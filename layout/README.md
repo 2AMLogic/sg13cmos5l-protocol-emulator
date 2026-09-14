@@ -56,7 +56,16 @@ sign-off flow from the one the competition actually runs. Deliberately not
 done. This resolves itself, with **no change on this side**, once
 `tt-gds-action#52` is fixed upstream.
 
-**Reproduced on** (both runs identical, this repo):
+**Reproduced on** (all runs identical, this repo): PR-branch runs
 [34802819850](https://github.com/2AMLogic/sg13cmos5l-protocol-emulator/actions/runs/34802819850)
 and
-[34803033165](https://github.com/2AMLogic/sg13cmos5l-protocol-emulator/actions/runs/34803033165).
+[34803033165](https://github.com/2AMLogic/sg13cmos5l-protocol-emulator/actions/runs/34803033165),
+then — after PR #7 merged — on `main` itself at `a3585ea`:
+[34804131079](https://github.com/2AMLogic/sg13cmos5l-protocol-emulator/actions/runs/34804131079)
+(`fatal: destination path … already exists`, exit 128, same step). That last
+run is the one to cite: it establishes the failure is a property of `main`, not
+of an unmerged branch.
+
+**Last re-probed**: 2026-09-14 — `tt-gds-action#52` still `state: open`, last
+upstream activity 2026-09-11, zero comments. Re-probe it (and re-run `gds`)
+before concluding anything downstream of this blocker is still stuck.
