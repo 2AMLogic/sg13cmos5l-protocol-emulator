@@ -1,0 +1,64 @@
+# Raw log excerpt: GitHub Actions run 34884059362, job "gds", step "Build GDS"
+# `gh run view 34884059362 --log` lines 1795-1845 (LibreLane's Yosys.Synthesis
+# stage, pass "102. Printing statistics.").
+#
+# THIS IS THE INTERMEDIATE STAT PRINTED IMMEDIATELY *BEFORE* ABC's technology
+# mapping re-integrates $_MUX_ cells as sg13cmos5l_mux2_1 and *BEFORE* the
+# HILOMAP pass maps constant drivers to sg13cmos5l_tielo cells. It reports
+# 16 cells ($_MUX_: 8 (not yet a real stdcell), sg13cmos5l_dfrbpq_1: 8).
+#
+# This is the number this issue's curator-enhancement comment cited as
+# "LibreLane's own Yosys.Synthesis stage: 16 cells, matching the
+# Yosys-standalone record exactly" -- verified here to show that citation was
+# an intermediate, non-final print, NOT the stage's own persisted report
+# (see librelane_yosys_synthesis_stat.json / librelane_tt_submission_synthesis-stats.txt
+# in this same artifacts directory, both of which report 32 cells for the
+# same Yosys.Synthesis stage, after HILOMAP runs). See the new record's
+# Result section for the full explanation.
+#
+"num_submodules":       0,                                             
+"area":              391.910400,                                       
+"sequential_area":    391.910400,                                      
+"num_cells_by_type": {                                                 
+"$_MUX_": 8,                                                        
+"sg13cmos5l_dfrbpq_1": 8                                            
+}                                                                      
+}                                                                         
+},                                                                           
+"design": {                                                               
+"num_wires":         16,                                               
+"num_wire_bits":     51,                                               
+"num_pub_wires":     8,                                                
+"num_pub_wire_bits": 43,                                               
+"num_ports":         8,                                                
+"num_port_bits":     43,                                               
+"num_memories":      0,                                                
+"num_memory_bits":   0,                                                
+"num_processes":     0,                                                
+"num_cells":         16,                                               
+"num_submodules":       0,                                             
+"area":              391.910400,                                       
+"sequential_area":    391.910400,                                      
+"num_cells_by_type": {                                                 
+"$_MUX_": 8,                                                        
+"sg13cmos5l_dfrbpq_1": 8                                            
+}                                                                      
+}                                                                         
+}                                                                               
+102. Printing statistics.                                                       
+=== tt_um_2amlogic_protocol_emulator ===                                        
++----------Local Count, excluding submodules.                           
+|        +-Local Area, excluding submodules.                            
+|        |                                                              
+16        - wires                                                        
+51        - wire bits                                                    
+8        - public wires                                                 
+43        - public wire bits                                             
+8        - ports                                                        
+43        - port bits                                                    
+16   391.91 cells                                                        
+8        -   $_MUX_                                                     
+8   391.91   sg13cmos5l_dfrbpq_1                                        
+Area for cell type $_MUX_ is unknown!                                        
+Chip area for module '\tt_um_2amlogic_protocol_emulator': 391.910400         
+of which used for sequential elements: 391.910400 (100.00%)                

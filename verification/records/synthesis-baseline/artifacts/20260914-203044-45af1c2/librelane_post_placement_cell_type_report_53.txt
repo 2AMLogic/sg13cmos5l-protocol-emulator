@@ -1,0 +1,25 @@
+# Raw log excerpt: GitHub Actions run 34884059362, job "gds", step "Build GDS"
+# `gh run view 34884059362 --log`, OpenROAD.DetailedPlacement step (LibreLane
+# step 34), its own "Cell type report" immediately after detailed placement,
+# before clock-tree synthesis / timing-repair buffering / fill insertion.
+#
+# 53 cells total: Sequential cell 8, Multi-Input combinational cell 24,
+# Clock buffer 3, Timing Repair Buffer 18. Cross-checked against
+# `design__instance__count__stdcell: 53` in
+# GDS_logs/runs/wokwi/34-openroad-detailedplacement/or_metrics_out.json
+# (not copied here; see the workflow run's own GDS_logs artifact for the
+# full per-step metrics if more detail is needed).
+#
+[INFO DPL-0023] HPWL delta               -3.8 %                                 
+Setting global connections for newly added cells…                               
+[INFO] Setting global connections...                                            
+[INFO ODB-0403] 16 connections made, 0 conflicts skipped.                       
+Updating metrics…                                                               
+Cell type report:                       Count       Area                        
+Clock buffer                              3      70.76                        
+Timing Repair Buffer                     18     203.21                        
+Sequential cell                           8     391.91                        
+Multi-Input combinational cell           24     261.27                        
+Total                                    53     927.16                        
+Writing OpenROAD database to                                                    
+'/home/runner/work/sg13cmos5l-protocol-emulator/sg13cmos5l-protocol-emulator/run
