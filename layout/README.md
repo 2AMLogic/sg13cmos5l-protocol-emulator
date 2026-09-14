@@ -101,3 +101,27 @@ instruction; enabling Pages in Settings is the correct fix.
 **Last re-probed**: 2026-09-14, against runs `34884059362` (pre-fix) and
 `34895381099` (post-fix). Re-probe before concluding anything about the
 PDK-install step, `gl_test`, or `viewer` is still in the state described here.
+
+## `viewer` / GitHub Pages: now resolved — operator enabled Pages (issue #2)
+
+The operator-only gap described in the section above has been closed:
+`gh api repos/2AMLogic/sg13cmos5l-protocol-emulator/pages` now returns a
+populated config (`build_type: "workflow"`, `source.branch: "main"`) instead
+of `404 Not Found`. GitHub Pages has been enabled in this repo's Settings →
+Pages with the GitHub Actions build/deployment source, exactly as the section
+above asked for.
+
+**Confirmed end-to-end on a fresh `gds` run**: workflow run
+[`34905475502`](https://github.com/2AMLogic/sg13cmos5l-protocol-emulator/actions/runs/34905475502)
+(`main` @ `599fd0e`, 2026-09-14T22:43Z) completed with all four `gds`-workflow
+jobs succeeding — `gds`, `precheck`, `gl_test`, and `viewer` — the first run in
+this repo's history to do so. This is the last item that was still open on
+issue #2's first acceptance criterion ("the `gds` and `test` workflows pass on
+`main`"); with it cleared, that criterion is fully met, and there is no
+further code-side or settings-side gap remaining in the Tiny Tapeout template
+checklist that this section (and the two above it) track.
+
+**Last re-probed**: 2026-09-14, against run `34905475502`. As always, re-probe
+before concluding anything about the PDK-install step, `gl_test`, or `viewer`
+is still in the state described here — this section supersedes the "still
+unresolved" framing above by recording why, not by editing it away.

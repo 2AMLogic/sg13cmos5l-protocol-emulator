@@ -99,12 +99,15 @@ template](https://github.com/TinyTapeout/ttihp-verilog-template/tree/cmos5l)
 [`2AMLogic/sky130-modexp`](https://github.com/2AMLogic/sky130-modexp).
 
 The `gds` workflow — the LibreLane sign-off flow, and the only thing here that
-builds a GDS — currently fails before doing any work, on a confirmed upstream
-bug in the Tiny Tapeout action it calls
-([`TinyTapeout/tt-gds-action#52`](https://github.com/TinyTapeout/tt-gds-action/issues/52)),
-which also skips `precheck`/`gl_test`/`viewer`. It is not fixable from this
-repo without abandoning the verbatim-template rule above. Full write-up:
-[`layout/README.md`](layout/README.md).
+builds a GDS — now passes end to end on `main` (`gds`/`precheck`/`gl_test`/
+`viewer` all succeed) for the harness-bootstrap stub top. It previously failed
+before doing any work, on a confirmed upstream bug in the Tiny Tapeout action
+it calls ([`TinyTapeout/tt-gds-action#52`](https://github.com/TinyTapeout/tt-gds-action/issues/52)),
+which also skipped `precheck`/`gl_test`/`viewer`; that symptom stopped
+reproducing on its own (the upstream issue remains open, unreconciled), and a
+separate template gap that broke `gl_test` and a missing GitHub Pages setting
+that broke `viewer` have both been fixed. Full write-up, including the
+still-open upstream-issue caveat: [`layout/README.md`](layout/README.md).
 
 ## License
 
