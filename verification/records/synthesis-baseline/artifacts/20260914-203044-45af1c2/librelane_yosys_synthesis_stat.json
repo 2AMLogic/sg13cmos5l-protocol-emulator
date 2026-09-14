@@ -1,0 +1,47 @@
+{
+   "creator": "Yosys 0.66 (git sha1 86f2ddebce7e98ce7cacc27e8a5c14cb53b51b51, clang++ 21.1.8 -fPIC -O3)",
+   "invocation": "stat -json -liberty /home/runner/work/sg13cmos5l-protocol-emulator/sg13cmos5l-protocol-emulator/runs/wokwi/tmp/b80763c9fe3a4514b6d946410914cb9c.lib -liberty /home/runner/work/sg13cmos5l-protocol-emulator/sg13cmos5l-protocol-emulator/runs/wokwi/tmp/ce44a6a73e5342c89574223d3621675c.lib ",
+   "modules": {
+      "\\tt_um_2amlogic_protocol_emulator": {
+         "num_wires":         16,
+         "num_wire_bits":     51,
+         "num_pub_wires":     8,
+         "num_pub_wire_bits": 43,
+         "num_ports":         8,
+         "num_port_bits":     43,
+         "num_memories":      0,
+         "num_memory_bits":   0,
+         "num_processes":     0,
+         "num_cells":         32,
+         "num_submodules":       0,
+         "area":              653.184000,
+         "sequential_area":    391.910400,
+         "num_cells_by_type": {
+            "sg13cmos5l_dfrbpq_1": 8,
+            "sg13cmos5l_mux2_1": 8,
+            "sg13cmos5l_tielo": 16
+         }
+      }
+   },
+      "design": {
+         "num_wires":         16,
+         "num_wire_bits":     51,
+         "num_pub_wires":     8,
+         "num_pub_wire_bits": 43,
+         "num_ports":         8,
+         "num_port_bits":     43,
+         "num_memories":      0,
+         "num_memory_bits":   0,
+         "num_processes":     0,
+         "num_cells":         32,
+         "num_submodules":       0,
+         "area":              653.184000,
+         "sequential_area":    391.910400,
+         "num_cells_by_type": {
+            "sg13cmos5l_dfrbpq_1": 8,
+            "sg13cmos5l_mux2_1": 8,
+            "sg13cmos5l_tielo": 16
+         }
+      }
+}
+
