@@ -51,12 +51,14 @@
     "                         in *this* repo's pin is visible next to",
     "                         klt's).",
     "",
-    "2026-09-12 (standup): pinned to klayout-tools main as of this repo's creation, the commit the scaffold was run against. It is a STARTING pin, not a verified one: no layout/ runner exists yet and klt's synthesize/par platform table does not yet carry an IHP CMOS5L entry, so `klt drc` against this PDK has not been exercised here. Issue #2 verifies the pin (or bumps it) when the first layout/ harness comes up, and records the result as a new paragraph below."
+    "2026-09-12 (standup): pinned to klayout-tools main as of this repo's creation, the commit the scaffold was run against. It is a STARTING pin, not a verified one: no layout/ runner exists yet and klt's synthesize/par platform table does not yet carry an IHP CMOS5L entry, so `klt drc` against this PDK has not been exercised here. Issue #2 verifies the pin (or bumps it) when the first layout/ harness comes up, and records the result as a new paragraph below.",
+    "",
+    "2026-09-14 (issue #2): bumped klt_install/klt_last_verified_commit from 051e8f7 to 5c757081680e207b6abbc7a6ca7d3688ad07072a (051e8f7 is an ancestor of this commit -- a forward move, not a rewrite), the exact commit `klt drc` was actually exercised against for this bump. `klt drc --deck sg13cmos5l --format json` against a trivial synthetic layout (a single shape on layer 1/0, no real design content -- issue #2 does not produce a GDS yet) ran end to end: `klt deck info` reports the `sg13cmos5l` deck as `released: true` (release 0.4.0), and the drc run itself returned `status: clean`, `violation_count: 0`, with a full provenance block (`klt_version`, `klayout_version`, `deck.content_hash`, `input.content_hash`). This verifies the `drc` command and the `sg13cmos5l` deck are both genuinely present and runnable at this pin -- not just that `klt --help` lists `drc` -- but it is still a smoke check, not a real-layout DRC pass: no actual standard-cell/GDS content has gone through this deck yet, since this repo has no layout/ content-producing flow yet (this issue only wires up the RTL->netlist harness, not place-and-route). A future layout/ runner (once one exists) should re-verify against real content and record that as its own new paragraph, not edit this one. klayout_package_min re-checked against klayout-tools' current pyproject.toml floor (`klayout>=0.30`) -- unchanged."
   ],
-  "klt_install": "git+https://github.com/2AMLogic/klayout-tools@051e8f772281beddd21a3d0022bc83821267056a",
+  "klt_install": "git+https://github.com/2AMLogic/klayout-tools@5c757081680e207b6abbc7a6ca7d3688ad07072a",
   "klt_required_commands": [
     "drc"
   ],
-  "klt_last_verified_commit": "051e8f772281beddd21a3d0022bc83821267056a",
+  "klt_last_verified_commit": "5c757081680e207b6abbc7a6ca7d3688ad07072a",
   "klayout_package_min": "0.30"
 }

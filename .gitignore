@@ -7,8 +7,25 @@ __pycache__/
 
 # synthesis / P&R scratch
 flow/build/
+flow/.synth-scratch/
 # local klt install, created by the setup script
 .venv/
+# klt's own scratch build dir for `klt functional-verification` runs
+verification/.klt/
+
+# Tiny Tapeout template (info.yaml / src / test), verbatim from
+# TinyTapeout/ttihp-verilog-template@cmos5l, ported in issue #2
+*.fst
+*.fst.hier
+.idea
+runs
+tt_submission
+src/user_config.json
+src/config_merged.json
+test/sim_build
+test/__pycache__/
+test/results.xml
+test/gate_level_netlist.v
 # >>> loom-managed (do not edit) >>>
 # Loom runtime state (don't commit these)
 .loom-in-use

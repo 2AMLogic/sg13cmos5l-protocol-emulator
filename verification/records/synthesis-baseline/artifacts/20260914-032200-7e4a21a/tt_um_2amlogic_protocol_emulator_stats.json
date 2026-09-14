@@ -1,0 +1,45 @@
+{
+   "creator": "Yosys 0.68 (git sha1 38e001a6f, Release, Clang /workspace/YoWASP/yosys/wasi-sdk-33.0-x86_64-linux/share/cmake/../..//bin/clang++ 22.1.0)",
+   "invocation": "stat -liberty /home/ubuntu/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/lib/sg13cmos5l_stdcell_typ_1p20V_25C.lib -json -top tt_um_2amlogic_protocol_emulator ",
+   "modules": {
+      "\\tt_um_2amlogic_protocol_emulator": {
+         "num_wires":         18,
+         "num_wire_bits":     60,
+         "num_pub_wires":     10,
+         "num_pub_wire_bits": 52,
+         "num_ports":         8,
+         "num_port_bits":     43,
+         "num_memories":      0,
+         "num_memory_bits":   0,
+         "num_processes":     0,
+         "num_cells":         16,
+         "num_submodules":       0,
+         "area":              537.062400,
+         "sequential_area":    391.910400,
+         "num_cells_by_type": {
+            "sg13cmos5l_dfrbpq_1": 8,
+            "sg13cmos5l_mux2_1": 8
+         }
+      }
+   },
+      "design": {
+         "num_wires":         18,
+         "num_wire_bits":     60,
+         "num_pub_wires":     10,
+         "num_pub_wire_bits": 52,
+         "num_ports":         8,
+         "num_port_bits":     43,
+         "num_memories":      0,
+         "num_memory_bits":   0,
+         "num_processes":     0,
+         "num_cells":         16,
+         "num_submodules":       0,
+         "area":              537.062400,
+         "sequential_area":    391.910400,
+         "num_cells_by_type": {
+            "sg13cmos5l_dfrbpq_1": 8,
+            "sg13cmos5l_mux2_1": 8
+         }
+      }
+}
+

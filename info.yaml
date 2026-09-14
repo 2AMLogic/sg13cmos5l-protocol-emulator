@@ -1,0 +1,72 @@
+# Tiny Tapeout project information
+#
+# Taken from the Tiny Tapeout `cmos5l` template
+# (https://github.com/TinyTapeout/ttihp-verilog-template/tree/cmos5l) per
+# CLAUDE.md's "Harness bootstrap" section and populated for this project
+# (issue #2). `top_module` is a stub that only wires up the fixed pin budget
+# (clk/rst_n/ena + 8 in / 8 out / 8 bidir) -- the ISA has not been ratified
+# yet (spec/, issue #1), so `tiles`, `pinout`, and `clock_hz` below are
+# placeholders sized for the stub, not a ratified area/pinout budget. Revisit
+# once issue #1 lands.
+project:
+  title:        "Protocol emulator ASIC (harness bootstrap stub)"
+  author:       "2AMLogic"
+  discord:      ""
+  description:  "Harness-bootstrap stub for a firmware-programmable protocol-emulator core; the ISA is not designed yet (see spec/, issue #1) -- this top only proves clk/rst_n/ena and the pin budget."
+  language:     "Verilog"
+  clock_hz:     50000000 # 50 MHz -- the draft board-clock target in README.md's target spec table (DRAFT, unratified)
+
+  # How many tiles your design occupies? A single tile is about 167x108 uM.
+  tiles: "1x1"          # stub only; the ratified ISA's area budget is a later decision record
+
+  # Your top module name must start with "tt_um_". Make it unique by including your github username:
+  top_module:  "tt_um_2amlogic_protocol_emulator"
+
+  # List your project's source files here.
+  # Source files must be in ./src and you must list each source file separately, one per line.
+  # Don't forget to also update `PROJECT_SOURCES` in test/Makefile.
+  source_files:
+    - "tt_um_2amlogic_protocol_emulator.v"
+
+# The pinout of your project. Leave unused pins blank. DO NOT delete or add any pins.
+# This section is for the datasheet/website. Use descriptive names (e.g., RX, TX, MOSI, SCL, SEG_A, etc.).
+#
+# No ISA is ratified yet (spec/, issue #1), so no pin has a fixed protocol
+# role -- these are generic stub descriptions, not a pinout budget decision.
+# ui[]/uo[] are genuinely wired (ui_in is registered onto uo_out; see
+# src/tt_um_2amlogic_protocol_emulator.v) so they get a real, if generic,
+# label; uio[] is left blank because the stub holds it as inputs
+# (uio_oe = 0) and drives nothing onto it.
+pinout:
+  # Inputs
+  ui[0]: "stub: registered onto uo[0]"
+  ui[1]: "stub: registered onto uo[1]"
+  ui[2]: "stub: registered onto uo[2]"
+  ui[3]: "stub: registered onto uo[3]"
+  ui[4]: "stub: registered onto uo[4]"
+  ui[5]: "stub: registered onto uo[5]"
+  ui[6]: "stub: registered onto uo[6]"
+  ui[7]: "stub: registered onto uo[7]"
+
+  # Outputs
+  uo[0]: "stub: ui[0] registered here"
+  uo[1]: "stub: ui[1] registered here"
+  uo[2]: "stub: ui[2] registered here"
+  uo[3]: "stub: ui[3] registered here"
+  uo[4]: "stub: ui[4] registered here"
+  uo[5]: "stub: ui[5] registered here"
+  uo[6]: "stub: ui[6] registered here"
+  uo[7]: "stub: ui[7] registered here"
+
+  # Bidirectional pins
+  uio[0]: ""
+  uio[1]: ""
+  uio[2]: ""
+  uio[3]: ""
+  uio[4]: ""
+  uio[5]: ""
+  uio[6]: ""
+  uio[7]: ""
+
+# Do not change!
+yaml_version: 6
