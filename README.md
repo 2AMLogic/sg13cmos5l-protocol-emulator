@@ -102,6 +102,14 @@ template](https://github.com/TinyTapeout/ttihp-verilog-template/tree/cmos5l)
 (issue #2); everything else is this program's own harness, ported from
 [`2AMLogic/sky130-modexp`](https://github.com/2AMLogic/sky130-modexp).
 
+The `gds` workflow — the LibreLane sign-off flow, and the only thing here that
+builds a GDS — currently fails before doing any work, on a confirmed upstream
+bug in the Tiny Tapeout action it calls
+([`TinyTapeout/tt-gds-action#52`](https://github.com/TinyTapeout/tt-gds-action/issues/52)),
+which also skips `precheck`/`gl_test`/`viewer`. It is not fixable from this
+repo without abandoning the verbatim-template rule above. Full write-up:
+[`layout/README.md`](layout/README.md).
+
 ## License
 
 Apache License 2.0 — see [LICENSE](LICENSE).
