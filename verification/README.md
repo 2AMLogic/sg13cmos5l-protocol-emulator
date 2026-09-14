@@ -85,12 +85,17 @@ currently has to work around).
 installed as an isolated tool (e.g. `uv tool install klayout-tools`), that
 isolated venv does not automatically pick up an ambient `cocotb` install --
 running the command above then fails with `cocotb is not installed`, even
-when `python3 -c "import cocotb"` works fine outside of `klt`. Fix by
-installing `klt` with `cocotb`/`cocotb-tools` as extra dependencies (e.g.
-`uv tool install --with cocotb --with cocotb-tools klayout-tools`), or by
-using a `pip`-based `klt` install into a venv that also has `cocotb`
-(`2AMLogic/sky130-modexp`'s `scripts/setup-env.sh` does the latter, though
-this repo does not have that script yet — see issue #6).
+when `python3 -c "import cocotb"` works fine outside of `klt`.
+
+**Fix: run `./scripts/setup-env.sh`.** It installs `klt` together with
+pinned `cocotb`/`cocotb-tools` versions in one `uv tool install` call, at
+the exact `klt` commit `layout/toolchain.json` records (so this flow and
+the `layout/` DRC/LVS flow never drift onto different `klt` pins), and also
+reports the resolved `ihp-sg13cmos5l` `$PDK_ROOT` and whether
+`iverilog`/`yosys`/`openroad` are on `$PATH`. See `docs/environment.md` for
+the full pinned-version record and rationale. (This replaces the ad hoc
+`uv tool install --with cocotb --with cocotb-tools klayout-tools` workaround
+this note previously described.)
 
 ## Directory / naming convention
 
