@@ -31,29 +31,32 @@ project:
 # The pinout of your project. Leave unused pins blank. DO NOT delete or add any pins.
 # This section is for the datasheet/website. Use descriptive names (e.g., RX, TX, MOSI, SCL, SEG_A, etc.).
 #
-# Left blank: no ISA is ratified yet, so no pin has a fixed protocol role.
-# The stub top registers ui_in onto uo_out and leaves uio_* as inputs
-# (uio_oe = 0); see src/tt_um_2amlogic_protocol_emulator.v.
+# No ISA is ratified yet (spec/, issue #1), so no pin has a fixed protocol
+# role -- these are generic stub descriptions, not a pinout budget decision.
+# ui[]/uo[] are genuinely wired (ui_in is registered onto uo_out; see
+# src/tt_um_2amlogic_protocol_emulator.v) so they get a real, if generic,
+# label; uio[] is left blank because the stub holds it as inputs
+# (uio_oe = 0) and drives nothing onto it.
 pinout:
   # Inputs
-  ui[0]: ""
-  ui[1]: ""
-  ui[2]: ""
-  ui[3]: ""
-  ui[4]: ""
-  ui[5]: ""
-  ui[6]: ""
-  ui[7]: ""
+  ui[0]: "stub: registered onto uo[0]"
+  ui[1]: "stub: registered onto uo[1]"
+  ui[2]: "stub: registered onto uo[2]"
+  ui[3]: "stub: registered onto uo[3]"
+  ui[4]: "stub: registered onto uo[4]"
+  ui[5]: "stub: registered onto uo[5]"
+  ui[6]: "stub: registered onto uo[6]"
+  ui[7]: "stub: registered onto uo[7]"
 
   # Outputs
-  uo[0]: ""
-  uo[1]: ""
-  uo[2]: ""
-  uo[3]: ""
-  uo[4]: ""
-  uo[5]: ""
-  uo[6]: ""
-  uo[7]: ""
+  uo[0]: "stub: ui[0] registered here"
+  uo[1]: "stub: ui[1] registered here"
+  uo[2]: "stub: ui[2] registered here"
+  uo[3]: "stub: ui[3] registered here"
+  uo[4]: "stub: ui[4] registered here"
+  uo[5]: "stub: ui[5] registered here"
+  uo[6]: "stub: ui[6] registered here"
+  uo[7]: "stub: ui[7] registered here"
 
   # Bidirectional pins
   uio[0]: ""
