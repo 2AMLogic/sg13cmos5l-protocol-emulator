@@ -19,12 +19,12 @@ discovered.
 | 1 | Protocols emulated in firmware | Spec only | No RTL, no firmware, no verification suite yet. DR 0001's cycle-budget sketches are the sufficiency argument; the ISA itself is unimplemented. |
 | 2 | Stretch protocols | Not started | No cycle-budget sketch exists for USB 1.1 or 10BASE-T against DR 0001's ISA — per that record, they don't enter the spec until one exists. Explicitly deferred; not blocking core-protocol submission. |
 | 3 | Timing determinism | Spec only | Formal property `no_data_dependent_latency` (verification-plan.md §2.1) named but not written; no RTL to check it against yet. |
-| 4 | Core clock (≥50 MHz) | One flow has synthesized a stub; timing still unconfirmed | No synthesis run on either flow (DR 0002) has been performed; the 50 MHz target is a draft carried over from the README, not yet confirmed achievable on CMOS5L by either flow. — **2026-09-14 (issue #2):** one flow has now run, on the *harness-bootstrap stub* top, not the ISA core: Yosys against `sg13cmos5l_stdcell`, 16 cells, record `verification/records/synthesis-baseline/records/20260914-032200-7e4a21a.md`. That run reports **cell count only, not timing** — the direct-Yosys fallback it had to use (klayout-tools#1786) neither reads nor enforces `constraints.clock_period_ns`. The LibreLane leg of DR 0002's two flows has still produced no number at all (row 9). 50 MHz therefore remains unconfirmed on **both** flows. |
+| 4 | Core clock (≥50 MHz) | Both flows have now synthesized the stub; timing still unconfirmed | No synthesis run on either flow (DR 0002) has been performed; the 50 MHz target is a draft carried over from the README, not yet confirmed achievable on CMOS5L by either flow. — **2026-09-14 (issue #2):** one flow has now run, on the *harness-bootstrap stub* top, not the ISA core: Yosys against `sg13cmos5l_stdcell`, 16 cells, record `verification/records/synthesis-baseline/records/20260914-032200-7e4a21a.md`. That run reports **cell count only, not timing** — the direct-Yosys fallback it had to use (klayout-tools#1786) neither reads nor enforces `constraints.clock_period_ns`. The LibreLane leg of DR 0002's two flows has still produced no number at all (row 9). 50 MHz therefore remains unconfirmed on **both** flows. — **2026-09-14 (issue #5, PR #11):** the LibreLane leg has now run too (record `20260914-203044-45af1c2.md`, superseding the record above): 32 cells at its own `Yosys.Synthesis` stage (the correct apples-to-apples comparison point; the two flows agree on substantive logic and diverge only on tie-cell insertion — see that record for the full reconciliation). **Still cell counts only, not timing** — neither flow's run reports a clock-period/STA result, so 50 MHz remains unconfirmed on both flows even though both now have a synthesis data point. |
 | 5 | I/O pin budget | Template-fixed; instantiated by the stub top | The `tt_um_*` wrapper interface is fixed by the Tiny Tapeout template (once it's pulled in per DR 0002/issue #2); this repo has not yet instantiated it. — **2026-09-14 (issue #2):** now instantiated. `src/tt_um_2amlogic_protocol_emulator.v` drives the full fixed budget (`clk`/`rst_n`/`ena`, `ui_in[7:0]`, `uo_out[7:0]`, `uio_in`/`uio_out`/`uio_oe`) and `info.yaml` declares the pinout. It is a **stub** (`ui_in` registered onto `uo_out`, `uio_oe = 0`), so the budget is consumed *structurally*; assigning protocol roles to specific pins is a later decision record, and `info.yaml`'s pinout labels say so explicitly. |
 | 6 | Program storage (256×16-bit, serial load) | Spec only | RTL for program memory and the load-phase shift-in logic (DR 0001) does not exist. No cocotb test for the load protocol exists. |
-| 7 | Area (≤2×2 tiles) | Tile pitch confirmed; area still unverified | No synthesis has run, so no real area number exists. **Open question, not yet resolved**: the exact Tiny Tapeout tile pitch for the CMOS5L shuttle is not confirmed in this repo — needs to be pulled from the `cmos5l` branch of the template (issue #2) before "2×2 tiles" can be checked against a real number. — **2026-09-14 (issue #2): the tile-pitch half of this question is resolved.** The template's own `info.yaml`, now in this repo verbatim from the `cmos5l` branch, states a single tile is **about 167 × 108 µm**, so a ≤2×2-tile budget is on the order of **334 × 216 µm** (the template states no inter-tile spacing or margin, so treat that as the order of magnitude, not an exact die area). The stub declares `tiles: "1x1"`. **The area half is still open**: the only synthesis that has run reports 537.0624 liberty-area units for the *stub's cells* (record `20260914-032200-7e4a21a`) with no floorplan or P&R, and the LibreLane flow that would produce a real die area has never run (row 9). |
-| 8 | Verification (cocotb + gate-level + formal + constrained-random) | Plan only; cocotb harnesses bootstrapped, gate-level blocked upstream | `spec/verification-plan.md` names the shape; none of §2–§4's artifacts (formal properties, gate-level regression, constrained-random suites, reference models) exist yet. — **2026-09-14 (issue #2):** two cocotb harnesses now exist against the stub top — `test/` (the template's own, driven by the `test` workflow, green on `main`) and `verification/` (this program's own, driven by `klt functional-verification`, with one passing append-only record `20260914-031931-7e4a21a`). §3's **gate-level regression is wired but cannot run**: the template's `gl_test` job declares `needs: gds`, and `gds` fails upstream before producing a netlist (row 9). §2 formal properties and §4 constrained-random suites + reference models still do not exist. |
-| 9 | Submission (Apache-2.0, TT CMOS5L template, 2027-01-18) | License set (repo-wide, per `LICENSE`); template pulled in (stub); sign-off flow blocked upstream | Template wiring (`info.yaml`, `tt_um_*` top, `test/`, docs) is issue #2's scope per `CLAUDE.md`'s "Harness bootstrap," taken verbatim from the template's `cmos5l` branch. Not started. — **2026-09-14 (issue #2, PR #7):** template wiring **landed**, verbatim from the `cmos5l` branch — `info.yaml`, `src/tt_um_2amlogic_protocol_emulator.v`, `src/config.json`, `test/`, `docs/info.md`, `.devcontainer/`, and the `gds`/`test`/`fpga`/`docs` workflows (checklist below). `test` and `docs` are green on `main`; **`gds` fails deterministically** in `tt-gds-action`'s PDK-install step (upstream `TinyTapeout/tt-gds-action#52`, open as of 2026-09-14; re-confirmed on `main` at `a3585ea`), so the competition's sign-off flow has never produced a GDS and `precheck`/`gl_test`/`viewer` are all skipped. Not fixable from this side without forking the template — full analysis in `layout/README.md`. |
+| 7 | Area (≤2×2 tiles) | Tile pitch confirmed; area still unverified | No synthesis has run, so no real area number exists. **Open question, not yet resolved**: the exact Tiny Tapeout tile pitch for the CMOS5L shuttle is not confirmed in this repo — needs to be pulled from the `cmos5l` branch of the template (issue #2) before "2×2 tiles" can be checked against a real number. — **2026-09-14 (issue #2): the tile-pitch half of this question is resolved.** The template's own `info.yaml`, now in this repo verbatim from the `cmos5l` branch, states a single tile is **about 167 × 108 µm**, so a ≤2×2-tile budget is on the order of **334 × 216 µm** (the template states no inter-tile spacing or margin, so treat that as the order of magnitude, not an exact die area). The stub declares `tiles: "1x1"`. **The area half is still open**: the only synthesis that has run reports 537.0624 liberty-area units for the *stub's cells* (record `20260914-032200-7e4a21a`) with no floorplan or P&R, and the LibreLane flow that would produce a real die area has never run (row 9). — **2026-09-14 (issue #5, PR #11):** the LibreLane flow has now run end to end (`gds` workflow, run `34884059362`), through placement and fill insertion, but it produced *cell-count* checkpoints (32 / 53 / 2340 cells at successive stages, record `20260914-203044-45af1c2.md`), not a floorplan or die-area report. **The area half remains genuinely open** — no run of either flow has reported a die area or utilization-against-tile-budget number yet. |
+| 8 | Verification (cocotb + gate-level + formal + constrained-random) | Plan only; cocotb harnesses bootstrapped, gate-level now passing | `spec/verification-plan.md` names the shape; none of §2–§4's artifacts (formal properties, gate-level regression, constrained-random suites, reference models) exist yet. — **2026-09-14 (issue #2):** two cocotb harnesses now exist against the stub top — `test/` (the template's own, driven by the `test` workflow, green on `main`) and `verification/` (this program's own, driven by `klt functional-verification`, with one passing append-only record `20260914-031931-7e4a21a`). §3's **gate-level regression is wired but cannot run**: the template's `gl_test` job declares `needs: gds`, and `gds` fails upstream before producing a netlist (row 9). §2 formal properties and §4 constrained-random suites + reference models still do not exist. — **2026-09-14 (issue #10, PR #12; re-confirmed issue #2):** §3's gate-level regression **now runs and passes**. The blocker above (`gds` failing before a netlist existed) cleared, and a separate upstream gap in `test/Makefile` (missing `sg13cmos5l_udp.v` UDP source, inherited verbatim from the template) was patched — see `layout/README.md`. Latest confirmation: `gds`-workflow run `34905475502` (`main` @ `599fd0e`) reports `gl_test: success`. §2 formal properties and §4 constrained-random suites + reference models still do not exist — unchanged, and still future-issue scope. |
+| 9 | Submission (Apache-2.0, TT CMOS5L template, 2027-01-18) | License set (repo-wide, per `LICENSE`); template pulled in; sign-off flow now green end to end | Template wiring (`info.yaml`, `tt_um_*` top, `test/`, docs) is issue #2's scope per `CLAUDE.md`'s "Harness bootstrap," taken verbatim from the template's `cmos5l` branch. Not started. — **2026-09-14 (issue #2, PR #7):** template wiring **landed**, verbatim from the `cmos5l` branch — `info.yaml`, `src/tt_um_2amlogic_protocol_emulator.v`, `src/config.json`, `test/`, `docs/info.md`, `.devcontainer/`, and the `gds`/`test`/`fpga`/`docs` workflows (checklist below). `test` and `docs` are green on `main`; **`gds` fails deterministically** in `tt-gds-action`'s PDK-install step (upstream `TinyTapeout/tt-gds-action#52`, open as of 2026-09-14; re-confirmed on `main` at `a3585ea`), so the competition's sign-off flow has never produced a GDS and `precheck`/`gl_test`/`viewer` are all skipped. Not fixable from this side without forking the template — full analysis in `layout/README.md`. — **2026-09-14 (issues #5/#10/#2, PRs #11/#12, this re-check):** the PDK-install symptom above stopped reproducing (confirmed stale in `layout/README.md`, run `34884059362`), `gl_test` was fixed (row 8), and the last remaining gap — GitHub Pages not enabled, blocking the `viewer` job — has now been cleared by the operator (`gh api .../pages` returns a populated config, not `404`). **Confirmed on run [`34905475502`](https://github.com/2AMLogic/sg13cmos5l-protocol-emulator/actions/runs/34905475502) (`main` @ `599fd0e`, 2026-09-14T22:43Z): all four `gds`-workflow jobs — `gds`, `precheck`, `gl_test`, `viewer` — succeed.** The competition's sign-off flow is therefore now fully exercised end to end on the harness-bootstrap stub; `TinyTapeout/tt-gds-action#52` remains open upstream but no longer reproduces here (unreconciled — see `layout/README.md`). Nothing further is blocked on this row for the stub; the ISA itself (rows 1, 3, 6, 10–12) is what future issues still need to build. |
 | 10 | UART bit-timing accuracy | Spec only | No firmware, no RTL, no reference-model comparison exists to check this against yet. |
 | 11 | SPI clock ceiling and modes | Spec only | Same — no firmware/RTL/test exists yet. |
 | 12 | I2C timing | Spec only | Same — no firmware/RTL/test exists yet. |
@@ -44,7 +44,10 @@ is taken verbatim from the template's `cmos5l` branch, not reimplemented —
 tracked here as a checklist against that source. Originally recorded (2026-09-14,
 issue #1) as *all unstarted*; **updated 2026-09-14 after issue #2 / PR #7 landed
 the wiring** — every file is now present, but "present" is not "signed off":
-the `gds` workflow that would exercise them fails upstream (row 9).
+the `gds` workflow that would exercise them fails upstream (row 9). **Further
+updated 2026-09-14 (issues #5/#10/#2, PRs #11/#12, this re-check): the `gds`
+workflow now passes end to end on `main` (run `34905475502`) — every item on
+this checklist is both present and signed off; nothing remains open here.**
 
 - [x] `info.yaml` — project metadata, pin mapping, clock frequency declaration.
       *Landed 2026-09-14; populated for the stub top (`tiles: "1x1"`,
@@ -64,9 +67,16 @@ the `gds` workflow that would exercise them fails upstream (row 9).
       CI, which is also the flow-of-record's actual execution mechanism
       per DR 0002.
       *All present verbatim (plus the template's `docs` workflow).
-      `test` and `docs` pass on `main`; **`gds` fails upstream**
-      (`TinyTapeout/tt-gds-action#52`), taking `precheck`/`gl_test`/`viewer`
-      with it. Per `CLAUDE.md` these files stay verbatim — no local patch.*
+      `test` and `docs` pass on `main`. **2026-09-14 update: `gds` now
+      passes end to end too** — the upstream PDK-install symptom
+      (`TinyTapeout/tt-gds-action#52`) stopped reproducing, `gl_test` was
+      fixed (issue #10, a one-line `test/Makefile` patch for a template gap,
+      see `layout/README.md`), and the operator enabled GitHub Pages,
+      clearing the last `viewer` gap. Confirmed on run `34905475502`
+      (`main` @ `599fd0e`): `gds`/`precheck`/`gl_test`/`viewer` all succeed.
+      Per `CLAUDE.md` these files stay verbatim — `gl_test`'s fix was a
+      necessary patch to an upstream template bug, not a deviation; no other
+      local patch was needed.*
 - [x] Docs — whatever documentation surface the template itself expects
       populated for a submission (README sections, `info.yaml` description
       fields, etc.) — exact list to be confirmed against the template
@@ -76,10 +86,12 @@ the `gds` workflow that would exercise them fails upstream (row 9).
       populated for the stub; the `docs` workflow renders them and is green on
       `main`. They describe a stub and will need rewriting once the ISA lands.*
 
-**Still open on this checklist** (tracked on issue #2, not re-filed here):
-a green `gds` run and the gate-level regression (`gl_test`) that depends on it,
-both waiting on the upstream fix; and the LibreLane cell count that would sit
-beside the Yosys one (issue #5).
+**Nothing remains open on this checklist as of 2026-09-14.** The green `gds`
+run and the gate-level regression (`gl_test`) it gates both now pass (issues
+#2/#10), and the LibreLane cell count beside the Yosys one has been backfilled
+(issue #5, closed via PR #11). This checklist item of issue #2 is complete;
+remaining gap-to-submission work is scoped to the ISA/firmware/verification
+rows above, not to this checklist.
 
 ## rtl/ status
 
@@ -100,19 +112,30 @@ its decision records are ratified.
    Issue #2 stays open on the LibreLane half: a green `gds` run and the
    gate-level regression behind it, blocked on `TinyTapeout/tt-gds-action#52`
    (see the blocker note below step 3), plus the LibreLane cell count (issue #5).
+   **2026-09-14, later the same day: fully done.** The `tt-gds-action#52`
+   symptom stopped reproducing, `gl_test` was fixed (issue #10, PR #12), the
+   LibreLane cell count was backfilled (issue #5, PR #11), and the operator
+   enabled GitHub Pages, clearing the last `viewer` gap. `gds`-workflow run
+   `34905475502` (`main` @ `599fd0e`) is green end to end — issue #2's harness-
+   bootstrap scope is complete.
 3. Track 2AMLogic/klayout-tools#1784 (CMOS5L platform gap) — does not block
    step 2's template-flow work, but blocks klt-side iteration convenience
    per DR 0002. **2026-09-14:** add 2AMLogic/klayout-tools#1786 (liberty
    filename convention) to the same watch — `flow/run_synthesize_direct_yosys.py`
    is the interim workaround and should be retired when it closes.
-   - **New blocker, discovered 2026-09-14 (issue #2):**
-     `TinyTapeout/tt-gds-action#52` — the template's `gds` workflow cannot
-     install the IHP PDK, so the competition's own sign-off flow produces
-     nothing and `precheck`/`gl_test`/`viewer` never run. Third-party issue,
-     already filed upstream, nothing to file from here; resolves with zero
-     changes on this side. Blocks rows 4 (LibreLane timing), 7 (real die
-     area), 8 (gate-level regression), and 9 (a signed-off submission
-     artifact). Re-probe it before assuming any of those are still stuck.
+   - **Blocker, discovered 2026-09-14 (issue #2), now cleared:**
+     `TinyTapeout/tt-gds-action#52` — the template's `gds` workflow could not
+     install the IHP PDK, so the competition's own sign-off flow produced
+     nothing and `precheck`/`gl_test`/`viewer` never ran. Third-party issue,
+     already filed upstream, nothing to file from here; resolved with zero
+     changes on this side (the exit-128 install symptom stopped reproducing
+     on its own — see `layout/README.md`; `tt-gds-action#52` itself remains
+     open upstream, unreconciled). Previously blocked rows 4 (LibreLane
+     timing — cell count now in hand, timing still separately open), 7 (real
+     die area — cell-stage data now in hand, floorplan/die-area still open),
+     8 (gate-level regression — now passing), and 9 (a signed-off submission
+     artifact — now produced end to end). **2026-09-14, same day:** all four
+     runs clean on run `34905475502`; re-probe before assuming a regression.
      Full analysis: `layout/README.md`.
 4. First RTL issue(s): the core datapath per DR 0001 (registers, pin ports,
    program memory + load-phase logic, fetch/execute).
