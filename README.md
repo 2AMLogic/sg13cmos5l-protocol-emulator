@@ -59,26 +59,22 @@ result. Where the agents hit friction with the open-source tooling — most ofte
 filed as a public issue against the tool itself, so the fix benefits everyone
 using IHP SG13CMOS5L, not just this repo.
 
-## Target specification (DRAFT — engineering to ratify, see issue #1)
+## Target specification
 
-| Parameter | Target | Stretch |
-|---|---|---|
-| Protocols emulated in firmware | UART (8N1, 9600–1 Mbaud), SPI (modes 0–3, controller, ≤ f_clk/4), I2C (standard + fast mode, controller) | Low-speed USB 1.1 (1.5 Mbit/s), 10BASE-T Ethernet |
-| Timing determinism | Every pin read/write lands on a cycle the program names; no data-dependent instruction latency | — |
-| Core clock | Runs at the Tiny Tapeout board clock; ≥ 50 MHz timing closure on CMOS5L | 100 MHz |
-| I/O | The Tiny Tapeout pin budget: 8 dedicated inputs, 8 dedicated outputs, 8 bidirectional, plus `clk`/`rst_n`/`ena` | — |
-| Program storage | On-chip program memory loaded over one of the pins at boot; size set by the ratified ISA | Program memory from a Tiny Tapeout SRAM macro |
-| Area | ≤ 2×2 Tiny Tapeout tiles (draft; competition maximum is 8×4) | — |
-| Verification | cocotb functional suite + gate-level regression on the template's flow; formal properties on the timing guarantees; constrained-random protocol traffic against a reference model | Silicon bring-up on the dev board |
-| Submission | Open source (Apache-2.0), Tiny Tapeout CMOS5L template, due 2027-01-18 | — |
-
-Every row above is a draft. Ratification (issue #1) may move any of them and
-must cite a source for each bound it keeps.
+The full target-spec table — every commitment, its source citation, and
+what verification artifact checks it — lives in
+[`spec/target-spec.md`](spec/target-spec.md) (Status: DRAFT). Design
+decisions behind those targets (the ISA, which flow produces the submitted
+GDS, the firmware toolchain) are recorded in
+[`spec/decision-records/`](spec/decision-records/). What's judged and how
+it's checked is in [`spec/verification-plan.md`](spec/verification-plan.md).
+Current status against every row and the 2027-01-18 deadline is tracked in
+[`spec/gap-to-submission.md`](spec/gap-to-submission.md).
 
 The `flow/` directory description below names Yosys and OpenROAD because that
 is this program's standard digital flow; whether the *submitted* GDS comes
 from it or from the Tiny Tapeout template's LibreLane flow is an open decision
-record (see Status).
+record (see `spec/decision-records/0002-flow-of-record.md`).
 
 ## Repo layout
 
