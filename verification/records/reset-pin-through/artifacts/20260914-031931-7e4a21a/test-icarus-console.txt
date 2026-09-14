@@ -1,0 +1,26 @@
+     -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:242  in gpi_load_users                  Loaded entry library: '/home/ubuntu/.local/share/uv/python/cpython-3.10.20-linux-x86_64-gnu/lib/libpython3.10.so.1.0'
+     -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:233  in gpi_load_users                  Running entry func 'initialize' from loaded library '/home/ubuntu/.local/share/uv/tools/klayout-tools/lib/python3.10/site-packages/cocotb/simulator.cpython-310-x86_64-linux-gnu.so'
+     -.--ns INFO     pygpi                              ..ib/pygpi/embed.cpp:114  in initialize                      Using Python 3.10.19 interpreter at /home/ubuntu/.local/share/uv/tools/klayout-tools/bin/python
+     -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:74   in gpi_print_registered_impl       GPI: VPI support registered
+     0.00ns INFO     cocotb.initialize                  Seeding Python random module with 1
+     0.00ns INFO     cocotb.initialize                  Initialized cocotb v2.1.0 from /home/ubuntu/.local/share/uv/tools/klayout-tools/lib/python3.10/site-packages/cocotb
+     0.00ns INFO     cocotb.initialize                  Running on Icarus Verilog version 12.0 (stable)
+     0.00ns INFO     cocotb.regression                  Running tests
+     0.00ns INFO     cocotb.regression                  running test_protocol_emulator.test_reset_clears_output (1/3)
+                                                            After reset, the registered output is zero.
+   110.00ns INFO     cocotb.regression                  test_protocol_emulator.test_reset_clears_output passed
+   110.00ns INFO     cocotb.regression                  running test_protocol_emulator.test_pin_through (2/3)
+                                                            `ui_in` is registered onto `uo_out` while `ena` is high.
+   310.00ns INFO     cocotb.regression                  test_protocol_emulator.test_pin_through passed
+   310.00ns INFO     cocotb.regression                  running test_protocol_emulator.test_ena_gates_updates (3/3)
+                                                            While `ena` is low, `uo_out` holds its last value regardless of `ui_in`.
+   500.00ns INFO     cocotb.regression                  test_protocol_emulator.test_ena_gates_updates passed
+   500.00ns INFO     cocotb.regression                  *********************************************************************************************************
+                                                        ** TEST                                             STATUS  SIM TIME (ns)  REAL TIME (s)  RATIO (ns/s) **
+                                                        *********************************************************************************************************
+                                                        ** test_protocol_emulator.test_reset_clears_output   PASS         110.00           0.00     150884.85  **
+                                                        ** test_protocol_emulator.test_pin_through           PASS         200.00           0.00     290324.67  **
+                                                        ** test_protocol_emulator.test_ena_gates_updates     PASS         190.00           0.00     302043.79  **
+                                                        *********************************************************************************************************
+                                                        ** TESTS=3 PASS=3 FAIL=0 SKIP=0                                   500.00           0.00     190838.94  **
+                                                        *********************************************************************************************************

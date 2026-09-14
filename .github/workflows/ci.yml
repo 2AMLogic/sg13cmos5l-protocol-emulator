@@ -1,0 +1,62 @@
+# CI for this program's own evidence-record convention (verification/README.md).
+#
+# Scope is deliberate, mirroring 2AMLogic/sky130-modexp's own ci.yml: this
+# workflow runs the **tool-light** leg only -- the append-only evidence-record
+# linter, which needs nothing but Python 3 and git (no PDK, no simulator).
+#
+# The Tiny Tapeout template's own cocotb harness (`test/`) is covered by
+# `.github/workflows/test.yaml`/`gds.yaml`, taken verbatim from the template
+# -- not duplicated here. The PDK-heavy legs (`klt synthesize`, this
+# program's own `klt functional-verification` run) are NOT run here either:
+# they need cocotb wired into `klt`'s own environment (see
+# verification/README.md's "local-environment note") and, for synthesis, the
+# PDK's standard-cell liberty. Those are run locally and committed as
+# append-only records under `verification/records/`.
+
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  records:
+    name: evidence records (lint + append-only)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Full history: the append-only check diffs against the merge-base
+          # with origin/main, which a shallow clone cannot resolve.
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Ensure origin/main is available for the append-only base ref
+        run: git fetch --no-tags --quiet origin +refs/heads/main:refs/remotes/origin/main
+
+      - name: Syntax-check the verification scripts
+        run: |
+          python3 -m compileall -q verification/_repo_utils.py \
+                                   verification/check_records.py \
+                                   verification/test_check_records.py \
+                                   verification/_dut.py \
+                                   verification/test_protocol_emulator.py \
+                                   flow/run_synthesize_direct_yosys.py
+
+      - name: Record linter + its self-test (npm run lint)
+        run: npm run lint
+
+      - name: Record linter, strict append-only against origin/main
+        run: python3 verification/check_records.py --require-append-only --base-ref origin/main

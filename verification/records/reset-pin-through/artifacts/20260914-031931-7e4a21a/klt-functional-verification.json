@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "engine": "icarus",
+  "hdl_toplevel": "tt_um_2amlogic_protocol_emulator",
+  "testbench": "test_protocol_emulator",
+  "status": "pass",
+  "test_count": 3,
+  "passed_count": 3,
+  "failed_count": 0,
+  "skipped_count": 0,
+  "tests": [
+    {
+      "name": "test_reset_clears_output",
+      "status": "passed",
+      "sim_time_ns": null,
+      "real_time_s": 0.001
+    },
+    {
+      "name": "test_pin_through",
+      "status": "passed",
+      "sim_time_ns": null,
+      "real_time_s": 0.001
+    },
+    {
+      "name": "test_ena_gates_updates",
+      "status": "passed",
+      "sim_time_ns": null,
+      "real_time_s": 0.001
+    }
+  ],
+  "coverage": null,
+  "environment": {
+    "engine": "icarus",
+    "engine_version": "12.0",
+    "cocotb_version": "2.1.0",
+    "results_xml": "/home/ubuntu/loom-workspaces/sg13cmos5l-protocol-emulator/.loom/worktrees/issue-2/verification/.klt/functional-verification/results_icarus.xml",
+    "random_seed": 1,
+    "sdf": null
+  }
+}

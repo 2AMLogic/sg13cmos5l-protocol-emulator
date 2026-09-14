@@ -83,13 +83,24 @@ record (see Status).
 ## Repo layout
 
 ```
-flow/          synthesis + place-and-route (Yosys, OpenROAD)
+src/           Verilog sources, at the path the Tiny Tapeout template expects
+info.yaml      Tiny Tapeout project metadata (top module, pinout, tile count)
+test/          the Tiny Tapeout template's own cocotb harness (gds/test CI)
+docs/          the Tiny Tapeout template's project datasheet source
+flow/          synthesis + place-and-route (Yosys, OpenROAD), driven through klt
 layout/        GDS + DRC/LVS reports (klayout-tools driven)
 measurements/  silicon characterization (empty until tape-out)
-rtl/           Verilog sources
+rtl/           this program's own Verilog sources -- empty until the ratified
+               ISA needs RTL beyond the Tiny Tapeout top; see rtl/README.md
 spec/          ratified spec + decision records
-verification/  cocotb testbenches
+verification/  this program's own cocotb bench + append-only evidence records
 ```
+
+`src/`/`info.yaml`/`test/`/`docs/`/the `.github/workflows/{gds,test,fpga,docs}.yaml`
+files are taken verbatim from the [Tiny Tapeout CMOS5L
+template](https://github.com/TinyTapeout/ttihp-verilog-template/tree/cmos5l)
+(issue #2); everything else is this program's own harness, ported from
+[`2AMLogic/sky130-modexp`](https://github.com/2AMLogic/sky130-modexp).
 
 ## License
 

@@ -1,0 +1,8 @@
+read_verilog /home/ubuntu/loom-workspaces/sg13cmos5l-protocol-emulator/.loom/worktrees/issue-2/src/tt_um_2amlogic_protocol_emulator.v
+hierarchy -check -top tt_um_2amlogic_protocol_emulator
+synth -top tt_um_2amlogic_protocol_emulator
+dfflibmap -liberty /home/ubuntu/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/lib/sg13cmos5l_stdcell_typ_1p20V_25C.lib
+abc -liberty /home/ubuntu/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/lib/sg13cmos5l_stdcell_typ_1p20V_25C.lib
+clean
+tee -q -o flow/.synth-scratch/tt_um_2amlogic_protocol_emulator_stats.json stat -liberty /home/ubuntu/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/lib/sg13cmos5l_stdcell_typ_1p20V_25C.lib -json -top tt_um_2amlogic_protocol_emulator
+write_verilog flow/.synth-scratch/tt_um_2amlogic_protocol_emulator_synth.v
