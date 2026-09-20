@@ -67,6 +67,7 @@ test/gate_level_netlist.v
 .loom/metrics/
 .loom/usage-cache.json
 .loom/claude-config/
+.loom/native-tools/
 .loom/tokens/
 .loom/accounts.env
 .loom/account-health.json
