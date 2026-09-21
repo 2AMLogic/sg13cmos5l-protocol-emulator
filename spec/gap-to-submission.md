@@ -1,6 +1,12 @@
 # Gap to Submission
 
-Status: DRAFT — proposed 2026-09-14 in issue #1.
+Status: DRAFT — proposed 2026-09-14 in issue #1. **2026-09-21:** the spec
+rows and decision records this tracker measures against were **ratified**
+via the program's two-key mechanism (`spec/target-spec.md` Status:
+RATIFIED, per `spec/decision-records/0004-target-spec-ratification.md`);
+this file's own `DRAFT` label above refers to that pre-ratification spec
+state and is superseded by it. The tracker itself stays the live
+evidence/progress record, unchanged in role.
 Submission deadline: **2027-01-18** (Jane Street Protocol Emulator ASIC
 Competition, targeting the March 2027 IHP CMOS5L shuttle via the Tiny
 Tapeout CMOS5L template).
@@ -33,9 +39,9 @@ discovered.
 
 | Record | Status |
 |---|---|
-| `0001-isa.md` | Proposed, includes cycle-budget sketches for UART/SPI/I2C as required by this issue's acceptance criteria. Pending ratification. |
-| `0002-flow-of-record.md` | Proposed. klayout-tools CMOS5L platform gap filed: 2AMLogic/klayout-tools#1784. Pending ratification and pending that upstream gap's resolution before klt-side iteration is usable. **2026-09-14 (issue #2):** a second klayout-tools gap was hit and filed while porting the synthesis leg — [2AMLogic/klayout-tools#1786](https://github.com/2AMLogic/klayout-tools/issues/1786): `klt synthesize`'s liberty resolver hardcodes a SkyWater-style `<cell_library>__<corner>.lib` filename, while IHP's SG13 PDKs ship `<cell_library>_<corner>.lib`. Interim workaround committed as `flow/run_synthesize_direct_yosys.py` (same pass sequence, liberty resolved directly); retire it for a plain `klt synthesize` call when #1786 closes — no request-file change needed. Separately, DR 0002's *other* flow (LibreLane via the template's `gds` workflow) is itself blocked by `TinyTapeout/tt-gds-action#52`, so **neither** flow is currently fully exercised. |
-| `0003-firmware-toolchain.md` | Proposed. Assembler design fixed; `firmware/` directory and the assembler itself do not exist yet (deliberately out of scope for this ratification issue). |
+| `0001-isa.md` | Proposed, includes cycle-budget sketches for UART/SPI/I2C as required by this issue's acceptance criteria. Pending ratification. — **2026-09-21:** **Ratified** via the two-key mechanism, carried into force with `spec/target-spec.md` (per `decision-records/0004-target-spec-ratification.md`, issue #17). The cycle-budget sketches are now bound as the row-1/row-3/row-6 sufficiency evidence — unmet, not carried as met. |
+| `0002-flow-of-record.md` | Proposed. klayout-tools CMOS5L platform gap filed: 2AMLogic/klayout-tools#1784. Pending ratification and pending that upstream gap's resolution before klt-side iteration is usable. **2026-09-14 (issue #2):** a second klayout-tools gap was hit and filed while porting the synthesis leg — [2AMLogic/klayout-tools#1786](https://github.com/2AMLogic/klayout-tools/issues/1786): `klt synthesize`'s liberty resolver hardcodes a SkyWater-style `<cell_library>__<corner>.lib` filename, while IHP's SG13 PDKs ship `<cell_library>_<corner>.lib`. Interim workaround committed as `flow/run_synthesize_direct_yosys.py` (same pass sequence, liberty resolved directly); retire it for a plain `klt synthesize` call when #1786 closes — no request-file change needed. Separately, DR 0002's *other* flow (LibreLane via the template's `gds` workflow) is itself blocked by `TinyTapeout/tt-gds-action#52`, so **neither** flow is currently fully exercised. — **2026-09-21:** **Ratified** via the two-key mechanism (per `decision-records/0004-target-spec-ratification.md`, issue #17). Since the earlier notes: both upstream klayout-tools gaps this record tracks are **closed** ([#1784](https://github.com/2AMLogic/klayout-tools/issues/1784) platform entry; [#1786](https://github.com/2AMLogic/klayout-tools/issues/1786) corner-naming resolver — both verified live 2026-09-21), and the LibreLane leg has been exercised end to end (green `gds` workflow run `34905475502`, row 9), so the "neither flow fully exercised" state above is superseded. The flow-of-record policy itself binds unchanged; retiring the interim direct-Yosys workaround for a plain `klt synthesize` call remains follow-up implementation work, not part of the ratification. |
+| `0003-firmware-toolchain.md` | Proposed. Assembler design fixed; `firmware/` directory and the assembler itself do not exist yet (deliberately out of scope for this ratification issue). — **2026-09-21:** **Ratified** via the two-key mechanism, carried into force with `spec/target-spec.md` (per `decision-records/0004-target-spec-ratification.md`, issue #17). `firmware/` and the assembler remain future implementation work (issues #22, #23), exactly as this record scoped. |
 
 ## Tiny Tapeout template's own checklist
 

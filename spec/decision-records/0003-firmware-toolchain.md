@@ -1,6 +1,9 @@
 # 0003: Firmware Toolchain
 
-Status: Proposed (pending ratification alongside `spec/target-spec.md`)
+Status: Ratified 2026-09-21 — carried into force with `spec/target-spec.md`'s
+ratification via the two-key mechanism, recorded in
+`0004-target-spec-ratification.md` (issue #17: the ratifying PR's two
+`RATIFY-KEY` reviews and merge commit are the act).
 Date: 2026-09-14
 Issue: #1
 
