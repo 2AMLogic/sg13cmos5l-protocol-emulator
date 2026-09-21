@@ -71,6 +71,14 @@ it's checked is in [`spec/verification-plan.md`](spec/verification-plan.md).
 Current status against every row and the 2027-01-18 deadline is tracked in
 [`spec/gap-to-submission.md`](spec/gap-to-submission.md).
 
+This block's evidence-tier (T1) state against the `klayout-tools` checklist
+is graded, not hand-read: `klt signoff --manifest` renders it from the
+committed block manifest at
+[`manifests/sg13cmos5l-protocol-emulator.json`](manifests/sg13cmos5l-protocol-emulator.json)
+(see [`manifests/README.md`](manifests/README.md) for how the report is
+produced and where the committed verdict of record lives; the gap-to-T1
+tracker is issue #27).
+
 The `flow/` directory description below names Yosys and OpenROAD because that
 is this program's standard digital flow; whether the *submitted* GDS comes
 from it or from the Tiny Tapeout template's LibreLane flow is an open decision
@@ -85,6 +93,7 @@ test/          the Tiny Tapeout template's own cocotb harness (gds/test CI)
 docs/          the Tiny Tapeout template's project datasheet source
 flow/          synthesis + place-and-route (Yosys, OpenROAD), driven through klt
 layout/        GDS + DRC/LVS reports (klayout-tools driven)
+manifests/     the klt signoff block manifest that grades this block's T1 state
 measurements/  silicon characterization (empty until tape-out)
 rtl/           this program's own Verilog sources -- empty until the ratified
                ISA needs RTL beyond the Tiny Tapeout top; see rtl/README.md

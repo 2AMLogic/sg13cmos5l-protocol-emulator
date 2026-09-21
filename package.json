@@ -7,6 +7,6 @@
     "lint": "python3 verification/check_records.py && python3 verification/test_check_records.py",
     "test": "cd test && make clean && make && ! grep -q failure results.xml",
     "check:ci": "npm run lint && npm run test",
-    "check:all": "npm run lint && npm run test && klt functional-verification verification/request-protocol-emulator.json --format json"
+    "check:all": "npm run lint && npm run test && klt functional-verification verification/request-protocol-emulator.json --format json && scripts/signoff-report.sh --check-latest"
   }
 }

@@ -60,3 +60,28 @@ jobs:
 
       - name: Record linter, strict append-only against origin/main
         run: python3 verification/check_records.py --require-append-only --base-ref origin/main
+
+  # klt signoff --manifest re-run (issue #16): CI re-renders this block's
+  # T1 tier-verdict report from the committed block manifest against the
+  # pinned klt and byte-compares it with the latest committed evidence
+  # record under verification/records/signoff-baseline/. A manifest citing
+  # an artifact that has since changed therefore FAILS here rather than
+  # rotting. `klt signoff` exits 3 when at least one T1 item is unmet -- the
+  # normal gap state -- which scripts/signoff-report.sh maps to success;
+  # only a real error or a drift-from-record fails this job. PDK/simulator
+  # are not needed; setup-env.sh's provisioning (klt at the
+  # layout/toolchain.json pin + cocotb) is reused verbatim so CI and local
+  # developers grade with the same build.
+  signoff:
+    name: klt signoff manifest re-run
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+
+      - name: Provision klt at the layout/toolchain.json pin
+        run: ./scripts/setup-env.sh
+
+      - name: Re-render the tier report and compare with the committed record
+        run: scripts/signoff-report.sh --check-latest

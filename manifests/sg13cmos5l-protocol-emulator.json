@@ -1,0 +1,14 @@
+{
+  "block": "sg13cmos5l-protocol-emulator",
+  "kind": "digital",
+  "evidence": {
+    "7": {
+      "file": "verification/records/reset-pin-through/artifacts/20260914-031931-7e4a21a/klt-functional-verification.json",
+      "content_hash": "sha256:c92c5811612a43971d72898a319e36b076b0c3900452bd162cb3da4409453d27"
+    },
+    "9": {
+      "file": "verification/records/reset-pin-through/artifacts/20260914-031931-7e4a21a/klt-functional-verification.json",
+      "content_hash": "sha256:c92c5811612a43971d72898a319e36b076b0c3900452bd162cb3da4409453d27"
+    }
+  }
+}
