@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "version": "0.4.0+g5c757081680e.dirty",
+  "package_version": "0.4.0",
+  "git_commit": "5c757081680e207b6abbc7a6ca7d3688ad07072a",
+  "git_tag": null,
+  "dirty": true,
+  "is_release": false
+}
