@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "engine": "icarus",
+  "hdl_toplevel": "protocol_program_memory",
+  "testbench": "test_program_memory",
+  "status": "pass",
+  "test_count": 6,
+  "passed_count": 6,
+  "failed_count": 0,
+  "skipped_count": 0,
+  "tests": [
+    {
+      "name": "test_mode_low_at_release_enters_immediate_run",
+      "status": "passed",
+      "sim_time_ns": null,
+      "real_time_s": 0.003
+    },
+    {
+      "name": "test_single_word_bit_order_and_boundary_commit",
+      "status": "passed",
+      "sim_time_ns": null,
+      "real_time_s": 0.001
+    },
+    {
+      "name": "test_full_program_load_and_fetch",
+      "status": "passed",
+      "sim_time_ns": null,
+      "real_time_s": 0.183
+    },
+    {
+      "name": "test_partial_word_discarded_and_writer_realigns",
+      "status": "passed",
+      "sim_time_ns": null,
+      "real_time_s": 0.004
+    },
+    {
+      "name": "test_no_midrun_reentry_without_reset",
+      "status": "passed",
+      "sim_time_ns": null,
+      "real_time_s": 0.004
+    },
+    {
+      "name": "test_saturation_at_256_words_no_wraparound",
+      "status": "passed",
+      "sim_time_ns": null,
+      "real_time_s": 0.188
+    }
+  ],
+  "coverage": null,
+  "environment": {
+    "engine": "icarus",
+    "engine_version": "13.0",
+    "cocotb_version": "2.1.0",
+    "results_xml": "/Users/rwalters/GitHub/sg13cmos5l-protocol-emulator/.loom/worktrees/issue-19/verification/.klt/functional-verification/results_icarus.xml",
+    "random_seed": 1,
+    "sdf": null
+  }
+}

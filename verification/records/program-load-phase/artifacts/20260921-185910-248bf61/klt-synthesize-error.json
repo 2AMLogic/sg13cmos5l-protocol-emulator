@@ -1,0 +1,7 @@
+{
+  "schema_version": 1,
+  "error": {
+    "command": "synthesize",
+    "message": "liberty not found for deck: no 'typ_1p20V_25C' corner for 'sg13cmos5l_stdcell' under resolved PDK install 'ihp-sg13cmos5l' (expected '/Users/rwalters/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/lib/sg13cmos5l_stdcell__typ_1p20V_25C.lib')"
+  }
+}

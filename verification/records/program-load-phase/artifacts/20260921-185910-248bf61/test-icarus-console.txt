@@ -1,0 +1,38 @@
+     -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:242  in gpi_load_users                  Loaded entry library: '/Users/rwalters/.local/share/uv/python/cpython-3.12.11-macos-aarch64-none/lib/libpython3.12.dylib'
+     -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:234  in gpi_load_users                  Running entry func 'initialize' from loaded library '/Users/rwalters/.local/share/uv/tools/klayout-tools/lib/python3.12/site-packages/cocotb/simulator.cpython-312-darwin.so'
+     -.--ns INFO     pygpi                              ..ib/pygpi/embed.cpp:115  in initialize                      Using Python 3.12.10 interpreter at /Users/rwalters/.local/share/uv/tools/klayout-tools/bin/python
+     -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:74   in gpi_print_registered_impl       GPI: VPI support registered
+     0.00ns INFO     cocotb.initialize                  Seeding Python random module with 1
+     0.00ns INFO     cocotb.initialize                  Initialized cocotb v2.1.0 from /Users/rwalters/.local/share/uv/tools/klayout-tools/lib/python3.12/site-packages/cocotb
+     0.00ns INFO     cocotb.initialize                  Running on Icarus Verilog version 13.0 (stable)
+     0.00ns INFO     cocotb.regression                  Running tests
+     0.00ns INFO     cocotb.regression                  running test_program_memory.test_mode_low_at_release_enters_immediate_run (1/6)
+                                                            MODE low at reset release: load phase never entered; run phase
+   510.00ns INFO     cocotb.regression                  test_program_memory.test_mode_low_at_release_enters_immediate_run passed
+   510.00ns INFO     cocotb.regression                  running test_program_memory.test_single_word_bit_order_and_boundary_commit (2/6)
+                                                            One word, 0x1234, loaded MSB-first (an LSB-first or mis-assembled
+   792.00ns INFO     cocotb.regression                  test_program_memory.test_single_word_bit_order_and_boundary_commit passed
+   792.00ns INFO     cocotb.regression                  running test_program_memory.test_full_program_load_and_fetch (3/6)
+                                                            A full 256-word program loads at the auto-incrementing address
+ 42138.00ns INFO     cocotb.regression                  test_program_memory.test_full_program_load_and_fetch passed
+ 42138.00ns INFO     cocotb.regression                  running test_program_memory.test_partial_word_discarded_and_writer_realigns (4/6)
+                                                            A MODE drop mid-word discards the partial word: only complete
+ 42920.00ns INFO     cocotb.regression                  test_program_memory.test_partial_word_discarded_and_writer_realigns passed
+ 42920.00ns INFO     cocotb.regression                  running test_program_memory.test_no_midrun_reentry_without_reset (5/6)
+                                                            Mode is latched only at reset release, never sampled mid-run
+ 43871.00ns INFO     cocotb.regression                  test_program_memory.test_no_midrun_reentry_without_reset passed
+ 43871.00ns INFO     cocotb.regression                  running test_program_memory.test_saturation_at_256_words_no_wraparound (6/6)
+                                                            Streaming more than a full memory's worth of words with MODE held
+ 92257.01ns INFO     cocotb.regression                  test_program_memory.test_saturation_at_256_words_no_wraparound passed
+ 92257.01ns INFO     cocotb.regression                  *****************************************************************************************************************************
+                                                        ** TEST                                                                 STATUS  SIM TIME (ns)  REAL TIME (s)  RATIO (ns/s) **
+                                                        *****************************************************************************************************************************
+                                                        ** test_program_memory.test_mode_low_at_release_enters_immediate_run     PASS         510.00           0.00     202857.26  **
+                                                        ** test_program_memory.test_single_word_bit_order_and_boundary_commit    PASS         282.00           0.00     193128.73  **
+                                                        ** test_program_memory.test_full_program_load_and_fetch                  PASS       41346.00           0.18     226226.48  **
+                                                        ** test_program_memory.test_partial_word_discarded_and_writer_realigns   PASS         782.00           0.00     222934.93  **
+                                                        ** test_program_memory.test_no_midrun_reentry_without_reset              PASS         951.00           0.00     235226.20  **
+                                                        ** test_program_memory.test_saturation_at_256_words_no_wraparound        PASS       48386.00           0.19     256950.98  **
+                                                        *****************************************************************************************************************************
+                                                        ** TESTS=6 PASS=6 FAIL=0 SKIP=0                                                     92257.01           0.39     239339.82  **
+                                                        *****************************************************************************************************************************

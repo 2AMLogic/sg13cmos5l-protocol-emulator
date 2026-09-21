@@ -12,7 +12,13 @@ recorded rather than silently resolved.
 - `synthesize-protocol-emulator.json` — a `klt.synthesize.request/1` recipe
   synthesizing `src/tt_um_2amlogic_protocol_emulator.v` against
   `sg13cmos5l_stdcell` via Yosys.
-- `run_synthesize_direct_yosys.py` — a **stopgap** runner for the recipe
+- `synthesize-program-memory.json` — the same recipe shape for
+  `rtl/protocol_program_memory.v` (the 256x16-bit program memory +
+  serial load-phase logic, issue #19): same `klt.synthesize.request/1`
+  schema, same cell library and corner, same 20 ns (50 MHz) clock
+  constraint. Its results feed
+  `verification/records/program-load-phase/` like any other run.
+- `run_synthesize_direct_yosys.py` — a **stopgap** runner for the recipes
   above. `klt synthesize` cannot resolve any liberty corner for
   `sg13cmos5l_stdcell` today (see the script's own docstring and
   `verification/records/synthesis-baseline/` for the filed gap and the

@@ -54,12 +54,23 @@ coverage.
   `src/tt_um_2amlogic_protocol_emulator.v` (the harness-bootstrap stub top,
   issue #2). Driven by `klt functional-verification` (see
   `request-protocol-emulator.json`).
+- `test_program_memory.py` — cocotb testbench for
+  `rtl/protocol_program_memory.v`, the program memory and serial
+  load-phase logic (target-spec row 6, issue #19): loads known programs
+  serially and reads them back through the module's fetch port, pinning
+  the load protocol's DR 0001 contracts (MSB-first shift, commit-on-16th-
+  bit-edge, mid-word discard, no mid-run re-entry, 256-word saturation).
+  Driven by `klt functional-verification` (see
+  `request-program-memory.json`).
 - `_dut.py` — shared `reset(dut)` coroutine, imported as a sibling module by
   `test_protocol_emulator.py` (and any future bench added here) so reset
   sequencing lives in one place.
 - `request-protocol-emulator.json` — `klt functional-verification` request
   driving `test_protocol_emulator.py` against
   `src/tt_um_2amlogic_protocol_emulator.v` via Icarus.
+- `request-program-memory.json` — `klt functional-verification` request
+  driving `test_program_memory.py` against
+  `rtl/protocol_program_memory.v` via Icarus.
 - `check_records.py` — the evidence-record linter (see "Enforcement").
 - `test_check_records.py` — the linter's own self-test: one executable
   negative case per violation class named below, run against a throwaway

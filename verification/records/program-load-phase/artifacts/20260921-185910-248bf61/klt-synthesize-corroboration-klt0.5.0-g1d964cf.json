@@ -1,0 +1,127 @@
+{
+  "schema_version": 2,
+  "engine": "yosys",
+  "engine_version": "0.69+post",
+  "hdl_toplevel": "protocol_program_memory",
+  "run_id": "run-e19d387891e64daface82c06453e64ae",
+  "status": "ok",
+  "instance_count": 11603,
+  "area_um2": 312062.8896,
+  "sequential_area_um2": 202176.7776,
+  "instance_counts_by_type": {
+    "sg13cmos5l_a21o_1": 3,
+    "sg13cmos5l_a21oi_1": 2,
+    "sg13cmos5l_a22oi_1": 2048,
+    "sg13cmos5l_and2_1": 4,
+    "sg13cmos5l_and3_1": 1,
+    "sg13cmos5l_and4_1": 1,
+    "sg13cmos5l_dfrbpq_1": 4127,
+    "sg13cmos5l_inv_1": 6,
+    "sg13cmos5l_mux2_1": 4112,
+    "sg13cmos5l_nand2_1": 262,
+    "sg13cmos5l_nand2b_1": 17,
+    "sg13cmos5l_nand3_1": 4,
+    "sg13cmos5l_nand3b_1": 2,
+    "sg13cmos5l_nand4_1": 549,
+    "sg13cmos5l_nor2_1": 29,
+    "sg13cmos5l_nor2b_1": 3,
+    "sg13cmos5l_nor3_1": 70,
+    "sg13cmos5l_nor4_1": 328,
+    "sg13cmos5l_o21ai_1": 3,
+    "sg13cmos5l_or2_1": 22,
+    "sg13cmos5l_or3_1": 1,
+    "sg13cmos5l_or4_1": 2,
+    "sg13cmos5l_xnor2_1": 5,
+    "sg13cmos5l_xor2_1": 2
+  },
+  "leakage_power_nw": 3527.3750947,
+  "leakage_by_type_nw": {
+    "sg13cmos5l_a21o_1": 0.158296,
+    "sg13cmos5l_a21oi_1": 0.11447700000000001,
+    "sg13cmos5l_a22oi_1": 0.13888499999999998,
+    "sg13cmos5l_and2_1": 0.13761,
+    "sg13cmos5l_and3_1": 0.14666200000000001,
+    "sg13cmos5l_and4_1": 0.151909,
+    "sg13cmos5l_dfrbpq_1": 0.510517,
+    "sg13cmos5l_inv_1": 0.0630032,
+    "sg13cmos5l_mux2_1": 0.246339,
+    "sg13cmos5l_nand2_1": 0.0812456,
+    "sg13cmos5l_nand2b_1": 0.128618,
+    "sg13cmos5l_nand3_1": 0.08718479999999999,
+    "sg13cmos5l_nand3b_1": 0.134524,
+    "sg13cmos5l_nand4_1": 0.0915718,
+    "sg13cmos5l_nor2_1": 0.08292350000000001,
+    "sg13cmos5l_nor2b_1": 0.130258,
+    "sg13cmos5l_nor3_1": 0.0950841,
+    "sg13cmos5l_nor4_1": 0.0997618,
+    "sg13cmos5l_o21ai_1": 0.126648,
+    "sg13cmos5l_or2_1": 0.114895,
+    "sg13cmos5l_or3_1": 0.121923,
+    "sg13cmos5l_or4_1": 0.124109,
+    "sg13cmos5l_xnor2_1": 0.194767,
+    "sg13cmos5l_xor2_1": 0.184817
+  },
+  "timing": null,
+  "sta": null,
+  "structural": {
+    "latches": 0,
+    "expected_latches": 0,
+    "unexpected_latches": 0,
+    "comb_loops": 0,
+    "multi_driven": 0,
+    "has_critical": false
+  },
+  "warnings": {
+    "total": 2,
+    "by_category": {
+      "other": 1,
+      "unsupported_cell_library": 1
+    },
+    "representatives": [
+      {
+        "category": "other",
+        "count": 1,
+        "text": "Replacing memory \\mem with list of registers. See rtl/protocol_program_memory.v:128"
+      },
+      {
+        "category": "unsupported_cell_library",
+        "count": 1,
+        "text": "cell_library 'sg13cmos5l_stdcell' has no verified mapping for: ABC -constr (driving cell/output load), load-driven sizing/buffering and ABC timing (timing is null); setundef -zero/hilomap (bare 0/1/x constants may remain unroutable in place-and-route). These capabilities were skipped."
+      }
+    ]
+  },
+  "netlist_path": {
+    "path": "flow/.klt/synthesize/run-e19d387891e64daface82c06453e64ae/protocol_program_memory_synth.v",
+    "scope": "repo"
+  },
+  "script_path": {
+    "path": "flow/.klt/synthesize/run-e19d387891e64daface82c06453e64ae/synth_protocol_program_memory.ys",
+    "scope": "repo"
+  },
+  "run_script_path": {
+    "path": "flow/.klt/synthesize/run-e19d387891e64daface82c06453e64ae/synth_protocol_program_memory.run.ys",
+    "scope": "repo"
+  },
+  "provenance": {
+    "klt_version": "0.5.0+g1d964cf4ed93.dirty",
+    "klayout_version": "0.30.12",
+    "pdk": {
+      "name": "ihp-sg13cmos5l",
+      "source": "search root: ~/share/pdk",
+      "version": null
+    },
+    "deck": {
+      "name": "sg13cmos5l_stdcell__typ_1p20V_25C",
+      "content_hash": "sha256:34163f3e7de9f854afac57332ba06f1739b78e7ac35660a8a5ddd39c570124ad",
+      "released": false
+    },
+    "input": {
+      "content_hash": "sha256:c7f989cfff1d45f40c110ffa4a29aae8c0bd876be47af943b6e53001cb38e4d1",
+      "role": "source"
+    }
+  },
+  "equivalence": null,
+  "restructuring": null,
+  "arithmetic": null,
+  "baseline": null
+}
