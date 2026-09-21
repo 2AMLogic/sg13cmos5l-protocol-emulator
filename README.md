@@ -63,8 +63,10 @@ using IHP SG13CMOS5L, not just this repo.
 
 The full target-spec table — every commitment, its source citation, and
 what verification artifact checks it — lives in
-[`spec/target-spec.md`](spec/target-spec.md) (Status: DRAFT). Design
-decisions behind those targets (the ISA, which flow produces the submitted
+[`spec/target-spec.md`](spec/target-spec.md) (Status: **RATIFIED**
+2026-09-21 via the two-key mechanism; record:
+[`spec/decision-records/0004-target-spec-ratification.md`](spec/decision-records/0004-target-spec-ratification.md)).
+Design decisions behind those targets (the ISA, which flow produces the submitted
 GDS, the firmware toolchain) are recorded in
 [`spec/decision-records/`](spec/decision-records/). What's judged and how
 it's checked is in [`spec/verification-plan.md`](spec/verification-plan.md).

@@ -1,6 +1,17 @@
 # 0002: Flow of Record
 
-Status: Proposed (pending ratification alongside `spec/target-spec.md`)
+Status: Ratified 2026-09-21 — carried into force with `spec/target-spec.md`'s
+ratification via the two-key mechanism, recorded in
+`0004-target-spec-ratification.md` (issue #17: the ratifying PR's two
+`RATIFY-KEY` reviews and merge commit are the act). **Live-state note,
+2026-09-21:** both upstream klayout-tools gaps this record filed are
+closed as of this ratification ([#1784](https://github.com/2AMLogic/klayout-tools/issues/1784)
+— CMOS5L platform entry; [#1786](https://github.com/2AMLogic/klayout-tools/issues/1786)
+— corner-naming resolver), so the klt-side iteration flow is no longer
+upstream-blocked. Retiring this repo's interim direct-Yosys workaround
+(`flow/run_synthesize_direct_yosys.py`) for a plain `klt synthesize` call
+is implementation follow-up work, deliberately not part of this
+ratification; the two-flows reconciliation policy below binds unchanged.
 Date: 2026-09-14
 Issue: #1
 
