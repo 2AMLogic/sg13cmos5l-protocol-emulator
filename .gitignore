@@ -8,6 +8,13 @@ __pycache__/
 # synthesis / P&R scratch
 flow/build/
 flow/.synth-scratch/
+# klt's own scratch build dir for `klt synthesize` runs
+flow/.klt/
+# `klt sta` corner-sweep scratch: per-corner request dirs, swept-netlist
+# staging, and the sweep summary
+flow/sta-corners/
+flow/sta-sweep/
+flow/sta-corner-sweep-results.json
 # local klt install, created by the setup script
 .venv/
 # klt's own scratch build dir for `klt functional-verification` runs

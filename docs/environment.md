@@ -31,7 +31,7 @@ an actionable install pointer, never a traceback. It is safe to re-run
 
 | Component | Pinned to | Resolved via |
 |---|---|---|
-| `klayout-tools` (`klt`) | the exact git revision recorded in [`layout/toolchain.json`](../layout/toolchain.json)'s `klt_install` field — **not duplicated here**, so the two flows (`layout/`'s DRC/LVS and `verification/`'s cocotb harness) can never drift onto different `klt` pins by accident. As of this writing: [`5c757081680e207b6abbc7a6ca7d3688ad07072a`](https://github.com/2AMLogic/klayout-tools/commit/5c757081680e207b6abbc7a6ca7d3688ad07072a) (bumped by issue #2, 2026-09-14) | `uv tool install --force --with cocotb==2.1.0 --with cocotb-tools==0.1.0 "klayout-tools @ $(python3 -c "import json;print(json.load(open('layout/toolchain.json'))['klt_install'])")"` (what `scripts/setup-env.sh` runs) |
+| `klayout-tools` (`klt`) | the exact git revision recorded in [`layout/toolchain.json`](../layout/toolchain.json)'s `klt_install` field — **not duplicated here**, so the two flows (`layout/`'s DRC/LVS and `verification/`'s cocotb harness) can never drift onto different `klt` pins by accident. As of this writing: [`1d964cf4ed93b15bd36acf1eb14e3855b3c500d1`](https://github.com/2AMLogic/klayout-tools/commit/1d964cf4ed93b15bd36acf1eb14e3855b3c500d1) (bumped by issue #2 2026-09-14, then by issue #20 2026-09-21 — `klt sta` needs a commit past klayout-tools#1861 to resolve IHP liberty; `layout/toolchain.json`'s comment log carries both bump rationales and what was verified) | `uv tool install --force --with cocotb==2.1.0 --with cocotb-tools==0.1.0 "klayout-tools @ $(python3 -c "import json;print(json.load(open('layout/toolchain.json'))['klt_install'])")"` (what `scripts/setup-env.sh` runs). **2026-09-21 caveat (observed on one host, unreduced):** that route silently served the *pre-bump* tree there across three reinstalls (incl. `--no-cache`) — the working alternate route was building the wheel at the pinned commit from a clean `git worktree add` and installing it into this repo's gitignored `.venv/`, with the flow runners' `KLT_BIN` override pointing at it; see `layout/toolchain.json`'s 2026-09-21 paragraph |
 | `cocotb` | `2.1.0` (pinned explicitly in `scripts/setup-env.sh`, installed as a `uv tool install --with` extra alongside `klt`) | verified end-to-end: `klt functional-verification verification/request-protocol-emulator.json --format json` reports `"cocotb_version": "2.1.0"` in its `environment` block |
 | `cocotb-tools` | `0.1.0` (its only published release as of this writing) | same `uv tool install --with` step |
 | Python | whatever `uv`'s own resolver selects for `klayout-tools`' `requires-python = ">=3.10"` floor — `uv tool install` manages this itself; no separate interpreter-selection step is needed here (contrast with sky130-modexp's script, which hand-picks an interpreter — see "Why this differs" below) | `uv tool install` |
@@ -64,6 +64,21 @@ exercised in, so there has been no provisioning gap to work around yet. If
 that changes, extend `scripts/setup-env.sh`'s step 3 rather than silently
 declaring `openroad` "missing" with no fallback — and record the new route
 here.
+
+**2026-09-21 (issue #20): that route changed on the host the STA
+corner-sweep record was produced on.** `openroad` there resolves to the
+docker *wrapper script* `scripts/install-openroad-docker.sh` generates (a
+Bash → `docker run openroad/orfs:latest` shim, container OpenROAD
+`26Q3-2056-g41a28926b9`), not a native binary — same mechanism
+sky130-modexp documents, arriving here via that script's auto-generation.
+Two consequences for the `klt sta` leg, both encoded in
+`flow/run-sta-corner-sweep.sh`: (1) the wrapper mounts only `$PWD`,
+`$PDK_ROOT` (when exported), and `$TMPDIR` into the container, so
+`PDK_ROOT` **must be exported** (`klt pdk find` resolves the PDK without
+it, but the containerized `read_liberty` cannot see an unmounted PDK), and
+every input path must live under the repo (paths under `/tmp` are not
+reliably visible to the container); (2) `engine_version` in the sta
+response names the *container's* OpenROAD build, not a host one.
 
 ## `$PDK_ROOT` for `ihp-sg13cmos5l`
 

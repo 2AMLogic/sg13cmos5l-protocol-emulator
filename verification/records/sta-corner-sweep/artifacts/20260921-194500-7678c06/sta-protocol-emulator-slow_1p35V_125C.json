@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "engine": "openroad",
+  "engine_version": "26Q3-2056-g41a28926b9",
+  "hdl_toplevel": "tt_um_2amlogic_protocol_emulator",
+  "status": "ok",
+  "def_path": null,
+  "verilog_path": "/Users/rwalters/GitHub/sg13cmos5l-protocol-emulator/.loom/worktrees/issue-20/flow/sta-sweep/tt_um_2amlogic_protocol_emulator_synth.v",
+  "geometry_source": "netlist_estimate",
+  "wire_load_model": "1k",
+  "wire_load_mode": "top",
+  "spef_path": null,
+  "worst_slack_ns": 19.6093,
+  "total_negative_slack_ns": 0,
+  "worst_hold_slack_ns": 0.31823,
+  "total_negative_hold_slack_ns": 0,
+  "fmax_mhz": 2559.75,
+  "timing_status": "constrained",
+  "setup_violation_count": 0,
+  "hold_violation_count": 0,
+  "clock_skew_ns": 2e-05,
+  "estimated_power_mw": 0.0311,
+  "provenance": {
+    "klt_version": "0.5.0+g1d964cf4ed93",
+    "klayout_version": "0.30.12",
+    "pdk": {
+      "name": "ihp-sg13cmos5l",
+      "source": "PDK_ROOT environment variable",
+      "version": null
+    },
+    "deck": {
+      "name": "sg13cmos5l_stdcell__slow_1p35V_125C",
+      "content_hash": "sha256:121a828abfb4ad143c706e5cdf4af12b532c054aac32d4da0f14e372b63c2958",
+      "released": false
+    },
+    "input": {
+      "content_hash": "sha256:18c538ed30ad382715e9c497332361b5a175bff1a7f86093b748f7dfd3ec771b",
+      "role": "netlist"
+    }
+  },
+  "spef_annotation": null,
+  "engine_log": {
+    "invocation_id": "4d591aa499144a55800feefa86cc6a7e",
+    "script_name": "sta_tt_um_2amlogic_protocol_emulator_synth.tcl",
+    "script_path": {
+      "path": "flow/sta-corners/slow_1p35V_125C/.klt/sta/sta_tt_um_2amlogic_protocol_emulator_synth.tcl",
+      "scope": "repo"
+    },
+    "script_sha256": "de0486c5338b7488375dec1f2ed9a8d3cb4c3fb3f0d6dfa12d54b90d844acdf2",
+    "metrics_path": {
+      "path": "flow/sta-corners/slow_1p35V_125C/.klt/sta/tt_um_2amlogic_protocol_emulator_synth_metrics.json",
+      "scope": "repo"
+    },
+    "outcome": "exited",
+    "returncode": 0,
+    "directory": {
+      "path": "flow/sta-corners/slow_1p35V_125C/.klt/sta/openroad-logs/4d591aa499144a55800feefa86cc6a7e",
+      "scope": "repo"
+    },
+    "stdout_path": {
+      "path": "flow/sta-corners/slow_1p35V_125C/.klt/sta/openroad-logs/4d591aa499144a55800feefa86cc6a7e/stdout.log",
+      "scope": "repo"
+    },
+    "stderr_path": {
+      "path": "flow/sta-corners/slow_1p35V_125C/.klt/sta/openroad-logs/4d591aa499144a55800feefa86cc6a7e/stderr.log",
+      "scope": "repo"
+    },
+    "metadata_path": {
+      "path": "flow/sta-corners/slow_1p35V_125C/.klt/sta/openroad-logs/4d591aa499144a55800feefa86cc6a7e/invocation.json",
+      "scope": "repo"
+    },
+    "retention_errors": []
+  }
+}
