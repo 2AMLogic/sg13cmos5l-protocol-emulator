@@ -1,0 +1,8 @@
+read_verilog /Users/rwalters/GitHub/sg13cmos5l-protocol-emulator/.loom/worktrees/issue-19/rtl/protocol_program_memory.v
+hierarchy -check -top protocol_program_memory
+synth -top protocol_program_memory
+dfflibmap -liberty /Users/rwalters/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/lib/sg13cmos5l_stdcell_typ_1p20V_25C.lib
+abc -liberty /Users/rwalters/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/lib/sg13cmos5l_stdcell_typ_1p20V_25C.lib
+clean
+tee -q -o /tmp/synth-pmem-final/protocol_program_memory_stats.json stat -liberty /Users/rwalters/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/lib/sg13cmos5l_stdcell_typ_1p20V_25C.lib -json -top protocol_program_memory
+write_verilog /tmp/synth-pmem-final/protocol_program_memory_synth.v

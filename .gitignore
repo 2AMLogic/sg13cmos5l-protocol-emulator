@@ -12,6 +12,10 @@ flow/.synth-scratch/
 .venv/
 # klt's own scratch build dir for `klt functional-verification` runs
 verification/.klt/
+# klt's scratch build dir for `klt synthesize` runs (netlists under
+# flow/synthesize-*.json land here unless --out-dir is given; first
+# exercised by issue #19's program-memory recipe flow run)
+flow/.klt/
 
 # Tiny Tapeout template (info.yaml / src / test), verbatim from
 # TinyTapeout/ttihp-verilog-template@cmos5l, ported in issue #2
