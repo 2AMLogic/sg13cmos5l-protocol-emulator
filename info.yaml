@@ -37,16 +37,24 @@ project:
 # src/tt_um_2amlogic_protocol_emulator.v) so they get a real, if generic,
 # label; uio[] is left blank because the stub holds it as inputs
 # (uio_oe = 0) and drives nothing onto it.
+#
+# 2026-09-21 (issue #19): ui[0] and ui[7] now name the program-load
+# protocol roles DR 0001 section "Program memory sizing and loading"
+# assigns (ui_in[7] = MODE, ui_in[0] = serial data) -- the pin-role
+# decision record the row-5 gap note asks for, for the load pins only
+# (ratification of DR 0001 as a whole is still pending, issue #17). The
+# top-level wiring of these two pins lands with the core-datapath issue
+# (#18), which instantiates rtl/protocol_program_memory.v.
 pinout:
   # Inputs
-  ui[0]: "stub: registered onto uo[0]"
+  ui[0]: "PROG_SER: serial program-load data bit (load phase)"
   ui[1]: "stub: registered onto uo[1]"
   ui[2]: "stub: registered onto uo[2]"
   ui[3]: "stub: registered onto uo[3]"
   ui[4]: "stub: registered onto uo[4]"
   ui[5]: "stub: registered onto uo[5]"
   ui[6]: "stub: registered onto uo[6]"
-  ui[7]: "stub: registered onto uo[7]"
+  ui[7]: "PROG_MODE: high at reset release = serial program load phase"
 
   # Outputs
   uo[0]: "stub: ui[0] registered here"
