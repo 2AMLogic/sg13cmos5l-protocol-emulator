@@ -5,10 +5,15 @@ This directory holds this block's `klt signoff` **block manifest** (issue
 checklist item, the evidence envelope backing it. `klt signoff --manifest`
 renders the eleven-item T1 evidence-tier checklist mechanically, with a
 per-item `met`/`unmet` verdict and a `reason`, so this block's "gap to T1"
-state is graded, not hand-read. This is the first block manifest in the
-canary fleet (see `2AMLogic/2am`#956, the fleet roll-up that consumes this
-file to grade every block's tier in one query — the fleet roll-up consumes
-exactly this manifest, and identifies this block's row by its `block` field).
+state is graded, not hand-read. This is one of the first two block manifests
+in the canary fleet — `sg13g2-comparator`'s landed a few hours ahead
+(`2AMLogic/sg13g2-comparator` PR #39, commit `681270b`, 2026-09-21T15:26Z,
+its evidence map empty like this one's nearly is; the two repos independently
+converged on the same `manifests/<block>.json`-at-repo-root convention and
+the same cwd-relative evidence-path finding this README documents). The fleet
+roll-up that consumes this file is `2AMLogic/2am`#956 — it grades every
+block's tier in one query, consuming exactly this manifest and identifying
+this block's row by its `block` field.
 
 ## Contents
 
