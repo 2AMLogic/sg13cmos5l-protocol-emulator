@@ -18,24 +18,50 @@ recorded rather than silently resolved.
   schema, same cell library and corner, same 20 ns (50 MHz) clock
   constraint. Its results feed
   `verification/records/program-load-phase/` like any other run.
-- `run_synthesize_direct_yosys.py` — a **stopgap** runner for the recipes
-  above. `klt synthesize` cannot resolve any liberty corner for
-  `sg13cmos5l_stdcell` today (see the script's own docstring and
-  `verification/records/synthesis-baseline/` for the filed gap and the
-  worked-around run); this script reads the identical request document and
-  drives Yosys directly with the same pass sequence `klt synthesize`
-  documents, so it can be retired the moment the gap is fixed upstream.
+- `run-sta-corner-sweep.sh` — a standalone multi-corner static-timing
+  runner (`klt sta`, verilog mode) over **one freshly synthesized gate-level
+  netlist** of a recipe's output, at all six `sg13cmos5l_stdcell`
+  liberty corners the PDK ships. This is the target-spec row-4 / T1
+  item-5 corner-sweep leg (issue #20): the corner list in the script **is**
+  the declared corner set this block is held to — the target spec and its
+  decision records are now ratified (issue #17 / PR #29, so T1 item 5's
+  verdicts are no longer provisional-on-a-draft), and folding the corner
+  matrix into a spec decision record is tracked there. Every number it
+  reports is a `geometry_source: "netlist_estimate"`
+  number (cell delays + the liberty's own default `1k`/`top` wire-load
+  model, never routing parasitics) — see the script's header for the
+  environment requirements (`PDK_ROOT` must be exported for the common
+  docker-wrapped `openroad`; `KLT_BIN` can point at a pinned install).
+- `run_synthesize_direct_yosys.py` — the **historical** stopgap runner for
+  the recipes above, kept for record history only
+  (`verification/records/synthesis-baseline/` cites it). It predates the
+  upstream resolution of `2AMLogic/klayout-tools#1786` (liberty-naming),
+  which closed 2026-09-14: with `layout/toolchain.json`'s klt pin at
+  1d964cf4 or later, plain
+  `klt synthesize flow/synthesize-protocol-emulator.json --pdk ihp-sg13cmos5l --format json`
+  drives the synthesis leg itself — verified live 2026-09-21, issue #20 —
+  and `run-sta-corner-sweep.sh` uses it that way. Nothing on the active
+  path invokes this script anymore; do not delete it (the records cite it
+  by content hash), and do not route new work through it.
 
-Run the (stopgap) synthesis baseline with:
+Run the (now-canonical) synthesis leg with:
 
 ```bash
-python3 flow/run_synthesize_direct_yosys.py flow/synthesize-protocol-emulator.json \
-    --pdk-root "$PDK_ROOT" --out-dir /tmp/synth-out
+klt synthesize flow/synthesize-protocol-emulator.json --pdk ihp-sg13cmos5l --format json
 ```
 
-Once the upstream liberty-naming gap is fixed, the same recipe should run
-directly through `klt synthesize flow/synthesize-protocol-emulator.json
---pdk ihp-sg13cmos5l --format json` with no request-file changes.
+Run the STA corner sweep with:
+
+```bash
+./flow/run-sta-corner-sweep.sh                 # all 6 shipped corners
+KLT_BIN=.venv/bin/klt ./flow/run-sta-corner-sweep.sh   # pinned local install
+```
+
+Both write scratch under `flow/.klt/`, `flow/sta-sweep/`,
+`flow/sta-corners/`, and `flow/sta-corner-sweep-results.json` (all
+gitignored); the evidence record under
+`verification/records/sta-corner-sweep/artifacts/` freezes the copies
+that constitute the claim.
 
 See `verification/README.md` for the append-only evidence-record convention
 these runs feed, and the root `README.md` / `CLAUDE.md` for why this flow

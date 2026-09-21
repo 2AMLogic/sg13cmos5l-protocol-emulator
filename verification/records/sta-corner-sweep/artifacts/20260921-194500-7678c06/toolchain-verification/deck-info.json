@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "decks": [
+    {
+      "deck": "sg13cmos5l",
+      "content_hash": "sha256:1912f17486e78de5259aab5d68533488ebbd239a05018f096217aa62ddee2909",
+      "device_classes": [
+        "nfet",
+        "pfet",
+        "cap_cmomi",
+        "cap_cmomf",
+        "resistor"
+      ],
+      "released": false,
+      "release": null
+    }
+  ]
+}
