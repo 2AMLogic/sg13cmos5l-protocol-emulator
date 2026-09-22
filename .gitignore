@@ -19,6 +19,11 @@ flow/sta-corner-sweep-results.json
 # docs, frozen netlists, and the summary (issue #21)
 flow/par-scratch/
 flow/die-area-par-results.json
+# `klt functional-verification` post-route SDF sweep scratch: downloaded
+# gds-workflow artifacts, frozen netlist/SDF staging, per-corner request
+# dirs, and the sweep summary (issue #26)
+flow/post-layout-sdf/
+flow/post-layout-sdf-results.json
 # local klt install, created by the setup script
 .venv/
 # klt's own scratch build dir for `klt functional-verification` runs
