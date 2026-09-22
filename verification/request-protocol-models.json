@@ -1,0 +1,20 @@
+{
+  "schema": "klt.functional_verification.request/1",
+  "engine": "icarus",
+  "sources": [
+    "duts/model_validation_top.v"
+  ],
+  "hdl_toplevel": "model_validation_top",
+  "testbench": {
+    "module": "test_protocol_models",
+    "testcase": null
+  },
+  "options": {
+    "coverage": false,
+    "timescale": [
+      "1ns",
+      "1ps"
+    ],
+    "random_seed": 20260922
+  }
+}

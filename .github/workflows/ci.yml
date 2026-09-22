@@ -56,6 +56,8 @@ jobs:
                                    verification/test_firmware_roundtrip.py \
                                    firmware/tools/asm.py \
                                    firmware/tools/test_asm.py \
+                                   verification/test_protocol_models.py \
+                                   verification/reference_models \
                                    flow/run_synthesize_direct_yosys.py
 
       # Firmware toolchain (issue #22, DR 0003): the assembler's unit

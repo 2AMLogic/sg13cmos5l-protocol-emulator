@@ -62,6 +62,24 @@ coverage.
   bit-edge, mid-word discard, no mid-run re-entry, 256-word saturation).
   Driven by `klt functional-verification` (see
   `request-program-memory.json`).
+- `test_protocol_models.py` — constrained-random reference-model
+  validation bench (verification-plan.md §4, issue #25): drives the
+  `reference_models/` package's independent UART/SPI/I2C models with
+  seeded constrained-random legal traffic plus deterministic negative
+  controls, under a recorded seed mirrored into the request. The cocotb
+  toplevel is the declared fixture `duts/model_validation_top.v` — this
+  bench validates the models, not any RTL; the DUT-facing suites that will
+  one day check the core's firmware through these same models are issues
+  #18/#22/#23's follow-on scope. Driven by `klt functional-verification`
+  (see `request-protocol-models.json`).
+- `reference_models/` — the §4 independent reference models (pure Python,
+  sharing no code with `src/`/`rtl/`): `waveform.py` (piecewise-constant
+  signal abstraction), `uart.py` (8N1 + per-frame drift measurement
+  against row 10's ~2% bound), `spi.py` (Motorola-convention modes 0-3 +
+  row 11's f_clk/4 ceiling), `i2c.py` (NXP UM10204 Table 10 timing checks
+  directly, both modes, repeated-START + clock-stretching aware), and
+  `stimulus.py` (the constrained-random generators and deterministic
+  negative controls).
 - `_dut.py` — shared `reset(dut)` coroutine, imported as a sibling module by
   `test_protocol_emulator.py` (and any future bench added here) so reset
   sequencing lives in one place.
@@ -84,6 +102,9 @@ coverage.
 - `request-firmware-roundtrip.json` — `klt functional-verification`
   request driving `test_firmware_roundtrip.py` against
   `rtl/protocol_program_memory.v` via Icarus.
+- `request-protocol-models.json` — `klt functional-verification` request
+  driving `test_protocol_models.py` against the declared fixture
+  `duts/model_validation_top.v` via Icarus, carrying the recorded seed.
 - `check_records.py` — the evidence-record linter (see "Enforcement").
 - `test_check_records.py` — the linter's own self-test: one executable
   negative case per violation class named below, run against a throwaway

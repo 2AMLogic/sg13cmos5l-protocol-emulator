@@ -1,0 +1,18 @@
+engine: icarus 13.0
+hdl_toplevel: model_validation_top
+testbench: test_protocol_models
+status: pass
+tests: 9  passed: 9  failed: 0  skipped: 0
+
+[passed] test_recorded_seed_matches_request
+[passed] test_uart_random_legal_frames_round_trip_and_stay_in_budget
+[passed] test_uart_negative_control_flags_drift_over_bound
+[passed] test_spi_random_legal_traffic_passes_in_all_modes
+[passed] test_spi_negative_control_flags_clock_ceiling_violation
+[passed] test_spi_negative_control_wrong_mode_sampling_mismatches
+[passed] test_i2c_random_legal_traffic_meets_table10_minimums
+[passed] test_i2c_clock_stretching_is_legal_and_reported
+[passed] test_i2c_negative_control_flags_stop_setup_violation
+
+results_xml: /Users/rwalters/GitHub/sg13cmos5l-protocol-emulator/.loom/worktrees/issue-25/verification/.klt/functional-verification/results_icarus.xml
+random_seed: 20260922

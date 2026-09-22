@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "engine": "icarus",
+  "hdl_toplevel": "model_validation_top",
+  "testbench": "test_protocol_models",
+  "status": "pass",
+  "test_count": 9,
+  "passed_count": 9,
+  "failed_count": 0,
+  "skipped_count": 0,
+  "tests": [
+    {
+      "name": "test_recorded_seed_matches_request",
+      "status": "passed",
+      "sim_time_ns": null,
+      "real_time_s": 0.001
+    },
+    {
+      "name": "test_uart_random_legal_frames_round_trip_and_stay_in_budget",
+      "status": "passed",
+      "sim_time_ns": null,
+      "real_time_s": 0.002
+    },
+    {
+      "name": "test_uart_negative_control_flags_drift_over_bound",
+      "status": "passed",
+      "sim_time_ns": null,
+      "real_time_s": 0.0
+    },
+    {
+      "name": "test_spi_random_legal_traffic_passes_in_all_modes",
+      "status": "passed",
+      "sim_time_ns": null,
+      "real_time_s": 0.029
+    },
+    {
+      "name": "test_spi_negative_control_flags_clock_ceiling_violation",
+      "status": "passed",
+      "sim_time_ns": null,
+      "real_time_s": 0.0
+    },
+    {
+      "name": "test_spi_negative_control_wrong_mode_sampling_mismatches",
+      "status": "passed",
+      "sim_time_ns": null,
+      "real_time_s": 0.0
+    },
+    {
+      "name": "test_i2c_random_legal_traffic_meets_table10_minimums",
+      "status": "passed",
+      "sim_time_ns": null,
+      "real_time_s": 0.03
+    },
+    {
+      "name": "test_i2c_clock_stretching_is_legal_and_reported",
+      "status": "passed",
+      "sim_time_ns": null,
+      "real_time_s": 0.0
+    },
+    {
+      "name": "test_i2c_negative_control_flags_stop_setup_violation",
+      "status": "passed",
+      "sim_time_ns": null,
+      "real_time_s": 0.0
+    }
+  ],
+  "coverage": null,
+  "environment": {
+    "engine": "icarus",
+    "engine_version": "13.0",
+    "cocotb_version": "2.1.0",
+    "results_xml": "/Users/rwalters/GitHub/sg13cmos5l-protocol-emulator/.loom/worktrees/issue-25/verification/.klt/functional-verification/results_icarus.xml",
+    "random_seed": 20260922,
+    "sdf": null
+  }
+}
