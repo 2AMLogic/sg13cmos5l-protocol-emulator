@@ -1,7 +1,11 @@
 {
   "schema": "klt.synthesize.request/1",
   "engine": "yosys",
-  "sources": ["../src/tt_um_2amlogic_protocol_emulator.v"],
+  "sources": [
+    "../src/tt_um_2amlogic_protocol_emulator.v",
+    "../rtl/protocol_core.v",
+    "../rtl/protocol_program_memory.v"
+  ],
   "hdl_toplevel": "tt_um_2amlogic_protocol_emulator",
   "pdk": { "cell_library": "sg13cmos5l_stdcell", "corner": "typ_1p20V_25C" },
   "constraints": { "clock_period_ns": 20 }

@@ -1,28 +1,29 @@
 # Tiny Tapeout project information
 #
 # Taken from the Tiny Tapeout `cmos5l` template
-# (https://github.com/TinyTapeout/ttihp-verilog-template/tree/cmos5l) per
+# (https://github.com/TinyTapeout/ttihp-verlog-template/tree/cmos5l) per
 # CLAUDE.md's "Harness bootstrap" section and populated for this project
-# (issue #2). `top_module` is a stub that only wires up the fixed pin budget
-# (clk/rst_n/ena + 8 in / 8 out / 8 bidir) -- the ISA has not been ratified
-# yet (spec/, issue #1), so `pinout` and `clock_hz` below are placeholders
-# sized for the stub, not a ratified pinout/clock budget. `tiles` is now
-# measured for the stub top (issue #21's die-area record); see its inline
-# comment. Revisit once issue #1 lands.
+# (issue #2). Since issue #18 the top instantiates the ratified ISA's core
+# datapath and program memory (spec/decision-records/0001-isa.md); `pinout`
+# remains a placeholder pending the pin-role decision records the gap
+# tracker holds open (spec/gap-to-submission.md row 5). `tiles` stays "1x1"
+# deliberately -- see its inline comment.
 project:
-  title:        "Protocol emulator ASIC (harness bootstrap stub)"
+  title:        "Protocol emulator ASIC"
   author:       "2AMLogic"
   discord:      ""
-  description:  "Harness-bootstrap stub for a firmware-programmable protocol-emulator core; the ISA is not designed yet (see spec/, issue #1) -- this top only proves clk/rst_n/ena and the pin budget."
+  description:  "Firmware-programmable protocol-emulator core: a 16-opcode, 4-register, single-cycle-per-instruction pin-timing engine (DR 0001) with a 256x16-bit serially loaded program memory. UART/SPI/I2C are firmware, not fixed logic."
   language:     "Verilog"
-  clock_hz:     50000000 # 50 MHz -- the draft board-clock target in README.md's target spec table (DRAFT, unratified)
+  clock_hz:     50000000 # 50 MHz -- ratified target-spec row 4 target (a demonstrated clock is a separate, still-open question)
 
   # How many tiles your design occupies? A single tile is about 167x108 uM.
-  tiles: "1x1"          # measured, not a placeholder, for the stub top actually submitted: die 1651.61 um^2 = 0.092 tiles
-                        # (klt place-and-route record 20260922-012402-420c370, issue #21). NOT grown to fit the real RTL:
-                        # the program memory alone measures 4.33x the ratified <=2x2 budget in cell area (same record), and
-                        # the budget is a ratified target, not a suggestion -- resolving that non-fit (SRAM macro per row 6,
-                        # or an AREA-EFF budget revision) is a spec decision record, not a tiles edit here.
+  tiles: "1x1"          # measured for the stub top (die 1651.61 um^2 = 0.092 tiles, klt place-and-route
+                        # record 20260922-012402-420c370, issue #21). NOT grown to fit the real RTL, which
+                        # measures 4.33x the ratified <=2x2 budget in cell area (same record) and now fails
+                        # the LibreLane gds flow at GPL-0301 (1306% utilization at 1x1, 378,066 um^2 cells):
+                        # the budget is a ratified target, not a suggestion -- resolving that non-fit (SRAM
+                        # macro per row 6, or an AREA-EFF budget revision) is a spec decision record, not
+                        # a tiles edit here.
 
   # Your top module name must start with "tt_um_". Make it unique by including your github username:
   top_module:  "tt_um_2amlogic_protocol_emulator"
@@ -30,46 +31,53 @@ project:
   # List your project's source files here.
   # Source files must be in ./src and you must list each source file separately, one per line.
   # Don't forget to also update `PROJECT_SOURCES` in test/Makefile.
+  # protocol_core.v and protocol_program_memory.v are symlinks to ../rtl/
+  # (the real sources live under rtl/ per rtl/README.md -- one copy, no
+  # drift; the symlinks exist only because this template requires sources
+  # under ./src).
   source_files:
     - "tt_um_2amlogic_protocol_emulator.v"
+    - "protocol_core.v"
+    - "protocol_program_memory.v"
 
 # The pinout of your project. Leave unused pins blank. DO NOT delete or add any pins.
 # This section is for the datasheet/website. Use descriptive names (e.g., RX, TX, MOSI, SCL, SEG_A, etc.).
 #
-# No ISA is ratified yet (spec/, issue #1), so no pin has a fixed protocol
-# role -- these are generic stub descriptions, not a pinout budget decision.
-# ui[]/uo[] are genuinely wired (ui_in is registered onto uo_out; see
-# src/tt_um_2amlogic_protocol_emulator.v) so they get a real, if generic,
-# label; uio[] is left blank because the stub holds it as inputs
-# (uio_oe = 0) and drives nothing onto it.
+# 2026-09-22 (issue #18): with the core datapath wired in, ui[]/uo[]/uio[]
+# are now the ratified ISA's pin ports (DR 0001 "Register and pin model"):
+# ui_in is port 00 (readable by firmware via IN), uio_in port 01, uo_out
+# port 10 (drivable via OUT), uio_out port 11. uio_oe direction is fixed
+# at synthesis time per protocol pin plan; no admitted plan drives it yet,
+# so uio[] is still held as inputs (uio_oe = 0) and left blank below.
+# Per-pin protocol roles (which uo/uio bit is TX, SCLK, SDA, ...) are the
+# later pinout decision records the row-5 gap note tracks -- until then
+# these stay generic.
 #
-# 2026-09-21 (issue #19): ui[0] and ui[7] now name the program-load
-# protocol roles DR 0001 section "Program memory sizing and loading"
-# assigns (ui_in[7] = MODE, ui_in[0] = serial data) -- the pin-role
-# decision record the row-5 gap note asks for, for the load pins only
-# (ratification of DR 0001 as a whole is still pending, issue #17). The
-# top-level wiring of these two pins lands with the core-datapath issue
-# (#18), which instantiates rtl/protocol_program_memory.v.
+# 2026-09-21 (issue #19): ui[0] and ui[7] name the program-load protocol
+# roles DR 0001 section "Program memory sizing and loading" assigns
+# (ui_in[7] = MODE, ui_in[0] = serial data); the top-level wiring landed
+# with the core-datapath issue (#18), which instantiates
+# rtl/protocol_program_memory.v.
 pinout:
   # Inputs
-  ui[0]: "PROG_SER: serial program-load data bit (load phase)"
-  ui[1]: "stub: registered onto uo[1]"
-  ui[2]: "stub: registered onto uo[2]"
-  ui[3]: "stub: registered onto uo[3]"
-  ui[4]: "stub: registered onto uo[4]"
-  ui[5]: "stub: registered onto uo[5]"
-  ui[6]: "stub: registered onto uo[6]"
-  ui[7]: "PROG_MODE: high at reset release = serial program load phase"
+  ui[0]: "PROG_SER (load phase) / ISA input port 00 bit 0 (run phase)"
+  ui[1]: "ISA input port 00 bit 1"
+  ui[2]: "ISA input port 00 bit 2"
+  ui[3]: "ISA input port 00 bit 3"
+  ui[4]: "ISA input port 00 bit 4"
+  ui[5]: "ISA input port 00 bit 5"
+  ui[6]: "ISA input port 00 bit 6"
+  ui[7]: "PROG_MODE (load phase) / ISA input port 00 bit 7 (run phase)"
 
   # Outputs
-  uo[0]: "stub: ui[0] registered here"
-  uo[1]: "stub: ui[1] registered here"
-  uo[2]: "stub: ui[2] registered here"
-  uo[3]: "stub: ui[3] registered here"
-  uo[4]: "stub: ui[4] registered here"
-  uo[5]: "stub: ui[5] registered here"
-  uo[6]: "stub: ui[6] registered here"
-  uo[7]: "stub: ui[7] registered here"
+  uo[0]: "ISA output port 10 bit 0"
+  uo[1]: "ISA output port 10 bit 1"
+  uo[2]: "ISA output port 10 bit 2"
+  uo[3]: "ISA output port 10 bit 3"
+  uo[4]: "ISA output port 10 bit 4"
+  uo[5]: "ISA output port 10 bit 5"
+  uo[6]: "ISA output port 10 bit 6"
+  uo[7]: "ISA output port 10 bit 7"
 
   # Bidirectional pins
   uio[0]: ""

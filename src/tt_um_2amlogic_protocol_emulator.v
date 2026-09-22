@@ -2,28 +2,56 @@
  * Copyright (c) 2026 2AMLogic
  * SPDX-License-Identifier: Apache-2.0
  *
- * Harness-bootstrap stub (issue #2).
+ * Tiny Tapeout top for the protocol-emulator ASIC: the ratified ISA's
+ * core datapath (`rtl/protocol_core.v`, issue #18) wired to its program
+ * memory (`rtl/protocol_program_memory.v`, issue #19), per
+ * `spec/decision-records/0001-isa.md`.
  *
- * The ISA is not ratified yet (see spec/, issue #1): this design has no
- * instructions, no program memory, and no protocol logic. Its only job is
- * to prove the fixed Tiny Tapeout pin budget, clock, and reset wiring that
- * a future ISA gets built on top of -- clk/rst_n/ena, 8 dedicated inputs,
- * 8 dedicated outputs, and 8 bidirectional pins (held as inputs here, since
- * nothing drives them yet).
+ * This replaces the harness-bootstrap stub (issue #2): the pin budget,
+ * clock and reset wiring are unchanged (they are fixed by the Tiny
+ * Tapeout template), but `ui_in` is no longer registered onto `uo_out`.
+ * What drives `uo_out`/`uio_out` now is firmware -- the program loaded
+ * over the serial load-phase protocol executing on the core. Per
+ * CLAUDE.md, "the ISA is the product": there is deliberately no
+ * fixed-function UART/SPI/I2C peripheral here, only the pin-timing
+ * engine those protocols are firmware for.
  *
- * Behavior: `ui_in` is registered onto `uo_out` synchronously on every
- * `clk` edge while `ena` is asserted, and cleared to zero on `rst_n` low.
- * That is enough to exercise reset and one full clk/pin round trip through
- * real sequential logic (not a bare combinational `assign`), which is what
- * `verification/`'s cocotb bench and `test/test.py` both check.
+ * Wiring (DR 0001 section "Program memory sizing and loading" and
+ * `rtl/protocol_program_memory.v`'s "Interface intent"):
  *
- * This file is this design's one and only RTL source today. It lives here
- * (rather than under `rtl/`) because the Tiny Tapeout template fixes the
- * top-level source path at `src/<file>.v` (`info.yaml`'s `source_files`);
- * see `rtl/README.md` for how this repo's own klt-driven flow
- * (`flow/synthesize-protocol-emulator.json`) points at this same file
- * instead of keeping a second copy, so the two flows can never disagree on
- * *what* they synthesized -- only, potentially, on the result.
+ *   - `ui_in[7]` (MODE) and `ui_in[0]` (serial data) feed the program
+ *     memory's load-phase port. All other pins are undisturbed by the
+ *     load mechanism; after reset release with MODE low (or once MODE
+ *     drops after a load), `ui_in` reads as an ordinary input port
+ *     (ISA port 00) -- MODE is latched only at reset release, never
+ *     sampled mid-run.
+ *   - The core's PC drives the program memory's combinational fetch
+ *     port, and the fetched word drives the core's decoder -- the
+ *     same-cycle fetch-and-execute path DR 0001's timing model
+ *     requires.
+ *   - `uo_out` / `uio_out` come from the core's registered pin-port
+ *     outputs (ISA ports 10 / 11; new values visible exactly one cycle
+ *     after the retiring `OUT`). `uio_in` / `ui_in` feed the core's
+ *     input ports (ISA ports 01 / 00).
+ *   - `uio_oe` direction is fixed at synthesis time per protocol pin
+ *     plan (DR 0001 "Consequences": `OUT` to port 11 only ever targets
+ *     `uio_out`, never the direction). No pin-role decision record has
+ *     admitted a bidirectional protocol yet, so all 8 bidirectional
+ *     pins are still held as inputs (`uio_oe = 0`), same as the stub.
+ *   - `ena` is unused on purpose: the template documents it as "always
+ *     1 when the design is powered, so you can ignore it", and DR
+ *     0001's load protocol is reset-gated, not power-gated.
+ *
+ * This file is this design's one and only top-level RTL source (the
+ * Tiny Tapeout template fixes the top at `src/<file>.v`, per
+ * `info.yaml`'s `source_files`); the modules it instantiates live under
+ * `rtl/` and reach this flow through symlinks in `src/` so the
+ * template's "sources must be in ./src" rule and this repo's
+ * one-copy-under-`rtl/` rule (see `rtl/README.md`) both hold without a
+ * second copy of anything. This program's own klt-driven flow
+ * (`flow/synthesize-protocol-emulator.json`) points at these same
+ * files, so the two flows can never disagree on *what* they
+ * synthesized -- only, potentially, on the result.
  */
 
 `default_nettype none
@@ -39,25 +67,46 @@ module tt_um_2amlogic_protocol_emulator (
     input  wire       rst_n     // reset_n - low to reset
 );
 
-  reg [7:0] uo_reg;
+  wire [15:0] instr_word;
+  wire [7:0]  fetch_addr;
+  wire        run_phase;
 
-  always @(posedge clk or negedge rst_n) begin
-    if (!rst_n) begin
-      uo_reg <= 8'h00;
-    end else if (ena) begin
-      uo_reg <= ui_in;
-    end
-  end
+  // Program memory + serial load-phase logic (issue #19, DR 0001
+  // "Program memory sizing and loading").
+  protocol_program_memory u_prog_mem (
+      .clk       (clk),
+      .rst_n     (rst_n),
+      .mode_pin  (ui_in[7]),
+      .serial_in (ui_in[0]),
+      .fetch_addr(fetch_addr),
+      .instr_word(instr_word),
+      .run_phase (run_phase)
+  );
 
-  assign uo_out  = uo_reg;
+  // Core datapath (issue #18, DR 0001 "Timing model" / "Register and
+  // pin model" / "Encoding").
+  protocol_core u_core (
+      .clk        (clk),
+      .rst_n      (rst_n),
+      .run_phase  (run_phase),
+      .instr_word (instr_word),
+      .fetch_addr (fetch_addr),
+      .port_ui_in (ui_in),
+      .port_uio_in(uio_in),
+      .port_uo_out(uo_out),
+      .port_uio_out(uio_out)
+  );
 
-  // Bidirectional pins are held as inputs (uio_oe = 0): nothing drives them
-  // yet, so uio_out's value is a don't-care downstream, but every output
-  // pin must still be assigned.
-  assign uio_out = 8'h00;
-  assign uio_oe  = 8'h00;
+  // Bidirectional direction is fixed at synthesis time (DR 0001
+  // "Consequences"); no admitted protocol pin plan drives it yet, so
+  // every bidirectional pin stays an input and uio_out's value is a
+  // don't-care downstream -- but every output pin must still be
+  // assigned.
+  assign uio_oe = 8'h00;
 
-  // List all unused inputs to prevent warnings
-  wire _unused = &{uio_in, 1'b0};
+  // List unused inputs to prevent warnings.
+  wire _unused = &{ena, 1'b0};
 
 endmodule
+
+`default_nettype wire
