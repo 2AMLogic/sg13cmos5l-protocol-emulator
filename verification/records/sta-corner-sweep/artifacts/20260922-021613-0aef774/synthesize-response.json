@@ -1,0 +1,131 @@
+{
+  "schema_version": 2,
+  "engine": "yosys",
+  "engine_version": "0.69+post",
+  "hdl_toplevel": "tt_um_2amlogic_protocol_emulator",
+  "run_id": "run-ccbd7a8d1eee4278b2c29efa2c3e13c8",
+  "status": "ok",
+  "instance_count": 12063,
+  "area_um2": 319815.2916,
+  "sequential_area_um2": 205459.0272,
+  "instance_counts_by_type": {
+    "sg13cmos5l_a21o_1": 10,
+    "sg13cmos5l_a21oi_1": 41,
+    "sg13cmos5l_a221oi_1": 14,
+    "sg13cmos5l_a22oi_1": 2062,
+    "sg13cmos5l_and2_1": 10,
+    "sg13cmos5l_and3_1": 3,
+    "sg13cmos5l_and4_1": 1,
+    "sg13cmos5l_dfrbpq_1": 4194,
+    "sg13cmos5l_inv_1": 36,
+    "sg13cmos5l_mux2_1": 4158,
+    "sg13cmos5l_mux4_1": 16,
+    "sg13cmos5l_nand2_1": 293,
+    "sg13cmos5l_nand2b_1": 32,
+    "sg13cmos5l_nand3_1": 13,
+    "sg13cmos5l_nand3b_1": 6,
+    "sg13cmos5l_nand4_1": 554,
+    "sg13cmos5l_nor2_1": 72,
+    "sg13cmos5l_nor2b_1": 16,
+    "sg13cmos5l_nor3_1": 79,
+    "sg13cmos5l_nor4_1": 338,
+    "sg13cmos5l_o21ai_1": 55,
+    "sg13cmos5l_or2_1": 33,
+    "sg13cmos5l_or3_1": 2,
+    "sg13cmos5l_or4_1": 3,
+    "sg13cmos5l_xnor2_1": 14,
+    "sg13cmos5l_xor2_1": 8
+  },
+  "leakage_power_nw": 3617.3853758999994,
+  "leakage_by_type_nw": {
+    "sg13cmos5l_a21o_1": 0.158296,
+    "sg13cmos5l_a21oi_1": 0.11447700000000001,
+    "sg13cmos5l_a221oi_1": 0.157856,
+    "sg13cmos5l_a22oi_1": 0.13888499999999998,
+    "sg13cmos5l_and2_1": 0.13761,
+    "sg13cmos5l_and3_1": 0.14666200000000001,
+    "sg13cmos5l_and4_1": 0.151909,
+    "sg13cmos5l_dfrbpq_1": 0.510517,
+    "sg13cmos5l_inv_1": 0.0630032,
+    "sg13cmos5l_mux2_1": 0.246339,
+    "sg13cmos5l_mux4_1": 0.464975,
+    "sg13cmos5l_nand2_1": 0.0812456,
+    "sg13cmos5l_nand2b_1": 0.128618,
+    "sg13cmos5l_nand3_1": 0.08718479999999999,
+    "sg13cmos5l_nand3b_1": 0.134524,
+    "sg13cmos5l_nand4_1": 0.0915718,
+    "sg13cmos5l_nor2_1": 0.08292350000000001,
+    "sg13cmos5l_nor2b_1": 0.130258,
+    "sg13cmos5l_nor3_1": 0.0950841,
+    "sg13cmos5l_nor4_1": 0.0997618,
+    "sg13cmos5l_o21ai_1": 0.126648,
+    "sg13cmos5l_or2_1": 0.114895,
+    "sg13cmos5l_or3_1": 0.121923,
+    "sg13cmos5l_or4_1": 0.124109,
+    "sg13cmos5l_xnor2_1": 0.194767,
+    "sg13cmos5l_xor2_1": 0.184817
+  },
+  "timing": null,
+  "sta": null,
+  "structural": {
+    "latches": 0,
+    "expected_latches": 0,
+    "unexpected_latches": 0,
+    "comb_loops": 0,
+    "multi_driven": 0,
+    "has_critical": false
+  },
+  "warnings": {
+    "total": 3,
+    "by_category": {
+      "other": 2,
+      "unsupported_cell_library": 1
+    },
+    "representatives": [
+      {
+        "category": "other",
+        "count": 2,
+        "text": "Replacing memory \\regs with list of registers. See rtl/protocol_core.v:176"
+      },
+      {
+        "category": "unsupported_cell_library",
+        "count": 1,
+        "text": "cell_library 'sg13cmos5l_stdcell' has no verified mapping for: ABC -constr (driving cell/output load), load-driven sizing/buffering and ABC timing (timing is null); setundef -zero/hilomap (bare 0/1/x constants may remain unroutable in place-and-route). These capabilities were skipped."
+      }
+    ]
+  },
+  "netlist_path": {
+    "path": "flow/.klt/synthesize/run-ccbd7a8d1eee4278b2c29efa2c3e13c8/tt_um_2amlogic_protocol_emulator_synth.v",
+    "scope": "repo"
+  },
+  "script_path": {
+    "path": "flow/.klt/synthesize/run-ccbd7a8d1eee4278b2c29efa2c3e13c8/synth_tt_um_2amlogic_protocol_emulator.ys",
+    "scope": "repo"
+  },
+  "run_script_path": {
+    "path": "flow/.klt/synthesize/run-ccbd7a8d1eee4278b2c29efa2c3e13c8/synth_tt_um_2amlogic_protocol_emulator.run.ys",
+    "scope": "repo"
+  },
+  "provenance": {
+    "klt_version": "0.5.0+g1d964cf4ed93",
+    "klayout_version": "0.30.12",
+    "pdk": {
+      "name": "ihp-sg13cmos5l",
+      "source": "PDK_ROOT environment variable",
+      "version": null
+    },
+    "deck": {
+      "name": "sg13cmos5l_stdcell__typ_1p20V_25C",
+      "content_hash": "sha256:34163f3e7de9f854afac57332ba06f1739b78e7ac35660a8a5ddd39c570124ad",
+      "released": false
+    },
+    "input": {
+      "content_hash": "sha256:d930f787a9fc5edd7502048c2cd05b65192a768bdc301aceebb4a1c9124bba85",
+      "role": "source"
+    }
+  },
+  "equivalence": null,
+  "restructuring": null,
+  "arithmetic": null,
+  "baseline": null
+}
