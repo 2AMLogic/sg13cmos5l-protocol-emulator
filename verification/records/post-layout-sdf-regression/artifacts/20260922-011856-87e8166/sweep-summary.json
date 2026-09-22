@@ -1,0 +1,178 @@
+[
+{
+  "corner": "nom_fast_1p32V_m40C",
+  "run_rc": 0,
+  "sdf_annotated": true,
+  "status": "pass",
+  "elapsed_s": 3,
+  "response": {
+    "schema_version": 1,
+    "engine": "icarus",
+    "hdl_toplevel": "tt_um_2amlogic_protocol_emulator",
+    "testbench": "test_protocol_emulator",
+    "status": "pass",
+    "test_count": 3,
+    "passed_count": 3,
+    "failed_count": 0,
+    "skipped_count": 0,
+    "tests": [
+      {
+        "name": "test_reset_clears_output",
+        "status": "passed",
+        "sim_time_ns": null,
+        "real_time_s": 0.062
+      },
+      {
+        "name": "test_pin_through",
+        "status": "passed",
+        "sim_time_ns": null,
+        "real_time_s": 0.003
+      },
+      {
+        "name": "test_ena_gates_updates",
+        "status": "passed",
+        "sim_time_ns": null,
+        "real_time_s": 0.003
+      }
+    ],
+    "coverage": null,
+    "trace": null,
+    "environment": {
+      "engine": "icarus",
+      "engine_version": "13.0",
+      "cocotb_version": "2.1.0",
+      "results_xml": "/Users/rwalters/GitHub/sg13cmos5l-protocol-emulator/.loom/worktrees/issue-26/flow/post-layout-sdf/nom_fast_1p32V_m40C/.klt/functional-verification/results_icarus.xml",
+      "random_seed": 1,
+      "sdf": {
+        "file": "/Users/rwalters/GitHub/sg13cmos5l-protocol-emulator/.loom/worktrees/issue-26/flow/post-layout-sdf/sdf/nom_fast_1p32V_m40C.normalized.sdf",
+        "corner": "typ",
+        "annotated": true,
+        "partial": true,
+        "dropped": {
+          "timingcheck": {
+            "count": 8,
+            "reason": "Icarus Verilog implements SDF delay annotation (IOPATH/INTERCONNECT) but not SDF TIMINGCHECK -- every TIMINGCHECK section in the SDF is dropped, so $setup/$hold/$width checks run against the cell library's own placeholder timing, not the characterised limits in the SDF"
+          }
+        }
+      }
+    }
+  }
+},
+{
+  "corner": "nom_slow_1p08V_125C",
+  "run_rc": 0,
+  "sdf_annotated": true,
+  "status": "pass",
+  "elapsed_s": 3,
+  "response": {
+    "schema_version": 1,
+    "engine": "icarus",
+    "hdl_toplevel": "tt_um_2amlogic_protocol_emulator",
+    "testbench": "test_protocol_emulator",
+    "status": "pass",
+    "test_count": 3,
+    "passed_count": 3,
+    "failed_count": 0,
+    "skipped_count": 0,
+    "tests": [
+      {
+        "name": "test_reset_clears_output",
+        "status": "passed",
+        "sim_time_ns": null,
+        "real_time_s": 0.04
+      },
+      {
+        "name": "test_pin_through",
+        "status": "passed",
+        "sim_time_ns": null,
+        "real_time_s": 0.003
+      },
+      {
+        "name": "test_ena_gates_updates",
+        "status": "passed",
+        "sim_time_ns": null,
+        "real_time_s": 0.001
+      }
+    ],
+    "coverage": null,
+    "trace": null,
+    "environment": {
+      "engine": "icarus",
+      "engine_version": "13.0",
+      "cocotb_version": "2.1.0",
+      "results_xml": "/Users/rwalters/GitHub/sg13cmos5l-protocol-emulator/.loom/worktrees/issue-26/flow/post-layout-sdf/nom_slow_1p08V_125C/.klt/functional-verification/results_icarus.xml",
+      "random_seed": 1,
+      "sdf": {
+        "file": "/Users/rwalters/GitHub/sg13cmos5l-protocol-emulator/.loom/worktrees/issue-26/flow/post-layout-sdf/sdf/nom_slow_1p08V_125C.normalized.sdf",
+        "corner": "typ",
+        "annotated": true,
+        "partial": true,
+        "dropped": {
+          "timingcheck": {
+            "count": 8,
+            "reason": "Icarus Verilog implements SDF delay annotation (IOPATH/INTERCONNECT) but not SDF TIMINGCHECK -- every TIMINGCHECK section in the SDF is dropped, so $setup/$hold/$width checks run against the cell library's own placeholder timing, not the characterised limits in the SDF"
+          }
+        }
+      }
+    }
+  }
+},
+{
+  "corner": "nom_typ_1p20V_25C",
+  "run_rc": 0,
+  "sdf_annotated": true,
+  "status": "pass",
+  "elapsed_s": 2,
+  "response": {
+    "schema_version": 1,
+    "engine": "icarus",
+    "hdl_toplevel": "tt_um_2amlogic_protocol_emulator",
+    "testbench": "test_protocol_emulator",
+    "status": "pass",
+    "test_count": 3,
+    "passed_count": 3,
+    "failed_count": 0,
+    "skipped_count": 0,
+    "tests": [
+      {
+        "name": "test_reset_clears_output",
+        "status": "passed",
+        "sim_time_ns": null,
+        "real_time_s": 0.035
+      },
+      {
+        "name": "test_pin_through",
+        "status": "passed",
+        "sim_time_ns": null,
+        "real_time_s": 0.001
+      },
+      {
+        "name": "test_ena_gates_updates",
+        "status": "passed",
+        "sim_time_ns": null,
+        "real_time_s": 0.001
+      }
+    ],
+    "coverage": null,
+    "trace": null,
+    "environment": {
+      "engine": "icarus",
+      "engine_version": "13.0",
+      "cocotb_version": "2.1.0",
+      "results_xml": "/Users/rwalters/GitHub/sg13cmos5l-protocol-emulator/.loom/worktrees/issue-26/flow/post-layout-sdf/nom_typ_1p20V_25C/.klt/functional-verification/results_icarus.xml",
+      "random_seed": 1,
+      "sdf": {
+        "file": "/Users/rwalters/GitHub/sg13cmos5l-protocol-emulator/.loom/worktrees/issue-26/flow/post-layout-sdf/sdf/nom_typ_1p20V_25C.normalized.sdf",
+        "corner": "typ",
+        "annotated": true,
+        "partial": true,
+        "dropped": {
+          "timingcheck": {
+            "count": 8,
+            "reason": "Icarus Verilog implements SDF delay annotation (IOPATH/INTERCONNECT) but not SDF TIMINGCHECK -- every TIMINGCHECK section in the SDF is dropped, so $setup/$hold/$width checks run against the cell library's own placeholder timing, not the characterised limits in the SDF"
+          }
+        }
+      }
+    }
+  }
+}]

@@ -3,8 +3,8 @@
   "kind": "digital",
   "evidence": {
     "7": {
-      "file": "verification/records/reset-pin-through/artifacts/20260914-031931-7e4a21a/klt-functional-verification.json",
-      "content_hash": "sha256:c92c5811612a43971d72898a319e36b076b0c3900452bd162cb3da4409453d27"
+      "file": "verification/records/post-layout-sdf-regression/artifacts/20260922-011856-87e8166/klt-functional-verification-nom_typ_1p20V_25C.json",
+      "content_hash": "sha256:26e21574bb8ef958836f7599ed746619f147804c87e52c04260cbd63d25f7324"
     },
     "9": {
       "file": "verification/records/reset-pin-through/artifacts/20260914-031931-7e4a21a/klt-functional-verification.json",

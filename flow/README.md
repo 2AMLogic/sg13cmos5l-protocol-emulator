@@ -49,6 +49,24 @@ recorded rather than silently resolved.
   in the die-area record — not worked around). Same environment
   requirements as the corner sweep (`PDK_ROOT`, `KLT_BIN`,
   docker-wrapped `openroad`).
+- `run-post-layout-sdf.sh` — the T1 item-7 post-route SDF regression
+  runner (issue #26): downloads the `gds` workflow's `tt_submission` +
+  `GDS_logs` artifacts (or takes `--from <dir>`), freezes the final
+  **post-route gate-level netlist** and the **per-corner SDFs** LibreLane's
+  post-route STA stage emits, and re-runs this repo's own committed cocotb
+  bench (`verification/test_protocol_emulator.py`, unmodified, via
+  `testbench.search_path`) against that netlist with `options.sdf` set —
+  one `klt functional-verification` run per emitted corner, each required
+  to report `environment.sdf.annotated: true` and `status: "pass"`. The
+  SDF normalization it applies for Icarus 13.0 (header `min::max` triplets
+  filled, klayout-tools#1880; all-zero INTERCONNECTs onto assign-aliased
+  ports dropped, klayout-tools#2285) is mechanically audited per corner in
+  a `*.normalization.json` report; original and normalized bytes are both
+  frozen by the evidence record
+  (`verification/records/post-layout-sdf-regression/`). Environment:
+  `klt` at the `layout/toolchain.json` pin (`KLT_BIN` honored), Icarus
+  >= 13.0, a resolvable `ihp-sg13cmos5l` PDK, and `gh` for `--run-id`
+  mode.
 - `run_synthesize_direct_yosys.py` — the **historical** stopgap runner for
   the recipes above, kept for record history only
   (`verification/records/synthesis-baseline/` cites it). It predates the

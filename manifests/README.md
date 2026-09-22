@@ -73,28 +73,39 @@ CMOS5L standard-cell flow — no analog partition), so the Digital column of
 T1 items 1, 2, 5, 7 and 11 applies: this repo is not held to schematic
 capture, PVT corner sweeps, or Monte Carlo.
 
-- **Items 7 and 9 cite the one committed `klt` evidence envelope this repo
-  has** — record `20260914-031931-7e4a21a`'s
-  `klt-functional-verification.json` (`verification/records/reset-pin-through/`),
-  the harness-bootstrap stub's passing zero-delay Icarus/cocotb run:
-  - item 7 (post-layout verification): the cited run is zero-delay
-    (`environment.sdf` is `null`), so it does **not** satisfy the item —
-    SDF-annotated re-verification is issue #26. Citing it states the
-    honest gap: the best post-layout-adjacent evidence on record is a
-    run the checklist's own text excludes.
-  - item 9 (testbenches shipped): the cited run's testbench
-    (`verification/test_protocol_emulator.py`) is committed with a
-    documented cold-start invocation — the harness half of item 9; the
-    protocol-specific firmware benches (#22/#23) and formal properties
-    (#24) are the unmet remainder.
-  - Under the pinned `klt` both citations render
-    `unmet`/`unrecognized_envelope`: `klt signoff` at that commit does not
-    yet classify `functional-verification` envelopes (that recognition is
-    `2AMLogic/klayout-tools` #1959/#1967, newer than the pin). The verdict
-    is `unmet` under every grader version — pinned-build, current release,
-    or current `main` — never a false green, which is why shading a
-    reason that varies by grader (`unrecognized_envelope` →
-    `not_post_layout`/`unverifiable_provenance`) is safe.
+- **Item 7 cites the SDF-annotated post-route regression** (issue #26) —
+  record `20260922-011856-87e8166`'s typ-corner
+  `klt-functional-verification-nom_typ_1p20V_25C.json`
+  (`verification/records/post-layout-sdf-regression/`): the committed cocotb
+  bench re-run against the post-route gate-level netlist with
+  `options.sdf` set, `environment.sdf.annotated: true` — exactly the
+  machine-checkable shape the checklist's Digital column accepts for this
+  item. The citation is fresh against the current top (the swept netlist is
+  the `gds` workflow's own output at the manifest-edit commit's `src/`
+  revision) and must be re-run when the top changes — issue #18's core
+  integration is the next such change, and the record's provenance pin on
+  `src/tt_um_2amlogic_protocol_emulator.v` is the tripwire
+  (`verification/check_records.py` fails a stale record).
+  - Under the pinned `klt` the citation renders
+    `unmet`/`unverifiable_provenance`: the post-layout gate passes (the
+    envelope is SDF-annotated — no longer the zero-delay
+    `not_post_layout` this item rendered before issue #26), and the
+    remaining unmet is the grader-side provenance binding — this repo
+    pins the cited file's sha256 (every citation does, see below), while
+    `functional-verification` envelopes carry no internal
+    `provenance.input.content_hash` for the grader to compare against
+    (klayout-tools #2182; the binding itself is #2097, open). Unmet
+    everywhere, never silently met; the pin is enforced at the record
+    layer instead.
+- **Item 9 still cites the zero-delay `reset-pin-through` envelope**
+  (`verification/records/reset-pin-through/artifacts/20260914-031931-7e4a21a/klt-functional-verification.json`,
+  unchanged by issue #26): the cited run's testbench
+  (`verification/test_protocol_emulator.py`) is committed with a
+  documented cold-start invocation — the harness half of item 9; the
+  protocol-specific firmware benches (#22/#23) and formal properties
+  (#24) are the unmet remainder. It renders
+  `unmet`/`unverifiable_provenance` at the pinned `klt` for the same
+  provenance-binding reason as item 7 (below).
 - **Every citation pins a `content_hash`** — the sha256 of the cited
   artifact file, verifiable with `sha256sum`. Two honest caveats, on
   record here because the issue calls freshness "the point":
