@@ -1,6 +1,7 @@
 // Renovate configuration for 2AMLogic/sg13cmos5l-protocol-emulator
 // Docs: https://docs.renovatebot.com/configuration-options/
-// Pipeline docs: docs/ops/dependency-security-pipeline.md
+// Pipeline docs: docs/ops/dependency-security-pipeline.md in noc0dev-template
+// (the repo this config was adopted from; no local copy of that doc)
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
 
@@ -70,20 +71,24 @@
 
   "packageRules": [
     // Group all non-major Python dependency updates into one PR
+    // (pip-requirements covers test/requirements.txt — this repo's only
+    // Python manifest today; pep621/uv are forward-looking for issue #2)
     {
       "groupName": "python minor/patch dependencies",
-      "matchManagers": ["pep621", "uv"],
+      "matchManagers": ["pep621", "uv", "pip-requirements"],
       "matchUpdateTypes": ["minor", "patch"]
     },
 
     // Python major updates get individual PRs (more risk, need individual review)
     {
-      "matchManagers": ["pep621", "uv"],
+      "matchManagers": ["pep621", "uv", "pip-requirements"],
       "matchUpdateTypes": ["major"]
     },
 
     // Group all GitHub Actions SHA updates into one PR
-    // AGENTS.md mandates SHA pinning with inline version comments (# vX.Y.Z)
+    // SHA pinning with inline version comments (# vX.Y.Z) is noc0dev-template
+    // policy this config inherits — this repo's workflows pin by tag today, so
+    // "digest" updates stay dormant until SHA pinning is adopted here.
     // Renovate preserves these comments natively when updating digests
     {
       "groupName": "github-actions",
