@@ -5,9 +5,10 @@
 # CLAUDE.md's "Harness bootstrap" section and populated for this project
 # (issue #2). `top_module` is a stub that only wires up the fixed pin budget
 # (clk/rst_n/ena + 8 in / 8 out / 8 bidir) -- the ISA has not been ratified
-# yet (spec/, issue #1), so `tiles`, `pinout`, and `clock_hz` below are
-# placeholders sized for the stub, not a ratified area/pinout budget. Revisit
-# once issue #1 lands.
+# yet (spec/, issue #1), so `pinout` and `clock_hz` below are placeholders
+# sized for the stub, not a ratified pinout/clock budget. `tiles` is now
+# measured for the stub top (issue #21's die-area record); see its inline
+# comment. Revisit once issue #1 lands.
 project:
   title:        "Protocol emulator ASIC (harness bootstrap stub)"
   author:       "2AMLogic"
@@ -17,7 +18,11 @@ project:
   clock_hz:     50000000 # 50 MHz -- the draft board-clock target in README.md's target spec table (DRAFT, unratified)
 
   # How many tiles your design occupies? A single tile is about 167x108 uM.
-  tiles: "1x1"          # stub only; the ratified ISA's area budget is a later decision record
+  tiles: "1x1"          # measured, not a placeholder, for the stub top actually submitted: die 1651.61 um^2 = 0.092 tiles
+                        # (klt place-and-route record 20260922-012402-420c370, issue #21). NOT grown to fit the real RTL:
+                        # the program memory alone measures 4.33x the ratified <=2x2 budget in cell area (same record), and
+                        # the budget is a ratified target, not a suggestion -- resolving that non-fit (SRAM macro per row 6,
+                        # or an AREA-EFF budget revision) is a spec decision record, not a tiles edit here.
 
   # Your top module name must start with "tt_um_". Make it unique by including your github username:
   top_module:  "tt_um_2amlogic_protocol_emulator"
