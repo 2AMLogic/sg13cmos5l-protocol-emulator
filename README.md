@@ -97,8 +97,9 @@ flow/          synthesis + place-and-route (Yosys, OpenROAD), driven through klt
 layout/        GDS + DRC/LVS reports (klayout-tools driven)
 manifests/     the klt signoff block manifest that grades this block's T1 state
 measurements/  silicon characterization (empty until tape-out)
-rtl/           this program's own Verilog sources -- empty until the ratified
-               ISA needs RTL beyond the Tiny Tapeout top; see rtl/README.md
+rtl/           this program's own Verilog sources below the Tiny Tapeout
+               top (the ISA core datapath + program memory, issues
+               #18/#19); see rtl/README.md
 spec/          ratified spec + decision records
 verification/  this program's own cocotb bench + append-only evidence records
 ```
@@ -111,7 +112,9 @@ template](https://github.com/TinyTapeout/ttihp-verilog-template/tree/cmos5l)
 
 The `gds` workflow — the LibreLane sign-off flow, and the only thing here that
 builds a GDS — now passes end to end on `main` (`gds`/`precheck`/`gl_test`/
-`viewer` all succeed) for the harness-bootstrap stub top. It previously failed
+`viewer` all succeed) — last confirmed green on the harness-bootstrap
+stub top (run `34905475502`; issue #18's core top re-runs it in CI). It
+previously failed
 before doing any work, on a confirmed upstream bug in the Tiny Tapeout action
 it calls ([`TinyTapeout/tt-gds-action#52`](https://github.com/TinyTapeout/tt-gds-action/issues/52)),
 which also skipped `precheck`/`gl_test`/`viewer`; that symptom stopped
