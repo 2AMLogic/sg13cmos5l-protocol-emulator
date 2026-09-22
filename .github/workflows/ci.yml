@@ -53,7 +53,20 @@ jobs:
                                    verification/test_check_records.py \
                                    verification/_dut.py \
                                    verification/test_protocol_emulator.py \
+                                   verification/test_firmware_roundtrip.py \
+                                   firmware/tools/asm.py \
+                                   firmware/tools/test_asm.py \
                                    flow/run_synthesize_direct_yosys.py
+
+      # Firmware toolchain (issue #22, DR 0003): the assembler's unit
+      # tests (whole instruction set + malformed input) and a freshness
+      # check that the committed firmware/build/ artifacts still match the
+      # committed .asm source. Stdlib-only Python, same tool-light contract
+      # as the records job.
+      - name: Firmware assembler tests + build-artifact freshness
+        run: |
+          python3 firmware/tools/test_asm.py
+          python3 firmware/tools/asm.py firmware/asm/demo_roundtrip.asm --check
 
       - name: Record linter + its self-test (npm run lint)
         run: npm run lint

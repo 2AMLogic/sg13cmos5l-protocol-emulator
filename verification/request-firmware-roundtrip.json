@@ -1,0 +1,20 @@
+{
+  "schema": "klt.functional_verification.request/1",
+  "engine": "icarus",
+  "sources": [
+    "../rtl/protocol_program_memory.v"
+  ],
+  "hdl_toplevel": "protocol_program_memory",
+  "testbench": {
+    "module": "test_firmware_roundtrip",
+    "testcase": null
+  },
+  "options": {
+    "coverage": false,
+    "timescale": [
+      "1ns",
+      "1ps"
+    ],
+    "random_seed": 1
+  }
+}
