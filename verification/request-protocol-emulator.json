@@ -2,7 +2,9 @@
   "schema": "klt.functional_verification.request/1",
   "engine": "icarus",
   "sources": [
-    "../src/tt_um_2amlogic_protocol_emulator.v"
+    "../src/tt_um_2amlogic_protocol_emulator.v",
+    "../rtl/protocol_core.v",
+    "../rtl/protocol_program_memory.v"
   ],
   "hdl_toplevel": "tt_um_2amlogic_protocol_emulator",
   "testbench": {

@@ -1,0 +1,188 @@
+{
+  "schema_version": 1,
+  "engine": "openroad",
+  "engine_version": "26Q3-2056-g41a28926b9",
+  "engine_logs": [
+    {
+      "invocation_id": "511e8364007e4f6798a3eb9cb52ce8c3",
+      "script_name": "pnr_tt_um_2amlogic_protocol_emulator_floorplan.tcl",
+      "script_path": {
+        "path": "flow/par-scratch/.klt/place-and-route/pnr_tt_um_2amlogic_protocol_emulator_floorplan.tcl",
+        "scope": "repo"
+      },
+      "script_sha256": "77726d6611436792180841e365bb7f9030473c67ae5c5af19042917f905fde08",
+      "metrics_path": {
+        "path": "flow/par-scratch/.klt/place-and-route/tt_um_2amlogic_protocol_emulator_floorplan_metrics.json",
+        "scope": "repo"
+      },
+      "outcome": "exited",
+      "returncode": 0,
+      "directory": {
+        "path": "flow/par-scratch/.klt/place-and-route/openroad-logs/511e8364007e4f6798a3eb9cb52ce8c3",
+        "scope": "repo"
+      },
+      "stdout_path": {
+        "path": "flow/par-scratch/.klt/place-and-route/openroad-logs/511e8364007e4f6798a3eb9cb52ce8c3/stdout.log",
+        "scope": "repo"
+      },
+      "stderr_path": {
+        "path": "flow/par-scratch/.klt/place-and-route/openroad-logs/511e8364007e4f6798a3eb9cb52ce8c3/stderr.log",
+        "scope": "repo"
+      },
+      "metadata_path": {
+        "path": "flow/par-scratch/.klt/place-and-route/openroad-logs/511e8364007e4f6798a3eb9cb52ce8c3/invocation.json",
+        "scope": "repo"
+      },
+      "retention_errors": []
+    },
+    {
+      "invocation_id": "e586deb6228847229f7d93ab18852009",
+      "script_name": "pnr_tt_um_2amlogic_protocol_emulator_place.tcl",
+      "script_path": {
+        "path": "flow/par-scratch/.klt/place-and-route/pnr_tt_um_2amlogic_protocol_emulator_place.tcl",
+        "scope": "repo"
+      },
+      "script_sha256": "74cfc95c8aab5b42497a47b682d29cb0e5423c0778a48802a980b22b1dba2683",
+      "metrics_path": {
+        "path": "flow/par-scratch/.klt/place-and-route/tt_um_2amlogic_protocol_emulator_place_metrics.json",
+        "scope": "repo"
+      },
+      "outcome": "exited",
+      "returncode": 0,
+      "directory": {
+        "path": "flow/par-scratch/.klt/place-and-route/openroad-logs/e586deb6228847229f7d93ab18852009",
+        "scope": "repo"
+      },
+      "stdout_path": {
+        "path": "flow/par-scratch/.klt/place-and-route/openroad-logs/e586deb6228847229f7d93ab18852009/stdout.log",
+        "scope": "repo"
+      },
+      "stderr_path": {
+        "path": "flow/par-scratch/.klt/place-and-route/openroad-logs/e586deb6228847229f7d93ab18852009/stderr.log",
+        "scope": "repo"
+      },
+      "metadata_path": {
+        "path": "flow/par-scratch/.klt/place-and-route/openroad-logs/e586deb6228847229f7d93ab18852009/invocation.json",
+        "scope": "repo"
+      },
+      "retention_errors": []
+    }
+  ],
+  "hdl_toplevel": "tt_um_2amlogic_protocol_emulator",
+  "status": "ok",
+  "stage_reached": "place",
+  "seed": 1,
+  "interconnect_corner": "nom",
+  "die_area_um2": 806898,
+  "core_area_um2": 797305,
+  "utilization_pct": 41.913,
+  "wirelength_um": 1212420.0,
+  "worst_slack_ns": 13.662,
+  "total_negative_slack_ns": 0,
+  "fmax_mhz": 157.778,
+  "setup_violation_count": 0,
+  "hold_violation_count": 0,
+  "nominal_hold_slack_ns": 0.26524,
+  "antenna_violation_count": null,
+  "route_drc_violation_count": null,
+  "estimated_power_mw": 11.991,
+  "clock_skew_ns": null,
+  "worst_setup_slack_ns": null,
+  "worst_hold_slack_ns": null,
+  "corners": null,
+  "max_transition_violation_count": null,
+  "max_capacitance_violation_count": null,
+  "timing_status": "constrained",
+  "stages": [
+    {
+      "name": "floorplan",
+      "die_area_um2": 806898,
+      "core_area_um2": 797305,
+      "utilization_pct": 40.1218,
+      "worst_slack_ns": 15.0883,
+      "total_negative_slack_ns": 0,
+      "timing_status": "constrained"
+    },
+    {
+      "name": "place",
+      "die_area_um2": 806898,
+      "core_area_um2": 797305,
+      "utilization_pct": 41.913,
+      "worst_slack_ns": 13.662,
+      "total_negative_slack_ns": 0,
+      "wirelength_um": 1212420.0,
+      "fmax_mhz": 157.778,
+      "estimated_power_mw": 11.991,
+      "setup_violation_count": 0,
+      "hold_violation_count": 0,
+      "nominal_hold_slack_ns": 0.26524,
+      "timing_status": "constrained"
+    }
+  ],
+  "macros": [],
+  "def_path": null,
+  "unrouted_def_path": "/Users/rwalters/GitHub/sg13cmos5l-protocol-emulator/.loom/worktrees/issue-18/flow/par-scratch/.klt/place-and-route/tt_um_2amlogic_protocol_emulator.place.def",
+  "gds_path": null,
+  "layer_map": null,
+  "def_net_names": null,
+  "min_area_repair": null,
+  "verilog_path": null,
+  "spef_sta": null,
+  "power": {
+    "preset": null,
+    "pdn": false,
+    "global_connect": false,
+    "power_net": null,
+    "ground_net": null,
+    "tapcell_master": null,
+    "endcap_master": null,
+    "filler_masters": [],
+    "straps": [],
+    "connects": [],
+    "row_rail": {
+      "emitted": false,
+      "layer": null,
+      "power_net": null,
+      "ground_net": null,
+      "filler_masters": []
+    },
+    "placed": {
+      "evidence": "def",
+      "def_path": "/Users/rwalters/GitHub/sg13cmos5l-protocol-emulator/.loom/worktrees/issue-18/flow/par-scratch/.klt/place-and-route/tt_um_2amlogic_protocol_emulator.place.def",
+      "unavailable_reason": null,
+      "status": "absent",
+      "missing": [
+        "special_nets",
+        "followpin_segments",
+        "stripe_segments",
+        "pdn_vias"
+      ],
+      "components": 14025,
+      "tapcells": 0,
+      "endcaps": 0,
+      "fillers": 0,
+      "special_nets": []
+    }
+  },
+  "warnings": [
+    "request.power was omitted: no power delivery was requested for this run, and the produced DEF has no a SPECIALNETS section, FOLLOWPIN rail segments, STRIPE strap segments, PDN vias (0 tapcell(s), 0 endcap(s), 0 filler cell(s), 0 power special net(s), 0 FOLLOWPIN rail segment(s), 0 STRIPE strap segment(s), 0 PDN via(s)). The layout has no power delivery, no substrate/well taps and no fill -- its area, timing and DRC numbers are not a signoff result. Supply request.power (see docs/cli/place-and-route.md, 'Power delivery') to build one."
+  ],
+  "provenance": {
+    "klt_version": "0.5.0+g1d964cf4ed93",
+    "klayout_version": "0.30.12",
+    "pdk": {
+      "name": "ihp-sg13cmos5l",
+      "source": "PDK_ROOT environment variable",
+      "version": null
+    },
+    "deck": {
+      "name": "sg13cmos5l_stdcell__typ_1p20V_25C",
+      "content_hash": "sha256:34163f3e7de9f854afac57332ba06f1739b78e7ac35660a8a5ddd39c570124ad",
+      "released": false
+    },
+    "input": {
+      "content_hash": "sha256:da6f7ec9b47ad0755b24c6c4e56690b2a8e0cf0c6d5ee3b5a6908ad00918ca2b",
+      "role": "netlist"
+    }
+  }
+}

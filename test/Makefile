@@ -6,7 +6,7 @@ SIM ?= icarus
 FST ?= -fst # Use more efficient FST format
 TOPLEVEL_LANG ?= verilog
 SRC_DIR = $(PWD)/../src
-PROJECT_SOURCES = tt_um_2amlogic_protocol_emulator.v
+PROJECT_SOURCES = tt_um_2amlogic_protocol_emulator.v protocol_core.v protocol_program_memory.v
 
 ifneq ($(GATES),yes)
 
