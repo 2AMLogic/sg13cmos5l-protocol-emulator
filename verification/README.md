@@ -105,6 +105,25 @@ coverage.
 - `request-protocol-models.json` — `klt functional-verification` request
   driving `test_protocol_models.py` against the declared fixture
   `duts/model_validation_top.v` via Icarus, carrying the recorded seed.
+- `formal/` — the §2 formal-properties leg (issue #24, distinct from the
+  cocotb legs above: no `klt`, no PDK, no simulator — a Yosys+SMTBMC model
+  checking harness). `formal/no_data_dependent_latency.sv` is
+  verification-plan §2.1's property of record (a port-only SVA monitor
+  over DR 0001's latency table, binding to the core-datapath signals the
+  landed program memory already fixes); `formal/fixtures/` holds the
+  conformant timing-contract shell and the data-dependent early-out mutant
+  that qualify the property (pass / must-fail controls);
+  `formal/formal_top.v` wires DUT + program source + monitor; and
+  `formal/run-no-data-dependent-latency.sh` is the cold-start runner
+  (requires `yosys`, `yosys-smtbmc`, `z3` on `$PATH`):
+  ```bash
+  ./verification/formal/run-no-data-dependent-latency.sh [artifacts-dir]
+  ```
+  It runs bounded model checking on the conformant fixture (expect PASS),
+  the non-vacuity cover set, a k-induction attempt (informational), and
+  the mutant negative control (expect FAIL with a counterexample); exit 0
+  means every expectation was met. Evidence lives in
+  `records/no-data-dependent-latency/`.
 - `check_records.py` — the evidence-record linter (see "Enforcement").
 - `test_check_records.py` — the linter's own self-test: one executable
   negative case per violation class named below, run against a throwaway

@@ -54,6 +54,34 @@ construction. Tooling choice (SymbiYosys/other) is deferred to the issue
 that writes this property against real RTL — this record fixes *what* is
 checked, not the specific formal tool invocation.
 
+> **2026-09-22 (issue #24): the property is written.**
+> `verification/formal/no_data_dependent_latency.sv` is this section's
+> property of record: a port-only SVA monitor that operationalizes the
+> statement above as mechanical assertions over DR 0001's ratified latency
+> table (1 cycle per opcode; `imm8+1` for `WAIT`; `HALT` then idle), with
+> data-independence enforced by construction — every assertion's
+> right-hand side is a function of the instruction word alone, and branch
+> targets may respond to free data while branch *cost* never does, which
+> is DR 0001's "data may choose *where*, never *how long*" encoded
+> exactly. The monitor observes only the signals the core must already
+> use to wire the landed program memory (`clk`/`rst_n`/`run_phase`/`pc`
+> /`instr`), so it binds to issue #18's core unchanged. Tooling, chosen
+> by #24: Yosys (`write_smt2`) + `yosys-smtbmc` + Z3 — the same engine
+> pair SymbiYosys drives, without the `sby` wrapper (not installed here);
+> cold-start invocation is
+> `./verification/formal/run-no-data-dependent-latency.sh` (T1 item 9
+> shape: committed bench, documented one-command invocation, no PDK
+> dependency). Qualification state, recorded append-only in
+> `verification/records/no-data-dependent-latency/`: the property passes
+> bounded model checking on a conformant timing-contract fixture with all
+> non-vacuity covers reached, and catches a deliberately data-dependent
+> `WAIT` early-out mutant within 5 cycles. **This is property
+> qualification, not row-3 evidence**: the DUT in those runs is a
+> qualification fixture standing in for the core; row 3 stays unmet until
+> the same property passes against issue #18's real core RTL. The
+> bounded/unbounded split of that future run is documented in the property
+> header and the record.
+
 ### 2.2 `pin_write_latency`
 
 **Statement**: for every `OUT` instruction that retires at cycle `N`, the
@@ -65,6 +93,21 @@ write data to the pin).
 This directly backs DR 0001's "drive on edge" definition and is the
 property a protocol timing claim (e.g., "the SPI SCLK edge lands where the
 program says") ultimately reduces to.
+
+> **2026-09-22 (issue #24): explicitly deferred, with the reason.**
+> §2.1's property was written and qualified now because its expected
+> values are DR 0001's ratified latency table and its observable surface
+> (`pc`, `instr`, `run_phase`) is already fixed by the landed program
+> memory. `pin_write_latency` does not have that second anchor yet: it
+> asserts a relation between an `OUT` instruction's retirement event and
+> the physical pin output register's value one cycle later, and neither
+> that retirement event nor the pin-drive path exists in RTL until issue
+> #18's core lands (today's top is still the harness-bootstrap stub).
+> Writing it now would mean guessing #18's observable retirement/pin
+> surface — exactly the guessing §2.1's bind contract avoided by anchoring
+> on landed RTL. It is therefore deferred to the #18 follow-up sweep that
+> re-runs `no_data_dependent_latency` against the real core; the deferral,
+> not silence, is recorded here per this plan's own evidence discipline.
 
 ## 3. Gate-level regression
 
