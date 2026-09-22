@@ -127,7 +127,16 @@ module protocol_core (
   // Architectural state.
   reg [7:0] regs [0:3];   // R0-R3
   reg       flag_z;       // zero flag, written by ADD/SUB/AND/OR/XOR, read by BZ/BNZ
-  reg       flag_c;       // carry/no-borrow flag, written by ADD/SUB/SHF (write-only state)
+  /* verilator lint_off UNUSEDSIGNAL */
+  // flag_c is deliberately write-only state in ISA revision 1: DR 0001's
+  // opcode table has no instruction that reads C (BZ/BNZ read Z only), so
+  // no RTL cone consumes it. It is verified white-box by the bench
+  // (test_alu_flags_whitebox reads dut.u_core.flag_c) and exists for a
+  // future revision that ratifies a carry-consuming instruction -- see the
+  // header's SUB borrow-convention note. Silence Verilator's UNUSEDSIGNAL
+  // for exactly this declaration and nothing else.
+  reg       flag_c;       // carry/borrow flag, written by ADD/SUB/SHF (write-only state)
+  /* verilator lint_on UNUSEDSIGNAL */
   reg [7:0] pc;           // program counter, 8 bits == 256-word program memory
   reg       waiting;      // a WAIT stall is in progress
   reg [7:0] wait_cnt;     // remaining stall cycles (loaded from the WAIT immediate)
