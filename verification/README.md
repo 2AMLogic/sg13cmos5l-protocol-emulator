@@ -71,6 +71,19 @@ coverage.
 - `request-program-memory.json` — `klt functional-verification` request
   driving `test_program_memory.py` against
   `rtl/protocol_program_memory.v` via Icarus.
+- `test_firmware_roundtrip.py` — cocotb round-trip bench for the DR 0003
+  firmware toolchain (issue #22): re-assembles the committed
+  `firmware/asm/demo_roundtrip.asm` and checks the committed
+  `firmware/build/` artifacts match byte-for-byte, serially loads the
+  committed image through `protocol_program_memory`'s DR 0001 load phase,
+  reads every word back through the fetch port (the assembler's encoding
+  and the RTL agreeing), and cross-checks the committed cycle-accounting
+  report against cycle arithmetic decoded independently from the image
+  words. Driven by `klt functional-verification` (see
+  `request-firmware-roundtrip.json`).
+- `request-firmware-roundtrip.json` — `klt functional-verification`
+  request driving `test_firmware_roundtrip.py` against
+  `rtl/protocol_program_memory.v` via Icarus.
 - `check_records.py` — the evidence-record linter (see "Enforcement").
 - `test_check_records.py` — the linter's own self-test: one executable
   negative case per violation class named below, run against a throwaway
