@@ -1,0 +1,85 @@
+{
+  "experiment": "die-area-baseline",
+  "flow": "klt synthesize + klt place-and-route (OpenROAD, iteration flow of DR 0002)",
+  "tile_geometry_source": "Tiny Tapeout cmos5l template info.yaml (~167x108 um per tile, order of magnitude)",
+  "floorplan_inputs": {
+    "method": "utilization",
+    "requested_utilization_pct": 40.0,
+    "aspect_ratio": 1.0,
+    "core_margin_um": 2.0,
+    "site": "CoreSite",
+    "io_layers": [
+      "Metal3",
+      "Metal2"
+    ],
+    "clock_period_ns": 20.0,
+    "seed": 1,
+    "target_stage": "place"
+  },
+  "designs": [
+    {
+      "recipe": "flow/synthesize-program-memory.json",
+      "hdl_toplevel": "protocol_program_memory",
+      "synthesis": {
+        "instance_count": 11603,
+        "cell_area_um2": 312062.8896,
+        "corner": "sg13cmos5l_stdcell__typ_1p20V_25C",
+        "netlist_path": "flow/.klt/synthesize/run-c9689a852ac44cb69cc2b9730c623eab/protocol_program_memory_synth.v"
+      },
+      "place_and_route": {
+        "stage_reached": "place",
+        "die_area_um2": 787434,
+        "core_area_um2": 777447,
+        "utilization_pct_at_stage": 41.9222,
+        "requested_utilization_pct": 40.1494,
+        "engine_version": "26Q3-2056-g41a28926b9",
+        "deck_name": "sg13cmos5l_stdcell__typ_1p20V_25C"
+      },
+      "tile_budget": {
+        "tile_um": [
+          167,
+          108
+        ],
+        "tile_area_um2": 18036.0,
+        "budget_2x2_um2": 72144.0,
+        "competition_max_8x4_um2": 577152.0,
+        "cell_area_vs_2x2_budget": 4.3256,
+        "die_area_vs_2x2_budget": 10.9148,
+        "die_area_tile_equivalents": 43.66,
+        "min_tiles_at_100pct_utilization": 18.0
+      }
+    },
+    {
+      "recipe": "flow/synthesize-protocol-emulator.json",
+      "hdl_toplevel": "tt_um_2amlogic_protocol_emulator",
+      "synthesis": {
+        "instance_count": 16,
+        "cell_area_um2": 537.0624,
+        "corner": "sg13cmos5l_stdcell__typ_1p20V_25C",
+        "netlist_path": "flow/.klt/synthesize/run-c953d33858ee44fa839db2a2c65c63fe/tt_um_2amlogic_protocol_emulator_synth.v"
+      },
+      "place_and_route": {
+        "stage_reached": "place",
+        "die_area_um2": 1651.61,
+        "core_area_um2": 1224.72,
+        "utilization_pct_at_stage": 43.8519,
+        "requested_utilization_pct": 43.8519,
+        "engine_version": "26Q3-2056-g41a28926b9",
+        "deck_name": "sg13cmos5l_stdcell__typ_1p20V_25C"
+      },
+      "tile_budget": {
+        "tile_um": [
+          167,
+          108
+        ],
+        "tile_area_um2": 18036.0,
+        "budget_2x2_um2": 72144.0,
+        "competition_max_8x4_um2": 577152.0,
+        "cell_area_vs_2x2_budget": 0.0074,
+        "die_area_vs_2x2_budget": 0.0229,
+        "die_area_tile_equivalents": 0.09,
+        "min_tiles_at_100pct_utilization": 1.0
+      }
+    }
+  ]
+}

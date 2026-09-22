@@ -15,6 +15,10 @@ flow/.klt/
 flow/sta-corners/
 flow/sta-sweep/
 flow/sta-corner-sweep-results.json
+# `klt place-and-route` die-area scratch: per-design request/response
+# docs, frozen netlists, and the summary (issue #21)
+flow/par-scratch/
+flow/die-area-par-results.json
 # local klt install, created by the setup script
 .venv/
 # klt's own scratch build dir for `klt functional-verification` runs

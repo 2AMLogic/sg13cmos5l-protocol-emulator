@@ -32,6 +32,23 @@ recorded rather than silently resolved.
   model, never routing parasitics) — see the script's header for the
   environment requirements (`PDK_ROOT` must be exported for the common
   docker-wrapped `openroad`; `KLT_BIN` can point at a pinned install).
+- `run-die-area-par.sh` — the target-spec row-7 die-area leg (issue #21):
+  synthesizes both existing tops fresh (`rtl/protocol_program_memory.v`
+  and the stub `src/tt_um_2amlogic_protocol_emulator.v`), runs
+  `klt place-and-route` on each with `target_stage: "place"` (floorplan at
+  a stated utilization **through legalized placement** — one stage past
+  the floorplan minimum issue #21's dependency note asks for, so the
+  utilization figure is a placed one), and folds the numbers plus the
+  tile-budget arithmetic (1 tile ≈ 167 × 108 µm per the template's
+  `info.yaml`) into `flow/die-area-par-results.json`. First P&R run of
+  this flow against this PDK — the enabling pin verification is
+  `layout/toolchain.json`'s 2026-09-22 paragraph (`place-and-route` added
+  to `klt_required_commands`). `cts`/`route` are **not** reached:
+  `sg13cmos5l_stdcell` has no verified CTS-buffer/routing-layer/antenna
+  table entry in klt at this pin (a klayout-tools capability gap, recorded
+  in the die-area record — not worked around). Same environment
+  requirements as the corner sweep (`PDK_ROOT`, `KLT_BIN`,
+  docker-wrapped `openroad`).
 - `run_synthesize_direct_yosys.py` — the **historical** stopgap runner for
   the recipes above, kept for record history only
   (`verification/records/synthesis-baseline/` cites it). It predates the
@@ -62,6 +79,18 @@ Both write scratch under `flow/.klt/`, `flow/sta-sweep/`,
 gitignored); the evidence record under
 `verification/records/sta-corner-sweep/artifacts/` freezes the copies
 that constitute the claim.
+
+Run the die-area leg (issue #21) with:
+
+```bash
+./flow/run-die-area-par.sh
+KLT_BIN=.venv/bin/klt ./flow/run-die-area-par.sh       # pinned local install
+```
+
+It writes scratch under `flow/.klt/`, `flow/par-scratch/`, and
+`flow/die-area-par-results.json` (all gitignored); the evidence record
+under `verification/records/die-area-baseline/artifacts/` freezes the
+copies that constitute the claim.
 
 See `verification/README.md` for the append-only evidence-record convention
 these runs feed, and the root `README.md` / `CLAUDE.md` for why this flow

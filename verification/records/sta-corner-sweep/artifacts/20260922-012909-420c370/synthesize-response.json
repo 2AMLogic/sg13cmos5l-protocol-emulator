@@ -1,0 +1,77 @@
+{
+  "schema_version": 2,
+  "engine": "yosys",
+  "engine_version": "0.69+post",
+  "hdl_toplevel": "tt_um_2amlogic_protocol_emulator",
+  "run_id": "run-b5565f7170cd4e21bc7d88b6be996c45",
+  "status": "ok",
+  "instance_count": 16,
+  "area_um2": 537.0624,
+  "sequential_area_um2": 391.9104,
+  "instance_counts_by_type": {
+    "sg13cmos5l_dfrbpq_1": 8,
+    "sg13cmos5l_mux2_1": 8
+  },
+  "leakage_power_nw": 6.054848,
+  "leakage_by_type_nw": {
+    "sg13cmos5l_dfrbpq_1": 0.510517,
+    "sg13cmos5l_mux2_1": 0.246339
+  },
+  "timing": null,
+  "sta": null,
+  "structural": {
+    "latches": 0,
+    "expected_latches": 0,
+    "unexpected_latches": 0,
+    "comb_loops": 0,
+    "multi_driven": 0,
+    "has_critical": false
+  },
+  "warnings": {
+    "total": 1,
+    "by_category": {
+      "unsupported_cell_library": 1
+    },
+    "representatives": [
+      {
+        "category": "unsupported_cell_library",
+        "count": 1,
+        "text": "cell_library 'sg13cmos5l_stdcell' has no verified mapping for: ABC -constr (driving cell/output load), load-driven sizing/buffering and ABC timing (timing is null); setundef -zero/hilomap (bare 0/1/x constants may remain unroutable in place-and-route). These capabilities were skipped."
+      }
+    ]
+  },
+  "netlist_path": {
+    "path": "flow/.klt/synthesize/run-b5565f7170cd4e21bc7d88b6be996c45/tt_um_2amlogic_protocol_emulator_synth.v",
+    "scope": "repo"
+  },
+  "script_path": {
+    "path": "flow/.klt/synthesize/run-b5565f7170cd4e21bc7d88b6be996c45/synth_tt_um_2amlogic_protocol_emulator.ys",
+    "scope": "repo"
+  },
+  "run_script_path": {
+    "path": "flow/.klt/synthesize/run-b5565f7170cd4e21bc7d88b6be996c45/synth_tt_um_2amlogic_protocol_emulator.run.ys",
+    "scope": "repo"
+  },
+  "provenance": {
+    "klt_version": "0.5.0+g1d964cf4ed93",
+    "klayout_version": "0.30.12",
+    "pdk": {
+      "name": "ihp-sg13cmos5l",
+      "source": "PDK_ROOT environment variable",
+      "version": null
+    },
+    "deck": {
+      "name": "sg13cmos5l_stdcell__typ_1p20V_25C",
+      "content_hash": "sha256:34163f3e7de9f854afac57332ba06f1739b78e7ac35660a8a5ddd39c570124ad",
+      "released": false
+    },
+    "input": {
+      "content_hash": "sha256:4945013ad813d88c92b20beb8f959d44080fe7b009d6ca55edd32b34ffd15708",
+      "role": "source"
+    }
+  },
+  "equivalence": null,
+  "restructuring": null,
+  "arithmetic": null,
+  "baseline": null
+}
