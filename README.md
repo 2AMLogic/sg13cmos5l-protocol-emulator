@@ -16,6 +16,8 @@ the program it loads. It is this program's entry in the
 [Tiny Tapeout](https://tinytapeout.com/)), and it is built in public from the
 first commit because the competition asks for exactly that.
 
+![fleet burndown](https://raw.githubusercontent.com/2AMLogic/2am/main/fleet-metrics/charts/sg13cmos5l-protocol-emulator.svg)
+
 ## Status
 
 **Just opened, specification phase.** Nothing is designed yet, nothing has been
