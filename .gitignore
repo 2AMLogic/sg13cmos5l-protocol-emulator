@@ -24,6 +24,10 @@ flow/die-area-par-results.json
 # dirs, and the sweep summary (issue #26)
 flow/post-layout-sdf/
 flow/post-layout-sdf-results.json
+# SRAM-macro feasibility probe summary: regenerated on demand from the PDK
+# and the vendored upstream tables, frozen per-run under
+# verification/records/program-memory-macro-feasibility/artifacts/ (issue #39)
+flow/sram-macro-feasibility-results.json
 # local klt install, created by the setup script
 .venv/
 # klt's own scratch build dir for `klt functional-verification` runs

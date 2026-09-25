@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "version": "0.5.0+g1d964cf4ed93.dirty",
+  "package_version": "0.5.0",
+  "git_commit": "1d964cf4ed93b15bd36acf1eb14e3855b3c500d1",
+  "git_tag": null,
+  "dirty": true,
+  "is_release": false,
+  "klayout_version": "0.30.12",
+  "klayout_version_expected": "0.30.10"
+}

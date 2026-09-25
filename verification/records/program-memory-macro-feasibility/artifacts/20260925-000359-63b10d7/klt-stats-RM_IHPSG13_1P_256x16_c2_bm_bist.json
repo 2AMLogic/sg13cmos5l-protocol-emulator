@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "file": "/home/ubuntu/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_sram/gds/RM_IHPSG13_1P_256x16_c2_bm_bist.gds",
+  "dbu_um": 0.001,
+  "top_cell": "RM_IHPSG13_1P_256x16_c2_bm_bist",
+  "bbox_um": {
+    "left": 0.0,
+    "bottom": -0.225,
+    "right": 236.8,
+    "top": 118.78,
+    "width": 236.8,
+    "height": 119.005
+  },
+  "total": {
+    "area_um2": 281197.08455,
+    "density": 9.978468872177185,
+    "polygon_count": 4281,
+    "vertex_count": 19926
+  },
+  "layers": null
+}
