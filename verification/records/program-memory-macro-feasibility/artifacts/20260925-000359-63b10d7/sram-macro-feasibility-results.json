@@ -1,0 +1,872 @@
+{
+  "schema_version": 1,
+  "question": "Is there an SRAM macro for ihp-sg13cmos5l that implements DR 0001's ratified 256x16 program memory, and does it fit a legal Tiny Tapeout CMOS5L tile allocation?",
+  "what_this_run_does_not_claim": [
+    "No synthesis, place-and-route, STA, DRC or LVS was run.",
+    "No utilization, timing-closure or routability result is claimed.",
+    "Macro fit is a geometric/area feasibility check, not an implementation."
+  ],
+  "pdk": {
+    "name": "ihp-sg13cmos5l",
+    "root": "/home/ubuntu/share/pdk/ihp-sg13cmos5l",
+    "version": null,
+    "resolved_via": "search root: ~/share/pdk"
+  },
+  "sram_library": {
+    "path": "/home/ubuntu/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_sram",
+    "exists": true,
+    "is_symlink": true,
+    "symlink_target": "../../ihp-sg13g2/libs.ref/sg13g2_sram",
+    "resolved_path": "/home/ubuntu/share/pdk/ihp-sg13g2/libs.ref/sg13g2_sram"
+  },
+  "macro_family_1p": {
+    "RM_IHPSG13_1P_1024x16_c2_bm_bist": {
+      "lef": "/home/ubuntu/share/pdk/ihp-sg13g2/libs.ref/sg13g2_sram/lef/RM_IHPSG13_1P_1024x16_c2_bm_bist.lef",
+      "width_um": 236.8,
+      "height_um": 336.46,
+      "area_um2": 79673.728
+    },
+    "RM_IHPSG13_1P_1024x32_c2_bm_bist": {
+      "lef": "/home/ubuntu/share/pdk/ihp-sg13g2/libs.ref/sg13g2_sram/lef/RM_IHPSG13_1P_1024x32_c2_bm_bist.lef",
+      "width_um": 416.64,
+      "height_um": 336.46,
+      "area_um2": 140182.6944
+    },
+    "RM_IHPSG13_1P_1024x64_c2_bm_bist": {
+      "lef": "/home/ubuntu/share/pdk/ihp-sg13g2/libs.ref/sg13g2_sram/lef/RM_IHPSG13_1P_1024x64_c2_bm_bist.lef",
+      "width_um": 784.48,
+      "height_um": 336.46,
+      "area_um2": 263946.1408
+    },
+    "RM_IHPSG13_1P_1024x8_c2_bm_bist": {
+      "lef": "/home/ubuntu/share/pdk/ihp-sg13g2/libs.ref/sg13g2_sram/lef/RM_IHPSG13_1P_1024x8_c2_bm_bist.lef",
+      "width_um": 146.88,
+      "height_um": 336.46,
+      "area_um2": 49419.2448
+    },
+    "RM_IHPSG13_1P_2048x64_c2_bm_bist": {
+      "lef": "/home/ubuntu/share/pdk/ihp-sg13g2/libs.ref/sg13g2_sram/lef/RM_IHPSG13_1P_2048x64_c2_bm_bist.lef",
+      "width_um": 784.48,
+      "height_um": 626.7,
+      "area_um2": 491633.616
+    },
+    "RM_IHPSG13_1P_256x16_c2_bm_bist": {
+      "lef": "/home/ubuntu/share/pdk/ihp-sg13g2/libs.ref/sg13g2_sram/lef/RM_IHPSG13_1P_256x16_c2_bm_bist.lef",
+      "width_um": 236.8,
+      "height_um": 118.78,
+      "area_um2": 28127.104
+    },
+    "RM_IHPSG13_1P_256x32_c2_bm_bist": {
+      "lef": "/home/ubuntu/share/pdk/ihp-sg13g2/libs.ref/sg13g2_sram/lef/RM_IHPSG13_1P_256x32_c2_bm_bist.lef",
+      "width_um": 416.64,
+      "height_um": 118.78,
+      "area_um2": 49488.4992
+    },
+    "RM_IHPSG13_1P_256x48_c2_bm_bist": {
+      "lef": "/home/ubuntu/share/pdk/ihp-sg13g2/libs.ref/sg13g2_sram/lef/RM_IHPSG13_1P_256x48_c2_bm_bist.lef",
+      "width_um": 596.48,
+      "height_um": 118.78,
+      "area_um2": 70849.8944
+    },
+    "RM_IHPSG13_1P_256x64_c2_bm_bist": {
+      "lef": "/home/ubuntu/share/pdk/ihp-sg13g2/libs.ref/sg13g2_sram/lef/RM_IHPSG13_1P_256x64_c2_bm_bist.lef",
+      "width_um": 784.48,
+      "height_um": 118.78,
+      "area_um2": 93180.5344
+    },
+    "RM_IHPSG13_1P_256x8_c3_bm_bist": {
+      "lef": "/home/ubuntu/share/pdk/ihp-sg13g2/libs.ref/sg13g2_sram/lef/RM_IHPSG13_1P_256x8_c3_bm_bist.lef",
+      "width_um": 236.8,
+      "height_um": 74.1,
+      "area_um2": 17546.88
+    },
+    "RM_IHPSG13_1P_4096x16_c3_bm_bist": {
+      "lef": "/home/ubuntu/share/pdk/ihp-sg13g2/libs.ref/sg13g2_sram/lef/RM_IHPSG13_1P_4096x16_c3_bm_bist.lef",
+      "width_um": 416.64,
+      "height_um": 618.3,
+      "area_um2": 257608.512
+    },
+    "RM_IHPSG13_1P_4096x8_c3_bm_bist": {
+      "lef": "/home/ubuntu/share/pdk/ihp-sg13g2/libs.ref/sg13g2_sram/lef/RM_IHPSG13_1P_4096x8_c3_bm_bist.lef",
+      "width_um": 236.8,
+      "height_um": 618.3,
+      "area_um2": 146413.44
+    },
+    "RM_IHPSG13_1P_512x16_c2_bm_bist": {
+      "lef": "/home/ubuntu/share/pdk/ihp-sg13g2/libs.ref/sg13g2_sram/lef/RM_IHPSG13_1P_512x16_c2_bm_bist.lef",
+      "width_um": 236.8,
+      "height_um": 191.34,
+      "area_um2": 45309.312
+    },
+    "RM_IHPSG13_1P_512x32_c2_bm_bist": {
+      "lef": "/home/ubuntu/share/pdk/ihp-sg13g2/libs.ref/sg13g2_sram/lef/RM_IHPSG13_1P_512x32_c2_bm_bist.lef",
+      "width_um": 416.64,
+      "height_um": 191.34,
+      "area_um2": 79719.8976
+    },
+    "RM_IHPSG13_1P_512x64_c2_bm_bist": {
+      "lef": "/home/ubuntu/share/pdk/ihp-sg13g2/libs.ref/sg13g2_sram/lef/RM_IHPSG13_1P_512x64_c2_bm_bist.lef",
+      "width_um": 784.48,
+      "height_um": 191.34,
+      "area_um2": 150102.4032
+    },
+    "RM_IHPSG13_1P_512x8_c3_bm_bist": {
+      "lef": "/home/ubuntu/share/pdk/ihp-sg13g2/libs.ref/sg13g2_sram/lef/RM_IHPSG13_1P_512x8_c3_bm_bist.lef",
+      "width_um": 236.8,
+      "height_um": 110.38,
+      "area_um2": 26137.984
+    },
+    "RM_IHPSG13_1P_64x64_c2_bm_bist": {
+      "lef": "/home/ubuntu/share/pdk/ihp-sg13g2/libs.ref/sg13g2_sram/lef/RM_IHPSG13_1P_64x64_c2_bm_bist.lef",
+      "width_um": 784.48,
+      "height_um": 64.36,
+      "area_um2": 50489.1328
+    },
+    "RM_IHPSG13_1P_8192x32_c4": {
+      "lef": "/home/ubuntu/share/pdk/ihp-sg13g2/libs.ref/sg13g2_sram/lef/RM_IHPSG13_1P_8192x32_c4.lef",
+      "width_um": 1520.16,
+      "height_um": 618.3,
+      "area_um2": 939914.928
+    }
+  },
+  "selected_macro": {
+    "name": "RM_IHPSG13_1P_256x16_c2_bm_bist",
+    "lef": "/home/ubuntu/share/pdk/ihp-sg13g2/libs.ref/sg13g2_sram/lef/RM_IHPSG13_1P_256x16_c2_bm_bist.lef",
+    "width_um": 236.8,
+    "height_um": 118.78,
+    "area_um2": 28127.104,
+    "drawn_bbox_um": {
+      "left": 0.0,
+      "bottom": -0.225,
+      "right": 236.8,
+      "top": 118.78,
+      "width": 236.8,
+      "height": 119.005
+    },
+    "layer_inventory": [
+      {
+        "layer": 1,
+        "datatype": 0,
+        "name": "Activ.drawing"
+      },
+      {
+        "layer": 5,
+        "datatype": 0,
+        "name": "GatPoly.drawing"
+      },
+      {
+        "layer": 6,
+        "datatype": 0,
+        "name": "Cont.drawing"
+      },
+      {
+        "layer": 8,
+        "datatype": 0,
+        "name": "Metal1.drawing"
+      },
+      {
+        "layer": 8,
+        "datatype": 2,
+        "name": "Metal1.pin"
+      },
+      {
+        "layer": 8,
+        "datatype": 25,
+        "name": "Metal1.text"
+      },
+      {
+        "layer": 8,
+        "datatype": 29,
+        "name": "Metal1.res"
+      },
+      {
+        "layer": 10,
+        "datatype": 0,
+        "name": "Metal2.drawing"
+      },
+      {
+        "layer": 10,
+        "datatype": 2,
+        "name": "Metal2.pin"
+      },
+      {
+        "layer": 10,
+        "datatype": 25,
+        "name": "Metal2.text"
+      },
+      {
+        "layer": 10,
+        "datatype": 29,
+        "name": "Metal2.res"
+      },
+      {
+        "layer": 14,
+        "datatype": 0,
+        "name": "pSD.drawing"
+      },
+      {
+        "layer": 16,
+        "datatype": 0,
+        "name": "DigiBnd.drawing"
+      },
+      {
+        "layer": 19,
+        "datatype": 0,
+        "name": "Via1.drawing"
+      },
+      {
+        "layer": 25,
+        "datatype": 0,
+        "name": "SRAM.drawing"
+      },
+      {
+        "layer": 29,
+        "datatype": 0,
+        "name": "Via2.drawing"
+      },
+      {
+        "layer": 30,
+        "datatype": 0,
+        "name": "Metal3.drawing"
+      },
+      {
+        "layer": 30,
+        "datatype": 2,
+        "name": "Metal3.pin"
+      },
+      {
+        "layer": 30,
+        "datatype": 25,
+        "name": "Metal3.text"
+      },
+      {
+        "layer": 30,
+        "datatype": 29,
+        "name": "Metal3.res"
+      },
+      {
+        "layer": 31,
+        "datatype": 0,
+        "name": "NWell.drawing"
+      },
+      {
+        "layer": 49,
+        "datatype": 0,
+        "name": "Via3.drawing"
+      },
+      {
+        "layer": 50,
+        "datatype": 0,
+        "name": "Metal4.drawing"
+      },
+      {
+        "layer": 50,
+        "datatype": 2,
+        "name": "Metal4.pin"
+      },
+      {
+        "layer": 50,
+        "datatype": 25,
+        "name": "Metal4.text"
+      },
+      {
+        "layer": 63,
+        "datatype": 0,
+        "name": "TEXT.drawing"
+      },
+      {
+        "layer": 189,
+        "datatype": 4,
+        "name": "prBoundary.boundary"
+      }
+    ]
+  },
+  "tt_precheck_layer_check": {
+    "allowlist_source": {
+      "repo": "TinyTapeout/tt-support-tools",
+      "ref": "ihp-sg13cmos5l",
+      "ref_commit": "d66cf179e7bc4d296362ab7e2e3b344dc3c4f665",
+      "path": "precheck/tech_data.py",
+      "symbol": "valid_layers_ihp_sg13cmos5l",
+      "blob_sha": "f42a2d3270b12ecc455ca0fab31189fd05d3239d",
+      "retrieved": "2026-09-24",
+      "consumed_by": "precheck.layer_check() -- rejects any GDS layer/datatype not on this list"
+    },
+    "layer_names_unresolved_in_pdk_lyp": [],
+    "lyp_used": "/home/ubuntu/share/pdk/ihp-sg13cmos5l/libs.tech/klayout/tech/sg13cmos5l.lyp",
+    "layers_used": 27,
+    "layers_not_allowed": [],
+    "verdict": "pass"
+  },
+  "site_um": {
+    "width": 0.48,
+    "height": 3.78
+  },
+  "tile_budget": {
+    "die_area_source": {
+      "repo": "TinyTapeout/tt-support-tools",
+      "ref": "ihp-sg13cmos5l",
+      "ref_commit": "d66cf179e7bc4d296362ab7e2e3b344dc3c4f665",
+      "ref_commit_date": "2026-09-21T21:11:38Z",
+      "path": "tech/ihp-sg13cmos5l/tile_sizes.yaml",
+      "blob_sha": "cb96d4e7831e4cce1e22ac38e462be2e2ed3ee3f",
+      "retrieved": "2026-09-24",
+      "why_this_ref": [
+        "`.github/workflows/gds.yaml` in this repo pins",
+        "`TinyTapeout/tt-gds-action@ihp-cmos5l`, whose `action.yml` defaults",
+        "`tools-ref` to the `ihp-sg13cmos5l` branch of tt-support-tools.",
+        "tt-gds-action@ihp-cmos5l head at retrieval:",
+        "3412659307918422f3f0727917cf9b499aaca588 (2026-09-14T11:07:02Z)."
+      ],
+      "consumed_by": "Project.create_user_config() -> LibreLane DIE_AREA (project.py)"
+    },
+    "ratified_budget_tiles": "2x2",
+    "competition_max_tiles": "8x4",
+    "per_tiles": {
+      "1x1": {
+        "die_um": [
+          202.08,
+          154.98
+        ],
+        "die_area_um2": 31318.3584,
+        "core_um": [
+          196.32,
+          147.42
+        ],
+        "core_area_um2": 28941.4944,
+        "sram_macro": {
+          "fits_upright": false,
+          "fits_rotated_r90": false,
+          "fits": false,
+          "macro_fraction_of_core_area_pct": 97.19
+        },
+        "ff_memory_cell_area_vs_core": {
+          "klt_openroad_iteration_flow": {
+            "cell_area_um2": 312062.8896,
+            "required_core_area_at_target_density_um2": 520104.816,
+            "implied_core_density_pct": 1078.25,
+            "fits_at_target_density": false
+          },
+          "librelane_flow_of_record": {
+            "cell_area_um2": 378066.857,
+            "required_core_area_at_target_density_um2": 630111.4283,
+            "implied_core_density_pct": 1306.31,
+            "fits_at_target_density": false
+          }
+        }
+      },
+      "1x2": {
+        "die_um": [
+          202.08,
+          313.74
+        ],
+        "die_area_um2": 63400.5792,
+        "core_um": [
+          196.32,
+          306.18
+        ],
+        "core_area_um2": 60109.2576,
+        "sram_macro": {
+          "fits_upright": false,
+          "fits_rotated_r90": true,
+          "fits": true,
+          "macro_fraction_of_core_area_pct": 46.79
+        },
+        "ff_memory_cell_area_vs_core": {
+          "klt_openroad_iteration_flow": {
+            "cell_area_um2": 312062.8896,
+            "required_core_area_at_target_density_um2": 520104.816,
+            "implied_core_density_pct": 519.16,
+            "fits_at_target_density": false
+          },
+          "librelane_flow_of_record": {
+            "cell_area_um2": 378066.857,
+            "required_core_area_at_target_density_um2": 630111.4283,
+            "implied_core_density_pct": 628.97,
+            "fits_at_target_density": false
+          }
+        }
+      },
+      "2x1": {
+        "die_um": [
+          419.52,
+          154.98
+        ],
+        "die_area_um2": 65017.2096,
+        "core_um": [
+          413.76,
+          147.42
+        ],
+        "core_area_um2": 60996.4992,
+        "sram_macro": {
+          "fits_upright": true,
+          "fits_rotated_r90": false,
+          "fits": true,
+          "macro_fraction_of_core_area_pct": 46.11
+        },
+        "ff_memory_cell_area_vs_core": {
+          "klt_openroad_iteration_flow": {
+            "cell_area_um2": 312062.8896,
+            "required_core_area_at_target_density_um2": 520104.816,
+            "implied_core_density_pct": 511.61,
+            "fits_at_target_density": false
+          },
+          "librelane_flow_of_record": {
+            "cell_area_um2": 378066.857,
+            "required_core_area_at_target_density_um2": 630111.4283,
+            "implied_core_density_pct": 619.82,
+            "fits_at_target_density": false
+          }
+        }
+      },
+      "2x2": {
+        "die_um": [
+          419.52,
+          313.74
+        ],
+        "die_area_um2": 131620.2048,
+        "core_um": [
+          413.76,
+          306.18
+        ],
+        "core_area_um2": 126685.0368,
+        "sram_macro": {
+          "fits_upright": true,
+          "fits_rotated_r90": true,
+          "fits": true,
+          "macro_fraction_of_core_area_pct": 22.2
+        },
+        "ff_memory_cell_area_vs_core": {
+          "klt_openroad_iteration_flow": {
+            "cell_area_um2": 312062.8896,
+            "required_core_area_at_target_density_um2": 520104.816,
+            "implied_core_density_pct": 246.33,
+            "fits_at_target_density": false
+          },
+          "librelane_flow_of_record": {
+            "cell_area_um2": 378066.857,
+            "required_core_area_at_target_density_um2": 630111.4283,
+            "implied_core_density_pct": 298.43,
+            "fits_at_target_density": false
+          }
+        }
+      },
+      "3x1": {
+        "die_um": [
+          636.96,
+          154.98
+        ],
+        "die_area_um2": 98716.0608,
+        "core_um": [
+          631.2,
+          147.42
+        ],
+        "core_area_um2": 93051.504,
+        "sram_macro": {
+          "fits_upright": true,
+          "fits_rotated_r90": false,
+          "fits": true,
+          "macro_fraction_of_core_area_pct": 30.23
+        },
+        "ff_memory_cell_area_vs_core": {
+          "klt_openroad_iteration_flow": {
+            "cell_area_um2": 312062.8896,
+            "required_core_area_at_target_density_um2": 520104.816,
+            "implied_core_density_pct": 335.37,
+            "fits_at_target_density": false
+          },
+          "librelane_flow_of_record": {
+            "cell_area_um2": 378066.857,
+            "required_core_area_at_target_density_um2": 630111.4283,
+            "implied_core_density_pct": 406.3,
+            "fits_at_target_density": false
+          }
+        }
+      },
+      "3x2": {
+        "die_um": [
+          636.96,
+          313.74
+        ],
+        "die_area_um2": 199839.8304,
+        "core_um": [
+          631.2,
+          306.18
+        ],
+        "core_area_um2": 193260.816,
+        "sram_macro": {
+          "fits_upright": true,
+          "fits_rotated_r90": true,
+          "fits": true,
+          "macro_fraction_of_core_area_pct": 14.55
+        },
+        "ff_memory_cell_area_vs_core": {
+          "klt_openroad_iteration_flow": {
+            "cell_area_um2": 312062.8896,
+            "required_core_area_at_target_density_um2": 520104.816,
+            "implied_core_density_pct": 161.47,
+            "fits_at_target_density": false
+          },
+          "librelane_flow_of_record": {
+            "cell_area_um2": 378066.857,
+            "required_core_area_at_target_density_um2": 630111.4283,
+            "implied_core_density_pct": 195.63,
+            "fits_at_target_density": false
+          }
+        }
+      },
+      "3x4": {
+        "die_um": [
+          636.96,
+          710.64
+        ],
+        "die_area_um2": 452649.2544,
+        "core_um": [
+          631.2,
+          703.08
+        ],
+        "core_area_um2": 443784.096,
+        "sram_macro": {
+          "fits_upright": true,
+          "fits_rotated_r90": true,
+          "fits": true,
+          "macro_fraction_of_core_area_pct": 6.34
+        },
+        "ff_memory_cell_area_vs_core": {
+          "klt_openroad_iteration_flow": {
+            "cell_area_um2": 312062.8896,
+            "required_core_area_at_target_density_um2": 520104.816,
+            "implied_core_density_pct": 70.32,
+            "fits_at_target_density": false
+          },
+          "librelane_flow_of_record": {
+            "cell_area_um2": 378066.857,
+            "required_core_area_at_target_density_um2": 630111.4283,
+            "implied_core_density_pct": 85.19,
+            "fits_at_target_density": false
+          }
+        }
+      },
+      "4x1": {
+        "die_um": [
+          854.4,
+          154.98
+        ],
+        "die_area_um2": 132414.912,
+        "core_um": [
+          848.64,
+          147.42
+        ],
+        "core_area_um2": 125106.5088,
+        "sram_macro": {
+          "fits_upright": true,
+          "fits_rotated_r90": false,
+          "fits": true,
+          "macro_fraction_of_core_area_pct": 22.48
+        },
+        "ff_memory_cell_area_vs_core": {
+          "klt_openroad_iteration_flow": {
+            "cell_area_um2": 312062.8896,
+            "required_core_area_at_target_density_um2": 520104.816,
+            "implied_core_density_pct": 249.44,
+            "fits_at_target_density": false
+          },
+          "librelane_flow_of_record": {
+            "cell_area_um2": 378066.857,
+            "required_core_area_at_target_density_um2": 630111.4283,
+            "implied_core_density_pct": 302.2,
+            "fits_at_target_density": false
+          }
+        }
+      },
+      "4x2": {
+        "die_um": [
+          854.4,
+          313.74
+        ],
+        "die_area_um2": 268059.456,
+        "core_um": [
+          848.64,
+          306.18
+        ],
+        "core_area_um2": 259836.5952,
+        "sram_macro": {
+          "fits_upright": true,
+          "fits_rotated_r90": true,
+          "fits": true,
+          "macro_fraction_of_core_area_pct": 10.82
+        },
+        "ff_memory_cell_area_vs_core": {
+          "klt_openroad_iteration_flow": {
+            "cell_area_um2": 312062.8896,
+            "required_core_area_at_target_density_um2": 520104.816,
+            "implied_core_density_pct": 120.1,
+            "fits_at_target_density": false
+          },
+          "librelane_flow_of_record": {
+            "cell_area_um2": 378066.857,
+            "required_core_area_at_target_density_um2": 630111.4283,
+            "implied_core_density_pct": 145.5,
+            "fits_at_target_density": false
+          }
+        }
+      },
+      "4x4": {
+        "die_um": [
+          854.4,
+          710.64
+        ],
+        "die_area_um2": 607170.816,
+        "core_um": [
+          848.64,
+          703.08
+        ],
+        "core_area_um2": 596661.8112,
+        "sram_macro": {
+          "fits_upright": true,
+          "fits_rotated_r90": true,
+          "fits": true,
+          "macro_fraction_of_core_area_pct": 4.71
+        },
+        "ff_memory_cell_area_vs_core": {
+          "klt_openroad_iteration_flow": {
+            "cell_area_um2": 312062.8896,
+            "required_core_area_at_target_density_um2": 520104.816,
+            "implied_core_density_pct": 52.3,
+            "fits_at_target_density": true
+          },
+          "librelane_flow_of_record": {
+            "cell_area_um2": 378066.857,
+            "required_core_area_at_target_density_um2": 630111.4283,
+            "implied_core_density_pct": 63.36,
+            "fits_at_target_density": false
+          }
+        }
+      },
+      "5x4": {
+        "die_um": [
+          1071.84,
+          710.64
+        ],
+        "die_area_um2": 761692.3776,
+        "core_um": [
+          1066.08,
+          703.08
+        ],
+        "core_area_um2": 749539.5264,
+        "sram_macro": {
+          "fits_upright": true,
+          "fits_rotated_r90": true,
+          "fits": true,
+          "macro_fraction_of_core_area_pct": 3.75
+        },
+        "ff_memory_cell_area_vs_core": {
+          "klt_openroad_iteration_flow": {
+            "cell_area_um2": 312062.8896,
+            "required_core_area_at_target_density_um2": 520104.816,
+            "implied_core_density_pct": 41.63,
+            "fits_at_target_density": true
+          },
+          "librelane_flow_of_record": {
+            "cell_area_um2": 378066.857,
+            "required_core_area_at_target_density_um2": 630111.4283,
+            "implied_core_density_pct": 50.44,
+            "fits_at_target_density": true
+          }
+        }
+      },
+      "6x1": {
+        "die_um": [
+          1289.28,
+          154.98
+        ],
+        "die_area_um2": 199812.6144,
+        "core_um": [
+          1283.52,
+          147.42
+        ],
+        "core_area_um2": 189216.5184,
+        "sram_macro": {
+          "fits_upright": true,
+          "fits_rotated_r90": false,
+          "fits": true,
+          "macro_fraction_of_core_area_pct": 14.87
+        },
+        "ff_memory_cell_area_vs_core": {
+          "klt_openroad_iteration_flow": {
+            "cell_area_um2": 312062.8896,
+            "required_core_area_at_target_density_um2": 520104.816,
+            "implied_core_density_pct": 164.92,
+            "fits_at_target_density": false
+          },
+          "librelane_flow_of_record": {
+            "cell_area_um2": 378066.857,
+            "required_core_area_at_target_density_um2": 630111.4283,
+            "implied_core_density_pct": 199.81,
+            "fits_at_target_density": false
+          }
+        }
+      },
+      "6x2": {
+        "die_um": [
+          1289.28,
+          313.74
+        ],
+        "die_area_um2": 404498.7072,
+        "core_um": [
+          1283.52,
+          306.18
+        ],
+        "core_area_um2": 392988.1536,
+        "sram_macro": {
+          "fits_upright": true,
+          "fits_rotated_r90": true,
+          "fits": true,
+          "macro_fraction_of_core_area_pct": 7.16
+        },
+        "ff_memory_cell_area_vs_core": {
+          "klt_openroad_iteration_flow": {
+            "cell_area_um2": 312062.8896,
+            "required_core_area_at_target_density_um2": 520104.816,
+            "implied_core_density_pct": 79.41,
+            "fits_at_target_density": false
+          },
+          "librelane_flow_of_record": {
+            "cell_area_um2": 378066.857,
+            "required_core_area_at_target_density_um2": 630111.4283,
+            "implied_core_density_pct": 96.2,
+            "fits_at_target_density": false
+          }
+        }
+      },
+      "6x4": {
+        "die_um": [
+          1289.28,
+          710.64
+        ],
+        "die_area_um2": 916213.9392,
+        "core_um": [
+          1283.52,
+          703.08
+        ],
+        "core_area_um2": 902417.2416,
+        "sram_macro": {
+          "fits_upright": true,
+          "fits_rotated_r90": true,
+          "fits": true,
+          "macro_fraction_of_core_area_pct": 3.12
+        },
+        "ff_memory_cell_area_vs_core": {
+          "klt_openroad_iteration_flow": {
+            "cell_area_um2": 312062.8896,
+            "required_core_area_at_target_density_um2": 520104.816,
+            "implied_core_density_pct": 34.58,
+            "fits_at_target_density": true
+          },
+          "librelane_flow_of_record": {
+            "cell_area_um2": 378066.857,
+            "required_core_area_at_target_density_um2": 630111.4283,
+            "implied_core_density_pct": 41.89,
+            "fits_at_target_density": true
+          }
+        }
+      },
+      "8x1": {
+        "die_um": [
+          1724.16,
+          154.98
+        ],
+        "die_area_um2": 267210.3168,
+        "core_um": [
+          1718.4,
+          147.42
+        ],
+        "core_area_um2": 253326.528,
+        "sram_macro": {
+          "fits_upright": true,
+          "fits_rotated_r90": false,
+          "fits": true,
+          "macro_fraction_of_core_area_pct": 11.1
+        },
+        "ff_memory_cell_area_vs_core": {
+          "klt_openroad_iteration_flow": {
+            "cell_area_um2": 312062.8896,
+            "required_core_area_at_target_density_um2": 520104.816,
+            "implied_core_density_pct": 123.19,
+            "fits_at_target_density": false
+          },
+          "librelane_flow_of_record": {
+            "cell_area_um2": 378066.857,
+            "required_core_area_at_target_density_um2": 630111.4283,
+            "implied_core_density_pct": 149.24,
+            "fits_at_target_density": false
+          }
+        }
+      },
+      "8x2": {
+        "die_um": [
+          1724.16,
+          313.74
+        ],
+        "die_area_um2": 540937.9584,
+        "core_um": [
+          1718.4,
+          306.18
+        ],
+        "core_area_um2": 526139.712,
+        "sram_macro": {
+          "fits_upright": true,
+          "fits_rotated_r90": true,
+          "fits": true,
+          "macro_fraction_of_core_area_pct": 5.35
+        },
+        "ff_memory_cell_area_vs_core": {
+          "klt_openroad_iteration_flow": {
+            "cell_area_um2": 312062.8896,
+            "required_core_area_at_target_density_um2": 520104.816,
+            "implied_core_density_pct": 59.31,
+            "fits_at_target_density": true
+          },
+          "librelane_flow_of_record": {
+            "cell_area_um2": 378066.857,
+            "required_core_area_at_target_density_um2": 630111.4283,
+            "implied_core_density_pct": 71.86,
+            "fits_at_target_density": false
+          }
+        }
+      },
+      "8x4": {
+        "die_um": [
+          1724.16,
+          710.64
+        ],
+        "die_area_um2": 1225257.0624,
+        "core_um": [
+          1718.4,
+          703.08
+        ],
+        "core_area_um2": 1208172.672,
+        "sram_macro": {
+          "fits_upright": true,
+          "fits_rotated_r90": true,
+          "fits": true,
+          "macro_fraction_of_core_area_pct": 2.33
+        },
+        "ff_memory_cell_area_vs_core": {
+          "klt_openroad_iteration_flow": {
+            "cell_area_um2": 312062.8896,
+            "required_core_area_at_target_density_um2": 520104.816,
+            "implied_core_density_pct": 25.83,
+            "fits_at_target_density": true
+          },
+          "librelane_flow_of_record": {
+            "cell_area_um2": 378066.857,
+            "required_core_area_at_target_density_um2": 630111.4283,
+            "implied_core_density_pct": 31.29,
+            "fits_at_target_density": true
+          }
+        }
+      }
+    }
+  }
+}

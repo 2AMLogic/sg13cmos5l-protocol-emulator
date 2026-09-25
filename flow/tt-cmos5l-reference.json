@@ -1,0 +1,167 @@
+{
+  "_comment": [
+    "Vendored, provenance-stamped constants taken from the COMPETITION'S",
+    "FLOW OF RECORD's own tooling (DR 0002: the Tiny Tapeout CMOS5L",
+    "template driving LibreLane through `tt-gds-action`), so this repo's",
+    "tile-budget arithmetic cites the flow that actually sizes the die",
+    "rather than an order-of-magnitude figure from a template comment.",
+    "",
+    "WHY THIS FILE EXISTS (issue #39): every tile-budget comparison this",
+    "repo had made before 2026-09-24 used `1 tile ~= 167 x 108 um` -- the",
+    "number in the template's own `info.yaml` comment, which that comment",
+    "and this repo's records both correctly labelled an order of magnitude",
+    "with no inter-tile spacing or margin stated. The flow of record does",
+    "not use that number: `tt-support-tools`' `Project.create_user_config`",
+    "sets LibreLane's `DIE_AREA` directly from",
+    "`tech/ihp-sg13cmos5l/tile_sizes.yaml`, keyed by `info.yaml`'s `tiles`",
+    "string. Those are the die areas the submitted design is actually",
+    "hardened into, and they are between 1.7x and 2.2x the areas the",
+    "167x108 arithmetic produces. `spec/decision-records/0005-*.md` records",
+    "the correction and what it changes.",
+    "",
+    "APPEND-ONLY DISCIPLINE: this file states upstream facts, not this",
+    "repo's own measurements. Re-vendor it (new `vendored` block, new",
+    "paragraph here) when the upstream ref moves; never silently edit a",
+    "value under an old provenance stamp."
+  ],
+
+  "schema_version": 1,
+
+  "tile_sizes": {
+    "vendored": {
+      "repo": "TinyTapeout/tt-support-tools",
+      "ref": "ihp-sg13cmos5l",
+      "ref_commit": "d66cf179e7bc4d296362ab7e2e3b344dc3c4f665",
+      "ref_commit_date": "2026-09-21T21:11:38Z",
+      "path": "tech/ihp-sg13cmos5l/tile_sizes.yaml",
+      "blob_sha": "cb96d4e7831e4cce1e22ac38e462be2e2ed3ee3f",
+      "retrieved": "2026-09-24",
+      "why_this_ref": [
+        "`.github/workflows/gds.yaml` in this repo pins",
+        "`TinyTapeout/tt-gds-action@ihp-cmos5l`, whose `action.yml` defaults",
+        "`tools-ref` to the `ihp-sg13cmos5l` branch of tt-support-tools.",
+        "tt-gds-action@ihp-cmos5l head at retrieval:",
+        "3412659307918422f3f0727917cf9b499aaca588 (2026-09-14T11:07:02Z)."
+      ],
+      "consumed_by": "Project.create_user_config() -> LibreLane DIE_AREA (project.py)"
+    },
+    "units": "um, as the LibreLane DIE_AREA 4-tuple 'llx lly urx ury'",
+    "die_area": {
+      "1x1": [0.0, 0.0, 202.08, 154.98],
+      "1x2": [0.0, 0.0, 202.08, 313.74],
+      "2x1": [0.0, 0.0, 419.52, 154.98],
+      "2x2": [0.0, 0.0, 419.52, 313.74],
+      "3x1": [0.0, 0.0, 636.96, 154.98],
+      "3x2": [0.0, 0.0, 636.96, 313.74],
+      "3x4": [0.0, 0.0, 636.96, 710.64],
+      "4x1": [0.0, 0.0, 854.40, 154.98],
+      "4x2": [0.0, 0.0, 854.40, 313.74],
+      "4x4": [0.0, 0.0, 854.40, 710.64],
+      "5x4": [0.0, 0.0, 1071.84, 710.64],
+      "6x1": [0.0, 0.0, 1289.28, 154.98],
+      "6x2": [0.0, 0.0, 1289.28, 313.74],
+      "6x4": [0.0, 0.0, 1289.28, 710.64],
+      "8x1": [0.0, 0.0, 1724.16, 154.98],
+      "8x2": [0.0, 0.0, 1724.16, 313.74],
+      "8x4": [0.0, 0.0, 1724.16, 710.64]
+    }
+  },
+
+  "precheck_valid_layers": {
+    "vendored": {
+      "repo": "TinyTapeout/tt-support-tools",
+      "ref": "ihp-sg13cmos5l",
+      "ref_commit": "d66cf179e7bc4d296362ab7e2e3b344dc3c4f665",
+      "path": "precheck/tech_data.py",
+      "symbol": "valid_layers_ihp_sg13cmos5l",
+      "blob_sha": "f42a2d3270b12ecc455ca0fab31189fd05d3239d",
+      "retrieved": "2026-09-24",
+      "consumed_by": "precheck.layer_check() -- rejects any GDS layer/datatype not on this list"
+    },
+    "_note": [
+      "Names are resolved to (layer, datatype) pairs through the PDK's own",
+      "`libs.tech/klayout/tech/sg13cmos5l.lyp`, which is exactly what",
+      "`precheck.load_layers()` does. Note that `SRAM.drawing` (25/0) and",
+      "`DigiBnd.drawing` (16/0) are on this allowlist: the competition's",
+      "own precheck already anticipates an SRAM bit-cell marker inside a",
+      "CMOS5L user project."
+    ],
+    "layer_names": [
+      "Substrate.drawing", "Substrate.text", "Activ.drawing", "Activ.label",
+      "Activ.nofill", "Activ.pin", "GatPoly.drawing", "GatPoly.label",
+      "GatPoly.nofill", "GatPoly.pin", "PolyRes.drawing", "PolyRes.label",
+      "PolyRes.pin", "NWell.drawing", "NWell.label", "NWell.pin",
+      "PWell.block", "pSD.drawing", "nSD.drawing", "nSD.block",
+      "SalBlock.drawing", "ThickGateOx.drawing", "Cont.drawing",
+      "Metal1.drawing", "Metal1.label", "Metal1.nofill", "Metal1.pin",
+      "Metal1.slit", "Metal1.text", "Metal1.res", "Via1.drawing",
+      "Metal2.drawing", "Metal2.label", "Metal2.nofill", "Metal2.pin",
+      "Metal2.slit", "Metal2.text", "Metal2.res", "Via2.drawing",
+      "Via2.net", "Via2.boundary", "Metal3.drawing", "Metal3.label",
+      "Metal3.nofill", "Metal3.pin", "Metal3.slit", "Metal3.text",
+      "Metal3.res", "Via3.drawing", "Metal4.drawing", "Metal4.label",
+      "Metal4.nofill", "Metal4.pin", "Metal4.slit", "Metal4.text",
+      "Metal4.res", "TopMetal1.nofill", "TEXT.drawing", "Recog.drawing",
+      "Recog.pin", "Recog.esd", "Recog.diode", "Recog.tsv", "Recog.pdiode",
+      "Recog.mom", "RES.drawing", "RES.label", "SRAM.drawing",
+      "DigiBnd.drawing", "HeatRes.drawing", "EXTBlock.drawing",
+      "prBoundary.drawing", "prBoundary.label", "prBoundary.boundary"
+    ]
+  },
+
+  "librelane_margins": {
+    "_note": [
+      "From this repo's own `src/config.json` (verbatim from the template).",
+      "LibreLane multiplies these by the site dimensions of the standard-cell",
+      "SITE to inset the core area from the die area; the script reads the",
+      "SITE size out of `sg13cmos5l_stdcell.lef` rather than hardcoding it."
+    ],
+    "LEFT_MARGIN_MULT": 6,
+    "RIGHT_MARGIN_MULT": 6,
+    "TOP_MARGIN_MULT": 1,
+    "BOTTOM_MARGIN_MULT": 1,
+    "PL_TARGET_DENSITY_PCT": 60
+  },
+
+  "pdk_install": {
+    "_note": [
+      "How the flow of record materializes the PDK, which is what decides",
+      "whether `sg13cmos5l_sram` is reachable in CI at all."
+    ],
+    "installer": "TinyTapeout/tt-gds-action@ihp-cmos5l:install_sg13cmos5l.sh",
+    "source_repo": "https://github.com/IHP-GmbH/IHP-Open-PDK.git",
+    "source_rev": "2bbec755dc67ca3db0261c3d6163e15735d66710",
+    "method": "git fetch --depth 1 <rev> && git checkout FETCH_HEAD into $PDK_ROOT",
+    "consequence": [
+      "The whole IHP-Open-PDK tree is checked out, not just the",
+      "`ihp-sg13cmos5l/` subtree -- which matters because at that revision",
+      "`ihp-sg13cmos5l/libs.ref/sg13cmos5l_sram` is a SYMLINK to",
+      "`../../ihp-sg13g2/libs.ref/sg13g2_sram` (git tree mode 120000).",
+      "The symlink therefore resolves in CI; it would not if only the",
+      "CMOS5L subtree were installed."
+    ]
+  },
+
+  "committed_ff_memory_measurements": {
+    "_note": [
+      "Restated, not re-measured. Both figures are already committed",
+      "evidence; they are repeated here only so the tile-budget arithmetic",
+      "has one input table. CLAUDE.md two-flows rule: each carries its flow."
+    ],
+    "klt_openroad_iteration_flow": {
+      "flow": "klt synthesize + klt place-and-route (OpenROAD), DR 0002 iteration flow",
+      "source": "verification/records/die-area-baseline/records/20260922-012402-420c370.md",
+      "design": "rtl/protocol_program_memory.v (program memory alone, no ISA core)",
+      "cell_area_um2": 312062.8896,
+      "die_area_um2": 787434.0,
+      "placed_utilization_pct": 41.92
+    },
+    "librelane_flow_of_record": {
+      "flow": "LibreLane via tt-gds-action (competition sign-off flow), DR 0002 flow of record",
+      "source": "PR #38 thread, gds workflow run 35677496675 (NOT a committed record in this repo)",
+      "design": "full design = ISA core datapath + program memory, at tiles 1x1",
+      "cell_area_um2": 378066.857,
+      "outcome": "OpenROAD global placement aborted: GPL-0301 Utilization 1306.314%"
+    }
+  }
+}

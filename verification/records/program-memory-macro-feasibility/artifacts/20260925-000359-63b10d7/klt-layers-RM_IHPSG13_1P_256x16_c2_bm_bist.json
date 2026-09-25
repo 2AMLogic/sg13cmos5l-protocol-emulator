@@ -1,0 +1,197 @@
+{
+  "schema_version": 1,
+  "file": "/home/ubuntu/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_sram/gds/RM_IHPSG13_1P_256x16_c2_bm_bist.gds",
+  "dbu_um": 0.001,
+  "layer_count": 27,
+  "layers": [
+    {
+      "layer": 1,
+      "datatype": 0,
+      "name": null,
+      "shapes": 211,
+      "annotation": false
+    },
+    {
+      "layer": 5,
+      "datatype": 0,
+      "name": null,
+      "shapes": 166,
+      "annotation": false
+    },
+    {
+      "layer": 6,
+      "datatype": 0,
+      "name": null,
+      "shapes": 1070,
+      "annotation": false
+    },
+    {
+      "layer": 8,
+      "datatype": 0,
+      "name": null,
+      "shapes": 437,
+      "annotation": false
+    },
+    {
+      "layer": 8,
+      "datatype": 2,
+      "name": null,
+      "shapes": 363,
+      "annotation": false
+    },
+    {
+      "layer": 8,
+      "datatype": 25,
+      "name": null,
+      "shapes": 61,
+      "annotation": false
+    },
+    {
+      "layer": 8,
+      "datatype": 29,
+      "name": null,
+      "shapes": 1,
+      "annotation": false
+    },
+    {
+      "layer": 10,
+      "datatype": 0,
+      "name": null,
+      "shapes": 737,
+      "annotation": false
+    },
+    {
+      "layer": 10,
+      "datatype": 2,
+      "name": null,
+      "shapes": 218,
+      "annotation": false
+    },
+    {
+      "layer": 10,
+      "datatype": 25,
+      "name": null,
+      "shapes": 210,
+      "annotation": false
+    },
+    {
+      "layer": 10,
+      "datatype": 29,
+      "name": null,
+      "shapes": 2,
+      "annotation": false
+    },
+    {
+      "layer": 14,
+      "datatype": 0,
+      "name": null,
+      "shapes": 99,
+      "annotation": false
+    },
+    {
+      "layer": 16,
+      "datatype": 0,
+      "name": null,
+      "shapes": 47,
+      "annotation": false
+    },
+    {
+      "layer": 19,
+      "datatype": 0,
+      "name": null,
+      "shapes": 74,
+      "annotation": false
+    },
+    {
+      "layer": 25,
+      "datatype": 0,
+      "name": null,
+      "shapes": 4,
+      "annotation": false
+    },
+    {
+      "layer": 29,
+      "datatype": 0,
+      "name": null,
+      "shapes": 70,
+      "annotation": false
+    },
+    {
+      "layer": 30,
+      "datatype": 0,
+      "name": null,
+      "shapes": 522,
+      "annotation": false
+    },
+    {
+      "layer": 30,
+      "datatype": 2,
+      "name": null,
+      "shapes": 250,
+      "annotation": false
+    },
+    {
+      "layer": 30,
+      "datatype": 25,
+      "name": null,
+      "shapes": 202,
+      "annotation": false
+    },
+    {
+      "layer": 30,
+      "datatype": 29,
+      "name": null,
+      "shapes": 2,
+      "annotation": false
+    },
+    {
+      "layer": 31,
+      "datatype": 0,
+      "name": null,
+      "shapes": 56,
+      "annotation": false
+    },
+    {
+      "layer": 49,
+      "datatype": 0,
+      "name": null,
+      "shapes": 27,
+      "annotation": false
+    },
+    {
+      "layer": 50,
+      "datatype": 0,
+      "name": null,
+      "shapes": 39,
+      "annotation": false
+    },
+    {
+      "layer": 50,
+      "datatype": 2,
+      "name": null,
+      "shapes": 56,
+      "annotation": false
+    },
+    {
+      "layer": 50,
+      "datatype": 25,
+      "name": null,
+      "shapes": 56,
+      "annotation": false
+    },
+    {
+      "layer": 63,
+      "datatype": 0,
+      "name": null,
+      "shapes": 27,
+      "annotation": false
+    },
+    {
+      "layer": 189,
+      "datatype": 4,
+      "name": null,
+      "shapes": 3,
+      "annotation": false
+    }
+  ]
+}

@@ -17,12 +17,23 @@ project:
   language:     "Verilog"
   clock_hz:     50000000 # 50 MHz -- the draft board-clock target in README.md's target spec table (DRAFT, unratified)
 
-  # How many tiles your design occupies? A single tile is about 167x108 uM.
-  tiles: "1x1"          # measured, not a placeholder, for the stub top actually submitted: die 1651.61 um^2 = 0.092 tiles
-                        # (klt place-and-route record 20260922-012402-420c370, issue #21). NOT grown to fit the real RTL:
-                        # the program memory alone measures 4.33x the ratified <=2x2 budget in cell area (same record), and
-                        # the budget is a ratified target, not a suggestion -- resolving that non-fit (SRAM macro per row 6,
-                        # or an AREA-EFF budget revision) is a spec decision record, not a tiles edit here.
+  # How many tiles your design occupies?
+  #
+  # NOTE (2026-09-25, issue #39): the template's own comment here used to read
+  # "A single tile is about 167x108 uM". That is an order-of-magnitude figure
+  # and is NOT what the flow of record uses. tt-support-tools sets LibreLane's
+  # DIE_AREA from tech/ihp-sg13cmos5l/tile_sizes.yaml: 1x1 = 202.08 x 154.98 um,
+  # 2x2 = 419.52 x 313.74 um, 8x4 = 1724.16 x 710.64 um. See
+  # verification/records/program-memory-macro-feasibility/records/20260925-000359-63b10d7.md.
+  tiles: "1x1"          # measured, not a placeholder, for the stub top actually submitted: die 1651.61 um^2
+                        # (klt place-and-route record 20260922-012402-420c370, issue #21) = 0.053 tiles at the
+                        # corrected 1x1 die area above (that record's own "0.092 tiles" used the 167x108 figure).
+                        # NOT grown to fit the real RTL: the flip-flop program memory alone measures 2.46x (klt flow)
+                        # to 2.98x (LibreLane flow) the ENTIRE ratified <=2x2 core area in cell area, so no utilization
+                        # setting fits it. The budget is a ratified target, not a suggestion -- the resolution is
+                        # spec/decision-records/0005-program-memory-implementation.md (take row 6's SRAM-macro stretch;
+                        # do not revise row 7), which is PROPOSED, not yet ratified. `tiles` moves when a real top is
+                        # measured, not on that record's arithmetic -- not a tiles edit here.
 
   # Your top module name must start with "tt_um_". Make it unique by including your github username:
   top_module:  "tt_um_2amlogic_protocol_emulator"

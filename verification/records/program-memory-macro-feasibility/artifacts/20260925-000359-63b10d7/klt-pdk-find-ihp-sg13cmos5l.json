@@ -1,0 +1,134 @@
+{
+  "schema_version": 1,
+  "root": "/home/ubuntu/share/pdk",
+  "variant": "ihp-sg13cmos5l",
+  "version": null,
+  "resolved_via": "search root: ~/share/pdk",
+  "assets": {
+    "ngspice": "/home/ubuntu/share/pdk/ihp-sg13cmos5l/libs.tech/ngspice",
+    "xschem": "/home/ubuntu/share/pdk/ihp-sg13cmos5l/libs.tech/xschem",
+    "klayout": "/home/ubuntu/share/pdk/ihp-sg13cmos5l/libs.tech/klayout",
+    "magic": "/home/ubuntu/share/pdk/ihp-sg13cmos5l/libs.tech/magic",
+    "netgen": "/home/ubuntu/share/pdk/ihp-sg13cmos5l/libs.tech/netgen",
+    "libs_ref": "/home/ubuntu/share/pdk/ihp-sg13cmos5l/libs.ref"
+  },
+  "broken_symlinks": [
+    {
+      "asset": "klayout",
+      "path": "/home/ubuntu/share/pdk/ihp-sg13cmos5l/libs.tech/klayout/python/sg13cmos5l_pycell_lib/callbacks/moscap_cb.tcl"
+    },
+    {
+      "asset": "klayout",
+      "path": "/home/ubuntu/share/pdk/ihp-sg13cmos5l/libs.tech/klayout/python/sg13cmos5l_pycell_lib/ihp/moscap_n_code.py"
+    },
+    {
+      "asset": "klayout",
+      "path": "/home/ubuntu/share/pdk/ihp-sg13cmos5l/libs.tech/klayout/python/sg13cmos5l_pycell_lib/ihp/moscap_p_code.py"
+    },
+    {
+      "asset": "klayout",
+      "path": "/home/ubuntu/share/pdk/ihp-sg13cmos5l/libs.tech/klayout/python/sg13cmos5l_pycell_lib/native_pcells/sg13_klayout_tech_info.py"
+    },
+    {
+      "asset": "klayout",
+      "path": "/home/ubuntu/share/pdk/ihp-sg13cmos5l/libs.tech/klayout/python/sg13cmos5l_pycell_lib/native_pcells/via_pcell.py"
+    },
+    {
+      "asset": "klayout",
+      "path": "/home/ubuntu/share/pdk/ihp-sg13cmos5l/libs.tech/klayout/tech/lvs/rule_decks/cap_cmomf_connections.lvs"
+    },
+    {
+      "asset": "klayout",
+      "path": "/home/ubuntu/share/pdk/ihp-sg13cmos5l/libs.tech/klayout/tech/lvs/rule_decks/cap_cmomf_derivations.lvs"
+    },
+    {
+      "asset": "klayout",
+      "path": "/home/ubuntu/share/pdk/ihp-sg13cmos5l/libs.tech/klayout/tech/lvs/rule_decks/cap_cmomi_connections.lvs"
+    },
+    {
+      "asset": "klayout",
+      "path": "/home/ubuntu/share/pdk/ihp-sg13cmos5l/libs.tech/klayout/tech/lvs/rule_decks/cap_cmomi_derivations.lvs"
+    },
+    {
+      "asset": "klayout",
+      "path": "/home/ubuntu/share/pdk/ihp-sg13cmos5l/libs.tech/klayout/tech/lvs/rule_decks/custom_mom_extractor.lvs"
+    },
+    {
+      "asset": "klayout",
+      "path": "/home/ubuntu/share/pdk/ihp-sg13cmos5l/libs.tech/klayout/tech/lvs/rule_decks/custom_moscap_extractor.lvs"
+    },
+    {
+      "asset": "klayout",
+      "path": "/home/ubuntu/share/pdk/ihp-sg13cmos5l/libs.tech/klayout/tech/lvs/testing/testcases/unit/cap_devices/layout/sg13_moscap_n.gds"
+    },
+    {
+      "asset": "klayout",
+      "path": "/home/ubuntu/share/pdk/ihp-sg13cmos5l/libs.tech/klayout/tech/lvs/testing/testcases/unit/cap_devices/layout/sg13_moscap_n.yaml"
+    },
+    {
+      "asset": "klayout",
+      "path": "/home/ubuntu/share/pdk/ihp-sg13cmos5l/libs.tech/klayout/tech/lvs/testing/testcases/unit/cap_devices/layout/sg13_moscap_p.gds"
+    },
+    {
+      "asset": "klayout",
+      "path": "/home/ubuntu/share/pdk/ihp-sg13cmos5l/libs.tech/klayout/tech/lvs/testing/testcases/unit/cap_devices/layout/sg13_moscap_p.yaml"
+    },
+    {
+      "asset": "klayout",
+      "path": "/home/ubuntu/share/pdk/ihp-sg13cmos5l/libs.tech/klayout/tech/lvs/testing/testcases/unit/cap_devices/netlist/sg13_moscap_n.cdl"
+    },
+    {
+      "asset": "klayout",
+      "path": "/home/ubuntu/share/pdk/ihp-sg13cmos5l/libs.tech/klayout/tech/lvs/testing/testcases/unit/cap_devices/netlist/sg13_moscap_p.cdl"
+    },
+    {
+      "asset": "ngspice",
+      "path": "/home/ubuntu/share/pdk/ihp-sg13cmos5l/libs.tech/ngspice/models/cornerMOSCAP.lib"
+    },
+    {
+      "asset": "ngspice",
+      "path": "/home/ubuntu/share/pdk/ihp-sg13cmos5l/libs.tech/ngspice/models/sg13g2_moscap_mismatch.lib"
+    },
+    {
+      "asset": "ngspice",
+      "path": "/home/ubuntu/share/pdk/ihp-sg13cmos5l/libs.tech/ngspice/models/sg13g2_moscap_mod.lib"
+    },
+    {
+      "asset": "ngspice",
+      "path": "/home/ubuntu/share/pdk/ihp-sg13cmos5l/libs.tech/ngspice/models/sg13g2_moscap_mod_mismatch.lib"
+    },
+    {
+      "asset": "ngspice",
+      "path": "/home/ubuntu/share/pdk/ihp-sg13cmos5l/libs.tech/ngspice/models/sg13g2_moscap_parm.lib"
+    },
+    {
+      "asset": "ngspice",
+      "path": "/home/ubuntu/share/pdk/ihp-sg13cmos5l/libs.tech/ngspice/models/sg13g2_moscap_stat.lib"
+    },
+    {
+      "asset": "xschem",
+      "path": "/home/ubuntu/share/pdk/ihp-sg13cmos5l/libs.tech/xschem/sg13cmos5l_pr/moscap_n.sym"
+    },
+    {
+      "asset": "xschem",
+      "path": "/home/ubuntu/share/pdk/ihp-sg13cmos5l/libs.tech/xschem/sg13cmos5l_pr/moscap_p.sym"
+    },
+    {
+      "asset": "xschem",
+      "path": "/home/ubuntu/share/pdk/ihp-sg13cmos5l/libs.tech/xschem/tests/tran_moscap_n.sch"
+    },
+    {
+      "asset": "xschem",
+      "path": "/home/ubuntu/share/pdk/ihp-sg13cmos5l/libs.tech/xschem/tests/tran_moscap_n.sym"
+    },
+    {
+      "asset": "xschem",
+      "path": "/home/ubuntu/share/pdk/ihp-sg13cmos5l/libs.tech/xschem/tests/tran_moscap_p.sch"
+    },
+    {
+      "asset": "xschem",
+      "path": "/home/ubuntu/share/pdk/ihp-sg13cmos5l/libs.tech/xschem/tests/tran_moscap_p.sym"
+    }
+  ],
+  "has_pcell_library": true
+}
