@@ -1,12 +1,31 @@
 # 0004: Target-Spec Ratification
 
-Status: Ratified 2026-09-21 — this record is itself part of the act it
-describes: it is ratified by the same two `RATIFY-KEY` reviews on the
-carrying PR that ratify `spec/target-spec.md` (see "The binding process"
-below). If that PR merged without both key reviews, this record's
-`Ratified` line is invalid until superseded by a later record that says so.
+Status: **Proposed — the ratification act this record describes was never
+performed.** Reconciled 2026-09-26 per
+[`0006-two-key-ratification-never-ran.md`](0006-two-key-ratification-never-ran.md),
+which is the *"later record that says so"* the line below requires. The
+carrying PR was **#29**; it merged at 2026-09-21T19:07:39Z (merge commit
+`8be9d1e`) with **zero** `RATIFY-KEY` reviews — in fact with zero PR reviews
+of any kind — and without `loom:auto-merge-ok`. The invalidation clause below
+therefore fires on its own terms: this record's `Ratified` line was invalid
+from the moment it merged, and the Status lines it flipped on DRs 0001–0003
+and `spec/target-spec.md` are reopened rather than inherited (DR 0006's table
+does that reopening file by file). **Everything below this header stands
+unchanged** — the per-row register, the binding/evidenced separation, the
+alternatives considered, and the rejection of pipeline approval as a
+substitute for a key are all reaffirmed by DR 0006, not weakened by it. What
+is missing is the act, and an act cannot be supplied by describing it.
 Date: 2026-09-21
 Issue: #17
+
+> **Status line as written 2026-09-21, preserved verbatim (superseded by the
+> line above, not deleted — DR 0006 records why):**
+>
+> Status: Ratified 2026-09-21 — this record is itself part of the act it
+> describes: it is ratified by the same two `RATIFY-KEY` reviews on the
+> carrying PR that ratify `spec/target-spec.md` (see "The binding process"
+> below). If that PR merged without both key reviews, this record's
+> `Ratified` line is invalid until superseded by a later record that says so.
 
 ## Context
 
@@ -80,6 +99,18 @@ The binding process is what makes the above a ratification rather than an
 assertion — see the next section.
 
 ## The binding process (two-key; merge commit = ratification record)
+
+> **2026-09-26 reconciliation — this section describes what should have
+> happened, not what did.** The requirements below are reaffirmed in full and
+> are *not* relaxed; none of them was carried out. The carrying PR (#29,
+> merge commit `8be9d1e`) merged with zero `RATIFY-KEY` reviews and without
+> `loom:auto-merge-ok`, so this section's own last bullet — *"A merge of the
+> carrying PR without both key reviews does not enact this ratification"* — is
+> the operative sentence. See
+> [`0006-two-key-ratification-never-ran.md`](0006-two-key-ratification-never-ran.md).
+> The reason nothing stopped that merge (the mechanism has no enforcement
+> hook; `loom:auto-merge-ok` is an override, not a precondition) is filed
+> separately as issue #45.
 
 Per the program's two-key mechanism ([`ratification/ee-key/SKILL.md`](../../ratification/ee-key/SKILL.md),
 [`ratification/market-key/SKILL.md`](../../ratification/market-key/SKILL.md)):
@@ -168,6 +199,18 @@ correct in exactly that world — the workaround note in its Status area
 records the retirement as follow-up work.
 
 ## Consequences
+
+> **2026-09-26 reconciliation — the first bullet below did not come true.**
+> Because the two-key act was never performed (see this record's Status line
+> and [`0006-two-key-ratification-never-ran.md`](0006-two-key-ratification-never-ran.md)),
+> **T1 item 5's precondition is not satisfied**, and verdicts graded against
+> these rows *remain* provisional by construction — the exact state the
+> Context section above was written to end. `manifests/README.md` already
+> records item 5 as unmet with "an unratified spec (#17)" among its reasons;
+> that line is accurate. The remaining bullets are unaffected: the
+> register-vs-tracker split, the new-decision-record requirement for any row
+> change, the relax-after-measured-FAIL escalation, and the market key's
+> comp-data starting point all stand as written and are reaffirmed.
 
 - The spec-of-record now exists: T1 item 5's precondition is satisfied.
   The next evidence runs (STA on the flow of record, the formal properties,

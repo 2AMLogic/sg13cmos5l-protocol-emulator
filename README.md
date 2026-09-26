@@ -65,9 +65,18 @@ using IHP SG13CMOS5L, not just this repo.
 
 The full target-spec table — every commitment, its source citation, and
 what verification artifact checks it — lives in
-[`spec/target-spec.md`](spec/target-spec.md) (Status: **RATIFIED**
-2026-09-21 via the two-key mechanism; record:
+[`spec/target-spec.md`](spec/target-spec.md) (Status: **PROPOSED — not
+ratified**; the per-row register is
 [`spec/decision-records/0004-target-spec-ratification.md`](spec/decision-records/0004-target-spec-ratification.md)).
+**The two-key (`RATIFY-KEY`) ratification mechanism has never run in this
+repository** — no PR in its history carries a key review, so the 2026-09-21
+`RATIFIED` claim was an assertion rather than an act and has been reconciled
+to `Proposed` per DR 0004's own invalidation clause. The finding of fact, what
+it does and does not change, and what is required to close it out are in
+[`spec/decision-records/0006-two-key-ratification-never-ran.md`](spec/decision-records/0006-two-key-ratification-never-ran.md)
+(issue #44). No spec content changed — only the claim that it binds — but
+every verdict graded against these rows stays provisional by construction
+(T1 item 5) until the keys actually land.
 Design decisions behind those targets (the ISA, which flow produces the submitted
 GDS, the firmware toolchain) are recorded in
 [`spec/decision-records/`](spec/decision-records/). What's judged and how
