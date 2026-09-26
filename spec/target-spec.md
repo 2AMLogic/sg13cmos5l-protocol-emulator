@@ -1,24 +1,55 @@
 # Target Specification
 
-Status: **RATIFIED** — proposed 2026-09-14 in issue #1; ratified
-2026-09-21 in issue #17, via the program's two-key (EE + market) mechanism:
-the ratification act is the two `RATIFY-KEY` reviews on the PR that carries
-[`decision-records/0004-target-spec-ratification.md`](decision-records/0004-target-spec-ratification.md)
-(neither key held by that PR's author or the design's author — the marker
-convention both keys follow is documented in this repo's installed
-[`ratification/ee-key/SKILL.md`](../ratification/ee-key/SKILL.md) and
-[`ratification/market-key/SKILL.md`](../ratification/market-key/SKILL.md),
-"Output format"), and the merge commit is the ratification record. The
-ratification binds the **rows as targets** — every row's ratified state is
-explicit in the State column below and in
-[`decision-records/0004`](decision-records/0004-target-spec-ratification.md)'s
-per-row register; no row is carried as *met* unless its State says so, and
-the rows whose evidence does not exist yet (2, 10–12: no evidence at all;
-4, 7: cell counts only, no STA or die-area number on either flow) are
-ratified as targets with that said out loud. What made it a *spec* rather
-than a wishlist before ratification still holds: every row carries a
-citable source and a description of how the verification suite checks it,
-per `spec/verification-plan.md`.
+Status: **PROPOSED — not ratified.** Proposed 2026-09-14 in issue #1.
+Reconciled 2026-09-26 per
+[`decision-records/0006-two-key-ratification-never-ran.md`](decision-records/0006-two-key-ratification-never-ran.md):
+the 2026-09-21 `RATIFIED` claim below rested on an act that never happened.
+The PR carrying
+[`decision-records/0004`](decision-records/0004-target-spec-ratification.md)
+was **#29**, and it merged (merge commit `8be9d1e`) with **zero**
+`RATIFY-KEY` reviews — in fact with zero PR reviews of any kind. The
+§ "Ratification" section's own clause therefore fires: *"If this file's
+Status reads `RATIFIED` but the ratifying PR's record cannot show both key
+reviews, the ratification did not happen by mechanism, and this status is
+invalid until superseded by a later record that says so."* DR 0006 is that
+record.
+
+**Nothing in the table below changes.** Every row's target, stretch entry,
+citable source, checking artifact, and `State` reading stands exactly as
+written, and DR 0004's load-bearing separation — what a ratification *binds*
+versus whether the design has *met* it — is preserved intact: no row moves
+between target and met in either direction. What the reconciliation withdraws
+is only the claim that these rows *bind by mechanism*. They are this repo's
+proposed spec-of-record, unratified, and every verdict graded against them
+stays provisional by construction (T1 item 5) until two `RATIFY-KEY` reviews
+land on a carrying PR. The `[DR-4]` markers in the State column should be
+read as *"as DR 0004 proposes to bind it"*, not as a completed ratification.
+What made this a *spec* rather than a wishlist is unaffected: every row
+carries a citable source and a description of how the verification suite
+checks it, per `spec/verification-plan.md`.
+
+> **Status line as written 2026-09-21, preserved verbatim (superseded by the
+> text above, not deleted — DR 0006 records why):**
+>
+> Status: **RATIFIED** — proposed 2026-09-14 in issue #1; ratified
+> 2026-09-21 in issue #17, via the program's two-key (EE + market) mechanism:
+> the ratification act is the two `RATIFY-KEY` reviews on the PR that carries
+> [`decision-records/0004-target-spec-ratification.md`](decision-records/0004-target-spec-ratification.md)
+> (neither key held by that PR's author or the design's author — the marker
+> convention both keys follow is documented in this repo's installed
+> [`ratification/ee-key/SKILL.md`](../ratification/ee-key/SKILL.md) and
+> [`ratification/market-key/SKILL.md`](../ratification/market-key/SKILL.md),
+> "Output format"), and the merge commit is the ratification record. The
+> ratification binds the **rows as targets** — every row's ratified state is
+> explicit in the State column below and in
+> [`decision-records/0004`](decision-records/0004-target-spec-ratification.md)'s
+> per-row register; no row is carried as *met* unless its State says so, and
+> the rows whose evidence does not exist yet (2, 10–12: no evidence at all;
+> 4, 7: cell counts only, no STA or die-area number on either flow) are
+> ratified as targets with that said out loud. What made it a *spec* rather
+> than a wishlist before ratification still holds: every row carries a
+> citable source and a description of how the verification suite checks it,
+> per `spec/verification-plan.md`.
 
 This table supersedes the draft table formerly inline in `README.md` (see
 that file's "Target specification" section, now a pointer here). Rationale
@@ -68,6 +99,19 @@ themselves — lives in `spec/decision-records/`.
 | 12 | I2C timing | Standard-mode (100 kHz) and Fast-mode (400 kHz), controller role, meeting `t_LOW`, `t_HIGH`, `t_HD;STA`, `t_SU;STA`, `t_SU;STO` minimums | Fast-mode Plus (1 MHz) | NXP UM10204 "I²C-bus specification and user manual," Rev. 6 (2014), Table 10 (Standard/Fast-mode AC characteristics) | Formal property on ACK-window timing plus I2C constrained-random suite (§2 and §4, verification-plan.md) against an independent I2C reference model | Target [DR-4] — unmet, no evidence yet (the UM10204 minimums are bound as targets; the formal property and I2C suite do not exist — ratified as a *target*, not carried as met) |
 
 ## Ratification
+
+> **2026-09-26 reconciliation — the act described in this section was not
+> performed.** The PR carrying DR 0004 was **#29**; it merged (merge commit
+> `8be9d1e`) with **zero** `RATIFY-KEY` reviews and without
+> `loom:auto-merge-ok`. Everything from here to the end of this section is
+> preserved verbatim as written on 2026-09-21 — read the first paragraph as
+> the ratification this repo *intended*, not one it carried out. The second
+> paragraph's *"it cannot substitute for the two keys"* and the third
+> paragraph's *"this status is invalid until superseded by a later record that
+> says so"* are the operative sentences, and they are reaffirmed, not relaxed.
+> The later record is
+> [`decision-records/0006-two-key-ratification-never-ran.md`](decision-records/0006-two-key-ratification-never-ran.md);
+> the missing enforcement hook that let the merge happen is issue #45.
 
 Ratified 2026-09-21 via the program's two-key mechanism (issue #17): an
 **EE key** and a **market key**, neither held by the ratifying PR's author

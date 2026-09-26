@@ -8,6 +8,27 @@ PR's history shows **two** `RATIFY-KEY` reviews — one EE key, one market
 key, neither held by this record's author — and the merge commit is the
 ratification act. Until then it is a proposal with measured evidence, not a
 binding decision.
+
+**Status resolved 2026-09-26 (issue #44): still `Proposed`, and now with a
+named reason.** Its carrying PR (#43, merge commit `a59a0f3`) merged with zero
+`RATIFY-KEY` reviews, and this record correctly declined to self-certify —
+its Status line above already required the two keys, and PR #43 left the
+corresponding checklist item unticked with *"not satisfied by this PR, and
+cannot be."* That was the right behaviour and nothing about it is disturbed
+here. What
+[`0006-two-key-ratification-never-ran.md`](0006-two-key-ratification-never-ran.md)
+adds is the reason it is still waiting: the two-key mechanism has never run on
+any PR in this repository, so there is currently **no path to ratification for
+this record at all** — it is the standing demonstration of that gap, not an
+instance of it. Two corollaries, recorded so they are tracked rather than
+assumed: (1) **what this being unratified blocks** — the SRAM-macro path is a
+measured proposal, not the decided implementation path, so issue #18 / PR #38's
+acceptance criterion 4 waits on it (with #20 and #23 downstream of #18), and
+`spec/target-spec.md` rows 6 and 7 stay unmet and bound as written while
+`info.yaml`'s `tiles: "1x1"` stays put; (2) **this record's title says
+"Ratified Area Budget"** — as of the 2026-09-26 reconciliation that budget
+(row 7) is *proposed*, not ratified. The title is left unchanged so existing
+citations keep resolving; read it as naming the row, not asserting its status.
 Date: 2026-09-25
 Issue: #39
 
