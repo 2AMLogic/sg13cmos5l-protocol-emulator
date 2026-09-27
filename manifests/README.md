@@ -20,7 +20,9 @@ this block's row by its `block` field.
 | File | What it is |
 |---|---|
 | [`sg13cmos5l-protocol-emulator.json`](sg13cmos5l-protocol-emulator.json) | The block manifest itself. `block` (required — the fleet roll-up's row identity) and `kind` are the two declarations; `evidence` maps T1 item ids to their citations. |
-| [`design-evidence-tiers.md`](design-evidence-tiers.md) | The vendored `klayout-tools` evidence-tiers checklist `klt signoff` grades against (see "The vendored tiers doc" below for its provenance and the rule for refreshing it). |
+
+There is no longer a vendored copy of the evidence-tiers checklist in this
+directory — see "The vendored tiers doc" below for why it was retired.
 
 ## How the report is produced and where it lives
 
@@ -40,8 +42,7 @@ why the runner always invokes from the repo root) runs
 
 ```bash
 klt signoff --manifest manifests/sg13cmos5l-protocol-emulator.json \
-            --format json \
-            --tiers-doc manifests/design-evidence-tiers.md
+            --format json
 ```
 
 and checks that the `klt` on `PATH` is at the pinned commit before grading.
@@ -184,6 +185,34 @@ produced" above), and a `klt` pin bump that brings the tool's own bundled
 doc to eleven or more items may retire the vendored copy — do that
 retirement in its own change, with the commit that makes it true recorded
 here (append-only: never rewrite this paragraph, only add new ones).
+
+**Retired (issue #52).** `manifests/design-evidence-tiers.md` is deleted as
+of this paragraph's commit and `scripts/signoff-report.sh` no longer passes
+`--tiers-doc`. The retirement trigger this section wrote above is satisfied:
+`layout/toolchain.json`'s pin has moved twice since the vendoring decision
+(`5c75708` → `1d964cf4ed93` under issue #20 → `c622e8addb36` / v0.6.0 under
+issue #49), and the tiers doc bundled with the current pin has carried all
+eleven T1 items since before `1d964cf4ed93`. `klt signoff` now resolves the
+checklist from its own packaged/source copy
+(`design_evidence_tiers.default_doc_path()`'s precedence order —
+`$KLT_TIERS_DOC`, then the wheel-packaged `klayout_tools/data/` copy, then
+the source checkout's `docs/design-evidence-tiers.md`), with no repo-local
+override. Re-rendering at the current pin without `--tiers-doc` changed
+exactly three things versus the prior committed report, none of them a
+graded verdict: the `source_doc`/`source_doc_content_hash` fields (now
+naming the pin's own copy instead of the vendored file) and item 11's
+`notes[0]` prose (grew with upstream caveat/known-gap paragraphs added to
+the checklist between the vendored copy's commit and the current pin) —
+every item's `status`/`reason`/`citations`, `t1_item_count` (11), and
+`t1_met_count` (0) are byte-identical to the prior record. The fresh
+append-only signoff-baseline record this change requires is
+`verification/records/signoff-baseline/records/20260927-112359-2baa6f0b.md`,
+superseding `20260927-092721-91f489d4` (not the older
+`20260922-012257-3dbfdc5` this retirement was originally proposed against —
+that record had already been superseded by `20260927-092721-91f489d4` under
+issue #49's klt pin bump by the time this retirement landed, and that
+record still cited the vendored file by content hash, so it is the one this
+retirement's supersession chain must extend).
 
 ## Companion links
 

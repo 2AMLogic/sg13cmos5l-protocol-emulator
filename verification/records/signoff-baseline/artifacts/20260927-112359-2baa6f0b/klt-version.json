@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "version": "0.6.0",
+  "package_version": "0.6.0",
+  "git_commit": "c622e8addb362491664d44ba4d717f354ca88bbd",
+  "git_tag": "v0.6.0",
+  "dirty": false,
+  "is_release": true,
+  "grading_ruleset_id": "sha256:0d8cc27c752ce25fc78499d4c280a4b472c460ac2dbcd38e56c9694485a17156",
+  "klayout_version": "0.30.12",
+  "klayout_version_expected": "0.30.10"
+}

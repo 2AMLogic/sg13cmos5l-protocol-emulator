@@ -5,8 +5,7 @@
 # Runs the pinned invocation
 #
 #   klt signoff --manifest manifests/sg13cmos5l-protocol-emulator.json \
-#               --format json \
-#               --tiers-doc manifests/design-evidence-tiers.md
+#               --format json
 #
 # from the repo root (evidence paths inside the manifest are cwd-relative,
 # so the runner -- not the caller -- owns the working directory), after
@@ -14,6 +13,13 @@
 # `layout/toolchain.json` pins. The rendered report is the verdict of record
 # for this block's T1 state once committed as an evidence record under
 # verification/records/signoff-baseline/ (see manifests/README.md).
+#
+# No `--tiers-doc` override: the pinned `klt` (`layout/toolchain.json`)
+# bundles its own copy of `docs/design-evidence-tiers.md` with all eleven
+# T1 items (issue #52 retired the vendored `manifests/design-evidence-tiers.md`
+# once the pin moved past the checklist's item-11 addition -- see
+# manifests/README.md's "The vendored tiers doc" section for the history and
+# retirement record).
 #
 # Exit codes:
 #   0  Report rendered (klt exitted 0 = every item met, or 3 = at least one
@@ -58,7 +64,6 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 cd "$REPO_ROOT"
 
 MANIFEST="manifests/sg13cmos5l-protocol-emulator.json"
-TIERS_DOC="manifests/design-evidence-tiers.md"
 TOOLCHAIN_JSON="layout/toolchain.json"
 RECORDS_GLOB="verification/records/signoff-baseline/records/*.md"
 
@@ -121,7 +126,7 @@ fi
 FRESH="$(mktemp)"
 trap 'rm -f "$FRESH"' EXIT
 set +e
-"$KLT_BIN" signoff --manifest "$MANIFEST" --format json --tiers-doc "$TIERS_DOC" >"$FRESH"
+"$KLT_BIN" signoff --manifest "$MANIFEST" --format json >"$FRESH"
 KLT_RC=$?
 set -e
 
@@ -166,7 +171,7 @@ if [[ "$CHECK_LATEST" -eq 1 ]]; then
   # permanently green and blind to the manifest rot it exists to catch.
   CHECK_OUT="$(mktemp)"
   set +e
-  "$KLT_BIN" signoff --manifest "$MANIFEST" --format json --tiers-doc "$TIERS_DOC" \
+  "$KLT_BIN" signoff --manifest "$MANIFEST" --format json \
     --check "$COMMITTED" >"$CHECK_OUT"
   CHECK_RC=$?
   set -e
