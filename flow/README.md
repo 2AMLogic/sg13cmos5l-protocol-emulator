@@ -9,6 +9,12 @@ recorded rather than silently resolved.
 
 ## Contents
 
+- `_klt.sh` — sourced-not-executed helper shared by the three bash runners
+  below (`run-sta-corner-sweep.sh`, `run-die-area-par.sh`,
+  `run-post-layout-sdf.sh`): `klt_resolve`, `klt_require_verbs`,
+  `klt_export_pdk_root`, and `klt_response_path` (the `{path, scope}` /
+  `2AMLogic/klayout-tools#2073` unwrap, named in exactly this one place —
+  issue #47).
 - `synthesize-protocol-emulator.json` — a `klt.synthesize.request/1` recipe
   synthesizing `src/tt_um_2amlogic_protocol_emulator.v` against
   `sg13cmos5l_stdcell` via Yosys.

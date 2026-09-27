@@ -100,20 +100,15 @@ if [ "${#CORNERS[@]}" -eq 0 ]; then
   CORNERS=("${ALL_CORNERS[@]}")
 fi
 
-KLT="${KLT_BIN:-klt}"
-if ! command -v "$KLT" >/dev/null 2>&1; then
-  echo "FATAL: klt ('$KLT') not found on \$PATH -- run scripts/setup-env.sh or set KLT_BIN." >&2
-  exit 1
-fi
+# shellcheck source=./_klt.sh
+source "${FLOW_DIR}/_klt.sh"
 
-# Export PDK_ROOT even when klt itself can resolve the PDK without it: the
-# openroad docker wrapper mounts only $PWD and $PDK_ROOT, and without the
-# mount the container's read_liberty cannot see the liberty files.
-PDK_ROOT_RESOLVED="$("$KLT" pdk find --pdk "$PDK_VARIANT" --format json \
-  | python3 -c 'import json,sys; print(json.load(sys.stdin)["root"])')"
-export PDK_ROOT="$PDK_ROOT_RESOLVED"
-# Pin the invocation to this PDK even if $PDK points elsewhere.
-PDK_ARGS=(--pdk "$PDK_VARIANT")
+klt_resolve
+
+# Resolves/exports PDK_ROOT and sets PDK_ARGS -- see _klt.sh's
+# klt_export_pdk_root for why this is exported even though klt itself can
+# resolve the PDK without it (the openroad docker wrapper's mount).
+klt_export_pdk_root "$PDK_VARIANT"
 
 mkdir -p "$NETLIST_SCRATCH"
 
@@ -125,16 +120,7 @@ mkdir -p "$NETLIST_SCRATCH"
 echo "== synthesizing (nominal corner, once per sweep) ==" >&2
 "$KLT" synthesize "$SYNTH_RECIPE" "${PDK_ARGS[@]}" --format json \
   > "${NETLIST_SCRATCH}/synthesize-response.json" 2> "${NETLIST_SCRATCH}/synthesize.log"
-NETLIST_ABS="$(python3 - "${NETLIST_SCRATCH}/synthesize-response.json" <<'PYEOF'
-import json
-import sys
-
-path = json.load(open(sys.argv[1]))["netlist_path"]
-if isinstance(path, dict):
-    path = path["path"]   # {path, scope} envelope (klt issue #2073)
-print(path)
-PYEOF
-)"
+NETLIST_ABS="$(klt_response_path "${NETLIST_SCRATCH}/synthesize-response.json" netlist_path)"
 if [ ! -f "$NETLIST_ABS" ]; then
   # scope "repo" paths are repo-root-relative
   NETLIST_ABS="${REPO_ROOT}/${NETLIST_ABS}"
