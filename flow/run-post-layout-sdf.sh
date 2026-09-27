@@ -76,17 +76,13 @@ BENCH_MODULE="test_protocol_emulator"
 # message when discovery finds nothing.
 EXPECTED_CORNERS="nom_typ_1p20V_25C nom_slow_1p08V_125C nom_fast_1p32V_m40C"
 
-KLT="${KLT_BIN:-klt}"
-if ! command -v "$KLT" >/dev/null 2>&1; then
-  echo "FATAL: klt ('$KLT') not found on \$PATH -- run scripts/setup-env.sh or set KLT_BIN." >&2
-  exit 1
-fi
+# shellcheck source=./_klt.sh
+source "${REPO_ROOT}/flow/_klt.sh"
+
+klt_resolve
 # Required-command check per layout/toolchain.json's contract: fail loudly
 # naming the missing verb, never skip silently.
-if ! "$KLT" --help 2>/dev/null | grep -q "functional-verification"; then
-  echo "FATAL: '$KLT --help' does not list 'functional-verification' -- the install at '$KLT' lacks the verb this runner needs (layout/toolchain.json's klt_required_commands contract)." >&2
-  exit 1
-fi
+klt_require_verbs "functional-verification"
 
 RUN_ID_ARG=""
 FROM_DIR=""
@@ -114,8 +110,11 @@ if [ -n "$RUN_ID_ARG" ] && [ -n "$FROM_DIR" ]; then
 fi
 
 # --- Resolve the PDK (cell-model sources live under libs.ref) ------------
-PDK_ROOT_RESOLVED="$("$KLT" pdk find --pdk "$PDK_VARIANT" --format json \
-  | python3 -c 'import json,sys; print(json.load(sys.stdin)["root"])')"
+# Also exports PDK_ROOT and sets (unused here) PDK_ARGS -- see _klt.sh's
+# klt_export_pdk_root comment for why this runner accepts that new export
+# even though, unlike the other two runners, it never drives the
+# docker-wrapped openroad and has no mount to satisfy (issue #47).
+klt_export_pdk_root "$PDK_VARIANT"
 STDCELL_V="${PDK_ROOT_RESOLVED}/${PDK_VARIANT}/libs.ref/${CELL_LIBRARY}/verilog/${CELL_LIBRARY}.v"
 # The UDP primitives file drops the _stdcell suffix in IHP's libs.ref
 # layout (sg13cmos5l_udp.v, not sg13cmos5l_stdcell_udp.v) -- the same file

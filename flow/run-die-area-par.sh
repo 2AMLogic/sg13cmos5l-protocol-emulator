@@ -93,23 +93,19 @@ DESIGNS=(
   "flow/synthesize-protocol-emulator.json tt_um_2amlogic_protocol_emulator"
 )
 
-KLT="${KLT_BIN:-klt}"
-if ! command -v "$KLT" >/dev/null 2>&1; then
-  echo "FATAL: klt ('$KLT') not found on \$PATH -- run scripts/setup-env.sh or set KLT_BIN." >&2
-  exit 1
-fi
+# shellcheck source=./_klt.sh
+source "${FLOW_DIR}/_klt.sh"
+
+klt_resolve
 command -v openroad >/dev/null 2>&1 || {
   echo "FATAL: openroad not found on \$PATH -- see docs/environment.md." >&2
   exit 1
 }
 
-# Export PDK_ROOT even when klt itself can resolve the PDK without it: the
-# openroad docker wrapper mounts only $PWD and $PDK_ROOT, and without the
-# mount the container's read_liberty/read_lef cannot see the PDK files.
-PDK_ROOT_RESOLVED="$("$KLT" pdk find --pdk "$PDK_VARIANT" --format json \
-  | python3 -c 'import json,sys; print(json.load(sys.stdin)["root"])')"
-export PDK_ROOT="$PDK_ROOT_RESOLVED"
-PDK_ARGS=(--pdk "$PDK_VARIANT")
+# Resolves/exports PDK_ROOT and sets PDK_ARGS -- see _klt.sh's
+# klt_export_pdk_root for why this is exported even though klt itself can
+# resolve the PDK without it (the openroad docker wrapper's mount).
+klt_export_pdk_root "$PDK_VARIANT"
 
 rm -rf "$SCRATCH_DIR"
 mkdir -p "$SCRATCH_DIR"
@@ -128,16 +124,7 @@ for entry in "${DESIGNS[@]}"; do
   echo "== ${top}: synthesize (nominal corner) ==" >&2
   "$KLT" synthesize "$recipe" "${PDK_ARGS[@]}" --format json \
     > "${SCRATCH_DIR}/synthesize-${slug}-response.json" 2> "${SCRATCH_DIR}/synthesize-${slug}.log"
-  NETLIST_ABS="$(python3 - "${SCRATCH_DIR}/synthesize-${slug}-response.json" <<'PYEOF'
-import json
-import sys
-
-path = json.load(open(sys.argv[1]))["netlist_path"]
-if isinstance(path, dict):
-    path = path["path"]   # {path, scope} envelope (klt issue #2073)
-print(path)
-PYEOF
-)"
+  NETLIST_ABS="$(klt_response_path "${SCRATCH_DIR}/synthesize-${slug}-response.json" netlist_path)"
   if [ ! -f "$NETLIST_ABS" ]; then
     # scope "repo" paths are repo-root-relative
     NETLIST_ABS="${REPO_ROOT}/${NETLIST_ABS}"
@@ -194,17 +181,19 @@ PYEOF
   fi
 
   # Fold this design's synthesis + P&R numbers plus the tile-budget
-  # arithmetic into the summary.
-  entry_json="$(python3 - "$SCRATCH_DIR" "$slug" "$recipe" "$TILE_AREA" <<'PYEOF'
+  # arithmetic into the summary. netlist_path is resolved via the shared
+  # klt_response_path unwrap (issue #47) rather than a third inline
+  # isinstance check.
+  netlist_path_for_summary="$(klt_response_path "${SCRATCH_DIR}/synthesize-${slug}-response.json" netlist_path)"
+  entry_json="$(python3 - "$SCRATCH_DIR" "$slug" "$recipe" "$TILE_AREA" "$netlist_path_for_summary" <<'PYEOF'
 import json
 import sys
 
-scratch, slug, recipe, tile_area = sys.argv[1], sys.argv[2], sys.argv[3], float(sys.argv[4])
+scratch, slug, recipe, tile_area, netlist_path = (
+    sys.argv[1], sys.argv[2], sys.argv[3], float(sys.argv[4]), sys.argv[5],
+)
 synth = json.load(open(f"{scratch}/synthesize-{slug}-response.json"))
 par = json.load(open(f"{scratch}/par-{slug}-response.json"))
-netlist_path = synth["netlist_path"]
-if isinstance(netlist_path, dict):
-    netlist_path = netlist_path["path"]
 cell_area = synth["area_um2"]
 die = par["die_area_um2"]
 out = {
