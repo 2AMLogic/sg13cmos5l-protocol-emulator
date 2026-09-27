@@ -47,18 +47,7 @@ jobs:
         run: git fetch --no-tags --quiet origin +refs/heads/main:refs/remotes/origin/main
 
       - name: Syntax-check the verification scripts
-        run: |
-          python3 -m compileall -q verification/_repo_utils.py \
-                                   verification/check_records.py \
-                                   verification/test_check_records.py \
-                                   verification/_dut.py \
-                                   verification/test_protocol_emulator.py \
-                                   verification/test_firmware_roundtrip.py \
-                                   firmware/tools/asm.py \
-                                   firmware/tools/test_asm.py \
-                                   verification/test_protocol_models.py \
-                                   verification/reference_models \
-                                   flow/run_synthesize_direct_yosys.py
+        run: python3 -m compileall -q verification firmware flow
 
       # Firmware toolchain (issue #22, DR 0003): the assembler's unit
       # tests (whole instruction set + malformed input) and a freshness
