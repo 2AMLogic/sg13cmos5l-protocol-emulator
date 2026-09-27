@@ -1,0 +1,83 @@
+# Enforcement hook for the two-key (RATIFY-KEY) ratification mechanism.
+#
+# `spec/README.md` § "How ratification works here" and
+# `spec/decision-records/0004-target-spec-ratification.md` § "The binding
+# process" define the ratification act as two `RATIFY-KEY` reviews on the
+# carrying PR. Until this workflow existed, nothing mechanical asserted that:
+# `spec/decision-records/0006-two-key-ratification-never-ran.md` records the
+# consequence -- PR #29 flipped five `Status:` lines to `Ratified` and merged
+# with zero PR reviews of any kind, 4m37s after a correct stand-down comment
+# that nothing mechanical could read.
+#
+# This job is the thing a merge can fail on. It is scoped narrowly: a PR that
+# does not flip a `spec/` `Status:` line to `Ratified` passes trivially, so it
+# costs ordinary PRs one ~20s job and gates only the act it is about.
+#
+# Two triggers, deliberately:
+#   * `pull_request` -- catches the flip as soon as it is pushed.
+#   * `pull_request_review` -- a key review arrives *after* the last push, so
+#     without this trigger the gate would never see the reviews that release
+#     the PR. Both events carry `github.event.pull_request`, so the same
+#     check re-runs against the same head sha and the latest run wins.
+#
+# OPERATOR NOTE: for this to block a merge rather than merely report, the job
+# must be added to `main`'s required status checks (branch protection is an
+# operator-only surface; an agent token gets 403 on it). Until then it is a
+# red check on the PR -- which Judge/Champion do not merge past -- plus the
+# same assertion inside `npm run check:ci`. See `docs/ratification-gate.md`
+# § "Making it blocking".
+
+name: Ratification gate
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  pull_request_review:
+    types: [submitted, edited, dismissed]
+  workflow_dispatch:
+
+concurrency:
+  group: ratification-gate-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  two-key-gate:
+    name: two-key gate (spec Status flips)
+    runs-on: ubuntu-latest
+    if: github.event.pull_request != null
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # The PR head itself, not the merge commit: the gate compares the
+          # head tree against the merge-base, and full history is needed to
+          # resolve that merge-base.
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Make the PR's base branch available for the merge-base
+        run: |
+          git fetch --no-tags --quiet origin \
+            "+refs/heads/${{ github.event.pull_request.base.ref }}:refs/remotes/origin/${{ github.event.pull_request.base.ref }}"
+
+      # A gate that has silently stopped catching a violation class is worse
+      # than no gate, so its own self-test runs here as well as in `npm run
+      # lint` -- this job must not be able to pass on a broken gate.
+      - name: Gate self-test (negative + positive controls)
+        run: python3 scripts/test_check_ratification_gate.py
+
+      - name: Two-key gate against this PR's reviews
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 scripts/check_ratification_gate.py \
+            --repo "${{ github.repository }}" \
+            --pr "${{ github.event.pull_request.number }}" \
+            --base-ref "origin/${{ github.event.pull_request.base.ref }}"

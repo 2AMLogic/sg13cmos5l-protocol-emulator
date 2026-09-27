@@ -112,6 +112,29 @@ assertion — see the next section.
 > hook; `loom:auto-merge-ok` is an override, not a precondition) is filed
 > separately as issue #45.
 
+> **2026-09-27 reconciliation (issue #45) — the release signal is the two
+> reviews, and it is now enforced.** The second bullet below names the second
+> key-holder's release as applying `loom:auto-merge-ok`. That naming is
+> **withdrawn as the release signal**: in the surrounding pipeline that label
+> *overrides a merge-risk hold*, so its absence blocked nothing — it is one of
+> the two mechanical reasons PR #29 could merge with zero key reviews. **The
+> release signal is the two `RATIFY-KEY` reviews themselves**, which is what
+> this section's own first and third bullets always said the act was; the
+> merge commit remains the ratification record. A key-holder may still apply
+> pipeline labels and post the consolidated ratification-record comment — both
+> remain good practice — but neither is what releases a ratification, and
+> nothing below is relaxed by the correction.
+>
+> As of 2026-09-27 the requirement is also **mechanical**: a PR that moves any
+> `Status:` line under `spec/` to `Ratified` fails the
+> `two-key gate (spec Status flips)` check and `npm run check:ci` unless that
+> PR's own `/pulls/<N>/reviews` shows one `ee` and one `market` marker with
+> distinct `reviewer=` values, releasing verdicts, and neither attributable to
+> the PR's author. Replayed against PR #29's own diff and PR #29's own
+> (zero) reviews, the gate fails — naming all five files this record flipped.
+> [`../../docs/ratification-gate.md`](../../docs/ratification-gate.md) is the
+> authoritative description of what it checks.
+
 Per the program's two-key mechanism ([`ratification/ee-key/SKILL.md`](../../ratification/ee-key/SKILL.md),
 [`ratification/market-key/SKILL.md`](../../ratification/market-key/SKILL.md)):
 
@@ -123,9 +146,12 @@ Per the program's two-key mechanism ([`ratification/ee-key/SKILL.md`](../../rati
   author or the design's author.** Each key posts one PR review opening
   with a `RATIFY-KEY: <ee|market> verdict=… block=… reviewer=… date=…`
   marker line (the grammar both skills' "Output format" sections define).
-- The second key-holder's application **releases the PR for merge**
-  (`loom:auto-merge-ok` plus a consolidated ratification-record comment
-  quoting both keys with links to the reviews). **The merge commit is the
+- The second key-holder's application **releases the PR for merge** — the
+  release signal being the two key reviews themselves (see the 2026-09-27
+  reconciliation banner above: `loom:auto-merge-ok` is withdrawn as the
+  signal, since in the surrounding pipeline it overrides a hold rather than
+  imposing one). A consolidated ratification-record comment quoting both keys
+  with links to the reviews accompanies the release. **The merge commit is the
   ratification record.**
 - Approvals inside the ordinary Loom pipeline (Judge, Champion) are
   **quality gates, not keys**. A merge of the carrying PR without both key
