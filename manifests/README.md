@@ -49,11 +49,15 @@ Its output is committed as an append-only evidence record under
 `verification/records/signoff-baseline/` — the **committed report is the
 verdict of record** for this block's T1 state; the gap-to-T1 tracker (issue
 #27) points at it and must not re-derive grades by hand. `--check-latest`
-re-runs the grading and byte-compares the fresh report against the latest
-committed record's artifact — a mismatch means either an evidence artifact
-changed under a citation's pinned hash or a manifest edit landed without a
-fresh record, and it fails. CI (`.github/workflows/ci.yml`'s `signoff` job)
-does this on every push and PR.
+re-runs the grading and verifies the committed record still reproduces via
+`klt signoff --check` (klayout-tools #2258) — the grader's own comparison,
+which excludes the report's `build` block so the same pinned commit
+verifies from any provisioning route (clean-tree or `.dirty`-stamped,
+klayout-tools #2249). A `drifted` result means a graded field outside the
+build block — an evidence artifact changed under a citation's pinned hash,
+a manifest or tiers-doc edit, a per-item verdict, or a count — landed
+without a fresh record, and it fails. CI (`.github/workflows/ci.yml`'s
+`signoff` job) does this on every push and PR.
 
 ### Exit-code semantics — read this before scripting around `klt signoff`
 
@@ -65,6 +69,16 @@ result". Exit `1`/`2` are real errors (unreadable manifest, unparseable
 tier doc, bad `--format`, …). `scripts/signoff-report.sh` maps `0` and `3`
 to success for this reason; gate tiers and per-item statuses, not exit
 codes.
+
+**`--check` mode overloads `3` with the opposite meaning.**
+`klt signoff --manifest … --check REPORT` re-grades and verifies the
+committed report still reproduces (excluding the `build` block): `0` is
+`status: "match"`, `3` is `status: "drifted"` — a graded field outside the
+build block moved, a hard failure — and `1` a missing/unparseable
+committed report. So the render-mode `0|3 → success` mapping above must
+never be reused for a `--check` invocation: `scripts/signoff-report.sh
+--check-latest` maps `--check`'s `3` to exit `1` for exactly this reason
+(the trap is called out in its header).
 
 ## What the manifest currently declares, and why every row is `unmet`
 
