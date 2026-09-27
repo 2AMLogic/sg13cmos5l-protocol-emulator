@@ -31,6 +31,10 @@ When a flip is present, the gate requires **all** of:
 2. A releasing verdict on each: `ee` must be `approve`; `market` must be
    `competitive` or `adequate-for-catalog`. A `request-changes` /
    `uncompetitive` / `escalate` key is a review that happened, not a release.
+   It is also not a *veto*: a review list is append-only, so a rejected
+   candidate fails the gate only when its kind has no usable key at all, and
+   only a reviewer's latest marker of a kind is operative (see
+   `evaluate_keys`).
 3. The two markers' `reviewer=` values distinct (case-insensitively).
 4. Neither key attributable to the PR's author -- neither the review's forge
    login nor the marker's `reviewer=` value may equal the PR author's login.
@@ -82,6 +86,9 @@ GUARDED_PATHS = (
     "scripts/check_ratification_gate.py",
     "scripts/test_check_ratification_gate.py",
     ".github/workflows/ratification-gate.yml",
+    # `npm run lint` is where the local copy of the gate is invoked; removing
+    # that invocation in the same diff is the same move as editing the gate.
+    "package.json",
 )
 
 #: A `Status:` value asserting that the ratification act has happened. Matched
@@ -296,7 +303,25 @@ def evaluate_keys(
     *,
     require_distinct_principals: bool,
 ) -> tuple[bool, list[str], list[str], dict[str, dict]]:
-    """Apply requirements 1-4. Returns (ok, failures, notes, accepted-by-kind)."""
+    """Apply requirements 1-4. Returns (ok, failures, notes, accepted-by-kind).
+
+    Two properties of a forge review list shape this, and both are what
+    `docs/ratification-gate.md` § "A rejected candidate is not a veto" states:
+
+    * **Reviews are append-only.** A `request-changes` review the author then
+      fixed stays in `/pulls/<N>/reviews` forever. So a rejected candidate is
+      evaluated **per kind** and only becomes a failure when that kind ends up
+      with no usable key at all -- otherwise the ordinary review cycle
+      (`request-changes` then `approve` from the same holder) could never
+      release, and any junk `RATIFY-KEY` review by anyone, the PR author
+      included, would be a permanent veto. Rejections a usable key outlives
+      are still reported, as audit `notes`.
+    * **A reviewer speaks once per kind.** Only a reviewer's *latest* marker of
+      a kind is operative (reviews arrive in chronological order), so a
+      withdrawn key -- `approve` later followed by `request-changes` from the
+      same `reviewer=` -- stops releasing rather than being outvoted by its own
+      earlier self.
+    """
     failures: list[str] = []
     notes: list[str] = []
     author = pr_author.strip().lower()
@@ -307,30 +332,53 @@ def evaluate_keys(
         if not candidates:
             failures.append(f"no {kind} key: zero well-formed RATIFY-KEY {kind} markers")
             continue
-        usable = []
+
+        # Latest marker per reviewer wins; earlier ones are superseded, not votes.
+        operative: dict[str, dict] = {}
         for marker in candidates:
+            who = marker["reviewer"].strip().lower()
+            previous = operative.get(who)
+            if previous is not None:
+                notes.append(
+                    f"NOTE: an earlier {kind} marker from reviewer="
+                    f"{previous['reviewer']} (verdict={previous['verdict']}) is "
+                    "superseded by a later review from the same reviewer"
+                )
+            operative[who] = marker
+
+        usable: list[dict] = []
+        rejections: list[str] = []
+        for marker in operative.values():
             reviewer = marker["reviewer"].strip().lower()
             login = marker["login"].strip().lower()
             if author and reviewer == author:
-                failures.append(
+                rejections.append(
                     f"{kind} key rejected: reviewer={marker['reviewer']} is the PR author"
                 )
                 continue
             if author and login == author:
-                failures.append(
+                rejections.append(
                     f"{kind} key rejected: review posted by the PR author ({marker['login']})"
                 )
                 continue
             if marker["verdict"] not in RELEASING_VERDICTS[kind]:
-                failures.append(
+                rejections.append(
                     f"{kind} key does not release: verdict={marker['verdict']} "
                     f"(releasing verdicts: {', '.join(sorted(RELEASING_VERDICTS[kind]))})"
                 )
                 continue
             usable.append(marker)
+
         if not usable:
+            # Nothing of this kind released: now the rejections are the reason.
+            failures.extend(rejections)
             continue
         accepted[kind] = usable[0]
+        for rejection in rejections:
+            notes.append(
+                f"NOTE: unusable {kind} candidate, outlived by an accepted "
+                f"{kind} key -- {rejection}"
+            )
         if len(usable) > 1:
             notes.append(
                 f"{len(usable)} usable {kind} keys present; the first is reported"

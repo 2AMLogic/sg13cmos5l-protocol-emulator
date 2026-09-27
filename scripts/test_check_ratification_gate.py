@@ -271,6 +271,127 @@ def case_non_releasing_verdict(repo: Path) -> tuple[bool, str]:
     ), result.stdout
 
 
+def case_rereview_after_request_changes(repo: Path) -> tuple[bool, str]:
+    """The ordinary review cycle must not deadlock the gate.
+
+    GitHub's review list is **append-only**: when the ee key-holder posts
+    `request-changes`, the author fixes the finding, and the same holder then
+    posts `approve`, both reviews are in `/pulls/<N>/reviews` forever. The
+    superseded `request-changes` is a review that happened; it is not a veto
+    over the later `approve`, so the flip must be released.
+    """
+    (repo / "spec" / "decision-records" / "0009-a-record.md").write_text(RATIFIED_DR)
+    _commit(repo, "flip")
+    result = _run_gate(
+        repo,
+        [
+            _review(
+                _marker("ee", "request-changes", "ee-agent-7"), login="ee-key-holder"
+            ),
+            _review(EE_OK(), login="ee-key-holder"),
+            _review(MARKET_OK(), login="market-key-holder"),
+        ],
+    )
+    ok = (
+        result.returncode == 0
+        and "PASS" in result.stdout
+        and "FAIL" not in result.stdout
+        and "ee key: reviewer=ee-agent-7 verdict=approve" in result.stdout
+        and "superseded" in result.stdout
+    )
+    return ok, result.stdout
+
+
+def case_market_rereview_after_uncompetitive(repo: Path) -> tuple[bool, str]:
+    """The same shape on the market side: uncompetitive -> competitive."""
+    (repo / "spec" / "decision-records" / "0009-a-record.md").write_text(RATIFIED_DR)
+    _commit(repo, "flip")
+    result = _run_gate(
+        repo,
+        [
+            _review(EE_OK(), login="ee-key-holder"),
+            _review(
+                _marker("market", "uncompetitive", "market-agent-3"),
+                login="market-key-holder",
+            ),
+            _review(MARKET_OK(), login="market-key-holder"),
+        ],
+    )
+    ok = (
+        result.returncode == 0
+        and "PASS" in result.stdout
+        and "FAIL" not in result.stdout
+        and "market key: reviewer=market-agent-3 verdict=competitive" in result.stdout
+        and "superseded" in result.stdout
+    )
+    return ok, result.stdout
+
+
+def case_decoy_key_cannot_veto(repo: Path) -> tuple[bool, str]:
+    """A junk RATIFY-KEY review must not make ratification unpassable.
+
+    Two genuine, usable keys are present. Alongside them sit two unusable
+    candidates of the same kinds -- one `ee` marker posted by the PR author
+    (rejected by requirement 4) and one non-releasing `market` marker from an
+    unrelated login (rejected by requirement 2). Neither is a key, and neither
+    may deny the keys that are: otherwise anyone who can post a review on the
+    PR -- including the author -- holds a permanent veto over the act.
+    """
+    (repo / "spec" / "decision-records" / "0009-a-record.md").write_text(RATIFIED_DR)
+    _commit(repo, "flip")
+    result = _run_gate(
+        repo,
+        [
+            _review(EE_OK(), login="ee-key-holder"),
+            _review(MARKET_OK(), login="market-key-holder"),
+            _review(_marker("ee", "approve", "decoy-agent"), login=AUTHOR),
+            _review(
+                _marker("market", "uncompetitive", "drive-by-agent"),
+                login="random-passerby",
+            ),
+        ],
+    )
+    ok = (
+        result.returncode == 0
+        and "PASS" in result.stdout
+        and "FAIL" not in result.stdout
+        and "ee key: reviewer=ee-agent-7 verdict=approve" in result.stdout
+        and "market key: reviewer=market-agent-3 verdict=competitive" in result.stdout
+        # the rejected candidates are still reported, as audit notes
+        and "posted by the PR author" in result.stdout
+        and "does not release" in result.stdout
+    )
+    return ok, result.stdout
+
+
+def case_withdrawn_approval_does_not_release(repo: Path) -> tuple[bool, str]:
+    """The converse of the re-review cases: a holder may take a key back.
+
+    `approve` followed by `request-changes` from the *same* `reviewer=` is a
+    withdrawn key, not a standing one. Only a reviewer's latest marker of a
+    given kind is operative, so this must FAIL -- otherwise "supersede" would
+    only ever work in the direction that releases.
+    """
+    (repo / "spec" / "decision-records" / "0009-a-record.md").write_text(RATIFIED_DR)
+    _commit(repo, "flip")
+    result = _run_gate(
+        repo,
+        [
+            _review(EE_OK(), login="ee-key-holder"),
+            _review(
+                _marker("ee", "request-changes", "ee-agent-7"), login="ee-key-holder"
+            ),
+            _review(MARKET_OK(), login="market-key-holder"),
+        ],
+    )
+    ok = (
+        result.returncode == 1
+        and "does not release" in result.stdout
+        and "ee key: reviewer=ee-agent-7 verdict=approve" not in result.stdout
+    )
+    return ok, result.stdout
+
+
 def case_dismissed_review(repo: Path) -> tuple[bool, str]:
     (repo / "spec" / "decision-records" / "0009-a-record.md").write_text(RATIFIED_DR)
     _commit(repo, "flip")
@@ -413,6 +534,29 @@ def case_gate_self_modification(repo: Path) -> tuple[bool, str]:
     ), result.stdout
 
 
+def case_lint_wiring_self_modification(repo: Path) -> tuple[bool, str]:
+    """`package.json` is guarded too: it is where `npm run lint` calls the gate.
+
+    Deleting the gate's invocation from the lint script in the same diff that
+    flips a Status line is the same move as editing the gate itself.
+    """
+    (repo / "spec" / "decision-records" / "0009-a-record.md").write_text(RATIFIED_DR)
+    (repo / "package.json").write_text('{"scripts": {"lint": "true"}}\n')
+    _commit(repo, "flip and rewire lint")
+    result = _run_gate(
+        repo,
+        [
+            _review(EE_OK(), login="ee-key-holder"),
+            _review(MARKET_OK(), login="market-key-holder"),
+        ],
+    )
+    return (
+        result.returncode == 1
+        and "modifies the gate's own files" in result.stdout
+        and "package.json" in result.stdout
+    ), result.stdout
+
+
 def case_same_login_note_only(repo: Path) -> tuple[bool, str]:
     """Two keys, one forge login: a NOTE by default (DR 0006's open question)."""
     (repo / "spec" / "decision-records" / "0009-a-record.md").write_text(RATIFIED_DR)
@@ -465,6 +609,10 @@ FIXTURE_CASES = (
     case_reviewer_field_is_pr_author,
     case_only_one_kind,
     case_non_releasing_verdict,
+    case_rereview_after_request_changes,
+    case_market_rereview_after_uncompetitive,
+    case_decoy_key_cannot_veto,
+    case_withdrawn_approval_does_not_release,
     case_dismissed_review,
     case_placeholder_marker,
     case_malformed_marker_missing_field,
@@ -475,6 +623,7 @@ FIXTURE_CASES = (
     case_new_file_born_proposed,
     case_status_outside_spec_ignored,
     case_gate_self_modification,
+    case_lint_wiring_self_modification,
     case_same_login_note_only,
     case_no_base_ref_skips,
 )

@@ -73,7 +73,7 @@ All of the following, evaluated against the carrying PR's
 | 2 | A **releasing verdict** on each: `ee` must be `approve`; `market` must be `competitive` or `adequate-for-catalog`. `request-changes` / `uncompetitive` / `escalate` is a review that happened, not a release. |
 | 3 | The two markers' `reviewer=` values **distinct** (case-insensitively) — two keys means two holders. |
 | 4 | **Neither key attributable to the PR author**: neither the review's forge login nor the marker's `reviewer=` value may equal the PR author's login. |
-| 5 | The same diff must not modify the gate's own files (`scripts/check_ratification_gate.py`, `scripts/test_check_ratification_gate.py`, `.github/workflows/ratification-gate.yml`). A PR may not ratify and rewrite its own gate in one move. |
+| 5 | The same diff must not modify the gate's own files (`scripts/check_ratification_gate.py`, `scripts/test_check_ratification_gate.py`, `.github/workflows/ratification-gate.yml`, `package.json` — where `npm run lint` invokes the gate). A PR may not ratify and rewrite its own gate in one move. |
 
 Marker grammar comes from the installed key skills, unchanged:
 
@@ -85,6 +85,36 @@ Marker grammar comes from the installed key skills, unchanged:
 Only **reviews** count. A PR *comment* naming `RATIFY-KEY` is not a key — DR
 0006 § "One false positive to expect" names the two comments in this repo's
 history that mention the marker while explicitly disclaiming being one.
+
+### A rejected candidate is not a veto
+
+A forge review list is **append-only**, and requirements 2–4 reject
+*candidates*, not PRs. Those two facts together decide how a kind is scored:
+
+* **A kind fails only when it has no usable key at all.** Rejected candidates
+  are accumulated per kind and become failures only in that case. Otherwise the
+  ordinary review cycle could never release a flip: the ee key-holder posts
+  `request-changes`, the author fixes the finding, the same holder posts
+  `approve` — and the superseded `request-changes` review is still in
+  `/pulls/<N>/reviews`, permanently. The same shape applies on the market side
+  (`uncompetitive` → `competitive`). It would also hand a **permanent veto** to
+  anyone who can post a review on the PR — the author included — since one junk
+  `RATIFY-KEY` review would be enough to make ratification unpassable.
+* **Rejected candidates are still reported**, as `NOTE:` lines, so the record
+  shows every marker the gate saw and why each was not the key it accepted. A
+  failure is never printed for a kind whose key was accepted; the output does
+  not contradict itself.
+* **A reviewer speaks once per kind.** Only a reviewer's *latest* marker of a
+  kind is operative (reviews arrive in chronological order), so a **withdrawn**
+  key — `approve` later followed by `request-changes` from the same `reviewer=`
+  — stops releasing, rather than being outvoted by its own earlier self.
+  Superseding therefore works in both directions, not only the one that
+  releases.
+
+Each of these shapes has its own self-test case
+(`case_rereview_after_request_changes`,
+`case_market_rereview_after_uncompetitive`, `case_decoy_key_cannot_veto`,
+`case_withdrawn_approval_does_not_release`).
 
 ## What the gate deliberately does not decide
 
