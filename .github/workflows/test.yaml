@@ -27,9 +27,12 @@ jobs:
         run: |
           cd test
           make clean
-          make
-          # make will return success even if the test fails, so check for failure in the results.xml
-          ! grep failure results.xml
+          make || true
+          # `make`'s own exit status is not trusted as the pass/fail signal (see
+          # scripts/check_test_results.py's docstring): assert directly on the
+          # JUnit summary, which also fails correctly on a missing/truncated
+          # results.xml (e.g. a crashed simulator).
+          python3 ../scripts/check_test_results.py
 
       - name: Test Summary
         uses: test-summary/action@v2.4
