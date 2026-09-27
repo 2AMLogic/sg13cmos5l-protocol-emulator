@@ -67,12 +67,18 @@ jobs:
 
   # klt signoff --manifest re-run (issue #16): CI re-renders this block's
   # T1 tier-verdict report from the committed block manifest against the
-  # pinned klt and byte-compares it with the latest committed evidence
-  # record under verification/records/signoff-baseline/. A manifest citing
-  # an artifact that has since changed therefore FAILS here rather than
-  # rotting. `klt signoff` exits 3 when at least one T1 item is unmet -- the
-  # normal gap state -- which scripts/signoff-report.sh maps to success;
-  # only a real error or a drift-from-record fails this job. PDK/simulator
+  # pinned klt and verifies the latest committed evidence record under
+  # verification/records/signoff-baseline/ still reproduces, via
+  # `klt signoff --check` (klayout-tools #2258) -- the grader's own
+  # comparison, which excludes the report's build block so the same pinned
+  # commit verifies from any provisioning route (klayout-tools #2249; the
+  # byte-compare this replaces went red on exactly that route difference).
+  # A manifest citing an artifact that has since changed therefore FAILS
+  # here rather than rotting. Exit-code note: `klt signoff` exits 3 when at
+  # least one T1 item is unmet -- the normal gap state -- which
+  # scripts/signoff-report.sh maps to success in render mode; under
+  # `--check`, 3 instead means "drifted" and is mapped to failure. Only a
+  # real error or a drift-from-record fails this job. PDK/simulator
   # are not needed; setup-env.sh's provisioning (klt at the
   # layout/toolchain.json pin + cocotb) is reused verbatim so CI and local
   # developers grade with the same build.

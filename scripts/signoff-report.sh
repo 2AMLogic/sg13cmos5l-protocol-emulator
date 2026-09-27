@@ -19,21 +19,32 @@
 #   0  Report rendered (klt exitted 0 = every item met, or 3 = at least one
 #      unmet -- see manifests/README.md's "Exit-code semantics" for why an
 #      all-unmet render is the normal gap state, not an error). With
-#      --check-latest: the fresh report also byte-matches the latest
-#      committed record's artifact.
+#      --check-latest: the latest committed record also still reproduces
+#      (`klt signoff --check` reported status "match" -- the grader re-graded
+#      the manifest and found nothing outside the build-identity block
+#      moved, so the same pinned commit verifies from any provisioning
+#      route; klayout-tools #2249/#2258).
 #   1  Real failure: klt missing / not at the pinned commit / `signoff`
 #      missing from its subcommand list; klt exitted 1 or 2 (usage or
 #      error); no signoff-baseline record committed; or --check-latest
-#      found a mismatch (a cited artifact or the manifest or the tiers doc
-#      drifted since the committed report -- the exact "fails rather than
-#      rotting" case that check exists for).
+#      found a drift (`klt signoff --check` exitted 3, status "drifted":
+#      a graded field outside the build block -- item status/reason,
+#      citation hash, t1_met_count, ... -- moved since the committed
+#      report; the exact "fails rather than rotting" case that check
+#      exists for). NOTE the exit-code trap: 3 means OPPOSITE things in
+#      the two modes -- render mode's 3 is the normal all-unmet gap state
+#      mapped to success above, but --check mode's 3 is DRIFT and a hard
+#      failure. The two mappings are kept separate below on purpose.
 #
 # Usage:
 #   scripts/signoff-report.sh                 # render to stdout (JSON)
 #   scripts/signoff-report.sh --out FILE     # write the JSON report to FILE
-#   scripts/signoff-report.sh --check-latest # re-run and byte-compare
-#                                            # against the latest evidence
-#                                            # record's committed artifact
+#   scripts/signoff-report.sh --check-latest # re-grade and verify against
+#                                            # the latest evidence record's
+#                                            # committed artifact via
+#                                            # `klt signoff --check` (the
+#                                            # grader's own comparison, not
+#                                            # a byte-compare)
 #
 # klt resolution: `klt` from $PATH unless $KLT_BIN names another binary
 # (used by environments that provision the pinned klt in an isolated
@@ -142,15 +153,49 @@ if [[ "$CHECK_LATEST" -eq 1 ]]; then
     echo "error: latest record $RECORD_ID has no committed report artifact at $COMMITTED." >&2
     exit 1
   fi
-  if ! cmp -s "$FRESH" "$COMMITTED"; then
-    echo "error: fresh klt signoff report does not match the committed record artifact ($COMMITTED)." >&2
-    echo "  A cited artifact, the manifest, or the vendored tiers doc changed without a fresh" >&2
-    echo "  signoff-baseline record. Re-render (scripts/signoff-report.sh --out), mint a new" >&2
-    echo "  append-only record superseding $RECORD_ID, and commit it with the change." >&2
-    diff <(python3 -m json.tool "$COMMITTED") <(python3 -m json.tool "$FRESH") | head -40 >&2 || true
-    exit 1
-  fi
-  echo "report matches the latest committed record ($RECORD_ID) -- no drift." >&2
+  # The grader's own comparison (klt signoff --check, klayout-tools #2258):
+  # re-grades the manifest and diffs the fresh result against the committed
+  # report EXCLUDING the build-identity block, so two legitimate installs of
+  # the same pinned commit -- one clean-tree, one whose build stamped .dirty
+  # -- both verify (the byte-compare this replaces failed on exactly that
+  # provisioning-route difference, #2249). Exit-code trap: under --check,
+  # klt's 0 = "match", 3 = "drifted" (a graded field outside build moved),
+  # 1/2 = missing/unparseable committed report or real error. The render
+  # mode's `0|3) ;;` mapping above MUST NOT be reused here: --check's 3 is
+  # drift, a hard failure -- mapping it to success would leave this gate
+  # permanently green and blind to the manifest rot it exists to catch.
+  CHECK_OUT="$(mktemp)"
+  set +e
+  "$KLT_BIN" signoff --manifest "$MANIFEST" --format json --tiers-doc "$TIERS_DOC" \
+    --check "$COMMITTED" >"$CHECK_OUT"
+  CHECK_RC=$?
+  set -e
+  case "$CHECK_RC" in
+    0)
+      echo "report matches the latest committed record ($RECORD_ID) -- no drift (klt signoff --check: status match; grader build identity excluded from the comparison)." >&2
+      ;;
+    3)
+      echo "error: the committed signoff report no longer reproduces (klt signoff --check: status drifted, artifact $COMMITTED)." >&2
+      echo "  A graded field outside the build block changed without a fresh" >&2
+      echo "  signoff-baseline record. Re-render (scripts/signoff-report.sh --out), mint a new" >&2
+      echo "  append-only record superseding $RECORD_ID, and commit it with the change." >&2
+      python3 - "$CHECK_OUT" <<'PYDRIFT' >&2 || true
+import json, sys
+with open(sys.argv[1]) as f:
+    envelope = json.load(f)
+for d in envelope.get("drift", []):
+    print(f"  drifted: {d.get('field')}: committed={d.get('committed')!r} fresh={d.get('fresh')!r}")
+PYDRIFT
+      rm -f "$CHECK_OUT"
+      exit 1
+      ;;
+    *)
+      echo "error: klt signoff --check exitted $CHECK_RC (missing/unparseable committed report, or a real error -- see stderr above)." >&2
+      rm -f "$CHECK_OUT"
+      exit 1
+      ;;
+  esac
+  rm -f "$CHECK_OUT"
 fi
 
 if [[ -z "$OUT" ]]; then
