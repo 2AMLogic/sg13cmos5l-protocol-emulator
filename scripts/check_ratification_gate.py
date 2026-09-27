@@ -6,7 +6,7 @@ This is the enforcement half of the two-key mechanism documented in
 `spec/decision-records/0004-target-spec-ratification.md` § "The binding
 process". Until this script existed, that mechanism was described in prose
 and enforced by nothing: `spec/decision-records/0006-two-key-ratification-
-never-ran.md` records the consequence -- PR #29 flipped eight `Status:` lines
+never-ran.md` records the consequence -- PR #29 flipped five `Status:` lines
 to `Ratified` and merged with zero PR reviews of any kind, 4m37s after a
 correct stand-down comment that nothing mechanical could read.
 
