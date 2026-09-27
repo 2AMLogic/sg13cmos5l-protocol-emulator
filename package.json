@@ -4,8 +4,8 @@
   "private": true,
   "scripts": {
     "worktree:return": "./.loom/scripts/worktree-return.sh",
-    "lint": "python3 verification/check_records.py && python3 verification/test_check_records.py",
-    "test": "cd test && make clean && make && ! grep -q failure results.xml",
+    "lint": "python3 verification/check_records.py && python3 verification/test_check_records.py && python3 scripts/test_check_test_results.py",
+    "test": "cd test && make clean && make; python3 ../scripts/check_test_results.py",
     "check:ci": "npm run lint && npm run test",
     "check:all": "npm run lint && npm run test && klt functional-verification verification/request-protocol-emulator.json --format json && scripts/signoff-report.sh --check-latest"
   }
