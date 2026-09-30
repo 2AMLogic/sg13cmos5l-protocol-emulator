@@ -144,11 +144,24 @@ async def load_words(dut, words):
 
 
 async def fetch_word(dut, addr):
-    """Combinational fetch read -- the same-cycle instruction path the
-    core's fetch-and-execute will drive."""
+    """Synchronous fetch read -- the same instruction path the core's
+    fetch-and-execute drives.
+
+    Re-verified for the SRAM-macro-backed program memory (issue #18,
+    `spec/decision-records/0005-program-memory-implementation.md`): the
+    macro captures `A_ADDR` at a clock edge and presents the word on
+    `A_DOUT` for the following cycle, so a read costs one edge where the
+    superseded flip-flop array answered combinationally. The round-trip
+    *contract* this bench checks -- assembler image in, identical words
+    out at the same addresses -- is unchanged; only the sampling cycle
+    moved. See `verification/test_program_memory.py`'s `fetch_word` for
+    the same change in the module's own bench."""
     dut.fetch_addr.value = addr
-    await Timer(1, unit="ns")
-    return int(dut.instr_word.value)
+    await RisingEdge(dut.clk)  # the macro captures A_ADDR on this edge
+    await ReadOnly()           # ...and A_DOUT settles just after it
+    value = int(dut.instr_word.value)
+    await Timer(1, unit="ns")  # leave the read-only region (writable again)
+    return value
 
 
 async def read_reg(dut, name):

@@ -8,6 +8,25 @@ program-readback instruction (its 16-opcode table is exactly full), so the
 read-back here is the fetch port itself -- the same instruction path the
 core datapath will execute from -- exercised out-of-band by the testbench.
 
+Re-verified against the SRAM-macro-backed module (issue #18)
+------------------------------------------------------------
+`spec/decision-records/0005-program-memory-implementation.md` replaced the
+flip-flop storage array with the PDK's
+`RM_IHPSG13_1P_256x16_c2_bm_bist` macro and flagged this bench explicitly:
+*"`verification/test_program_memory.py` must be re-verified against the
+macro-backed module, not assumed to carry over. Its readback assertions
+are written against an asynchronous fetch port; under fetch-ahead the
+fetched word arrives one cycle later."*
+
+That re-verification is what this file now is. **Every load-protocol
+contract below is unchanged** -- MSB-first shift, commit on the 16th
+bit's own edge, mid-word discard, 256-word saturation, no mid-run
+re-entry, and the cycle-exact 1 + 16*N + 1 edge accounting. The single
+change is in `fetch_word()`: the macro's read is synchronous, so
+presenting an address now costs one clock edge before `instr_word`
+carries that word. Nothing else in this bench moved, and that is the
+point -- if a contract had shifted, it would have shifted here.
+
 Every contract checked is DR 0001 section "Program memory sizing and loading",
 restated next to each test. Sub-cycle contracts DR 0001 leaves implicit are
 pinned deliberately and named in the test that pins them:
@@ -106,11 +125,27 @@ async def load_words(dut, words):
 
 
 async def fetch_word(dut, addr):
-    """Combinational fetch read -- the same-cycle instruction path the
-    core's fetch-and-execute uses at addresses it will run from."""
+    """Synchronous fetch read -- the same instruction path the core's
+    fetch-and-execute uses at addresses it will run from.
+
+    DR 0005's one behavioural change: the SRAM macro captures `A_ADDR`
+    at a clock edge and presents the word on `A_DOUT` for the whole
+    following cycle, so a read costs one edge. (The superseded
+    flip-flop array answered combinationally, and this helper's old body
+    was a bare `Timer(1, "ns")` settle.) Awaiting `ReadOnly` after the
+    capturing edge reads the post-NBA `A_DOUT` -- same reason
+    `read_reg()` below documents.
+
+    This is the fetch-ahead contract from the *memory's* side: the
+    address presented during cycle N is the word available in cycle
+    N+1, which is exactly what `rtl/protocol_core.v` exploits by driving
+    the next instruction's address rather than the current one's."""
     dut.fetch_addr.value = addr
-    await Timer(1, unit="ns")  # let the asynchronous read settle
-    return int(dut.instr_word.value)
+    await RisingEdge(dut.clk)  # the macro captures A_ADDR on this edge
+    await ReadOnly()           # ...and A_DOUT settles just after it
+    value = int(dut.instr_word.value)
+    await Timer(1, unit="ns")  # leave the read-only region (writable again)
+    return value
 
 
 async def read_reg(dut, name):

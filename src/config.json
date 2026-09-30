@@ -9,6 +9,33 @@
 
   "//": "If you get stuck with this config, please open an issue or get in touch via the discord.",
 
+  "//": "==================================================================",
+  "//": "LOCAL DEVIATION FROM THE TEMPLATE -- read before changing anything",
+  "//": "==================================================================",
+  "//": "2026-09-30 (issue #18), implementing spec/decision-records/0005-program-memory-implementation.md:",
+  "//": "this design instantiates a HARD MACRO, the IHP PDK's RM_IHPSG13_1P_256x16_c2_bm_bist single-port",
+  "//": "256x16 SRAM, as its program memory. That is the one and only reason this file is no longer",
+  "//": "byte-identical to the template's, and the MACROS / PDN_MACRO_CONNECTIONS block at the bottom of",
+  "//": "this file is the whole of the change. DR 0005 anticipated this edit and required it to be",
+  "//": "self-documenting here: 'That file carries a do-not-edit-unless-you-know-what-you-are-doing",
+  "//": "banner: the implementation PR must say what it changed and why, in the file.' This is that.",
+  "//": "",
+  "//": "WHY a macro at all: the flip-flop 256x16 program memory issue #19 built measures 312,063 um^2",
+  "//": "(klt/Yosys flow) to 378,067 um^2 (LibreLane flow) of standard cells -- 2.46x to 2.98x the ENTIRE",
+  "//": "core area of the ratified <=2x2-tile budget (spec/target-spec.md row 7), so no utilization",
+  "//": "setting places it. The macro is 236.8 x 118.78 um = 28,127.104 um^2, i.e. 22.2% of that core.",
+  "//": "DR 0005 took row 6's own ratified stretch item rather than relaxing row 7's target.",
+  "//": "",
+  "//": "WHY it survives the merge: tt-support-tools' Project.create_merged_config() reads THIS file",
+  "//": "first and overlays only the keys Tiny Tapeout generates (DESIGN_NAME, VERILOG_FILES, DIE_AREA,",
+  "//": "FP_DEF_TEMPLATE, VDD_PIN, GND_PIN, RT_MAX_LAYER). MACROS and PDN_MACRO_CONNECTIONS are not in",
+  "//": "that overlay set, so they reach LibreLane intact.",
+  "//": "",
+  "//": "WHAT WAS NOT CHANGED: every template key above and below keeps its template value. In",
+  "//": "particular PL_TARGET_DENSITY_PCT, CLOCK_PERIOD, RUN_LINTER and the whole do-not-change block",
+  "//": "are untouched -- the macro is meant to make this design fit at the template's own settings,",
+  "//": "not to need them loosened.",
+
   "//": "Here are some of the variables you may want to change:",
 
   "//": "PL_TARGET_DENSITY_PCT - You can increase this if Global Placement fails with error GPL-0302.",
@@ -32,6 +59,105 @@
   "CLOCK_PORT": "clk",
 
   "//": "Configuration docs: https://librelane.readthedocs.io/en/latest/reference/configuration.html",
+
+  "//": "------------------------------------------------------------------",
+  "//": "Program-memory SRAM macro (issue #18 / DR 0005). See the banner above.",
+  "//": "------------------------------------------------------------------",
+
+  "//": "Paths use LibreLane's pdk_dir:: prefix, which expands to $PDK_ROOT/$PDK -- i.e.",
+  "//": "$PDK_ROOT/ihp-sg13cmos5l, the same root test/Makefile's gate-level leg already reads the",
+  "//": "standard-cell models from. Note libs.ref/sg13cmos5l_sram is a SYMLINK in the IHP PDK",
+  "//": "(-> ../../ihp-sg13g2/libs.ref/sg13g2_sram): IHP ships ONE SRAM macro set shared by SG13G2 and",
+  "//": "CMOS5L. It resolves in CI because tt-gds-action@ihp-cmos5l's install_sg13cmos5l.sh checks out",
+  "//": "the whole IHP-Open-PDK tree, not just the CMOS5L subtree (DR 0005 Finding 1 records this, and",
+  "//": "records the measurement that all 27 layer/datatype pairs in the macro's GDS pass the Tiny",
+  "//": "Tapeout CMOS5L precheck's own allowlist, which explicitly carries SRAM.drawing).",
+
+  "//": "MACROS (rather than hand-writing EXTRA_LEFS/EXTRA_LIBS/EXTRA_GDS_FILES, the other keys DR 0005",
+  "//": "names) is deliberate: LibreLane derives all three from this one entry, so there is exactly one",
+  "//": "place to change and no risk of the LEF, the liberty and the GDS drifting apart -- and no risk",
+  "//": "of the same cell being declared twice, which is what listing both mechanisms would do.",
+
+  "//": "instances: the macro is placed explicitly rather than left to the placer, because LibreLane's",
+  "//": "Classic flow has no automatic macro placer -- OpenROAD.CutRows and the PDN generator both need",
+  "//": "macros already FIXED. The location below is in die coordinates (um) at tiles: 2x2, whose die is",
+  "//": "419.52 x 313.74 um (tt-support-tools' tech/ihp-sg13cmos5l/tile_sizes.yaml). Inset by this",
+  "//": "file's own margins -- LEFT/RIGHT_MARGIN_MULT 6 and TOP/BOTTOM_MARGIN_MULT 1 times the CoreSite",
+  "//": "0.48 x 3.78 um -- the core box is x in [2.88, 416.64], y in [3.78, 309.96]. The macro is placed",
+  "//": "centred horizontally and high, at (91.2, 173.88) with N orientation, occupying",
+  "//": "x [91.2, 328.0] and y [173.88, 292.66]: >= 9 um of clearance to every core edge, and the whole",
+  "//": "lower band of the core left as one contiguous region for the ~10,323 um^2 of standard cells the",
+  "//": "core datapath synthesizes to. Both coordinates are exact site multiples (91.2 = 190 x 0.48,",
+  "//": "173.88 = 46 x 3.78) so the macro lands on the placement grid rather than cutting a row.",
+
+  "//": "instance NAME: the design keeps two levels of hierarchy (tt_um_... -> u_prog_mem -> u_sram),",
+  "//": "and LibreLane's Yosys step flattens, so the instance reaches the DEF as `u_prog_mem.u_sram`.",
+  "//": "If a future LibreLane/Yosys version stops flattening, OpenROAD.ManualMacroPlacement will",
+  "//": "report the instance as missing and the key below becomes plain `u_sram` -- which is exactly",
+  "//": "what the un-flattened netlist this repo's klt/Yosys leg emits calls it (see",
+  "//": "verification/records/synthesis-baseline/artifacts/.../tt_um_2amlogic_protocol_emulator_synth.v).",
+
+  "//": "vh (Verilog HEADER view): LibreLane needs a module DECLARATION for the macro even though the",
+  "//": "macro has no RTL -- its Verilator.Lint step fails %Error-MODMISSING without one (observed on the",
+  "//": "first gds run of this branch, run 36772645448). `vh` is the field built for that: the linter",
+  "//": "appends it verbatim as a blackbox, and Yosys reads it with `read_verilog -sv -lib`. The file is",
+  "//": "the SAME blackbox this repo's klt/Yosys leg already lists in flow/synthesize-*.json, deliberately",
+  "//": "-- one declaration of the macro interface for both flows, so the two can never disagree about the",
+  "//": "macro's ports (CLAUDE.md, 'two flows, one record of truth'). Do NOT instead add it to info.yaml's",
+  "//": "source_files: that is VERILOG_FILES, where it would be a competing DESIGN module.",
+  "//": "Consequence, stated because it moves a number: LibreLane ranks `vh` ABOVE `lib` when choosing a",
+  "//": "macro view for Yosys, so the macro's liberty is no longer read at SYNTHESIS and its 28,127.104",
+  "//": "um^2 is excluded from LibreLane's reported cell area -- exactly as it already is from the klt",
+  "//": "flow's. That makes the two flows' cell-area figures comparable rather than silently offset. STA is",
+  "//": "unaffected: openroad.py reads macro LIB views directly via get_macro_views(config, LIB), which",
+  "//": "this priority list does not touch, and the three corner globs below are still what it reads.",
+
+  "//": "lib CORNERS: the macro ships exactly three liberty corners; the globs below route each of the",
+  "//": "flow's corner names (nom_/min_/max_ prefixed) to the matching one. The standard-cell library's",
+  "//": "fast corner is -40C and the macro's is -55C: that is what IHP ships, not a substitution made",
+  "//": "here, and it makes the fast corner slightly pessimistic for the macro.",
+
+  "MACROS": {
+    "RM_IHPSG13_1P_256x16_c2_bm_bist": {
+      "gds": [
+        "pdk_dir::libs.ref/sg13cmos5l_sram/gds/RM_IHPSG13_1P_256x16_c2_bm_bist.gds"
+      ],
+      "lef": [
+        "pdk_dir::libs.ref/sg13cmos5l_sram/lef/RM_IHPSG13_1P_256x16_c2_bm_bist.lef"
+      ],
+      "vh": [
+        "dir::../flow/blackbox-RM_IHPSG13_1P_256x16_c2_bm_bist.v"
+      ],
+      "instances": {
+        "u_prog_mem.u_sram": {
+          "location": [91.2, 173.88],
+          "orientation": "N"
+        }
+      },
+      "lib": {
+        "*typ*": [
+          "pdk_dir::libs.ref/sg13cmos5l_sram/lib/RM_IHPSG13_1P_256x16_c2_bm_bist_typ_1p20V_25C.lib"
+        ],
+        "*slow*": [
+          "pdk_dir::libs.ref/sg13cmos5l_sram/lib/RM_IHPSG13_1P_256x16_c2_bm_bist_slow_1p08V_125C.lib"
+        ],
+        "*fast*": [
+          "pdk_dir::libs.ref/sg13cmos5l_sram/lib/RM_IHPSG13_1P_256x16_c2_bm_bist_fast_1p32V_m55C.lib"
+        ]
+      }
+    }
+  },
+
+  "//": "PDN_MACRO_CONNECTIONS -- one entry per supply pin, as",
+  "//": "'<instance> <vdd net> <gnd net> <vdd pin> <gnd pin>'. The macro has THREE supply pins, not the",
+  "//": "usual two: VDD!, VSS! and VDDARRAY! (the bit-array supply). DR 0005 calls connecting the third",
+  "//": "out as an explicit implementation step, not a default -- an unconnected VDDARRAY! is a macro",
+  "//": "that powers up but never retains a bit. Both entries tie into the same VPWR/VGND nets Tiny",
+  "//": "Tapeout gives the project (VDD_PIN/GND_PIN are part of tt-support-tools' overlay).",
+  "PDN_MACRO_CONNECTIONS": [
+    "u_prog_mem.u_sram VPWR VGND VDD! VSS!",
+    "u_prog_mem.u_sram VPWR VGND VDDARRAY! VSS!"
+  ],
 
   "//": "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!",
   "//": "!!! DO NOT CHANGE ANYTHING BELOW THIS POINT !!!",

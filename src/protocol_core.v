@@ -1,0 +1,1 @@
+../rtl/protocol_core.v
