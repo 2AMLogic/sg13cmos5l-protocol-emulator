@@ -2,10 +2,13 @@
  * Copyright (c) 2026 2AMLogic
  * SPDX-License-Identifier: Apache-2.0
  *
- * Program memory and serial load-phase logic (target-spec row 6, issue #19).
+ * Program memory and serial load-phase logic (target-spec row 6, issue #19),
+ * backed by the IHP PDK's `RM_IHPSG13_1P_256x16_c2_bm_bist` single-port SRAM
+ * macro per `spec/decision-records/0005-program-memory-implementation.md`
+ * (issue #18's implementation of that record's Decision item 1).
  *
- * Implements `spec/decision-records/0001-isa.md` section  "Program memory sizing
- * and loading", which is the authoritative contract for this module:
+ * Implements `spec/decision-records/0001-isa.md` section "Program memory
+ * sizing and loading", which is the authoritative contract for this module:
  *
  *   - 256 x 16-bit program words (512 bytes), addressed by an 8-bit
  *     program counter.
@@ -21,10 +24,7 @@
  *     words with no boundary ambiguity.
  *   - MODE dropping low ends the load phase and begins the run phase at
  *     the next clock cycle. The run phase is signalled by `run_phase`
- *     rising; the core datapath is expected to hold its PC at 0 while
- *     `run_phase` is low and fetch from 0 on the first cycle it is high
- *     (DR 0001: "MODE dropping low ends load phase, resets the program
- *     counter to 0, and begins run phase at the next cycle").
+ *     rising.
  *   - Mode is latched only at reset release, never sampled mid-run: once
  *     `run_phase` is high, raising MODE again does nothing until a fresh
  *     `rst_n` pulse with MODE held high. This is DR 0001's no-race rule
@@ -34,47 +34,99 @@
  *     program just loaded. MODE dropping low remains the only exit to
  *     the run phase.
  *
- * Interface intent (for the core-datapath issue, #18):
+ * ---------------------------------------------------------------------
+ * WHAT DR 0005 CHANGED (and what it deliberately did not)
+ * ---------------------------------------------------------------------
  *
- *   - `fetch_addr` is the core's program counter and `instr_word` is the
- *     same-cycle combinational read DR 0001's single-cycle
- *     fetch-and-execute model requires (`assign instr_word = mem[...]`,
- *     no registered read port: a registered read would add an instruction
- *     fetch latency the ISA's cycle determinism does not budget for).
- *   - The core should hold `pc <= 0` while `run_phase` is low so first
- *     fetch lands at address 0 in the cycle after MODE drops. `run_phase`
- *     is also low during reset, so one reset expression covers both
- *     (`if (!rst_n || !run_phase) pc <= 8'd0;`).
- *   - Top wiring (`src/tt_um_2amlogic_protocol_emulator.v`, once the core
- *     lands): `mode_pin` <- `ui_in[7]`, `serial_in` <- `ui_in[0]`. All
- *     other pins are undisturbed by the load mechanism, per DR 0001.
+ * The storage array changed from a flip-flop `reg [15:0] mem [0:255]` to
+ * the PDK macro. **Nothing about DR 0001's organisation or load protocol
+ * changed**: still 256 x 16, still an 8-bit PC, still MSB-first serial
+ * shift-in with commit on the 16th bit's own edge, mid-word discard,
+ * 256-word saturation and no mid-run re-entry. DR 0005 Decision item 1:
+ * "this is an implementation decision about *what holds the bits*, not a
+ * spec change."
+ *
+ * The one behavioural consequence is the **fetch port's timing**, and it
+ * is the DR 0005 "Amendment to DR 0001":
+ *
+ *   OLD (flip-flop array): `assign instr_word = mem[fetch_addr]` -- an
+ *   asynchronous read, valid in the same cycle the address is presented.
+ *
+ *   NEW (macro): the macro's read is **synchronous, one-cycle data
+ *   access**. The address presented on `fetch_addr` during cycle N is
+ *   captured at the clock edge ending cycle N; `instr_word` carries that
+ *   word throughout cycle N+1. The core therefore drives `fetch_addr`
+ *   with the address of the instruction that will execute *next* cycle
+ *   (fetch-ahead) -- see `rtl/protocol_core.v`. This costs zero cycles
+ *   per instruction, because every DR 0001 control transfer (`JMP`,
+ *   `BZ`, `BNZ`) takes its target from an immediate in the instruction
+ *   word, so the next address is always combinationally available in the
+ *   same cycle the branch executes.
+ *
+ * Load and run phases stay mutually exclusive (DR 0001 latches MODE only
+ * at reset release and forbids mid-run re-entry), which is exactly why a
+ * **single-port** macro suffices: the memory is never read and written in
+ * the same cycle, so no arbitration and no dual-port macro is needed.
+ *
+ * Macro pin mapping (DR 0005: "the load protocol itself is unchanged and
+ * maps onto the macro directly"):
+ *
+ *   A_ADDR   <- wr_addr during load phase, fetch_addr during run phase
+ *   A_DIN    <- the 16-bit shift register's about-to-complete word
+ *   A_BM     <- 16'hFFFF (whole-word writes; no partial writes exist here)
+ *   A_WEN    <- asserted for the one cycle whose ending edge commits a word
+ *   A_REN    <- asserted whenever the fetch port is live (not load phase)
+ *   A_MEN    <- A_WEN | A_REN (macro deactivated otherwise)
+ *   A_DLY    <- 1'b1 (the datasheet's mandatory setting)
+ *   A_BIST_* <- tied off, A_BIST_EN = 0
+ *
+ * Simulation vs. synthesis: the macro has no synthesizable RTL. Icarus
+ * runs the PDK's own behavioural model, vendored at
+ * `rtl/vendor/RM_IHPSG13_1P_256x16_c2_bm_bist.v` (plus its
+ * `RM_IHPSG13_1P_core_behavioral_bm_bist.v` core) with provenance and
+ * licence in `rtl/vendor/README.md`; Yosys/LibreLane blackbox it against
+ * the PDK LEF/liberty wired up in `src/config.json`. The macro's array
+ * has no reset and powers up X in simulation, exactly as the silicon
+ * does -- a program must be loaded before anything is fetched, which is
+ * what the load phase is for.
+ *
+ * Interface intent (for the core datapath, `rtl/protocol_core.v`):
+ *
+ *   - `fetch_addr` is the address of the instruction that will execute in
+ *     the NEXT cycle (fetch-ahead, above), not the currently-executing
+ *     one. The core computes it combinationally from the instruction it
+ *     is executing now plus the current flags.
+ *   - `run_phase` is low during reset and during the load phase. The core
+ *     holds its PC at 0 and executes nothing while it is low, presents
+ *     address 0 on the first cycle it is high, and executes the
+ *     instruction at address 0 on the second -- DR 0005's "run-phase
+ *     entry costs one additional cycle", a fixed, data-independent +1 at
+ *     a single point per reset.
+ *   - Top wiring (`src/tt_um_2amlogic_protocol_emulator.v`):
+ *     `mode_pin` <- `ui_in[7]`, `serial_in` <- `ui_in[0]`. All other pins
+ *     are undisturbed by the load mechanism, per DR 0001.
  *   - `ena` (Tiny Tapeout's power/selection line) is deliberately not a
  *     port: DR 0001's load protocol is reset-gated, not power-gated, and
  *     the template documents `ena` as "always 1 when the design is
  *     powered, so you can ignore it".
  *
- * This module is simulation-portable out-of-band state: DR 0001 defines no
- * program-readback instruction (the ISA's 16-opcode table is exactly
- * full), so the verifiable path for "the bits landed where the ISA says"
- * is the fetch port itself -- what the core will execute -- exercised by
- * `verification/test_program_memory.py` after MODE drops.
+ * DR 0001 defines no program-readback instruction (the ISA's 16-opcode
+ * table is exactly full), so the verifiable path for "the bits landed
+ * where the ISA says" is the fetch port itself -- what the core will
+ * execute -- exercised by `verification/test_program_memory.py`.
  */
 
 `default_nettype none
 
 module protocol_program_memory (
-    input  wire        clk,        // clock
-    input  wire        rst_n,      // reset_n - low to reset; mode is sampled at the first post-release edge
-    input  wire        mode_pin,   // ui_in[7] - MODE: high at reset release enters load phase; during load, high = shifting, low = enter run phase
+    input  wire        clk,         // clock
+    input  wire        rst_n,       // reset_n - low to reset; mode is sampled at the first post-release edge
+    input  wire        mode_pin,    // ui_in[7] - MODE: high at reset release enters load phase; during load, high = shifting, low = enter run phase
     input  wire        serial_in,   // ui_in[0] - serial program bit, sampled MSB-first during load phase
-    input  wire [7:0]  fetch_addr,  // core's 8-bit program counter (run phase)
-    output wire [15:0] instr_word,  // combinational fetch read of program memory
+    input  wire [7:0]  fetch_addr,  // address of the instruction to execute NEXT cycle (fetch-ahead, DR 0005)
+    output wire [15:0] instr_word,  // the word read at the address presented one cycle earlier
     output wire        run_phase    // high once the load phase has ended (or was never entered)
 );
-
-  // 256 x 16-bit program memory. Flip-flop based (the target-spec row 6
-  // stretch item of an SRAM macro is deliberately not taken here).
-  reg [15:0] mem [0:255];
 
   // Load-phase state.
   reg        started;      // has the post-reset mode-sampling edge happened?
@@ -85,10 +137,60 @@ module protocol_program_memory (
   reg [7:0]  wr_addr;      // next program word to be written, 0..255
   reg        full;         // all 256 words loaded: saturate, never wrap
 
-  // Fetch read: combinational, same-cycle, per DR 0001's single-cycle
-  // fetch-and-execute timing model.
-  assign instr_word = mem[fetch_addr];
-  assign run_phase  = run_phase_r;
+  assign run_phase = run_phase_r;
+
+  // ------------------------------------------------------------------
+  // Macro port drive (combinational: the macro registers every input on
+  // the same posedge clk this module's own state advances on).
+  // ------------------------------------------------------------------
+
+  // The word that completes on THIS edge: 15 already-shifted bits plus
+  // the bit presented now. This is the same expression the flip-flop
+  // implementation wrote into `mem[wr_addr]`, so the
+  // commit-on-16th-bit-edge contract is bit-for-bit the one
+  // `verification/test_program_memory.py` pins.
+  wire [15:0] load_word = {shift_reg[14:0], serial_in};
+
+  // A commit cycle: in the load phase, with MODE still high (a MODE drop
+  // on this edge exits instead of shifting), on the 16th bit of a word,
+  // and not yet saturated.
+  wire        mem_wen   = load_active && mode_pin && (bit_cnt == 4'd15) && !full;
+
+  // The fetch port is live whenever the load phase is not. That includes
+  // the single pre-sampling cycle after reset release (harmless: the
+  // core holds address 0 and executes nothing until run_phase rises).
+  wire        mem_ren   = !load_active;
+
+  wire        mem_men   = mem_wen || mem_ren;
+  wire [7:0]  mem_addr  = load_active ? wr_addr : fetch_addr;
+
+  RM_IHPSG13_1P_256x16_c2_bm_bist u_sram (
+      .A_CLK      (clk),
+      .A_MEN      (mem_men),
+      .A_WEN      (mem_wen),
+      .A_REN      (mem_ren),
+      .A_ADDR     (mem_addr),
+      .A_DIN      (load_word),
+      .A_DLY      (1'b1),          // datasheet's mandatory setting (DR 0005)
+      .A_DOUT     (instr_word),
+      .A_BM       (16'hFFFF),      // whole-word writes only
+      // BIST port tied off: this design never uses it (DR 0005).
+      .A_BIST_CLK (1'b0),
+      .A_BIST_EN  (1'b0),
+      .A_BIST_MEN (1'b0),
+      .A_BIST_WEN (1'b0),
+      .A_BIST_REN (1'b0),
+      .A_BIST_ADDR(8'h00),
+      .A_BIST_DIN (16'h0000),
+      .A_BIST_BM  (16'h0000)
+  );
+
+  // ------------------------------------------------------------------
+  // Load-phase sequencer. Unchanged from the flip-flop implementation
+  // except that the word commit is now the macro's own synchronous
+  // write, driven by the combinational `mem_*` signals above rather than
+  // by an array assignment in this block.
+  // ------------------------------------------------------------------
 
   always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
@@ -119,13 +221,13 @@ module protocol_program_memory (
           run_phase_r <= 1'b1;
         end else begin
           // Shift one bit, MSB-first.
-          shift_reg <= {shift_reg[14:0], serial_in};
+          shift_reg <= load_word;
           if (bit_cnt == 4'd15) begin
             // Commit-on-16th-bit-edge: this edge shifts the final bit AND
-            // writes the assembled word, so a host can drop MODE on the
-            // very next cycle without losing the word.
+            // writes the assembled word (through `mem_wen` above), so a
+            // host can drop MODE on the very next cycle without losing
+            // the word.
             if (!full) begin
-              mem[wr_addr] <= {shift_reg[14:0], serial_in};
               if (wr_addr == 8'd255) begin
                 full <= 1'b1;
               end else begin
@@ -133,7 +235,7 @@ module protocol_program_memory (
               end
             end
             // After saturation, further groups keep shifting (harmless)
-            // but never commit.
+            // but never commit -- `mem_wen` gates on `!full`.
             bit_cnt <= 4'd0;
           end else begin
             bit_cnt <= bit_cnt + 4'd1;

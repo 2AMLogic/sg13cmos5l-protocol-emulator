@@ -3,19 +3,25 @@
 # Taken from the Tiny Tapeout `cmos5l` template
 # (https://github.com/TinyTapeout/ttihp-verilog-template/tree/cmos5l) per
 # CLAUDE.md's "Harness bootstrap" section and populated for this project
-# (issue #2). `top_module` is a stub that only wires up the fixed pin budget
-# (clk/rst_n/ena + 8 in / 8 out / 8 bidir) -- the ISA has not been ratified
-# yet (spec/, issue #1), so `pinout` and `clock_hz` below are placeholders
-# sized for the stub, not a ratified pinout/clock budget. `tiles` is now
-# measured for the stub top (issue #21's die-area record); see its inline
-# comment. Revisit once issue #1 lands.
+# (issue #2).
+#
+# 2026-09-30 (issue #18): `top_module` is no longer the harness-bootstrap
+# stub. It is the ISA core datapath of
+# `spec/decision-records/0001-isa.md` wired to its SRAM-macro-backed
+# program memory (`spec/decision-records/0005-program-memory-implementation.md`),
+# so `description`, `pinout` and `tiles` below all change with it. Note
+# that DR 0001 and DR 0005 are both `Proposed`, not ratified -- the
+# two-key mechanism has never run in this repository
+# (`spec/decision-records/0006-two-key-ratification-never-ran.md`,
+# issue #45) -- so what this file declares is the design as built and
+# measured, against targets that are proposed rather than binding.
 project:
-  title:        "Protocol emulator ASIC (harness bootstrap stub)"
+  title:        "Protocol emulator ASIC (ISA core)"
   author:       "2AMLogic"
   discord:      ""
-  description:  "Harness-bootstrap stub for a firmware-programmable protocol-emulator core; the ISA is not designed yet (see spec/, issue #1) -- this top only proves clk/rst_n/ena and the pin budget."
+  description:  "A firmware-programmable protocol-emulator core: a 16-opcode, 4-register pin-timing ISA with a 256x16 SRAM program memory loaded serially over two pins. UART/SPI/I2C are firmware for this core, not hardware blocks -- there is deliberately no fixed-function protocol peripheral on the die."
   language:     "Verilog"
-  clock_hz:     50000000 # 50 MHz -- the draft board-clock target in README.md's target spec table (DRAFT, unratified)
+  clock_hz:     50000000 # 50 MHz -- the target-spec row 4 number, still UNCONFIRMED by STA on either flow (see spec/gap-to-submission.md row 4)
 
   # How many tiles your design occupies?
   #
@@ -25,15 +31,30 @@ project:
   # DIE_AREA from tech/ihp-sg13cmos5l/tile_sizes.yaml: 1x1 = 202.08 x 154.98 um,
   # 2x2 = 419.52 x 313.74 um, 8x4 = 1724.16 x 710.64 um. See
   # verification/records/program-memory-macro-feasibility/records/20260925-000359-63b10d7.md.
-  tiles: "1x1"          # measured, not a placeholder, for the stub top actually submitted: die 1651.61 um^2
-                        # (klt place-and-route record 20260922-012402-420c370, issue #21) = 0.053 tiles at the
-                        # corrected 1x1 die area above (that record's own "0.092 tiles" used the 167x108 figure).
-                        # NOT grown to fit the real RTL: the flip-flop program memory alone measures 2.46x (klt flow)
-                        # to 2.98x (LibreLane flow) the ENTIRE ratified <=2x2 core area in cell area, so no utilization
-                        # setting fits it. The budget is a ratified target, not a suggestion -- the resolution is
-                        # spec/decision-records/0005-program-memory-implementation.md (take row 6's SRAM-macro stretch;
-                        # do not revise row 7), which is PROPOSED, not yet ratified. `tiles` moves when a real top is
-                        # measured, not on that record's arithmetic -- not a tiles edit here.
+  #
+  # 2026-09-30 (issue #18): grown from "1x1" to "2x2" -- the ratified row-7
+  # budget, not past it. Two reasons, one geometric and one measured:
+  #
+  #   (a) GEOMETRIC, and not negotiable: the program memory is now the
+  #       RM_IHPSG13_1P_256x16_c2_bm_bist macro (DR 0005), whose LEF SIZE is
+  #       236.8 x 118.78 um. A 1x1 die is 202.08 x 154.98 um -- the macro is
+  #       wider than the whole die in either orientation, so 1x1 cannot hold
+  #       this design at any utilization. 2x2 is the smallest legal tile
+  #       allocation that can.
+  #   (b) MEASURED: the klt/Yosys flow synthesizes the whole top to 568
+  #       instances, of which 567 are standard cells totalling 10,323.2556 um^2
+  #       (the macro is a blackbox there and contributes 0 -- see
+  #       flow/blackbox-RM_IHPSG13_1P_256x16_c2_bm_bist.v). Cells plus the
+  #       macro's 28,127.104 um^2 is 38,450.4 um^2 against the 2x2 core area of
+  #       126,685 um^2 = 30.4% core density, comfortably inside the
+  #       PL_TARGET_DENSITY_PCT 60 this repo's src/config.json asks for.
+  #
+  # Read (b) as what it is: a CELL-AREA figure from the klt flow, not a placed
+  # die area, and not the LibreLane flow's number. Per CLAUDE.md's two-flows
+  # rule the LibreLane figure is the `gds` workflow's own, reported separately.
+  # `verification/records/core-datapath-integration/` carries both, and says
+  # which produced which.
+  tiles: "2x2"
 
   # Your top module name must start with "tt_um_". Make it unique by including your github username:
   top_module:  "tt_um_2amlogic_protocol_emulator"
@@ -41,56 +62,70 @@ project:
   # List your project's source files here.
   # Source files must be in ./src and you must list each source file separately, one per line.
   # Don't forget to also update `PROJECT_SOURCES` in test/Makefile.
+  #
+  # protocol_core.v and protocol_program_memory.v are symlinks in src/ to the
+  # single copies under rtl/ (see rtl/README.md): the template fixes source
+  # files at ./src, and this repo keeps exactly one copy of each module, so the
+  # two flows can never disagree about WHAT they built.
+  #
+  # The SRAM macro's behavioural model (rtl/vendor/) is deliberately NOT listed:
+  # the macro is a hard block, blackboxed against its LEF/liberty by
+  # src/config.json's MACROS entry. Listing it here would make LibreLane
+  # synthesize a 4,096-flip-flop array -- the implementation DR 0005 replaced.
   source_files:
     - "tt_um_2amlogic_protocol_emulator.v"
+    - "protocol_core.v"
+    - "protocol_program_memory.v"
 
 # The pinout of your project. Leave unused pins blank. DO NOT delete or add any pins.
 # This section is for the datasheet/website. Use descriptive names (e.g., RX, TX, MOSI, SCL, SEG_A, etc.).
 #
-# No ISA is ratified yet (spec/, issue #1), so no pin has a fixed protocol
-# role -- these are generic stub descriptions, not a pinout budget decision.
-# ui[]/uo[] are genuinely wired (ui_in is registered onto uo_out; see
-# src/tt_um_2amlogic_protocol_emulator.v) so they get a real, if generic,
-# label; uio[] is left blank because the stub holds it as inputs
-# (uio_oe = 0) and drives nothing onto it.
+# 2026-09-21 (issue #19): ui[0] and ui[7] name the program-load protocol
+# roles DR 0001 section "Program memory sizing and loading" assigns
+# (ui_in[7] = MODE, ui_in[0] = serial data).
 #
-# 2026-09-21 (issue #19): ui[0] and ui[7] now name the program-load
-# protocol roles DR 0001 section "Program memory sizing and loading"
-# assigns (ui_in[7] = MODE, ui_in[0] = serial data) -- the pin-role
-# decision record the row-5 gap note asks for, for the load pins only
-# (ratification of DR 0001 as a whole is still pending, issue #17). The
-# top-level wiring of these two pins lands with the core-datapath issue
-# (#18), which instantiates rtl/protocol_program_memory.v.
+# 2026-09-30 (issue #18): the remaining pins get their real ISA roles. They
+# are deliberately GENERIC, because that is the design: DR 0001 exposes four
+# addressable 8-bit ports (ui_in, uio_in read-only; uo_out, uio_out
+# write-only) and what any individual pin *means* -- TX, SCLK, SDA -- is
+# decided by the firmware image loaded at run time, not by the silicon. A
+# per-protocol pin plan belongs to the firmware issues (#23) and to a pin-role
+# decision record, not here. uio_oe is fixed at 0 (all bidirectional pins are
+# inputs) until such a record admits a bidirectional protocol; DR 0001's
+# "Consequences" flags that as a known limitation for I2C's open-drain SDA.
 pinout:
   # Inputs
-  ui[0]: "PROG_SER: serial program-load data bit (load phase)"
-  ui[1]: "stub: registered onto uo[1]"
-  ui[2]: "stub: registered onto uo[2]"
-  ui[3]: "stub: registered onto uo[3]"
-  ui[4]: "stub: registered onto uo[4]"
-  ui[5]: "stub: registered onto uo[5]"
-  ui[6]: "stub: registered onto uo[6]"
-  ui[7]: "PROG_MODE: high at reset release = serial program load phase"
+  ui[0]: "PROG_SER: serial program-load data bit (load phase); ISA input port 00 bit 0 in run phase"
+  ui[1]: "ISA input port 00 bit 1 (read by IN Rd, 00)"
+  ui[2]: "ISA input port 00 bit 2 (read by IN Rd, 00)"
+  ui[3]: "ISA input port 00 bit 3 (read by IN Rd, 00)"
+  ui[4]: "ISA input port 00 bit 4 (read by IN Rd, 00)"
+  ui[5]: "ISA input port 00 bit 5 (read by IN Rd, 00)"
+  ui[6]: "ISA input port 00 bit 6 (read by IN Rd, 00)"
+  ui[7]: "PROG_MODE: high at reset release = serial program load phase; ISA input port 00 bit 7 in run phase"
 
   # Outputs
-  uo[0]: "stub: ui[0] registered here"
-  uo[1]: "stub: ui[1] registered here"
-  uo[2]: "stub: ui[2] registered here"
-  uo[3]: "stub: ui[3] registered here"
-  uo[4]: "stub: ui[4] registered here"
-  uo[5]: "stub: ui[5] registered here"
-  uo[6]: "stub: ui[6] registered here"
-  uo[7]: "stub: ui[7] registered here"
+  uo[0]: "ISA output port 10 bit 0 (driven by OUT 10, Rs; registered, one cycle after the OUT)"
+  uo[1]: "ISA output port 10 bit 1 (driven by OUT 10, Rs)"
+  uo[2]: "ISA output port 10 bit 2 (driven by OUT 10, Rs)"
+  uo[3]: "ISA output port 10 bit 3 (driven by OUT 10, Rs)"
+  uo[4]: "ISA output port 10 bit 4 (driven by OUT 10, Rs)"
+  uo[5]: "ISA output port 10 bit 5 (driven by OUT 10, Rs)"
+  uo[6]: "ISA output port 10 bit 6 (driven by OUT 10, Rs)"
+  uo[7]: "ISA output port 10 bit 7 (driven by OUT 10, Rs)"
 
   # Bidirectional pins
-  uio[0]: ""
-  uio[1]: ""
-  uio[2]: ""
-  uio[3]: ""
-  uio[4]: ""
-  uio[5]: ""
-  uio[6]: ""
-  uio[7]: ""
+  # Held as inputs (uio_oe = 0) in this ISA revision: IN Rd, 01 reads them;
+  # OUT 11, Rs writes the uio_out register but the direction is not
+  # runtime-programmable, so nothing reaches the pad yet.
+  uio[0]: "ISA input port 01 bit 0 (read by IN Rd, 01); held as an input"
+  uio[1]: "ISA input port 01 bit 1 (read by IN Rd, 01); held as an input"
+  uio[2]: "ISA input port 01 bit 2 (read by IN Rd, 01); held as an input"
+  uio[3]: "ISA input port 01 bit 3 (read by IN Rd, 01); held as an input"
+  uio[4]: "ISA input port 01 bit 4 (read by IN Rd, 01); held as an input"
+  uio[5]: "ISA input port 01 bit 5 (read by IN Rd, 01); held as an input"
+  uio[6]: "ISA input port 01 bit 6 (read by IN Rd, 01); held as an input"
+  uio[7]: "ISA input port 01 bit 7 (read by IN Rd, 01); held as an input"
 
 # Do not change!
 yaml_version: 6
