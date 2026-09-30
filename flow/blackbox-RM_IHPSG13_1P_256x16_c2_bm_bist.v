@@ -8,13 +8,35 @@
  *
  * WHY THIS FILE EXISTS -- and why it is under `flow/`, not `rtl/`:
  *
- * The LibreLane flow of record does not need it. `tt-support-tools`
- * merges this repo's `src/config.json`, whose `MACROS` / `EXTRA_LEFS` /
- * `EXTRA_LIBS` / `EXTRA_GDS_FILES` entries hand LibreLane the macro's
- * LEF/liberty/GDS, and LibreLane's Yosys step reads the liberty with
- * `-lib`, which creates the blackbox itself.
+ * BOTH flows need it, for different reasons. It is the single declaration
+ * of this macro's interface in this repository, which is the point: two
+ * transcriptions of a 17-port hard-macro pin list could disagree, and
+ * CLAUDE.md's "two flows, one record of truth" is exactly the rule
+ * against that.
  *
- * This repo's *other* flow -- the `klt`/Yosys/OpenROAD iteration flow of
+ * 1. THE LIBRELANE FLOW OF RECORD needs it for its linter. It was
+ *    originally believed not to -- `tt-support-tools` merges this repo's
+ *    `src/config.json`, whose `MACROS` entry hands LibreLane the macro's
+ *    LEF/liberty/GDS, and LibreLane's Yosys step reads the liberty with
+ *    `-lib`, which creates the blackbox itself. That covers synthesis but
+ *    NOT `Verilator.Lint`, which runs before it and reads neither LEF nor
+ *    liberty. The first `gds` run of the macro-backed top (run
+ *    `36772645448`, 2026-09-30) failed there, not in placement:
+ *
+ *        %Error-MODMISSING: src/protocol_program_memory.v:167:3: Cannot
+ *        find file containing module: 'RM_IHPSG13_1P_256x16_c2_bm_bist'
+ *
+ *    This file is now wired in as that macro's `vh` (Verilog HEADER)
+ *    view, the field LibreLane provides for precisely this: the linter
+ *    appends it verbatim as a blackbox. See `src/config.json`'s `vh`
+ *    comment block for the one number this moves (the macro's area leaves
+ *    LibreLane's *synthesis* cell-area total, because `vh` outranks `lib`
+ *    when Yosys picks a macro view -- STA still reads the liberty).
+ *    Waiving MODMISSING instead was rejected: it would also hide a
+ *    genuinely mistyped module name, and it would leave the macro's 17
+ *    ports unchecked at the one step that can check them.
+ *
+ * 2. This repo's *other* flow -- the `klt`/Yosys/OpenROAD iteration flow of
  * DR 0002 -- has no equivalent. `klt synthesize`'s request schema has no
  * field for a hard macro (no `macros`, `extra_libs` or `blackbox`
  * entry), so Yosys sees an undeclared module and aborts:
@@ -27,12 +49,17 @@
  * ("a klt-side place-and-route flow that handles a hard macro against
  * this PDK ... if that surfaces a tool gap, it is a
  * 2AMLogic/klayout-tools issue under CLAUDE.md's friction protocol").
- * It is filed upstream; this file is the interim workaround, listed in
- * `flow/synthesize-*.json`'s `sources` so the klt leg can synthesize the
- * surrounding logic. **Retire it when `klt synthesize` grows a macro /
- * liberty-blackbox input**, and do not add it to `info.yaml`'s
- * `source_files` -- LibreLane would then see two competing declarations
- * of the same cell.
+ * It is filed upstream as 2AMLogic/klayout-tools#2635; this file is the
+ * interim workaround for that half, listed in `flow/synthesize-*.json`'s
+ * `sources` so the klt leg can synthesize the surrounding logic. When
+ * `klt synthesize` grows a macro / liberty-blackbox input, retire it from
+ * *that* list only -- reason 1 above is not a workaround and does not
+ * expire.
+ *
+ * Do NOT add this file to `info.yaml`'s `source_files`: that list becomes
+ * LibreLane's `VERILOG_FILES`, where this would be a competing *design*
+ * module rather than a macro view. `MACROS[...].vh` is the correct hook
+ * and is what `src/config.json` uses.
  *
  * Port list and widths are transcribed from the PDK's own behavioural
  * model (`rtl/vendor/RM_IHPSG13_1P_256x16_c2_bm_bist.v`, whose provenance

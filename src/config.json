@@ -97,6 +97,21 @@
   "//": "what the un-flattened netlist this repo's klt/Yosys leg emits calls it (see",
   "//": "verification/records/synthesis-baseline/artifacts/.../tt_um_2amlogic_protocol_emulator_synth.v).",
 
+  "//": "vh (Verilog HEADER view): LibreLane needs a module DECLARATION for the macro even though the",
+  "//": "macro has no RTL -- its Verilator.Lint step fails %Error-MODMISSING without one (observed on the",
+  "//": "first gds run of this branch, run 36772645448). `vh` is the field built for that: the linter",
+  "//": "appends it verbatim as a blackbox, and Yosys reads it with `read_verilog -sv -lib`. The file is",
+  "//": "the SAME blackbox this repo's klt/Yosys leg already lists in flow/synthesize-*.json, deliberately",
+  "//": "-- one declaration of the macro interface for both flows, so the two can never disagree about the",
+  "//": "macro's ports (CLAUDE.md, 'two flows, one record of truth'). Do NOT instead add it to info.yaml's",
+  "//": "source_files: that is VERILOG_FILES, where it would be a competing DESIGN module.",
+  "//": "Consequence, stated because it moves a number: LibreLane ranks `vh` ABOVE `lib` when choosing a",
+  "//": "macro view for Yosys, so the macro's liberty is no longer read at SYNTHESIS and its 28,127.104",
+  "//": "um^2 is excluded from LibreLane's reported cell area -- exactly as it already is from the klt",
+  "//": "flow's. That makes the two flows' cell-area figures comparable rather than silently offset. STA is",
+  "//": "unaffected: openroad.py reads macro LIB views directly via get_macro_views(config, LIB), which",
+  "//": "this priority list does not touch, and the three corner globs below are still what it reads.",
+
   "//": "lib CORNERS: the macro ships exactly three liberty corners; the globs below route each of the",
   "//": "flow's corner names (nom_/min_/max_ prefixed) to the matching one. The standard-cell library's",
   "//": "fast corner is -40C and the macro's is -55C: that is what IHP ships, not a substitution made",
@@ -109,6 +124,9 @@
       ],
       "lef": [
         "pdk_dir::libs.ref/sg13cmos5l_sram/lef/RM_IHPSG13_1P_256x16_c2_bm_bist.lef"
+      ],
+      "vh": [
+        "dir::../flow/blackbox-RM_IHPSG13_1P_256x16_c2_bm_bist.v"
       ],
       "instances": {
         "u_prog_mem.u_sram": {
