@@ -52,8 +52,11 @@ project:
   # Read (b) as what it is: a CELL-AREA figure from the klt flow, not a placed
   # die area, and not the LibreLane flow's number. Per CLAUDE.md's two-flows
   # rule the LibreLane figure is the `gds` workflow's own, reported separately.
-  # `verification/records/core-datapath-integration/` carries both, and says
-  # which produced which.
+  # `verification/records/synthesis-baseline/` carries the klt cell-area half
+  # and `verification/records/die-area-baseline/` records why the klt flow
+  # could not place it at all (klayout-tools#2635); both say which flow
+  # produced which number. `verification/records/core-datapath/` is the
+  # functional/cycle-level leg and deliberately claims no area at all.
   tiles: "2x2"
 
   # Your top module name must start with "tt_um_". Make it unique by including your github username:

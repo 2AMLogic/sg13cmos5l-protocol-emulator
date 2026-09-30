@@ -1,0 +1,7 @@
+{
+  "schema_version": 1,
+  "error": {
+    "command": "sta",
+    "message": "openroad sta run failed: [ERROR ORD-2013] instance u_prog_mem/u_sram LEF master RM_IHPSG13_1P_256x16_c2_bm_bist not found. -- openroad invocation: {\"directory\": {\"path\": \"flow/sta-corners/typ_1p20V_25C/.klt/sta/openroad-logs/19c19824c09b4e2b89e6de7a2c0508c1\", \"scope\": \"repo\"}, \"invocation_id\": \"19c19824c09b4e2b89e6de7a2c0508c1\", \"metadata_path\": {\"path\": \"flow/sta-corners/typ_1p20V_25C/.klt/sta/openroad-logs/19c19824c09b4e2b89e6de7a2c0508c1/invocation.json\", \"scope\": \"repo\"}, \"metrics_path\": {\"path\": \"flow/sta-corners/typ_1p20V_25C/.klt/sta/tt_um_2amlogic_protocol_emulator_synth_metrics.json\", \"scope\": \"repo\"}, \"outcome\": \"exited\", \"retention_errors\": [], \"returncode\": 1, \"script_name\": \"sta_tt_um_2amlogic_protocol_emulator_synth.tcl\", \"script_path\": {\"path\": \"flow/sta-corners/typ_1p20V_25C/.klt/sta/sta_tt_um_2amlogic_protocol_emulator_synth.tcl\", \"scope\": \"repo\"}, \"script_sha256\": \"bd783dcc282f358e4f75e4c3451429265eb738db7042a7bbabc6dfd87c3a7f5a\", \"stderr_path\": {\"path\": \"flow/sta-corners/typ_1p20V_25C/.klt/sta/openroad-logs/19c19824c09b4e2b89e6de7a2c0508c1/stderr.log\", \"scope\": \"repo\"}, \"stdout_path\": {\"path\": \"flow/sta-corners/typ_1p20V_25C/.klt/sta/openroad-logs/19c19824c09b4e2b89e6de7a2c0508c1/stdout.log\", \"scope\": \"repo\"}}"
+  }
+}

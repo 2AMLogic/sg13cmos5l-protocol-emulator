@@ -90,6 +90,18 @@
   "//": "core datapath synthesizes to. Both coordinates are exact site multiples (91.2 = 190 x 0.48,",
   "//": "173.88 = 46 x 3.78) so the macro lands on the placement grid rather than cutting a row.",
 
+  "//": "instance NAME: the design keeps two levels of hierarchy (tt_um_... -> u_prog_mem -> u_sram),",
+  "//": "and LibreLane's Yosys step flattens, so the instance reaches the DEF as `u_prog_mem.u_sram`.",
+  "//": "If a future LibreLane/Yosys version stops flattening, OpenROAD.ManualMacroPlacement will",
+  "//": "report the instance as missing and the key below becomes plain `u_sram` -- which is exactly",
+  "//": "what the un-flattened netlist this repo's klt/Yosys leg emits calls it (see",
+  "//": "verification/records/synthesis-baseline/artifacts/.../tt_um_2amlogic_protocol_emulator_synth.v).",
+
+  "//": "lib CORNERS: the macro ships exactly three liberty corners; the globs below route each of the",
+  "//": "flow's corner names (nom_/min_/max_ prefixed) to the matching one. The standard-cell library's",
+  "//": "fast corner is -40C and the macro's is -55C: that is what IHP ships, not a substitution made",
+  "//": "here, and it makes the fast corner slightly pessimistic for the macro.",
+
   "MACROS": {
     "RM_IHPSG13_1P_256x16_c2_bm_bist": {
       "gds": [
@@ -104,10 +116,6 @@
           "orientation": "N"
         }
       },
-      "//": "The macro ships exactly three liberty corners; the globs below route each of the flow's",
-      "//": "corner names (nom_/min_/max_ prefixed) to the matching one. The stdcell library's fast",
-      "//": "corner is -40C and the macro's is -55C: that is what IHP ships, not a substitution made",
-      "//": "here, and it makes the fast corner slightly pessimistic for the macro.",
       "lib": {
         "*typ*": [
           "pdk_dir::libs.ref/sg13cmos5l_sram/lib/RM_IHPSG13_1P_256x16_c2_bm_bist_typ_1p20V_25C.lib"

@@ -1,0 +1,7 @@
+{
+  "schema_version": 1,
+  "error": {
+    "command": "place-and-route",
+    "message": "openroad 'floorplan' stage failed: [ERROR ORD-2013] instance u_prog_mem/u_sram LEF master RM_IHPSG13_1P_256x16_c2_bm_bist not found. -- openroad invocation: {\"directory\": {\"path\": \"flow/par-scratch/.klt/place-and-route/openroad-logs/bd29bca3273543b08ca2fc9989343ba7\", \"scope\": \"repo\"}, \"invocation_id\": \"bd29bca3273543b08ca2fc9989343ba7\", \"metadata_path\": {\"path\": \"flow/par-scratch/.klt/place-and-route/openroad-logs/bd29bca3273543b08ca2fc9989343ba7/invocation.json\", \"scope\": \"repo\"}, \"metrics_path\": {\"path\": \"flow/par-scratch/.klt/place-and-route/tt_um_2amlogic_protocol_emulator_floorplan_metrics.json\", \"scope\": \"repo\"}, \"outcome\": \"exited\", \"retention_errors\": [], \"returncode\": 1, \"script_name\": \"pnr_tt_um_2amlogic_protocol_emulator_floorplan.tcl\", \"script_path\": {\"path\": \"flow/par-scratch/.klt/place-and-route/pnr_tt_um_2amlogic_protocol_emulator_floorplan.tcl\", \"scope\": \"repo\"}, \"script_sha256\": \"1d869e0a80f3c4ed06669dd7f57238a3e04089bf5f0862cd009fbe5819d71954\", \"stderr_path\": {\"path\": \"flow/par-scratch/.klt/place-and-route/openroad-logs/bd29bca3273543b08ca2fc9989343ba7/stderr.log\", \"scope\": \"repo\"}, \"stdout_path\": {\"path\": \"flow/par-scratch/.klt/place-and-route/openroad-logs/bd29bca3273543b08ca2fc9989343ba7/stdout.log\", \"scope\": \"repo\"}}"
+  }
+}
