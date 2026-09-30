@@ -283,6 +283,21 @@ documented where a reader will look for it.
   later: the stand-down was prose, and nothing mechanical was watching. Filed
   as its own defect (see issue #45) — a repair that only adds documentation
   would leave the same hole open.
+  **2026-09-27 update (issue #45): the hook now exists.** A `spec/` `Status:`
+  flip to `Ratified` fails the `two-key gate (spec Status flips)` check
+  (`.github/workflows/ratification-gate.yml`) and `npm run check:ci` unless the
+  carrying PR's own `/pulls/<N>/reviews` shows the two markers — one `ee`, one
+  `market`, distinct `reviewer=` values, releasing verdicts, neither
+  attributable to the PR's author. Replayed against PR #29's own diff and its
+  own zero reviews, the gate fails and names all five files this record's table
+  reopens. `loom:auto-merge-ok` is withdrawn as the release signal in
+  `spec/README.md` and DR 0004; the release signal is the reviews.
+  `docs/ratification-gate.md` is authoritative for what is checked, including
+  the operator step that makes the check *blocking* rather than merely red, and
+  the `--require-distinct-principals` switch that mechanises the independence
+  ruling § "Routed, not decided" routes without a code change. **This update
+  changes nothing about this record's finding of fact**, and step 3 of "How
+  this gets closed" below is now enforced rather than merely required.
 
 ## How this gets closed
 
