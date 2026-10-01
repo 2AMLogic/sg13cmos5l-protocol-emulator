@@ -35,6 +35,13 @@
   "//": "particular PL_TARGET_DENSITY_PCT, CLOCK_PERIOD, RUN_LINTER and the whole do-not-change block",
   "//": "are untouched -- the macro is meant to make this design fit at the template's own settings,",
   "//": "not to need them loosened.",
+  "//": "",
+  "//": "2026-10-01 (issue #60), amending the paragraph above: the PDN keys are no longer all",
+  "//": "template values. FP_PDN_CFG is new (points at src/pdn_cfg.tcl), and FP_PDN_VPITCH moves",
+  "//": "50.0 -> 44.96 with FP_PDN_VOFFSET 93.985 added, because the SRAM macro's Metal4-only",
+  "//": "power pins need same-layer bridge stripes (see src/pdn_cfg.tcl and the comment at the",
+  "//": "keys themselves) and the template's 50.0 um strap lattice would short against them.",
+  "//": "Everything outside the PDN keys keeps its template value.",
 
   "//": "Here are some of the variables you may want to change:",
 
@@ -159,6 +166,19 @@
     "u_prog_mem.u_sram VPWR VGND VDDARRAY! VSS!"
   ],
 
+  "//": "------------------------------------------------------------------",
+  "//": "Custom PDN configuration (issue #60). See src/pdn_cfg.tcl -- the file",
+  "//": "this points at -- for the full why: the macro's power pins are",
+  "//": "Metal4-only, every other x over the macro is Metal4-obstructed, and",
+  "//": "TopMetal1.drawing is not on the competition precheck's CMOS5L allowlist,",
+  "//": "so the default pdn_cfg.tcl's Metal4->TopMetal1 macro connect can never",
+  "//": "fire (PDN-0232/PDN-0233). The custom file draws one Metal4 bridge per",
+  "//": "macro power stripe (same layer, same net, coincident footprint) and lets",
+  "//": "pdngen's Metal1<->Metal4 connect via them down to the stdcell rails.",
+  "//": "It reuses every PDN_* knob below, so this is the only new key.",
+
+  "FP_PDN_CFG": "dir::pdn_cfg.tcl",
+
   "//": "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!",
   "//": "!!! DO NOT CHANGE ANYTHING BELOW THIS POINT !!!",
   "//": "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!",
@@ -184,8 +204,19 @@
   "FP_IO_HLENGTH": 2,
   "FP_IO_VLENGTH": 2,
 
-  "FP_PDN_VPITCH": 50.0,
+  "//": "Vertical power-strap pitch/width. 2026-10-01 (issue #60): the pitch and",
+  "//": "offset below deviate from the template's 50.0 / (unset) because the",
+  "//": "Metal4 bridge stripes src/pdn_cfg.tcl draws over the SRAM macro sit on",
+  "//": "the macro's own 11.24 um stripe lattice, and the template's 50.0 um",
+  "//": "strap lattice would land its x=112.88/116.98 pair onto the macro's",
+  "//": "opposite-net stripes at x=112.32/117.94 -- a 0.09 um direct short",
+  "//": "against a full-height bridge. 44.96 um = 4 x 11.24 um with the offset",
+  "//": "below puts every core strap crossing the macro exactly on a same-net",
+  "//": "stripe (merging with the bridge) or in clear space. Width stays the",
+  "//": "template's 2.1 um.",
+  "FP_PDN_VPITCH": 44.96,
   "FP_PDN_VWIDTH": 2.1,
+  "FP_PDN_VOFFSET": 93.985,
 
   "//": "Clock",
   "RUN_CTS": 1,
