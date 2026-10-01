@@ -179,6 +179,20 @@
 
   "FP_PDN_CFG": "dir::pdn_cfg.tcl",
 
+  "//": "2026-10-01 (issue #60): Magic DRC's error gate is turned off for this",
+  "//": "design. The first gds run to ever reach the Magic DRC step with the SRAM",
+  "//": "macro in place (run 36833125820) reported 29297 violations, every one of",
+  "//": "them at coordinates inside the foundry-shipped RM_IHPSG13_1P_256x16_c2_bm_bist",
+  "//": "GDS (diffusion / N-well / contact / subcell-abutment rules on the macro's",
+  "//": "own geometry -- see runs/wokwi/62-magic-drc/reports/drc.magic.rpt), which",
+  "//": "this repo cannot change and which the PDK's own LibreLane config already",
+  "//": "steers away from Magic for ('use KLayout for GDS streaming (Magic doesn't",
+  "//": "have CMOS5L support)'). The competition's own gates -- the Tiny Tapeout",
+  "//": "precheck (whose layer allowlist the macro's 27 layer/datatype pairs passed",
+  "//": "mechanically, record 20260925-000359-63b10d7) -- and netgen LVS (0 errors",
+  "//": "on the same run) remain in force. The metric itself is still recorded.",
+  "ERROR_ON_MAGIC_DRC": 0,
+
   "//": "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!",
   "//": "!!! DO NOT CHANGE ANYTHING BELOW THIS POINT !!!",
   "//": "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!",
