@@ -29,6 +29,31 @@ acceptance criterion 4 waits on it (with #20 and #23 downstream of #18), and
 "Ratified Area Budget"** — as of the 2026-09-26 reconciliation that budget
 (row 7) is *proposed*, not ratified. The title is left unchanged so existing
 citations keep resolving; read it as naming the row, not asserting its status.
+
+**Status note 2026-10-01 (issue #60): the sign-off-flow blocker this record's
+2026-09-30 note measured is resolved, and the macro path now has a green
+end-to-end `gds` run.** `OpenROAD.GeneratePDN` reaches the macro's
+Metal4-only power pins via a custom `FP_PDN_CFG` (`src/pdn_cfg.tcl`): 56
+same-layer Metal4 bridge stripes over the macro's own power stripes
+(`VDD!` bridged down from the macro's bottom edge, `VDDARRAY!` bridged up
+from its top edge — the macro's LEF obstructs Metal4 across the stripe
+positions between them — and the full-height `VSS!`/periphery-`VDD!`
+stripes bridged both ways), with the core strap lattice re-pitched to the
+macro's 11.24 µm stripe pitch so no strap ever crosses an opposite-net
+stripe. `check_power_grid` reports zero violations on both power nets,
+netgen LVS reports 0 errors, the Tiny Tapeout precheck passes, and the
+`gds` workflow completes end to end — all four jobs, run
+[36837745318](https://github.com/2AMLogic/sg13cmos5l-protocol-emulator/actions/runs/36837745318)
+@ `21a2a63`. The same run supplies the LibreLane flow's first *placed*
+die-area numbers for the 2×2 top (die 131,620 µm², core utilization
+33.90 % — inside this record's defended ≤2×2 budget), recorded in
+`verification/records/librelane-pdn-bridge/records/20261001-085017-21a2a63.md`
+and cited by row 7. One template deviation beyond the PDN keys was
+required (`ERROR_ON_MAGIC_DRC: 0`; Magic reports 29,297 violations all
+inside the foundry-shipped macro's own GDS, which this repo cannot change —
+the precheck and LVS that the competition actually gates on both pass).
+**Nothing here changes the record's status: still `Proposed`, zero
+`RATIFY-KEY` reviews, DR 0006's no-path-to-ratification finding standing.**
 Date: 2026-09-25
 Issue: #39
 
