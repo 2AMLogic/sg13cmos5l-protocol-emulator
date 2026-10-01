@@ -249,6 +249,22 @@ def test_lint_mov_propagates_taint():
     )
     assert len(p.warnings) == 1, "taint flows through MOV"
 
+def test_lint_shf_does_not_launder_tainted_flag():
+    # SHF writes C only, never Z (rtl/protocol_core.v OP_SHF block; DR 0001
+    # opcode table: "shifted-out bit -> C"), so it cannot supply -- or
+    # displace -- the Z flag BZ/BNZ read. A shift between a tainted ALU op
+    # and a conditional branch must not erase the governing-flag record.
+    p = one(
+        "     IN R0, UI_IN\n"
+        "     LDI R1, 1\n"
+        "top: SUB R0, R1\n"
+        "     SHF R2, LEFT\n"
+        "     BNZ top\n"
+        "     HALT\n"
+    )
+    assert len(p.warnings) == 1, "SHF must not launder a tainted Z flag"
+    assert "data-dependent-latency" in p.warnings[0]
+
 
 # --- malformed input (each must raise AsmError with a line number) -----------
 
@@ -335,6 +351,7 @@ ALL_TESTS = [
     test_lint_warns_on_pin_data_conditional_branch,
     test_lint_silent_on_constant_loop,
     test_lint_ldi_clears_taint, test_lint_mov_propagates_taint,
+    test_lint_shf_does_not_launder_tainted_flag,
     test_unknown_mnemonic, test_bad_register, test_imm_range, test_bad_arity,
     test_bad_port_and_direction, test_io_direction_bugs, test_label_errors,
     test_directive_errors, test_error_carries_line_number,
