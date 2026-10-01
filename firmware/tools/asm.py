@@ -114,7 +114,9 @@ REGISTERS = {f"R{i}": i for i in range(4)}  # DR 0001: R0-R3, four 8-bit GPRs
 
 IDENT_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 # Ops that set the Z flag read by BZ/BNZ (DR 0001 register/pin model).
-FLAG_SETTING_OPS = {"ADD", "SUB", "AND", "OR", "XOR", "SHF"}
+# SHF is deliberately absent: it writes C only (the shifted-out bit), never
+# the Z this set governs (rtl/protocol_core.v OP_SHF block; DR 0001 table).
+FLAG_SETTING_OPS = {"ADD", "SUB", "AND", "OR", "XOR"}
 
 
 @dataclass
@@ -354,12 +356,9 @@ def assemble_text(text: str, source_name: str = "<memory>") -> Program:
             tainted[rd] = True
         elif mnemonic == "MOV":
             tainted[rd] = tainted[rs]
-        elif mnemonic in ("ADD", "SUB", "AND", "OR", "XOR"):
+        elif mnemonic in FLAG_SETTING_OPS:
             last_flag_setter = (mnemonic, (tainted[rd], tainted[rs]))
             tainted[rd] = tainted[rd] or tainted[rs]
-        elif mnemonic == "SHF":
-            last_flag_setter = (mnemonic, (tainted[rd],))
-            tainted[rd] = tainted[rd]  # shifting propagates its own taint
         if mnemonic in ("BZ", "BNZ") and last_flag_setter is not None:
             setter, taints = last_flag_setter
             if any(taints):
