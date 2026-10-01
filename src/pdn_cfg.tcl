@@ -270,6 +270,9 @@ proc pdn_pins_create {} {
             set bterm [odb::dbBTerm_create $net $net_name]
             $bterm setIoType INOUT
             $bterm setSpecial
+            # The DisconnectedPins checker classifies block terminals by
+            # their own sig type, not the net's -- set it from the net.
+            $bterm setSigType [$net getSigType]
         }
         set bpin [odb::dbBPin_create $bterm]
         $bpin setPlacementStatus FIRM
