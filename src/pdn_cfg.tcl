@@ -181,9 +181,6 @@ if { $::env(PDN_MULTILAYER) == 1 } {
 }
 
 set arg_list [list]
-if { $::env(PDN_ENABLE_PINS) } {
-    lappend arg_list -pins "$::env(PDN_VERTICAL_LAYER)"
-}
 
 define_pdn_grid \
     -name stdcell_grid \
@@ -220,6 +217,69 @@ if { $::env(PDN_ENABLE_RAILS) == 1 } {
     add_pdn_connect \
         -grid stdcell_grid \
         -layers "$::env(PDN_RAIL_LAYER) $::env(PDN_VERTICAL_LAYER)"
+}
+
+# ---------------------------------------------------------------------------
+# Power pins (replaces pin promotion on the stdcell grid).
+#
+# The Tiny Tapeout precheck (tt-support-tools precheck/pin_check.py,
+# power-pins loop) requires EVERY VPWR/VGND port rect in the streamed LEF to
+# be within 10 um of BOTH die edges -- i.e. every power pin must be a
+# full-die-height strap.  Promoting the stdcell grid's straps (-pins on that
+# grid, the default behavior) fails that with a macro in the die: straps
+# crossing the macro's x-range are split by its halo into partial rects, and
+# a separate pins-only grid cannot work either, because the stdcell grid
+# claims the whole core domain on its layers for every other grid.  So the
+# two pin shapes are created directly, on the same strap lattice positions
+# the stdcell grid itself uses to the RIGHT of the macro (whose x-range is
+# [91.2, 328.0] on this die), where the underlying straps run uninterrupted
+# from die edge to die edge.  The pin boxes coincide with those straps, so
+# this adds no new metal -- only the block pins the flow and the precheck
+# need.
+# ---------------------------------------------------------------------------
+proc pdn_pins_create {} {
+    set block [ord::get_db_block]
+    set tech [$block getTech]
+    set m4 [$tech findLayer Metal4]
+    if {$m4 eq "NULL"} {
+        puts stderr "pdn_pins: Metal4 not found in tech"
+        exit 1
+    }
+    set dbu [$block getDbUnitsPerMicron]
+    set die [$block getDieArea]
+    set y0 [$die yMin]
+    set y1 [$die yMax]
+    # Strap centers on the stdcell grid's lattice (offset is measured from
+    # the core corner to the first power-strap center; ground follows by
+    # width + spacing).  Seven pitch periods from the offset lands right of
+    # the macro's x-range on this die (366.625 / 370.725 um for the values
+    # in src/config.json).
+    set core [$block getCoreArea]
+    set cx_vdd [expr {([$core xMin] + ($::env(PDN_VOFFSET) + 6 * $::env(PDN_VPITCH)) * $dbu)}]
+    set cx_vss [expr {$cx_vdd + ($::env(PDN_VWIDTH) + $::env(PDN_VSPACING)) * $dbu}]
+    set halfw [expr {int($::env(PDN_VWIDTH) * $dbu / 2)}]
+    foreach pair [list [list $::env(VDD_NET) $cx_vdd] [list $::env(GND_NET) $cx_vss]] {
+        lassign $pair net_name cx
+        set net [$block findNet $net_name]
+        if {$net eq "NULL"} {
+            puts stderr "pdn_pins: net '$net_name' not found"
+            exit 1
+        }
+        set bterm [$net get1stBTerm]
+        if {$bterm eq "NULL"} {
+            set bterm [odb::dbBTerm_create $net $net_name]
+            $bterm setIoType INOUT
+            $bterm setSpecial
+        }
+        set bpin [odb::dbBPin_create $bterm]
+        $bpin setPlacementStatus FIRM
+        odb::dbBox_create $bpin $m4 [expr {int($cx) - $halfw}] $y0 [expr {int($cx) + $halfw}] $y1
+        puts "\[INFO\] pdn_pins: created $net_name pin at x=[expr {$cx / $dbu}] um spanning the die height"
+    }
+}
+
+if { $::env(PDN_ENABLE_PINS) } {
+    pdn_pins_create
 }
 
 if { $::env(PDN_CORE_RING) == 1 } {
