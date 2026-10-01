@@ -20,6 +20,14 @@
 #     the PR. Both events carry `github.event.pull_request`, so the same
 #     check re-runs against the same head sha and the latest run wins.
 #
+# Two and only two: every step below reads `github.event.pull_request` (the
+# checkout ref, the base-branch fetch, the `--pr`/`--base-ref` arguments), and
+# the job's `if` requires it. An event that does not carry a pull_request --
+# `workflow_dispatch` above all -- therefore cannot run this job at all; it
+# would be offered in the Actions UI and then silently skip, which is worse
+# than not being offered. Adding one means giving every one of those steps a
+# way to resolve the target PR's number, head sha and base ref for itself.
+#
 # OPERATOR NOTE: for this to block a merge rather than merely report, the job
 # must be added to `main`'s required status checks (branch protection is an
 # operator-only surface; an agent token gets 403 on it). Until then it is a
@@ -34,7 +42,6 @@ on:
     types: [opened, synchronize, reopened, ready_for_review]
   pull_request_review:
     types: [submitted, edited, dismissed]
-  workflow_dispatch:
 
 concurrency:
   group: ratification-gate-${{ github.event.pull_request.number || github.ref }}
