@@ -1,0 +1,7 @@
+{
+  "schema_version": 1,
+  "error": {
+    "command": "lvs",
+    "message": "could not convert gate-level-verilog reference netlist '/Users/rwalters/GitHub/sg13cmos5l-protocol-emulator/.loom/worktrees/issue-65/flow/../verification/records/librelane-gds-signoff-check/artifacts/20261001-111857-8a94265/reference-asrouted-with-macro-stub.v' to plain-element form: connection '{net153,\\n    net161,\\n    net157,\\n    net146,\\n    net159,\\n    net148,\\n    net155,\\n    net150}' is not a plain net reference, a single-index bit-select, or a '1'b0'/'1'b1' constant -- concatenation and general expressions are not supported"
+  }
+}
