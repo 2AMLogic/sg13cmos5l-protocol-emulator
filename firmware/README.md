@@ -13,8 +13,10 @@ tool cites, never re-derives).
 ```
 firmware/
   asm/            hand-written .asm source, one file per protocol program
-    demo_roundtrip.asm   the assembler's round-trip coverage program (this
-                         issue; the UART/SPI/I2C programs are issue #23)
+    demo_roundtrip.asm   the assembler's round-trip coverage program (the
+                         opening issue #22; not a protocol program)
+    uart_tx.asm          bit-banged 8N1 UART transmitter (issue #71, the
+                         UART third of #23; SPI and I2C are its siblings)
   build/          assembler output (program images + cycle reports) —
                   COMMITTED, not gitignored: a program's image and cycle
                   report are part of the evidence record, byte for byte
@@ -38,6 +40,48 @@ python3 firmware/tools/asm.py firmware/asm/demo_roundtrip.asm
 # Verify the committed build artifacts still match the committed source
 # (what CI runs — catches a stale committed image):
 python3 firmware/tools/asm.py firmware/asm/demo_roundtrip.asm --check
+python3 firmware/tools/asm.py firmware/asm/uart_tx.asm --check
+```
+
+## Programs
+
+### `uart_tx.asm` — bit-banged 8N1 UART transmitter (issue #71)
+
+The UART third of issue #23's three-protocol batch, implementing DR 0001's
+"Per-protocol cycle-budget sketch → UART (bit-banged, 8N1)" inner loop
+(`MOV`/`AND`/`OUT`/`SHF`/`WAIT`) on `UO_OUT` bit 0, line idling high. It
+transmits two frames, `0x5A` then `0xA5`, so both stop-bit adjacencies (a
+last data bit of 0 and of 1) are exercised.
+
+**Bit period: exactly 50 core cycles**, measured at the pin by
+`verification/test_firmware_uart.py` and recorded in
+`verification/records/firmware-uart/`. That cycle count is the claim; the
+"1 µs / 1,000,000 baud" reading of it is arithmetic at target-spec row 4's
+**unconfirmed** 50 MHz core clock (row 4 is unconfirmed on both flows and
+STA against this core is blocked — `verification/records/sta-corner-sweep/`),
+so no wall-clock baud figure here is a measurement.
+
+Cycle accounting (DR 0001's opcode table: 1 cycle per instruction, `WAIT
+imm8` = imm8 + 1):
+
+| Interval | Instructions | Cycles |
+|---|---|---|
+| per data bit (the `.cyclesec uart_bit_frame*` sections) | `MOV`+`AND`+`OUT`+`SHF`+`SUB`+`WAIT 43`+`BNZ` | 1+1+1+1+1+44+1 = **50** |
+| START → first data bit | `OUT`+`WAIT 46`+`MOV`+`AND` | 1+47+1+1 = **50** |
+| last data bit → STOP | `OUT`+`SHF`+`SUB`+`WAIT 43`+`BNZ`+`WAIT 1` | 1+1+1+44+1+2 = **50** |
+
+DR 0001's sketch quotes `WAIT 45` for the same 50-cycle period; that is
+the *unrolled* per-bit form (a 4-instruction body plus 46 padding cycles).
+This program uses DR 0001's own blessed compile-time-constant-trip-count
+loop instead, so two of those 46 padding cycles go to `SUB`+`BNZ` and the
+immediate is 43. Same 50-cycle total — the sketch's arithmetic holds, and
+the evidence record says so explicitly rather than leaving the discrepancy
+in the immediate unexplained.
+
+Run its DUT-facing bench with:
+
+```bash
+klt functional-verification verification/request-firmware-uart.json --format json
 ```
 
 The cocotb round-trip bench — assembling `demo_roundtrip.asm`, loading the
