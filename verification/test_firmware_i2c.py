@@ -194,21 +194,20 @@ REPO_ROOT = _find_repo_root()
 sys.path.insert(0, str(REPO_ROOT / "firmware" / "tools"))
 import asm  # noqa: E402  (path-shimmed import of the committed assembler)
 
-# The load-phase driver, the capture scaffolding and the cycle-domain
-# helpers are NOT re-derived here: they are the ones already proven by
+# The load-phase driver and the capture scaffolding are NOT re-derived
+# here: they are the ones already proven by
 # `verification/records/program-load-phase/` (load_program) and landed by
 # the UART sub-issue (#71, `verification/records/firmware-uart/` --
-# CapturedPin / capture_pin_bits / cycle_at_time). Importing the
-# functions (not the modules' tests) is deliberate -- cocotb discovers
-# tests by scanning the *named* module's own namespace, so no sibling
-# test is registered by these imports and `test_firmware_uart.py` /
+# CapturedPin / capture_pin_bits). Importing the functions (not the
+# modules' tests) is deliberate -- cocotb discovers tests by scanning
+# the *named* module's own namespace, so no sibling test is registered
+# by these imports and `test_firmware_uart.py` /
 # `test_protocol_emulator.py` stay byte-unchanged (live evidence records
 # hash them).
 from test_protocol_emulator import load_program  # noqa: E402
 from test_firmware_uart import (  # noqa: E402
     CapturedPin,
     capture_pin_bits,
-    cycle_at_time,
 )
 
 
