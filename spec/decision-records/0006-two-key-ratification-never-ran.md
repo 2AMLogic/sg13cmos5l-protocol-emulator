@@ -319,6 +319,14 @@ In order, and not skippable:
    before**, each citing `0007` and the merge commit rather than citing a
    process description.
 
+> **Numbering note, 2026-10-02 (issue #69).** The number `0007` in steps 4
+> and 5 was taken by
+> [`0007-row4-corner-set-under-the-macro.md`](0007-row4-corner-set-under-the-macro.md),
+> because it was the next free number when that record was filed. Read
+> "`0007`" above as "the next free record number when the act happens". The
+> record reporting the act must also list DR 0007 among the records it
+> binds. Steps 1–5 are otherwise unchanged.
+
 Until step 4 lands, every `Status:` line under `spec/` says `DRAFT`,
 `Proposed`, or `Recorded`, and the repository's governance claims and its
 forge record agree.

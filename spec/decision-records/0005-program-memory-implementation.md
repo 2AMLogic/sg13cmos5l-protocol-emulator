@@ -54,6 +54,19 @@ inside the foundry-shipped macro's own GDS, which this repo cannot change —
 the precheck and LVS that the competition actually gates on both pass).
 **Nothing here changes the record's status: still `Proposed`, zero
 `RATIFY-KEY` reviews, DR 0006's no-path-to-ratification finding standing.**
+
+**Status note 2026-10-02 (issue #69): a consequence of this record now has
+its own decision record.** The macro adopted here ships liberty at three
+corners only (`typ_1p20V_25C`, `slow_1p08V_125C`, `fast_1p32V_m55C`). That
+leaves three of the six standard-cell corners declared for target-spec row
+4 on 2026-09-21 unreachable for this design.
+[`0007-row4-corner-set-under-the-macro.md`](0007-row4-corner-set-under-the-macro.md)
+(`Proposed`) proposes row 4's corner set under that constraint. It also
+records the fast corner's −40 °C / −55 °C pairing as an approximation whose
+effect on hold is not established. DR 0007 is a **separate record that
+depends on this one**, not an amendment to it, and it says why. **Nothing
+in this record's body changes.** If this record is superseded (open item 1's
+flip-flop fallback), DR 0007 lapses with it.
 Date: 2026-09-25
 Issue: #39
 
