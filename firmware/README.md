@@ -21,6 +21,9 @@ firmware/
                          phase budget (issue #73, the I2C third of #23)
     i2c_std.asm          the same controller on the Standard-mode
                          100 kHz phase budget (issue #73)
+    spi_mode{0..3}.asm   bit-banged SPI controller, one program per
+                         (CPOL, CPHA) mode (issue #72, the SPI third of
+                         #23)
   build/          assembler output (program images + cycle reports) —
                   COMMITTED, not gitignored: a program's image and cycle
                   report are part of the evidence record, byte for byte
@@ -48,6 +51,10 @@ python3 firmware/tools/asm.py firmware/asm/demo_roundtrip.asm --check
 python3 firmware/tools/asm.py firmware/asm/uart_tx.asm --check
 python3 firmware/tools/asm.py firmware/asm/i2c_fast.asm --check
 python3 firmware/tools/asm.py firmware/asm/i2c_std.asm --check
+python3 firmware/tools/asm.py firmware/asm/spi_mode0.asm --check
+python3 firmware/tools/asm.py firmware/asm/spi_mode1.asm --check
+python3 firmware/tools/asm.py firmware/asm/spi_mode2.asm --check
+python3 firmware/tools/asm.py firmware/asm/spi_mode3.asm --check
 ```
 
 ## Programs
@@ -153,6 +160,61 @@ with the ACK flowing through the core's real `IN` path. A silicon-true
 open-drain SDA/SCL needs a pin-plan decision record (DR 0001's own
 flagged open question); tracked in its own issue, not worked around
 here.
+### `spi_mode{0..3}.asm` — bit-banged SPI controller, all four modes (issue #72)
+
+The SPI third of issue #23's three-protocol batch: four programs, one per
+(CPOL, CPHA) combination, implementing DR 0001's "SPI (controller, mode 0,
+SCLK ≤ f_clk/4)" cycle-budget sketch extended to modes 1–3 (the sketch
+itself covers mode 0 only; the mode variants are this issue's own design
+work, with `verification/reference_models/spi.py`'s `SpiMode` semantics —
+not the sketch — as the authority on which edge samples per mode).
+
+**Pin map** (the fixed pin-port table, no new port codes; `uio_oe` stays 0
+so all bidirectional pins remain inputs and MISO is simply read on the
+input side):
+
+| Pin | uo_out/uio_in bit | Role |
+|---|---|---|
+| CS | `uo_out[0]` | active low |
+| SCLK | `uo_out[1]` | idles at CPOL |
+| MOSI | `uo_out[2]` | controller-driven |
+| MISO | `uio_in[0]` | peripheral-driven, sampled by `IN` |
+
+**Two bursts per program, both full-duplex** (an `IN` samples MISO every
+bit in both), both graded by the independent model in
+`verification/test_firmware_spi.py`:
+
+1. **Ceiling burst** — exactly **4 core cycles per SCLK period**
+   (SCLK = f_clk/4, DR 0001's ceiling; 2-cycle half-periods, zero `WAIT`),
+   32 instructions for 8 bits (`.cyclesec spi_mode*_ceil`, straight-line,
+   no branches). The write on the mode's sampling edge carries the data
+   bit; the other phase's write is a static register image (MOSI low
+   there) — the model samples only on the mode-correct edges, so the
+   sampled value is the data bit with a half-period of setup.
+2. **Functional burst** — 8 cycles/bit (under the ceiling;
+   `.cyclesec spi_mode*_func`, 64 cycles), the same full-duplex shape plus
+   MISO extraction and assembly (`IN`+`AND`+`SHF`+`OR` per bit — the
+   extraction cannot fit the 4-cycle budget), after which the assembled
+   byte is echoed on `uo_out[7:0]` once CS releases.
+
+**Measured at the pin** (record
+`verification/records/firmware-spi/`): SCLK period exactly 4 cycles
+(80.000 ns at the bench's nominal-only 20 ns clock) on the ceiling burst
+in all four modes, both data streams decoded byte-exact by the
+independent `check_burst` in all four modes, and the echoed assembled RX
+byte matching the peripheral's byte in all four modes. As with UART, the
+cycle counts are the claim; any MHz figure is arithmetic at
+target-spec row 4's **unconfirmed** clock.
+
+**ISA finding** (recorded as a dated note in the evidence record, per
+#72's acceptance criterion 5): DR 0001's 4-cycle sketch budget **holds** —
+4 cycles/bit with the MISO sample (`IN`) inside the loop — but its literal
+instruction sketch does not: the sketch's one `SHF` ("shift in sampled
+bit, shift out next TX bit") presumes a shift the ISA does not have (the
+real `SHF` shifts one register, fills with 0, and there is no immediate
+ALU form), so the data-bearing phase write is built from per-bit `LDI`
+immediates instead. RX **assembly** costs a further 4 ops/bit and does
+not fit at 4 cycles/bit — hence the 8-cycle functional burst.
 
 Run the DUT-facing bench with:
 
@@ -162,6 +224,9 @@ klt functional-verification verification/request-firmware-i2c.json --format json
 
 Its result is committed as an append-only evidence record under
 `verification/records/firmware-i2c/`.
+klt functional-verification verification/request-firmware-spi.json --format json
+```
+
 
 The cocotb round-trip bench — assembling `demo_roundtrip.asm`, loading the
 image serially through `rtl/protocol_program_memory.v`'s DR 0001 load
