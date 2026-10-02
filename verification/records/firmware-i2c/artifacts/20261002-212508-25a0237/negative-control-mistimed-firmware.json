@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "engine": "icarus",
+  "hdl_toplevel": "tt_um_2amlogic_protocol_emulator",
+  "testbench": "test_firmware_i2c",
+  "status": "fail",
+  "test_count": 3,
+  "passed_count": 1,
+  "failed_count": 2,
+  "skipped_count": 0,
+  "tests": [
+    {
+      "name": "test_committed_images_are_fresh",
+      "status": "failed",
+      "sim_time_ns": null,
+      "real_time_s": 0.008,
+      "error_type": "AssertionError",
+      "error_message": "i2c_fast: section i2c_dbit1_low claims 64 cycles, this bench grades 65\nassert 64 == 65"
+    },
+    {
+      "name": "test_i2c_both_grades_pass_independent_reference_model",
+      "status": "failed",
+      "sim_time_ns": null,
+      "real_time_s": 0.949,
+      "error_type": "AssertionError",
+      "error_message": "i2c_fast run A failed the independent model: I2cReport(addr=0x50W, data=['0x5a'], acks=[True, False], stretched=0, violations=['t_LOW 1280.000ns < 1300.000ns minimum'])\nassert False\n +  where False = I2cReport(addr=0x50W, data=['0x5a'], acks=[True, False], stretched=0, violations=['t_LOW 1280.000ns < 1300.000ns minimum']).ok"
+    },
+    {
+      "name": "test_reference_model_negative_control_still_fails",
+      "status": "passed",
+      "sim_time_ns": null,
+      "real_time_s": 0.002
+    }
+  ],
+  "coverage": null,
+  "trace": null,
+  "environment": {
+    "engine": "icarus",
+    "engine_version": "13.0",
+    "cocotb_version": "2.1.0",
+    "results_xml": "/Users/rwalters/GitHub/sg13cmos5l-protocol-emulator/.loom/worktrees/issue-73/verification/.klt/functional-verification/results_icarus.xml",
+    "random_seed": 1,
+    "sdf": null
+  }
+}
