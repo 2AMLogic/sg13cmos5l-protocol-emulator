@@ -61,6 +61,10 @@ jobs:
           python3 firmware/tools/asm.py firmware/asm/uart_tx.asm --check
           python3 firmware/tools/asm.py firmware/asm/i2c_fast.asm --check
           python3 firmware/tools/asm.py firmware/asm/i2c_std.asm --check
+          python3 firmware/tools/asm.py firmware/asm/spi_mode0.asm --check
+          python3 firmware/tools/asm.py firmware/asm/spi_mode1.asm --check
+          python3 firmware/tools/asm.py firmware/asm/spi_mode2.asm --check
+          python3 firmware/tools/asm.py firmware/asm/spi_mode3.asm --check
 
       - name: Record linter + its self-test (npm run lint)
         run: npm run lint
