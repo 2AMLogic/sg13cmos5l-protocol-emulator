@@ -17,6 +17,10 @@ firmware/
                          opening issue #22; not a protocol program)
     uart_tx.asm          bit-banged 8N1 UART transmitter (issue #71, the
                          UART third of #23; SPI and I2C are its siblings)
+    i2c_fast.asm         bit-banged I2C controller, Fast-mode 400 kHz
+                         phase budget (issue #73, the I2C third of #23)
+    i2c_std.asm          the same controller on the Standard-mode
+                         100 kHz phase budget (issue #73)
   build/          assembler output (program images + cycle reports) —
                   COMMITTED, not gitignored: a program's image and cycle
                   report are part of the evidence record, byte for byte
@@ -37,10 +41,13 @@ python3 firmware/tools/test_asm.py
 # Assemble a program (writes firmware/build/<stem>.hex + .cycles.txt):
 python3 firmware/tools/asm.py firmware/asm/demo_roundtrip.asm
 
+```bash
 # Verify the committed build artifacts still match the committed source
 # (what CI runs — catches a stale committed image):
 python3 firmware/tools/asm.py firmware/asm/demo_roundtrip.asm --check
 python3 firmware/tools/asm.py firmware/asm/uart_tx.asm --check
+python3 firmware/tools/asm.py firmware/asm/i2c_fast.asm --check
+python3 firmware/tools/asm.py firmware/asm/i2c_std.asm --check
 ```
 
 ## Programs
@@ -83,6 +90,78 @@ Run its DUT-facing bench with:
 ```bash
 klt functional-verification verification/request-firmware-uart.json --format json
 ```
+
+### `i2c_fast.asm` / `i2c_std.asm` — bit-banged I2C controller, both speed grades (issue #73)
+
+The I2C third of issue #23's batch, implementing DR 0001's "Per-protocol
+cycle-budget sketch → I2C". `i2c_fast.asm` paces the Fast-mode budget
+(low = 65, high = 60 core cycles per SCL clock — the 125-cycle / 400 kHz
+period of the sketch, with t_LOW exactly at UM10204 Table 10's 1.3 µs
+floor); `i2c_std.asm` is the same instruction stream on the
+Standard-mode budget (low = 235, high = 200 — both Table 10 floors to
+the cycle; the floor-paced bus runs at the Standard-mode maximum, ~114.9
+kHz at the unconfirmed nominal clock). Each program performs one write
+transfer: START, address 0xA0 (0x50 << 1 | W), ACK slot, data byte 0x5A,
+ACK slot, STOP.
+
+**Pin plan** (these programs' own; the ratified pin-role decision record
+is still open per target-spec row 5): SCL = `UIO_OUT` bit 0, SDA =
+`UIO_OUT` bit 7, open-drain convention (1 = released, 0 = asserted).
+The 0x80 mask register does double duty — bit extraction and the
+ACK-slot "SDA released" pin value — because SDA sits on bit 7.
+
+**The ACK handshake is the one sanctioned data-dependent branch.** The
+address ACK slot samples SDA with `IN` + `AND` and branches `BNZ` on it:
+a NACK skips the data byte and goes straight to STOP. DR 0001 names
+exactly this branch as legitimate (a protocol handshake, not a timing
+budget), and each program therefore carries exactly one assembler
+*warning* — asserted by the bench, not silenced. Timing phases
+themselves never branch on pin data: every phase is straight-line code
+with assemble-time `WAIT` literals.
+
+**The eight clocks per byte are unrolled, not looped.** DR 0001's
+blessed constant-trip-count loop needs five live values (byte, mask,
+SCL constant, temp, loop counter) and the ISA has four registers — so
+each byte is 65 instructions of straight-line phases, and a whole
+program is 181 words. That fits DR 0001's 256-word memory for one
+protocol with headroom, but it challenges the sketch's "all three core
+protocols coexist with room for a dispatch table" sizing narrative —
+recorded as an ISA finding in the evidence record, not a spec change.
+
+Cycle accounting per phase (DR 0001's opcode table; `.cyclesec` sections
+state each phase's exact length — the bench cross-checks all 41):
+
+| Phase (Fast / Standard) | Instructions | Cycles |
+|---|---|---|
+| data-clock low | `OUT`+`WAIT 62`/`232`+`OR` | **65 / 235** |
+| data-clock high | `OUT`+`SHF`+`WAIT 55`/`195`+`MOV`+`AND` | **60 / 200** |
+| ACK low (incl. the `IN` sample) | `OUT`+`WAIT`+`IN`+`WAIT`+`AND`+`LDI` | **65 / 235** |
+| START hold (t_HD;STA) | `OUT`+`WAIT`+`LDI`+`MOV`+`AND` | **65 / 205** |
+| STOP setup (t_SU;STO) | `OUT`+`WAIT`+`LDI` | **60 / 205** |
+
+The measured quantities are those **cycle counts**; the 400 kHz / 100
+kHz names are arithmetic at target-spec row 4's unconfirmed clock (same
+stance as `uart_tx.asm`).
+
+**Open-drain caveat, stated rather than papered over:** `uio_oe` is
+fixed to 0 at the top level, so on silicon no firmware drive reaches a
+physical pin. The DUT-facing bench composes the wired-AND bus
+(line = controller `uio_out` AND peripheral `uio_in`) and grades that
+against the independent reference model — proving the firmware's cycle
+timing and protocol behavior at the point the core drives and samples,
+with the ACK flowing through the core's real `IN` path. A silicon-true
+open-drain SDA/SCL needs a pin-plan decision record (DR 0001's own
+flagged open question); tracked in its own issue, not worked around
+here.
+
+Run the DUT-facing bench with:
+
+```bash
+klt functional-verification verification/request-firmware-i2c.json --format json
+```
+
+Its result is committed as an append-only evidence record under
+`verification/records/firmware-i2c/`.
 
 The cocotb round-trip bench — assembling `demo_roundtrip.asm`, loading the
 image serially through `rtl/protocol_program_memory.v`'s DR 0001 load
