@@ -105,6 +105,28 @@ coverage.
 - `request-protocol-models.json` — `klt functional-verification` request
   driving `test_protocol_models.py` against the declared fixture
   `duts/model_validation_top.v` via Icarus, carrying the recorded seed.
+- `test_firmware_uart.py` — the **DUT-facing** UART bench (issue #71, part
+  of #23; target-spec rows 1 and 10): loads the committed
+  `firmware/build/uart_tx.hex` onto the real top over the serial
+  load-phase pins (reusing `test_protocol_emulator.py`'s `load_program`,
+  not a second copy of it), runs it for its statically known cycle count,
+  captures the TX pin (`uo_out[0]`) every clock edge into a
+  `reference_models/waveform.py` `Signal`, and hands that waveform to the
+  **independent** `reference_models/uart.py` — `UartDecoder` recovers the
+  bytes and measures the frame timing, `check_frame` grades it against
+  row 10's drift bound. Bit-period timing is asserted in **core cycles**;
+  the ns/baud mapping is arithmetic at target-spec row 4's *unconfirmed*
+  clock and the bench says so. Two negative controls (the model's own
+  `encode_slow_frame`, and a 1.025×-stretched copy of the DUT's own
+  captured waveform) must fail `check_frame`. Its `capture_pin_bits()` /
+  `CapturedPin` scaffolding is protocol-agnostic and is what the SPI and
+  I2C sub-issues of #23 are expected to reuse. Driven by `klt
+  functional-verification` (see `request-firmware-uart.json`); evidence in
+  `records/firmware-uart/`.
+- `request-firmware-uart.json` — `klt functional-verification` request
+  driving `test_firmware_uart.py` against
+  `src/tt_um_2amlogic_protocol_emulator.v` (plus the two `rtl/` modules
+  and the vendored macro model) via Icarus.
 - `formal/` — the §2 formal-properties leg (issue #24, distinct from the
   cocotb legs above: no `klt`, no PDK, no simulator — a Yosys+SMTBMC model
   checking harness). `formal/no_data_dependent_latency.sv` is
