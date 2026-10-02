@@ -21,7 +21,50 @@ project:
   discord:      ""
   description:  "A firmware-programmable protocol-emulator core: a 16-opcode, 4-register pin-timing ISA with a 256x16 SRAM program memory loaded serially over two pins. UART/SPI/I2C are firmware for this core, not hardware blocks -- there is deliberately no fixed-function protocol peripheral on the die."
   language:     "Verilog"
-  clock_hz:     50000000 # 50 MHz -- the target-spec row 4 number, still UNCONFIRMED by STA on either flow (see spec/gap-to-submission.md row 4)
+  # clock_hz is the target-spec row 4 number (>=50 MHz). It was declared here as
+  # a DRAFT carried over from the README, UNCONFIRMED by STA on either flow.
+  #
+  # 2026-10-02 (issue #20): it now has measured backing from ONE flow, and the
+  # value is UNCHANGED at 50 MHz -- this is a reconciliation, not a re-tune.
+  # Reconciled the same way `tiles` was (see the 2026-09-30 note below it):
+  # cite the flow-attributed evidence, and KEEP the draft/unratified qualifier
+  # rather than dropping it.
+  #
+  #   MEASURED (LibreLane flow only): the competition's own flow hardens this
+  #   design end to end at CLOCK_PERIOD 20 (src/config.json) -- 20 ns, i.e.
+  #   exactly the 50 MHz declared here -- and OpenSTA reports POST-ROUTE worst
+  #   setup slack +9.6214 ns at nom_slow_1p08V_125C (the binding setup corner),
+  #   +13.5576 ns at nom_typ_1p20V_25C, +14.6486 ns at nom_fast_1p32V_m40C, and
+  #   worst hold slack +0.1156 ns at nom_fast_1p32V_m40C (the binding hold
+  #   corner), with ZERO setup and ZERO hold violations at every corner.
+  #   LibreLane 3.1.0.dev3 via tt-gds-action, CI run 36837745318 @ 21a2a63.
+  #   Record: verification/records/librelane-corner-timing/records/20261002-095445-21a2a63.md
+  #
+  # Read that as what it is, and note the three things it is NOT:
+  #
+  #   (a) It is the LIBRELANE flow's number, per CLAUDE.md's two-flows rule.
+  #       The klt/OpenROAD flow reports NOTHING for this design: `klt sta` has
+  #       no way to declare the SRAM macro's LEF/liberty, so it produced 0 of 6
+  #       corners (record verification/records/sta-corner-sweep/records/
+  #       20260930-195410-ead870a.md; upstream 2AMLogic/klayout-tools#2635,
+  #       open). One flow's answer plus one flow's silence -- not agreement,
+  #       and not a disagreement either.
+  #   (b) It is PARTIAL coverage of row 4: 3 corners, not the 6 that row
+  #       declares. The macro ships exactly three liberty characterizations,
+  #       none above 1.32 V, so the 1.35/1.50/1.65 V corners are unreachable by
+  #       construction for this design -- no flow can produce them. Whether
+  #       row 4's bar should be re-declared accordingly is a spec question
+  #       filed as issue #69, NOT settled here.
+  #   (c) It is NOT an f_max claim. 50 MHz is what the run constrains and what
+  #       this field declares; the residual-period arithmetic (~96 MHz) is an
+  #       extrapolation from a clock tree built for 20 ns, not a measurement.
+  #
+  # So: still DRAFT and UNRATIFIED -- target-spec row 4 reads "PROPOSED -- not
+  # ratified" (DR 0006 / issues #44, #45), exactly as `tiles` below is still
+  # bound to DR 0005's unratified status. What changed on 2026-10-02 is that
+  # the number is no longer unmeasured; its authority as sign-off is unchanged.
+  # Full detail: spec/gap-to-submission.md row 4.
+  clock_hz:     50000000 # 50 MHz -- DRAFT, unratified; measured on the LibreLane flow only, 3 of 6 declared corners (see the note above and spec/gap-to-submission.md row 4)
 
   # How many tiles your design occupies?
   #

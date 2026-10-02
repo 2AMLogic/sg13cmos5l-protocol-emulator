@@ -145,6 +145,38 @@ capture, PVT corner sweeps, or Monte Carlo.
   change a reason string — the tracker's linked issues are the
   per-item "why", the manifest's rendered reasons are the mechanical
   statement.
+- **Item 5 stays uncited even though timing evidence now exists (2026-10-02,
+  issue #20)** — this is a deliberate decision, recorded here so a later
+  reader does not mistake it for an oversight. The LibreLane flow has now
+  produced a real multi-corner setup/hold result for the macro-backed core
+  (record
+  `verification/records/librelane-corner-timing/records/20261002-095445-21a2a63.md`:
+  3 corners, 0 setup and 0 hold violations at the 20 ns / 50 MHz
+  constraint), so the bullet above is stale in saying there is "no timing
+  evidence" behind item 5. **It is still not a citation this manifest may
+  carry**, for three independent reasons, any one of which is sufficient:
+  (1) **it is the wrong flow's artifact.** The cited file would be a
+  LibreLane `final-metrics.json`, not a `klt sta` report — it carries no
+  `klt` provenance block, no `timing_status`, and no per-corner
+  schema the grader reads. Feeding it to `klt signoff` as this item's
+  evidence would be substituting a LibreLane number for a klt one inside
+  the klt grader, which is exactly what `CLAUDE.md` § "Two flows, one record
+  of truth" forbids — and it is the "cite an envelope that does not actually
+  support an item just to change a reason string" move the bullet above
+  already rules out. (2) **The item cannot render `met` regardless**: its own
+  checklist note reads "Both require the spec table itself to be ratified —
+  verdicts against a draft spec are provisional by construction", and
+  `spec/target-spec.md` is `PROPOSED — not ratified` (DR 0006, issues
+  #44/#45). (3) **Coverage is partial anyway** — 3 of the 6 corners row 4
+  declares, the other 3 structurally unreachable for this design (issue
+  #69). So item 5 correctly remains `unmet`/`no_evidence`, the manifest is
+  unchanged by that work, and no re-render was needed: `klt signoff --check`
+  grades the manifest and the files it cites, and issue #20's change touches
+  neither. The evidence lives in `verification/records/` and is cited from
+  `spec/gap-to-submission.md` row 4, which is where a claim about row 4
+  belongs; when `2AMLogic/klayout-tools#2635` closes and the klt leg can
+  produce a `klt sta` report for the macro-backed core, *that* report is the
+  citation this item has been waiting for.
 - **Item 6 is uncited by explicit statement, not omission**: this block's
   spec table (`spec/target-spec.md`) has **no statistical row** — every
   row is a deterministic protocol-timing, area, or pin-budget bound — so
