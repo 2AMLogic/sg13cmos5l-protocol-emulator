@@ -8,9 +8,10 @@ key, neither held by this record's author, and the merge commit is the
 ratification act. As
 [`0006-two-key-ratification-never-ran.md`](0006-two-key-ratification-never-ran.md)
 records, that mechanism has never run in this repository (issue #44), so for
-now this record is a proposal, the same way DRs 0001–0007 are. It does
-**not** make target-spec row 12 met, and nothing in it may be cited as
-though it did.
+now this record is a proposal, the same way DRs 0001–0005 and 0007 are
+(DR 0006 is a finding of fact that binds nothing, not a proposal awaiting
+keys). It does **not** make target-spec row 12 met, and nothing in it may be
+cited as though it did.
 Date: 2026-10-03
 Issue: #75
 
@@ -330,9 +331,9 @@ dedicated outputs. **Rejected.**
    model the mask in the I2C bench, re-run
    `verification/records/firmware-i2c/`-style evidence flow-attributed,
    and add DR 0001's dated note resolving its flagged open question.
-4. **Ratification.** This record, DRs 0001–0007, and `spec/target-spec.md`
-   wait on the same two-key act (DR 0006 § "How this gets closed";
-   #44, #45).
+4. **Ratification.** This record, DRs 0001–0005 and 0007, and
+   `spec/target-spec.md` wait on the same two-key act (DR 0006 § "How this
+   gets closed"; #44, #45).
 
 ## Cross-references
 
