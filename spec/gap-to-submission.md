@@ -163,6 +163,19 @@ scoped to a future issue once the spec and its decision records were ratified.
    per DR 0002. **2026-09-14:** add 2AMLogic/klayout-tools#1786 (liberty
    filename convention) to the same watch — `flow/run_synthesize_direct_yosys.py`
    is the interim workaround and should be retired when it closes.
+   **2026-10-07 (issue #32): physically deleted.** Two separate steps, now
+   both done. (a) *Active-path retirement* happened 2026-09-21 (issue #20):
+   plain `klt synthesize` drives the synthesis leg at the 1d964cf4 klt pin,
+   and nothing on the active path calls the script (see row `0002` above).
+   (b) *Physical deletion* happened here. The script had been kept because
+   superseded records hash it as an input, and the September 30 successors
+   (`synthesis-baseline` and `program-load-phase` `20260930-195410-ead870a`)
+   leave it out of their input lists. Superseded records' inputs are not
+   re-hashed, so the frozen citations stay valid without the file. No new
+   measurement or record was needed. The deletion is not a supersession.
+   Historical mentions of the script elsewhere (row `0002`, DR 0002,
+   `layout/toolchain.json`, the records, and comments in `flow/_klt.sh` /
+   `flow/run-sta-corner-sweep.sh`) stay unchanged on purpose.
    - **Blocker, discovered 2026-09-14 (issue #2), now cleared:**
      `TinyTapeout/tt-gds-action#52` — the template's `gds` workflow could not
      install the IHP PDK, so the competition's own sign-off flow produced
