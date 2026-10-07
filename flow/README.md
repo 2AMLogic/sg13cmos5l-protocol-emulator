@@ -104,17 +104,25 @@ recorded rather than silently resolved.
   `tt-gds-action@ihp-cmos5l` defaults `tools-ref` to — i.e. the ref this
   repo's `gds` workflow really runs. Keep it append-only: re-vendor under a
   new provenance stamp, never edit a value under an old one.
-- `run_synthesize_direct_yosys.py` — the **historical** stopgap runner for
-  the recipes above, kept for record history only
-  (`verification/records/synthesis-baseline/` cites it). It predates the
-  upstream resolution of `2AMLogic/klayout-tools#1786` (liberty-naming),
-  which closed 2026-09-14: with `layout/toolchain.json`'s klt pin at
-  1d964cf4 or later, plain
-  `klt synthesize flow/synthesize-protocol-emulator.json --pdk ihp-sg13cmos5l --format json`
-  drives the synthesis leg itself — verified live 2026-09-21, issue #20 —
-  and `run-sta-corner-sweep.sh` uses it that way. Nothing on the active
-  path invokes this script anymore; do not delete it (the records cite it
-  by content hash), and do not route new work through it.
+- *(removed)* `run_synthesize_direct_yosys.py` — the historical direct-Yosys
+  stopgap runner for the recipes above, written while
+  `2AMLogic/klayout-tools#1786` (liberty-naming) was open. That gap closed
+  2026-09-14; with `layout/toolchain.json`'s klt pin at 1d964cf4 or later,
+  plain `klt synthesize` drives the synthesis leg itself (verified live
+  2026-09-21, issue #20), and `run-sta-corner-sweep.sh` uses it that way.
+  The script was **retired from the active path** on 2026-09-21 and
+  **deleted** on 2026-10-07 (issue #32). It had been kept until then only
+  because records hashed it as an input. Those records are all superseded
+  now, and `verification/check_records.py` does not re-hash a superseded
+  record's inputs: `synthesis-baseline` `20260914-032200-7e4a21a` →
+  `20260914-203044-45af1c2` → `20260930-195410-ead870a`, and
+  `program-load-phase` `20260921-185910-248bf61` →
+  `20260930-195410-ead870a`. Neither successor lists the script as an
+  input. The superseded records still cite it by path and content hash as
+  frozen history. Recover the bytes with
+  `git show 01c0095:flow/run_synthesize_direct_yosys.py` if you need them.
+  Mentions in `_klt.sh` / `run-sta-corner-sweep.sh` comments stay on
+  purpose, because live records hash those files whole.
 
 Run the (now-canonical) synthesis leg with:
 

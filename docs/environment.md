@@ -54,7 +54,7 @@ command fail with an opaque error.
 | Tool | Used for | Resolved version on the environment these records were produced on |
 |---|---|---|
 | Icarus Verilog (`iverilog`) | `klt functional-verification` (the only leg this script's acceptance criterion requires) | 12.0 (stable) (`iverilog -V`) |
-| Yosys (`yosys`) | `flow/run_synthesize_direct_yosys.py` (stopgap; `klt synthesize` itself, once [`2AMLogic/klayout-tools#1786`](https://github.com/2AMLogic/klayout-tools/issues/1786)'s liberty-naming gap is fixed) | 0.68 (`yosys -V`) |
+| Yosys (`yosys`) | `klt synthesize` (plain, `--pdk ihp-sg13cmos5l`, at `layout/toolchain.json`'s klt pin; `flow/run-sta-corner-sweep.sh` uses it to produce the gate-level netlist its `klt sta` leg times). The earlier direct-Yosys stopgap was retired from the active path 2026-09-21 (issue #20) and deleted 2026-10-07 (issue #32) — see `flow/README.md` | 0.68 (`yosys -V`) |
 | OpenROAD (`openroad`) | any future place-and-route leg of `flow/` (this program's own flow; distinct from the Tiny Tapeout LibreLane flow, which bundles and drives its own OpenROAD internally — see `.github/workflows/gds.yaml`) | `26Q3-1278-g4421880472` (`openroad -version`) |
 
 Unlike `sky130-modexp`, this repo does not pin or wrap `openroad` behind a

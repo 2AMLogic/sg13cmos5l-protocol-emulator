@@ -165,8 +165,8 @@ else
 
    Continuing without a resolved PDK: `klt functional-verification`
    (Icarus-only, no PDK dependency) does not need one, but
-   flow/run_synthesize_direct_yosys.py and any future layout/ DRC/LVS run
-   do.
+   'klt synthesize' / 'klt sta' (flow/run-sta-corner-sweep.sh) and any
+   future layout/ DRC/LVS run do.
 PDKMSG
 fi
 
@@ -194,7 +194,7 @@ if [[ ${#MISSING[@]} -gt 0 ]]; then
         echo "       Fix: apt-get install iverilog   (or see https://steveicarus.github.io/iverilog/usage/installation.html)" >&2
         ;;
       yosys)
-        echo "     - yosys: required by flow/run_synthesize_direct_yosys.py (and future 'klt synthesize' runs, once the liberty-naming gap tracked at 2AMLogic/klayout-tools#1786 is fixed)." >&2
+        echo "     - yosys: required by 'klt synthesize' (the synthesis leg of flow/, including the netlist flow/run-sta-corner-sweep.sh feeds to 'klt sta')." >&2
         echo "       Fix: see https://github.com/YosysHQ/yosys#installation" >&2
         ;;
       openroad)
