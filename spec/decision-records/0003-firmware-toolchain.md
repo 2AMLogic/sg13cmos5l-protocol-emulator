@@ -1,17 +1,28 @@
 # 0003: Firmware Toolchain
 
-Status: **Proposed** (pending ratification alongside `spec/target-spec.md`)
-— reconciled 2026-09-26 per
-[`0006-two-key-ratification-never-ran.md`](0006-two-key-ratification-never-ran.md).
-This record's 2026-09-21 `Ratified` line was derivative: it was carried into
-force by `0004-target-spec-ratification.md`'s two-key act. That act never
-happened — the carrying PR #29 merged (merge commit `8be9d1e`) with **zero**
-`RATIFY-KEY` reviews — so nothing was carried, and per DR 0004's own
-invalidation clause this record returns to the status it was authored with.
-**The record's content is unchanged and unquestioned**; only the claim that it
-binds is withdrawn, until the mechanism actually runs.
+Status: **Ratified** — carried into force with `spec/target-spec.md` by the
+two `RATIFY-KEY` reviews (one EE key, one market key, neither held by the
+carrying PR's author or the design's author) on pull request #84
+(issue #44). That PR's merge commit is the ratification record, and
+[`0009-two-key-ratification-act.md`](0009-two-key-ratification-act.md) is
+the record of the act and of what it binds.
+**This record's content is unchanged**; it is ratified as written.
 Date: 2026-09-14
 Issue: #1
+
+> **Status text as written 2026-09-26, preserved verbatim (superseded by the
+> line above, not deleted — DR 0009 records why):**
+>
+> Status: **Proposed** (pending ratification alongside `spec/target-spec.md`)
+> — reconciled 2026-09-26 per
+> [`0006-two-key-ratification-never-ran.md`](0006-two-key-ratification-never-ran.md).
+> This record's 2026-09-21 `Ratified` line was derivative: it was carried into
+> force by `0004-target-spec-ratification.md`'s two-key act. That act never
+> happened — the carrying PR #29 merged (merge commit `8be9d1e`) with **zero**
+> `RATIFY-KEY` reviews — so nothing was carried, and per DR 0004's own
+> invalidation clause this record returns to the status it was authored with.
+> **The record's content is unchanged and unquestioned**; only the claim that it
+> binds is withdrawn, until the mechanism actually runs.
 
 > **Status line as written 2026-09-21, preserved verbatim (superseded by the
 > line above, not deleted — DR 0006 records why):**

@@ -1,22 +1,38 @@
 # 0004: Target-Spec Ratification
 
-Status: **Proposed — the ratification act this record describes was never
-performed.** Reconciled 2026-09-26 per
-[`0006-two-key-ratification-never-ran.md`](0006-two-key-ratification-never-ran.md),
-which is the *"later record that says so"* the line below requires. The
-carrying PR was **#29**; it merged at 2026-09-21T19:07:39Z (merge commit
-`8be9d1e`) with **zero** `RATIFY-KEY` reviews — in fact with zero PR reviews
-of any kind — and without `loom:auto-merge-ok`. The invalidation clause below
-therefore fires on its own terms: this record's `Ratified` line was invalid
-from the moment it merged, and the Status lines it flipped on DRs 0001–0003
-and `spec/target-spec.md` are reopened rather than inherited (DR 0006's table
-does that reopening file by file). **Everything below this header stands
-unchanged** — the per-row register, the binding/evidenced separation, the
-alternatives considered, and the rejection of pipeline approval as a
-substitute for a key are all reaffirmed by DR 0006, not weakened by it. What
-is missing is the act, and an act cannot be supplied by describing it.
+Status: **Ratified** — by the two `RATIFY-KEY` reviews (one EE key, one
+market key, neither held by the carrying PR's author or the design's author)
+on pull request #84 (issue #44). That PR's merge commit is the ratification
+record, and [`0009-two-key-ratification-act.md`](0009-two-key-ratification-act.md) is the record of the act and of what it binds.
+The carrying PR this record's body describes was #29, which enacted nothing
+(DR 0006); the act this record defines was performed on pull request #84
+instead, under the same requirements, none of them relaxed. **Everything
+below this header stands as written.** The per-row register is a
+2026-09-21 snapshot, as its own heading says: its "Evidence state at
+ratification" column records the evidence on that date, not on the date of
+the act, and `spec/gap-to-submission.md` remains the live tracker. No row
+moves between target and met in either direction.
 Date: 2026-09-21
 Issue: #17
+
+> **Status text as written 2026-09-26, preserved verbatim (superseded by the
+> line above, not deleted — DR 0009 records why):**
+>
+> Status: **Proposed — the ratification act this record describes was never
+> performed.** Reconciled 2026-09-26 per
+> [`0006-two-key-ratification-never-ran.md`](0006-two-key-ratification-never-ran.md),
+> which is the *"later record that says so"* the line below requires. The
+> carrying PR was **#29**; it merged at 2026-09-21T19:07:39Z (merge commit
+> `8be9d1e`) with **zero** `RATIFY-KEY` reviews — in fact with zero PR reviews
+> of any kind — and without `loom:auto-merge-ok`. The invalidation clause below
+> therefore fires on its own terms: this record's `Ratified` line was invalid
+> from the moment it merged, and the Status lines it flipped on DRs 0001–0003
+> and `spec/target-spec.md` are reopened rather than inherited (DR 0006's table
+> does that reopening file by file). **Everything below this header stands
+> unchanged** — the per-row register, the binding/evidenced separation, the
+> alternatives considered, and the rejection of pipeline approval as a
+> substitute for a key are all reaffirmed by DR 0006, not weakened by it. What
+> is missing is the act, and an act cannot be supplied by describing it.
 
 > **Status line as written 2026-09-21, preserved verbatim (superseded by the
 > line above, not deleted — DR 0006 records why):**
@@ -99,6 +115,14 @@ The binding process is what makes the above a ratification rather than an
 assertion — see the next section.
 
 ## The binding process (two-key; merge commit = ratification record)
+
+> **2026-10-08 (issue #44) — this section's requirements have now been
+> carried out, on pull request #84.** The two banners below are preserved as
+> written and describe PR #29, which is still the PR that enacted nothing.
+> "The carrying PR" in the bullets that follow is, for the act that actually
+> happened, pull request #84: two `RATIFY-KEY` reviews, neither held by that
+> PR's author or the design's author, and its merge commit as the ratification
+> record. See [`0009-two-key-ratification-act.md`](0009-two-key-ratification-act.md).
 
 > **2026-09-26 reconciliation — this section describes what should have
 > happened, not what did.** The requirements below are reaffirmed in full and
@@ -225,6 +249,13 @@ correct in exactly that world — the workaround note in its Status area
 records the retirement as follow-up work.
 
 ## Consequences
+
+> **2026-10-08 (issue #44) — the first bullet below holds from the merge of
+> pull request #84.** The spec-of-record exists by mechanism from that merge
+> commit, not from 2026-09-21. The banner below is preserved as written; it
+> was accurate from 2026-09-26 until that merge. What the first bullet
+> establishes is the *precondition* of T1 item 5 (a ratified spec to grade
+> against). It does not make item 5, or any row, met.
 
 > **2026-09-26 reconciliation — the first bullet below did not come true.**
 > Because the two-key act was never performed (see this record's Status line
