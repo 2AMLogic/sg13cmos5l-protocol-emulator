@@ -112,8 +112,8 @@ PATTERNS = {
     "gen_strings",          # instruction string literals of gen_i2c_sr.py
     "bench_uart_tx",        # TX_PIN, TX_BIT = "port", n
     "bench_spi_consts",     # CS/SCLK/MOSI/MISO constants and capture ports
-    "bench_i2c_consts",     # SCL/SDA constants, _RELEASED, _ACK_PULL
-    "bench_i2c_sr_consts",  # imports, 0x81 / (sda_drive << N), capture ports
+    "bench_i2c_consts",     # SCL/SDA constants, LINE_PIN, CAPTURE_SPECS, i2c_board(scl=, sda=), pad calls
+    "bench_i2c_sr_consts",  # imports from test_firmware_i2c, pad calls by named bit, no uio_in write
     "bench_load_pins",      # load_program ui_in MODE / serial assignments
     "top_load_wiring",      # .mode_pin(ui_in[n]) / .serial_in(ui_in[n])
     "top_uio_oe",           # assign uio_oe = <literal | DR 0008 mask | DR 0012 pin-mode rule>;
@@ -904,13 +904,43 @@ class Checker:
                               "i2c_transfer", role)
                 if m.group(1) != "uio_out":
                     self.concrete.err(f"{rel}: {role}_PIN {m.group(1)!r}; controller intent is uio_out")
-        scl, sda = self.mask_of("i2c_transfer", "SCL"), self.mask_of("i2c_transfer", "SDA")
-        m = self.need(text, r"^_RELEASED\s*=\s*(0x[0-9A-Fa-f]+)", rel, "_RELEASED")
-        if m and int(m.group(1), 16) != (scl | sda):
-            self.concrete.err(f"{rel}: _RELEASED {m.group(1)} != table SCL|SDA 0x{scl | sda:02X}")
-        m = self.need(text, r"^_ACK_PULL\s*=\s*(0x[0-9A-Fa-f]+)", rel, "_ACK_PULL")
-        if m and int(m.group(1), 16) != scl:
-            self.concrete.err(f"{rel}: _ACK_PULL {m.group(1)} != SCL-released/SDA-low 0x{scl:02X}")
+        # Issue #136: the bus is the pad-resolved line (verification/uio_pads.py),
+        # read on uio_in. The bench names the lines only through SCL_BIT /
+        # SDA_BIT, so the pin plan is stated once in this file.
+        m = self.need(text, r'^LINE_PIN\s*=\s*"(\w+)"', rel, "LINE_PIN")
+        if m and m.group(1) != "uio_in":
+            self.concrete.err(f"{rel}: LINE_PIN {m.group(1)!r}; the pad-resolved line is read on uio_in")
+        for key, role, pin in (("scl", "SCL", "LINE_PIN"), ("sda", "SDA", "LINE_PIN"),
+                               ("ctl_scl", "SCL", "SCL_PIN"), ("ctl_sda", "SDA", "SDA_PIN")):
+            self.need(text, rf'"{key}":\s*\({pin},\s*{role}_BIT\)', rel,
+                      f'"{key}": ({pin}, {role}_BIT) capture spec')
+        self.need(text, r"i2c_board\(\s*dut,\s*scl=SCL_BIT,\s*sda=SDA_BIT\s*\)", rel,
+                  "i2c_board(dut, scl=SCL_BIT, sda=SDA_BIT)")
+        self.pad_calls(rel, text, required=(("level", "SCL_BIT"), ("pull_low", "SDA_BIT"),
+                                            ("release", "SDA_BIT")))
+
+    PAD_CALL_RE = re.compile(r"\bpads\.(level|line|drive|release|pull_low|set_open_drain)\(\s*([^,)\s]+)")
+
+    def pad_calls(self, rel, text, required) -> None:
+        """Every call that names a pad (`pads.level(...)`, `pads.pull_low(...)`,
+        ...) must name it as SCL_BIT or SDA_BIT -- a literal pin number here
+        would be a second copy of the pin plan -- and the bench must not write
+        `uio_in` itself: the pad model owns that port (issue #136)."""
+        calls = self.PAD_CALL_RE.findall(text)
+        for method, arg in calls:
+            self.concrete.sites += 1
+            if arg not in ("SCL_BIT", "SDA_BIT"):
+                self.concrete.err(f"{rel}: pads.{method}({arg}, ...) names a pad other than "
+                                  f"SCL_BIT / SDA_BIT (would re-derive the pin)")
+        for method, arg in required:
+            self.concrete.sites += 1
+            if (method, arg) not in calls:
+                self.concrete.err(f"{rel}: cannot find pads.{method}({arg}) "
+                                  f"(unsupported/missing extraction pattern)")
+        self.concrete.sites += 1
+        if re.search(r"\bdut\.uio_in\.value\s*=", text):
+            self.concrete.err(f"{rel}: writes dut.uio_in directly; the I2C lines are resolved by "
+                              f"the pad model (verification/uio_pads.py), which owns uio_in")
 
     def prof_bench_i2c_sr(self, rel, ent):
         text = self.read(rel, self.concrete)
@@ -921,25 +951,20 @@ class Checker:
         if m:
             body = re.sub(r"#[^\n]*", "", m.group(1))
             names = {n.strip() for n in body.split(",")}
-            for n in ("SCL_BIT", "SCL_PIN", "SDA_BIT", "SDA_PIN"):
+            for n in ("SCL_BIT", "SDA_BIT", "CAPTURE_SPECS", "i2c_pads"):
                 if n not in names:
                     self.concrete.err(f"{rel}: does not import {n} from test_firmware_i2c "
                                       f"(would re-derive the pin)")
-        scl, sda = self.mask_of("i2c_transfer", "SCL"), self.mask_of("i2c_transfer", "SDA")
-        m = self.need(text, r"dut\.uio_in\.value\s*=\s*(0x[0-9A-Fa-f]+)", rel, "uio_in released literal")
-        if m and int(m.group(1), 16) != (scl | sda):
-            self.concrete.err(f"{rel}: uio_in released literal {m.group(1)} != table SCL|SDA 0x{scl | sda:02X}")
-        m = self.need(text, r"dut\.uio_in\.value\s*=\s*\(sda_drive\s*<<\s*(\d+)\)\s*\|\s*scl_drive", rel,
-                      "(sda_drive << N) | scl_drive composition")
-        if m:
-            self.check_pb(rel, "peripheral SDA drive shift", "uio_in", int(m.group(1)), "i2c_transfer", "SDA")
-            if scl != 1:
-                self.concrete.err(f"{rel}: scl_drive is composed unshifted (bit 0) but the table's "
-                                  f"SCL mask is 0x{scl:02X}")
-        for key in ("per_scl", "per_sda"):
-            m = self.need(text, rf'"{key}":\s*\("(\w+)",\s*(SCL|SDA)_BIT\)', rel, f"{key} capture spec")
-            if m and m.group(1) != "uio_in":
-                self.concrete.err(f"{rel}: {key} captured on {m.group(1)}, peripheral intent is uio_in")
+        # The peripheral drives the two lines through the pad model, by named
+        # bit; and the board and the captures are test_firmware_i2c's own.
+        self.pad_calls(rel, text, required=(("level", "SCL_BIT"), ("set_open_drain", "SDA_BIT"),
+                                            ("set_open_drain", "SCL_BIT")))
+        self.need(text, r"\bi2c_pads\(dut\)", rel, "i2c_pads(dut)")
+        self.need(text, r"capture_pin_bits\(dut,\s*CAPTURE_SPECS\b", rel,
+                  "capture_pin_bits(dut, CAPTURE_SPECS, ...)")
+        if re.search(r"\bi2c_board\(", text):
+            self.concrete.err(f"{rel}: calls i2c_board() itself; use test_firmware_i2c.i2c_pads "
+                              f"(would re-derive the pin)")
 
     def prof_bench_load(self, rel, ent):
         text = self.read(rel, self.concrete)
