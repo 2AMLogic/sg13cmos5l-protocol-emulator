@@ -189,6 +189,21 @@ coverage.
   the mutant negative control (expect FAIL with a counterexample); exit 0
   means every expectation was met. Evidence lives in
   `records/no-data-dependent-latency/`.
+  Section 2.2's property of record, `formal/pin_write_latency.sv` (issue
+  #116), is an independent shadow-ISA monitor of the core's two output ports
+  (value, destination, cycle-exact registered timing, and hold otherwise).
+  `formal/formal_top_pin_write.v` binds it to the shipped
+  `rtl/protocol_core.v`. `formal/pin_write_mutants.py` writes the
+  fault-injected scratch copies of the core. `formal/run-pin-write-latency.sh`
+  is the cold-start runner (requires `yosys`, `yosys-smtbmc`, `yosys-abc`,
+  `z3`, `python3` on `$PATH`):
+  ```bash
+  ./verification/formal/run-pin-write-latency.sh [artifacts-dir]
+  ```
+  It runs a structural output-register check, an ABC `scorr`+`pdr` proof on
+  a once-per-cycle (EDGE) model and on a `clk2fflogic` (FINE) model, z3
+  covers, and seven core mutants. Each mutant must be rejected by ABC and by
+  z3. Evidence lives in `records/pin-write-latency/`.
 - `check_records.py` — the evidence-record linter (see "Enforcement").
 - `test_check_records.py` — the linter's own self-test: one executable
   negative case per violation class named below, run against a throwaway
