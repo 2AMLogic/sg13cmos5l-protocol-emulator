@@ -241,4 +241,32 @@ silicon or by the LibreLane flow.
 
 ## External hardware
 
-None.
+The chip has digital pins only: 3.3 V I/O on the Tiny Tapeout demo board, no
+analog pads. Anything else goes on a Pmod
+([Pmods and demo board](https://tinytapeout.com/specs/pcb-etr/)).
+
+**Required for I2C:**
+
+- A pull-up resistor from each of `uio[0]` (SCL) and `uio[7]` (SDA) to 3.3 V.
+  The design releases an I2C line by tri-stating the pad, so the line reads
+  high only with a pull-up. No pull-up is assumed to exist on the board.
+  (Today's RTL fixes `uio_oe` to 0, so the pad is never driven at all; see
+  Pins above. The pull-ups are needed once DR 0008's wiring lands.)
+- The pins as listed under Pins are a custom plan. They do **not** match
+  Tiny Tapeout's [recommended Pmod pinouts](https://tinytapeout.com/specs/pinouts/)
+  (which put UART, SPI and I2C on one `uio` row, e.g. I2C SCL `uio[2]`/`uio[6]`,
+  SDA `uio[3]`/`uio[7]`), so an off-the-shelf Pmod needs a wire adapter
+  (DR 0010, "Alignment with Tiny Tapeout's recommended Pmod pinouts").
+
+**Not required:** UART, SPI at 3.3 V with 3.3 V peers need no extra parts
+beyond wiring.
+
+**Levels and other buses.** A 5 V peer needs level shifting on a Pmod. A
+differential bus (USB D+/D-, 10BASE-T) needs a transceiver on a Pmod; neither
+is in the submitted design (DR 0011 defers them).
+
+**Pad speed is unverified.** CMOS5L has no silicon yet and no pad
+characterization; Tiny Tapeout is checking whether SG13G2-derived numbers
+exist. Any claim of a maximum toggle rate at the pins, including the SPI SCLK
+ceiling of f_clk/4 (12.5 MHz at 50 MHz), holds for the core's cycle timing
+only, not at the pad.

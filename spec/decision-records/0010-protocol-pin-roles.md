@@ -111,6 +111,44 @@ typically the bus's own. Whether the Tiny Tapeout demo board provides pull-ups
 on `uio` is **not verified** here (DR 0008 open item 1 stands); the
 submission's user-facing `docs/info.md` must name the requirement.
 
+**Update 2026-10-09 (issue #133), appended; the text above stands as
+written.** DR 0008 item 1 is answered: pull-ups are external, on a Pmod, and
+documented in `docs/info.md` ("External hardware"). The board is not assumed
+to provide any.
+
+### Alignment with Tiny Tapeout's recommended Pmod pinouts (issue #133)
+
+Source: <https://tinytapeout.com/specs/pinouts/>, read 2026-10-09. Each
+protocol uses one four-pin row of the `uio` Pmod, "preferably the upper row"
+(`uio[0..3]`) or the lower (`uio[4..7]`):
+
+| Protocol | Upper row | Lower row |
+|---|---|---|
+| UART | (CTS) `uio[0]`, TXD `uio[1]`, RXD `uio[2]`, (RTS) `uio[3]` | `uio[4..7]`, same order |
+| SPI | CS `uio[0]`, MOSI `uio[1]`, MISO `uio[2]`, SCK `uio[3]` | `uio[4..7]`, same order |
+| I2C | (INT) `uio[0]`, (RESET) `uio[1]`, SCL `uio[2]`, SDA `uio[3]` | `uio[4..7]`, same order |
+
+Compared with this record's plan, **the plan does not match**, and this
+record deliberately does not move any pin (the ratification state, firmware
+images, benches and the `check_protocol_pin_roles` inventory all assume the
+current plan, and the DR 0008 mask is a synthesis-time constant):
+
+| Protocol | This plan | Recommended Pmod | Plugs in unmodified? |
+|---|---|---|---|
+| UART | TX `uo_out[0]`; RX not assigned in this table | TXD/RXD on `uio` | No: TX is on a dedicated output |
+| SPI | CS, SCLK, MOSI on `uo_out[0..2]`; MISO `uio[0]` | CS/MOSI/MISO/SCK on one `uio` row | No |
+| I2C | SCL `uio[0]`, SDA `uio[7]` | SCL `uio[2]`/`uio[6]`, SDA `uio[3]`/`uio[7]` | SDA matches the lower row; SCL does not (`uio[0]` vs `uio[6]`) |
+
+Consequence: until a pin plan that follows the Pmod rows is admitted, a
+user connects these protocols with a jumper-wire adapter board, not an
+off-the-shelf Tiny Tapeout Pmod, and `docs/info.md` says so. Output-capable
+`uio` roles also need DR 0012's runtime pin direction, since DR 0008's mask is
+fixed at synthesis. Re-plumbing to the recommended rows is a **deferred
+option**, not a decision: it touches the firmware, four benches and the
+checker's table, and is worth doing only if a decision record admits it
+before the 2027-01-18 deadline. The deviation is recorded here as the
+deliberate choice of the unratified plan, not as an oversight.
+
 ### SPI `MISO` and I2C `SCL` both on `uio[0]` — electrical compatibility
 
 This is a real conflict, stated rather than hidden. DR 0008 fixes a pin's

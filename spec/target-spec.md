@@ -158,6 +158,13 @@ the convention this file uses for dated notes.
   pads". Any claim about pad edge rate is unverified until Tiny Tapeout
   publishes numbers. That affects row 11's SCLK ceiling at the pins (the
   f_clk/4 *core* timing is unaffected) and row 12's rise-time terms (#133).
+  **Row 11's SCLK ceiling at the pins (f_clk/4 = 12.5 MHz at 50 MHz) is
+  therefore unverified**, as is any 10BASE-T edge-rate assumption behind
+  row 2; the core-side f_clk/4 cycle count is unaffected. The chip's pins are
+  3.3 V digital only, so external parts (I2C pull-ups, transceivers, level
+  shifters) go on a Pmod and must be documented (`docs/info.md`, "External
+  hardware"; DR 0008 item 1; DR 0010). The numbers are tracked as an
+  external dependency in `spec/gap-to-submission.md`. No row value changes.
 - **State column.** The State cells of rows 1, 6 and 10–12 still say "no
   firmware" or "no RTL". `spec/gap-to-submission.md` records that firmware
   and RTL now exist and pass for most of those rows. Reconciling these cells
