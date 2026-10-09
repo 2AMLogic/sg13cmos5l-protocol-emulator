@@ -168,9 +168,10 @@ here.
   - all of the above at gate level
 - **Pin plan (DR 0010):** the UART boot uses Tiny Tapeout option B (RX
   `ui_in[1]`, TX `uo_out[0]`). Today's UART *profile* firmware uses `ui_in[0]`
-  for RX. Aligning the profiles with Tiny Tapeout's recommended Pmod pinouts
+  for RX. Aligning the profiles with Tiny Tapeout's recommended pinouts
   is #133's revision of DR 0010, which DR 0012's runtime direction makes
-  possible without re-synthesis.
+  possible without re-synthesis. That revision is made: DR 0010's "Target pin
+  plan" puts the profile RX on `ui_in[1]` too, and the move is #155.
 
 ## Open items
 

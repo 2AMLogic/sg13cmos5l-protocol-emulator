@@ -149,7 +149,7 @@ scoped to a future issue once the spec and its decision records were ratified.
 
 | Dependency | Owner | Status | Affects |
 |---|---|---|---|
-| CMOS5L pad characterization (drive strength, edge rates, max toggle rate). Organizers, 2026-10-09: "CMOS5L is new enough that there's no silicon back yet, so there aren't characterized numbers for the pads. Tiny Tapeout is checking whether they have numbers from the similar SG13G2 process." | Tiny Tapeout / Jane Street organizers | Open, no numbers published (2026-10-09) | Target-spec row 11 (SCLK ceiling f_clk/4 = 12.5 MHz **at the pins**) and any 10BASE-T edge-rate assumption (row 2, DR 0011 once PR #128 merges): **unverified** until the numbers exist. The core-side cycle counts are unaffected. Re-check before the 2027-01-18 submission. |
+| CMOS5L pad characterization (drive strength, edge rates, max toggle rate). Organizers, 2026-10-09: "CMOS5L is new enough that there's no silicon back yet, so there aren't characterized numbers for the pads. Tiny Tapeout is checking whether they have numbers from the similar SG13G2 process." | Tiny Tapeout / Jane Street organizers | Open, no numbers published (2026-10-09) | Target-spec row 11 (SCLK ceiling f_clk/4 = 12.5 MHz **at the pins**), row 12's rise-time terms, and any 10BASE-T edge-rate assumption (row 2, DR 0011 once PR #128 merges): **unverified** until the numbers exist. The core-side cycle counts are unaffected. Re-check before the 2027-01-18 submission. |
 | Pull-ups and level shifting on a Pmod (organizers, 2026-10-09: board is digital-only, 3.3 V I/O) | Submission docs (this repo) | Documented in `docs/info.md` "External hardware"; DR 0008 item 1 answered | I2C `uio[0]`/`uio[7]`; 5 V or differential peers |
 
 ## Sequencing implied by the gaps above
@@ -222,7 +222,7 @@ scoped to a future issue once the spec and its decision records were ratified.
    makes I2C work on silicon), then DR 0013's load CRC and boot ROM, then the
    row-14 reset run, then the row-13 unplanned-protocol firmware once the
    submission ISA is frozen. Running in parallel: #129 (area), #130 (stretch
-   primitives), #133 (Pmod-aligned pin roles), #118/#132 (host loader).
+   primitives), #133 (Pmod-aligned pin plan, decided in DR 0010) and #155 (the pin moves, after #135), #118/#132 (host loader).
 8. Submission packaging against the template's checklist above, well
    before 2027-01-18 to leave margin for the flow-of-record's own CI
    turnaround and any late-discovered gap. The organizers' required

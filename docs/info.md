@@ -251,15 +251,31 @@ analog pads. Anything else goes on a Pmod
   The design releases an I2C line by tri-stating the pad, so the line reads
   high only with a pull-up. No pull-up is assumed to exist on the board.
   (Today's RTL fixes `uio_oe` to 0, so the pad is never driven at all; see
-  Pins above. The pull-ups are needed once DR 0008's wiring lands.)
-- The pins as listed under Pins are a custom plan. They do **not** match
-  Tiny Tapeout's [recommended Pmod pinouts](https://tinytapeout.com/specs/pinouts/)
-  (which put UART, SPI and I2C on one `uio` row, e.g. I2C SCL `uio[2]`/`uio[6]`,
-  SDA `uio[3]`/`uio[7]`), so an off-the-shelf Pmod needs a wire adapter
-  (DR 0010, "Alignment with Tiny Tapeout's recommended Pmod pinouts").
+  Pins above. The pull-ups are needed once the pads can be driven: DR 0012's
+  runtime `UIO_OD` register (#135), or DR 0008's fixed wiring if that is
+  built instead.)
 
-**Not required:** UART, SPI at 3.3 V with 3.3 V peers need no extra parts
-beyond wiring.
+**Wiring today.** Tiny Tapeout's
+[recommended pinouts](https://tinytapeout.com/specs/pinouts/) cover two
+things: a UART bridged to USB by the demo board's MCU (option A: RX
+`ui_in[3]`, TX `uo_out[4]`; option B: RX `ui_in[1]`, TX `uo_out[0]`), and
+Pmods that put UART, SPI or I2C on one four-pin `uio` row. Against those:
+
+- **UART transmit** is on `uo_out[0]`, which is option B's TX. It reaches the
+  host over the board's USB bridge with no extra wiring.
+- **UART receive** is on `ui_in[0]`, not option B's `ui_in[1]`. It needs one
+  jumper wire.
+- **SPI** (CS, SCLK, MOSI on `uo_out[0..2]`, MISO on `uio[0]`) and **I2C**
+  (SCL `uio[0]`, SDA `uio[7]`) do not match the Pmod rows (SPI: CS `uio[0]`,
+  MOSI `uio[1]`, MISO `uio[2]`, SCK `uio[3]`; I2C: SCL `uio[2]`, SDA
+  `uio[3]`). An off-the-shelf Pmod needs a wire adapter.
+
+The plan is to move to the recommended pins (UART option B, SPI and I2C on
+the upper Pmod row) once the `uio` pins can be driven. See DR 0010, "Target
+pin plan"; the move is tracked in #155.
+
+**Not required:** UART and SPI at 3.3 V with 3.3 V peers need no extra parts
+beyond that wiring.
 
 **Levels and other buses.** A 5 V peer needs level shifting on a Pmod. A
 differential bus (USB D+/D-, 10BASE-T) needs a transceiver on a Pmod; neither
