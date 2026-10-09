@@ -67,6 +67,27 @@ yosys -V
 z3 --version
 yosys-smtbmc --help 2>&1 | head -1   # no --version flag; it ships with the yosys distribution above
 
+# expect_cex <label> <model.smt2> <cex.vcd>: run BMC on a negative-control
+# model and accept it ONLY if it produced a genuine assertion counterexample.
+# A nonzero exit alone is not evidence -- a crashed/missing solver or a
+# malformed model also exits nonzero -- so the log must carry smtbmc's
+# assertion-failure markers and a fresh trace must exist. Stale trace and log
+# are removed first so a previous run cannot satisfy the check.
+expect_cex () {
+  local label="$1" smt2="$2" vcd="$3" log="${2%.smt2}-bmc.log"
+  rm -f "$vcd" "$log"
+  if yosys-smtbmc -s z3 -t "$BMC_DEPTH" --dump-vcd "$vcd" "$smt2" >"$log" 2>&1; then
+    echo "$label: NO counterexample -- the property failed to catch a data-dependent latency; it is vacuous or wrong" >&2
+    fail=1
+  elif grep -q 'Assert failed in' "$log" && grep -q 'BMC failed!' "$log" && [ -s "$vcd" ]; then
+    echo "$label: counterexample found as required; VCD: $vcd"
+  else
+    echo "$label: solver/tool failure -- no assertion counterexample in the log and/or no fresh trace (not evidence the property has teeth)" >&2
+    tail -5 "$log" >&2
+    fail=1
+  fi
+}
+
 SOURCES_CONFORMANT="\
 $SCRIPT_DIR/fixtures/timing_contract_conformant.v \
 $SCRIPT_DIR/no_data_dependent_latency.sv \
@@ -139,12 +160,7 @@ fi
 echo
 echo "== [4/4] mutant fixture (data-dependent WAIT early-out): BMC depth $BMC_DEPTH (expect CEX) =="
 run_elab "$ART_DIR/mutant.smt2" -D MUTANT $SOURCES_MUTANT || fail=1
-if yosys-smtbmc -s z3 -t "$BMC_DEPTH" --dump-vcd "$ART_DIR/mutant-cex.vcd" "$ART_DIR/mutant.smt2" >"$ART_DIR/mutant-bmc.log" 2>&1; then
-  echo "mutant: NO counterexample -- the property failed to catch a data-dependent latency; it is vacuous or wrong" >&2
-  fail=1
-else
-  echo "mutant: counterexample found as required (property has teeth); VCD: $ART_DIR/mutant-cex.vcd"
-fi
+expect_cex "mutant" "$ART_DIR/mutant.smt2" "$ART_DIR/mutant-cex.vcd"
 
 fi  # fixture legs
 
@@ -203,12 +219,7 @@ if cmp -s "$REPO_ROOT/rtl/protocol_core.v" "$ART_DIR/protocol_core_mutant.v"; th
   fail=1
 else
   run_elab_core "$ART_DIR/core-mutant.smt2" "$ART_DIR/protocol_core_mutant.v" || fail=1
-  if yosys-smtbmc -s z3 -t "$BMC_DEPTH" --dump-vcd "$ART_DIR/core-mutant-cex.vcd" "$ART_DIR/core-mutant.smt2" >"$ART_DIR/core-mutant-bmc.log" 2>&1; then
-    echo "core mutant: NO counterexample -- the property failed to catch a data-dependent latency on the real core" >&2
-    fail=1
-  else
-    echo "core mutant: counterexample found as required; VCD: $ART_DIR/core-mutant-cex.vcd"
-  fi
+  expect_cex "core mutant" "$ART_DIR/core-mutant.smt2" "$ART_DIR/core-mutant-cex.vcd"
 fi
 fi  # real-core legs
 
