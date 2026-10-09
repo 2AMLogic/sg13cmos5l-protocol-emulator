@@ -221,5 +221,6 @@ scoped to a future issue once the spec and its decision records were ratified.
    contents (architecture/ISA doc, toolchain + examples, verification
    write-up, AI-use description, optional demo) are tracked per deliverable
    in #134. The submission form opens near the deadline.
+   Tracker: [`docs/submission/README.md`](../docs/submission/README.md).
 
 Every step above is a future issue, not a commitment made by this one.
