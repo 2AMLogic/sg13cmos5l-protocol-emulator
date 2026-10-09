@@ -3,7 +3,7 @@
   "file": "../verification/records/librelane-gds-signoff-check/artifacts/20261001-111857-8a94265/tt_um_2amlogic_protocol_emulator.gds",
   "deck": "sg13cmos5l",
   "top": "tt_um_2amlogic_protocol_emulator",
-  "output": "../verification/records/librelane-gds-signoff-check/artifacts/20261001-111857-8a94265/layout-gate-level.spice",
+  "output": "../verification/records/librelane-gds-signoff-check/artifacts/20261009-054750-676f8b2/layout-gate-level.spice",
   "abstract_cells": [
     "sg13cmos5l_*",
     "RM_IHPSG13_1P_256x16_c2_bm_bist"
@@ -11,5 +11,23 @@
   "abstract_cell_lef": [
     "$PDK_ROOT/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/lef/sg13cmos5l_stdcell.lef",
     "$PDK_ROOT/ihp-sg13cmos5l/libs.ref/sg13cmos5l_sram/lef/RM_IHPSG13_1P_256x16_c2_bm_bist.lef"
-  ]
+  ],
+  "label_layers": {
+    "metal0": [
+      8,
+      25
+    ],
+    "metal1": [
+      10,
+      25
+    ],
+    "metal2": [
+      30,
+      25
+    ],
+    "metal3": [
+      50,
+      25
+    ]
+  }
 }

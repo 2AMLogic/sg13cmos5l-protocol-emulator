@@ -1,7 +1,7 @@
 {
   "schema": "klt.lvs.request/1",
   "layout": {
-    "netlist": "../verification/records/librelane-gds-signoff-check/artifacts/20261001-111857-8a94265/layout-gate-level.spice",
+    "netlist": "../verification/records/librelane-gds-signoff-check/artifacts/20261009-054750-676f8b2/layout-gate-level.spice",
     "top": "tt_um_2amlogic_protocol_emulator"
   },
   "reference": {
