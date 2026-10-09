@@ -34,6 +34,9 @@ Proposed specification and decision records.
   update (issues #129–#134). They cover the runtime `uio` direction and
   program-memory access through the ISA's two spare no-op encodings, and a
   layered loader (serial recovery path + boot ROM in this ISA).
+- `decision-records/0014-area-beyond-2x2.md` — **Proposed 2026-10-09** (not
+  ratified), issue #129: what tiles beyond 2×2 buy (second engine, more SRAM,
+  ISA assists) with sourced area costs, and a tile recommendation (keep 2×2).
 - `decision-records/0015-stretch-protocols-with-neutral-primitives.md` —
   **Proposed 2026-10-09** (not ratified). Rescopes the parked DR 0011
   (PR #128) for the stretch protocols around protocol-neutral ISA primitives
