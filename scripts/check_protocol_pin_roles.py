@@ -117,7 +117,8 @@ PATTERNS = {
     "bench_load_pins",      # load_program ui_in MODE / serial assignments
     "top_load_wiring",      # .mode_pin(ui_in[n]) / .serial_in(ui_in[n])
     "top_uio_oe",           # assign uio_oe = <literal | DR 0008 mask | DR 0012 pin-mode rule>;
-    "top_port_passthrough", # .port_*(whole-port) connections
+    "top_port_passthrough", # .port_*(whole-port) connections; uo_out may pass through
+                            # DR 0013's `run_phase ? <core net> : <load CRC>` mux
     "core_uio_out_reset",   # port_uio_out reset literal
     "isa_port_table",       # firmware/tools/asm.py PORTS codes
     "info_pinout",          # info.yaml pinout block
@@ -990,6 +991,20 @@ class Checker:
         for port in ("ui_in", "uio_in", "uo_out", "uio_out"):
             m = re.search(rf"\.port_{port}\s*\(\s*(\w+)\s*\)", text)
             self.meta.sites += 1
+            if m and port == "uo_out" and m.group(1) != port:
+                # DR 0013 layer 1 (issue #137): outside the run phase uo_out
+                # shows the load CRC instead. The one accepted shape is a
+                # mux whose run-phase arm is the core's port, whole:
+                #   assign uo_out = run_phase ? <core net> : <anything>;
+                # so every protocol role the table gives a uo_out pin (all of
+                # them run-phase roles) is still the core's register.
+                mux = re.search(r"assign\s+uo_out\s*=\s*run_phase\s*\?\s*(\w+)\s*:", text)
+                if mux and mux.group(1) == m.group(1):
+                    continue
+                self.meta.err(f"{rel}: core port_uo_out is not connected to the whole uo_out bus in "
+                              f"run phase (want `.port_uo_out(uo_out)`, or `assign uo_out = run_phase ? "
+                              f"{m.group(1)} : ...;`)")
+                continue
             if not m or m.group(1) != port:
                 self.meta.err(f"{rel}: core port_{port} is not connected to the whole {port} bus")
         m = re.search(r"assign\s+uio_oe\s*=\s*([^;]+);", text)

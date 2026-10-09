@@ -52,8 +52,14 @@
  *     proposed, which was never built. `uio_in` is always readable.
  *   - The core's program-memory access port (`pm_*`, DR 0012) and the
  *     program memory's `pm_crc` / `serial_loaded` are wired straight
- *     across; neither reaches a pin in this revision (the load-phase CRC
- *     readout on `uo_out` is issue #137).
+ *     across.
+ *   - Load-phase CRC readout (DR 0013 layer 1, issue #137): until the run
+ *     phase begins, `uo_out` carries the running `PM_CRC` instead of the
+ *     core's port-10 register -- the low byte when `ui_in[1]` is 0, the
+ *     high byte when it is 1. A host reads both bytes before it drops
+ *     MODE and runs the image only if they match its own CRC. See the
+ *     mux at the bottom of this file. The load protocol itself is
+ *     untouched: this reads state and feeds nothing back.
  *   - `ena` is unused on purpose: the template documents it as "always
  *     1 when the design is powered, so you can ignore it", and DR
  *     0001's load protocol is reset-gated, not power-gated.
@@ -98,6 +104,7 @@ module tt_um_2amlogic_protocol_emulator (
   wire        pm_crc_clr;
   wire [15:0] pm_crc;
   wire        serial_loaded;
+  wire [7:0]  core_uo_out;  // the core's port-10 register (run-phase uo_out)
 
   // Program memory + serial load-phase logic (issue #19, DR 0001
   // "Program memory sizing and loading"), backed by the
@@ -129,7 +136,7 @@ module tt_um_2amlogic_protocol_emulator (
       .fetch_addr  (fetch_addr),
       .port_ui_in  (ui_in),
       .port_uio_in (uio_in),
-      .port_uo_out (uo_out),
+      .port_uo_out (core_uo_out),
       .port_uio_out(uio_out),
       .uio_dir      (uio_dir),
       .uio_od       (uio_od),
@@ -146,6 +153,24 @@ module tt_um_2amlogic_protocol_emulator (
   // then push-pull, else input. With both registers at their reset value
   // of 0 this is 8'h00 -- every bidirectional pin an input.
   assign uio_oe = (uio_od & ~uio_out) | (~uio_od & uio_dir);
+
+  // Load-phase CRC readout (DR 0013 layer 1, issue #137). `run_phase` is
+  // low in exactly three situations, and PM_CRC is the right thing to show
+  // in each:
+  //   - reset held, and the one mode-sampling cycle after its release:
+  //     PM_CRC is at its reset value 16'h0000, so uo_out is 8'h00 -- what
+  //     the core's own reset value put there before this mux existed;
+  //   - the load phase (MODE was high at reset release and has not dropped
+  //     yet): PM_CRC is the CRC-16/XMODEM of the words committed so far.
+  // Once `run_phase` rises it never falls without a reset, so from then on
+  // uo_out is the core's register alone and `ui_in[1]` is an ordinary input
+  // again. The byte select is combinational from `ui_in[1]`: the host can
+  // read both bytes without a clock edge in between. PM_CRC only changes on
+  // the edge that commits a word (every 16th load-phase edge), so it is
+  // stable for the 15 edges after a commit.
+  assign uo_out = run_phase ? core_uo_out :
+                  ui_in[1]  ? pm_crc[15:8] :
+                              pm_crc[7:0];
 
   // List unused inputs to prevent warnings.
   wire _unused = &{ena, 1'b0};

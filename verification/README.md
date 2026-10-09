@@ -64,6 +64,18 @@ coverage.
   white-box reads, so it also runs on a gate-level netlist. Driven by
   `klt functional-verification` (see `request-control-space.json`);
   `control_space_mutants.py` is its negative-control runner.
+- `test_load_integrity.py` — cocotb bench for the load-phase CRC readout
+  (issue #137, DR 0013 layer 1; verification-plan §7 "Load integrity") on
+  the top: during the serial load `uo_out` reads the running `PM_CRC`,
+  low byte or high byte by `ui_in[1]`, equal to `binascii.crc_hqx` for
+  random images of 1 to 256 words; a truncated load and a load with one
+  clock edge dropped or doubled read a different CRC (every position of a
+  4-word image, seeded positions in larger ones); the readout is gone
+  outside the load phase; and a host that performs the readout gets the
+  program running on the same edges as one that does not. Pin-only, so it
+  also runs on a gate-level netlist. Driven by
+  `klt functional-verification` (see `request-load-integrity.json`);
+  `load_integrity_mutants.py` is its negative-control runner.
 - `test_program_memory.py` — cocotb testbench for
   `rtl/protocol_program_memory.v`, the program memory and serial
   load-phase logic (target-spec row 6, issue #19): loads known programs
@@ -236,7 +248,8 @@ carry sources, defines and recorded seeds), provisioned by
 CI-covered (RTL, Icarus, no PDK): `test_protocol_emulator`,
 `test_program_memory`, `test_protocol_models`, `test_firmware_uart`,
 `test_firmware_spi`, `test_firmware_i2c`, `test_firmware_i2c_sr`,
-`test_firmware_roundtrip`, `test_random_regression`.
+`test_firmware_roundtrip`, `test_random_regression`,
+`test_load_integrity`.
 
 Covered elsewhere in CI: `test_check_records.py` and
 `test_firmware_templates.py` (`npm run lint`).

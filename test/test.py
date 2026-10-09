@@ -312,3 +312,77 @@ async def test_control_space(dut):
     await step(dut, 10)
     assert dut.uo_out.value == 0xC3, "RUN fell through, or the routine's HALT did not hold"
     assert dut.uio_oe.value == 0
+
+
+# ---------------------------------------------------------------------------
+# DR 0013 layer 1 (issue #137): the host checks a serial load before it runs
+# it. While the design is in load phase, uo_out shows the running PM_CRC --
+# low byte with ui_in[1] = 0, high byte with ui_in[1] = 1. Pin-only, so it
+# runs unchanged on the gate-level netlist. The deep bench (random images of
+# every length, every single-edge fault position, the running-clock host) is
+# verification/test_load_integrity.py; this is the sign-off-leg smoke: the
+# documented host procedure, once with a good load and once with a bad one.
+async def serial_load_and_read_crc(dut, bits):
+    """Reset with MODE high, clock `bits` in on ui_in[0], then -- MODE
+    still high, no further clock edge -- read uo_out with ui_in[1] low and
+    with ui_in[1] high. Returns the 16-bit CRC the pins showed."""
+    dut.ena.value = 1
+    dut.uio_in.value = 0
+    dut.ui_in.value = 0x80
+    dut.rst_n.value = 0
+    await ClockCycles(dut.clk, 10)
+    assert dut.uo_out.value == 0, "uo_out must be 0 in reset"
+    dut.rst_n.value = 1
+    await RisingEdge(dut.clk)  # the mode-sampling edge
+    for bit in bits:
+        dut.ui_in.value = 0x80 | bit
+        await RisingEdge(dut.clk)
+    dut.ui_in.value = 0x80          # ui_in[1] = 0: low byte
+    await Timer(1, unit="us")
+    lo = int(dut.uo_out.value)
+    dut.ui_in.value = 0x82          # ui_in[1] = 1: high byte
+    await Timer(1, unit="us")
+    hi = int(dut.uo_out.value)
+    dut.ui_in.value = 0x80
+    return (hi << 8) | lo
+
+
+@cocotb.test()
+async def test_load_crc_readout(dut):
+    dut._log.info("Start (DR 0013 layer 1: load-phase CRC readout)")
+    cocotb.start_soon(Clock(dut.clk, 10, unit="us").start())
+
+    program = [
+        enc(OP_LDI, rd=R0, imm=0xA5),
+        enc(OP_OUT, rd=R0, rs=PORT_UO_OUT),
+        enc(OP_HALT),
+        0x1234, 0xFEDC, 0x0001,     # filler the CRC also covers
+    ]
+    bits = [(w >> b) & 1 for w in program for b in range(15, -1, -1)]
+    want = binascii.crc_hqx(b"".join(bytes((w >> 8, w & 0xFF)) for w in program), 0)
+    assert (want & 0xFF) != (want >> 8) and want != 0, "test premise"
+
+    dut._log.info("A load with one clock edge missing must not read as good")
+    bad = await serial_load_and_read_crc(dut, bits[:40] + bits[41:])
+    assert bad != want, f"a load one edge short read the good CRC {want:#06x}"
+
+    dut._log.info("A complete load reads the image's CRC (binascii.crc_hqx)")
+    got = await serial_load_and_read_crc(dut, bits)
+    assert got == want, f"uo_out read {got:#06x} during load, want {want:#06x}"
+
+    dut._log.info("Only now drop MODE: the program runs, uo_out is the program's again")
+    dut.ui_in.value = 0x00
+    await RisingEdge(dut.clk)  # the MODE-drop edge
+    await Timer(1, unit="ns")
+    assert dut.uo_out.value == 0, "from the MODE-drop edge uo_out is the core's register"
+    await step(dut, 2)  # edges 1, 2
+    dut.ui_in.value = 0x02     # ui_in[1] is an ordinary input now
+    await Timer(1, unit="us")
+    assert dut.uo_out.value == 0, "ui_in[1] must not reach uo_out in run phase"
+    await step(dut, 1)  # edge 3: the OUT at index 1
+    assert dut.uo_out.value == 0xA5, (
+        f"loaded program: got {int(dut.uo_out.value):#04x}, want 0xa5"
+    )
+    await step(dut, 5)
+    assert dut.uo_out.value == 0xA5
+    assert dut.uio_oe.value == 0
