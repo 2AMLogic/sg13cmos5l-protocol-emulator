@@ -1,0 +1,108 @@
+     -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:242  in gpi_load_users                  Loaded entry library: '/home/ubuntu/.local/share/uv/python/cpython-3.14.6-linux-x86_64-gnu/lib/libpython3.14.so.1.0'
+     -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:233  in gpi_load_users                  Running entry func 'initialize' from loaded library '/home/ubuntu/.cache/uv/archive-v0/KSEQo6aHgyYfmnF6/lib/python3.14/site-packages/cocotb/simulator.cpython-314-x86_64-linux-gnu.so'
+     -.--ns INFO     pygpi                              ..ib/pygpi/embed.cpp:114  in initialize                      Using Python 3.14.0 interpreter at /home/ubuntu/.cache/uv/archive-v0/KSEQo6aHgyYfmnF6/bin/python
+     -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:74   in gpi_print_registered_impl       GPI: VPI support registered
+     0.00ns INFO     cocotb.initialize                  Seeding Python random module with 20261009
+     0.00ns INFO     cocotb.initialize                  Initialized cocotb v2.1.0 from /home/ubuntu/.cache/uv/archive-v0/KSEQo6aHgyYfmnF6/lib/python3.14/site-packages/cocotb
+     0.00ns INFO     cocotb.initialize                  Running on Icarus Verilog version 13.0 (stable)
+     0.00ns INFO     cocotb.regression                  Running tests
+     0.00ns INFO     cocotb.regression                  running test_random_regression.test_recorded_seed_matches_request (1/6)
+                                                            The seed is recorded in the request, not just in source.
+     0.00ns INFO     ..tt_um_2amlogic_protocol_emulator seed=20261009 cases/protocol=20
+     0.00ns INFO     cocotb.regression                  test_random_regression.test_recorded_seed_matches_request passed
+     0.00ns INFO     cocotb.regression                  running test_random_regression.test_uart_random_programs (2/6)
+ 27681.00ns INFO     ..tt_um_2amlogic_protocol_emulator seed=20261009 protocol=uart index=0 params={'period': 50, 'payloads': [0]} -> True (1 frame(s) @ 50 cycles/bit)
+ 66381.00ns INFO     ..tt_um_2amlogic_protocol_emulator seed=20261009 protocol=uart index=1 params={'period': 100, 'payloads': [255]} -> True (1 frame(s) @ 100 cycles/bit)
+133081.00ns INFO     ..tt_um_2amlogic_protocol_emulator seed=20261009 protocol=uart index=2 params={'period': 100, 'payloads': [85, 0]} -> True (2 frame(s) @ 100 cycles/bit)
+246581.00ns INFO     ..tt_um_2amlogic_protocol_emulator seed=20261009 protocol=uart index=3 params={'period': 217, 'payloads': [128, 255]} -> True (2 frame(s) @ 217 cycles/bit)
+313281.00ns INFO     ..tt_um_2amlogic_protocol_emulator seed=20261009 protocol=uart index=4 params={'period': 100, 'payloads': [0, 255]} -> True (2 frame(s) @ 100 cycles/bit)
+384981.00ns INFO     ..tt_um_2amlogic_protocol_emulator seed=20261009 protocol=uart index=5 params={'period': 250, 'payloads': [255]} -> True (1 frame(s) @ 250 cycles/bit)
+456681.00ns INFO     ..tt_um_2amlogic_protocol_emulator seed=20261009 protocol=uart index=6 params={'period': 250, 'payloads': [170]} -> True (1 frame(s) @ 250 cycles/bit)
+523381.00ns INFO     ..tt_um_2amlogic_protocol_emulator seed=20261009 protocol=uart index=7 params={'period': 100, 'payloads': [180, 255]} -> True (2 frame(s) @ 100 cycles/bit)
+590081.00ns INFO     ..tt_um_2amlogic_protocol_emulator seed=20261009 protocol=uart index=8 params={'period': 100, 'payloads': [0, 170]} -> True (2 frame(s) @ 100 cycles/bit)
+617781.00ns INFO     ..tt_um_2amlogic_protocol_emulator seed=20261009 protocol=uart index=9 params={'period': 50, 'payloads': [255]} -> True (1 frame(s) @ 50 cycles/bit)
+664481.00ns INFO     ..tt_um_2amlogic_protocol_emulator seed=20261009 protocol=uart index=10 params={'period': 50, 'payloads': [85, 255]} -> True (2 frame(s) @ 50 cycles/bit)
+731181.00ns INFO     ..tt_um_2amlogic_protocol_emulator seed=20261009 protocol=uart index=11 params={'period': 100, 'payloads': [93, 168]} -> True (2 frame(s) @ 100 cycles/bit)
+795621.00ns INFO     ..tt_um_2amlogic_protocol_emulator seed=20261009 protocol=uart index=12 params={'period': 217, 'payloads': [0]} -> True (1 frame(s) @ 217 cycles/bit)
+842321.00ns INFO     ..tt_um_2amlogic_protocol_emulator seed=20261009 protocol=uart index=13 params={'period': 50, 'payloads': [255, 164]} -> True (2 frame(s) @ 50 cycles/bit)
+969021.00ns INFO     ..tt_um_2amlogic_protocol_emulator seed=20261009 protocol=uart index=14 params={'period': 250, 'payloads': [85, 255]} -> True (2 frame(s) @ 250 cycles/bit)
+1015721.00ns INFO     ..tt_um_2amlogic_protocol_emulator seed=20261009 protocol=uart index=15 params={'period': 50, 'payloads': [30, 85]} -> True (2 frame(s) @ 50 cycles/bit)
+1087421.00ns INFO     ..tt_um_2amlogic_protocol_emulator seed=20261009 protocol=uart index=16 params={'period': 250, 'payloads': [0]} -> True (1 frame(s) @ 250 cycles/bit)
+1151861.00ns INFO     ..tt_um_2amlogic_protocol_emulator seed=20261009 protocol=uart index=17 params={'period': 217, 'payloads': [255]} -> True (1 frame(s) @ 217 cycles/bit)
+1265361.00ns INFO     ..tt_um_2amlogic_protocol_emulator seed=20261009 protocol=uart index=18 params={'period': 217, 'payloads': [170, 0]} -> True (2 frame(s) @ 217 cycles/bit)
+1332061.00ns INFO     ..tt_um_2amlogic_protocol_emulator seed=20261009 protocol=uart index=19 params={'period': 100, 'payloads': [77, 71]} -> True (2 frame(s) @ 100 cycles/bit)
+1332061.00ns INFO     cocotb.regression                  test_random_regression.test_uart_random_programs passed
+1332061.00ns INFO     cocotb.regression                  running test_random_regression.test_spi_random_programs (3/6)
+1354562.00ns INFO     ..tt_um_2amlogic_protocol_emulator seed=20261009 protocol=spi index=0 params={'mode': 0, 'cpol': 0, 'cpha': 0, 'half_period': 4, 'mosi': [0], 'miso': [192]} -> True (1 burst(s), mode 0, 8 cycles/bit)
+1397502.00ns INFO     ..tt_um_2amlogic_protocol_emulator seed=20261009 protocol=spi index=1 params={'mode': 1, 'cpol': 0, 'cpha': 1, 'half_period': 4, 'mosi': [0, 85], 'miso': [104, 234]} -> True (2 burst(s), mode 1, 8 cycles/bit)
+1428922.00ns INFO     ..tt_um_2amlogic_protocol_emulator seed=20261009 protocol=spi index=2 params={'mode': 2, 'cpol': 1, 'cpha': 0, 'half_period': 2, 'mosi': [0, 0], 'miso': [54, 172]} -> True (2 burst(s), mode 2, 4 cycles/bit)
+1445662.00ns INFO     ..tt_um_2amlogic_protocol_emulator seed=20261009 protocol=spi index=3 params={'mode': 3, 'cpol': 1, 'cpha': 1, 'half_period': 2, 'mosi': [0], 'miso': [88]} -> True (1 burst(s), mode 3, 4 cycles/bit)
+1488602.00ns INFO     ..tt_um_2amlogic_protocol_emulator seed=20261009 protocol=spi index=4 params={'mode': 0, 'cpol': 0, 'cpha': 0, 'half_period': 4, 'mosi': [255, 0], 'miso': [226, 67]} -> True (2 burst(s), mode 0, 8 cycles/bit)
+1511742.00ns INFO     ..tt_um_2amlogic_protocol_emulator seed=20261009 protocol=spi index=5 params={'mode': 1, 'cpol': 0, 'cpha': 1, 'half_period': 6, 'mosi': [255], 'miso': [141]} -> True (1 burst(s), mode 1, 12 cycles/bit)
+1534242.00ns INFO     ..tt_um_2amlogic_protocol_emulator seed=20261009 protocol=spi index=6 params={'mode': 2, 'cpol': 1, 'cpha': 0, 'half_period': 4, 'mosi': [255], 'miso': [250]} -> True (1 burst(s), mode 2, 8 cycles/bit)
+1576542.00ns INFO     ..tt_um_2amlogic_protocol_emulator seed=20261009 protocol=spi index=7 params={'mode': 3, 'cpol': 1, 'cpha': 1, 'half_period': 3, 'mosi': [255, 0], 'miso': [201, 11]} -> True (2 burst(s), mode 3, 6 cycles/bit)
+1619482.00ns INFO     ..tt_um_2amlogic_protocol_emulator seed=20261009 protocol=spi index=8 params={'mode': 0, 'cpol': 0, 'cpha': 0, 'half_period': 4, 'mosi': [85, 255], 'miso': [174, 19]} -> True (2 burst(s), mode 0, 8 cycles/bit)
+1636222.00ns INFO     ..tt_um_2amlogic_protocol_emulator seed=20261009 protocol=spi index=9 params={'mode': 1, 'cpol': 0, 'cpha': 1, 'half_period': 2, 'mosi': [85], 'miso': [98]} -> True (1 burst(s), mode 1, 4 cycles/bit)
+1659362.00ns INFO     ..tt_um_2amlogic_protocol_emulator seed=20261009 protocol=spi index=10 params={'mode': 2, 'cpol': 1, 'cpha': 0, 'half_period': 6, 'mosi': [170], 'miso': [117]} -> True (1 burst(s), mode 2, 12 cycles/bit)
+1682502.00ns INFO     ..tt_um_2amlogic_protocol_emulator seed=20261009 protocol=spi index=11 params={'mode': 3, 'cpol': 1, 'cpha': 1, 'half_period': 6, 'mosi': [85], 'miso': [241]} -> True (1 burst(s), mode 3, 12 cycles/bit)
+1705002.00ns INFO     ..tt_um_2amlogic_protocol_emulator seed=20261009 protocol=spi index=12 params={'mode': 0, 'cpol': 0, 'cpha': 0, 'half_period': 4, 'mosi': [18], 'miso': [228]} -> True (1 burst(s), mode 0, 8 cycles/bit)
+1721742.00ns INFO     ..tt_um_2amlogic_protocol_emulator seed=20261009 protocol=spi index=13 params={'mode': 1, 'cpol': 0, 'cpha': 1, 'half_period': 2, 'mosi': [242], 'miso': [88]} -> True (1 burst(s), mode 1, 4 cycles/bit)
+1744242.00ns INFO     ..tt_um_2amlogic_protocol_emulator seed=20261009 protocol=spi index=14 params={'mode': 2, 'cpol': 1, 'cpha': 0, 'half_period': 4, 'mosi': [149], 'miso': [77]} -> True (1 burst(s), mode 2, 8 cycles/bit)
+1766422.00ns INFO     ..tt_um_2amlogic_protocol_emulator seed=20261009 protocol=spi index=15 params={'mode': 3, 'cpol': 1, 'cpha': 1, 'half_period': 3, 'mosi': [246], 'miso': [244]} -> True (1 burst(s), mode 3, 6 cycles/bit)
+1788602.00ns INFO     ..tt_um_2amlogic_protocol_emulator seed=20261009 protocol=spi index=16 params={'mode': 0, 'cpol': 0, 'cpha': 0, 'half_period': 3, 'mosi': [0], 'miso': [164]} -> True (1 burst(s), mode 0, 6 cycles/bit)
+1810782.00ns INFO     ..tt_um_2amlogic_protocol_emulator seed=20261009 protocol=spi index=17 params={'mode': 1, 'cpol': 0, 'cpha': 1, 'half_period': 3, 'mosi': [0], 'miso': [211]} -> True (1 burst(s), mode 1, 6 cycles/bit)
+1827522.00ns INFO     ..tt_um_2amlogic_protocol_emulator seed=20261009 protocol=spi index=18 params={'mode': 2, 'cpol': 1, 'cpha': 0, 'half_period': 2, 'mosi': [0], 'miso': [233]} -> True (1 burst(s), mode 2, 4 cycles/bit)
+1844262.00ns INFO     ..tt_um_2amlogic_protocol_emulator seed=20261009 protocol=spi index=19 params={'mode': 3, 'cpol': 1, 'cpha': 1, 'half_period': 2, 'mosi': [0], 'miso': [78]} -> True (1 burst(s), mode 3, 4 cycles/bit)
+1844262.00ns INFO     cocotb.regression                  test_random_regression.test_spi_random_programs passed
+1844262.00ns INFO     cocotb.regression                  running test_random_regression.test_i2c_random_programs (4/6)
+1975323.00ns WARNING  py.warnings                        /home/ubuntu/GitHub/sg13cmos5l-protocol-emulator/.loom/worktrees/issue-93/verification/test_random_regression.py:366: DeprecationWarning: `task.kill()` is deprecated in favor of `task.cancel()`
+                                                          driver.kill()
+1975323.00ns INFO     ..tt_um_2amlogic_protocol_emulator seed=20261009 protocol=i2c index=0 params={'grade': 'i2c_fast', 'address': 64, 'data': 0, 'ack_address': True} -> True (i2c_fast 0x40 data=[0])
+2233383.00ns INFO     ..tt_um_2amlogic_protocol_emulator seed=20261009 protocol=i2c index=1 params={'grade': 'i2c_std', 'address': 99, 'data': 0, 'ack_address': True} -> True (i2c_std 0x63 data=[0])
+2364443.00ns INFO     ..tt_um_2amlogic_protocol_emulator seed=20261009 protocol=i2c index=2 params={'grade': 'i2c_fast', 'address': 8, 'data': 255, 'ack_address': True} -> True (i2c_fast 0x08 data=[255])
+2622503.00ns INFO     ..tt_um_2amlogic_protocol_emulator seed=20261009 protocol=i2c index=3 params={'grade': 'i2c_std', 'address': 32, 'data': 255, 'ack_address': False} -> True (i2c_std 0x20 data=[])
+2753563.00ns INFO     ..tt_um_2amlogic_protocol_emulator seed=20261009 protocol=i2c index=4 params={'grade': 'i2c_fast', 'address': 32, 'data': 85, 'ack_address': True} -> True (i2c_fast 0x20 data=[85])
+3011623.00ns INFO     ..tt_um_2amlogic_protocol_emulator seed=20261009 protocol=i2c index=5 params={'grade': 'i2c_std', 'address': 32, 'data': 85, 'ack_address': False} -> True (i2c_std 0x20 data=[])
+3142683.00ns INFO     ..tt_um_2amlogic_protocol_emulator seed=20261009 protocol=i2c index=6 params={'grade': 'i2c_fast', 'address': 95, 'data': 36, 'ack_address': True} -> True (i2c_fast 0x5f data=[36])
+3400743.00ns INFO     ..tt_um_2amlogic_protocol_emulator seed=20261009 protocol=i2c index=7 params={'grade': 'i2c_std', 'address': 16, 'data': 50, 'ack_address': False} -> True (i2c_std 0x10 data=[])
+3531803.00ns INFO     ..tt_um_2amlogic_protocol_emulator seed=20261009 protocol=i2c index=8 params={'grade': 'i2c_fast', 'address': 32, 'data': 0, 'ack_address': True} -> True (i2c_fast 0x20 data=[0])
+3789863.00ns INFO     ..tt_um_2amlogic_protocol_emulator seed=20261009 protocol=i2c index=9 params={'grade': 'i2c_std', 'address': 29, 'data': 0, 'ack_address': True} -> True (i2c_std 0x1d data=[0])
+3920923.00ns INFO     ..tt_um_2amlogic_protocol_emulator seed=20261009 protocol=i2c index=10 params={'grade': 'i2c_fast', 'address': 8, 'data': 255, 'ack_address': True} -> True (i2c_fast 0x08 data=[255])
+4178983.00ns INFO     ..tt_um_2amlogic_protocol_emulator seed=20261009 protocol=i2c index=11 params={'grade': 'i2c_std', 'address': 119, 'data': 255, 'ack_address': False} -> True (i2c_std 0x77 data=[])
+4310043.00ns INFO     ..tt_um_2amlogic_protocol_emulator seed=20261009 protocol=i2c index=12 params={'grade': 'i2c_fast', 'address': 119, 'data': 170, 'ack_address': True} -> True (i2c_fast 0x77 data=[170])
+4568103.00ns INFO     ..tt_um_2amlogic_protocol_emulator seed=20261009 protocol=i2c index=13 params={'grade': 'i2c_std', 'address': 109, 'data': 85, 'ack_address': True} -> True (i2c_std 0x6d data=[85])
+4699163.00ns INFO     ..tt_um_2amlogic_protocol_emulator seed=20261009 protocol=i2c index=14 params={'grade': 'i2c_fast', 'address': 8, 'data': 12, 'ack_address': True} -> True (i2c_fast 0x08 data=[12])
+4957223.00ns INFO     ..tt_um_2amlogic_protocol_emulator seed=20261009 protocol=i2c index=15 params={'grade': 'i2c_std', 'address': 8, 'data': 63, 'ack_address': True} -> True (i2c_std 0x08 data=[63])
+5088283.00ns INFO     ..tt_um_2amlogic_protocol_emulator seed=20261009 protocol=i2c index=16 params={'grade': 'i2c_fast', 'address': 119, 'data': 0, 'ack_address': True} -> True (i2c_fast 0x77 data=[0])
+5346343.00ns INFO     ..tt_um_2amlogic_protocol_emulator seed=20261009 protocol=i2c index=17 params={'grade': 'i2c_std', 'address': 16, 'data': 0, 'ack_address': True} -> True (i2c_std 0x10 data=[0])
+5477403.00ns INFO     ..tt_um_2amlogic_protocol_emulator seed=20261009 protocol=i2c index=18 params={'grade': 'i2c_fast', 'address': 119, 'data': 255, 'ack_address': True} -> True (i2c_fast 0x77 data=[255])
+5735463.00ns INFO     ..tt_um_2amlogic_protocol_emulator seed=20261009 protocol=i2c index=19 params={'grade': 'i2c_std', 'address': 64, 'data': 255, 'ack_address': True} -> True (i2c_std 0x40 data=[255])
+5735463.00ns INFO     cocotb.regression                  test_random_regression.test_i2c_random_programs passed
+5735463.00ns INFO     cocotb.regression                  running test_random_regression.test_negative_controls_mutated_templates_fail (5/6)
+5774104.00ns INFO     ..tt_um_2amlogic_protocol_emulator negative control UART mistimed: ok=False (frame 0: row-10 drift 24.000%)
+5796604.00ns INFO     ..tt_um_2amlogic_protocol_emulator negative control SPI wrong idle: ok=False (burst 0: ['SCLK not idle at CPOL=0 before burst', 'SCLK did not return to CPOL idle after burst'])
+5924464.00ns INFO     ..tt_um_2amlogic_protocol_emulator negative control i2c_fast short t_LOW: violations ['t_LOW 1100.000ns < 1300.000ns minimum', 't_LOW 1100.000ns < 1300.000ns minimum']
+6179324.00ns INFO     ..tt_um_2amlogic_protocol_emulator negative control i2c_std short t_LOW: violations ['t_LOW 4500.000ns < 4700.000ns minimum', 't_LOW 4500.000ns < 4700.000ns minimum']
+6179324.00ns INFO     cocotb.regression                  test_random_regression.test_negative_controls_mutated_templates_fail passed
+6179324.00ns INFO     cocotb.regression                  running test_random_regression.test_zz_write_report (6/6)
+                                                            Write verdicts.json / coverage.json when an artifact dir is named,
+6179324.00ns INFO     ..tt_um_2amlogic_protocol_emulator COVER uart.byte_class: 4/4 hit; unhit=[]
+6179324.00ns INFO     ..tt_um_2amlogic_protocol_emulator COVER uart.bit_period_cycles: 4/4 hit; unhit=[]
+6179324.00ns INFO     ..tt_um_2amlogic_protocol_emulator COVER spi.mode_x_bursts: 8/8 hit; unhit=[]
+6179324.00ns INFO     ..tt_um_2amlogic_protocol_emulator COVER spi.sclk_period_cycles: 4/4 hit; unhit=[]
+6179324.00ns INFO     ..tt_um_2amlogic_protocol_emulator COVER spi.mosi_class: 4/4 hit; unhit=[]
+6179324.00ns INFO     ..tt_um_2amlogic_protocol_emulator COVER i2c.grade_x_addr_x_data: 15/24 hit; unhit=['i2c_fast/power-of-two/ones', 'i2c_fast/power-of-two/random', 'i2c_fast/random/alternating', 'i2c_fast/random/ones', 'i2c_fast/random/zero', 'i2c_std/bound/alternating', 'i2c_std/bound/zero', 'i2c_std/random/ones', 'i2c_std/random/random']
+6179324.00ns INFO     ..tt_um_2amlogic_protocol_emulator COVER i2c.address_ack: 2/2 hit; unhit=[]
+6179324.00ns INFO     cocotb.regression                  test_random_regression.test_zz_write_report passed
+6179324.00ns INFO     cocotb.regression                  ******************************************************************************************************************************
+                                                        ** TEST                                                                  STATUS  SIM TIME (ns)  REAL TIME (s)  RATIO (ns/s) **
+                                                        ******************************************************************************************************************************
+                                                        ** test_random_regression.test_recorded_seed_matches_request              PASS           0.00           0.00          0.00  **
+                                                        ** test_random_regression.test_uart_random_programs                       PASS     1332061.00           1.78     746712.38  **
+                                                        ** test_random_regression.test_spi_random_programs                        PASS      512201.00           0.60     857726.86  **
+                                                        ** test_random_regression.test_i2c_random_programs                        PASS     3891201.00           7.18     541582.19  **
+                                                        ** test_random_regression.test_negative_controls_mutated_templates_fail   PASS      443861.00           0.76     582666.75  **
+                                                        ** test_random_regression.test_zz_write_report                            PASS           0.00           0.00          0.00  **
+                                                        ******************************************************************************************************************************
+                                                        ** TESTS=6 PASS=6 FAIL=0 SKIP=0                                                    6179324.00          10.33     598181.85  **
+                                                        ******************************************************************************************************************************

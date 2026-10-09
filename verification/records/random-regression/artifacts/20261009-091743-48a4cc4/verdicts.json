@@ -1,0 +1,1184 @@
+{
+ "cases_per_protocol": 20,
+ "negative_controls": [
+  {
+   "detail": "frame 0: row-10 drift 24.000%",
+   "model_verdict": "FAIL",
+   "name": "uart_bit_period_minus_3",
+   "params": {
+    "mistime_delta": -3,
+    "payloads": [
+     90
+    ],
+    "period": 100
+   }
+  },
+  {
+   "detail": "burst 0: ['SCLK not idle at CPOL=0 before burst', 'SCLK did not return to CPOL idle after burst']",
+   "model_verdict": "FAIL",
+   "name": "spi_wrong_cpol_idle",
+   "params": {
+    "cpha": 0,
+    "cpol": 0,
+    "flip_idle": 1,
+    "half_period": 4,
+    "miso": [
+     192
+    ],
+    "mode": 0,
+    "mosi": [
+     0
+    ]
+   }
+  },
+  {
+   "detail": "violations ['t_LOW 1100.000ns < 1300.000ns minimum', 't_LOW 1100.000ns < 1300.000ns minimum']",
+   "model_verdict": "FAIL",
+   "name": "i2c_fast_low_phase_minus_10",
+   "params": {
+    "ack_address": true,
+    "address": 64,
+    "data": 0,
+    "grade": "i2c_fast",
+    "mistime_low_delta": -10
+   }
+  },
+  {
+   "detail": "violations ['t_LOW 4500.000ns < 4700.000ns minimum', 't_LOW 4500.000ns < 4700.000ns minimum']",
+   "model_verdict": "FAIL",
+   "name": "i2c_std_low_phase_minus_10",
+   "params": {
+    "ack_address": true,
+    "address": 99,
+    "data": 0,
+    "grade": "i2c_std",
+    "mistime_low_delta": -10
+   }
+  }
+ ],
+ "seed": 20261009,
+ "verdicts": [
+  {
+   "detail": "1 frame(s) @ 50 cycles/bit",
+   "hex_sha256": "1ffea7267bc89c8c90e2c2e6b20c07d4fe0d6b99b7fd581631026a726fc4cea9",
+   "index": 0,
+   "name": "uart_00",
+   "params": {
+    "payloads": [
+     0
+    ],
+    "period": 50
+   },
+   "protocol": "uart",
+   "total_cycles": 619,
+   "verdict": "PASS",
+   "words": 19
+  },
+  {
+   "detail": "1 frame(s) @ 100 cycles/bit",
+   "hex_sha256": "b448185036b87fc17a97e562a2dc8e17c3ea7d7e7abb80480a4e3b1527bb3cfe",
+   "index": 1,
+   "name": "uart_01",
+   "params": {
+    "payloads": [
+     255
+    ],
+    "period": 100
+   },
+   "protocol": "uart",
+   "total_cycles": 719,
+   "verdict": "PASS",
+   "words": 19
+  },
+  {
+   "detail": "2 frame(s) @ 100 cycles/bit",
+   "hex_sha256": "826004731356246a4a76aac87725628cc93e31dcbfca32caa5a64d6786f144d4",
+   "index": 2,
+   "name": "uart_02",
+   "params": {
+    "payloads": [
+     85,
+     0
+    ],
+    "period": 100
+   },
+   "protocol": "uart",
+   "total_cycles": 1179,
+   "verdict": "PASS",
+   "words": 34
+  },
+  {
+   "detail": "2 frame(s) @ 217 cycles/bit",
+   "hex_sha256": "a9176b06374dce595c8b26f56d0d6ac44ce77ec03b35fd348168afad52b60259",
+   "index": 3,
+   "name": "uart_03",
+   "params": {
+    "payloads": [
+     128,
+     255
+    ],
+    "period": 217
+   },
+   "protocol": "uart",
+   "total_cycles": 1647,
+   "verdict": "PASS",
+   "words": 34
+  },
+  {
+   "detail": "2 frame(s) @ 100 cycles/bit",
+   "hex_sha256": "6ea1c7f66928a064f4cab49544c46a61c2e775a7f3cfac47f81c20e95fd122b3",
+   "index": 4,
+   "name": "uart_04",
+   "params": {
+    "payloads": [
+     0,
+     255
+    ],
+    "period": 100
+   },
+   "protocol": "uart",
+   "total_cycles": 1179,
+   "verdict": "PASS",
+   "words": 34
+  },
+  {
+   "detail": "1 frame(s) @ 250 cycles/bit",
+   "hex_sha256": "8f0da71755ae8d12949a15d07eb77c1c81519f1f37390ccb73783fca747ddb31",
+   "index": 5,
+   "name": "uart_05",
+   "params": {
+    "payloads": [
+     255
+    ],
+    "period": 250
+   },
+   "protocol": "uart",
+   "total_cycles": 1019,
+   "verdict": "PASS",
+   "words": 19
+  },
+  {
+   "detail": "1 frame(s) @ 250 cycles/bit",
+   "hex_sha256": "061f71bb797d99df7b0502cf1e3d35cfca58f171084a65afccc397b83cc276e9",
+   "index": 6,
+   "name": "uart_06",
+   "params": {
+    "payloads": [
+     170
+    ],
+    "period": 250
+   },
+   "protocol": "uart",
+   "total_cycles": 1019,
+   "verdict": "PASS",
+   "words": 19
+  },
+  {
+   "detail": "2 frame(s) @ 100 cycles/bit",
+   "hex_sha256": "1c2df591c9a2c2fb9023c16be3183ea409b7ab0c073a3fe05235212ac5d66cf3",
+   "index": 7,
+   "name": "uart_07",
+   "params": {
+    "payloads": [
+     180,
+     255
+    ],
+    "period": 100
+   },
+   "protocol": "uart",
+   "total_cycles": 1179,
+   "verdict": "PASS",
+   "words": 34
+  },
+  {
+   "detail": "2 frame(s) @ 100 cycles/bit",
+   "hex_sha256": "daa036fbe92e63d0e86f809fbcbae7c72059fcf2d0bc734feb6a53ed7edc7524",
+   "index": 8,
+   "name": "uart_08",
+   "params": {
+    "payloads": [
+     0,
+     170
+    ],
+    "period": 100
+   },
+   "protocol": "uart",
+   "total_cycles": 1179,
+   "verdict": "PASS",
+   "words": 34
+  },
+  {
+   "detail": "1 frame(s) @ 50 cycles/bit",
+   "hex_sha256": "6761dcefc2b2a359255eb59df9503205a9fbab5b3a924a20752a4f59680234e4",
+   "index": 9,
+   "name": "uart_09",
+   "params": {
+    "payloads": [
+     255
+    ],
+    "period": 50
+   },
+   "protocol": "uart",
+   "total_cycles": 619,
+   "verdict": "PASS",
+   "words": 19
+  },
+  {
+   "detail": "2 frame(s) @ 50 cycles/bit",
+   "hex_sha256": "74e7fb7cc55a7bb9e5b8d70b0ade2ebf2c4149c869fe7615dacd2facc5b47cbe",
+   "index": 10,
+   "name": "uart_10",
+   "params": {
+    "payloads": [
+     85,
+     255
+    ],
+    "period": 50
+   },
+   "protocol": "uart",
+   "total_cycles": 979,
+   "verdict": "PASS",
+   "words": 34
+  },
+  {
+   "detail": "2 frame(s) @ 100 cycles/bit",
+   "hex_sha256": "ec1e4fe206c9628785b439d4644536285ce117689e20dd6e7bcaaa1e3d008706",
+   "index": 11,
+   "name": "uart_11",
+   "params": {
+    "payloads": [
+     93,
+     168
+    ],
+    "period": 100
+   },
+   "protocol": "uart",
+   "total_cycles": 1179,
+   "verdict": "PASS",
+   "words": 34
+  },
+  {
+   "detail": "1 frame(s) @ 217 cycles/bit",
+   "hex_sha256": "3c17175b408eacdd40abe4bf7822a12a6288d1ac9aba8a051b9cd045add27ac3",
+   "index": 12,
+   "name": "uart_12",
+   "params": {
+    "payloads": [
+     0
+    ],
+    "period": 217
+   },
+   "protocol": "uart",
+   "total_cycles": 953,
+   "verdict": "PASS",
+   "words": 19
+  },
+  {
+   "detail": "2 frame(s) @ 50 cycles/bit",
+   "hex_sha256": "b0febea488c9f67beb893fced713e2c0f21e05415a112838dd76bc8f5f910054",
+   "index": 13,
+   "name": "uart_13",
+   "params": {
+    "payloads": [
+     255,
+     164
+    ],
+    "period": 50
+   },
+   "protocol": "uart",
+   "total_cycles": 979,
+   "verdict": "PASS",
+   "words": 34
+  },
+  {
+   "detail": "2 frame(s) @ 250 cycles/bit",
+   "hex_sha256": "ea38a381ebe288beb751ee07671b28ba2e484808c862634710f574208a55334a",
+   "index": 14,
+   "name": "uart_14",
+   "params": {
+    "payloads": [
+     85,
+     255
+    ],
+    "period": 250
+   },
+   "protocol": "uart",
+   "total_cycles": 1779,
+   "verdict": "PASS",
+   "words": 34
+  },
+  {
+   "detail": "2 frame(s) @ 50 cycles/bit",
+   "hex_sha256": "ec67ee2da6a2d3378dafc58b9d3deaeecdef0e1b4c047c19565021bcd9aa9749",
+   "index": 15,
+   "name": "uart_15",
+   "params": {
+    "payloads": [
+     30,
+     85
+    ],
+    "period": 50
+   },
+   "protocol": "uart",
+   "total_cycles": 979,
+   "verdict": "PASS",
+   "words": 34
+  },
+  {
+   "detail": "1 frame(s) @ 250 cycles/bit",
+   "hex_sha256": "256202fe4190c5b3772f49fdf8ded3fd8753be7090e47c254ae0dcb656fd2255",
+   "index": 16,
+   "name": "uart_16",
+   "params": {
+    "payloads": [
+     0
+    ],
+    "period": 250
+   },
+   "protocol": "uart",
+   "total_cycles": 1019,
+   "verdict": "PASS",
+   "words": 19
+  },
+  {
+   "detail": "1 frame(s) @ 217 cycles/bit",
+   "hex_sha256": "17baa74023032587eead92f7b0334116616d0437a207f1ee1ca6e3dc01ff4016",
+   "index": 17,
+   "name": "uart_17",
+   "params": {
+    "payloads": [
+     255
+    ],
+    "period": 217
+   },
+   "protocol": "uart",
+   "total_cycles": 953,
+   "verdict": "PASS",
+   "words": 19
+  },
+  {
+   "detail": "2 frame(s) @ 217 cycles/bit",
+   "hex_sha256": "34d9f9d97a20e786d4ba743c6ef22a9f64da3a36abf050d31a4006adfe0f2cc0",
+   "index": 18,
+   "name": "uart_18",
+   "params": {
+    "payloads": [
+     170,
+     0
+    ],
+    "period": 217
+   },
+   "protocol": "uart",
+   "total_cycles": 1647,
+   "verdict": "PASS",
+   "words": 34
+  },
+  {
+   "detail": "2 frame(s) @ 100 cycles/bit",
+   "hex_sha256": "5ef619c13528aeb0ed142fa4baab5cf7add094f59fecca0bbd2e3ca22b4f3082",
+   "index": 19,
+   "name": "uart_19",
+   "params": {
+    "payloads": [
+     77,
+     71
+    ],
+    "period": 100
+   },
+   "protocol": "uart",
+   "total_cycles": 1179,
+   "verdict": "PASS",
+   "words": 34
+  },
+  {
+   "detail": "1 burst(s), mode 0, 8 cycles/bit",
+   "hex_sha256": "f92b9b66f3b5698ec500db8b639c20b4b8acd1d076bfcf2251f3e72eb32332f9",
+   "index": 0,
+   "name": "spi_00",
+   "params": {
+    "cpha": 0,
+    "cpol": 0,
+    "half_period": 4,
+    "miso": [
+     192
+    ],
+    "mode": 0,
+    "mosi": [
+     0
+    ]
+   },
+   "protocol": "spi",
+   "total_cycles": 129,
+   "verdict": "PASS",
+   "words": 61,
+   "wrong_mode_controls_failed_as_required": 0
+  },
+  {
+   "detail": "2 burst(s), mode 1, 8 cycles/bit",
+   "hex_sha256": "a21d8141dd8d67b9be559375d96ab551c597aba58e1ec1a026028bbc8714f144",
+   "index": 1,
+   "name": "spi_01",
+   "params": {
+    "cpha": 1,
+    "cpol": 0,
+    "half_period": 4,
+    "miso": [
+     104,
+     234
+    ],
+    "mode": 1,
+    "mosi": [
+     0,
+     85
+    ]
+   },
+   "protocol": "spi",
+   "total_cycles": 239,
+   "verdict": "PASS",
+   "words": 118,
+   "wrong_mode_controls_failed_as_required": 1
+  },
+  {
+   "detail": "2 burst(s), mode 2, 4 cycles/bit",
+   "hex_sha256": "13fefd570abc7569a05fb16e1eb0e5f8493c7ba054cd4a8fda21283d031be8e7",
+   "index": 2,
+   "name": "spi_02",
+   "params": {
+    "cpha": 0,
+    "cpol": 1,
+    "half_period": 2,
+    "miso": [
+     54,
+     172
+    ],
+    "mode": 2,
+    "mosi": [
+     0,
+     0
+    ]
+   },
+   "protocol": "spi",
+   "total_cycles": 175,
+   "verdict": "PASS",
+   "words": 86,
+   "wrong_mode_controls_failed_as_required": 0
+  },
+  {
+   "detail": "1 burst(s), mode 3, 4 cycles/bit",
+   "hex_sha256": "823b7daeb2bc048f3ba0f8ff7317bb24730ac5c0896784fa4ff6eec40c16fb9b",
+   "index": 3,
+   "name": "spi_03",
+   "params": {
+    "cpha": 1,
+    "cpol": 1,
+    "half_period": 2,
+    "miso": [
+     88
+    ],
+    "mode": 3,
+    "mosi": [
+     0
+    ]
+   },
+   "protocol": "spi",
+   "total_cycles": 97,
+   "verdict": "PASS",
+   "words": 45,
+   "wrong_mode_controls_failed_as_required": 0
+  },
+  {
+   "detail": "2 burst(s), mode 0, 8 cycles/bit",
+   "hex_sha256": "20eaec54864e848c547f2c548cf050e9e867601c1669375ded7c950b97824400",
+   "index": 4,
+   "name": "spi_04",
+   "params": {
+    "cpha": 0,
+    "cpol": 0,
+    "half_period": 4,
+    "miso": [
+     226,
+     67
+    ],
+    "mode": 0,
+    "mosi": [
+     255,
+     0
+    ]
+   },
+   "protocol": "spi",
+   "total_cycles": 239,
+   "verdict": "PASS",
+   "words": 118,
+   "wrong_mode_controls_failed_as_required": 1
+  },
+  {
+   "detail": "1 burst(s), mode 1, 12 cycles/bit",
+   "hex_sha256": "1e7e23a743574761aa808d8b829148580b7492caf56064d7c8cfa0ffd765da85",
+   "index": 5,
+   "name": "spi_05",
+   "params": {
+    "cpha": 1,
+    "cpol": 0,
+    "half_period": 6,
+    "miso": [
+     141
+    ],
+    "mode": 1,
+    "mosi": [
+     255
+    ]
+   },
+   "protocol": "spi",
+   "total_cycles": 161,
+   "verdict": "PASS",
+   "words": 61,
+   "wrong_mode_controls_failed_as_required": 1
+  },
+  {
+   "detail": "1 burst(s), mode 2, 8 cycles/bit",
+   "hex_sha256": "b6b6368bbc081f2f9eedb531834aa0c1589a872f02c6f686b63266234b85c9b8",
+   "index": 6,
+   "name": "spi_06",
+   "params": {
+    "cpha": 0,
+    "cpol": 1,
+    "half_period": 4,
+    "miso": [
+     250
+    ],
+    "mode": 2,
+    "mosi": [
+     255
+    ]
+   },
+   "protocol": "spi",
+   "total_cycles": 129,
+   "verdict": "PASS",
+   "words": 61,
+   "wrong_mode_controls_failed_as_required": 1
+  },
+  {
+   "detail": "2 burst(s), mode 3, 6 cycles/bit",
+   "hex_sha256": "adf3ebf7be8963c266c2532b78c7462f6b83083efad544699f94cae34f2518ed",
+   "index": 7,
+   "name": "spi_07",
+   "params": {
+    "cpha": 1,
+    "cpol": 1,
+    "half_period": 3,
+    "miso": [
+     201,
+     11
+    ],
+    "mode": 3,
+    "mosi": [
+     255,
+     0
+    ]
+   },
+   "protocol": "spi",
+   "total_cycles": 207,
+   "verdict": "PASS",
+   "words": 118,
+   "wrong_mode_controls_failed_as_required": 1
+  },
+  {
+   "detail": "2 burst(s), mode 0, 8 cycles/bit",
+   "hex_sha256": "949df236ac0d9036a4c42081f200636c387d750cf565392f46ce4c6c82e48d3a",
+   "index": 8,
+   "name": "spi_08",
+   "params": {
+    "cpha": 0,
+    "cpol": 0,
+    "half_period": 4,
+    "miso": [
+     174,
+     19
+    ],
+    "mode": 0,
+    "mosi": [
+     85,
+     255
+    ]
+   },
+   "protocol": "spi",
+   "total_cycles": 239,
+   "verdict": "PASS",
+   "words": 118,
+   "wrong_mode_controls_failed_as_required": 2
+  },
+  {
+   "detail": "1 burst(s), mode 1, 4 cycles/bit",
+   "hex_sha256": "a9542fe26fc26af4c369538a3111a67259f52a92bf24b0f9ce6199b3894a9de6",
+   "index": 9,
+   "name": "spi_09",
+   "params": {
+    "cpha": 1,
+    "cpol": 0,
+    "half_period": 2,
+    "miso": [
+     98
+    ],
+    "mode": 1,
+    "mosi": [
+     85
+    ]
+   },
+   "protocol": "spi",
+   "total_cycles": 97,
+   "verdict": "PASS",
+   "words": 45,
+   "wrong_mode_controls_failed_as_required": 1
+  },
+  {
+   "detail": "1 burst(s), mode 2, 12 cycles/bit",
+   "hex_sha256": "fcbafb87fa2534383b18b42746e91efedfb849829fb299ebd3e255b1f964a401",
+   "index": 10,
+   "name": "spi_10",
+   "params": {
+    "cpha": 0,
+    "cpol": 1,
+    "half_period": 6,
+    "miso": [
+     117
+    ],
+    "mode": 2,
+    "mosi": [
+     170
+    ]
+   },
+   "protocol": "spi",
+   "total_cycles": 161,
+   "verdict": "PASS",
+   "words": 61,
+   "wrong_mode_controls_failed_as_required": 1
+  },
+  {
+   "detail": "1 burst(s), mode 3, 12 cycles/bit",
+   "hex_sha256": "55129bb0c5cc0637a09b07bfea568460caa013d4d3e4661aaeabeca659f50053",
+   "index": 11,
+   "name": "spi_11",
+   "params": {
+    "cpha": 1,
+    "cpol": 1,
+    "half_period": 6,
+    "miso": [
+     241
+    ],
+    "mode": 3,
+    "mosi": [
+     85
+    ]
+   },
+   "protocol": "spi",
+   "total_cycles": 161,
+   "verdict": "PASS",
+   "words": 61,
+   "wrong_mode_controls_failed_as_required": 1
+  },
+  {
+   "detail": "1 burst(s), mode 0, 8 cycles/bit",
+   "hex_sha256": "d2c49085be500a450d76bf8de60130d26ef8554b65c08f648a161843a742faa8",
+   "index": 12,
+   "name": "spi_12",
+   "params": {
+    "cpha": 0,
+    "cpol": 0,
+    "half_period": 4,
+    "miso": [
+     228
+    ],
+    "mode": 0,
+    "mosi": [
+     18
+    ]
+   },
+   "protocol": "spi",
+   "total_cycles": 129,
+   "verdict": "PASS",
+   "words": 61,
+   "wrong_mode_controls_failed_as_required": 1
+  },
+  {
+   "detail": "1 burst(s), mode 1, 4 cycles/bit",
+   "hex_sha256": "8046a2affe17065b58c12dd0bb813f95572bfadc8bca49181f6fcf0739d85ae3",
+   "index": 13,
+   "name": "spi_13",
+   "params": {
+    "cpha": 1,
+    "cpol": 0,
+    "half_period": 2,
+    "miso": [
+     88
+    ],
+    "mode": 1,
+    "mosi": [
+     242
+    ]
+   },
+   "protocol": "spi",
+   "total_cycles": 97,
+   "verdict": "PASS",
+   "words": 45,
+   "wrong_mode_controls_failed_as_required": 1
+  },
+  {
+   "detail": "1 burst(s), mode 2, 8 cycles/bit",
+   "hex_sha256": "6873250974b40ee8590479b8bda7b641923125dcc70570bc761cf60934b9b364",
+   "index": 14,
+   "name": "spi_14",
+   "params": {
+    "cpha": 0,
+    "cpol": 1,
+    "half_period": 4,
+    "miso": [
+     77
+    ],
+    "mode": 2,
+    "mosi": [
+     149
+    ]
+   },
+   "protocol": "spi",
+   "total_cycles": 129,
+   "verdict": "PASS",
+   "words": 61,
+   "wrong_mode_controls_failed_as_required": 1
+  },
+  {
+   "detail": "1 burst(s), mode 3, 6 cycles/bit",
+   "hex_sha256": "2c4f08e9c0dcfc1d52046dbcfc041436f1c738f4644bf2f81619ea4efb77ddc7",
+   "index": 15,
+   "name": "spi_15",
+   "params": {
+    "cpha": 1,
+    "cpol": 1,
+    "half_period": 3,
+    "miso": [
+     244
+    ],
+    "mode": 3,
+    "mosi": [
+     246
+    ]
+   },
+   "protocol": "spi",
+   "total_cycles": 113,
+   "verdict": "PASS",
+   "words": 61,
+   "wrong_mode_controls_failed_as_required": 1
+  },
+  {
+   "detail": "1 burst(s), mode 0, 6 cycles/bit",
+   "hex_sha256": "4517d28c66689084853134ea4326cdffeed484558018ae534f4e0952b6403ef1",
+   "index": 16,
+   "name": "spi_16",
+   "params": {
+    "cpha": 0,
+    "cpol": 0,
+    "half_period": 3,
+    "miso": [
+     164
+    ],
+    "mode": 0,
+    "mosi": [
+     0
+    ]
+   },
+   "protocol": "spi",
+   "total_cycles": 113,
+   "verdict": "PASS",
+   "words": 61,
+   "wrong_mode_controls_failed_as_required": 0
+  },
+  {
+   "detail": "1 burst(s), mode 1, 6 cycles/bit",
+   "hex_sha256": "cb8cb861c97764178598d3b9f816b19e63b78176aa9e032a97ed84b7b5d84b02",
+   "index": 17,
+   "name": "spi_17",
+   "params": {
+    "cpha": 1,
+    "cpol": 0,
+    "half_period": 3,
+    "miso": [
+     211
+    ],
+    "mode": 1,
+    "mosi": [
+     0
+    ]
+   },
+   "protocol": "spi",
+   "total_cycles": 113,
+   "verdict": "PASS",
+   "words": 61,
+   "wrong_mode_controls_failed_as_required": 0
+  },
+  {
+   "detail": "1 burst(s), mode 2, 4 cycles/bit",
+   "hex_sha256": "4761c78af39f1bd1ba558f6625e0452c033531a786aa8711d197403158c40e14",
+   "index": 18,
+   "name": "spi_18",
+   "params": {
+    "cpha": 0,
+    "cpol": 1,
+    "half_period": 2,
+    "miso": [
+     233
+    ],
+    "mode": 2,
+    "mosi": [
+     0
+    ]
+   },
+   "protocol": "spi",
+   "total_cycles": 97,
+   "verdict": "PASS",
+   "words": 45,
+   "wrong_mode_controls_failed_as_required": 0
+  },
+  {
+   "detail": "1 burst(s), mode 3, 4 cycles/bit",
+   "hex_sha256": "823b7daeb2bc048f3ba0f8ff7317bb24730ac5c0896784fa4ff6eec40c16fb9b",
+   "index": 19,
+   "name": "spi_19",
+   "params": {
+    "cpha": 1,
+    "cpol": 1,
+    "half_period": 2,
+    "miso": [
+     78
+    ],
+    "mode": 3,
+    "mosi": [
+     0
+    ]
+   },
+   "protocol": "spi",
+   "total_cycles": 97,
+   "verdict": "PASS",
+   "words": 45,
+   "wrong_mode_controls_failed_as_required": 0
+  },
+  {
+   "detail": "i2c_fast 0x40 data=[0]",
+   "hex_sha256": "d76e50572be31e82d1af98d2a5cc4bedf4f704d1a4177edf5dfca2f3a2d78a24",
+   "index": 0,
+   "name": "i2c_00",
+   "params": {
+    "ack_address": true,
+    "address": 64,
+    "data": 0,
+    "grade": "i2c_fast"
+   },
+   "protocol": "i2c",
+   "total_cycles": 3345,
+   "verdict": "PASS",
+   "words": 181
+  },
+  {
+   "detail": "i2c_std 0x63 data=[0]",
+   "hex_sha256": "d60cc9d1005290e198f0c9caa2dcee99ac8854d104636ad5c4b4e73c766d7586",
+   "index": 1,
+   "name": "i2c_01",
+   "params": {
+    "ack_address": true,
+    "address": 99,
+    "data": 0,
+    "grade": "i2c_std"
+   },
+   "protocol": "i2c",
+   "total_cycles": 9695,
+   "verdict": "PASS",
+   "words": 181
+  },
+  {
+   "detail": "i2c_fast 0x08 data=[255]",
+   "hex_sha256": "f5fa35258aa3540b149e0f538f0955db10d699519df57486f715fe4b65f22295",
+   "index": 2,
+   "name": "i2c_02",
+   "params": {
+    "ack_address": true,
+    "address": 8,
+    "data": 255,
+    "grade": "i2c_fast"
+   },
+   "protocol": "i2c",
+   "total_cycles": 3345,
+   "verdict": "PASS",
+   "words": 181
+  },
+  {
+   "detail": "i2c_std 0x20 data=[]",
+   "hex_sha256": "ad820ea3845a3042e0fd0d6025db55dd623aea129d76e7b4fcdb78ff8d831c08",
+   "index": 3,
+   "name": "i2c_03",
+   "params": {
+    "ack_address": false,
+    "address": 32,
+    "data": 255,
+    "grade": "i2c_std"
+   },
+   "protocol": "i2c",
+   "total_cycles": 9695,
+   "verdict": "PASS",
+   "words": 181
+  },
+  {
+   "detail": "i2c_fast 0x20 data=[85]",
+   "hex_sha256": "35253adc005328e3f5e61f51b550c08d4ff5e0b1dc36294dfbc48b2755ec4cd7",
+   "index": 4,
+   "name": "i2c_04",
+   "params": {
+    "ack_address": true,
+    "address": 32,
+    "data": 85,
+    "grade": "i2c_fast"
+   },
+   "protocol": "i2c",
+   "total_cycles": 3345,
+   "verdict": "PASS",
+   "words": 181
+  },
+  {
+   "detail": "i2c_std 0x20 data=[]",
+   "hex_sha256": "c9bb8fb922927218727cf1315e6e187aef207686880261509ab880318d01685f",
+   "index": 5,
+   "name": "i2c_05",
+   "params": {
+    "ack_address": false,
+    "address": 32,
+    "data": 85,
+    "grade": "i2c_std"
+   },
+   "protocol": "i2c",
+   "total_cycles": 9695,
+   "verdict": "PASS",
+   "words": 181
+  },
+  {
+   "detail": "i2c_fast 0x5f data=[36]",
+   "hex_sha256": "c16d28004c5c31c3488f991e5567f1c8f02395b5515704a53e1d6f737187b7bb",
+   "index": 6,
+   "name": "i2c_06",
+   "params": {
+    "ack_address": true,
+    "address": 95,
+    "data": 36,
+    "grade": "i2c_fast"
+   },
+   "protocol": "i2c",
+   "total_cycles": 3345,
+   "verdict": "PASS",
+   "words": 181
+  },
+  {
+   "detail": "i2c_std 0x10 data=[]",
+   "hex_sha256": "61ad468c9707ac87804e20def538e8ed5f75e2d6e42a9dc93eac0a2f7978038f",
+   "index": 7,
+   "name": "i2c_07",
+   "params": {
+    "ack_address": false,
+    "address": 16,
+    "data": 50,
+    "grade": "i2c_std"
+   },
+   "protocol": "i2c",
+   "total_cycles": 9695,
+   "verdict": "PASS",
+   "words": 181
+  },
+  {
+   "detail": "i2c_fast 0x20 data=[0]",
+   "hex_sha256": "a0f1a21759ddcfd3ea80daf25a39048d8d22ce3085a3c09b7825d3dce050546b",
+   "index": 8,
+   "name": "i2c_08",
+   "params": {
+    "ack_address": true,
+    "address": 32,
+    "data": 0,
+    "grade": "i2c_fast"
+   },
+   "protocol": "i2c",
+   "total_cycles": 3345,
+   "verdict": "PASS",
+   "words": 181
+  },
+  {
+   "detail": "i2c_std 0x1d data=[0]",
+   "hex_sha256": "7a4a2e025082793c90e207886bba54eca7784f62edede4cb035e0da56ef780b8",
+   "index": 9,
+   "name": "i2c_09",
+   "params": {
+    "ack_address": true,
+    "address": 29,
+    "data": 0,
+    "grade": "i2c_std"
+   },
+   "protocol": "i2c",
+   "total_cycles": 9695,
+   "verdict": "PASS",
+   "words": 181
+  },
+  {
+   "detail": "i2c_fast 0x08 data=[255]",
+   "hex_sha256": "f5fa35258aa3540b149e0f538f0955db10d699519df57486f715fe4b65f22295",
+   "index": 10,
+   "name": "i2c_10",
+   "params": {
+    "ack_address": true,
+    "address": 8,
+    "data": 255,
+    "grade": "i2c_fast"
+   },
+   "protocol": "i2c",
+   "total_cycles": 3345,
+   "verdict": "PASS",
+   "words": 181
+  },
+  {
+   "detail": "i2c_std 0x77 data=[]",
+   "hex_sha256": "85d54dbcc036e974746e2f7a32b96de10a941961484a4be1ca71fe5431d1f07b",
+   "index": 11,
+   "name": "i2c_11",
+   "params": {
+    "ack_address": false,
+    "address": 119,
+    "data": 255,
+    "grade": "i2c_std"
+   },
+   "protocol": "i2c",
+   "total_cycles": 9695,
+   "verdict": "PASS",
+   "words": 181
+  },
+  {
+   "detail": "i2c_fast 0x77 data=[170]",
+   "hex_sha256": "8de9972230a233b45d84a9ccb2565f4cbd69fa957e027c17b37b3416b380e7b3",
+   "index": 12,
+   "name": "i2c_12",
+   "params": {
+    "ack_address": true,
+    "address": 119,
+    "data": 170,
+    "grade": "i2c_fast"
+   },
+   "protocol": "i2c",
+   "total_cycles": 3345,
+   "verdict": "PASS",
+   "words": 181
+  },
+  {
+   "detail": "i2c_std 0x6d data=[85]",
+   "hex_sha256": "cfd57f3f68dba4cd3e725cadb273246b585962ce9c1630e0f8b3808f21bb9e9e",
+   "index": 13,
+   "name": "i2c_13",
+   "params": {
+    "ack_address": true,
+    "address": 109,
+    "data": 85,
+    "grade": "i2c_std"
+   },
+   "protocol": "i2c",
+   "total_cycles": 9695,
+   "verdict": "PASS",
+   "words": 181
+  },
+  {
+   "detail": "i2c_fast 0x08 data=[12]",
+   "hex_sha256": "5f0efdb41b7a324157fb2abc51254b470825231ed1ef50a833018a8bd7500b15",
+   "index": 14,
+   "name": "i2c_14",
+   "params": {
+    "ack_address": true,
+    "address": 8,
+    "data": 12,
+    "grade": "i2c_fast"
+   },
+   "protocol": "i2c",
+   "total_cycles": 3345,
+   "verdict": "PASS",
+   "words": 181
+  },
+  {
+   "detail": "i2c_std 0x08 data=[63]",
+   "hex_sha256": "7e36da3664c5ccca5a522a6444b006aff3cbef5d8018ebc00142c0e44e7138e0",
+   "index": 15,
+   "name": "i2c_15",
+   "params": {
+    "ack_address": true,
+    "address": 8,
+    "data": 63,
+    "grade": "i2c_std"
+   },
+   "protocol": "i2c",
+   "total_cycles": 9695,
+   "verdict": "PASS",
+   "words": 181
+  },
+  {
+   "detail": "i2c_fast 0x77 data=[0]",
+   "hex_sha256": "8ca4aba46f63a478e08c6404bdd62340d5c6a8c6cbe04e83f9365f12db9a6bb7",
+   "index": 16,
+   "name": "i2c_16",
+   "params": {
+    "ack_address": true,
+    "address": 119,
+    "data": 0,
+    "grade": "i2c_fast"
+   },
+   "protocol": "i2c",
+   "total_cycles": 3345,
+   "verdict": "PASS",
+   "words": 181
+  },
+  {
+   "detail": "i2c_std 0x10 data=[0]",
+   "hex_sha256": "ed3bab362149b24ec8e5136fe9a522ab9fd494aa2211491b78cce4cb746bf2af",
+   "index": 17,
+   "name": "i2c_17",
+   "params": {
+    "ack_address": true,
+    "address": 16,
+    "data": 0,
+    "grade": "i2c_std"
+   },
+   "protocol": "i2c",
+   "total_cycles": 9695,
+   "verdict": "PASS",
+   "words": 181
+  },
+  {
+   "detail": "i2c_fast 0x77 data=[255]",
+   "hex_sha256": "316d43c9af22d0869b6c0f431b504c87637543794da38f150dd4f4d12de8d7b7",
+   "index": 18,
+   "name": "i2c_18",
+   "params": {
+    "ack_address": true,
+    "address": 119,
+    "data": 255,
+    "grade": "i2c_fast"
+   },
+   "protocol": "i2c",
+   "total_cycles": 3345,
+   "verdict": "PASS",
+   "words": 181
+  },
+  {
+   "detail": "i2c_std 0x40 data=[255]",
+   "hex_sha256": "810e128a5dfc41a3404da4f891849bdc52f0955d6f11c33069e499a94c4c6688",
+   "index": 19,
+   "name": "i2c_19",
+   "params": {
+    "ack_address": true,
+    "address": 64,
+    "data": 255,
+    "grade": "i2c_std"
+   },
+   "protocol": "i2c",
+   "total_cycles": 9695,
+   "verdict": "PASS",
+   "words": 181
+  }
+ ]
+}
