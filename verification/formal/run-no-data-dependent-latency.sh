@@ -11,6 +11,14 @@
 # property HAS TEETH by showing it fails against the data-dependent
 # early-out mutant fixture.
 #
+# Second DUT binding (issue #90): after the fixture legs, the SAME unmodified
+# monitor is run against the shipped core rtl/protocol_core.v (legs
+# [5/8]..[8/8]): BMC, covers, k-induction (informational), and a mutant of
+# the real core (a data-dependent WAIT early-out injected by a checked text
+# substitution into a scratch COPY -- rtl/ is never edited). Select with
+# DUT=fixture|core|all (default all). See formal_top.v's REAL_CORE block for
+# the binding (registered-read program model, pc/run_phase mapping).
+#
 # Cold start (a third party with a fresh clone needs exactly this):
 #
 #   ./verification/formal/run-no-data-dependent-latency.sh [artifacts-dir]
@@ -45,6 +53,7 @@ mkdir -p "$ART_DIR"
 # with BMC_DEPTH=<n> if a faster solver is available.
 BMC_DEPTH="${BMC_DEPTH:-30}"
 
+DUT="${DUT:-all}"
 fail=0
 
 need() { command -v "$1" >/dev/null 2>&1 || { echo "ERROR: $1 not found on PATH" >&2; exit 1; }; }
@@ -52,6 +61,7 @@ need yosys
 need yosys-smtbmc
 need z3
 
+case "$DUT" in fixture|core|all) ;; *) echo "ERROR: DUT must be fixture|core|all" >&2; exit 1;; esac
 echo "== toolchain =="
 yosys -V
 z3 --version
@@ -91,6 +101,7 @@ run_elab () { # $1 = out.smt2, $2.. = sources, with an optional -D MUTANT flag
   yosys -ql "$out.log" -p "read_verilog -formal -sv -nomem2reg $*; hierarchy -top formal_top; proc; flatten; opt_expr; opt_merge; opt_muxtree; opt_reduce; opt_merge; opt_dff; opt_clean; async2sync; dffunmap; write_smt2 -wires $out"
 }
 
+if [ "$DUT" != core ]; then
 # ---------------------------------------------------------------- conformant
 echo
 echo "== [1/4] conformant fixture: elaboration =="
@@ -135,9 +146,75 @@ else
   echo "mutant: counterexample found as required (property has teeth); VCD: $ART_DIR/mutant-cex.vcd"
 fi
 
+fi  # fixture legs
+
+if [ "$DUT" != fixture ]; then
+# ------------------------------------------------------------------ real core
+# The core is read WITHOUT -nomem2reg: its `regs` array has async-reset
+# writes, which yosys rejects as a memory (`Async reset causes memory write`);
+# mem2reg turns it into 4 reset-to-zero registers, which is exactly its RTL
+# semantics. The program is NOT a memory here (formal_top's anyconst table),
+# so the free-program argument above is unaffected.
+run_elab_core () { # $1 = out.smt2, $2 = core .v
+  local out="$1" core="$2"
+  yosys -ql "$out.log" -p "read_verilog -formal -sv $core; read_verilog -formal -sv -nomem2reg -D REAL_CORE $SCRIPT_DIR/no_data_dependent_latency.sv $SCRIPT_DIR/formal_top.v; hierarchy -top formal_top; proc; flatten; opt_expr; opt_merge; opt_muxtree; opt_reduce; opt_merge; opt_dff; opt_clean; async2sync; dffunmap; write_smt2 -wires $out"
+}
+
+echo
+echo "== monitor hash (must equal the fixture-run hash of record) =="
+sha256sum "$SCRIPT_DIR/no_data_dependent_latency.sv" "$REPO_ROOT/rtl/protocol_core.v"
+
+echo "== [5/8] real core rtl/protocol_core.v: elaboration =="
+run_elab_core "$ART_DIR/core.smt2" "$REPO_ROOT/rtl/protocol_core.v" || fail=1
+
+echo "== [6/8] real core: BMC depth $BMC_DEPTH (expect PASS) =="
+if yosys-smtbmc -s z3 -t "$BMC_DEPTH" "$ART_DIR/core.smt2" >"$ART_DIR/core-bmc.log" 2>&1; then
+  echo "BMC: PASS (no counterexample within $BMC_DEPTH cycles)"
+else
+  echo "BMC: CEX on the real core -- the property FAILS; record a finding, do NOT weaken the property" >&2
+  tail -5 "$ART_DIR/core-bmc.log" >&2
+  fail=1
+fi
+
+echo "== [7/8] real core: covers (non-vacuity) =="
+if yosys-smtbmc -s z3 -c -t "$BMC_DEPTH" "$ART_DIR/core.smt2" >"$ART_DIR/core-cover.log" 2>&1; then
+  echo "covers: all reachable"
+else
+  echo "covers: at least one cover unreachable -- BMC pass possibly vacuous" >&2
+  tail -5 "$ART_DIR/core-cover.log" >&2
+  fail=1
+fi
+
+echo "== [7b/8] real core: k-induction attempt (informational) =="
+if yosys-smtbmc -s z3 -i "$ART_DIR/core.smt2" >"$ART_DIR/core-induction.log" 2>&1; then
+  echo "induction: CLOSED (unbounded proof)"
+else
+  echo "induction: did not close (bounded result above is the shipped guarantee)"
+fi
+
+echo "== [8/8] real-core mutant (WAIT stall cut to 1 cycle when ui_in == 0xA5): BMC depth $BMC_DEPTH (expect CEX) =="
+# Inject the defect into a scratch COPY of the core; fail loudly if the
+# substitution did not apply (so a future RTL edit cannot silently turn the
+# negative control into a second positive run).
+sed 's/wait_cnt <= imm8;/wait_cnt <= (port_ui_in == 8'"'"'hA5) ? 8'"'"'d1 : imm8;/' \
+  "$REPO_ROOT/rtl/protocol_core.v" >"$ART_DIR/protocol_core_mutant.v"
+if cmp -s "$REPO_ROOT/rtl/protocol_core.v" "$ART_DIR/protocol_core_mutant.v"; then
+  echo "ERROR: core mutant substitution did not apply" >&2
+  fail=1
+else
+  run_elab_core "$ART_DIR/core-mutant.smt2" "$ART_DIR/protocol_core_mutant.v" || fail=1
+  if yosys-smtbmc -s z3 -t "$BMC_DEPTH" --dump-vcd "$ART_DIR/core-mutant-cex.vcd" "$ART_DIR/core-mutant.smt2" >"$ART_DIR/core-mutant-bmc.log" 2>&1; then
+    echo "core mutant: NO counterexample -- the property failed to catch a data-dependent latency on the real core" >&2
+    fail=1
+  else
+    echo "core mutant: counterexample found as required; VCD: $ART_DIR/core-mutant-cex.vcd"
+  fi
+fi
+fi  # real-core legs
+
 echo
 if [ "$fail" -eq 0 ]; then
-  echo "RESULT: all expectations met (BMC pass + covers reachable + mutant caught)"
+  echo "RESULT: all expectations met (BMC pass + covers reachable + mutant caught, per selected DUT)"
 else
   echo "RESULT: FAILED -- do not mint a record from this run" >&2
 fi

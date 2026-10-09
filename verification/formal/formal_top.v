@@ -94,6 +94,66 @@ module formal_top (
                                         : (fetch_addr[0] ? prog1 : prog0));
   assign instr_word = prog_sel;
 
+`ifdef REAL_CORE
+  // Second DUT binding (issue #90): the shipped rtl/protocol_core.v, read
+  // unmodified (the core mutant leg feeds it a text-mutated COPY, see the
+  // runner). Differences from the fixture binding, all in this harness and
+  // none in the property file:
+  //
+  //   - Program memory: the real core consumes `instr_word` ONE CYCLE AFTER
+  //     it presents `fetch_addr` (DR 0005 fetch-ahead; the PDK SRAM macro's
+  //     read is synchronous). `instr_q` models exactly that registered read
+  //     of the same free anyconst table, so the proof still quantifies over
+  //     every program. (Its power-on value is free; it is overwritten on
+  //     every edge, and the monitor ignores it outside run phase.)
+  //   - Monitor pc binding: the monitor's `pc` is the instruction occupying
+  //     execute NOW, i.e. the core's `pc` register. Yosys has no
+  //     hierarchical references, so the harness reconstructs it from the
+  //     core's port-level contract (the core's own rule: pc <= fetch_addr
+  //     every run-phase edge, pc <= 0 otherwise, 0 at reset). This uses no
+  //     core-internal signal.
+  //   - Monitor run_phase binding: DR 0005's priming cycle (first run_phase
+  //     cycle presents address 0 and executes nothing) is a fixed, data-free
+  //     +1 per reset. The monitor's run_phase means "an instruction occupies
+  //     pc this cycle", so it is bound to run_phase delayed one cycle
+  //     (== the core's fetch_valid). The monitor file is untouched.
+  //   - The core's pin inputs are free per-cycle inputs (data freedom).
+  reg [15:0] instr_q;
+  always @(posedge clk)
+    instr_q <= prog_sel;
+
+  reg       exec_phase;
+  reg [7:0] pc_q;
+  always @(posedge clk or negedge rst_n_r)
+    if (!rst_n_r) begin
+      exec_phase <= 1'b0;
+      pc_q       <= 8'd0;
+    end else begin
+      exec_phase <= run_phase;
+      pc_q       <= run_phase ? fetch_addr : 8'd0;
+    end
+
+  wire [7:0] core_uo, core_uio;
+  protocol_core dut_core (
+      .clk          (clk),
+      .rst_n        (rst_n_r),
+      .run_phase    (run_phase),
+      .instr_word   (instr_q),
+      .fetch_addr   (fetch_addr),
+      .port_ui_in   (branch_data),
+      .port_uio_in  (mutant_early_data),
+      .port_uo_out  (core_uo),
+      .port_uio_out (core_uio)
+  );
+
+  no_data_dependent_latency u_property (
+      .clk       (clk),
+      .rst_n     (rst_n_r),
+      .run_phase (exec_phase),
+      .pc        (pc_q),
+      .instr     (instr_q)
+  );
+`else
 `ifdef MUTANT
   timing_contract_mutant dut_core (
 `else
@@ -116,6 +176,7 @@ module formal_top (
       .pc        (fetch_addr),
       .instr     (instr_word)
   );
+`endif
 
 endmodule
 
