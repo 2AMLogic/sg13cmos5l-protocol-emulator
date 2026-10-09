@@ -49,7 +49,12 @@ module formal_top_pin_write (
     input wire [7:0]  ui_in,
     input wire [7:0]  uio_in,
     input wire        rst_req,
-    input wire        go
+    input wire        go,
+    // DR 0012 (issue #135): the two control-space values the core reads
+    // from the program memory rather than holding itself. Free every
+    // cycle, and handed to the core and the monitor alike.
+    input wire [15:0] pm_crc,
+    input wire        serial_loaded
 );
 
   reg rst_n_r = 1'b0;
@@ -95,11 +100,23 @@ module formal_top_pin_write (
   (* anyconst *) reg [15:0] prog7;
 
   wire [7:0]  fetch_addr;
-  wire [15:0] prog_sel = fetch_addr[2] ?
-                         (fetch_addr[1] ? (fetch_addr[0] ? prog7 : prog6)
-                                        : (fetch_addr[0] ? prog5 : prog4)) :
-                         (fetch_addr[1] ? (fetch_addr[0] ? prog3 : prog2)
-                                        : (fetch_addr[0] ? prog1 : prog0));
+  // DR 0012 (issue #135): the program memory's address mux, as in
+  // rtl/protocol_program_memory.v -- a program-memory data access takes
+  // the single port, so the word returned the next cycle is the table
+  // entry at PM_ADDR. In the stall cycle of such an access the core (and
+  // the monitor) therefore see a free word unrelated to the instruction
+  // stream; for RCTL PM_DATA_HI it is the read data. A write does not
+  // change the anyconst table (see the monitor header).
+  wire        core_pm_we, core_pm_re, core_pm_crc_clr;
+  wire [7:0]  core_pm_addr;
+  wire [15:0] core_pm_wdata;
+  wire [7:0]  core_uio_dir, core_uio_od;
+  wire [7:0]  mem_addr = (core_pm_we || core_pm_re) ? core_pm_addr : fetch_addr;
+  wire [15:0] prog_sel = mem_addr[2] ?
+                         (mem_addr[1] ? (mem_addr[0] ? prog7 : prog6)
+                                      : (mem_addr[0] ? prog5 : prog4)) :
+                         (mem_addr[1] ? (mem_addr[0] ? prog3 : prog2)
+                                      : (mem_addr[0] ? prog1 : prog0));
 
   reg [15:0] instr_q;
   always @(posedge clk)
@@ -120,7 +137,16 @@ module formal_top_pin_write (
       .port_ui_in   (ui_in),
       .port_uio_in  (uio_in),
       .port_uo_out  (core_uo),
-      .port_uio_out (core_uio)
+      .port_uio_out (core_uio),
+      .uio_dir      (core_uio_dir),
+      .uio_od       (core_uio_od),
+      .pm_we        (core_pm_we),
+      .pm_re        (core_pm_re),
+      .pm_addr      (core_pm_addr),
+      .pm_wdata     (core_pm_wdata),
+      .pm_crc_clr   (core_pm_crc_clr),
+      .pm_crc       (pm_crc),
+      .serial_loaded(serial_loaded)
   );
 
   pin_write_latency u_property (
@@ -131,7 +157,9 @@ module formal_top_pin_write (
       .ui_in      (ui_in),
       .uio_in     (uio_in),
       .uo_out     (core_uo),
-      .uio_out    (core_uio)
+      .uio_out    (core_uio),
+      .pm_crc       (pm_crc),
+      .serial_loaded(serial_loaded)
   );
 
   always @(posedge clk)

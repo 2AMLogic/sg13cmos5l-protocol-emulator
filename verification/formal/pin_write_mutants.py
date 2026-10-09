@@ -27,13 +27,18 @@ UIO_DECL = "output reg  [7:0]  port_uio_out"
 UO_RESET = "port_uo_out  <= 8'h00;"
 UIO_RESET = "port_uio_out <= 8'h00;"
 LOAD_HOLD = "      pc          <= 8'd0;\n      fetch_valid <= 1'b0;\n    end else begin\n"
-RO_DEFAULT = "default: ;  // OUT to a read-only port"
+RO_DEFAULT = "default: ;  // OUT to port 01 (read-only)"
+WCTL_DIR = "CTL_UIO_DIR:    uio_dir   <= rd_val;"
+RCTL_HW_ID = "CTL_HW_ID:       rctl_val = HW_ID;"
+PMRD_HI = "regs[stall_rd] <= instr_word[15:8];"
 EXEC_GATE = "if (fetch_valid && !halted) begin"
 INSERT_AT = "  assign fetch_addr = next_addr;\n"
 
-# The core's own "an OUT to port P executes this cycle" condition, re-stated
-# for the mutants that need a second write path (only used inside mutants).
-EXEC_OUT = "run_phase && fetch_valid && !halted && !waiting && opcode == OP_OUT"
+# The core's own "an instruction executes this cycle" wire, for the mutants
+# that need a second write path (only used inside mutants). Since issue #135
+# the core names it (`executing`: run phase, a valid fetch, not halted, not
+# in a WAIT stall and not in a control-access stall cycle).
+EXEC_OUT = "executing && opcode == OP_OUT"
 
 MUTANTS: dict[str, tuple[str, list[tuple[str, str]]]] = {
     # --- wrong destination / wrong value ----------------------------------
@@ -47,8 +52,24 @@ MUTANTS: dict[str, tuple[str, list[tuple[str, str]]]] = {
         [(OUT_UIO_WRITE, "PORT_UIO_OUT: port_uio_out <= rs_val;")],
     ),
     "readonly_port_writes": (
-        "OUT to a read-only port (00/01) writes port 10",
-        [(RO_DEFAULT, "default: port_uo_out <= rd_val;  // MUTANT: OUT to a read-only port")],
+        "OUT to the reserved read-only port 01 writes port 10",
+        [(RO_DEFAULT, "default: port_uo_out <= rd_val;  // MUTANT: OUT to port 01 (read-only)")],
+    ),
+    # --- DR 0012 control space (issue #135) -------------------------------
+    "wctl_writes_pin": (
+        "WCTL UIO_DIR (OUT to port 00) also writes port 10: a control write "
+        "must never move a pin",
+        [(WCTL_DIR, "CTL_UIO_DIR:    begin uio_dir <= rd_val; port_uo_out <= rd_val; end  // MUTANT")],
+    ),
+    "rctl_wrong_value": (
+        "RCTL HW_ID returns the complement of the constant: the wrong value "
+        "reaches a pin through a later OUT",
+        [(RCTL_HW_ID, "CTL_HW_ID:       rctl_val = ~HW_ID;  // MUTANT")],
+    ),
+    "pm_read_wrong_byte": (
+        "RCTL PM_DATA_HI returns the LOW byte of the word read: the wrong "
+        "program-memory byte reaches a pin through a later OUT",
+        [(PMRD_HI, "regs[stall_rd] <= instr_word[7:0];  // MUTANT")],
     ),
     # --- load-phase fault (needs a run_phase-low window of >= 3 cycles) ---
     "load_phase_leak": (
