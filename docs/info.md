@@ -21,7 +21,7 @@ The core (`rtl/protocol_core.v`) has four 8-bit registers `R0`–`R3`, a 2-bit
 four addressable 8-bit ports — `ui_in` and `uio_in` readable by `IN`,
 `uo_out` and `uio_out` writable by `OUT`. `uio_oe` is fixed at 0 (all
 bidirectional pins are inputs) because no protocol pin plan has been
-admitted yet (see [Pins (PROVISIONAL)](#pins-provisional)).
+admitted yet (see the "Pins (PROVISIONAL)" section below).
 
 **Timing is the product, so it is fixed by construction.** Every instruction
 retires in exactly one cycle. The single exception, `WAIT imm8`, stalls
@@ -89,8 +89,8 @@ claim; any baud/MHz reading is arithmetic at target-spec row 4's 50 MHz
 clock, which is **unconfirmed on the klt flow** (`klt sta` produced 0 of 6
 corners, [record](../verification/records/sta-corner-sweep/records/20260930-195410-ead870a.md)),
 so no wall-clock rate is claimed here. Nothing in this table was run on
-the Tiny Tapeout LibreLane flow or on silicon (see
-[Evidence not yet in hand](#evidence-not-yet-in-hand)).
+the Tiny Tapeout LibreLane flow or on silicon (see the
+"Evidence not yet in hand" section below).
 
 The table is mechanically checked against `firmware/asm/`,
 `firmware/build/` and the cited paths by `scripts/check_datasheet.py`
