@@ -1,0 +1,34 @@
+rm -f results.xml
+mkdir -p sim_build/rtl
+/opt/homebrew/bin/iverilog -o sim_build/rtl/sim.vvp -s tb -g2012 -DFUNCTIONAL -I<repo>/test/../src -f sim_build/rtl/cmds.f  <repo>/test/../rtl/vendor/RM_IHPSG13_1P_256x16_c2_bm_bist.v <repo>/test/../rtl/vendor/RM_IHPSG13_1P_core_behavioral_bm_bist.v <repo>/test/../src/tt_um_2amlogic_protocol_emulator.v <repo>/test/../src/protocol_core.v <repo>/test/../src/protocol_program_memory.v <repo>/test/tb.v
+rm -f results.xml
+COCOTB_TEST_MODULES=test COCOTB_TESTCASE=  COCOTB_TOPLEVEL=tb TOPLEVEL_LANG=verilog       \
+		 /opt/homebrew/bin/vvp -m <scratch>/kltvenv/lib/python3.13/site-packages/cocotb/libs/libcocotbvpi_icarus.so   sim_build/rtl/sim.vvp -fst   
+     -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:242  in gpi_load_users                  Loaded entry library: '/opt/homebrew/Cellar/python@3.13/3.13.16/Frameworks/Python.framework/Versions/3.13/Python'
+     -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:234  in gpi_load_users                  Running entry func 'initialize' from loaded library '<scratch>/kltvenv/lib/python3.13/site-packages/cocotb/simulator.cpython-313-darwin.so'
+     -.--ns INFO     pygpi                              ..ib/pygpi/embed.cpp:115  in initialize                      Using Python 3.13.14 interpreter at <scratch>/kltvenv/bin/python
+     -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:74   in gpi_print_registered_impl       GPI: VPI support registered
+     0.00ns INFO     cocotb.initialize                  Seeding Python random module with 1791576860
+     0.00ns INFO     cocotb.initialize                  Initialized cocotb v2.1.0 from <scratch>/kltvenv/lib/python3.13/site-packages/cocotb
+     0.00ns INFO     cocotb.initialize                  Running on Icarus Verilog version 13.0 (stable)
+     0.00ns INFO     cocotb.regression                  Running tests
+     0.00ns INFO     cocotb.regression                  running test.test_project (1/2)
+     0.00ns INFO     cocotb.tb                          Start
+     0.00ns INFO     cocotb.tb                          Reset and serial program load (DR 0001 load phase)
+1400001.00ns INFO     cocotb.tb                          Test the loaded firmware drives uo_out
+1420001.00ns INFO     cocotb.tb                          Test WAIT stalls, IN samples a pin, ADD runs
+1500001.00ns INFO     cocotb.tb                          Test HALT freezes the core
+1710001.00ns INFO     cocotb.regression                  test.test_project passed
+1710001.00ns INFO     cocotb.regression                  running test.test_control_space (2/2)
+1710001.00ns INFO     cocotb.tb                          Start (DR 0012 control space)
+12890002.00ns INFO     cocotb.tb                          Test RUN jumps into the routine written through PM_DATA
+13030002.00ns INFO     cocotb.regression                  test.test_control_space passed
+13030002.00ns INFO     cocotb.regression                  **************************************************************************************
+                                                        ** TEST                          STATUS  SIM TIME (ns)  REAL TIME (s)  RATIO (ns/s) **
+                                                        **************************************************************************************
+                                                        ** test.test_project              PASS     1710001.00           0.00   379522277.20  **
+                                                        ** test.test_control_space        PASS    11320001.00           0.02   611221551.55  **
+                                                        **************************************************************************************
+                                                        ** TESTS=2 PASS=2 FAIL=0 SKIP=0           13030002.00           0.02   549862591.38  **
+                                                        **************************************************************************************
+FST info: dumpfile tb.fst opened for output.

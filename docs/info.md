@@ -135,12 +135,12 @@ The table is mechanically checked against `firmware/asm/`,
 | [`spi_mode1`](../firmware/asm/spi_mode1.asm) | SPI controller, CPOL 0 / CPHA 1 | 4 per SCLK period (ceiling burst), 8 per bit (functional burst) | 120 | 182 | [`test_firmware_spi.py`](../verification/test_firmware_spi.py) | [firmware-spi 20261002-212640-061b65d](../verification/records/firmware-spi/records/20261002-212640-061b65d.md) |
 | [`spi_mode2`](../firmware/asm/spi_mode2.asm) | SPI controller, CPOL 1 / CPHA 0 | 4 per SCLK period (ceiling burst), 8 per bit (functional burst) | 119 | 181 | [`test_firmware_spi.py`](../verification/test_firmware_spi.py) | [firmware-spi 20261002-212640-061b65d](../verification/records/firmware-spi/records/20261002-212640-061b65d.md) |
 | [`spi_mode3`](../firmware/asm/spi_mode3.asm) | SPI controller, CPOL 1 / CPHA 1 | 4 per SCLK period (ceiling burst), 8 per bit (functional burst) | 120 | 182 | [`test_firmware_spi.py`](../verification/test_firmware_spi.py) | [firmware-spi 20261002-212640-061b65d](../verification/records/firmware-spi/records/20261002-212640-061b65d.md) |
-| [`i2c_fast`](../firmware/asm/i2c_fast.asm) | I2C controller, Fast-mode budget, write only | 125 per SCL clock (low 65 + high 60) | 182 | 3346 | [`test_firmware_i2c.py`](../verification/test_firmware_i2c.py) | [firmware-i2c 20261002-212508-25a0237](../verification/records/firmware-i2c/records/20261002-212508-25a0237.md) |
-| [`i2c_std`](../firmware/asm/i2c_std.asm) | I2C controller, Standard-mode budget, write only | 435 per SCL clock (low 235 + high 200) | 182 | 9696 | [`test_firmware_i2c.py`](../verification/test_firmware_i2c.py) | [firmware-i2c 20261002-212508-25a0237](../verification/records/firmware-i2c/records/20261002-212508-25a0237.md) |
-| [`i2c_fast_sr`](../firmware/asm/i2c_fast_sr.asm) | I2C controller, Fast-mode budget, write + repeated START + read, no pin-dependent branch | 125 per SCL clock (low 65 + high 60) | 132 | 1869 | [`test_firmware_i2c_sr.py`](../verification/test_firmware_i2c_sr.py) | [firmware-i2c 20261009-091929-48a4cc4](../verification/records/firmware-i2c/records/20261009-091929-48a4cc4.md) |
-| [`i2c_fast_sr_poll`](../firmware/asm/i2c_fast_sr_poll.asm) | as `i2c_fast_sr`, polls SCL (tolerates clock stretching) | 127 per SCL clock unstretched (low 65 + high 62) | 172 | 1889 | [`test_firmware_i2c_sr.py`](../verification/test_firmware_i2c_sr.py) | [firmware-i2c 20261009-091929-48a4cc4](../verification/records/firmware-i2c/records/20261009-091929-48a4cc4.md) |
-| [`i2c_std_sr`](../firmware/asm/i2c_std_sr.asm) | I2C controller, Standard-mode budget, write + repeated START + read, no pin-dependent branch | 435 per SCL clock (low 235 + high 200) | 132 | 5319 | [`test_firmware_i2c_sr.py`](../verification/test_firmware_i2c_sr.py) | [firmware-i2c 20261009-091929-48a4cc4](../verification/records/firmware-i2c/records/20261009-091929-48a4cc4.md) |
-| [`i2c_std_sr_poll`](../firmware/asm/i2c_std_sr_poll.asm) | as `i2c_std_sr`, polls SCL (tolerates clock stretching) | 437 per SCL clock unstretched (low 235 + high 202) | 172 | 5339 | [`test_firmware_i2c_sr.py`](../verification/test_firmware_i2c_sr.py) | [firmware-i2c 20261009-091929-48a4cc4](../verification/records/firmware-i2c/records/20261009-091929-48a4cc4.md) |
+| [`i2c_fast`](../firmware/asm/i2c_fast.asm) | I2C controller, Fast-mode budget, write only | 125 per SCL clock (low 65 + high 60) | 182 | 3346 | [`test_firmware_i2c.py`](../verification/test_firmware_i2c.py) | [firmware-i2c 20261009-201253-4ff0e14](../verification/records/firmware-i2c/records/20261009-201253-4ff0e14.md) |
+| [`i2c_std`](../firmware/asm/i2c_std.asm) | I2C controller, Standard-mode budget, write only | 435 per SCL clock (low 235 + high 200) | 182 | 9696 | [`test_firmware_i2c.py`](../verification/test_firmware_i2c.py) | [firmware-i2c 20261009-201253-4ff0e14](../verification/records/firmware-i2c/records/20261009-201253-4ff0e14.md) |
+| [`i2c_fast_sr`](../firmware/asm/i2c_fast_sr.asm) | I2C controller, Fast-mode budget, write + repeated START + read, no pin-dependent branch | 125 per SCL clock (low 65 + high 60) | 132 | 1869 | [`test_firmware_i2c_sr.py`](../verification/test_firmware_i2c_sr.py) | [firmware-i2c 20261009-201256-4ff0e14](../verification/records/firmware-i2c/records/20261009-201256-4ff0e14.md) |
+| [`i2c_fast_sr_poll`](../firmware/asm/i2c_fast_sr_poll.asm) | as `i2c_fast_sr`, polls SCL (tolerates clock stretching) | 127 per SCL clock unstretched (low 65 + high 62) | 172 | 1889 | [`test_firmware_i2c_sr.py`](../verification/test_firmware_i2c_sr.py) | [firmware-i2c 20261009-201256-4ff0e14](../verification/records/firmware-i2c/records/20261009-201256-4ff0e14.md) |
+| [`i2c_std_sr`](../firmware/asm/i2c_std_sr.asm) | I2C controller, Standard-mode budget, write + repeated START + read, no pin-dependent branch | 435 per SCL clock (low 235 + high 200) | 132 | 5319 | [`test_firmware_i2c_sr.py`](../verification/test_firmware_i2c_sr.py) | [firmware-i2c 20261009-201256-4ff0e14](../verification/records/firmware-i2c/records/20261009-201256-4ff0e14.md) |
+| [`i2c_std_sr_poll`](../firmware/asm/i2c_std_sr_poll.asm) | as `i2c_std_sr`, polls SCL (tolerates clock stretching) | 437 per SCL clock unstretched (low 235 + high 202) | 172 | 5339 | [`test_firmware_i2c_sr.py`](../verification/test_firmware_i2c_sr.py) | [firmware-i2c 20261009-201256-4ff0e14](../verification/records/firmware-i2c/records/20261009-201256-4ff0e14.md) |
 | [`demo_roundtrip`](../firmware/asm/demo_roundtrip.asm) | none (assembler and load-phase round-trip coverage program) | n/a | 27 | 30 | [`test_firmware_roundtrip.py`](../verification/test_firmware_roundtrip.py) | [firmware-assembler-roundtrip 20260930-195410-ead870a](../verification/records/firmware-assembler-roundtrip/records/20260930-195410-ead870a.md) |
 <!-- firmware-images:end -->
 
@@ -259,17 +259,21 @@ silicon or by the LibreLane flow.
 ## Evidence not yet in hand
 
 - **Tiny Tapeout LibreLane flow.** The routed-netlist SDF regression of the
-  submitted core ([record](../verification/records/post-layout-sdf-regression/records/20261009-103407-9716a9e.md),
-  LibreLane run 37911842396) is a **recorded FAIL** at all three corners (1
+  submitted core ([record](../verification/records/post-layout-sdf-regression/records/20261009-203349-4ff0e14.md),
+  LibreLane run 37985271399) is a **recorded FAIL** at all three corners (1
   of 13 core-bench tests passed) and ran only the core bench, not the
-  firmware above. LibreLane timing evidence is in
-  [`librelane-corner-timing`](../verification/records/librelane-corner-timing/records/20261002-095445-21a2a63.md).
-  Firmware run on the routed netlist: none.
+  firmware above. LibreLane timing and area evidence is in
+  [`librelane-corner-timing`](../verification/records/librelane-corner-timing/records/20261009-203554-4ff0e14.md).
+  Firmware and the control-space bench on that netlist at zero delay:
+  [`firmware-gate-level`](../verification/records/firmware-gate-level/records/20261009-203500-4ff0e14.md).
+  Firmware with back-annotated delays: none.
 - **klt synthesis and timing.** `klt sta` does not yet support the SRAM
   macro, so the two flows do not agree on timing; per the project rule that
   mismatch is a finding, not a number to pick from.
 - **Silicon:** none.
-- DR 0001 and DR 0005 are `Proposed`, not ratified.
+- **Pads.** `uio_oe` is verified as logic only. No pad model consumes it
+  yet, so no I2C result here is a claim about a driven bus (issue #136).
+- DR 0001, DR 0005 and DR 0012 are `Proposed`, not ratified.
 
 ## External hardware
 

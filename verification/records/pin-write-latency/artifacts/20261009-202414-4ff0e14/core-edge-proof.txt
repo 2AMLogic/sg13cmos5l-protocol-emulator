@@ -1,0 +1,12 @@
+======== ABC command line "read_aiger core-edge.aig; print_stats; scorr; print_stats; pdr -a -T 600"
+[1;37mcore-edge:[0m i/o = 1019/    6  lat =  381  and =   7562  lev = 37
+[1;37mcore-edge:[0m i/o = 1019/    6  lat =  282  and =   4850  lev = 33
+Proved output 2 in frame 0 (trivial).
+Proved output 3 in frame 0 (trivial).
+Invariant F[3] : 69 clauses with 0 flops (out of 282) (cex = 0, ave = 4.05)
+Verification of invariant with 69 clauses was successful.  Time =     0.00 sec
+Proved output 0 in frame -1950605064 (converged).
+Proved output 1 in frame -1950605064 (converged).
+Proved output 4 in frame -1950605064 (converged).
+Proved output 5 in frame -1950605064 (converged).
+Properties:  All = 6. Proved = 6. Disproved = 0. Undecided = 0.   Time =     0.06 sec
