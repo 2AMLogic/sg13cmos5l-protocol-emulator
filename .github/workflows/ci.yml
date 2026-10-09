@@ -103,3 +103,30 @@ jobs:
 
       - name: Re-render the tier report and compare with the committed record
         run: scripts/signoff-report.sh --check-latest
+
+  # RTL-level cocotb benches (issue #117): the PDK-free benches under
+  # verification/ (everything driven by a verification/request-*.json;
+  # test_check_records.py is covered by `npm run lint` in the records job,
+  # test_firmware_templates.py by the same). Simulates rtl/ + the vendored
+  # SRAM behavioural model under Icarus only. A pass/fail gate: it writes
+  # nothing under verification/records/ -- evidence records remain
+  # deliberate local runs. Benches need `klt functional-verification` (the
+  # requests carry the sources, defines and recorded seeds), so klt +
+  # cocotb are provisioned with the same setup-env.sh as the signoff job.
+  # The formal mutant gate (yosys/SBY) is not run here: follow-up.
+  rtl-benches:
+    name: RTL cocotb benches (no PDK)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install iverilog
+        run: sudo apt-get update && sudo apt-get install -y iverilog
+
+      - uses: astral-sh/setup-uv@v5
+
+      - name: Provision klt + pinned cocotb
+        run: ./scripts/setup-env.sh
+
+      - name: Run the RTL benches (gate only, no records written)
+        run: scripts/run-rtl-benches.sh

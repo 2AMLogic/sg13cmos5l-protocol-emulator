@@ -188,6 +188,30 @@ See `flow/README.md` for the synthesis-baseline leg (Yosys against
 `sg13cmos5l_stdcell`, and the `klt synthesize` liberty-naming gap that leg
 currently has to work around).
 
+## What CI runs vs. what stays local
+
+`.github/workflows/ci.yml`'s `rtl-benches` job (issue #117) runs
+`scripts/run-rtl-benches.sh`: `klt functional-verification` on every
+PDK-free RTL bench, as a **pass/fail gate only**. It writes nothing under
+`records/` (the klt envelopes go to a deleted temp dir); records remain
+deliberate local runs. The benches need `klt` (the `request-*.json` files
+carry sources, defines and recorded seeds), provisioned by
+`scripts/setup-env.sh` like the `signoff` job. Run it locally with
+`scripts/run-rtl-benches.sh` (~50 s serial).
+
+CI-covered (RTL, Icarus, no PDK): `test_protocol_emulator`,
+`test_program_memory`, `test_protocol_models`, `test_firmware_uart`,
+`test_firmware_spi`, `test_firmware_i2c`, `test_firmware_i2c_sr`,
+`test_firmware_roundtrip`, `test_random_regression`.
+
+Covered elsewhere in CI: `test_check_records.py` and
+`test_firmware_templates.py` (`npm run lint`).
+
+Local-only: the formal leg (`formal/`, needs yosys + yosys-smtbmc + z3;
+CI follow-up), and everything needing the PDK or a synthesized/laid-out
+netlist (`klt synthesize`, gate-level and post-layout SDF regressions,
+STA, DRC/LVS). A green CI run is not an evidence record.
+
 ## The `klt functional-verification` cocotb dependency (a local-environment note)
 
 `klt functional-verification` needs `cocotb`/`cocotb-tools` importable from
