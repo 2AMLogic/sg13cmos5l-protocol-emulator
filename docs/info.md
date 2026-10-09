@@ -279,7 +279,8 @@ beyond that wiring.
 
 **Levels and other buses.** A 5 V peer needs level shifting on a Pmod. A
 differential bus (USB D+/D-, 10BASE-T) needs a transceiver on a Pmod; neither
-is in the submitted design (DR 0011 defers them).
+is in the submitted design (not built; DR 0015 holds the proposed verdict and
+DR 0011 the current-ISA baseline).
 
 **Pad speed is unverified.** CMOS5L has no silicon yet and no pad
 characterization; Tiny Tapeout is checking whether SG13G2-derived numbers
