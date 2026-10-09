@@ -24,10 +24,17 @@ first commit because the competition asks for exactly that.
 
 **Implementation and verification are underway; the specification remains
 proposed pending two-key ratification.** The repository contains the ISA core,
-SRAM-backed 256×16 program memory, a Python assembler, and UART TX, four-mode
+SRAM-backed 256×16 program memory, a Python assembler, and UART TX/RX, four-mode
 SPI controller, and Standard/Fast-mode I2C controller firmware with DUT-facing
 benches. See [`rtl/README.md`](rtl/README.md) and
 [`firmware/README.md`](firmware/README.md) for the implemented design.
+
+DR 0012's control space is implemented: `WCTL`/`RCTL` provide runtime pin
+direction and open-drain control, program-memory access, CRC-16/XMODEM over
+committed words, and a fixed-latency `RUN` jump. The
+[control-space evidence](verification/records/control-space/records/20261009-210912-a46a399.md)
+records the RTL bench and mutant checks. The silicon-true I2C pad-model
+verification and DR 0013 boot ROM remain in progress (#136 and #138).
 
 The competition's LibreLane flow has routed the macro-backed core in a 2×2
 Tiny Tapeout die. Its [committed PDN/area record](verification/records/librelane-pdn-bridge/records/20261001-085017-21a2a63.md)

@@ -4,6 +4,34 @@ Chronological record of merged pull requests and closed issues, newest first.
 
 ### 2026-10-09
 
+- **PR #162**: refactor(verification): share firmware hex and cycle-report parsers
+- **PR #160**: feat: implement DR 0012 control space with runtime uio direction
+- **PR #128**: docs(spec): DR 0011 current-ISA baseline schedules for low-speed USB and 10BASE-T (verdict in DR 0015)
+- **PR #148**: docs(spec): required external parts, TT Pmod pinout alignment, pad-speed claims unverified
+- **PR #151**: spec: reconcile target-spec State cells (rows 1, 6, 10-12) with the evidence records
+- **PR #153**: spec: DR 0015, stretch protocols with protocol-neutral ISA primitives (Proposed)
+- **PR #150**: docs: judge-facing submission tracker (#134)
+- **PR #149**: Pin roles: inventory UART RX/low-baud firmware in DR 0010 and run the checker in lint
+- **PR #147**: spec: DR 0014, what area beyond 2x2 buys (Proposed)
+- **PR #127**: formal: pin_write_latency on the real core (verification-plan 2.2)
+- **PR #146**: spec: land the target-spec / verification-plan / tracker half of #144
+- **PR #144**: spec: respond to the organizers' 2026-10-09 entrant update (DR 0012 control space, DR 0013 loading, rows 13-14)
+- **PR #96**: Firmware: UART receive path and low-baud (9600) with RX bench (rows 1, 10)
+- **Issue #115** (closed): Consolidate firmware-bench hex and cycle-report parsers while preserving caller semantics
+- **Issue #135** (closed): RTL: implement DR 0012's control space (WCTL/RCTL, runtime uio direction, program-memory access, PM_CRC, RUN) + assembler + formal + bench
+- **Issue #109** (closed): Decision record: admit or defer the stretch protocols (low-speed USB, 10BASE-T) against the ISA cycle budget — row 2's entry condition is unevaluated
+- **Issue #133** (closed): I/O: required external parts on a Pmod (I2C pull-ups close DR 0008 item 1), align pinout with TT recommended Pmods, mark pad-speed claims unverified
+- **Issue #142** (closed): Spec: reconcile target-spec State cells (rows 1, 6, 10-12) with the evidence records — they still read 'no firmware'
+- **Issue #130** (closed): Stretch protocols: rescope DR 0011 around protocol-neutral ISA primitives (CRC/LFSR, NRZI/bit-stuff, Manchester, clock recovery) instead of a plain defer
+- **Issue #134** (closed): Submission tracker: map each required deliverable (arch/ISA doc, toolchain+examples, verification + AI-use write-ups, unplanned-protocol demo) to a judge-facing artifact
+- **Issue #143** (closed): check_protocol_pin_roles.py fails on main: four UART firmware files missing from DR 0010's inventory; checker not in lint
+- **Issue #129** (closed): Area: decide what tiles beyond 2×2 buy in flexibility (6×4 guaranteed, 8×4 expected mid-Oct) — revisit row 7 / DR 0005 Axis 2
+- **Issue #116** (closed): Formal: complete deferred pin_write_latency checks on the real core outputs
+- **Issue #132** (closed): Loader is submission-critical: program is lost on every deselect — re-tier #118 and target the demo board's MCU
+- **Issue #91** (closed): Firmware: UART receive path and low-baud (9600) case with RX jitter bench (rows 1, 10)
+
+### 2026-10-09
+
 - **Issue #82** (closed): T1 item 4: re-run klt lvs on the routed GDS now that klayout-tools#2656 and #2657 are fixed
 - **Issue #90** (closed): Formal: run no_data_dependent_latency against the real rtl/protocol_core.v (row 3's remaining scope is tracked nowhere)
 - **Issue #92** (closed): Firmware: I2C repeated-START (t_SU;STA), controller-read and clock-stretch cases (row 12 reason a)
