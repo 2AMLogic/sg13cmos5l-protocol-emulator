@@ -454,6 +454,15 @@ def test_ctl_lint_unknown_provenance_is_tainted():
     run = "RCTL R1, PM_ADDR\nLDI R2, 1\nAND R1, R2\nBZ 5\nLDI R0, 0\nWCTL RUN, R0\n"
     assert warns(run) == 1
 
+def test_ctl_lint_run_landing_after_rewrite_is_tainted():
+    # A RUN can land between a pin-derived rewrite and a later readback:
+    # the rewrite does not make the state clean at an address the RUN can
+    # reach. Without the RUN the same code is straight-line and clean.
+    body = ("LDI R0, 0\nWCTL UIO_DIR, R0\nRCTL R1, UIO_DIR\nLDI R2, 1\nAND R1, R2\n"
+            "BZ 8\nHALT\nNOP\nIN R0, UI_IN\nWCTL UIO_DIR, R0\nLDI R3, 2\n")
+    assert warns(body + "WCTL RUN, R3\n") >= 1
+    assert warns(body) == 0
+
 def test_ctl_lint_pm_data_reads_are_always_tainted():
     # RCTL PM_DATA_HI returns PM[PM_ADDR][15:8] and latches the low byte
     # for RCTL PM_DATA_LO (protocol_core.v stall_pmrd); neither reads back
@@ -585,6 +594,7 @@ ALL_TESTS = [
     test_ctl_lint_taint_survives_wctl_rctl_roundtrip,
     test_ctl_lint_constant_write_readback_is_clean,
     test_ctl_lint_unknown_provenance_is_tainted,
+    test_ctl_lint_run_landing_after_rewrite_is_tainted,
     test_ctl_lint_pm_data_reads_are_always_tainted,
     test_ctl_lint_crc_follows_committed_words,
     test_ctl_lint_status_and_constant_reads_stay_clean,
