@@ -20,40 +20,32 @@ first commit because the competition asks for exactly that.
 
 ## Status
 
-**Just opened, specification phase.** Nothing is designed yet, nothing has been
-taped out, and nothing has been measured.
+**Implementation and verification are underway; the specification remains
+proposed pending two-key ratification.** The repository contains the ISA core,
+SRAM-backed 256×16 program memory, a Python assembler, and UART TX, four-mode
+SPI controller, and Standard/Fast-mode I2C controller firmware with DUT-facing
+benches. See [`rtl/README.md`](rtl/README.md) and
+[`firmware/README.md`](firmware/README.md) for the implemented design.
 
-Deliberately not being built yet:
+The competition's LibreLane flow has routed the macro-backed core in a 2×2
+Tiny Tapeout die. Its [committed PDN/area record](verification/records/librelane-pdn-bridge/records/20261001-085017-21a2a63.md)
+reports die area 131,620 µm² and passing `gds`, `precheck`, `gl_test`, and
+`viewer` jobs. LibreLane timing evidence covers three macro-supported corners
+at the 20 ns (50 MHz) constraint; the remaining timing/specification gaps are
+tracked in [`spec/gap-to-submission.md`](spec/gap-to-submission.md).
 
-- **The instruction set.** No opcode is defined. The ISA is the design: how
-  a program expresses "wait exactly N cycles", "sample this pin on that edge",
-  and "drive this pin at that time" decides whether UART, SPI and I2C can all
-  be firmware on one core, and it is ratified in `spec/` (issue #1) before any
-  RTL is written. Nothing here presumes a register file width, a pipeline, or
-  an instruction encoding.
-- **Firmware and its toolchain.** Protocols live in programs, so an assembler
-  (or generator) and a firmware tree are deliverables of this repo. Their
-  shape — hand assembler, Python generator, or a Hardcaml-style embedding —
-  is a decision record, not a default, and it waits on the ISA.
-- **The flow of record.** The competition submits through the
-  [Tiny Tapeout CMOS5L template](https://github.com/TinyTapeout/ttihp-verilog-template/tree/cmos5l),
-  whose sign-off flow is LibreLane run in GitHub Actions. This program's own
-  digital flow (`klt synthesize`, Yosys, OpenROAD) does not yet know the
-  CMOS5L standard cells. Which flow produces the submitted GDS, and which is
-  used for day-to-day iteration, is recorded in `spec/decision-records/`
-  before the first synthesis number is written down.
-- **Area.** The competition allows up to 8×4 Tiny Tapeout tiles. The draft
-  budget below is far smaller on purpose: the judging criterion is novelty of
-  design and verification, not size, and a small core is easier to verify
-  formally.
-- **The stretch protocols.** Low-speed USB and 10 Mbit Ethernet are named in
-  the brief as stretch goals. They enter the spec only if the ratified ISA can
-  hit their timing; they are not assumed.
+The klt flow supports CMOS5L standard cells, but its macro-backed STA and
+place-and-route legs remain blocked by
+[klayout-tools#2635](https://github.com/2AMLogic/klayout-tools/issues/2635).
+Evidence from the two flows is recorded separately under
+[`spec/decision-records/0002-flow-of-record.md`](spec/decision-records/0002-flow-of-record.md).
+Nothing has been taped out or measured on silicon. Low-speed USB and
+10 Mbit Ethernet remain stretch goals.
 
 ## Built agent-native
 
 Every specification, decision record, testbench, and line of documentation in
-this repo is produced by AI agents working from a ratified spec and an
+this repo is produced by AI agents working from the proposed spec and an
 append-only evidence trail — not human-authored work that agents merely
 assisted with. Verification is the product: every claim traces to a recorded
 result. Where the agents hit friction with the open-source tooling — most often
@@ -93,9 +85,9 @@ produced and where the committed verdict of record lives; the gap-to-T1
 tracker is issue #27).
 
 The `flow/` directory description below names Yosys and OpenROAD because that
-is this program's standard digital flow; whether the *submitted* GDS comes
-from it or from the Tiny Tapeout template's LibreLane flow is an open decision
-record (see `spec/decision-records/0002-flow-of-record.md`).
+is this program's klt iteration flow. The competition's submitted GDS uses the
+Tiny Tapeout template's LibreLane flow, as described in the proposed
+[`flow-of-record decision`](spec/decision-records/0002-flow-of-record.md).
 
 ## Repo layout
 
@@ -108,25 +100,28 @@ flow/          synthesis + place-and-route (Yosys, OpenROAD), driven through klt
 layout/        GDS + DRC/LVS reports (klayout-tools driven)
 manifests/     the klt signoff block manifest that grades this block's T1 state
 measurements/  silicon characterization (empty until tape-out)
-rtl/           this program's own Verilog sources -- empty until the ratified
-               ISA needs RTL beyond the Tiny Tapeout top; see rtl/README.md
-spec/          ratified spec + decision records
+rtl/           ISA core and SRAM-backed program memory; see rtl/README.md
+firmware/      assembler, protocol programs, and committed build artifacts
+spec/          proposed spec + decision records and ratification history
 verification/  this program's own cocotb bench + append-only evidence records
 ```
 
 `src/`/`info.yaml`/`test/`/`docs/`/the `.github/workflows/{gds,test,fpga,docs}.yaml`
-files are taken verbatim from the [Tiny Tapeout CMOS5L
+files are based on the [Tiny Tapeout CMOS5L
 template](https://github.com/TinyTapeout/ttihp-verilog-template/tree/cmos5l)
-(issue #2); everything else is this program's own harness, ported from
+(issue #2), with documented core, PDN, and test-harness changes; the original
+verification harness was ported from
 [`2AMLogic/sky130-modexp`](https://github.com/2AMLogic/sky130-modexp).
 
 The `gds` workflow — the LibreLane sign-off flow, and the only thing here that
-builds a GDS — now passes end to end on `main` (`gds`/`precheck`/`gl_test`/
-`viewer` all succeed) for the harness-bootstrap stub top. It previously failed
+builds a GDS — has passed end to end (`gds`/`precheck`/`gl_test`/
+`viewer` all succeed) for the macro-backed ISA core, as recorded in the
+[PDN/area evidence](verification/records/librelane-pdn-bridge/records/20261001-085017-21a2a63.md).
+The earlier harness-bootstrap flow failed
 before doing any work, on a confirmed upstream bug in the Tiny Tapeout action
 it calls ([`TinyTapeout/tt-gds-action#52`](https://github.com/TinyTapeout/tt-gds-action/issues/52)),
 which also skipped `precheck`/`gl_test`/`viewer`; that symptom stopped
-reproducing on its own (the upstream issue remains open, unreconciled), and a
+reproducing on its own, and a
 separate template gap that broke `gl_test` and a missing GitHub Pages setting
 that broke `viewer` have both been fixed. Full write-up, including the
 still-open upstream-issue caveat: [`layout/README.md`](layout/README.md).
