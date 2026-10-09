@@ -60,6 +60,13 @@ jobs:
           python3 firmware/tools/test_asm.py
           python3 firmware/tools/check_firmware.py
 
+      # Datasheet drift (issue #110): docs/info.md's image table must agree
+      # with firmware/asm/, firmware/build/ and the cycle reports.
+      - name: Datasheet image table vs firmware tree
+        run: |
+          python3 scripts/test_check_datasheet.py
+          python3 scripts/check_datasheet.py
+
       - name: Record linter + its self-test (npm run lint)
         run: npm run lint
 
