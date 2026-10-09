@@ -19,6 +19,14 @@
 # DUT=fixture|core|all (default all). See formal_top.v's REAL_CORE block for
 # the binding (registered-read program model, pc/run_phase mapping).
 #
+# Control space (issue #135, DR 0012): the monitor's latency table now
+# carries the three 2-cycle control accesses, so each binding gains a second
+# negative control for exactly those rows -- leg [4b/4], a fixture whose
+# 2-cycle control access skips its stall on a data match
+# (fixtures/timing_contract_mutant_ctl.v), and leg [8b/8], the real core with
+# its control stall stretched while ui_in == 0xA5. The original WAIT mutants
+# (legs [4/4] and [8/8]) are unchanged.
+#
 # Cold start (a third party with a fresh clone needs exactly this):
 #
 #   ./verification/formal/run-no-data-dependent-latency.sh [artifacts-dir]
@@ -162,6 +170,14 @@ echo "== [4/4] mutant fixture (data-dependent WAIT early-out): BMC depth $BMC_DE
 run_elab "$ART_DIR/mutant.smt2" -D MUTANT $SOURCES_MUTANT || fail=1
 expect_cex "mutant" "$ART_DIR/mutant.smt2" "$ART_DIR/mutant-cex.vcd"
 
+echo
+echo "== [4b/4] control-space mutant fixture (data-dependent 2-cycle-access early-out, DR 0012): BMC depth $BMC_DEPTH (expect CEX) =="
+run_elab "$ART_DIR/mutant-ctl.smt2" -D MUTANT_CTL \
+  "$SCRIPT_DIR/fixtures/timing_contract_mutant_ctl.v" \
+  "$SCRIPT_DIR/no_data_dependent_latency.sv" \
+  "$SCRIPT_DIR/formal_top.v" || fail=1
+expect_cex "control-space mutant" "$ART_DIR/mutant-ctl.smt2" "$ART_DIR/mutant-ctl-cex.vcd"
+
 fi  # fixture legs
 
 if [ "$DUT" != fixture ]; then
@@ -220,6 +236,23 @@ if cmp -s "$REPO_ROOT/rtl/protocol_core.v" "$ART_DIR/protocol_core_mutant.v"; th
 else
   run_elab_core "$ART_DIR/core-mutant.smt2" "$ART_DIR/protocol_core_mutant.v" || fail=1
   expect_cex "core mutant" "$ART_DIR/core-mutant.smt2" "$ART_DIR/core-mutant-cex.vcd"
+fi
+
+echo "== [8b/8] real-core control-space mutant (2-cycle control access stalls on while ui_in == 0xA5, DR 0012): BMC depth $BMC_DEPTH (expect CEX) =="
+# Two checked substitutions into a scratch COPY: the stall cycle neither
+# ends nor releases the fetch address while the pin data matches. Each must
+# apply (the count of changed lines is checked), so a future RTL edit cannot
+# silently disarm the control.
+sed -e 's/^          ctl_stall  <= 1'"'"'b0;$/          ctl_stall  <= (port_ui_in == 8'"'"'hA5);/' \
+    -e 's/next_addr = stall_run ? rd_val : pc_next;/next_addr = (port_ui_in == 8'"'"'hA5) ? pc : (stall_run ? rd_val : pc_next);/' \
+  "$REPO_ROOT/rtl/protocol_core.v" >"$ART_DIR/protocol_core_mutant_ctl.v"
+changed="$(diff "$REPO_ROOT/rtl/protocol_core.v" "$ART_DIR/protocol_core_mutant_ctl.v" | grep -c '^>')"
+if [ "$changed" -ne 2 ]; then
+  echo "ERROR: core control-space mutant substitution applied to $changed line(s), expected 2" >&2
+  fail=1
+else
+  run_elab_core "$ART_DIR/core-mutant-ctl.smt2" "$ART_DIR/protocol_core_mutant_ctl.v" || fail=1
+  expect_cex "core control-space mutant" "$ART_DIR/core-mutant-ctl.smt2" "$ART_DIR/core-mutant-ctl-cex.vcd"
 fi
 fi  # real-core legs
 

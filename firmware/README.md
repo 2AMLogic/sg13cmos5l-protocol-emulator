@@ -34,7 +34,8 @@ firmware/
                   report are part of the evidence record, byte for byte
   tools/          the assembler itself
     asm.py        the assembler (Python 3 stdlib only, no dependencies)
-    test_asm.py   its unit tests (all 16 opcodes + malformed input)
+    test_asm.py   its unit tests (all 16 opcodes, the DR 0012 control
+                  mnemonics + malformed input)
 ```
 
 ## Cold-start invocation (a third party can run this from a fresh clone)
@@ -157,6 +158,12 @@ ACK slot, STOP.
 **Pin plan** (these programs' own; the ratified pin-role decision record
 is still open per target-spec row 5): SCL = `UIO_OUT` bit 0, SDA =
 `UIO_OUT` bit 7, open-drain convention (1 = released, 0 = asserted).
+Each I2C program makes that convention real on the pins with one
+instruction in its setup, `WCTL UIO_OD, R3` with `R3 = 0x81` (DR 0012:
+SCL and SDA become open-drain, `uio_oe[n] = ~uio_out[n]`). It comes
+**after** the `OUT UIO_OUT` of `0x81`, because `uio_out` resets to 0 and
+enabling open-drain first would pull both lines low for a cycle. It sits in
+the idle setup, outside every `.cyclesec`, so no phase length changed.
 The 0x80 mask register does double duty — bit extraction and the
 ACK-slot "SDA released" pin value — because SDA sits on bit 7.
 
@@ -318,6 +325,19 @@ guarantee makes that a property of the instruction stream alone) and
 records it in the cycle report. A section containing branches is flagged
 `branches=true` — the straight-line count is still exact, but a loop's
 trip count is the program's business, not the assembler's.
+
+**Control space (DR 0012).** `WCTL <reg>, Rs` writes a control register
+and `RCTL Rd, <reg>` reads one. They are not new opcodes: `WCTL` is `OUT`
+to port `00` and `RCTL` is `IN` from port `10`, with the register index in
+`imm8`. `<reg>` is a name — `UIO_DIR`, `UIO_OD`, `PM_ADDR`, `PM_DATA_HI`,
+`PM_DATA_LO`, `RUN`, `PM_CRC_LO`, `PM_CRC_HI`, `BOOT_STATUS`, `HW_ID` — or a
+number. The cycle report costs them per DR 0012's table: 1 cycle, except
+`WCTL PM_DATA_LO`, `WCTL RUN` and `RCTL PM_DATA_HI`, which are a fixed 2. An
+index the record does not assign in that direction (an unassigned number,
+a write to `BOOT_STATUS`/`HW_ID`, a read of `RUN`) is an error unless the
+assembler is run with `--allow-reserved`. `OUT` to port `01` and `IN` from
+port `11` stay errors either way, and `OUT UI_IN` / `IN UO_OUT` are errors
+that point at `WCTL` / `RCTL`.
 
 The assembler rejects, as errors with line numbers: unknown mnemonics,
 wrong operand arity, registers outside `R0`–`R3`, immediates outside

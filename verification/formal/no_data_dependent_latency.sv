@@ -11,10 +11,32 @@
  * depends only on the instruction's own encoded fields (opcode, and for
  * WAIT, its immediate) -- never on the value of any general-purpose
  * register, any pin input, or any flag" -- as mechanical assertions over
- * DR 0001's ratified latency table:
+ * DR 0001's latency table, extended by DR 0012's control space (issue
+ * #135; `spec/decision-records/0012-control-space-and-runtime-pin-
+ * direction.md` sections 1-2, "Every latency is fixed per index k, and k
+ * is an immediate"):
  *
  *   L(instr) = imm8 + 1  if opcode == WAIT (4'b1011)
- *   L(instr) = 1         for every other opcode (HALT then idles forever)
+ *   L(instr) = 2         if WCTL (OUT 4'b1010, port [9:8] == 00) with
+ *                           k = imm8 == 0x04 (PM_DATA_LO) or 0x05 (RUN)
+ *   L(instr) = 2         if RCTL (IN 4'b1001, port [9:8] == 10) with
+ *                           k = imm8 == 0x03 (PM_DATA_HI)
+ *   L(instr) = 1         for everything else: every other opcode, every
+ *                        other WCTL/RCTL index (assigned or reserved), and
+ *                        the two reserved no-op encodings (OUT port 01,
+ *                        IN port 11). HALT then idles forever.
+ *
+ * `WCTL RUN` is DR 0012's one computed jump (PC <- Rs). Like a branch, the
+ * data chooses WHERE it lands and never HOW LONG it takes: the monitor
+ * pins its occupancy to 2 cycles and leaves its target free.
+ *
+ * Because a 2-cycle control access gives the program memory's single port
+ * to a data access, the word on `instr` during its second cycle is NOT the
+ * access's own instruction (it is program-memory read data, or stale). The
+ * monitor therefore decodes an occupant ONCE, on its first cycle, and
+ * carries that decode (`occ_*`) for the rest of the occupancy; it never
+ * re-decodes `instr` mid-occupancy. For WAIT this changes nothing (the
+ * word is held stable for the whole stall).
  *
  * Data-independence is enforced by construction: every assertion's
  * right-hand side is a function of the instruction word alone (opcode,
@@ -67,6 +89,13 @@
  * runner's BMC_DEPTH note), not a semantic limit of the property -- the
  * assertions bind at every cycle and simply re-run deeper given a faster
  * solver.
+ *
+ * Issue #135 (DR 0012) changed this file: the latency table gained the
+ * three 2-cycle control accesses, the occupant decode became latched (see
+ * above), `WCTL RUN` got its own retirement rule, and covers c6-c9 were
+ * added. The proof status of the extended monitor is the later record
+ * under verification/records/no-data-dependent-latency/, not the paragraph
+ * above, which describes the monitor as it first landed.
  */
 
 `default_nettype none
@@ -87,19 +116,36 @@ module no_data_dependent_latency (
   wire [3:0] op  = instr[15:12];
   wire [7:0] imm = instr[7:0];
 
+  localparam [3:0] OP_IN   = 4'b1001;
+  localparam [3:0] OP_OUT  = 4'b1010;
   localparam [3:0] OP_WAIT = 4'b1011;
   localparam [3:0] OP_JMP  = 4'b1100;
   localparam [3:0] OP_BZ   = 4'b1101;
   localparam [3:0] OP_BNZ  = 4'b1110;
   localparam [3:0] OP_HALT = 4'b1111;
 
+  // DR 0012 control-register indices with a 2-cycle access.
+  localparam [7:0] K_PM_DATA_HI = 8'h03;
+  localparam [7:0] K_PM_DATA_LO = 8'h04;
+  localparam [7:0] K_RUN        = 8'h05;
+
+  wire [1:0] port = instr[9:8];
+
   wire is_wait   = (op == OP_WAIT);
   wire is_branch = (op == OP_JMP) || (op == OP_BZ) || (op == OP_BNZ);
   wire is_halt   = (op == OP_HALT);
+  wire is_wctl   = (op == OP_OUT) && (port == 2'b00);  // DR 0012: OUT port 00
+  wire is_rctl   = (op == OP_IN)  && (port == 2'b10);  // DR 0012: IN  port 10
+  wire is_run    = is_wctl && (imm == K_RUN);
+  wire is_pm_wr  = is_wctl && (imm == K_PM_DATA_LO);
+  wire is_pm_rd  = is_rctl && (imm == K_PM_DATA_HI);
+  wire is_ctl2   = is_run || is_pm_wr || is_pm_rd;
 
-  // DR 0001 latency table: the ONLY legal per-instruction occupancy, as a
-  // function of the encoded fields alone.
-  wire [8:0] tbl_lat = is_wait ? (9'd1 + {1'b0, imm}) : 9'd1;
+  // The latency table (DR 0001 + DR 0012): the ONLY legal per-instruction
+  // occupancy, as a function of the encoded fields alone.
+  wire [8:0] tbl_lat = is_wait ? (9'd1 + {1'b0, imm})
+                     : is_ctl2 ? 9'd2
+                     :           9'd1;
 
   wire [7:0] pc_p1 = pc + 8'd1; // 8-bit wraparound at 255 -> 0 (8-bit PC)
 
@@ -123,20 +169,51 @@ module no_data_dependent_latency (
 
   wire entry = run_phase && !prev_run;  // first run-phase cycle after idle/reset
 
-  wire [8:0] rem_eff = (!sync || entry) ? tbl_lat
-                     : (rem == 9'd1)    ? tbl_lat  // previous occupant retired last cycle
-                     : (rem - 9'd1);
+  // A fresh instruction occupies pc this cycle: decode it now, once.
+  wire boundary = !sync || entry || (rem == 9'd1);  // rem == 1: previous occupant retired last cycle
+
+  wire [8:0] rem_eff = boundary ? tbl_lat : (rem - 9'd1);
+
+  // The occupant's decode, taken on its first cycle and held for the rest
+  // of its occupancy (see the header: `instr` is not the occupant's own
+  // word during the second cycle of a 2-cycle control access).
+  reg        q_wait, q_br, q_halt, q_run, q_ctl2, q_pm_wr, q_pm_rd;
+  reg [7:0]  q_imm;
+  wire       occ_wait  = boundary ? is_wait   : q_wait;
+  wire       occ_br    = boundary ? is_branch : q_br;
+  wire       occ_halt  = boundary ? is_halt   : q_halt;
+  wire       occ_run   = boundary ? is_run    : q_run;
+  wire       occ_ctl2  = boundary ? is_ctl2   : q_ctl2;
+  wire       occ_pm_wr = boundary ? is_pm_wr  : q_pm_wr;
+  wire       occ_pm_rd = boundary ? is_pm_rd  : q_pm_rd;
+  wire [7:0] occ_imm   = boundary ? imm       : q_imm;
 
   always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
       prev_run <= 1'b0;
       rem      <= 9'd1;
       sync     <= 1'b0;
+      q_wait   <= 1'b0;
+      q_br     <= 1'b0;
+      q_halt   <= 1'b0;
+      q_run    <= 1'b0;
+      q_ctl2   <= 1'b0;
+      q_pm_wr  <= 1'b0;
+      q_pm_rd  <= 1'b0;
+      q_imm    <= 8'd0;
     end else begin
       prev_run <= run_phase;
       rem      <= run_phase ? rem_eff : 9'd1;
       if (entry)
         sync <= 1'b1;
+      q_wait   <= occ_wait;
+      q_br     <= occ_br;
+      q_halt   <= occ_halt;
+      q_run    <= occ_run;
+      q_ctl2   <= occ_ctl2;
+      q_pm_wr  <= occ_pm_wr;
+      q_pm_rd  <= occ_pm_rd;
+      q_imm    <= occ_imm;
     end
   end
 
@@ -150,12 +227,9 @@ module no_data_dependent_latency (
   reg        f_run;
   reg [7:0]  f_pc;
   reg [7:0]  f_imm;
-  wire [8:0] f_rem   = rem_eff;  // combinational shadow, sampled below
-  wire       f_wait  = is_wait;
-  wire       f_br    = is_branch;
-  wire       f_halt  = is_halt;
   reg [8:0]  f_rem_r;
   reg        f_wait_r, f_br_r, f_halt_r, f_entry_r;
+  reg        f_run_r, f_ctl2_r, f_pm_wr_r, f_pm_rd_r, f_wctl1_r;
 
   always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
@@ -168,16 +242,27 @@ module no_data_dependent_latency (
       f_br_r    <= 1'b0;
       f_halt_r  <= 1'b0;
       f_entry_r <= 1'b0;
+      f_run_r   <= 1'b0;
+      f_ctl2_r  <= 1'b0;
+      f_pm_wr_r <= 1'b0;
+      f_pm_rd_r <= 1'b0;
+      f_wctl1_r <= 1'b0;
     end else begin
       f_valid   <= 1'b1;
       f_run     <= run_phase;
       f_pc      <= pc;
-      f_imm     <= imm;
+      f_imm     <= occ_imm;
       f_rem_r   <= rem_eff;
-      f_wait_r  <= is_wait;
-      f_br_r    <= is_branch;
-      f_halt_r  <= is_halt;
+      f_wait_r  <= occ_wait;
+      f_br_r    <= occ_br;
+      f_halt_r  <= occ_halt;
       f_entry_r <= entry;
+      f_run_r   <= occ_run;
+      f_ctl2_r  <= occ_ctl2;
+      f_pm_wr_r <= occ_pm_wr;
+      f_pm_rd_r <= occ_pm_rd;
+      // a 1-cycle control write, decoded on its (only) cycle -- cover c9
+      f_wctl1_r <= boundary && is_wctl && !is_ctl2;
     end
   end
 
@@ -203,12 +288,12 @@ module no_data_dependent_latency (
 
       if (f_run) begin
         if (f_rem_r > 9'd1) begin
-          // (P3) Mid-occupancy: pc must hold, and only WAIT may occupy
-          // more than one cycle. Any data-dependent early exit or stretch
-          // of a stall violates this -- the mutant fixture exists to
-          // prove it.
+          // (P3) Mid-occupancy: pc must hold, and only WAIT and DR 0012's
+          // 2-cycle control accesses may occupy more than one cycle. Any
+          // data-dependent early exit or stretch of a stall violates
+          // this -- the mutant fixtures exist to prove it.
           assert (pc == f_pc);
-          assert (f_wait_r);
+          assert (f_wait_r || f_ctl2_r);
         end else begin
           // (P4) Retirement cycle: the occupant retires now, so the next
           // pc is a function of the encoded fields alone.
@@ -218,6 +303,11 @@ module no_data_dependent_latency (
           end else if (f_halt_r) begin
             // HALT: core idles until reset (DR 0001 table row 1111).
             assert (pc == f_pc);
+          end else if (f_run_r) begin
+            // WCTL RUN (DR 0012): PC <- Rs. Its occupancy was pinned to
+            // exactly 2 cycles by (P3) and the countdown; the target is
+            // data and deliberately unconstrained -- data may choose
+            // where, never how long.
           end else if (f_br_r) begin
             // Branch: 1 cycle taken or not taken; the target is either
             // pc+1 or the encoded immediate -- data may choose where,
@@ -226,7 +316,9 @@ module no_data_dependent_latency (
             // retiring every cycle.
             assert ((pc == f_pc + 8'd1) || (pc == f_imm));
           end else begin
-            // Every other opcode: exactly one cycle, straight-line.
+            // Every other instruction -- including the two 2-cycle
+            // program-memory accesses on their second cycle, every
+            // 1-cycle WCTL/RCTL and the reserved no-ops: straight-line.
             assert (pc == f_pc + 8'd1);
           end
         end
@@ -242,7 +334,7 @@ module no_data_dependent_latency (
   reg saw_multi_wait;   // a WAIT with imm >= 2 was seen mid-stall
   always @(posedge clk or negedge rst_n) begin
     if (!rst_n)                          saw_multi_wait <= 1'b0;
-    else if (run_phase && is_wait && rem_eff > 9'd2)
+    else if (run_phase && occ_wait && rem_eff > 9'd2)
                                          saw_multi_wait <= 1'b1;
   end
 
@@ -258,6 +350,15 @@ module no_data_dependent_latency (
       cover (f_br_r && (pc == f_pc) && (f_imm == f_pc));
       // (c5) HALT froze the core.
       cover (f_halt_r && (pc == f_pc));
+      // (c6) A WCTL PM_DATA_LO ran its full 2 cycles and advanced.
+      cover (f_pm_wr_r && (f_rem_r == 9'd1) && (pc == f_pc + 8'd1));
+      // (c7) An RCTL PM_DATA_HI ran its full 2 cycles and advanced.
+      cover (f_pm_rd_r && (f_rem_r == 9'd1) && (pc == f_pc + 8'd1));
+      // (c8) A WCTL RUN retired after 2 cycles to a data-chosen target
+      //      that is neither the next instruction nor itself.
+      cover (f_run_r && (f_rem_r == 9'd1) && (pc != f_pc + 8'd1) && (pc != f_pc));
+      // (c9) A 1-cycle control write (any other WCTL index) retired in one cycle.
+      cover (f_wctl1_r && (f_rem_r == 9'd1) && (pc == f_pc + 8'd1));
     end
   end
 

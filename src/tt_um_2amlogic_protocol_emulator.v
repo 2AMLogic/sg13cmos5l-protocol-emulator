@@ -35,11 +35,25 @@
  *     outputs (ISA ports 10 / 11; new values visible exactly one cycle
  *     after the retiring `OUT`). `uio_in` / `ui_in` feed the core's
  *     input ports (ISA ports 01 / 00).
- *   - `uio_oe` direction is fixed at synthesis time per protocol pin
- *     plan (DR 0001 "Consequences": `OUT` to port 11 only ever targets
- *     `uio_out`, never the direction). No pin-role decision record has
- *     admitted a bidirectional protocol yet, so all 8 bidirectional
- *     pins are still held as inputs (`uio_oe = 0`), same as the stub.
+ *   - `uio_oe` is driven at run time by firmware, per
+ *     `spec/decision-records/0012-control-space-and-runtime-pin-direction.md`
+ *     (issue #135): the core's control registers `UIO_DIR` and `UIO_OD`
+ *     select each pin's mode, and the pin-mode logic at the bottom of
+ *     this file turns them into `uio_oe` --
+ *       UIO_OD[n] set   -> open-drain: uio_oe[n] = ~uio_out[n] (drive low
+ *                          on a 0, release on a 1; uio_out[n] is 0 when
+ *                          driving, so the pad only ever pulls low)
+ *       else UIO_DIR[n] -> push-pull:  uio_oe[n] = 1
+ *       else            -> input:      uio_oe[n] = 0
+ *     Both registers reset to 0, so after `rst_n` every bidirectional pin
+ *     is an input until a program configures it (`WCTL UIO_DIR` /
+ *     `WCTL UIO_OD`). This supersedes the synthesis-time direction of DR
+ *     0001 "Consequences" and the synthesis-time open-drain mask DR 0008
+ *     proposed, which was never built. `uio_in` is always readable.
+ *   - The core's program-memory access port (`pm_*`, DR 0012) and the
+ *     program memory's `pm_crc` / `serial_loaded` are wired straight
+ *     across; neither reaches a pin in this revision (the load-phase CRC
+ *     readout on `uo_out` is issue #137).
  *   - `ena` is unused on purpose: the template documents it as "always
  *     1 when the design is powered, so you can ignore it", and DR
  *     0001's load protocol is reset-gated, not power-gated.
@@ -73,6 +87,18 @@ module tt_um_2amlogic_protocol_emulator (
   wire [7:0]  fetch_addr;
   wire        run_phase;
 
+  // DR 0012 control space: pin mode, and the run-phase program-memory
+  // access between the core and the program memory.
+  wire [7:0]  uio_dir;
+  wire [7:0]  uio_od;
+  wire        pm_we;
+  wire        pm_re;
+  wire [7:0]  pm_addr;
+  wire [15:0] pm_wdata;
+  wire        pm_crc_clr;
+  wire [15:0] pm_crc;
+  wire        serial_loaded;
+
   // Program memory + serial load-phase logic (issue #19, DR 0001
   // "Program memory sizing and loading"), backed by the
   // RM_IHPSG13_1P_256x16_c2_bm_bist SRAM macro (DR 0005).
@@ -83,7 +109,14 @@ module tt_um_2amlogic_protocol_emulator (
       .serial_in (ui_in[0]),
       .fetch_addr(fetch_addr),
       .instr_word(instr_word),
-      .run_phase (run_phase)
+      .run_phase (run_phase),
+      .pm_we        (pm_we),
+      .pm_re        (pm_re),
+      .pm_addr      (pm_addr),
+      .pm_wdata     (pm_wdata),
+      .pm_crc_clr   (pm_crc_clr),
+      .pm_crc       (pm_crc),
+      .serial_loaded(serial_loaded)
   );
 
   // Core datapath (issue #18, DR 0001 "Timing model" / "Register and
@@ -97,15 +130,22 @@ module tt_um_2amlogic_protocol_emulator (
       .port_ui_in  (ui_in),
       .port_uio_in (uio_in),
       .port_uo_out (uo_out),
-      .port_uio_out(uio_out)
+      .port_uio_out(uio_out),
+      .uio_dir      (uio_dir),
+      .uio_od       (uio_od),
+      .pm_we        (pm_we),
+      .pm_re        (pm_re),
+      .pm_addr      (pm_addr),
+      .pm_wdata     (pm_wdata),
+      .pm_crc_clr   (pm_crc_clr),
+      .pm_crc       (pm_crc),
+      .serial_loaded(serial_loaded)
   );
 
-  // Bidirectional direction is fixed at synthesis time (DR 0001
-  // "Consequences"); no admitted protocol pin plan drives it yet, so
-  // every bidirectional pin stays an input and uio_out's value is a
-  // don't-care downstream -- but every output pin must still be
-  // assigned.
-  assign uio_oe = 8'h00;
+  // Pin-mode logic (DR 0012 "Pin mode, per uio[n]"): open-drain wins,
+  // then push-pull, else input. With both registers at their reset value
+  // of 0 this is 8'h00 -- every bidirectional pin an input.
+  assign uio_oe = (uio_od & ~uio_out) | (~uio_od & uio_dir);
 
   // List unused inputs to prevent warnings.
   wire _unused = &{ena, 1'b0};

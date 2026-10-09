@@ -24,6 +24,11 @@ that are not themselves the Tiny Tapeout top:
   cycles per instruction and a fixed +1 cycle at run-phase entry). Checked by
   `verification/test_protocol_emulator.py` against the **top**, with every
   program loaded through the real load-phase pins rather than a backdoor.
+  It also holds DR 0012's control space (issue #135): the `WCTL`/`RCTL`
+  decode, the pin-mode registers `UIO_DIR`/`UIO_OD`, the program-memory
+  access registers and the fixed one-cycle fetch stall of the three
+  2-cycle accesses. Checked by `verification/test_control_space.py`, and
+  its latency table by the formal property under `verification/formal/`.
 - `protocol_program_memory.v` — the 256x16-bit program memory and serial
   load-phase shift-in logic (target-spec row 6, issue #19, per DR 0001
   section "Program memory sizing and loading"), with its storage array
@@ -32,6 +37,10 @@ that are not themselves the Tiny Tapeout top:
   only *what holds the bits* is. Verified by
   `verification/test_program_memory.py` (driven by
   `verification/request-program-memory.json`) against the module directly.
+  Since issue #135 it also arbitrates the macro's single port between
+  instruction fetch and the core's DR 0012 data accesses (`pm_we`/`pm_re`),
+  and keeps `PM_CRC` (CRC-16/XMODEM over every committed word, by either
+  path) and `BOOT_STATUS[0]`.
   It is wired into the top by issue #18's core (`ui_in[7]` -> `mode_pin`,
   `ui_in[0]` -> `serial_in`, the core's fetch-ahead address -> `fetch_addr`,
   `run_phase` -> the core).
@@ -46,7 +55,7 @@ Both modules reach the Tiny Tapeout flow through symlinks in `src/`
 "sources live in `./src`" rule and this file's one-copy rule above both hold
 without a second copy of anything.
 
-Note that DR 0001 and DR 0005 are both `Status: Proposed`, not ratified — the
+Note that DR 0001, DR 0005 and DR 0012 are all `Status: Proposed`, not ratified — the
 two-key mechanism has never run in this repository
 (`spec/decision-records/0006-two-key-ratification-never-ran.md`). This RTL
 implements their content as if binding, under the operator's explicit

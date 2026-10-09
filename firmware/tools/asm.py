@@ -35,6 +35,24 @@ Cycle costs (DR 0001's opcode table): every instruction is 1 cycle except
 `WAIT imm8`, which stalls `imm8 + 1` cycles. `HALT` retires in 1 cycle and
 then idles.
 
+Control space (DR 0012, `spec/decision-records/
+0012-control-space-and-runtime-pin-direction.md`, issue #135). Two of DR
+0001's no-op I/O encodings carry a control-register index `k` in imm8:
+
+    WCTL k, Rs   = OUT to port 00 with imm8 = k   (control register k <- Rs)
+    RCTL Rd, k   = IN from port 10 with imm8 = k  (Rd <- control register k)
+
+`k` is a name from DR 0012's register map (`UIO_DIR`, `UIO_OD`, `PM_ADDR`,
+`PM_DATA_HI`, `PM_DATA_LO`, `RUN`, `PM_CRC_LO`, `PM_CRC_HI`, `BOOT_STATUS`,
+`HW_ID`) or a number. Cycle costs are DR 0012's per-index table: 1, except
+`WCTL PM_DATA_LO`, `WCTL RUN` and `RCTL PM_DATA_HI`, which are a fixed 2.
+An index DR 0012 does not assign in that direction -- an unassigned `k`,
+a write to a read-only register, a read of the write-only `RUN` -- is an
+error unless `--allow-reserved` is given (hardware: a 1-cycle no-op / a
+read of 0x00). `OUT` to port 01 and `IN` from port 11 stay reserved no-ops
+and stay errors, with or without the flag; so do `OUT UI_IN` / `IN UO_OUT`
+written as plain `OUT`/`IN` (use the `WCTL`/`RCTL` mnemonics).
+
 Assembler lint (DR 0001 section "Timing model" delegates to DR 0003):
 "a loop whose exit condition is derived from pin data is a
 data-dependent-latency violation" when used for protocol timing -- the
@@ -46,6 +64,7 @@ budget).
 
 Usage:
     python3 firmware/tools/asm.py <source.asm> [--out-dir DIR] [--check]
+                                  [--allow-reserved]
     python3 firmware/tools/asm.py --selftest-prefix DIR   (internal, used
         by test_asm.py to locate fixtures; not a user entry point)
 
@@ -83,6 +102,8 @@ class AsmError(Exception):
 #   out     : writable-port, Rs      (OUT)
 #   wait    : imm8                   (WAIT; cycles = imm8 + 1)
 #   branch  : imm8 | label           (JMP BZ BNZ; absolute 8-bit target)
+#   wctl    : ctl-index, Rs          (WCTL; DR 0012: OUT port 00, imm8 = k)
+#   rctl    : Rd, ctl-index          (RCTL; DR 0012: IN  port 10, imm8 = k)
 OPCODES = {
     "NOP":  (0x0, "none"),
     "LDI":  (0x1, "ldi"),
@@ -101,6 +122,35 @@ OPCODES = {
     "BNZ":  (0xE, "branch"),
     "HALT": (0xF, "none"),
 }
+
+# DR 0012 mnemonics. Not new opcodes (DR 0001's table stays exactly 16):
+# WCTL is OUT's opcode with the port fixed at 00, RCTL is IN's with the
+# port fixed at 10, and the control-register index rides imm8.
+CTL_MNEMONICS = {
+    "WCTL": (OPCODES["OUT"][0], "wctl"),
+    "RCTL": (OPCODES["IN"][0], "rctl"),
+}
+
+# DR 0012 section 2 register map (cited, not re-derived):
+#   name -> (k, writable, readable, write cycles, read cycles)
+# "writable"/"readable" are the map's W / R columns. A direction the map
+# does not assign is reserved: hardware makes the write a 1-cycle no-op
+# and the read a 1-cycle 0x00.
+CTL_PORT_WRITE = 0b00  # WCTL rides OUT to port 00 (ui_in's code)
+CTL_PORT_READ = 0b10   # RCTL rides IN from port 10 (uo_out's code)
+CTL_REGS = {
+    "UIO_DIR":     (0x00, True,  True,  1, 1),
+    "UIO_OD":      (0x01, True,  True,  1, 1),
+    "PM_ADDR":     (0x02, True,  True,  1, 1),
+    "PM_DATA_HI":  (0x03, True,  True,  1, 2),
+    "PM_DATA_LO":  (0x04, True,  True,  2, 1),
+    "RUN":         (0x05, True,  False, 2, 1),
+    "PM_CRC_LO":   (0x06, True,  True,  1, 1),
+    "PM_CRC_HI":   (0x07, True,  True,  1, 1),
+    "BOOT_STATUS": (0x08, False, True,  1, 1),
+    "HW_ID":       (0x09, False, True,  1, 1),
+}
+CTL_BY_INDEX = {entry[0]: (name,) + entry[1:] for name, entry in CTL_REGS.items()}
 
 # DR 0001 port table: name -> (code, readable, writable)
 PORTS = {
@@ -190,18 +240,80 @@ def _parse_port(token: str, line_no: int, *, need_read: bool, need_write: bool):
         raise AsmError(line_no, f"bad port {token!r} (expected one of: {valid})")
     code, readable, writable = entry
     if need_read and not readable:
+        if code == CTL_PORT_READ:
+            raise AsmError(
+                line_no,
+                f"IN from write-only port {token.upper()} is a firmware bug: "
+                "that encoding is DR 0012's control read -- write it as "
+                "RCTL Rd, <control register>",
+            )
         raise AsmError(
             line_no,
             f"IN from write-only port {token.upper()} is a firmware bug "
-            "(DR 0001: a no-op in hardware; the assembler flags it)",
+            "(DR 0001/0012: a reserved no-op in hardware; the assembler flags it)",
         )
     if need_write and not writable:
+        if code == CTL_PORT_WRITE:
+            raise AsmError(
+                line_no,
+                f"OUT to read-only port {token.upper()} is a firmware bug: "
+                "that encoding is DR 0012's control write -- write it as "
+                "WCTL <control register>, Rs",
+            )
         raise AsmError(
             line_no,
             f"OUT to read-only port {token.upper()} is a firmware bug "
-            "(DR 0001: a no-op in hardware; the assembler flags it)",
+            "(DR 0001/0012: a reserved no-op in hardware; the assembler flags it)",
         )
     return code
+
+
+def _parse_ctl(token: str, line_no: int, *, write: bool, allow_reserved: bool):
+    """Parse a DR 0012 control-register operand (a name or a number).
+
+    Returns (k, cycles, canonical text). An index DR 0012 does not assign
+    in this direction is an error unless `allow_reserved`."""
+    mnemonic = "WCTL" if write else "RCTL"
+    entry = CTL_REGS.get(token.upper())
+    if entry is not None:
+        k, name = entry[0], token.upper()
+    else:
+        if IDENT_RE.match(token):
+            valid = ", ".join(CTL_REGS)
+            raise AsmError(
+                line_no,
+                f"bad control register {token!r} (DR 0012: expected one of: "
+                f"{valid}, or a numeric index)",
+            )
+        k = _parse_imm8(token, line_no)
+        name = CTL_BY_INDEX[k][0] if k in CTL_BY_INDEX else None
+    if name is None:
+        if not allow_reserved:
+            raise AsmError(
+                line_no,
+                f"{mnemonic} index {k:#04x} is reserved (unassigned in DR 0012's "
+                "register map: a no-op write / a read of 0x00 in hardware); "
+                "pass --allow-reserved to assemble it anyway",
+            )
+        return k, 1, f"{k:#04x}"
+    _, writable, readable, wcyc, rcyc = CTL_REGS[name]
+    if write and not writable:
+        if not allow_reserved:
+            raise AsmError(
+                line_no,
+                f"WCTL to read-only control register {name} is reserved (DR 0012: "
+                "a no-op in hardware); pass --allow-reserved to assemble it anyway",
+            )
+        return k, 1, name
+    if not write and not readable:
+        if not allow_reserved:
+            raise AsmError(
+                line_no,
+                f"RCTL of write-only control register {name} is reserved (DR 0012: "
+                "reads 0x00 in hardware); pass --allow-reserved to assemble it anyway",
+            )
+        return k, 1, name
+    return k, (wcyc if write else rcyc), name
 
 
 def _split_operands(rest: str) -> List[str]:
@@ -209,9 +321,12 @@ def _split_operands(rest: str) -> List[str]:
     return [p for p in re.split(r"[,\s]+", rest.strip()) if p]
 
 
-def assemble_text(text: str, source_name: str = "<memory>") -> Program:
+def assemble_text(
+    text: str, source_name: str = "<memory>", *, allow_reserved: bool = False
+) -> Program:
     """Assemble `text` into a `Program`, raising `AsmError` on the first
-    error encountered."""
+    error encountered. `allow_reserved` admits WCTL/RCTL to indices DR 0012
+    leaves reserved (the `--allow-reserved` CLI flag)."""
     program = Program(source_name=source_name)
     labels: dict = {}
     forward_refs: List[Tuple[str, int, int]] = []  # (label, addr, line_no)
@@ -268,13 +383,17 @@ def assemble_text(text: str, source_name: str = "<memory>") -> Program:
         # Instruction.
         parts = line.split(None, 1)
         mnemonic = parts[0].upper()
-        if mnemonic not in OPCODES:
+        if mnemonic in OPCODES:
+            opcode, kind = OPCODES[mnemonic]
+        elif mnemonic in CTL_MNEMONICS:
+            opcode, kind = CTL_MNEMONICS[mnemonic]
+        else:
             raise AsmError(line_no, f"unknown mnemonic {parts[0]!r}")
-        opcode, kind = OPCODES[mnemonic]
         operands = _split_operands(parts[1] if len(parts) > 1 else "")
 
         rd = rs = port = imm = 0
         text_out = parts[0]
+        ctl_cycles = 1
 
         def need(n):
             if len(operands) != n:
@@ -320,6 +439,25 @@ def assemble_text(text: str, source_name: str = "<memory>") -> Program:
             # encoding diagram states ("[9:8] ... or port (I/O ops)").
             rd = _parse_register(operands[1], line_no)
             text_out = f"{mnemonic} {operands[0].upper()}, R{rd}"
+        elif kind == "wctl":
+            # WCTL k, Rs -- OUT's encoding with the port fixed at 00: the
+            # source register rides [11:10] exactly as OUT's does.
+            need(2)
+            imm, ctl_cycles, ctl_text = _parse_ctl(
+                operands[0], line_no, write=True, allow_reserved=allow_reserved
+            )
+            rd = _parse_register(operands[1], line_no)
+            port = CTL_PORT_WRITE
+            text_out = f"{mnemonic} {ctl_text}, R{rd}"
+        elif kind == "rctl":
+            # RCTL Rd, k -- IN's encoding with the port fixed at 10.
+            need(2)
+            rd = _parse_register(operands[0], line_no)
+            imm, ctl_cycles, ctl_text = _parse_ctl(
+                operands[1], line_no, write=False, allow_reserved=allow_reserved
+            )
+            port = CTL_PORT_READ
+            text_out = f"{mnemonic} R{rd}, {ctl_text}"
         elif kind == "wait":
             need(1)
             imm = _parse_imm8(operands[0], line_no)
@@ -344,7 +482,12 @@ def assemble_text(text: str, source_name: str = "<memory>") -> Program:
             )
         word = (opcode << 12) | (rd << 10) | ((rs | port) << 8) | (imm & 0xFF)
 
-        cycles = imm + 1 if mnemonic == "WAIT" else 1
+        if mnemonic == "WAIT":
+            cycles = imm + 1
+        elif mnemonic in ("WCTL", "RCTL"):
+            cycles = ctl_cycles  # DR 0012's per-index latency table
+        else:
+            cycles = 1
         program.instructions.append(
             Instruction(addr, word, mnemonic, text_out, cycles, line_no)
         )
@@ -354,6 +497,10 @@ def assemble_text(text: str, source_name: str = "<memory>") -> Program:
             tainted[rd] = False
         elif mnemonic == "IN":
             tainted[rd] = True
+        elif mnemonic == "RCTL":
+            # A control register is not pin data: no DR 0012 register
+            # reads a pin (UIO_* return the register value, not uio_oe).
+            tainted[rd] = False
         elif mnemonic == "MOV":
             tainted[rd] = tainted[rs]
         elif mnemonic in FLAG_SETTING_OPS:
@@ -394,7 +541,12 @@ def assemble_text(text: str, source_name: str = "<memory>") -> Program:
                 start_addr=start,
                 end_addr=end,
                 cycles=sum(i.cycles for i in body),
-                has_branch=any(i.mnemonic in ("JMP", "BZ", "BNZ") for i in body),
+                has_branch=any(
+                    i.mnemonic in ("JMP", "BZ", "BNZ")
+                    # WCTL RUN is DR 0012's computed jump (PC <- Rs).
+                    or (i.mnemonic == "WCTL" and (i.word & 0xFF) == CTL_REGS["RUN"][0])
+                    for i in body
+                ),
             )
         )
     return program
@@ -432,7 +584,7 @@ def render_cycles_report(program: Program) -> str:
     return "\n".join(out) + "\n"
 
 
-def assemble_file(path: Path) -> Program:
+def assemble_file(path: Path, *, allow_reserved: bool = False) -> Program:
     # The report's `source:` line must be canonical -- repo-relative when
     # the source lives in this repo -- so `--check` byte-compares the same
     # rendered text regardless of cwd or how the path was spelled.
@@ -442,7 +594,9 @@ def assemble_file(path: Path) -> Program:
         name = str(path.resolve().relative_to(repo_root))
     except ValueError:
         name = str(path)
-    return assemble_text(path.read_text(encoding="utf-8"), source_name=name)
+    return assemble_text(
+        path.read_text(encoding="utf-8"), source_name=name, allow_reserved=allow_reserved
+    )
 
 
 def check_against(program: Program, out_dir: Path) -> List[str]:
@@ -467,6 +621,7 @@ def check_against(program: Program, out_dir: Path) -> List[str]:
 def main(argv: List[str]) -> int:
     args = list(argv)
     check = False
+    allow_reserved = False
     out_dir: Optional[str] = None
     sources: List[str] = []
     i = 0
@@ -474,6 +629,8 @@ def main(argv: List[str]) -> int:
         arg = args[i]
         if arg == "--check":
             check = True
+        elif arg == "--allow-reserved":
+            allow_reserved = True
         elif arg in ("--out-dir", "-o"):
             i += 1
             if i >= len(args):
@@ -487,7 +644,10 @@ def main(argv: List[str]) -> int:
             sources.append(arg)
         i += 1
     if len(sources) != 1:
-        print("usage: asm.py <source.asm> [--out-dir DIR] [--check]", file=sys.stderr)
+        print(
+            "usage: asm.py <source.asm> [--out-dir DIR] [--check] [--allow-reserved]",
+            file=sys.stderr,
+        )
         return 2
 
     source = Path(sources[0])
@@ -500,7 +660,7 @@ def main(argv: List[str]) -> int:
         out_dir = str(Path(__file__).resolve().parent.parent / "build")
 
     try:
-        program = assemble_file(source)
+        program = assemble_file(source, allow_reserved=allow_reserved)
     except AsmError as err:
         print(f"{source}:{err.line_no}: error: {err.message}", file=sys.stderr)
         return 1

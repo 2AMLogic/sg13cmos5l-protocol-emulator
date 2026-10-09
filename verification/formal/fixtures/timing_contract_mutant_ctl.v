@@ -2,26 +2,30 @@
  * Copyright (c) 2026 2AMLogic
  * SPDX-License-Identifier: Apache-2.0
  *
- * QUALIFICATION FIXTURE (NEGATIVE CONTROL), NOT DESIGN RTL (issue #24).
+ * QUALIFICATION FIXTURE (NEGATIVE CONTROL), NOT DESIGN RTL (issue #135).
  *
- * Byte-for-byte the conformant timing-contract shell above, with exactly
- * ONE defect injected: a WAIT may terminate early when a free data input
- * matches a magic value. This is precisely the bug class
- * `no_data_dependent_latency` exists to catch -- DR 0001: "a conditional
- * branch, an early-out, a shift loop that terminates on data all break
- * it". The property monitor must produce a counterexample against this
- * module (a WAIT whose stall was cut short by data). If it ever passes
- * against this mutant, the property is vacuous or wrong and must be
- * fixed before anyone trusts it against the real core.
+ * The conformant timing-contract shell (timing_contract_conformant.v) with
+ * exactly ONE defect injected, in the part of the latency table DR 0012
+ * added: a 2-cycle control access (WCTL PM_DATA_LO, WCTL RUN, RCTL
+ * PM_DATA_HI) retires in ONE cycle when a free data input matches a magic
+ * value. An early-out skipped access falls through the opcode `case` to
+ * its `default` (pc + 1), exactly as a 1-cycle OUT/IN would.
+ *
+ * This is the control-space sibling of timing_contract_mutant.v (whose
+ * defect is a data-dependent WAIT early-out): `no_data_dependent_latency`
+ * must produce a counterexample against this module too, or its extension
+ * to WCTL/RCTL is vacuous. WAIT is conformant here, so a counterexample
+ * can only come from the control-access rows of the table.
  *
  * The injected early-out reads `mutant_early_data` -- a stand-in for any
- * data-dependent state (a general-purpose register, a sampled pin, a
- * flag) that a naive implementation might route into its stall counter.
+ * data-dependent state (the register being written, a sampled pin, a flag)
+ * that a naive implementation might let short-circuit the stall, e.g.
+ * "skip the program-memory cycle when the value is unchanged".
  */
 
 `default_nettype none
 
-module timing_contract_mutant (
+module timing_contract_mutant_ctl (
     input  wire        clk,
     input  wire        rst_n,
     input  wire        run_phase,
@@ -44,8 +48,8 @@ module timing_contract_mutant (
   wire is_ctl2 = is_run || (is_wctl && (imm == 8'h04)) || (is_rctl && (imm == 8'h03));
 
   // THE INJECTED DEFECT (the only difference from the conformant shell):
-  // a WAIT whose data happens to equal the magic value terminates in one
-  // cycle regardless of its immediate. Latency now depends on data.
+  // a 2-cycle control access whose data happens to equal the magic value
+  // skips its stall cycle. Latency now depends on data.
   wire early_out = (mutant_early_data == 8'hA5);
 
   reg [8:0] wait_rem;
@@ -63,12 +67,12 @@ module timing_contract_mutant (
       wait_rem <= wait_rem - 9'd1;
       if (wait_rem == 9'd2)
         fetch_addr <= is_run ? branch_data : pc_p1;
-    end else if (is_ctl2) begin
+    end else if (is_ctl2 && !early_out) begin        // <-- defect: early_out skips the fixed stall
       wait_rem <= 9'd2;
     end else begin
       case (op)
         4'b1011: begin
-          if (imm == 8'd0 || early_out)              // <-- defect: early_out short-circuits the stall
+          if (imm == 8'd0)
             fetch_addr <= pc_p1;
           else
             wait_rem <= 9'd1 + {1'b0, imm};

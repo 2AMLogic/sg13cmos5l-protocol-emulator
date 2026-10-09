@@ -299,6 +299,123 @@ def test_io_direction_bugs():
     expect_error("OUT UI_IN, R0", "read-only", "out_ro")
     expect_error("OUT UIO_IN, R0", "read-only", "out_ro2")
 
+def test_io_direction_errors_survive_allow_reserved():
+    # Issue #135: --allow-reserved is about control indices only. OUT to
+    # port 01 / IN from port 11 stay errors with it, and plain OUT/IN to
+    # the two control encodings point at WCTL/RCTL instead of assembling.
+    for src, needle in (
+        ("OUT UIO_IN, R0", "read-only"),
+        ("IN R0, UIO_OUT", "write-only"),
+        ("OUT UI_IN, R0", "WCTL"),
+        ("IN R0, UO_OUT", "RCTL"),
+    ):
+        try:
+            asm.assemble_text(src, allow_reserved=True)
+        except asm.AsmError as err:
+            assert needle in err.message, (src, err.message)
+        else:
+            raise AssertionError(f"{src!r} assembled under --allow-reserved")
+
+
+# --- DR 0012 control space (issue #135) ------------------------------------
+# Expected words are hand-derived from DR 0012 section 1: WCTL k, Rs is
+# OUT (opcode 1010) to port 00 with imm8 = k and Rs in [11:10]; RCTL Rd, k
+# is IN (opcode 1001) from port 10 with imm8 = k and Rd in [11:10].
+
+DR0012_MAP = {  # name: (k, W cycles or None, R cycles or None) -- DR 0012 section 2
+    "UIO_DIR": (0x00, 1, 1), "UIO_OD": (0x01, 1, 1), "PM_ADDR": (0x02, 1, 1),
+    "PM_DATA_HI": (0x03, 1, 2), "PM_DATA_LO": (0x04, 2, 1), "RUN": (0x05, 2, None),
+    "PM_CRC_LO": (0x06, 1, 1), "PM_CRC_HI": (0x07, 1, 1),
+    "BOOT_STATUS": (0x08, None, 1), "HW_ID": (0x09, None, 1),
+}
+
+def test_wctl_encoding():
+    assert word_of("WCTL UIO_OD, R3") == 0xA000 | (3 << 10) | 0x01   # 0xAC01
+    assert word_of("WCTL UIO_DIR, R0") == 0xA000
+    assert word_of("WCTL PM_DATA_LO, R2") == 0xA000 | (2 << 10) | 0x04
+    assert word_of("WCTL RUN, R1") == 0xA000 | (1 << 10) | 0x05
+    assert word_of("wctl 0x02, r1") == 0xA000 | (1 << 10) | 0x02     # numeric k, any case
+    for name, (k, wcyc, _r) in DR0012_MAP.items():
+        if wcyc is not None:
+            assert word_of(f"WCTL {name}, R1") == 0xA400 | k, name
+
+def test_rctl_encoding():
+    assert word_of("RCTL R0, HW_ID") == 0x9000 | (0b10 << 8) | 0x09  # 0x9209
+    assert word_of("RCTL R3, PM_DATA_HI") == 0x9000 | (3 << 10) | (0b10 << 8) | 0x03
+    assert word_of("rctl r2, 8") == 0x9000 | (2 << 10) | (0b10 << 8) | 0x08
+    for name, (k, _w, rcyc) in DR0012_MAP.items():
+        if rcyc is not None:
+            assert word_of(f"RCTL R1, {name}") == 0x9600 | k, name
+
+def test_ctl_cycle_costs_follow_dr0012_table():
+    for name, (_k, wcyc, rcyc) in DR0012_MAP.items():
+        if wcyc is not None:
+            assert one(f"WCTL {name}, R0").instructions[0].cycles == wcyc, name
+        if rcyc is not None:
+            assert one(f"RCTL R0, {name}").instructions[0].cycles == rcyc, name
+    # The table's 2-cycle entries, by name, so a silent table edit fails here.
+    two = {(m, n) for m, n in (("WCTL", "PM_DATA_LO"), ("WCTL", "RUN"), ("RCTL", "PM_DATA_HI"))}
+    got = set()
+    for name, (_k, wcyc, rcyc) in DR0012_MAP.items():
+        if wcyc == 2:
+            got.add(("WCTL", name))
+        if rcyc == 2:
+            got.add(("RCTL", name))
+    assert got == two
+    # A cycle section sums them, and WCTL RUN counts as a control transfer.
+    p = one(".cyclesec s\nWCTL PM_DATA_HI, R0\nWCTL PM_DATA_LO, R1\nRCTL R2, PM_DATA_HI\n"
+            "RCTL R3, PM_DATA_LO\n.endcyclesec\n.cyclesec j\nWCTL RUN, R0\n.endcyclesec\n")
+    assert p.sections[0].cycles == 1 + 2 + 2 + 1 and not p.sections[0].has_branch
+    assert p.sections[1].cycles == 2 and p.sections[1].has_branch
+    assert p.total_cycles == 8
+
+def test_ctl_reserved_indices_are_errors_without_flag():
+    expect_error("WCTL 0x10, R0", "reserved", "w_res")
+    expect_error("RCTL R0, 0x1F", "reserved", "r_res")
+    expect_error("WCTL 0x0A, R0", "reserved", "w_res2")
+    expect_error("RCTL R0, 255", "reserved", "r_res3")
+    expect_error("WCTL BOOT_STATUS, R0", "read-only", "w_ro")
+    expect_error("WCTL HW_ID, R0", "read-only", "w_ro2")
+    expect_error("WCTL 0x09, R0", "read-only", "w_ro_numeric")
+    expect_error("RCTL R0, RUN", "write-only", "r_wo")
+    expect_error("WCTL NOPE, R0", "bad control register", "bad_name")
+    expect_error("WCTL UIO_DIR, R4", "bad register", "bad_reg")
+    expect_error("RCTL UIO_DIR, R0", "bad register", "swapped")
+    expect_error("WCTL UIO_DIR", "takes 2 operand", "arity")
+    expect_error("WCTL 256, R0", "out of range", "k_range")
+
+def test_ctl_allow_reserved_assembles_them_as_one_cycle():
+    def w(src):
+        return asm.assemble_text(src, allow_reserved=True).instructions[0]
+    assert (w("WCTL 0x10, R1").word, w("WCTL 0x10, R1").cycles) == (0xA410, 1)
+    assert (w("RCTL R1, 0xFF").word, w("RCTL R1, 0xFF").cycles) == (0x96FF, 1)
+    assert (w("WCTL HW_ID, R0").word, w("WCTL HW_ID, R0").cycles) == (0xA009, 1)
+    assert (w("RCTL R0, RUN").word, w("RCTL R0, RUN").cycles) == (0x9205, 1)
+
+def test_ctl_lint_rctl_is_not_pin_data():
+    # A control register is not a pin: branching on one is not the
+    # data-dependent-latency hazard the lint exists for, and an RCTL into
+    # a previously IN-tainted register clears the taint (like LDI).
+    p = one("IN R0, UI_IN\nRCTL R0, BOOT_STATUS\nLDI R1, 1\nAND R0, R1\nBZ 0\n")
+    assert p.warnings == []
+
+def test_ctl_mnemonics_are_not_new_opcodes():
+    # DR 0012 adds no opcode: DR 0001's table stays exactly 16.
+    assert len(asm.OPCODES) == 16 and not (set(asm.CTL_MNEMONICS) & set(asm.OPCODES))
+    assert {n: (e[0], e[3] if e[1] else None, e[4] if e[2] else None)
+            for n, e in asm.CTL_REGS.items()} == DR0012_MAP
+
+def test_cli_allow_reserved_flag():
+    import tempfile
+    with tempfile.TemporaryDirectory() as tmp:
+        src = Path(tmp) / "r.asm"
+        src.write_text("WCTL 0x10, R0\nHALT\n", encoding="utf-8")
+        assert asm.main([str(src), "--out-dir", tmp]) == 1
+        assert not (Path(tmp) / "r.hex").exists()
+        assert asm.main([str(src), "--out-dir", tmp, "--allow-reserved"]) == 0
+        assert (Path(tmp) / "r.hex").read_text() == "A010\nF000\n"
+
+
 def test_label_errors():
     expect_error("JMP nowhere", "undefined label", "undef_label")
     expect_error("x: NOP\nx: NOP\n", "duplicate label", "dup_label")
@@ -353,7 +470,14 @@ ALL_TESTS = [
     test_lint_ldi_clears_taint, test_lint_mov_propagates_taint,
     test_lint_shf_does_not_launder_tainted_flag,
     test_unknown_mnemonic, test_bad_register, test_imm_range, test_bad_arity,
-    test_bad_port_and_direction, test_io_direction_bugs, test_label_errors,
+    test_bad_port_and_direction, test_io_direction_bugs,
+    test_io_direction_errors_survive_allow_reserved,
+    test_wctl_encoding, test_rctl_encoding,
+    test_ctl_cycle_costs_follow_dr0012_table,
+    test_ctl_reserved_indices_are_errors_without_flag,
+    test_ctl_allow_reserved_assembles_them_as_one_cycle,
+    test_ctl_lint_rctl_is_not_pin_data, test_ctl_mnemonics_are_not_new_opcodes,
+    test_cli_allow_reserved_flag, test_label_errors,
     test_directive_errors, test_error_carries_line_number,
     test_demo_program_assembles_and_covers_all_opcodes,
     test_committed_artifacts_match_source,

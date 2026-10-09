@@ -31,7 +31,13 @@ merged into one green/red bit:
 4. `implementation`         which proposed electrical roles are not wired in
                             the top level (e.g. `uio_oe = 8'h00` leaves every
                             open-drain role unwired), plus prerequisites such
-                            as the `uio_out` reset value. Default success
+                            as the `uio_out` reset value. Since issue #135 the
+                            top level has DR 0012's runtime pin mode
+                            (`uio_oe` from the UIO_OD / UIO_DIR control
+                            registers); in that shape an open-drain role is
+                            "wired" when each I2C program sets the table's
+                            mask with `WCTL UIO_OD` after releasing the
+                            lines, and the registers must reset to 0. Default success
                             means results 1-3 agree with the Proposed record;
                             `--require-implemented` additionally fails while
                             this list is non-empty.
@@ -104,7 +110,7 @@ PATTERNS = {
     "bench_i2c_sr_consts",  # imports, 0x81 / (sda_drive << N), capture ports
     "bench_load_pins",      # load_program ui_in MODE / serial assignments
     "top_load_wiring",      # .mode_pin(ui_in[n]) / .serial_in(ui_in[n])
-    "top_uio_oe",           # assign uio_oe = <literal>;
+    "top_uio_oe",           # assign uio_oe = <literal | DR 0008 mask | DR 0012 pin-mode rule>;
     "top_port_passthrough", # .port_*(whole-port) connections
     "core_uio_out_reset",   # port_uio_out reset literal
     "isa_port_table",       # firmware/tools/asm.py PORTS codes
@@ -382,8 +388,9 @@ class Checker:
     # --------------------------------------------------------- asm extraction
     INSTR_RE = re.compile(r"^\s*(?:(\w+):)?\s*([A-Za-z]+)\s+(.*?)\s*$")
     MNEM = {"LDI": 2, "MOV": 2, "IN": 2, "OUT": 2, "AND": 2, "OR": 2, "XOR": 2,
-            "ADD": 2, "SUB": 2, "SHF": 2}
-    WRITES = {"LDI", "MOV", "IN", "AND", "OR", "XOR", "ADD", "SUB", "SHF"}
+            "ADD": 2, "SUB": 2, "SHF": 2,
+            "WCTL": 2, "RCTL": 2}  # DR 0012 control space (issue #135)
+    WRITES = {"LDI", "MOV", "IN", "AND", "OR", "XOR", "ADD", "SUB", "SHF", "RCTL"}
 
     def parse_lines(self, lines) -> list[dict]:
         out = []
@@ -836,6 +843,7 @@ class Checker:
         text = self.read(rel, self.concrete)
         if text is None:
             return
+        self.core_text = text
         m = re.search(r"port_uio_out\s*<=\s*8'h([0-9A-Fa-f]{2})\s*;", text)
         self.uio_out_reset = int(m.group(1), 16) if m else None
         if m is None:
@@ -933,6 +941,11 @@ class Checker:
                 elif role == "input" and bitset:
                     self.concrete.err(
                         f"src top: uio[{bit}] is an input in the table but uio_oe = {expr} drives it")
+        elif "uio_od" in expr or "uio_dir" in expr:
+            # the DR 0012 shape: pin mode is two runtime control registers
+            # (issue #135). See runtime_pin_mode().
+            self.runtime_pin_mode(expr)
+            return
         elif "uio_out" in expr:
             # the DR 0008 shape: PUSH_PULL | (OPEN_DRAIN & ~uio_out)
             if f"{od:02X}".lower() not in expr.lower() or "~" not in expr:
@@ -945,6 +958,68 @@ class Checker:
                 f"prerequisite: port_uio_out resets to 8'h{reset:02X}; open-drain pins (mask "
                 f"0x{od:02X}) must reset to 1 (released) or the pad asserts low from reset"
             )
+
+    DR0012_UIO_OE = "(uio_od&~uio_out)|(~uio_od&uio_dir)"
+
+    def runtime_pin_mode(self, expr: str) -> None:
+        """DR 0012 (issue #135): `uio_oe` is driven by the core's `UIO_OD` /
+        `UIO_DIR` control registers, so no electrical role is wired at
+        synthesis time. What can still drift, and is checked here:
+
+        - the top-level expression is DR 0012's pin-mode rule (open-drain
+          wins, then push-pull, else input) -- anything else is an error;
+        - both registers reset to 0, so every uio pin is an input from
+          reset (an error otherwise: a pin would be driven before any
+          program asked);
+        - each open-drain role in the table is a *firmware* convention:
+          every inventoried assembly file that drives `UIO_OUT` in an I2C
+          phase must set the table's open-drain mask with `WCTL UIO_OD`,
+          and must have released the lines (`OUT UIO_OUT`) first, because
+          `uio_out` resets to 0 and open-drain on a 0 pulls the pad low.
+          A file that does not is reported as unwired, not as an error.
+
+        The DR 0008 prerequisite "uio_out must reset released" does not
+        apply in this shape: the pins are inputs at reset whatever
+        `uio_out` holds."""
+        if re.sub(r"\s+", "", expr) != self.DR0012_UIO_OE:
+            self.concrete.err(
+                f"top-level `uio_oe = {expr}` is not DR 0012's pin-mode rule "
+                "`(uio_od & ~uio_out) | (~uio_od & uio_dir)`")
+        core = getattr(self, "core_text", None) or ""
+        for reg in ("uio_dir", "uio_od"):
+            self.concrete.sites += 1
+            m = re.search(rf"\b{reg}\s*<=\s*8'h([0-9A-Fa-f]{{2}})\s*;", core)
+            if not m:
+                self.concrete.err(f"core: no `{reg} <= 8'hXX;` reset literal found (DR 0012 reset value)")
+            elif int(m.group(1), 16) != 0:
+                self.concrete.err(
+                    f"core: {reg} resets to 8'h{m.group(1)}; DR 0012 requires 0 (every uio pin an input at reset)")
+        od = self.od_mask
+        if not od:
+            return
+        asm_dir = self.root / "firmware" / "asm"
+        for path in sorted(asm_dir.glob("i2c_*.asm")) if asm_dir.is_dir() else []:
+            rel = str(path.relative_to(self.root))
+            ins = self.asm_instrs(path.read_text(encoding="utf-8"))
+            site = next((i for i, x in enumerate(ins)
+                         if x["m"] == "WCTL" and x["ops"][0].upper() == "UIO_OD"), None)
+            if site is None:
+                self.unwired.append(
+                    f"{rel}: drives open-drain pins (mask 0x{od:02X}) but has no `WCTL UIO_OD` "
+                    "(DR 0012: the pins stay inputs and the bus is never pulled low)")
+                continue
+            reg = ins[site]["ops"][1]
+            val = next((self.imm(x["ops"][1]) for x in reversed(ins[:site])
+                        if x["m"] == "LDI" and x["ops"][0] == reg), None)
+            if val != od:
+                self.unwired.append(
+                    f"{rel}: `WCTL UIO_OD` writes {val if val is None else hex(val)}, "
+                    f"table open-drain mask is 0x{od:02X}")
+            released = any(x["m"] == "OUT" and x["ops"] == ["UIO_OUT", reg] for x in ins[:site])
+            if not released:
+                self.unwired.append(
+                    f"{rel}: `WCTL UIO_OD` precedes the first `OUT UIO_OUT` (uio_out resets to 0: "
+                    "the open-drain pins would be pulled low until released)")
 
     # -------------------------------------------------------------------- run
     def run(self) -> None:

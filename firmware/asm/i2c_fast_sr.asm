@@ -10,9 +10,11 @@
 ; check what the core actually shifted in from the bus.
 ;
 ; Pin plan (same as i2c_fast.asm / i2c_std.asm): UIO_OUT bit 0 = SCL,
-; bit 7 = SDA, writing 1 RELEASES the line. The bench composes the
-; wired-AND from uio_out/uio_in (uio_oe is fixed to 0 at the top level;
-; DR 0008 / #75 owns the silicon-true open-drain half).
+; bit 7 = SDA, writing 1 RELEASES the line. On silicon that is DR 0012's
+; open-drain pin mode: the setup writes 0x81 to UIO_OD (`WCTL UIO_OD`)
+; right AFTER the OUT of 0x81 (uio_out resets to 0x00; enabling open-drain
+; first would pull both lines low for a cycle). The bench still composes
+; the wired-AND from uio_out/uio_in; the silicon-true pad model is #136.
 ;
 ; Budgets (cycles): t_LOW 65, t_HIGH 60, t_HD;STA 65, t_SU;STA 30,
 ; t_SU;STO 60.  t_SU;STA is the span from the SCL rise that precedes the
@@ -35,6 +37,7 @@
 ; ---------------------------------------------------------------- setup
         LDI   R3, 0x81        ; both lines released: bus idle
         OUT   UIO_OUT, R3
+        WCTL  UIO_OD, R3      ; DR 0012: SCL|SDA open-drain (after the OUT)
         WAIT  255             ; idle bus before the START
         LDI   R3, 0x01        ; SCL high, SDA low
 ; --------------------------------------------------------------- START

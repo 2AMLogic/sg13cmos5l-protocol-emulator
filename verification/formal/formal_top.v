@@ -32,8 +32,10 @@
  *
  *   - The DUT under the property is selected by the MUTANT define:
  *     default = the conformant timing-contract fixture (property must
- *     PASS); -D MUTANT = the data-dependent early-out mutant (property
- *     must FAIL with a counterexample). When issue #18's core lands, this
+ *     PASS); -D MUTANT = the data-dependent WAIT early-out mutant and
+ *     -D MUTANT_CTL = the data-dependent control-access early-out mutant
+ *     (issue #135, DR 0012) -- the property must FAIL on each with a
+ *     counterexample. When issue #18's core lands, this
  *     ifdef is where the real core module slots in -- the monitor and the
  *     property file stay byte-identical.
  *
@@ -87,11 +89,22 @@ module formal_top (
   wire [7:0]  fetch_addr;
   wire [15:0] instr_word;
 
-  wire [15:0] prog_sel = fetch_addr[2] ?
-                         (fetch_addr[1] ? (fetch_addr[0] ? prog7 : prog6)
-                                        : (fetch_addr[0] ? prog5 : prog4)) :
-                         (fetch_addr[1] ? (fetch_addr[0] ? prog3 : prog2)
-                                        : (fetch_addr[0] ? prog1 : prog0));
+  // The address the (modeled) program memory reads this cycle. For the
+  // fixtures it is the fetch address. For the real core it is the macro's
+  // own address mux (rtl/protocol_program_memory.v, DR 0012): a
+  // program-memory data access takes the single port, so the word that
+  // comes back the next cycle is the table entry at PM_ADDR, not at the
+  // fetch address. Modeling that mux, rather than always reading at
+  // fetch_addr, hands the core a free, unrelated word during the stall
+  // cycle of every 2-cycle program-memory access -- so the proof also
+  // shows the core's timing does not depend on that word.
+  wire [7:0]  mem_addr;
+
+  wire [15:0] prog_sel = mem_addr[2] ?
+                         (mem_addr[1] ? (mem_addr[0] ? prog7 : prog6)
+                                      : (mem_addr[0] ? prog5 : prog4)) :
+                         (mem_addr[1] ? (mem_addr[0] ? prog3 : prog2)
+                                      : (mem_addr[0] ? prog1 : prog0));
   assign instr_word = prog_sel;
 
 `ifdef REAL_CORE
@@ -118,6 +131,24 @@ module formal_top (
   //     pc this cycle", so it is bound to run_phase delayed one cycle
   //     (== the core's fetch_valid). The monitor file is untouched.
   //   - The core's pin inputs are free per-cycle inputs (data freedom).
+  //   - DR 0012 (issue #135): the core's program-memory access port is
+  //     bound to the macro address mux above (`mem_addr`). A PM write does
+  //     not change the anyconst table -- the table stays the free, stable
+  //     program the proof quantifies over, which is the abstraction this
+  //     harness has always made; what a write does to memory *contents* is
+  //     the cocotb bench's subject (verification/test_control_space.py),
+  //     not this latency property's. The two data inputs the control
+  //     space reads from the program memory, `pm_crc` and `serial_loaded`,
+  //     are free per-cycle (`anyseq`): the latency must not depend on
+  //     them either.
+  (* anyseq *) wire [15:0] free_pm_crc;
+  (* anyseq *) wire        free_serial_loaded;
+  wire        core_pm_we, core_pm_re, core_pm_crc_clr;
+  wire [7:0]  core_pm_addr;
+  wire [15:0] core_pm_wdata;
+  wire [7:0]  core_uio_dir, core_uio_od;
+  assign mem_addr = (core_pm_we || core_pm_re) ? core_pm_addr : fetch_addr;
+
   reg [15:0] instr_q;
   always @(posedge clk)
     instr_q <= prog_sel;
@@ -143,7 +174,16 @@ module formal_top (
       .port_ui_in   (branch_data),
       .port_uio_in  (mutant_early_data),
       .port_uo_out  (core_uo),
-      .port_uio_out (core_uio)
+      .port_uio_out (core_uio),
+      .uio_dir      (core_uio_dir),
+      .uio_od       (core_uio_od),
+      .pm_we        (core_pm_we),
+      .pm_re        (core_pm_re),
+      .pm_addr      (core_pm_addr),
+      .pm_wdata     (core_pm_wdata),
+      .pm_crc_clr   (core_pm_crc_clr),
+      .pm_crc       (free_pm_crc),
+      .serial_loaded(free_serial_loaded)
   );
 
   no_data_dependent_latency u_property (
@@ -154,8 +194,13 @@ module formal_top (
       .instr     (instr_q)
   );
 `else
+  assign mem_addr = fetch_addr;  // fixtures: same-cycle fetch at pc
 `ifdef MUTANT
   timing_contract_mutant dut_core (
+`elsif MUTANT_CTL
+  // Issue #135: the control-space negative control (a data-dependent
+  // early-out of a DR 0012 2-cycle access).
+  timing_contract_mutant_ctl dut_core (
 `else
   timing_contract_conformant dut_core (
 `endif

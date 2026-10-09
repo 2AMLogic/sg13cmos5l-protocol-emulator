@@ -11,8 +11,10 @@
  * the real core exists. It implements EXACTLY the ratified timing
  * contract of DR 0001's "Timing model" section and nothing else:
  *
- *   - every opcode occupies exactly 1 cycle, except WAIT (imm8+1) and
- *     HALT (1 cycle, then idle forever);
+ *   - every opcode occupies exactly 1 cycle, except WAIT (imm8+1),
+ *     HALT (1 cycle, then idle forever) and DR 0012's three control
+ *     accesses that occupy a fixed 2 (WCTL PM_DATA_LO, WCTL RUN, RCTL
+ *     PM_DATA_HI -- issue #135);
  *   - branch *targets* may respond to free data inputs (`branch_data`
  *     stands in for the flags/registers/pins that will steer BZ/BNZ in
  *     the real core) -- DR 0001: "branch outcome may depend on data ...
@@ -41,6 +43,15 @@ module timing_contract_conformant (
   wire [3:0] op  = instr_word[15:12];
   wire [7:0] imm = instr_word[7:0];
 
+  // DR 0012 control space (issue #135): WCTL = OUT (1010) to port 00, RCTL
+  // = IN (1001) from port 10, index k in imm8. Three accesses occupy a
+  // fixed 2 cycles: WCTL PM_DATA_LO (0x04), WCTL RUN (0x05), RCTL
+  // PM_DATA_HI (0x03). Every other index, in either direction, is 1 cycle.
+  wire is_wctl = (op == 4'b1010) && (instr_word[9:8] == 2'b00);
+  wire is_rctl = (op == 4'b1001) && (instr_word[9:8] == 2'b10);
+  wire is_run  = is_wctl && (imm == 8'h05);
+  wire is_ctl2 = is_run || (is_wctl && (imm == 8'h04)) || (is_rctl && (imm == 8'h03));
+
   // WAIT occupancy countdown, in cycles remaining INCLUDING the current
   // cycle, while a WAIT is in progress (0 = no WAIT in progress). Counting
   // inclusive makes this register directly comparable to the property
@@ -63,7 +74,15 @@ module timing_contract_conformant (
       // or anywhere in this branch -- that is the whole point.
       wait_rem <= wait_rem - 9'd1;
       if (wait_rem == 9'd2)
-        fetch_addr <= pc_p1;  // last stall cycle: advance to next instruction
+        // Last stall cycle: advance to the next instruction -- or, for a
+        // WCTL RUN, to its data-chosen target (`branch_data` stands in for
+        // Rs: data picks where, the countdown alone picked how long). The
+        // fixture's fetch is same-cycle, so `instr_word` is still the
+        // stalled instruction here.
+        fetch_addr <= is_run ? branch_data : pc_p1;
+    end else if (is_ctl2) begin
+      // DR 0012 2-cycle control access: this cycle + exactly one more.
+      wait_rem <= 9'd2;
     end else begin
       case (op)
         4'b1011: begin // WAIT: occupy imm+1 cycles, then advance
