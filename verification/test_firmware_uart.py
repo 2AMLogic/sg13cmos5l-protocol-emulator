@@ -130,6 +130,12 @@ except ImportError:  # module run without verification/ on sys.path
     from repo_root import find_repo_root
 
 REPO_ROOT = find_repo_root(globals().get("__file__"))
+
+try:
+    from firmware_artifacts import parse_cycle_sections as _parse_sections, parse_hex_image, total_cycles
+except ImportError:  # module run without verification/ on sys.path
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from firmware_artifacts import parse_cycle_sections as _parse_sections, parse_hex_image, total_cycles
 sys.path.insert(0, str(REPO_ROOT / "firmware" / "tools"))
 import asm  # noqa: E402  (path-shimmed import of the committed assembler)
 
@@ -154,13 +160,7 @@ UART_CYCLES = REPO_ROOT / "firmware" / "build" / "uart_tx.cycles.txt"
 
 def load_committed_image() -> list:
     """Parse the committed hex image (one 4-hex-digit word per line)."""
-    words = []
-    for line in UART_HEX.read_text(encoding="utf-8").splitlines():
-        line = line.strip()
-        if line:
-            words.append(int(line, 16))
-    assert words, "committed image is empty"
-    return words
+    return parse_hex_image(UART_HEX)
 
 
 def committed_report() -> str:
@@ -169,22 +169,11 @@ def committed_report() -> str:
 
 def parse_cycle_sections() -> dict:
     """`CYCLES name=... start=... end=... cycles=...` report lines."""
-    pattern = re.compile(
-        r"^CYCLES name=(\S+) start=(\d+) end=(\d+) cycles=(\d+) branches=(\S+)$"
-    )
-    sections = {}
-    for line in committed_report().splitlines():
-        match = pattern.match(line)
-        if match:
-            name, start, end, cycles, branches = match.groups()
-            sections[name] = (int(start), int(end), int(cycles), branches)
-    return sections
+    return _parse_sections(committed_report())
 
 
 def committed_total_cycles() -> int:
-    match = re.search(r"^TOTAL-CYCLES (\d+)$", committed_report(), re.M)
-    assert match, "committed report is missing a TOTAL-CYCLES line"
-    return int(match.group(1))
+    return total_cycles(committed_report())
 
 
 def program_run_cycles() -> int:

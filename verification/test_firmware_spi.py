@@ -122,6 +122,12 @@ except ImportError:  # module run without verification/ on sys.path
     from repo_root import find_repo_root
 
 REPO_ROOT = find_repo_root(globals().get("__file__"))
+
+try:
+    from firmware_artifacts import parse_cycle_sections as _parse_sections, parse_hex_image, total_cycles
+except ImportError:  # module run without verification/ on sys.path
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from firmware_artifacts import parse_cycle_sections as _parse_sections, parse_hex_image, total_cycles
 sys.path.insert(0, str(REPO_ROOT / "firmware" / "tools"))
 import asm  # noqa: E402  (path-shimmed import of the committed assembler)
 
@@ -155,22 +161,11 @@ def committed_report(mode_number: int) -> str:
 
 
 def committed_total_cycles(mode_number: int) -> int:
-    match = re.search(r"^TOTAL-CYCLES (\d+)$", committed_report(mode_number), re.M)
-    assert match, f"committed report for mode {mode_number} is missing TOTAL-CYCLES"
-    return int(match.group(1))
+    return total_cycles(committed_report(mode_number))
 
 
 def parse_cycle_sections(mode_number: int) -> dict:
-    pattern = re.compile(
-        r"^CYCLES name=(\S+) start=(\d+) end=(\d+) cycles=(\d+) branches=(\S+)$"
-    )
-    sections = {}
-    for line in committed_report(mode_number).splitlines():
-        match = pattern.match(line)
-        if match:
-            name, start, end, cycles, branches = match.groups()
-            sections[name] = (int(start), int(end), int(cycles), branches)
-    return sections
+    return _parse_sections(committed_report(mode_number))
 
 
 # =======================================================================
@@ -279,13 +274,7 @@ def uo_byte_at(caps: dict, cycle: int) -> int:
 
 
 def load_hex(mode_number: int) -> list:
-    words = []
-    for line in program_paths(mode_number)[1].read_text(encoding="utf-8").splitlines():
-        line = line.strip()
-        if line:
-            words.append(int(line, 16))
-    assert words, "committed image is empty"
-    return words
+    return parse_hex_image(program_paths(mode_number)[1])
 
 
 # =======================================================================

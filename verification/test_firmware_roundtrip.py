@@ -44,6 +44,12 @@ except ImportError:  # module run without verification/ on sys.path
     from repo_root import find_repo_root
 
 REPO_ROOT = find_repo_root(globals().get("__file__"))
+
+try:
+    from firmware_artifacts import parse_cycle_sections as _parse_sections, parse_hex_image, total_cycles
+except ImportError:  # module run without verification/ on sys.path
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from firmware_artifacts import parse_cycle_sections as _parse_sections, parse_hex_image, total_cycles
 sys.path.insert(0, str(REPO_ROOT / "firmware" / "tools"))
 import asm  # noqa: E402  (path-shimmed import of the committed assembler)
 
@@ -54,14 +60,7 @@ DEMO_CYCLES = REPO_ROOT / "firmware" / "build" / "demo_roundtrip.cycles.txt"
 
 def load_committed_image() -> list:
     """Parse the committed hex image (one 4-hex-digit word per line)."""
-    words = []
-    for line in DEMO_HEX.read_text(encoding="utf-8").splitlines():
-        line = line.strip()
-        if not line:
-            continue
-        words.append(int(line, 16))
-    assert words, "committed image is empty"
-    return words
+    return parse_hex_image(DEMO_HEX)
 
 
 def decode_cycles_independently(words: list) -> int:
@@ -83,17 +82,9 @@ def decode_cycles_independently(words: list) -> int:
 
 
 def parse_cycle_sections() -> dict:
-    """Parse `CYCLES name=... start=... end=... cycles=...` report lines."""
-    sections = {}
-    pattern = re.compile(
-        r"^CYCLES name=(\S+) start=(\d+) end=(\d+) cycles=(\d+) branches=(\S+)$"
-    )
-    for line in DEMO_CYCLES.read_text(encoding="utf-8").splitlines():
-        match = pattern.match(line)
-        if match:
-            name, start, end, cycles, _branches = match.groups()
-            sections[name] = (int(start), int(end), int(cycles))
-    return sections
+    """Parse `CYCLES ...` report lines into (start, end, cycles) triples."""
+    shared = _parse_sections(DEMO_CYCLES.read_text(encoding="utf-8"))
+    return {name: fields[:3] for name, fields in shared.items()}
 
 
 async def reset_release(dut, mode, settle_cycles=0):
@@ -228,11 +219,7 @@ async def test_cycle_report_cross_checks_against_image(dut):
     assert int(match.group(1)) == len(words)
 
     per_word = decode_cycles_independently(words)
-    match = re.search(
-        r"^TOTAL-CYCLES (\d+)$", DEMO_CYCLES.read_text(encoding="utf-8"), re.M
-    )
-    assert match, "report missing a TOTAL-CYCLES line"
-    assert int(match.group(1)) == per_word, (
+    assert total_cycles(DEMO_CYCLES.read_text(encoding="utf-8")) == per_word, (
         "committed TOTAL-CYCLES disagrees with image-decoded arithmetic"
     )
 
