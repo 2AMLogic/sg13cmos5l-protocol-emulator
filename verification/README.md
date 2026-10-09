@@ -127,6 +127,29 @@ coverage.
   driving `test_firmware_uart.py` against
   `src/tt_um_2amlogic_protocol_emulator.v` (plus the two `rtl/` modules
   and the vendored macro model) via Icarus.
+- `test_random_regression.py` — the **seeded constrained-random DUT
+  regression** (issue #93; verification-plan §4, target-spec row 8):
+  `firmware_templates.py` renders assembler source from templates (UART TX
+  payload/bit period, SPI mode 0-3 / bursts / rate, I2C write
+  grade/address/data) from one recorded seed; the bench assembles each
+  program with the DR 0003 assembler, loads it through the real load-phase
+  pins, runs the core, and grades the pin waveform with the existing
+  independent models. Default 20 programs per protocol; a larger sweep is
+  opt-in via `RANDOM_REGRESSION_CASES=<n>`. `RANDOM_REGRESSION_ARTIFACT_DIR`
+  makes it write the generated `.asm`/`.hex`/`.cycles.txt`, `verdicts.json`
+  and `coverage.json` (this is how the record's artifacts were made). Mutated
+  templates run on the DUT as negative controls. Covers UART TX, SPI and I2C
+  write only (UART RX and I2C read are deferred). Driven by `klt
+  functional-verification` (see `request-random-regression.json`, whose
+  `random_seed` the bench asserts equal to its `RECORDED_SEED`); evidence in
+  `records/random-regression/`.
+- `firmware_templates.py` / `test_firmware_templates.py` — the generator
+  (pure Python, no simulator) and its simulator-free unit tests (determinism,
+  prefix-stability of larger sweeps, bounds, zero-warning assembly, cover-bin
+  reachability, seed mirrored into the request, committed firmware fresh);
+  run by `npm run lint`:
+  `python3 verification/test_firmware_templates.py`. To regenerate a failing
+  case: `python3 verification/firmware_templates.py --seed S --out DIR`.
 - `formal/` — the §2 formal-properties leg (issue #24, distinct from the
   cocotb legs above: no `klt`, no PDK, no simulator — a Yosys+SMTBMC model
   checking harness). `formal/no_data_dependent_latency.sv` is
