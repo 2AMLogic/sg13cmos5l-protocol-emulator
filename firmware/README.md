@@ -47,20 +47,15 @@ python3 firmware/tools/asm.py firmware/asm/demo_roundtrip.asm
 ```bash
 # Verify the committed build artifacts still match the committed source
 # (what CI runs — catches a stale committed image):
-python3 firmware/tools/asm.py firmware/asm/demo_roundtrip.asm --check
-python3 firmware/tools/asm.py firmware/asm/uart_tx.asm --check
-python3 firmware/tools/asm.py firmware/asm/i2c_fast.asm --check
-python3 firmware/tools/asm.py firmware/asm/i2c_std.asm --check
-python3 firmware/tools/asm.py firmware/asm/i2c_fast_sr.asm --check
-python3 firmware/tools/asm.py firmware/asm/i2c_fast_sr_poll.asm --check
-python3 firmware/tools/asm.py firmware/asm/i2c_std_sr.asm --check
-python3 firmware/tools/asm.py firmware/asm/i2c_std_sr_poll.asm --check
-python3 firmware/tools/gen_i2c_sr.py --check
-python3 firmware/tools/asm.py firmware/asm/spi_mode0.asm --check
-python3 firmware/tools/asm.py firmware/asm/spi_mode1.asm --check
-python3 firmware/tools/asm.py firmware/asm/spi_mode2.asm --check
-python3 firmware/tools/asm.py firmware/asm/spi_mode3.asm --check
+python3 firmware/tools/check_firmware.py
 ```
+
+`check_firmware.py` is the single invocation shared by CI and local use. It
+runs `gen_i2c_sr.py --check` (generated I2C sources vs generator), then
+`asm.py <file> --check` on every `firmware/asm/*.asm` it discovers (image
+and cycle report), keeps going after a failure, exits 1 if any check failed,
+and never rewrites an artifact. A newly committed program is covered
+automatically. A single program: `python3 firmware/tools/asm.py <file> --check`.
 
 ## Programs
 
