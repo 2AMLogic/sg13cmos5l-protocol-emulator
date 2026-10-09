@@ -285,6 +285,10 @@ auditable rather than a bare assertion:
   that follow it — this plan fixes *what* is checked and *against what
   independent standard*, which is the part that has to be right before any
   tool is chosen.
+- Area (row 7): no area number is checked by a bench. DR 0014 (Proposed,
+  issue #129) recommends keeping 2×2; any multi-engine design it gates would
+  need the §2 formal properties re-proved per engine and for their interaction,
+  and the `gds` wall-clock recorded (6-hour Actions limit, #134).
 
 ## 7. Reprogrammability, the control space and program loading (rows 6, 13; DRs 0012, 0013)
 

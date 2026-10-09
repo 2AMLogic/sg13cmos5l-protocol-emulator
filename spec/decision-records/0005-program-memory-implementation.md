@@ -239,6 +239,13 @@ read far better than an 8×4 design that is 69–74 % empty by construction.
 chosen "because judging rewards verification novelty, not size." Spending the
 entire allocation on flip-flops buys nothing judged.
 
+*Pointer added 2026-10-09 (issue #129; the text above is unchanged):*
+[`0014`](0014-area-beyond-2x2.md) (**Proposed**) revisits this axis against
+the organizers' 2026-10-09 judging description, which the paragraph above
+predates. It tests what extra area could buy (a second engine, more SRAM,
+ISA assists) rather than growing only the memory, and recommends keeping 2×2
+for now.
+
 **Axis 3 — reduce the program size.** Rejected, and it would not have
 worked anyway. Reaching a 2×2 core with flip-flops requires a ≈2.98×
 reduction on the flow-of-record's own number — 256 words to **≈ 86**, and
