@@ -1,0 +1,28 @@
+{
+  "schema": "klt.functional_verification.request/1",
+  "engine": "icarus",
+  "sources": [
+    "../netlist/tt_um_2amlogic_protocol_emulator.sim.v",
+    "<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v",
+    "<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_udp.v",
+    "flow/post-layout-sdf/netlist/macro-models.sim.v"
+  ],
+  "hdl_toplevel": "tt_um_2amlogic_protocol_emulator",
+  "testbench": {
+    "module": "test_protocol_emulator",
+    "search_path": "verification",
+    "testcase": null
+  },
+  "options": {
+    "coverage": false,
+    "timescale": [
+      "1ns",
+      "1ps"
+    ],
+    "random_seed": 1,
+    "sdf": {
+      "file": "../sdf/nom_slow_1p08V_125C.normalized.sdf",
+      "corner": "typ"
+    }
+  }
+}

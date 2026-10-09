@@ -1,0 +1,51 @@
+##   0:00:00  Solver: z3
+##   0:00:00  Checking cover reachability in step 0..
+##   0:00:00  Checking cover reachability in step 1..
+##   0:00:00  Checking cover reachability in step 2..
+##   0:00:00  Checking cover reachability in step 3..
+##   0:00:00  Checking cover reachability in step 4..
+##   0:00:00  Checking cover reachability in step 5..
+##   0:00:00  Reached cover statement in step 5 at formal_top_pin_write: verification/formal/pin_write_latency.sv:449.7-449.23 ($flatten/u_property.$cover$verification/formal/pin_write_latency.sv:449$450)
+##   0:00:00  Checking cover reachability in step 5..
+##   0:00:00  Checking cover reachability in step 6..
+##   0:00:00  Reached cover statement in step 6 at formal_top_pin_write: verification/formal/pin_write_latency.sv:462.7-464.68 ($flatten/u_property.$cover$verification/formal/pin_write_latency.sv:462$483)
+##   0:00:00  Reached cover statement in step 6 at formal_top_pin_write: verification/formal/pin_write_latency.sv:455.7-456.81 ($flatten/u_property.$cover$verification/formal/pin_write_latency.sv:455$461)
+##   0:00:00  Reached cover statement in step 6 at formal_top_pin_write: verification/formal/pin_write_latency.sv:471.7-472.81 ($flatten/u_property.$cover$verification/formal/pin_write_latency.sv:471$514)
+##   0:00:00  Reached cover statement in step 6 at formal_top_pin_write: verification/formal/pin_write_latency.sv:432.11-432.98 ($flatten/u_property.$cover$verification/formal/pin_write_latency.sv:432$554)
+##   0:00:00  Checking cover reachability in step 6..
+##   0:00:00  Reached cover statement in step 6 at formal_top_pin_write: verification/formal/pin_write_latency.sv:442.7-442.66 ($flatten/u_property.$cover$verification/formal/pin_write_latency.sv:442$434)
+##   0:00:00  Reached cover statement in step 6 at formal_top_pin_write: verification/formal/pin_write_latency.sv:433.11-433.99 ($flatten/u_property.$cover$verification/formal/pin_write_latency.sv:433$563)
+##   0:00:00  Checking cover reachability in step 6..
+##   0:00:00  Reached cover statement in step 6 at formal_top_pin_write: verification/formal/pin_write_latency.sv:432.11-432.98 ($flatten/u_property.$cover$verification/formal/pin_write_latency.sv:432$614)
+##   0:00:00  Reached cover statement in step 6 at formal_top_pin_write: verification/formal/pin_write_latency.sv:445.7-445.96 ($flatten/u_property.$cover$verification/formal/pin_write_latency.sv:445$439)
+##   0:00:00  Checking cover reachability in step 6..
+##   0:00:00  Reached cover statement in step 6 at formal_top_pin_write: verification/formal/pin_write_latency.sv:447.7-447.54 ($flatten/u_property.$cover$verification/formal/pin_write_latency.sv:447$447)
+##   0:00:00  Checking cover reachability in step 6..
+##   0:00:00  Reached cover statement in step 6 at formal_top_pin_write: verification/formal/pin_write_latency.sv:433.11-433.99 ($flatten/u_property.$cover$verification/formal/pin_write_latency.sv:433$583)
+##   0:00:00  Checking cover reachability in step 6..
+##   0:00:00  Reached cover statement in step 6 at formal_top_pin_write: verification/formal/pin_write_latency.sv:432.11-432.98 ($flatten/u_property.$cover$verification/formal/pin_write_latency.sv:432$574)
+##   0:00:00  Checking cover reachability in step 6..
+##   0:00:00  Reached cover statement in step 6 at formal_top_pin_write: verification/formal/pin_write_latency.sv:432.11-432.98 ($flatten/u_property.$cover$verification/formal/pin_write_latency.sv:432$594)
+##   0:00:00  Checking cover reachability in step 6..
+##   0:00:00  Reached cover statement in step 6 at formal_top_pin_write: verification/formal/pin_write_latency.sv:433.11-433.99 ($flatten/u_property.$cover$verification/formal/pin_write_latency.sv:433$603)
+##   0:00:00  Checking cover reachability in step 6..
+##   0:00:00  Reached cover statement in step 6 at formal_top_pin_write: verification/formal/pin_write_latency.sv:433.11-433.99 ($flatten/u_property.$cover$verification/formal/pin_write_latency.sv:433$623)
+##   0:00:00  Checking cover reachability in step 6..
+##   0:00:00  Checking cover reachability in step 7..
+##   0:00:00  Reached cover statement in step 7 at formal_top_pin_write: verification/formal/formal_top_pin_write.v:205.7-205.19 ($cover$verification/formal/formal_top_pin_write.v:205$686)
+##   0:00:00  Checking cover reachability in step 7..
+##   0:00:00  Reached cover statement in step 7 at formal_top_pin_write: verification/formal/pin_write_latency.sv:459.7-460.81 ($flatten/u_property.$cover$verification/formal/pin_write_latency.sv:459$472)
+##   0:00:00  Checking cover reachability in step 7..
+##   0:00:00  Reached cover statement in step 7 at formal_top_pin_write: verification/formal/formal_top_pin_write.v:217.7-217.52 ($cover$verification/formal/formal_top_pin_write.v:217$695)
+##   0:00:00  Checking cover reachability in step 7..
+##   0:00:00  Reached cover statement in step 7 at formal_top_pin_write: verification/formal/pin_write_latency.sv:474.7-474.64 ($flatten/u_property.$cover$verification/formal/pin_write_latency.sv:474$524)
+##   0:00:00  Checking cover reachability in step 7..
+##   0:00:01  Reached cover statement in step 7 at formal_top_pin_write: verification/formal/pin_write_latency.sv:476.7-476.64 ($flatten/u_property.$cover$verification/formal/pin_write_latency.sv:476$529)
+##   0:00:01  Checking cover reachability in step 7..
+##   0:00:01  Reached cover statement in step 7 at formal_top_pin_write: verification/formal/pin_write_latency.sv:453.7-453.68 ($flatten/u_property.$cover$verification/formal/pin_write_latency.sv:453$456)
+##   0:00:01  Reached cover statement in step 7 at formal_top_pin_write: verification/formal/pin_write_latency.sv:451.7-451.65 ($flatten/u_property.$cover$verification/formal/pin_write_latency.sv:451$451)
+##   0:00:01  Checking cover reachability in step 7..
+##   0:00:01  Checking cover reachability in step 8..
+##   0:00:01  Checking cover reachability in step 9..
+##   0:00:01  Reached cover statement in step 9 at formal_top_pin_write: verification/formal/pin_write_latency.sv:467.7-469.68 ($flatten/u_property.$cover$verification/formal/pin_write_latency.sv:467$497)
+##   0:00:01  Status: PASSED

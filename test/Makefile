@@ -6,7 +6,7 @@ SIM ?= icarus
 FST ?= -fst # Use more efficient FST format
 TOPLEVEL_LANG ?= verilog
 SRC_DIR = $(PWD)/../src
-PROJECT_SOURCES = tt_um_2amlogic_protocol_emulator.v protocol_core.v protocol_program_memory.v
+PROJECT_SOURCES = tt_um_2amlogic_protocol_emulator.v protocol_core.v protocol_program_memory.v protocol_boot_rom.v
 
 # Behavioural model of the RM_IHPSG13_1P_256x16_c2_bm_bist SRAM macro the
 # program memory is built on (spec/decision-records/0005-...). Vendored
