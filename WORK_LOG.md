@@ -2,6 +2,34 @@
 
 Chronological record of merged pull requests and closed issues, newest first.
 
+### 2026-10-09
+
+- **Issue #82** (closed): T1 item 4: re-run klt lvs on the routed GDS now that klayout-tools#2656 and #2657 are fixed
+- **Issue #90** (closed): Formal: run no_data_dependent_latency against the real rtl/protocol_core.v (row 3's remaining scope is tracked nowhere)
+- **Issue #92** (closed): Firmware: I2C repeated-START (t_SU;STA), controller-read and clock-stretch cases (row 12 reason a)
+- **Issue #93** (closed): Verification §4: seeded constrained-random regression of generated firmware on the real core, graded by the independent models
+- **Issue #94** (closed): Decision record: pin roles for ui_in/uo_out/uio per protocol (row 5; unblocks DR 0008's open-drain mask) plus a drift checker
+- **Issue #101** (closed): Auditor guard telemetry: worktree-write-confinement-unresolved-var false positives
+- **Issue #102** (closed): Post-layout: refresh SDF regression evidence for the SRAM-backed ISA core
+- **Issue #103** (closed): CI: discover all committed firmware images for freshness checks
+- **Issue #104** (closed): Verification: seed I2C read and clock-stretch scenarios on the real core
+- **Issue #108** (closed): Verification: run the committed UART/SPI/I2C firmware against the synthesized gate-level netlist (verification-plan §3 is only smoke-tested today)
+- **Issue #110** (closed): Docs: docs/info.md datasheet documents none of the shipped protocol firmware, with a drift check against the committed images
+- **Issue #114** (closed): Consolidate duplicated firmware-bench repository-root discovery
+- **Issue #117** (closed): CI: run the RTL-level cocotb benches (no PDK) on every PR — today only the template's 8-instruction test and the record linter gate merges
+- **PR #89**: T1 item 4: bump klt pin to 6457a605 and re-run LVS on the routed GDS (#82)
+- **PR #95**: Formal: run no_data_dependent_latency on the real protocol_core (#90)
+- **PR #98**: feat(verification): seeded constrained-random DUT regression of generated firmware (#93)
+- **PR #99**: Firmware: I2C repeated-START, controller-read and clock-stretch cases (#92)
+- **PR #105**: ci: discover all committed firmware images for freshness checks
+- **PR #107**: Post-layout: SDF regression of the SRAM-backed ISA core (annotated, bench fails 1/13) (#102)
+- **PR #111**: Verification: seed I2C read and clock-stretch scenarios on the real core
+- **PR #112**: docs: protocol datasheet with firmware table, run recipes, provisional pins, drift check
+- **PR #113**: feat(verification): firmware benches on the LibreLane gate-level netlist (#108)
+- **PR #119**: refactor(verification): share firmware-bench repo-root discovery
+- **PR #120**: spec: Proposed DR 0010 protocol pin roles plus drift checker
+- **PR #121**: ci: run the RTL-level cocotb benches (no PDK) on every PR
+
 ### 2026-10-07
 
 - **PR #80**: chore: delete retired direct-Yosys synthesis stopgap
