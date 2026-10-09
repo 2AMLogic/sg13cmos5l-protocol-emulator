@@ -53,18 +53,12 @@ jobs:
       # tests (whole instruction set + malformed input) and a freshness
       # check that the committed firmware/build/ artifacts still match the
       # committed .asm source. Stdlib-only Python, same tool-light contract
-      # as the records job.
+      # as the records job. check_firmware.py discovers firmware/asm/*.asm
+      # (no hand list) and runs gen_i2c_sr.py --check first.
       - name: Firmware assembler tests + build-artifact freshness
         run: |
           python3 firmware/tools/test_asm.py
-          python3 firmware/tools/asm.py firmware/asm/demo_roundtrip.asm --check
-          python3 firmware/tools/asm.py firmware/asm/uart_tx.asm --check
-          python3 firmware/tools/asm.py firmware/asm/i2c_fast.asm --check
-          python3 firmware/tools/asm.py firmware/asm/i2c_std.asm --check
-          python3 firmware/tools/asm.py firmware/asm/spi_mode0.asm --check
-          python3 firmware/tools/asm.py firmware/asm/spi_mode1.asm --check
-          python3 firmware/tools/asm.py firmware/asm/spi_mode2.asm --check
-          python3 firmware/tools/asm.py firmware/asm/spi_mode3.asm --check
+          python3 firmware/tools/check_firmware.py
 
       - name: Record linter + its self-test (npm run lint)
         run: npm run lint
