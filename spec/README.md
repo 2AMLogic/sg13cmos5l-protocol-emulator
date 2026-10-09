@@ -23,6 +23,11 @@ Proposed specification and decision records.
   *proposed* binding record of 2026-09-21, whose own invalidation clause
   fired, and `0006-two-key-ratification-never-ran.md`, which records that it
   did.
+- `decision-records/0010-protocol-pin-roles.md` — **Proposed** (not
+  ratified) pin-role table for `ui_in` / `uo_out` / `uio` per firmware
+  profile, the open-drain mask value DR 0008 defers to it, and the
+  machine-readable table that `scripts/check_protocol_pin_roles.py` checks
+  against `info.yaml`, the committed firmware and the benches.
 - `verification-plan.md` — what is verified and how, including the formal
   properties, constrained-random suites, and reference models.
 - `gap-to-submission.md` — every spec row and template checklist item
