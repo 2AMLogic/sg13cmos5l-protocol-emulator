@@ -43,9 +43,9 @@ Proposed specification and decision records.
   ratified), issue #129: what tiles beyond 2×2 buy (second engine, more SRAM,
   ISA assists) with sourced area costs, and a tile recommendation (keep 2×2).
 - `decision-records/0015-stretch-protocols-with-neutral-primitives.md` —
-  **Proposed 2026-10-09** (not ratified). Rescopes the parked DR 0011
-  (PR #128) for the stretch protocols around protocol-neutral ISA primitives
-  in DR 0012's control space; admits CRC/LFSR and NRZI/bit-stuff, proposes
+  **Proposed 2026-10-09** (not ratified). Starts from DR 0011's
+  current-ISA baseline and re-asks the stretch-protocol question with
+  protocol-neutral ISA primitives in DR 0012's control space; admits CRC/LFSR and NRZI/bit-stuff, proposes
   low-speed USB TX-only, defers 10BASE-T (its Manchester stage fails the
   record's admission test) and all receive.
 - `verification-plan.md` — what is verified and how, including the formal

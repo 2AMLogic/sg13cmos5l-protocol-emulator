@@ -5,7 +5,7 @@ two-key (`RATIFY-KEY`) mechanism on the PR that carries it
 (`spec/README.md`). That mechanism has never run here (DR 0006, issue #44),
 so this is a proposal like DRs 0001–0005, 0007, 0008, 0010, 0012 and 0013. It
 relaxes no ratified row and makes no target-spec row met. DR 0011 (PR #128,
-parked) holds its number; 0009 was never used; this record is 0014.
+since merged) holds its number; 0009 was never used; this record is 0014.
 Date: 2026-10-09
 Issues: #129 (this decision); #130 (protocol-neutral ISA assists); #134
 (submission, the 6-hour Actions limit). Revisits target-spec row 7 and DR
