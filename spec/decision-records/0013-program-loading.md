@@ -185,3 +185,132 @@ here.
 3. **Exact ROM size.** 128 words is a cap, not an estimate. The first
    assembled boot image sets it, and anything over the cap returns to this
    record.
+
+## Implementation notes and findings (issue #138, 2026-10-09)
+
+> Added when layer 2's infrastructure was built (the ROM, the fetch-source
+> switch and the warm start; the UART and SPI-flash boot programs are issues
+> #139 and #140). The Decision above is left as written. Nothing here
+> changes it: these are what building it showed, recorded per the issue's
+> instruction that a finding goes in the record and the design is not
+> quietly changed. This record is still **Proposed**. Evidence:
+> `verification/records/boot-rom/`.
+
+**Built as decided.**
+
+- With `MODE` low at `rst_n` release the core decodes the boot ROM
+  (`rtl/protocol_boot_rom.v`), and `BOOT_STATUS[1]` reads 1 for as long as it
+  does. A `WCTL RUN` switches the fetch source to program memory and sets
+  the PC; nothing switches it back short of a reset. A serial load (`MODE`
+  high) never decodes a ROM word and is unchanged, pin for pin and cycle for
+  cycle: every existing bench's console output is line-identical before and
+  after.
+- The ROM is logic behind one register, so its read has the macro's
+  one-cycle delay and the fetch stage's cycle timing is the same from either
+  source. Addresses past the image read as `HALT`.
+- The ROM's Verilog is generated from the committed image
+  `firmware/build/boot/boot_rom.hex`, which the DR 0003 assembler assembles
+  from `firmware/asm/boot/boot_rom.asm`. `firmware/tools/check_firmware.py`
+  checks both links.
+
+**One thing built beyond the text.** While the ROM is the fetch source the
+program memory does not read the macro for fetch at all (the core's
+`pm_fetch`). The Decision only requires that unverified memory is not
+*executed*; without the gate it would still be read every cycle and
+discarded at the decoder. With it, "fetch comes from a boot ROM instead of
+program memory" is true at the macro's pins, and the macro idles during
+boot. Cost: one AND term on the macro's read enable.
+
+**Open item 1, the warm-start signature: built as proposed, with one
+finding.** Word 255 holds the CRC-16/XMODEM of words 0–254, high byte of
+each word first.
+
+- *How the check runs.* DR 0012's `PM_CRC` covers words **committed** to
+  program memory and nothing else, and § Integrity above chooses to share
+  that one register rather than compute a CRC in firmware. So the boot
+  program reads each word and commits the same word back to the same
+  address. The array ends as it began and `PM_CRC` ends as the CRC of all
+  256 words, which for this CRC is zero exactly when word 255 equals the CRC
+  of words 0–254. This is buildable and is what was built; it is recorded
+  because "verify the image already in program memory" does not say that
+  verifying means rewriting. A warm start therefore performs 256 writes, and
+  takes a fixed 2,323 cycles from the boot program's first instruction to
+  the image's first.
+- *Finding F1: the all-zero image verifies.* `PM_CRC` starts at `0x0000`
+  (DR 0012), and the CRC of zeros from a zero seed is zero. 256 zero words
+  are therefore their own valid signature, and strap `10` runs them. They are
+  256 `NOP`s that wrap; nothing is driven. This is the one image for which
+  "never executes unverified program memory" (target-spec row 14 (c)) holds
+  only because executing it is harmless, not because it was rejected. An
+  SRAM that powers up all-zero would pass. Closing it needs a nonzero CRC
+  seed or a magic word in the signature, which changes DR 0012's register
+  definition or this record's signature format. **Not changed here.** The
+  behaviour is pinned by a test
+  (`test_warm_start_all_zero_image_is_the_known_weak_case`) so it cannot
+  change unnoticed, and the question is issue #168.
+- *What the image is entered with.* The boot program restores `R0`–`R3`, `Z`
+  and `C` to their reset values before `RUN 0`, so a warm-started program
+  starts in the state a serial-loaded one does, with three differences it
+  can observe: `BOOT_STATUS` reads `0x00` (a serial-loaded program reads
+  `0x01`); `PM_CRC` reads `0x0000`, the residue (after a serial load it
+  reads the CRC of the loaded words, which is also zero for a full signed
+  image); and the `PM_DATA` latches hold word 255's bytes.
+
+**Open item 3, the ROM size.** The first image is **30 words** of the
+128-word cap: 9 for the strap dispatch, 2 for the stubs, 19 for the warm
+start. That leaves 98 for the UART load and the SPI-flash boot together.
+For scale, and as a risk for #139 and #140 rather than a result: the
+committed 434-cycle UART receiver `uart_rx_115200.asm` is 168 words on its
+own, because its bit blocks are unrolled. A boot-ROM receiver has to be
+written as a loop. If the two boot programs do not fit in 98 words the
+question returns to this record, as open item 3 says.
+
+**Straps are firmware.** The boot program's first instruction is an
+ordinary `IN R0, UI_IN`; there is no strap latch. It samples `ui_in[6:5]`
+on the third clock edge after `rst_n` is released (the edge that retires
+it), so the host must hold the straps until then. A loaded program sees
+those two pins as plain input bits.
+
+**The stubs drive nothing, including the UART's TX.** Straps `00`, `01` and
+`11` reach a `HALT` with `uo_out` at its reset value, `0x00`. `uo_out[0]` is
+the UART boot's TX (Tiny Tapeout option B), and an idle UART line is high;
+a host on that pin sees a continuous break until #139 replaces the stub.
+The stub leaves it because "every pin at its reset value" is the property
+the row-14 evidence checks. What TX does before a frame arrives is #139's
+decision.
+
+**Correction to § Consequences.** "Only the cocotb benches did that, and
+they always serial-load first": confirmed for the benches. No top-level
+bench releases reset with `MODE` low; the one helper that does
+(`verification/_dut.py`'s `reset`) has no caller. But the benches were not
+the only dependents. Both formal harnesses modelled the run phase as "`MODE`
+low, run program memory" with a single free program table. They now model
+the ROM as a second free table and the fetch source as the design has it;
+`pin_write_latency`'s shadow model derives the source itself.
+
+**Area and timing, each number with its flow** (§ Consequences: "Both flows
+measure it. If it threatens the 2×2 row-7 budget, #129 decides"):
+
+| | klt/Yosys flow (synthesis, cell area only) | LibreLane flow (placed and routed, 20 ns) |
+|---|---|---|
+| Standard-cell area, before → after | 17,460.42 → 19,451.43 µm² (+1,991.00, +11.4 %) | 24,133.3 → 26,123.7 µm² placed (+1,990.4, +8.2 %) |
+| Flip-flops | 161 → 176 | 161 → 176 |
+| ROM alone, 30 words | 104 instances, 1,531.20 µm², 14 flip-flops | not separable |
+| Utilization of the 2×2 die | not measured by this flow | 41.25 % → 42.82 % |
+| Worst setup slack (slow / typ / fast) | **no timing**: this flow cannot time the design (`sta-corner-sweep`) | +7.422 / +12.168 / +14.473 ns; was +8.529 / +12.866 / +14.400 |
+| Worst hold slack (slow / typ / fast) | — | +0.604 / +0.300 / +0.119 ns |
+| Setup and hold violations | — | 0 at all three corners |
+
+Records: `verification/records/synthesis-baseline/records/20261009-222403-1dc1842.md`
+and `verification/records/librelane-corner-timing/records/20261009-221236-1dc1842.md`
+(`gds` run 37996177546). The two flows differ by about 3 % on synthesis
+area, as before, and agree on what this change costs. LibreLane reports one
+new max-slew violation at the slow and typ corners; it is not a setup or
+hold violation and is recorded there. Two of the ROM's 16 output flops are
+optimized away because bits 4 and 7 are zero in every word of this image; a
+later image can bring them back.
+
+**The 2×2 budget (row 7) is not threatened.** The die is unchanged and 57 %
+of the core is unoccupied, so nothing is raised on #129 or against DR 0014.
+The slow-corner setup slack fell by 1.1 ns of 20; the remaining boot
+programs add ROM words, not another mux.

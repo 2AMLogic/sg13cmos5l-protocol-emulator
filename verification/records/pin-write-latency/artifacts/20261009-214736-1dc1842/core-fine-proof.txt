@@ -1,0 +1,13 @@
+======== ABC command line "read_aiger core-fine.aig; print_stats; scorr; print_stats; pdr -a -T 600"
+core-fine: i/o = 1192/    8  lat =  980  and =  10200  lev = 47
+core-fine: i/o = 1192/    8  lat =    0  and =      0  lev =  0
+Proved output 0 in frame 0 (trivial).
+Proved output 1 in frame 0 (trivial).
+Proved output 2 in frame 0 (trivial).
+Proved output 3 in frame 0 (trivial).
+Proved output 4 in frame 0 (trivial).
+Proved output 5 in frame 0 (trivial).
+Proved output 6 in frame 0 (trivial).
+Proved output 7 in frame 0 (trivial).
+All outputs solved or timed out in frame 1.
+Properties:  All = 8. Proved = 8. Disproved = 0. Undecided = 0.   Time =     0.01 sec
