@@ -77,21 +77,13 @@ from pathlib import Path
 import cocotb
 from cocotb.clock import Clock
 
-_HERE = Path(__file__).resolve().parent if "__file__" in globals() else Path.cwd()
+try:
+    from repo_root import find_repo_root
+except ImportError:  # module run without verification/ on sys.path
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from repo_root import find_repo_root
 
-
-def _find_repo_root() -> Path:
-    candidates = [_HERE, Path.cwd()]
-    for start in candidates:
-        for probe in [start, *start.parents]:
-            if (probe / "firmware" / "tools" / "asm.py").exists() and (
-                probe / "spec" / "target-spec.md"
-            ).exists():
-                return probe
-    raise RuntimeError("cannot locate the repo root (needed for firmware/)")
-
-
-REPO_ROOT = _find_repo_root()
+REPO_ROOT = find_repo_root(globals().get("__file__"))
 sys.path.insert(0, str(REPO_ROOT / "verification"))
 sys.path.insert(0, str(REPO_ROOT / "firmware" / "tools"))
 import asm  # noqa: E402

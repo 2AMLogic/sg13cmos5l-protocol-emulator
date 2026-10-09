@@ -37,33 +37,13 @@ from cocotb.utils import get_sim_time
 CLK_PERIOD_NS = 10  # matches the 1ns/1ps timescale and a 50 MHz nominal
 
 
-def _find_repo_root() -> Path:
-    """Locate the repo root from this bench's file location or the cwd.
+try:
+    from repo_root import find_repo_root
+except ImportError:  # module run without verification/ on sys.path
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from repo_root import find_repo_root
 
-    `klt functional-verification` may run the testbench module from a
-    scratch directory, so both anchors are tried; the marker is the
-    committed toolchain layout (`firmware/tools/asm.py` next to
-    `spec/target-spec.md`)."""
-    candidates = []
-    try:
-        candidates.append(Path(__file__).resolve().parent)
-    except NameError:  # pragma: no cover - defensive
-        pass
-    candidates.append(Path.cwd())
-    for start in candidates:
-        for probe in [start, *start.parents]:
-            if (probe / "firmware" / "tools" / "asm.py").exists() and (
-                probe / "spec" / "target-spec.md"
-            ).exists():
-                return probe
-    raise RuntimeError(
-        "cannot locate the repo root (needed for firmware/ and the "
-        "committed build artifacts); run via klt functional-verification "
-        "from the repository, or from any directory inside it"
-    )
-
-
-REPO_ROOT = _find_repo_root()
+REPO_ROOT = find_repo_root(globals().get("__file__"))
 sys.path.insert(0, str(REPO_ROOT / "firmware" / "tools"))
 import asm  # noqa: E402  (path-shimmed import of the committed assembler)
 
