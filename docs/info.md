@@ -286,10 +286,9 @@ analog pads. Anything else goes on a Pmod
 - A pull-up resistor from each of `uio[0]` (SCL) and `uio[7]` (SDA) to 3.3 V.
   The design releases an I2C line by tri-stating the pad, so the line reads
   high only with a pull-up. No pull-up is assumed to exist on the board.
-  (Today's RTL fixes `uio_oe` to 0, so the pad is never driven at all; see
-  Pins above. The pull-ups are needed once the pads can be driven: DR 0012's
-  runtime `UIO_OD` register (#135), or DR 0008's fixed wiring if that is
-  built instead.)
+  (The RTL drives these two pads open-drain once an I2C image has written
+  `0x81` to DR 0012's runtime `UIO_OD` register; see Pins above. That is
+  verified as logic, not yet through a pad model: #136.)
 
 **Wiring today.** Tiny Tapeout's
 [recommended pinouts](https://tinytapeout.com/specs/pinouts/) cover two
