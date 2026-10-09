@@ -63,6 +63,8 @@ PORTS = ("ui_in", "uo_out", "uio")
 ELECTRICAL = ("input", "push_pull", "open_drain")
 PHASES = (
     "uart_tx",
+    "uart_rx",
+    "uart_rx_result",
     "spi_transfer",
     "spi_result",
     "i2c_transfer",
@@ -74,12 +76,14 @@ LOAD_ROLES = ("PROG_SER", "PROG_MODE", "none")
 # Role classes (what the role does electrically).
 DRIVE_PP = {"TX", "CS", "SCLK", "MOSI"} | {f"RESULT[{i}]" for i in range(8)}
 DRIVE_OD = {"SCL", "SDA"}
-SAMPLE = {"MISO"}
+SAMPLE = {"MISO", "RX"}
 ALL_ROLES = DRIVE_PP | DRIVE_OD | SAMPLE
 
 # Phase role vocabulary (the record's `phases` object must match exactly).
 PHASE_VOCAB = {
     "uart_tx": {"TX"},
+    "uart_rx": {"RX"},
+    "uart_rx_result": {f"RESULT[{i}]" for i in range(8)},
     "spi_transfer": {"CS", "SCLK", "MOSI", "MISO"},
     "spi_result": {f"RESULT[{i}]" for i in range(8)},
     "i2c_transfer": {"SCL", "SDA"},
@@ -91,6 +95,7 @@ PHASE_VOCAB = {
 PATTERNS = {
     "asm_ports",            # set of OUT / IN port names used by the file
     "uart_tx_mask",         # first `LDI R1, imm` == TX bit mask; ALU mask LDIs
+    "uart_rx_mask",         # first `LDI R1, imm` == RX bit mask; ALU masks; IN/AND masks
     "spi_images",           # LDI R2 -> OUT UO_OUT pin images
     "spi_miso_mask",        # IN UIO_IN ... AND Rx, Ry nearest-LDI mask
     "i2c_idle_start",       # first two `LDI R3, imm` before OUT UIO_OUT, R3
@@ -460,11 +465,11 @@ class Checker:
                         f"{sorted(f'0x{m:02X}' for m in mask_ok)}"
                     )
 
-    def in_and_sites(self, rel: str, ins: list[dict], want_for) -> None:
-        """For each IN Rx,UIO_IN, the next AND Rx,Ry takes its mask from the nearest LDI Ry."""
+    def in_and_sites(self, rel: str, ins: list[dict], want_for, port: str = "UIO_IN") -> None:
+        """For each IN Rx,<port>, the next AND Rx,Ry takes its mask from the nearest LDI Ry."""
         c = self.concrete
         for idx, i in enumerate(ins):
-            if not (i["m"] == "IN" and i["ops"][1].upper() == "UIO_IN"):
+            if not (i["m"] == "IN" and i["ops"][1].upper() == port):
                 continue
             rx = i["ops"][0]
             found = None
@@ -487,7 +492,7 @@ class Checker:
             v = self.imm(ldi["ops"][1])
             if v != want:
                 c.err(
-                    f"{rel}:{ldi['no']}: IN UIO_IN at line {i['no']} is masked with "
+                    f"{rel}:{ldi['no']}: IN {port} at line {i['no']} is masked with "
                     f"{ldi['ops'][1]} but the table's {what} is 0x{want:02X}"
                 )
 
@@ -544,6 +549,39 @@ class Checker:
         # the bit isolated by AND must come from the R1 mask
         if not any(i["m"] == "AND" and i["ops"][1] == "R1" for i in ins):
             c.err(f"{rel}: no `AND Rx, R1` bit-isolation site found")
+
+    def prof_uart_rx(self, rel, ent):
+        """UART receive: RX sampled from the table's uart_rx.RX pin, the byte
+        written to the uart_rx_result port. `OUT UIO_OUT` is also allowed: the
+        RX programs pulse uio_out[0] (sample mark) and uio_out[1] (frame error)
+        as bench observability aids. Those writes are NOT pin roles -- the
+        table assigns no uart_rx role on uio, and `uio_oe` does not drive them
+        (DR 0010 "UART receive")."""
+        text = self.read(rel, self.concrete)
+        if text is None:
+            return
+        c = self.concrete
+        ins = self.asm_instrs(text)
+        _outs, in_ports, res = self.out_in_ports([], [("uart_rx", ["RX"])], "uart_rx_result")
+        self.check_ports(rel, ins, res | {"UIO_OUT"}, in_ports, res, in_ports)
+        mask = self.mask_of("uart_rx", "RX")
+        first = next((i for i in ins if i["m"] == "LDI" and i["ops"][0] == "R1"), None)
+        if first is None:
+            c.err(f"{rel}: no `LDI R1, imm` RX bit-mask site found (pattern uart_rx_mask)")
+        else:
+            c.sites += 1
+            v = self.imm(first["ops"][1])
+            if v != mask:
+                c.err(f"{rel}:{first['no']}: RX bit mask LDI R1, {first['ops'][1]} but the table's "
+                      f"uart_rx RX pin {self.role_pin('uart_rx', 'RX')} is 0x{mask:02X}")
+        self.check_mask_sites(rel, ins, {mask}, "UART RX")
+        pb = self.role_pin("uart_rx", "RX")
+        if pb is not None:
+            before = c.sites
+            self.in_and_sites(rel, ins, lambda _i: (mask, "uart_rx RX mask"),
+                              port=PORT_ASM[(pb[0], "in")])
+            if c.sites == before:
+                c.err(f"{rel}: no `IN Rx, {PORT_ASM[(pb[0], 'in')]}` ... `AND Rx, Ry` RX sample site found")
 
     # ----------------------------------------------------------- profile: spi
     def prof_spi(self, rel, ent):

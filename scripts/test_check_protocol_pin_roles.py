@@ -176,6 +176,42 @@ def _(fx):
     expect_fail(fx, "OUT to port UIO_OUT", "concrete-firmware-bench")
 
 
+@case("UART RX mask LDI mutated in each RX program")
+def _(fx):
+    for stem in ("uart_rx", "uart_rx_115200", "uart_rx_9600"):
+        f = Fixture()
+        try:
+            f.mutate(f"firmware/asm/{stem}.asm", "LDI   R1, 1", "LDI   R1, 2")
+            expect_fail(f, f"firmware/asm/{stem}.asm", "concrete-firmware-bench")
+        finally:
+            f.close()
+
+
+@case("UART RX sampled from the wrong port")
+def _(fx):
+    fx.mutate("firmware/asm/uart_rx.asm", "IN    R2, UI_IN        ; SAMPLE (bit centre)",
+              "IN    R2, UIO_IN        ; SAMPLE (bit centre)")
+    expect_fail(fx, "IN from port UIO_IN", "concrete-firmware-bench")
+
+
+@case("table moves UART RX to ui_in[1]: RX programs fail by file")
+def _(fx):
+    def mv(t):
+        pin(t, "ui_in[0]")["protocol_roles"]["uart_rx"] = "unused"
+        pin(t, "ui_in[1]")["protocol_roles"]["uart_rx"] = "RX"
+    fx.mutate_table(mv)
+    code, out = fx.run()
+    assert code == 1 and "[schema] PASS" in out and "[concrete-firmware-bench] FAIL" in out, out
+    for stem in ("uart_rx", "uart_rx_115200", "uart_rx_9600"):
+        assert f"firmware/asm/{stem}.asm" in out, out
+
+
+@case("UART TX 9600 mask LDI mutated")
+def _(fx):
+    fx.mutate("firmware/asm/uart_tx_9600.asm", "LDI   R1, 1", "LDI   R1, 2")
+    expect_fail(fx, "firmware/asm/uart_tx_9600.asm", "concrete-firmware-bench")
+
+
 @case("SPI idle image (CS bit) mutated in each mode")
 def _(fx):
     for n in range(4):
@@ -410,8 +446,8 @@ def _(fx):
 
 @case("schema: uninventoried committed firmware file")
 def _(fx):
-    fx.path("firmware/asm/uart_rx.asm").write_text("HALT\n", encoding="utf-8")
-    expect_fail(fx, "firmware/asm/uart_rx.asm: committed firmware file is not in the inventory", "schema")
+    fx.path("firmware/asm/uart_rx_57600.asm").write_text("HALT\n", encoding="utf-8")
+    expect_fail(fx, "firmware/asm/uart_rx_57600.asm: committed firmware file is not in the inventory", "schema")
 
 
 @case("schema: protocol role placed twice or not at all")

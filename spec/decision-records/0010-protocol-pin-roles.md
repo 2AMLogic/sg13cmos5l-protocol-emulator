@@ -161,39 +161,45 @@ inventory is a hard failure.
   "push_pull_mask": "0x00",
   "phases": {
     "uart_tx": ["TX"],
+    "uart_rx": ["RX"],
+    "uart_rx_result": ["RESULT[0]", "RESULT[1]", "RESULT[2]", "RESULT[3]", "RESULT[4]", "RESULT[5]", "RESULT[6]", "RESULT[7]"],
     "spi_transfer": ["CS", "SCLK", "MOSI", "MISO"],
     "spi_result": ["RESULT[0]", "RESULT[1]", "RESULT[2]", "RESULT[3]", "RESULT[4]", "RESULT[5]", "RESULT[6]", "RESULT[7]"],
     "i2c_transfer": ["SCL", "SDA"],
     "i2c_result": ["RESULT[0]", "RESULT[1]", "RESULT[2]", "RESULT[3]", "RESULT[4]", "RESULT[5]", "RESULT[6]", "RESULT[7]"]
   },
   "pins": [
-    {"pin": "ui_in[0]", "port": "ui_in", "bit": 0, "electrical_role": "input", "load_role": "PROG_SER", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "spi_transfer": "unused", "spi_result": "unused", "i2c_transfer": "unused", "i2c_result": "unused"}, "shared_pin_rationale": ""},
-    {"pin": "ui_in[1]", "port": "ui_in", "bit": 1, "electrical_role": "input", "load_role": "none", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "spi_transfer": "unused", "spi_result": "unused", "i2c_transfer": "unused", "i2c_result": "unused"}, "shared_pin_rationale": ""},
-    {"pin": "ui_in[2]", "port": "ui_in", "bit": 2, "electrical_role": "input", "load_role": "none", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "spi_transfer": "unused", "spi_result": "unused", "i2c_transfer": "unused", "i2c_result": "unused"}, "shared_pin_rationale": ""},
-    {"pin": "ui_in[3]", "port": "ui_in", "bit": 3, "electrical_role": "input", "load_role": "none", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "spi_transfer": "unused", "spi_result": "unused", "i2c_transfer": "unused", "i2c_result": "unused"}, "shared_pin_rationale": ""},
-    {"pin": "ui_in[4]", "port": "ui_in", "bit": 4, "electrical_role": "input", "load_role": "none", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "spi_transfer": "unused", "spi_result": "unused", "i2c_transfer": "unused", "i2c_result": "unused"}, "shared_pin_rationale": ""},
-    {"pin": "ui_in[5]", "port": "ui_in", "bit": 5, "electrical_role": "input", "load_role": "none", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "spi_transfer": "unused", "spi_result": "unused", "i2c_transfer": "unused", "i2c_result": "unused"}, "shared_pin_rationale": ""},
-    {"pin": "ui_in[6]", "port": "ui_in", "bit": 6, "electrical_role": "input", "load_role": "none", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "spi_transfer": "unused", "spi_result": "unused", "i2c_transfer": "unused", "i2c_result": "unused"}, "shared_pin_rationale": ""},
-    {"pin": "ui_in[7]", "port": "ui_in", "bit": 7, "electrical_role": "input", "load_role": "PROG_MODE", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "spi_transfer": "unused", "spi_result": "unused", "i2c_transfer": "unused", "i2c_result": "unused"}, "shared_pin_rationale": ""},
-    {"pin": "uo_out[0]", "port": "uo_out", "bit": 0, "electrical_role": "push_pull", "load_role": "none", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "TX", "spi_transfer": "CS", "spi_result": "RESULT[0]", "i2c_transfer": "unused", "i2c_result": "RESULT[0]"}, "shared_pin_rationale": ""},
-    {"pin": "uo_out[1]", "port": "uo_out", "bit": 1, "electrical_role": "push_pull", "load_role": "none", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "spi_transfer": "SCLK", "spi_result": "RESULT[1]", "i2c_transfer": "unused", "i2c_result": "RESULT[1]"}, "shared_pin_rationale": ""},
-    {"pin": "uo_out[2]", "port": "uo_out", "bit": 2, "electrical_role": "push_pull", "load_role": "none", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "spi_transfer": "MOSI", "spi_result": "RESULT[2]", "i2c_transfer": "unused", "i2c_result": "RESULT[2]"}, "shared_pin_rationale": ""},
-    {"pin": "uo_out[3]", "port": "uo_out", "bit": 3, "electrical_role": "push_pull", "load_role": "none", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "spi_transfer": "unused", "spi_result": "RESULT[3]", "i2c_transfer": "unused", "i2c_result": "RESULT[3]"}, "shared_pin_rationale": ""},
-    {"pin": "uo_out[4]", "port": "uo_out", "bit": 4, "electrical_role": "push_pull", "load_role": "none", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "spi_transfer": "unused", "spi_result": "RESULT[4]", "i2c_transfer": "unused", "i2c_result": "RESULT[4]"}, "shared_pin_rationale": ""},
-    {"pin": "uo_out[5]", "port": "uo_out", "bit": 5, "electrical_role": "push_pull", "load_role": "none", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "spi_transfer": "unused", "spi_result": "RESULT[5]", "i2c_transfer": "unused", "i2c_result": "RESULT[5]"}, "shared_pin_rationale": ""},
-    {"pin": "uo_out[6]", "port": "uo_out", "bit": 6, "electrical_role": "push_pull", "load_role": "none", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "spi_transfer": "unused", "spi_result": "RESULT[6]", "i2c_transfer": "unused", "i2c_result": "RESULT[6]"}, "shared_pin_rationale": ""},
-    {"pin": "uo_out[7]", "port": "uo_out", "bit": 7, "electrical_role": "push_pull", "load_role": "none", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "spi_transfer": "unused", "spi_result": "RESULT[7]", "i2c_transfer": "unused", "i2c_result": "RESULT[7]"}, "shared_pin_rationale": ""},
-    {"pin": "uio[0]", "port": "uio", "bit": 0, "electrical_role": "open_drain", "load_role": "none", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "spi_transfer": "MISO", "spi_result": "unused", "i2c_transfer": "SCL", "i2c_result": "unused"}, "shared_pin_rationale": "SPI firmware never writes uio_out, so with uio_out[0] = 1 the open-drain pad is released (hi-Z) and MISO is read on uio_in[0] as a plain input; I2C and SPI are never in one firmware image. Requires uio_out[0] = 1 before SPI runs (reset value change, DR 0010 follow-up) and tolerates the SCL pull-up on MISO."},
-    {"pin": "uio[1]", "port": "uio", "bit": 1, "electrical_role": "input", "load_role": "none", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "spi_transfer": "unused", "spi_result": "unused", "i2c_transfer": "unused", "i2c_result": "unused"}, "shared_pin_rationale": ""},
-    {"pin": "uio[2]", "port": "uio", "bit": 2, "electrical_role": "input", "load_role": "none", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "spi_transfer": "unused", "spi_result": "unused", "i2c_transfer": "unused", "i2c_result": "unused"}, "shared_pin_rationale": ""},
-    {"pin": "uio[3]", "port": "uio", "bit": 3, "electrical_role": "input", "load_role": "none", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "spi_transfer": "unused", "spi_result": "unused", "i2c_transfer": "unused", "i2c_result": "unused"}, "shared_pin_rationale": ""},
-    {"pin": "uio[4]", "port": "uio", "bit": 4, "electrical_role": "input", "load_role": "none", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "spi_transfer": "unused", "spi_result": "unused", "i2c_transfer": "unused", "i2c_result": "unused"}, "shared_pin_rationale": ""},
-    {"pin": "uio[5]", "port": "uio", "bit": 5, "electrical_role": "input", "load_role": "none", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "spi_transfer": "unused", "spi_result": "unused", "i2c_transfer": "unused", "i2c_result": "unused"}, "shared_pin_rationale": ""},
-    {"pin": "uio[6]", "port": "uio", "bit": 6, "electrical_role": "input", "load_role": "none", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "spi_transfer": "unused", "spi_result": "unused", "i2c_transfer": "unused", "i2c_result": "unused"}, "shared_pin_rationale": ""},
-    {"pin": "uio[7]", "port": "uio", "bit": 7, "electrical_role": "open_drain", "load_role": "none", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "spi_transfer": "unused", "spi_result": "unused", "i2c_transfer": "SDA", "i2c_result": "unused"}, "shared_pin_rationale": ""}
+    {"pin": "ui_in[0]", "port": "ui_in", "bit": 0, "electrical_role": "input", "load_role": "PROG_SER", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "uart_rx": "RX", "uart_rx_result": "unused", "spi_transfer": "unused", "spi_result": "unused", "i2c_transfer": "unused", "i2c_result": "unused"}, "shared_pin_rationale": "UART RX shares the PROG_SER load pin: the loader shifts the program in while PROG_MODE is high, and the UART receive programs sample RX only after the MODE drop, so the two uses never overlap in time. DR 0013's boot UART uses ui_in[1] instead; reconciling the two is #133."},
+    {"pin": "ui_in[1]", "port": "ui_in", "bit": 1, "electrical_role": "input", "load_role": "none", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "uart_rx": "unused", "uart_rx_result": "unused", "spi_transfer": "unused", "spi_result": "unused", "i2c_transfer": "unused", "i2c_result": "unused"}, "shared_pin_rationale": ""},
+    {"pin": "ui_in[2]", "port": "ui_in", "bit": 2, "electrical_role": "input", "load_role": "none", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "uart_rx": "unused", "uart_rx_result": "unused", "spi_transfer": "unused", "spi_result": "unused", "i2c_transfer": "unused", "i2c_result": "unused"}, "shared_pin_rationale": ""},
+    {"pin": "ui_in[3]", "port": "ui_in", "bit": 3, "electrical_role": "input", "load_role": "none", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "uart_rx": "unused", "uart_rx_result": "unused", "spi_transfer": "unused", "spi_result": "unused", "i2c_transfer": "unused", "i2c_result": "unused"}, "shared_pin_rationale": ""},
+    {"pin": "ui_in[4]", "port": "ui_in", "bit": 4, "electrical_role": "input", "load_role": "none", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "uart_rx": "unused", "uart_rx_result": "unused", "spi_transfer": "unused", "spi_result": "unused", "i2c_transfer": "unused", "i2c_result": "unused"}, "shared_pin_rationale": ""},
+    {"pin": "ui_in[5]", "port": "ui_in", "bit": 5, "electrical_role": "input", "load_role": "none", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "uart_rx": "unused", "uart_rx_result": "unused", "spi_transfer": "unused", "spi_result": "unused", "i2c_transfer": "unused", "i2c_result": "unused"}, "shared_pin_rationale": ""},
+    {"pin": "ui_in[6]", "port": "ui_in", "bit": 6, "electrical_role": "input", "load_role": "none", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "uart_rx": "unused", "uart_rx_result": "unused", "spi_transfer": "unused", "spi_result": "unused", "i2c_transfer": "unused", "i2c_result": "unused"}, "shared_pin_rationale": ""},
+    {"pin": "ui_in[7]", "port": "ui_in", "bit": 7, "electrical_role": "input", "load_role": "PROG_MODE", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "uart_rx": "unused", "uart_rx_result": "unused", "spi_transfer": "unused", "spi_result": "unused", "i2c_transfer": "unused", "i2c_result": "unused"}, "shared_pin_rationale": ""},
+    {"pin": "uo_out[0]", "port": "uo_out", "bit": 0, "electrical_role": "push_pull", "load_role": "none", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "TX", "uart_rx": "unused", "uart_rx_result": "RESULT[0]", "spi_transfer": "CS", "spi_result": "RESULT[0]", "i2c_transfer": "unused", "i2c_result": "RESULT[0]"}, "shared_pin_rationale": ""},
+    {"pin": "uo_out[1]", "port": "uo_out", "bit": 1, "electrical_role": "push_pull", "load_role": "none", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "uart_rx": "unused", "uart_rx_result": "RESULT[1]", "spi_transfer": "SCLK", "spi_result": "RESULT[1]", "i2c_transfer": "unused", "i2c_result": "RESULT[1]"}, "shared_pin_rationale": ""},
+    {"pin": "uo_out[2]", "port": "uo_out", "bit": 2, "electrical_role": "push_pull", "load_role": "none", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "uart_rx": "unused", "uart_rx_result": "RESULT[2]", "spi_transfer": "MOSI", "spi_result": "RESULT[2]", "i2c_transfer": "unused", "i2c_result": "RESULT[2]"}, "shared_pin_rationale": ""},
+    {"pin": "uo_out[3]", "port": "uo_out", "bit": 3, "electrical_role": "push_pull", "load_role": "none", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "uart_rx": "unused", "uart_rx_result": "RESULT[3]", "spi_transfer": "unused", "spi_result": "RESULT[3]", "i2c_transfer": "unused", "i2c_result": "RESULT[3]"}, "shared_pin_rationale": ""},
+    {"pin": "uo_out[4]", "port": "uo_out", "bit": 4, "electrical_role": "push_pull", "load_role": "none", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "uart_rx": "unused", "uart_rx_result": "RESULT[4]", "spi_transfer": "unused", "spi_result": "RESULT[4]", "i2c_transfer": "unused", "i2c_result": "RESULT[4]"}, "shared_pin_rationale": ""},
+    {"pin": "uo_out[5]", "port": "uo_out", "bit": 5, "electrical_role": "push_pull", "load_role": "none", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "uart_rx": "unused", "uart_rx_result": "RESULT[5]", "spi_transfer": "unused", "spi_result": "RESULT[5]", "i2c_transfer": "unused", "i2c_result": "RESULT[5]"}, "shared_pin_rationale": ""},
+    {"pin": "uo_out[6]", "port": "uo_out", "bit": 6, "electrical_role": "push_pull", "load_role": "none", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "uart_rx": "unused", "uart_rx_result": "RESULT[6]", "spi_transfer": "unused", "spi_result": "RESULT[6]", "i2c_transfer": "unused", "i2c_result": "RESULT[6]"}, "shared_pin_rationale": ""},
+    {"pin": "uo_out[7]", "port": "uo_out", "bit": 7, "electrical_role": "push_pull", "load_role": "none", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "uart_rx": "unused", "uart_rx_result": "RESULT[7]", "spi_transfer": "unused", "spi_result": "RESULT[7]", "i2c_transfer": "unused", "i2c_result": "RESULT[7]"}, "shared_pin_rationale": ""},
+    {"pin": "uio[0]", "port": "uio", "bit": 0, "electrical_role": "open_drain", "load_role": "none", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "uart_rx": "unused", "uart_rx_result": "unused", "spi_transfer": "MISO", "spi_result": "unused", "i2c_transfer": "SCL", "i2c_result": "unused"}, "shared_pin_rationale": "SPI firmware never writes uio_out, so with uio_out[0] = 1 the open-drain pad is released (hi-Z) and MISO is read on uio_in[0] as a plain input; I2C and SPI are never in one firmware image. Requires uio_out[0] = 1 before SPI runs (reset value change, DR 0010 follow-up) and tolerates the SCL pull-up on MISO."},
+    {"pin": "uio[1]", "port": "uio", "bit": 1, "electrical_role": "input", "load_role": "none", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "uart_rx": "unused", "uart_rx_result": "unused", "spi_transfer": "unused", "spi_result": "unused", "i2c_transfer": "unused", "i2c_result": "unused"}, "shared_pin_rationale": ""},
+    {"pin": "uio[2]", "port": "uio", "bit": 2, "electrical_role": "input", "load_role": "none", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "uart_rx": "unused", "uart_rx_result": "unused", "spi_transfer": "unused", "spi_result": "unused", "i2c_transfer": "unused", "i2c_result": "unused"}, "shared_pin_rationale": ""},
+    {"pin": "uio[3]", "port": "uio", "bit": 3, "electrical_role": "input", "load_role": "none", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "uart_rx": "unused", "uart_rx_result": "unused", "spi_transfer": "unused", "spi_result": "unused", "i2c_transfer": "unused", "i2c_result": "unused"}, "shared_pin_rationale": ""},
+    {"pin": "uio[4]", "port": "uio", "bit": 4, "electrical_role": "input", "load_role": "none", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "uart_rx": "unused", "uart_rx_result": "unused", "spi_transfer": "unused", "spi_result": "unused", "i2c_transfer": "unused", "i2c_result": "unused"}, "shared_pin_rationale": ""},
+    {"pin": "uio[5]", "port": "uio", "bit": 5, "electrical_role": "input", "load_role": "none", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "uart_rx": "unused", "uart_rx_result": "unused", "spi_transfer": "unused", "spi_result": "unused", "i2c_transfer": "unused", "i2c_result": "unused"}, "shared_pin_rationale": ""},
+    {"pin": "uio[6]", "port": "uio", "bit": 6, "electrical_role": "input", "load_role": "none", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "uart_rx": "unused", "uart_rx_result": "unused", "spi_transfer": "unused", "spi_result": "unused", "i2c_transfer": "unused", "i2c_result": "unused"}, "shared_pin_rationale": ""},
+    {"pin": "uio[7]", "port": "uio", "bit": 7, "electrical_role": "open_drain", "load_role": "none", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "uart_rx": "unused", "uart_rx_result": "unused", "spi_transfer": "unused", "spi_result": "unused", "i2c_transfer": "SDA", "i2c_result": "unused"}, "shared_pin_rationale": ""}
   ],
   "inventory": [
     {"file": "firmware/asm/uart_tx.asm", "profile": "uart_tx", "patterns": ["asm_ports", "uart_tx_mask"]},
+    {"file": "firmware/asm/uart_tx_9600.asm", "profile": "uart_tx", "patterns": ["asm_ports", "uart_tx_mask"]},
+    {"file": "firmware/asm/uart_rx.asm", "profile": "uart_rx", "patterns": ["asm_ports", "uart_rx_mask"]},
+    {"file": "firmware/asm/uart_rx_115200.asm", "profile": "uart_rx", "patterns": ["asm_ports", "uart_rx_mask"]},
+    {"file": "firmware/asm/uart_rx_9600.asm", "profile": "uart_rx", "patterns": ["asm_ports", "uart_rx_mask"]},
     {"file": "firmware/asm/spi_mode0.asm", "profile": "spi", "patterns": ["asm_ports", "spi_images", "spi_miso_mask"]},
     {"file": "firmware/asm/spi_mode1.asm", "profile": "spi", "patterns": ["asm_ports", "spi_images", "spi_miso_mask"]},
     {"file": "firmware/asm/spi_mode2.asm", "profile": "spi", "patterns": ["asm_ports", "spi_images", "spi_miso_mask"]},
@@ -224,7 +230,8 @@ inventory is a hard failure.
 | Pattern | Site |
 |---|---|
 | `asm_ports` | the set of `OUT` / `IN` port names; must match the ports of the table's pins for the profile |
-| `uart_tx_mask` | first `LDI R1, imm` in `uart_tx.asm` (the TX bit mask and idle level) and every `LDI` immediately feeding `AND`/`OR`/`XOR` |
+| `uart_tx_mask` | first `LDI R1, imm` in `uart_tx.asm` / `uart_tx_9600.asm` (the TX bit mask and idle level) and every `LDI` immediately feeding `AND`/`OR`/`XOR` |
+| `uart_rx_mask` | first `LDI R1, imm` in `uart_rx*.asm` (the RX bit mask), every `LDI` immediately feeding `AND`/`OR`/`XOR`, and, as `spi_miso_mask`, the mask of each `IN Rx, <RX port>` sample; at least one such sample site must exist |
 | `spi_images` | each `LDI R2, imm` immediately followed by `OUT UO_OUT, R2`: the first is the idle image (CS high, SCLK at CPOL), every image may use only CS/SCLK/MOSI bits |
 | `spi_miso_mask` | for `IN Rx, UIO_IN`, the nearest `LDI Ry` before the next `AND Rx, Ry` must equal the MISO bit mask |
 | `i2c_idle_start` | the `LDI R3` feeding the first two `OUT UIO_OUT, R3`: bus-idle = SCL\|SDA, START = SCL |
@@ -238,13 +245,32 @@ inventory is a hard failure.
 | `isa_port_table` | `firmware/tools/asm.py` port codes 00/01/10/11 |
 | `info_pinout` | the 24 `ui[n]` / `uo[n]` / `uio[n]` keys, their direction sections and generic labels |
 
-Coverage is the tree as of this record: eleven committed assembly files
-(`uart_tx`, `spi_mode0–3`, `i2c_fast`, `i2c_std` and the four `*_sr`/`*_sr_poll`
-variants) plus `demo_roundtrip`, the generator, and four benches. UART receive
-and low-baud files that PR #96 adds are **not** claimed; because the checker
-fails on any uninventoried `firmware/asm/*.asm`, whoever merges them second
-must add them to the inventory (and to the table's phases if they use new
-pins).
+Coverage was originally the tree as of this record: eleven committed
+assembly files (`uart_tx`, `spi_mode0–3`, `i2c_fast`, `i2c_std` and the four
+`*_sr`/`*_sr_poll` variants) plus `demo_roundtrip`, the generator, and four
+benches. Because the checker fails on any uninventoried `firmware/asm/*.asm`,
+the UART receive and low-baud programs of issue #91 (PR #96) were added
+afterwards by #143 (see "UART receive" below). The checker runs in
+`npm run lint`, so the next unregistered firmware file fails its PR.
+
+### UART receive (added by #143)
+
+`uart_rx.asm`, `uart_rx_115200.asm` and `uart_rx_9600.asm` sample RX on
+`ui_in[0]` and write the received byte to all of `uo_out`. The table records
+that as the `uart_rx` phase (`RX` on `ui_in[0]`, a sampled role) and the
+`uart_rx_result` phase (`RESULT[n]` on `uo_out[n]`), checked by the `uart_rx`
+profile. `uart_tx_9600.asm` is the low-baud transmitter and uses the existing
+`uart_tx` profile (TX on `uo_out[0]`).
+
+`ui_in[0]` is also the `PROG_SER` load pin. The two never overlap: the loader
+shifts the program in while `PROG_MODE` is high, and the RX programs sample
+only after the MODE drop. The RX programs also pulse `uio_out[0]` (sample
+mark) and `uio_out[1]` (frame error) for the bench. Those writes are
+observability aids, **not** pin roles. The table assigns no `uart_rx` role on
+`uio`, `uio_oe` does not drive those pads, and the `uart_rx` profile allows
+`OUT UIO_OUT` without checking a mask. No pin moved in this change. The UART
+boot program of DR 0013 uses RX on `ui_in[1]` (Tiny Tapeout option B). Whether
+this profile's RX moves to match is #133's decision, not this record's.
 
 ## Checker behaviour
 
@@ -293,8 +319,11 @@ target-spec row.
    `firmware/tools/gen_i2c_sr.py` (and regenerate the `*_sr` files),
    `verification/test_firmware_i2c.py` (`SCL_*`/`SDA_*`, `_RELEASED`,
    `_ACK_PULL`) and `verification/test_firmware_i2c_sr.py`.
-5. **If UART TX moves**: `firmware/asm/uart_tx.asm` and
-   `verification/test_firmware_uart.py`.
+5. **If UART TX moves**: `firmware/asm/uart_tx.asm`,
+   `firmware/asm/uart_tx_9600.asm` and `verification/test_firmware_uart.py`.
+   **If UART RX moves** (#133): `firmware/asm/uart_rx*.asm` (the `IN … UI_IN`
+   port and the `LDI R1` mask) and `verification/test_firmware_uart_rx.py`
+   (its `dut.ui_in` driver).
 6. **If load pins move**: the top-level `.mode_pin`/`.serial_in`,
    `verification/test_protocol_emulator.py::load_program`, `info.yaml`.
 
@@ -303,7 +332,8 @@ target-spec row.
 - Ratification (this record is Proposed; no Status line is flipped).
 - The RTL change, the pad wiring, and whether the demo board has pull-ups.
 - Any target-spec row's target or state; row 5 and row 12 are not edited.
-- The UART RX pin (PR #96): to be added to this table when that PR lands.
+- Whether the UART RX pin moves to `ui_in[1]` to match DR 0013's boot UART
+  (#133). #143 recorded the committed `ui_in[0]` and did not move it.
 
 ## Cross-references
 
