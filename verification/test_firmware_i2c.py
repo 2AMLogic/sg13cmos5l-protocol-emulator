@@ -210,6 +210,12 @@ except ImportError:  # module run without verification/ on sys.path
     from repo_root import find_repo_root
 
 REPO_ROOT = find_repo_root(globals().get("__file__"))
+
+try:
+    from firmware_artifacts import parse_cycle_sections as _parse_sections, parse_hex_image, total_cycles
+except ImportError:  # module run without verification/ on sys.path
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from firmware_artifacts import parse_cycle_sections as _parse_sections, parse_hex_image, total_cycles
 sys.path.insert(0, str(REPO_ROOT / "firmware" / "tools"))
 import asm  # noqa: E402  (path-shimmed import of the committed assembler)
 
@@ -241,13 +247,7 @@ from uio_pads import (  # noqa: E402  (the pad model; no test objects)
 
 def load_committed_image(mode: _Mode) -> list:
     """Parse the committed hex image (one 4-hex-digit word per line)."""
-    words = []
-    for line in (REPO_ROOT / mode.hex).read_text(encoding="utf-8").splitlines():
-        line = line.strip()
-        if line:
-            words.append(int(line, 16))
-    assert words, f"committed image {mode.hex} is empty"
-    return words
+    return parse_hex_image(REPO_ROOT / mode.hex)
 
 
 def committed_report(mode: _Mode) -> str:
@@ -256,22 +256,11 @@ def committed_report(mode: _Mode) -> str:
 
 def parse_cycle_sections(mode: _Mode) -> dict:
     """`CYCLES name=... start=... end=... cycles=...` report lines."""
-    pattern = re.compile(
-        r"^CYCLES name=(\S+) start=(\d+) end=(\d+) cycles=(\d+) branches=(\S+)$"
-    )
-    sections = {}
-    for line in committed_report(mode).splitlines():
-        match = pattern.match(line)
-        if match:
-            name, start, end, cycles, branches = match.groups()
-            sections[name] = (int(start), int(end), int(cycles), branches)
-    return sections
+    return _parse_sections(committed_report(mode))
 
 
 def committed_total_cycles(mode: _Mode) -> int:
-    match = re.search(r"^TOTAL-CYCLES (\d+)$", committed_report(mode), re.M)
-    assert match, f"committed report for {mode.name} lacks a TOTAL-CYCLES line"
-    return int(match.group(1))
+    return total_cycles(committed_report(mode))
 
 
 def expected_section_cycles(mode: _Mode) -> dict:
