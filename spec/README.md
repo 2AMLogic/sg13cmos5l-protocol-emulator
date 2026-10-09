@@ -28,6 +28,12 @@ Proposed specification and decision records.
   profile, the open-drain mask value DR 0008 defers to it, and the
   machine-readable table that `scripts/check_protocol_pin_roles.py` checks
   against `info.yaml`, the committed firmware and the benches.
+- `decision-records/0012-control-space-and-runtime-pin-direction.md` and
+  `decision-records/0013-program-loading.md` — **Proposed 2026-10-09** (not
+  ratified), written in response to the organizers' 2026-10-09 entrant
+  update (issues #129–#134). They cover the runtime `uio` direction and
+  program-memory access through the ISA's two spare no-op encodings, and a
+  layered loader (serial recovery path + boot ROM in this ISA).
 - `verification-plan.md` — what is verified and how, including the formal
   properties, constrained-random suites, and reference models.
 - `gap-to-submission.md` — every spec row and template checklist item

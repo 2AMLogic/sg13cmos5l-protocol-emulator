@@ -28,6 +28,18 @@ without an ISA spec.
 | "Constrained random" | §4 |
 | "AI-assisted verification" | §5 — this entire program is built by AI agents from a ratified spec with an append-only evidence trail; §5 makes that auditable rather than just asserted. |
 
+> **2026-10-09: the organizers' own criteria.** The organizers' entrant update
+> (quoted verbatim in issues #129–#134) describes judging as having "no fixed
+> weighting. Flexibility is the main thing: can the chip be reprogrammed to
+> support protocols it wasn't designed for? Beyond that, we'll look at which
+> protocols you demonstrate, anything unique your architecture makes
+> possible, and how you designed and verified it." The table above, written
+> from the original blog post, has no row for the first of those. It is
+> answered by §7 (target-spec row 13), and the reset obligations the update
+> spells out are answered by §8 (row 14). The submission must also include "a
+> write-up of your verification approach" and a description of how AI tools
+> were used; §5 is the raw material for both (#134).
+
 ## 2. Formal properties
 
 Two properties are named now, both directly checking DR 0001's timing
@@ -206,3 +218,64 @@ auditable rather than a bare assertion:
   that follow it — this plan fixes *what* is checked and *against what
   independent standard*, which is the part that has to be right before any
   tool is chosen.
+
+## 7. Reprogrammability, the control space and program loading (rows 6, 13; DRs 0012, 0013)
+
+*Added 2026-10-09. Proposed, like the rest of this plan.*
+
+- **Unplanned-protocol firmware (row 13).** Each protocol gets a committed
+  program and a cocotb bench graded by an **independent reference model**,
+  with the same bar as §4. The protocol is chosen after the submission ISA is
+  frozen, and the record states the freeze commit, so the evidence cannot have
+  shaped the ISA. Its stretch (a role or pin direction the core protocols
+  never use) runs on the silicon-true pad model below.
+- **Control-register bench (DR 0012).** It checks:
+  - reset values, readback, and reserved-index behaviour (no-op write, read
+    returns 0)
+  - the fixed stall of the `PM_*` accesses and `RUN`
+  - that no `WCTL`/`RCTL` sets the flags
+
+  `no_data_dependent_latency` (§2.1) extends to `WCTL`/`RCTL` with DR 0012's
+  per-index latency table.
+- **Silicon-true pad model.** Per pin, `uio_oe`/`uio_out` drive a resolved
+  line with an optional pull-up, and `uio_in` reads the resolved line. It
+  replaces the bench-composed wired-AND bus (DR 0008 § Context), and the I2C
+  evidence re-runs on it, because until DR 0012 is built no bench has shown
+  that I2C works through the real `uio_oe`.
+- **Load integrity (DR 0013 layer 1).** The `PM_CRC` exposed on `uo_out`
+  during load, and through `RCTL`, matches an independent CRC-16/XMODEM
+  (`binascii.crc_hqx`) for random images, including truncated loads and loads
+  with a dropped or doubled clock edge, which must produce a mismatch.
+- **Boot programs (DR 0013 layer 2).** Each boot ROM program is tested
+  against an independent host:
+  - a UART host model that frames, sends and checks the reply, at nominal
+    baud and at ± tolerance
+  - a SPI-flash behavioural model that answers `0x03` reads from an image
+  - corrupted frames and flash contents, which must never reach `RUN`
+
+  The ROM image is freshness-checked against its `.asm` source like every
+  other committed `.hex`.
+- **Runtime swap.** A program loads a second program through `PM_*` and runs
+  it with `RUN`. The second program's protocol is graded by its own reference
+  model.
+- All of the above also runs at gate level (§3).
+
+## 8. Reset, power-up and reselect (row 14)
+
+*Added 2026-10-09 (issue #131). Proposed.*
+
+- **Random-initial-state gate-level run.** Every flop of the flow-of-record
+  netlist starts at a seeded random value (and, separately, at X). Then
+  `rst_n` is applied. After reset deasserts, the top-level outputs must be
+  identical across seeds and free of X, and must equal the documented reset
+  state. Several seeds; the seeds are recorded.
+- **Reset-coverage listing.** Every flop the netlist leaves without a reset is
+  listed, with a justification (for example a datapath register always
+  written before it is read). A new unjustified entry fails the check.
+- **Uninitialized program memory.** With the SRAM model holding random
+  contents and `MODE` low at reset, the design runs the boot ROM, drives no
+  `uio` pin, and does not execute program memory until a load passes its CRC
+  (DR 0013). This is the post-reselect case the organizers describe.
+- **Re-select.** Load, run, power-cycle (state randomized), reset, reload,
+  run. The second run's output must match the first.
+
