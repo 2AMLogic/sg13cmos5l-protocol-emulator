@@ -1,0 +1,136 @@
+     -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:242  in gpi_load_users                  Loaded entry library: '/home/ubuntu/.local/share/uv/python/cpython-3.13.16-linux-x86_64-gnu/lib/libpython3.13.so.1.0'
+     -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:233  in gpi_load_users                  Running entry func 'initialize' from loaded library '/home/ubuntu/GitHub/sg13cmos5l-protocol-emulator/.loom/worktrees/issue-91/.venv/lib/python3.13/site-packages/cocotb/simulator.cpython-313-x86_64-linux-gnu.so'
+     -.--ns INFO     pygpi                              ..ib/pygpi/embed.cpp:114  in initialize                      Using Python 3.13.8 interpreter at /home/ubuntu/GitHub/sg13cmos5l-protocol-emulator/.loom/worktrees/issue-91/.venv/bin/python
+     -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:74   in gpi_print_registered_impl       GPI: VPI support registered
+     0.00ns INFO     cocotb.initialize                  Seeding Python random module with 1
+     0.00ns INFO     cocotb.initialize                  Initialized cocotb v2.1.0 from /home/ubuntu/GitHub/sg13cmos5l-protocol-emulator/.loom/worktrees/issue-91/.venv/lib/python3.13/site-packages/cocotb
+     0.00ns INFO     cocotb.initialize                  Running on Icarus Verilog version 13.0 (stable)
+     0.00ns INFO     cocotb.regression                  Running tests
+     0.00ns INFO     cocotb.regression                  running test_firmware_uart_rx.test_committed_images_are_fresh (1/9)
+                                                            Committed images match their committed sources, fit the 256-word
+     0.00ns INFO     ..tt_um_2amlogic_protocol_emulator uart_rx: 132/256 words, 3 handshake warning(s), 50 cycles/bit
+     0.00ns INFO     ..tt_um_2amlogic_protocol_emulator uart_rx_115200: 168/256 words, 3 handshake warning(s), 434 cycles/bit
+     0.00ns INFO     ..tt_um_2amlogic_protocol_emulator uart_rx_9600: 168/256 words, 3 handshake warning(s), 5208 cycles/bit
+     0.00ns INFO     ..tt_um_2amlogic_protocol_emulator uart_tx_9600: 177/256 words, 0 handshake warning(s), 5208 cycles/bit
+     0.00ns INFO     cocotb.regression                  test_firmware_uart_rx.test_committed_images_are_fresh passed
+     0.00ns INFO     cocotb.regression                  running test_firmware_uart_rx.test_pin_timing_calibration (2/9)
+                                                            Directed: pin down the port timings the other tests lean on, with a
+  2761.00ns INFO     ..tt_um_2amlogic_protocol_emulator calibration (visible-at edge number, edge 0 = MODE drop): {'after-edge-1': 3, 'after-edge-2': None}
+  2761.00ns INFO     cocotb.regression                  test_firmware_uart_rx.test_pin_timing_calibration passed
+  2761.00ns INFO     cocotb.regression                  running test_firmware_uart_rx.test_uart_rx_1mbaud_class (3/9)
+                                                            50 cycles/bit: bytes, cycle-exact sampling, jitter, +-2 % rate error.
+198262.00ns INFO     ..tt_um_2amlogic_protocol_emulator uart_rx      nominal gap 0.0b sent 0xa5 got 0xa5 first-latency 75 cyc, sample-position span [+0.482, +0.502] bit, model check_frame(stimulus)=True
+198262.00ns INFO     ..tt_um_2amlogic_protocol_emulator uart_rx      nominal gap 0.5b sent 0x5a got 0x5a first-latency 74 cyc, sample-position span [+0.462, +0.482] bit, model check_frame(stimulus)=True
+198262.00ns INFO     ..tt_um_2amlogic_protocol_emulator uart_rx      nominal gap 2.5b sent 0x00 got 0x00 first-latency 75 cyc, sample-position span [+0.482, +0.502] bit, model check_frame(stimulus)=True
+198262.00ns INFO     ..tt_um_2amlogic_protocol_emulator uart_rx    jitter10% gap 1.0b sent 0xff got 0xff first-latency 76 cyc, sample-position span [+0.518, +0.538] bit, model check_frame(stimulus)=False
+198262.00ns INFO     ..tt_um_2amlogic_protocol_emulator uart_rx    jitter10% gap 2.5b sent 0x80 got 0x80 first-latency 75 cyc, sample-position span [+0.486, +0.506] bit, model check_frame(stimulus)=False
+198262.00ns INFO     ..tt_um_2amlogic_protocol_emulator uart_rx          +2% gap 1.0b sent 0x01 got 0x01 first-latency 75 cyc, sample-position span [+0.315, +0.453] bit, model check_frame(stimulus)=False
+198262.00ns INFO     ..tt_um_2amlogic_protocol_emulator uart_rx          +2% gap 2.5b sent 0x55 got 0x55 first-latency 74 cyc, sample-position span [+0.296, +0.433] bit, model check_frame(stimulus)=False
+198262.00ns INFO     ..tt_um_2amlogic_protocol_emulator uart_rx          -2% gap 1.0b sent 0xaa got 0xaa first-latency 76 cyc, sample-position span [+0.532, +0.716] bit, model check_frame(stimulus)=False
+198262.00ns INFO     ..tt_um_2amlogic_protocol_emulator uart_rx          -2% gap 2.5b sent 0x40 got 0x40 first-latency 74 cyc, sample-position span [+0.491, +0.675] bit, model check_frame(stimulus)=False
+198262.00ns INFO     ..tt_um_2amlogic_protocol_emulator uart_rx   +2%+jit10% gap 1.0b sent 0xc3 got 0xc3 first-latency 74 cyc, sample-position span [+0.304, +0.442] bit, model check_frame(stimulus)=False
+198262.00ns INFO     ..tt_um_2amlogic_protocol_emulator uart_rx   -2%+jit10% gap 2.5b sent 0xa5 got 0xa5 first-latency 74 cyc, sample-position span [+0.491, +0.675] bit, model check_frame(stimulus)=False
+198262.00ns INFO     ..tt_um_2amlogic_protocol_emulator uart_rx        +0.2% gap 1.0b sent 0x5a got 0x5a first-latency 75 cyc, sample-position span [+0.465, +0.483] bit, model check_frame(stimulus)=True
+198262.00ns INFO     ..tt_um_2amlogic_protocol_emulator uart_rx        -0.2% gap 1.0b sent 0x00 got 0x00 first-latency 74 cyc, sample-position span [+0.465, +0.501] bit, model check_frame(stimulus)=True
+198262.00ns WARNING  cocotb.regression                  test_firmware_uart_rx.test_uart_rx_1mbaud_class failed
+                                                        Traceback (most recent call last):
+                                                          File "/home/ubuntu/GitHub/sg13cmos5l-protocol-emulator/.loom/worktrees/issue-91/verification/test_firmware_uart_rx.py", line 511, in test_uart_rx_1mbaud_class
+                                                            await run_standard(dut, "uart_rx", seed=9100, reduced=False)
+                                                          File "/home/ubuntu/GitHub/sg13cmos5l-protocol-emulator/.loom/worktrees/issue-91/verification/test_firmware_uart_rx.py", line 447, in run_standard
+                                                            assert not failed, "\n".join(failed)
+                                                        AssertionError: nominal 0xa5: sample spacing != 50: [(7, 51)]
+                                                          nominal 0x5a: sample spacing != 50: [(7, 51)]
+                                                          nominal 0x00: sample spacing != 50: [(7, 51)]
+                                                          jitter10% 0xff: sample spacing != 50: [(7, 51)]
+                                                          jitter10% 0x80: sample spacing != 50: [(7, 51)]
+                                                          +2% 0x01: sample spacing != 50: [(7, 51)]
+                                                          +2% 0x55: sample spacing != 50: [(7, 51)]
+                                                          -2% 0xaa: sample spacing != 50: [(7, 51)]
+                                                          -2% 0x40: sample spacing != 50: [(7, 51)]
+                                                          +2%+jit10% 0xc3: sample spacing != 50: [(7, 51)]
+                                                          -2%+jit10% 0xa5: sample spacing != 50: [(7, 51)]
+                                                          +0.2% 0x5a: sample spacing != 50: [(7, 51)]
+                                                          -0.2% 0x00: sample spacing != 50: [(7, 51)]
+                                                        assert not ['nominal 0xa5: sample spacing != 50: [(7, 51)]', 'nominal 0x5a: sample spacing != 50: [(7, 51)]', 'nominal 0x00: samp...!= 50: [(7, 51)]', 'jitter10% 0x80: sample spacing != 50: [(7, 51)]', '+2% 0x01: sample spacing != 50: [(7, 51)]', ...]
+198262.00ns INFO     cocotb.regression                  running test_firmware_uart_rx.test_uart_rx_115200_class (4/9)
+                                                            434 cycles/bit (nested WAIT, one outer pass).
+1580323.00ns INFO     ..tt_um_2amlogic_protocol_emulator uart_rx_115200      nominal gap 0.0b sent 0xa5 got 0xa5 first-latency 651 cyc, sample-position span [+0.498, +0.498] bit, model check_frame(stimulus)=True
+1580323.00ns INFO     ..tt_um_2amlogic_protocol_emulator uart_rx_115200      nominal gap 0.5b sent 0x5a got 0x5a first-latency 652 cyc, sample-position span [+0.501, +0.501] bit, model check_frame(stimulus)=True
+1580323.00ns INFO     ..tt_um_2amlogic_protocol_emulator uart_rx_115200      nominal gap 2.5b sent 0x00 got 0x00 first-latency 652 cyc, sample-position span [+0.501, +0.501] bit, model check_frame(stimulus)=True
+1580323.00ns INFO     ..tt_um_2amlogic_protocol_emulator uart_rx_115200    jitter10% gap 1.0b sent 0xff got 0xff first-latency 650 cyc, sample-position span [+0.496, +0.496] bit, model check_frame(stimulus)=False
+1580323.00ns INFO     ..tt_um_2amlogic_protocol_emulator uart_rx_115200    jitter10% gap 2.5b sent 0x80 got 0x80 first-latency 651 cyc, sample-position span [+0.499, +0.499] bit, model check_frame(stimulus)=False
+1580323.00ns INFO     ..tt_um_2amlogic_protocol_emulator uart_rx_115200          +2% gap 1.0b sent 0x01 got 0x01 first-latency 652 cyc, sample-position span [+0.314, +0.471] bit, model check_frame(stimulus)=False
+1580323.00ns INFO     ..tt_um_2amlogic_protocol_emulator uart_rx_115200          +2% gap 2.5b sent 0x55 got 0x55 first-latency 651 cyc, sample-position span [+0.313, +0.469] bit, model check_frame(stimulus)=False
+1580323.00ns INFO     ..tt_um_2amlogic_protocol_emulator uart_rx_115200          -2% gap 1.0b sent 0xaa got 0xaa first-latency 650 cyc, sample-position span [+0.528, +0.691] bit, model check_frame(stimulus)=False
+1580323.00ns INFO     ..tt_um_2amlogic_protocol_emulator uart_rx_115200          -2% gap 2.5b sent 0x40 got 0x40 first-latency 652 cyc, sample-position span [+0.532, +0.695] bit, model check_frame(stimulus)=False
+1580323.00ns INFO     ..tt_um_2amlogic_protocol_emulator uart_rx_115200   +2%+jit10% gap 1.0b sent 0xc3 got 0xc3 first-latency 651 cyc, sample-position span [+0.313, +0.470] bit, model check_frame(stimulus)=False
+1580323.00ns INFO     ..tt_um_2amlogic_protocol_emulator uart_rx_115200   -2%+jit10% gap 2.5b sent 0xa5 got 0xa5 first-latency 651 cyc, sample-position span [+0.530, +0.694] bit, model check_frame(stimulus)=False
+1580323.00ns INFO     ..tt_um_2amlogic_protocol_emulator uart_rx_115200        +0.2% gap 1.0b sent 0x5a got 0x5a first-latency 652 cyc, sample-position span [+0.482, +0.498] bit, model check_frame(stimulus)=True
+1580323.00ns INFO     ..tt_um_2amlogic_protocol_emulator uart_rx_115200        -0.2% gap 1.0b sent 0x00 got 0x00 first-latency 651 cyc, sample-position span [+0.502, +0.518] bit, model check_frame(stimulus)=True
+1580323.00ns INFO     cocotb.regression                  test_firmware_uart_rx.test_uart_rx_115200_class passed
+1580323.00ns INFO     cocotb.regression                  running test_firmware_uart_rx.test_uart_rx_9600_class (5/9)
+                                                            5,208 cycles/bit (nested WAIT, 20 outer passes): row 1's low-baud end.
+8998444.00ns INFO     ..tt_um_2amlogic_protocol_emulator uart_rx_9600      nominal gap 0.0b sent 0xa5 got 0xa5 first-latency 7813 cyc, sample-position span [+0.500, +0.500] bit, model check_frame(stimulus)=True
+8998444.00ns INFO     ..tt_um_2amlogic_protocol_emulator uart_rx_9600      nominal gap 2.5b sent 0x5a got 0x5a first-latency 7812 cyc, sample-position span [+0.500, +0.500] bit, model check_frame(stimulus)=True
+8998444.00ns INFO     ..tt_um_2amlogic_protocol_emulator uart_rx_9600    jitter10% gap 1.0b sent 0x00 got 0x00 first-latency 7812 cyc, sample-position span [+0.500, +0.500] bit, model check_frame(stimulus)=False
+8998444.00ns INFO     ..tt_um_2amlogic_protocol_emulator uart_rx_9600          +2% gap 1.0b sent 0xff got 0xff first-latency 7813 cyc, sample-position span [+0.314, +0.471] bit, model check_frame(stimulus)=False
+8998444.00ns INFO     ..tt_um_2amlogic_protocol_emulator uart_rx_9600          -2% gap 1.0b sent 0x80 got 0x80 first-latency 7812 cyc, sample-position span [+0.530, +0.694] bit, model check_frame(stimulus)=False
+8998444.00ns INFO     ..tt_um_2amlogic_protocol_emulator uart_rx_9600   +2%+jit10% gap 1.0b sent 0x01 got 0x01 first-latency 7812 cyc, sample-position span [+0.314, +0.471] bit, model check_frame(stimulus)=False
+8998444.00ns INFO     cocotb.regression                  test_firmware_uart_rx.test_uart_rx_9600_class passed
+8998444.00ns INFO     cocotb.regression                  running test_firmware_uart_rx.test_negative_control_rate_error_beyond_tolerance (6/9)
+                                                            Drive the receiver past its tolerance: +-10 % per-bit error MUST give
+9913945.01ns INFO     ..tt_um_2amlogic_protocol_emulator sweep uart_rx rate x1.02: 4/4 frames received correctly
+9913945.01ns INFO     ..tt_um_2amlogic_protocol_emulator sweep uart_rx rate x0.98: 4/4 frames received correctly
+9913945.01ns INFO     ..tt_um_2amlogic_protocol_emulator sweep uart_rx rate x1.04: 4/4 frames received correctly
+9913945.01ns INFO     ..tt_um_2amlogic_protocol_emulator sweep uart_rx rate x0.96: 4/4 frames received correctly
+9913945.01ns INFO     ..tt_um_2amlogic_protocol_emulator sweep uart_rx rate x1.06: 3/4 frames received correctly
+9913945.01ns INFO     ..tt_um_2amlogic_protocol_emulator sweep uart_rx rate x0.94: 2/4 frames received correctly
+9913945.01ns INFO     ..tt_um_2amlogic_protocol_emulator sweep uart_rx rate x1.08: 1/4 frames received correctly
+9913945.01ns INFO     ..tt_um_2amlogic_protocol_emulator sweep uart_rx rate x0.92: 0/4 frames received correctly
+9913945.01ns INFO     ..tt_um_2amlogic_protocol_emulator sweep uart_rx rate x1.1: 1/4 frames received correctly
+9913945.01ns INFO     ..tt_um_2amlogic_protocol_emulator sweep uart_rx rate x0.9: 0/4 frames received correctly
+9913945.01ns INFO     ..tt_um_2amlogic_protocol_emulator model negative control: 1.025x sender decodes to 0x5a but check_frame False at 22.500% (bound 2.0%)
+9913945.01ns INFO     cocotb.regression                  test_firmware_uart_rx.test_negative_control_rate_error_beyond_tolerance passed
+9913945.01ns INFO     cocotb.regression                  running test_firmware_uart_rx.test_framing_error_flag_and_recovery (7/9)
+                                                            A stop bit held low raises `uio_out[1]`; the next, good frame is still
+9986446.01ns INFO     ..tt_um_2amlogic_protocol_emulator stop-low: got 90 err_flag 1
+9986446.01ns INFO     ..tt_um_2amlogic_protocol_emulator good-after: got 165 err_flag 0
+9986446.01ns WARNING  cocotb.regression                  test_firmware_uart_rx.test_framing_error_flag_and_recovery failed
+                                                        Traceback (most recent call last):
+                                                          File "/home/ubuntu/GitHub/sg13cmos5l-protocol-emulator/.loom/worktrees/issue-91/verification/test_firmware_uart_rx.py", line 582, in test_framing_error_flag_and_recovery
+                                                            assert not failed, "\n".join(failed)
+                                                        AssertionError: stop-low: sample spacing != 50: [(7, 51)]
+                                                          good-after: sample spacing != 50: [(7, 51)]
+                                                        assert not ['stop-low: sample spacing != 50: [(7, 51)]', 'good-after: sample spacing != 50: [(7, 51)]']
+9986446.01ns INFO     cocotb.regression                  running test_firmware_uart_rx.test_negative_control_spacing_checker_can_fail (8/9)
+                                                            The cycle-exactness checker passes a real capture and rejects the same
+10043947.01ns WARNING  cocotb.regression                  test_firmware_uart_rx.test_negative_control_spacing_checker_can_fail failed
+                                                        Traceback (most recent call last):
+                                                          File "/home/ubuntu/GitHub/sg13cmos5l-protocol-emulator/.loom/worktrees/issue-91/verification/test_firmware_uart_rx.py", line 595, in test_negative_control_spacing_checker_can_fail
+                                                            assert check_cycle_exact_spacing(marks, period) == []
+                                                        AssertionError: assert [(7, 51)] == []
+                                                         +  where [(7, 51)] = check_cycle_exact_spacing([176, 226, 276, 326, 376, 426, ...], 50)
+10043947.01ns INFO     cocotb.regression                  running test_firmware_uart_rx.test_uart_tx_9600_low_baud (9/9)
+                                                            Low-baud transmit (nested WAIT): `uart_tx_9600` frames recovered and
+13121468.01ns INFO     ..tt_um_2amlogic_protocol_emulator decoded UartFrameReport(data=0x5a, t_start=10309267.008ns, stop_ok=True, drift=0.000ns (0.000% of bit)
+13121468.01ns INFO     ..tt_um_2amlogic_protocol_emulator frame 0x5a: start edge at cycle 10422, intra-frame edge gaps [10416, 5208, 5208, 10416, 5208, 5208, 5208] cycles, bit period 5208
+13121468.01ns INFO     ..tt_um_2amlogic_protocol_emulator decoded UartFrameReport(data=0xa5, t_start=11455067.008ns, stop_ok=True, drift=0.000ns (0.000% of bit)
+13121468.01ns INFO     ..tt_um_2amlogic_protocol_emulator frame 0xa5: start edge at cycle 67712, intra-frame edge gaps [5208, 5208, 5208, 5208, 10416, 5208, 5208] cycles, bit period 5208
+13121468.01ns INFO     ..tt_um_2amlogic_protocol_emulator negative control (captured x1.025): UartFrameReport(data=0x5a, t_start=10566998.683ns, stop_ok=True, drift=23436.000ns (22.500% of bit)
+13121468.01ns INFO     ..tt_um_2amlogic_protocol_emulator negative control (captured x1.025): UartFrameReport(data=0xa5, t_start=11741443.683ns, stop_ok=True, drift=20832.000ns (20.000% of bit)
+13121468.01ns INFO     cocotb.regression                  test_firmware_uart_rx.test_uart_tx_9600_low_baud passed
+13121468.01ns INFO     cocotb.regression                  *********************************************************************************************************************************
+                                                        ** TEST                                                                     STATUS  SIM TIME (ns)  REAL TIME (s)  RATIO (ns/s) **
+                                                        *********************************************************************************************************************************
+                                                        ** test_firmware_uart_rx.test_committed_images_are_fresh                     PASS           0.00           0.00          0.00  **
+                                                        ** test_firmware_uart_rx.test_pin_timing_calibration                         PASS        2761.00           0.00     679914.95  **
+                                                        ** test_firmware_uart_rx.test_uart_rx_1mbaud_class                           FAIL      195501.00           0.34     576068.75  **
+                                                        ** test_firmware_uart_rx.test_uart_rx_115200_class                           PASS     1382061.00           3.07     450290.06  **
+                                                        ** test_firmware_uart_rx.test_uart_rx_9600_class                             PASS     7418121.00          14.07     527095.74  **
+                                                        ** test_firmware_uart_rx.test_negative_control_rate_error_beyond_tolerance   PASS      915501.00           1.64     558829.43  **
+                                                        ** test_firmware_uart_rx.test_framing_error_flag_and_recovery                FAIL       72501.00           0.10     725451.56  **
+                                                        ** test_firmware_uart_rx.test_negative_control_spacing_checker_can_fail      FAIL       57501.00           0.08     736879.17  **
+                                                        ** test_firmware_uart_rx.test_uart_tx_9600_low_baud                          PASS     3077521.00           5.03     612158.92  **
+                                                        *********************************************************************************************************************************
+                                                        ** TESTS=9 PASS=6 FAIL=3 SKIP=0                                                      13121468.01          24.34     539122.92  **
+                                                        *********************************************************************************************************************************
