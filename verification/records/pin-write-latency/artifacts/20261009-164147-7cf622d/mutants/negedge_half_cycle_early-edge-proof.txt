@@ -1,0 +1,10 @@
+======== ABC command line "read_aiger /tmp/pw127/mutants/negedge_half_cycle_early-edge.aig; scorr; pdr -a -T 600"
+Proved output 4 in frame 0 (trivial).
+Proved output 5 in frame 0 (trivial).
+Invariant F[3] : 69 clauses with 0 flops (out of 245) (cex = 0, ave = 4.22)
+Verification of invariant with 69 clauses was successful.  Time =     0.00 sec
+Proved output 0 in frame 1761090672 (converged).
+Proved output 1 in frame 1761090676 (converged).
+Proved output 2 in frame 1761090680 (converged).
+Proved output 3 in frame 1761090684 (converged).
+Properties:  All = 6. Proved = 6. Disproved = 0. Undecided = 0.   Time =     0.04 sec
