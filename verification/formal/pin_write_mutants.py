@@ -33,6 +33,11 @@ RCTL_HW_ID = "CTL_HW_ID:       rctl_val = HW_ID;"
 PMRD_HI = "regs[stall_rd] <= instr_word[15:8];"
 EXEC_GATE = "if (fetch_valid && !halted) begin"
 INSERT_AT = "  assign fetch_addr = next_addr;\n"
+# DR 0013 layer 2 (issue #138): the fetch-source mux.
+FETCH_ROM = "  assign      fetch_rom = !serial_loaded && !rom_exit;"
+ROM_EXIT_SET = "            rom_exit <= 1'b1;"
+BOOT_STATUS = "CTL_BOOT_STATUS: rctl_val = {6'b000000, fetch_rom, serial_loaded};"
+DECODE_IMM = "  wire [7:0] imm8   = exec_word[7:0];"
 
 # The core's own "an instruction executes this cycle" wire, for the mutants
 # that need a second write path (only used inside mutants). Since issue #135
@@ -70,6 +75,26 @@ MUTANTS: dict[str, tuple[str, list[tuple[str, str]]]] = {
         "RCTL PM_DATA_HI returns the LOW byte of the word read: the wrong "
         "program-memory byte reaches a pin through a later OUT",
         [(PMRD_HI, "regs[stall_rd] <= instr_word[7:0];  // MUTANT")],
+    ),
+    # --- DR 0013 layer 2 boot ROM (issue #138) ------------------------------
+    "fetch_source_ignores_rom": (
+        "the core always decodes program memory: MODE low at reset runs "
+        "program memory, as it did before DR 0013",
+        [(FETCH_ROM, "  assign      fetch_rom = 1'b0;  // MUTANT")],
+    ),
+    "run_does_not_leave_rom": (
+        "WCTL RUN jumps but the fetch source stays the boot ROM",
+        [(ROM_EXIT_SET, "            rom_exit <= 1'b0;  // MUTANT")],
+    ),
+    "boot_status_bit1_wrong": (
+        "BOOT_STATUS[1] reads 0 while fetching from the boot ROM: the wrong "
+        "status reaches a pin through a later OUT",
+        [(BOOT_STATUS, "CTL_BOOT_STATUS: rctl_val = {6'b000000, 1'b0, serial_loaded};  // MUTANT")],
+    ),
+    "rom_decode_split": (
+        "the immediate is always decoded from program memory's word, the "
+        "rest of the instruction from the selected source",
+        [(DECODE_IMM, "  wire [7:0] imm8   = instr_word[7:0];  // MUTANT")],
     ),
     # --- load-phase fault (needs a run_phase-low window of >= 3 cycles) ---
     "load_phase_leak": (

@@ -54,10 +54,14 @@ jobs:
       # check that the committed firmware/build/ artifacts still match the
       # committed .asm source. Stdlib-only Python, same tool-light contract
       # as the records job. check_firmware.py discovers firmware/asm/*.asm
-      # (no hand list) and runs gen_i2c_sr.py --check first.
+      # (no hand list) and runs gen_i2c_sr.py --check first. It also covers
+      # the boot ROM chain (issue #138, DR 0013 layer 2): firmware/asm/boot/
+      # -> firmware/build/boot/boot_rom.hex -> rtl/protocol_boot_rom.v, each
+      # link checked; test_gen_boot_rom.py tests the generator itself.
       - name: Firmware assembler tests + build-artifact freshness
         run: |
           python3 firmware/tools/test_asm.py
+          python3 firmware/tools/test_gen_boot_rom.py
           python3 firmware/tools/check_firmware.py
 
       # Datasheet drift (issue #110): docs/info.md's image table must agree

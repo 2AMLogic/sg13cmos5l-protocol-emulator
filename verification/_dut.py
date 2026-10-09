@@ -22,6 +22,13 @@ async def reset(dut):
 
     10 cycles is a generous margin, not a timing requirement -- this stub
     has a single register with no reset-release timing to characterize yet.
+
+    `ui_in` is 0 here, so MODE is low at release. Since DR 0013 layer 2
+    (issue #138) that runs the boot ROM with straps 00, whose UART-load
+    stub idles with every pin at its reset value; before it, the core ran
+    whatever program memory held. No bench calls this helper today: every
+    top-level bench resets through its own serial loader (MODE high), and
+    `test_boot_rom.py` has its own MODE-low reset with a strap argument.
     """
     dut.ena.value = 1
     dut.ui_in.value = 0

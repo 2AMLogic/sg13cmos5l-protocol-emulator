@@ -44,6 +44,32 @@
  * property (the harness's program table is a constant; the cocotb bench
  * verification/test_control_space.py owns that).
  *
+ * DR 0013 LAYER 2 BOOT ROM (issue #138). The core now has two instruction
+ * sources -- the boot ROM and program memory -- and decodes one of them
+ * per cycle. The shadow model does NOT take the core's word for which: it
+ * receives BOTH words (`rom_instr` and `instr`, the harness's two free
+ * tables behind their registered read ports) and selects with its own
+ * state, written from DR 0013 ("At `rst_n` release with `MODE` low, fetch
+ * comes from a small boot ROM instead of program memory"; a serial load
+ * runs program memory "as today") and DR 0012 (`RUN`: "switch the fetch
+ * source to program memory"):
+ *
+ *   - s_rom_exit  : a WCTL RUN has completed since reset;
+ *   - s_from_rom  = !serial_loaded && !s_rom_exit -- the ROM is the source
+ *                   unless a serial load completed or a RUN has left it;
+ *   - s_stall_run : the control-access stall in progress is a RUN's (so
+ *                   its end is where the source switches).
+ *
+ * The instruction the shadow executes is `rom_instr` when s_from_rom and
+ * `instr` otherwise; a RUN's own stall cycle still belongs to the source
+ * the RUN was decoded from. `BOOT_STATUS` reads {s_from_rom,
+ * serial_loaded} in bits [1:0]. Program-memory READ DATA (the stall cycle
+ * of RCTL PM_DATA_HI) is always `instr`, whichever source is selected:
+ * the ROM has no data port. A core that decodes the wrong source, switches
+ * at the wrong cycle, or misreports BOOT_STATUS[1] therefore drives a pin
+ * the shadow does not expect, for some pair of free tables. The core's
+ * `fetch_rom` output is deliberately not an input of this monitor.
+ *
  * Execution eligibility ("is the instruction on `instr` executing this
  * cycle") is derived HERE: exec_valid (from the harness's phase model --
  * run phase with DR 0005's priming cycle excluded, never the core's
@@ -122,7 +148,10 @@
  * retiring with a nonzero pin held; a nonzero pin held through a
  * control-access stall cycle; and a value read by RCTL (a 1-cycle index,
  * and the 2-cycle PM_DATA_HI) later driven onto a pin by an OUT -- the
- * path by which a wrong RCTL would reach a pin.
+ * path by which a wrong RCTL would reach a pin. DR 0013: an OUT decoded
+ * from the boot ROM changing a pin; an OUT decoded from program memory
+ * changing a pin after a RUN left the ROM; and BOOT_STATUS read from the
+ * ROM (bit 1 set) driven onto a pin.
  */
 
 `default_nettype none
@@ -131,7 +160,9 @@ module pin_write_latency (
     input wire        clk,
     input wire        rst_n,
     input wire        exec_valid,   // an instruction occupies `instr` this cycle (run phase, priming excluded)
-    input wire [15:0] instr,        // the instruction word being executed (stable through WAIT stalls)
+    input wire [15:0] instr,        // program memory's registered output: the instruction when PM is the
+                                    // fetch source, and the read data in an RCTL PM_DATA_HI stall cycle
+    input wire [15:0] rom_instr,    // DR 0013: the boot ROM's registered output (the instruction when the ROM is the source)
     input wire [7:0]  ui_in,        // read-only port 00, free
     input wire [7:0]  uio_in,       // read-only port 01, free
     input wire [7:0]  uo_out,       // DUT port 10 output register
@@ -150,10 +181,17 @@ module pin_write_latency (
 
   // DR 0001 "Encoding": [15:12] opcode, [11:10] Rd (for OUT: the SOURCE
   // register), [9:8] Rs / port, [7:0] imm8.
-  wire [3:0] op  = instr[15:12];
-  wire [1:0] rd  = instr[11:10];
-  wire [1:0] rs  = instr[9:8];
-  wire [7:0] imm = instr[7:0];
+  //
+  // DR 0013 layer 2: which word that is. The ROM is the fetch source from
+  // reset unless a serial load completed, until a WCTL RUN completes.
+  reg         s_rom_exit;    // a WCTL RUN has completed since reset
+  reg         s_stall_run;   // the control stall in progress is a RUN's
+  wire        s_from_rom = !serial_loaded && !s_rom_exit;
+  wire [15:0] xw  = s_from_rom ? rom_instr : instr;
+  wire [3:0] op  = xw[15:12];
+  wire [1:0] rd  = xw[11:10];
+  wire [1:0] rs  = xw[9:8];
+  wire [7:0] imm = xw[7:0];
 
   // Shadow architectural state (independent of the DUT).
   reg [7:0] s_r0, s_r1, s_r2, s_r3;
@@ -193,7 +231,7 @@ module pin_write_latency (
       K_PM_DATA_LO:  rctl_v = s_pmlo;
       K_PM_CRC_LO:   rctl_v = pm_crc[7:0];
       K_PM_CRC_HI:   rctl_v = pm_crc[15:8];
-      K_BOOT_STATUS: rctl_v = {7'b0000000, serial_loaded};  // bit 1 (boot ROM): no ROM in this revision
+      K_BOOT_STATUS: rctl_v = {6'b000000, s_from_rom, serial_loaded};  // DR 0012: bit 1 = running from the boot ROM
       K_HW_ID:       rctl_v = HW_ID_VALUE;
       default:       rctl_v = 8'h00;
     endcase
@@ -242,6 +280,7 @@ module pin_write_latency (
       exp_uio    <= 8'h00;
       s_dir <= 8'h00; s_od <= 8'h00; s_pmaddr <= 8'h00; s_pmlo <= 8'h00;  // DR 0012 reset values
       s_stall <= 1'b0; s_stall_pmrd <= 1'b0; s_stall_rd <= 2'd0;
+      s_rom_exit <= 1'b0; s_stall_run <= 1'b0;   // DR 0013: the boot ROM is the source after reset
     end else begin
       if (stalling) s_wait_rem <= s_wait_rem - 8'd1;
       if (ctl_stalling) begin
@@ -249,6 +288,10 @@ module pin_write_latency (
         // data is on `instr`: high byte to Rd, low byte to the latch.
         s_stall      <= 1'b0;
         s_stall_pmrd <= 1'b0;
+        s_stall_run  <= 1'b0;
+        // DR 0012 RUN / DR 0013: the word after a RUN's stall comes from
+        // program memory, and so does every word after it until reset.
+        if (s_stall_run) s_rom_exit <= 1'b1;
         if (s_stall_pmrd) begin
           case (s_stall_rd)
             2'd0: s_r0 <= instr[15:8];
@@ -270,6 +313,7 @@ module pin_write_latency (
             default: ;
           endcase
           if (wctl_two) s_stall <= 1'b1;
+          if (imm == K_RUN) s_stall_run <= 1'b1;
         end
         if (is_rctl) begin
           if (rctl_two) begin
@@ -311,21 +355,33 @@ module pin_write_latency (
   // anything else writes it), so "an RCTL result reached a pin" is observable.
   reg [3:0] c_from_rctl1;      // ...from a 1-cycle RCTL of a nonzero value
   reg [3:0] c_from_pmrd;       // ...from an RCTL PM_DATA_HI
+  // DR 0013 covers.
+  reg [3:0] c_from_boot1;      // ...from an RCTL BOOT_STATUS decoded from the boot ROM
+  reg       f_from_rom;        // previous cycle's instruction came from the boot ROM
+  reg       c_rom_out_seen;    // an OUT decoded from the ROM has executed since reset
+  reg       c_left_by_run;     // a RUN decoded from the ROM completed since reset
   always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
       f_valid   <= 1'b0; f_uo <= 8'h00; f_uio <= 8'h00;
       f_out_uo  <= 1'b0; f_out_uio <= 1'b0; f_out_ro <= 1'b0; f_out_any <= 1'b0;
       f_src     <= 8'h00; f_rd <= 2'd0; f_stalled_before <= 1'b0;
       f_out_ctl <= 1'b0; c_from_rctl1 <= 4'b0000; c_from_pmrd <= 4'b0000;
+      c_from_boot1 <= 4'b0000; f_from_rom <= 1'b0;
+      c_rom_out_seen <= 1'b0; c_left_by_run <= 1'b0;
     end else begin
       f_out_ctl <= out_ctl;
+      f_from_rom <= s_from_rom;
+      if (s_from_rom && (out_uo || out_uio)) c_rom_out_seen <= 1'b1;
+      if (ctl_stalling && s_stall_run && s_from_rom) c_left_by_run <= 1'b1;
       if (executing && wr_rd) begin
         c_from_rctl1[rd] <= is_rctl && (wr_val != 8'h00);
         c_from_pmrd[rd]  <= 1'b0;
+        c_from_boot1[rd] <= is_rctl && (imm == K_BOOT_STATUS) && s_from_rom;
       end
       if (ctl_stalling && s_stall_pmrd) begin
         c_from_pmrd[s_stall_rd]  <= (instr[15:8] != 8'h00);
         c_from_rctl1[s_stall_rd] <= 1'b0;
+        c_from_boot1[s_stall_rd] <= 1'b0;
       end
       f_valid   <= 1'b1;
       f_uo      <= uo_out;
@@ -401,6 +457,18 @@ module pin_write_latency (
       // C18 (DR 0012): a nonzero program-memory high byte (RCTL PM_DATA_HI,
       // 2 cycles) is driven onto a pin.
       cover (f_out_any && c_from_pmrd[f_rd] && (f_src != 8'h00) &&
+             ((f_out_uo && uo_out == f_src) || (f_out_uio && uio_out == f_src)));
+      // C19 (DR 0013): an OUT decoded from the boot ROM puts a nonzero value on a pin.
+      cover (f_out_any && f_from_rom && (f_src != 8'h00) &&
+             ((f_out_uo && uo_out == f_src && uo_out != f_uo) ||
+              (f_out_uio && uio_out == f_src && uio_out != f_uio)));
+      // C20 (DR 0013): after a WCTL RUN left the boot ROM, an OUT decoded from
+      // program memory changes a pin a ROM instruction had already written.
+      cover (f_out_any && !f_from_rom && c_left_by_run && c_rom_out_seen && (f_src != 8'h00) &&
+             ((f_out_uo && uo_out == f_src && uo_out != f_uo) ||
+              (f_out_uio && uio_out == f_src && uio_out != f_uio)));
+      // C21 (DR 0013): BOOT_STATUS read from the boot ROM (bit 1 set) reaches a pin.
+      cover (f_out_any && c_from_boot1[f_rd] && f_src[1] &&
              ((f_out_uo && uo_out == f_src) || (f_out_uio && uio_out == f_src)));
       // C13: a nonzero pin value held through a WAIT stall cycle.
       cover (stalling && (uo_out != 8'h00 || uio_out != 8'h00));

@@ -21,6 +21,17 @@
  *     loops through the table are. (`anyconst` is deliberate: a
  *     self-holding register with no init is folded to a constant by
  *     `opt_dff`, which would silently turn the program into all-NOPs.)
+ *   - Boot ROM (DR 0013 layer 2, issue #138): a SECOND table of 8
+ *     `anyconst` words, `rom0..7`, read at fetch_addr[2:0] through its own
+ *     registered port (`rom_q`) -- the boot ROM as a free program, so the
+ *     result quantifies over every ROM image, not over the committed one.
+ *     Both words go to the core (`rom_word`, `instr_word`) and to the
+ *     monitor (`rom_instr`, `instr`); the monitor picks between them with
+ *     its own shadow of the fetch source and never sees the core's
+ *     `fetch_rom`. Which way the run phase is entered -- the ROM, or
+ *     program memory after a serial load -- is the free `serial_loaded`
+ *     input: before issue #138 "mode_pin low" here meant "run program
+ *     memory", which is no longer what the design does.
  *   - Run phase: the program memory's own phase timing for mode_pin low
  *     (reset, one mode-sampling edge, then run), as in formal_top.v. The
  *     load phase proper (mode_pin high, serial shift-in) is modelled only
@@ -122,6 +133,29 @@ module formal_top_pin_write (
   always @(posedge clk)
     instr_q <= prog_sel;
 
+  // DR 0013 layer 2 (issue #138): the boot ROM as a second free, stable
+  // table behind its own registered read port. It is always read at the
+  // fetch address (the ROM has no data port).
+  (* anyconst *) reg [15:0] rom0;
+  (* anyconst *) reg [15:0] rom1;
+  (* anyconst *) reg [15:0] rom2;
+  (* anyconst *) reg [15:0] rom3;
+  (* anyconst *) reg [15:0] rom4;
+  (* anyconst *) reg [15:0] rom5;
+  (* anyconst *) reg [15:0] rom6;
+  (* anyconst *) reg [15:0] rom7;
+  wire [15:0] rom_sel = fetch_addr[2] ?
+                        (fetch_addr[1] ? (fetch_addr[0] ? rom7 : rom6)
+                                       : (fetch_addr[0] ? rom5 : rom4)) :
+                        (fetch_addr[1] ? (fetch_addr[0] ? rom3 : rom2)
+                                       : (fetch_addr[0] ? rom1 : rom0));
+  reg [15:0] rom_q;
+  always @(posedge clk)
+    rom_q <= rom_sel;
+  // Core outputs this harness does not use: the monitor derives the fetch
+  // source itself, and the macro's read gate is the cocotb bench's subject.
+  wire core_fetch_rom, core_pm_fetch;
+
   reg exec_valid;
   always @(posedge clk or negedge rst_n_r)
     if (!rst_n_r) exec_valid <= 1'b0;
@@ -134,6 +168,9 @@ module formal_top_pin_write (
       .run_phase    (run_phase),
       .instr_word   (instr_q),
       .fetch_addr   (fetch_addr),
+      .rom_word     (rom_q),
+      .fetch_rom    (core_fetch_rom),
+      .pm_fetch     (core_pm_fetch),
       .port_ui_in   (ui_in),
       .port_uio_in  (uio_in),
       .port_uo_out  (core_uo),
@@ -154,6 +191,7 @@ module formal_top_pin_write (
       .rst_n      (rst_n_r),
       .exec_valid (exec_valid),
       .instr      (instr_q),
+      .rom_instr  (rom_q),
       .ui_in      (ui_in),
       .uio_in     (uio_in),
       .uo_out     (core_uo),

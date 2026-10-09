@@ -29,13 +29,23 @@ firmware/
     spi_mode{0..3}.asm   bit-banged SPI controller, one program per
                          (CPOL, CPHA) mode (issue #72, the SPI third of
                          #23)
+    boot/boot_rom.asm    the on-chip boot ROM's program (issue #138, DR
+                         0013 layer 2). Not loaded into program memory:
+                         the ROM in rtl/protocol_boot_rom.v is generated
+                         from its image. See "The boot ROM" below.
   build/          assembler output (program images + cycle reports) —
                   COMMITTED, not gitignored: a program's image and cycle
                   report are part of the evidence record, byte for byte
+    boot/         the boot ROM image and its cycle report
   tools/          the assembler itself
     asm.py        the assembler (Python 3 stdlib only, no dependencies)
     test_asm.py   its unit tests (all 16 opcodes, the DR 0012 control
                   mnemonics + malformed input)
+    gen_boot_rom.py       writes rtl/protocol_boot_rom.v from
+                          build/boot/boot_rom.hex; `--check` reports drift
+    test_gen_boot_rom.py  its unit tests (the 128-word cap, determinism,
+                          stale and hand-edited ROMs)
+    check_firmware.py     every freshness check in one command
 ```
 
 ## Cold-start invocation (a third party can run this from a fresh clone)
@@ -59,9 +69,60 @@ python3 firmware/tools/check_firmware.py
 `check_firmware.py` is the single invocation shared by CI and local use. It
 runs `gen_i2c_sr.py --check` (generated I2C sources vs generator), then
 `asm.py <file> --check` on every `firmware/asm/*.asm` it discovers (image
-and cycle report), keeps going after a failure, exits 1 if any check failed,
-and never rewrites an artifact. A newly committed program is covered
-automatically. A single program: `python3 firmware/tools/asm.py <file> --check`.
+and cycle report), then the boot ROM chain below, keeps going after a
+failure, exits 1 if any check failed, and never rewrites an artifact. A
+newly committed program is covered automatically. A single program:
+`python3 firmware/tools/asm.py <file> --check`. `npm run lint` runs it too.
+
+## The boot ROM (issue #138, DR 0013 layer 2)
+
+With `MODE` low at reset the core fetches from an on-chip ROM, not from
+program memory. The ROM's contents are a program in this ISA, and the ROM's
+Verilog is generated from that program's committed image:
+
+```
+firmware/asm/boot/boot_rom.asm
+    asm.py --out-dir firmware/build/boot       (check: asm.py ... --check)
+firmware/build/boot/boot_rom.hex  (+ boot_rom.cycles.txt)
+    gen_boot_rom.py                            (check: gen_boot_rom.py --check)
+rtl/protocol_boot_rom.v
+```
+
+```bash
+# After editing the boot program:
+python3 firmware/tools/asm.py firmware/asm/boot/boot_rom.asm --out-dir firmware/build/boot
+python3 firmware/tools/gen_boot_rom.py
+```
+
+`check_firmware.py` checks both links, so a ROM that no longer matches the
+committed program fails CI at the link that went stale. The generator
+refuses an image over **128 words** (DR 0013's cap); the image is **30**.
+
+What the program does: its first instruction reads the straps `ui_in[6:5]`.
+Strap `10` is the **warm start**: it reads every word of program memory and
+commits it back unchanged, which runs all 256 words through `PM_CRC` (the
+hardware CRC only sees commits), and executes `WCTL RUN` to address 0 only
+if the result is zero, that is, only if word 255 is the CRC-16/XMODEM of
+words 0–254. It first restores `R0`–`R3`, `Z` and `C` to their reset
+values, so a warm-started program starts in the state a serial-loaded one
+does, except that it reads `BOOT_STATUS = 0x00`. One pass of the loop is 9
+cycles (`.cyclesec warm_word`), and word 0 of a verified image executes
+exactly 2,323 cycles after the boot program's first instruction. Straps
+`00`, `01` and `11` are **stubs** (one `HALT` each) until the UART load
+(#139) and the SPI-flash boot (#140) land; a failed warm start falls
+through to the UART stub. A stub drives nothing.
+
+The assembler reports three data-dependent-branch warnings for this
+program, all intended: the two strap branches and the CRC verdict. None
+paces a pin.
+
+Known weak case, recorded in DR 0013: 256 zero words carry their own valid
+signature (the CRC starts at 0), so a warm start runs them. They are `NOP`s.
+
+Bench: `verification/test_boot_rom.py`
+(`verification/request-boot-rom.json`), negative controls
+`verification/boot_rom_mutants.py`, evidence in
+`verification/records/boot-rom/`.
 
 ## Programs
 

@@ -44,18 +44,35 @@ that are not themselves the Tiny Tapeout top:
   It is wired into the top by issue #18's core (`ui_in[7]` -> `mode_pin`,
   `ui_in[0]` -> `serial_in`, the core's fetch-ahead address -> `fetch_addr`,
   `run_phase` -> the core).
+- `protocol_boot_rom.v` — the boot ROM of DR 0013 layer 2 (issue #138),
+  target-spec row 14 (c). **Generated, never edited by hand**:
+  `firmware/tools/gen_boot_rom.py` writes it from the committed boot image
+  `firmware/build/boot/boot_rom.hex`, which the DR 0003 assembler assembles
+  from `firmware/asm/boot/boot_rom.asm`. `firmware/tools/check_firmware.py`
+  (run by CI and by `npm run lint`) fails on a stale link in that chain.
+  It is a `case` over the fetch address behind one register, so it reads
+  with the macro's one-cycle delay and the core takes either source through
+  the same fetch stage; addresses outside the image read as `HALT`. The
+  image is 30 words; DR 0013 caps it at 128 and the generator refuses more.
+  The core decodes the ROM from `rst_n` release with `MODE` low until the
+  boot program executes `WCTL RUN` (`fetch_rom`, also `BOOT_STATUS[1]`),
+  and tells the program memory not to read the macro for fetch meanwhile
+  (`pm_fetch` → `fetch_en`). A serial load never decodes it. Checked by
+  `verification/test_boot_rom.py` on the top, with
+  `verification/boot_rom_mutants.py` as its negative controls.
 - `vendor/` — the SRAM macro's behavioural model, vendored byte-for-byte from
   the PDK with provenance and licence in `vendor/README.md`. Simulation only:
   the macro is a hard block, blackboxed by LibreLane against the LEF/liberty
   in `src/config.json` and by the klt/Yosys leg against
   `flow/blackbox-RM_IHPSG13_1P_256x16_c2_bm_bist.v`.
 
-Both modules reach the Tiny Tapeout flow through symlinks in `src/`
-(`src/protocol_core.v`, `src/protocol_program_memory.v`), so the template's
+All three modules reach the Tiny Tapeout flow through symlinks in `src/`
+(`src/protocol_core.v`, `src/protocol_program_memory.v`,
+`src/protocol_boot_rom.v`), so the template's
 "sources live in `./src`" rule and this file's one-copy rule above both hold
 without a second copy of anything.
 
-Note that DR 0001, DR 0005 and DR 0012 are all `Status: Proposed`, not ratified — the
+Note that DR 0001, DR 0005, DR 0012 and DR 0013 are all `Status: Proposed`, not ratified — the
 two-key mechanism has never run in this repository
 (`spec/decision-records/0006-two-key-ratification-never-ran.md`). This RTL
 implements their content as if binding, under the operator's explicit
