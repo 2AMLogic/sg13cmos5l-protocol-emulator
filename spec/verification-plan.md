@@ -122,6 +122,23 @@ regression is additionally run once the platform-table gap
 (2AMLogic/klayout-tools#1784) closes, as a second, faster-iteration
 correctness signal — not a substitute for the flow-of-record run.
 
+> **2026-10-09 (issue #108): reconciliation with what actually runs.**
+> The paragraph above is the target, not the status. Until #108 the only
+> gate-level leg was the template's `gl_test` (`test/test.py`, one short
+> program), so the §4 *firmware* benches had no evidence on gates. Now the
+> committed UART, SPI (modes 0-3) and I2C (Standard/Fast, plus the Sr/stretch
+> sibling) benches run unmodified, zero-delay, on the LibreLane `tt_submission`
+> netlist of `gds` run `37911842396` via `flow/run-firmware-gate-level.sh`
+> (reusing `test/Makefile` `GATES=yes`), all passing, with a WAIT-counter
+> stuck-at fault injected into the netlist failing every bench (record
+> `firmware-gate-level/20261009-120000-35c5332`; flow: LibreLane netlist,
+> Icarus/cocotb). Still not run at gates: the constrained-random regression
+> (`test_random_regression.py`) and the white-box core bench
+> (`test_protocol_emulator.py::test_alu_flags_whitebox` needs RTL hierarchy);
+> the SDF-annotated leg remains failing (#102 record, #106). The netlist is the
+> final routed one, not an intermediate post-synthesis netlist. The original
+> text above is left as written.
+
 ## 4. Constrained-random protocol traffic + reference models
 
 One suite per core protocol (`spec/target-spec.md` row 1), each structured

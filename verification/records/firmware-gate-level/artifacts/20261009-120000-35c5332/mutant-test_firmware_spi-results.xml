@@ -1,0 +1,10 @@
+<testsuites name="results">
+  <testsuite name="all" package="all">
+    <property name="random_seed" value="1791543853" />
+    <testcase name="test_committed_images_are_fresh" classname="test_firmware_spi" file="/home/ubuntu/GitHub/sg13cmos5l-protocol-emulator/.loom/worktrees/issue-108/verification/test_firmware_spi.py" lineno="313" time="0.013389825820922852" sim_time_ns="0.0" ratio_time="0.0" />
+    <testcase name="test_all_four_modes_pass_independent_reference_model" classname="test_firmware_spi" file="/home/ubuntu/GitHub/sg13cmos5l-protocol-emulator/.loom/worktrees/issue-108/verification/test_firmware_spi.py" lineno="350" time="0.23188138008117676" sim_time_ns="42081.0" ratio_time="181476.4082621396">
+      <failure error_type="AssertionError" error_msg="expected exactly 2 CS bursts, captured 0&#10;assert 0 == 2&#10; +  where 0 = len([])" />
+    </testcase>
+    <testcase name="test_reference_model_negative_controls_still_fail" classname="test_firmware_spi" file="/home/ubuntu/GitHub/sg13cmos5l-protocol-emulator/.loom/worktrees/issue-108/verification/test_firmware_spi.py" lineno="492" time="0.0004642009735107422" sim_time_ns="0.0" ratio_time="0.0" />
+  </testsuite>
+</testsuites>

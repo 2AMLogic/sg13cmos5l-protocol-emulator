@@ -1,0 +1,8 @@
+<testsuites name="results">
+  <testsuite name="all" package="all">
+    <property name="random_seed" value="1791543808" />
+    <testcase name="test_committed_images_are_fresh" classname="test_firmware_spi" file="/home/ubuntu/GitHub/sg13cmos5l-protocol-emulator/.loom/worktrees/issue-108/verification/test_firmware_spi.py" lineno="313" time="0.004908323287963867" sim_time_ns="0.0" ratio_time="0.0" />
+    <testcase name="test_all_four_modes_pass_independent_reference_model" classname="test_firmware_spi" file="/home/ubuntu/GitHub/sg13cmos5l-protocol-emulator/.loom/worktrees/issue-108/verification/test_firmware_spi.py" lineno="350" time="0.9661564826965332" sim_time_ns="169061.0" ratio_time="174983.04159606984" />
+    <testcase name="test_reference_model_negative_controls_still_fail" classname="test_firmware_spi" file="/home/ubuntu/GitHub/sg13cmos5l-protocol-emulator/.loom/worktrees/issue-108/verification/test_firmware_spi.py" lineno="492" time="0.0002961158752441406" sim_time_ns="0.0" ratio_time="0.0" />
+  </testsuite>
+</testsuites>

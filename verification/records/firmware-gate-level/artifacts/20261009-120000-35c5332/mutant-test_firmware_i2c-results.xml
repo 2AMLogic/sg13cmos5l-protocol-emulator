@@ -1,0 +1,10 @@
+<testsuites name="results">
+  <testsuite name="all" package="all">
+    <property name="random_seed" value="1791543855" />
+    <testcase name="test_committed_images_are_fresh" classname="test_firmware_i2c" file="/home/ubuntu/GitHub/sg13cmos5l-protocol-emulator/.loom/worktrees/issue-108/verification/test_firmware_i2c.py" lineno="438" time="0.004599332809448242" sim_time_ns="0.0" ratio_time="0.0" />
+    <testcase name="test_i2c_both_grades_pass_independent_reference_model" classname="test_firmware_i2c" file="/home/ubuntu/GitHub/sg13cmos5l-protocol-emulator/.loom/worktrees/issue-108/verification/test_firmware_i2c.py" lineno="477" time="0.7729396820068359" sim_time_ns="131041.0" ratio_time="169535.86812850562">
+      <failure error_type="ValueError" error_msg="no START in window" />
+    </testcase>
+    <testcase name="test_reference_model_negative_control_still_fails" classname="test_firmware_i2c" file="/home/ubuntu/GitHub/sg13cmos5l-protocol-emulator/.loom/worktrees/issue-108/verification/test_firmware_i2c.py" lineno="573" time="0.0005655288696289062" sim_time_ns="0.0" ratio_time="0.0" />
+  </testsuite>
+</testsuites>
