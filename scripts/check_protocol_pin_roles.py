@@ -150,6 +150,7 @@ class Checker:
         self.meta = Layer("metadata-capability")
         self.concrete = Layer("concrete-firmware-bench")
         self.unwired: list[str] = []
+        self.rx_uio_writers: list[str] = []
         self.table: dict | None = None
         self.pins: dict[tuple[str, int], dict] = {}
         self._cache: dict[str, str | None] = {}
@@ -552,11 +553,15 @@ class Checker:
 
     def prof_uart_rx(self, rel, ent):
         """UART receive: RX sampled from the table's uart_rx.RX pin, the byte
-        written to the uart_rx_result port. `OUT UIO_OUT` is also allowed: the
-        RX programs pulse uio_out[0] (sample mark) and uio_out[1] (frame error)
-        as bench observability aids. Those writes are NOT pin roles -- the
-        table assigns no uart_rx role on uio, and `uio_oe` does not drive them
-        (DR 0010 "UART receive")."""
+        (R0) written to the uart_rx_result port. `OUT UIO_OUT` is also
+        allowed, but only as bench debug writes: the sample mark (uio_out[0])
+        and frame error (uio_out[1]) from R1/R2/R3, never the received byte
+        (R0), with the clear value (first `LDI R3`) pinned to 0. These writes
+        are NOT pin roles -- the table assigns no uart_rx role on uio. They are
+        inert ONLY while `uio_oe` is 8'h00: under the proposed `uio_oe =
+        8'h81 & ~uio_out` wiring they would drive uio[0] low (SCL/MISO)
+        outside the sample marks and uio[7] (SDA) low for the whole run. That
+        is a recorded condition on the RTL follow-up (DR 0010 "UART receive")."""
         text = self.read(rel, self.concrete)
         if text is None:
             return
@@ -564,6 +569,26 @@ class Checker:
         ins = self.asm_instrs(text)
         _outs, in_ports, res = self.out_in_ports([], [("uart_rx", ["RX"])], "uart_rx_result")
         self.check_ports(rel, ins, res | {"UIO_OUT"}, in_ports, res, in_ports)
+        # UIO_OUT is debug-only: the received byte (R0) must go to the result
+        # port, and must never be accepted on UIO_OUT.
+        res_port = sorted(res)[0] if res else "UO_OUT"
+        for i in ins:
+            if i["m"] == "OUT" and i["ops"][0].upper() == "UIO_OUT":
+                c.sites += 1
+                if rel not in self.rx_uio_writers:
+                    self.rx_uio_writers.append(rel)
+                if i["ops"][1].upper() == "R0":
+                    c.err(f"{rel}:{i['no']}: OUT UIO_OUT, R0 -- the received byte must go to "
+                          f"{res_port}; UIO_OUT accepts only the debug mark/error writes")
+        if not any(i["m"] == "OUT" and i["ops"][0].upper() in res and i["ops"][1].upper() == "R0"
+                   for i in ins):
+            c.err(f"{rel}: no `OUT {res_port}, R0` -- the received byte (R0) is not written to the result port")
+        clear = next((i for i in ins if i["m"] == "LDI" and i["ops"][0] == "R3"), None)
+        if clear is not None:
+            c.sites += 1
+            if self.imm(clear["ops"][1]) != 0:
+                c.err(f"{rel}:{clear['no']}: first `LDI R3, {clear['ops'][1]}` is the result/mark clear "
+                      f"value and must be 0, so UIO_OUT is not driven with an arbitrary value")
         mask = self.mask_of("uart_rx", "RX")
         first = next((i for i in ins if i["m"] == "LDI" and i["ops"][0] == "R1"), None)
         if first is None:
@@ -977,6 +1002,15 @@ class Checker:
                 self.unwired.append(f"uio_oe expression `{expr}` does not visibly realise open-drain mask 0x{od:02X}")
         else:
             self.concrete.err(f"top-level `uio_oe = {expr}` is an unsupported extraction pattern")
+        # prerequisite: the UART RX programs' debug writes are inert only while
+        # uio_oe does not drive the open-drain pins (DR 0010 "UART receive")
+        drives_od = (bool(int((lit.group(1) or lit.group(3)), 16) & od) if lit else "uio_out" in expr)
+        if od and self.rx_uio_writers and drives_od:
+            self.unwired.append(
+                f"prerequisite: {', '.join(sorted(self.rx_uio_writers))} write UIO_OUT debug bits, which would "
+                f"drive open-drain pins (mask 0x{od:02X}) low once `uio_oe = {expr}` enables them; the RX "
+                f"programs must release those pins or stop writing UIO_OUT first"
+            )
         reset = getattr(self, "uio_out_reset", None)
         if od and reset is not None and (reset & od) != od:
             self.unwired.append(

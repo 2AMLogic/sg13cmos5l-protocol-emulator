@@ -266,9 +266,19 @@ profile. `uart_tx_9600.asm` is the low-baud transmitter and uses the existing
 shifts the program in while `PROG_MODE` is high, and the RX programs sample
 only after the MODE drop. The RX programs also pulse `uio_out[0]` (sample
 mark) and `uio_out[1]` (frame error) for the bench. Those writes are
-observability aids, **not** pin roles. The table assigns no `uart_rx` role on
-`uio`, `uio_oe` does not drive those pads, and the `uart_rx` profile allows
-`OUT UIO_OUT` without checking a mask. No pin moved in this change. The UART
+observability aids, **not** pin roles: the table assigns no `uart_rx` role on
+`uio`. They are inert **only while `uio_oe` is `8'h00`** (today's wiring). Under
+the `uio_oe = 8'h81 & ~uio_out` wiring proposed for the RTL follow-up, the
+programs write `0x00`, `0x01` and `0x00`/`0x02` to `UIO_OUT`, so they would
+hold `uio[7]` (SDA) low for the whole run and `uio[0]` (SCL / SPI MISO) low
+except during each sample mark. Only `uio[1]` (role `input`) is harmless. The
+`uart_rx` profile therefore allows `OUT UIO_OUT` only as debug writes: the
+source may not be `R0` (the received byte must go to `uo_out`), the program
+must contain `OUT UO_OUT, R0`, and the clear value (first `LDI R3`) must be 0.
+It does not check a mask on the debug bits. **Condition on the RTL
+follow-up (unmet, reported under `[implementation]`):** before `uio_oe` is
+wired non-zero, the RX programs must release `uio[0]`/`uio[7]` first or stop
+writing `UIO_OUT`. No pin moved in this change. The UART
 boot program of DR 0013 uses RX on `ui_in[1]` (Tiny Tapeout option B). Whether
 this profile's RX moves to match is #133's decision, not this record's.
 
@@ -293,7 +303,9 @@ this profile's RX moves to match is #133's decision, not this record's.
 4. **implementation** — proposed electrical roles not wired in the top level
    and unmet prerequisites. On the committed tree: `uio[0]` and `uio[7]`
    open-drain are unwired (`assign uio_oe = 8'h00;`) and `port_uio_out`
-   resets to `8'h00` rather than releasing the masked pins.
+   resets to `8'h00` rather than releasing the masked pins. Once `uio_oe` drives
+the open-drain pins, the UART RX programs' `UIO_OUT` debug writes are also
+reported here as an unmet prerequisite.
 
 Default success means results 1–3 agree with this Proposed record, **not**
 that silicon implements every electrical role. `--require-implemented` also

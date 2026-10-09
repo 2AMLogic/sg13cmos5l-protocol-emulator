@@ -113,6 +113,15 @@ def case(name: str):
 CASES: list = []
 
 
+def strip_rx_uio_writes(fx: Fixture) -> None:
+    """Drop the UART RX programs' debug `OUT UIO_OUT` lines (a fixture stand-in
+    for the programs releasing the open-drain pins first)."""
+    for stem in ("uart_rx", "uart_rx_115200", "uart_rx_9600"):
+        p = fx.path(f"firmware/asm/{stem}.asm")
+        p.write_text("".join(l for l in p.read_text(encoding="utf-8").splitlines(True)
+                             if not re.match(r"\s*OUT\s+UIO_OUT", l)), encoding="utf-8")
+
+
 def expect_fail(fx: Fixture, needle: str, layer: str | None = None, *extra: str) -> None:
     code, out = fx.run(*extra)
     assert code == 1, f"expected exit 1, got {code}:\n{out}"
@@ -144,6 +153,7 @@ def _(fx):
     fx.mutate("src/tt_um_2amlogic_protocol_emulator.v", "assign uio_oe = 8'h00;",
               "assign uio_oe = 8'h00 | (8'h81 & ~uio_out);")
     fx.mutate("rtl/protocol_core.v", "port_uio_out <= 8'h00;", "port_uio_out <= 8'hFF;")
+    strip_rx_uio_writes(fx)
     code, out = fx.run("--require-implemented")
     assert code == 0 and "[implementation] COMPLETE" in out, out
 
@@ -185,6 +195,35 @@ def _(fx):
             expect_fail(f, f"firmware/asm/{stem}.asm", "concrete-firmware-bench")
         finally:
             f.close()
+
+
+@case("UART RX received byte moved from UO_OUT to UIO_OUT")
+def _(fx):
+    fx.mutate("firmware/asm/uart_rx.asm", "OUT   UO_OUT, R0       ; emit the received byte",
+              "OUT   UIO_OUT, R0      ; emit the received byte")
+    expect_fail(fx, "OUT UIO_OUT, R0 -- the received byte must go to UO_OUT", "concrete-firmware-bench")
+    code, out = fx.run()
+    assert "no `OUT UO_OUT, R0`" in out, out
+
+
+@case("UART RX arbitrary clear value on UIO_OUT")
+def _(fx):
+    fx.mutate("firmware/asm/uart_rx.asm", "LDI   R3, 0", "LDI   R3, 0x7E")
+    expect_fail(fx, "must be 0", "concrete-firmware-bench")
+
+
+@case("UART RX debug writes become a prerequisite once uio_oe drives the open-drain pins")
+def _(fx):
+    fx.mutate("src/tt_um_2amlogic_protocol_emulator.v", "assign uio_oe = 8'h00;",
+              "assign uio_oe = 8'h00 | (8'h81 & ~uio_out);")
+    fx.mutate("rtl/protocol_core.v", "port_uio_out <= 8'h00;", "port_uio_out <= 8'hFF;")
+    code, out = fx.run("--require-implemented")
+    assert code == 1 and "[implementation] INCOMPLETE: 1" in out, out
+    assert "firmware/asm/uart_rx.asm" in out and "write UIO_OUT debug bits" in out, out
+    # once the RX programs no longer write UIO_OUT the prerequisite clears
+    strip_rx_uio_writes(fx)
+    code, out = fx.run("--require-implemented")
+    assert code == 0 and "[implementation] COMPLETE" in out, out
 
 
 @case("UART RX sampled from the wrong port")
