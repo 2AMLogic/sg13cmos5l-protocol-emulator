@@ -10,6 +10,12 @@ Issues: #130 (this decision); #129 (area, DR 0014); #133 (pads); #44
 (ratification). Depends on DR [`0012`](0012-control-space-and-runtime-pin-direction.md)
 (the control space the primitives live in). Rescopes DR 0011 (PR #128).
 
+**Revision (2026-10-09, review of PR #153).** The first draft admitted P3
+(Manchester transmit) and 10BASE-T TX, although P3 failed this record's own
+test 3 (three unrelated protocols). P3 is now **not admitted** and
+10BASE-T TX is **deferred**, conditionally; test 3 is worded more precisely
+and is not relaxed (Admission test, P3, Verdicts, reopening condition 2).
+
 **Numbering note.** Checked 2026-10-09: `origin/main` has DRs 0001–0008, 0010,
 0012, 0013. PR #128 holds 0011 (parked), PR #84 reserves 0009, PR #147 holds
 0014. This record is 0015.
@@ -52,7 +58,13 @@ keeps the ISA the product and keeps out a peripheral.
    A blocking "wait for edge" read is therefore ruled out; hardware may run
    asynchronously, firmware polls a flag.
 3. **At least three unrelated protocols** can use it with different
-   configuration (table below).
+   configuration (table below). "Use" means the protocol at its own rate
+   **needs** the primitive on this ISA (the firmware alone cannot do that
+   job in the cycles available), not merely that it could be configured
+   onto it. Protocols of one family (for example the 802.3 Manchester PHYs)
+   count once. This record makes **no exception** to this test; a primitive
+   that fails it is not admitted, whatever target depends on it (P3,
+   Verdicts).
 4. **Reached through DR 0012's control space** (`WCTL`/`RCTL`, indices
    `0x10`–`0x1F`, reserved there for this record). No new opcode: DR 0001's
    table stays full at 16 of 16.
@@ -163,10 +175,25 @@ schedules below count that.
 - **Rough timing cost.** A small counter and an 8-way output override mux on
   `uo_out`. The mux sits on the output path to the pad; its cost against the
   pad is unverified (#133).
-- **Protocols served.** Stretch: 10BASE-T transmit. Plausible reuse
-  (ineligible as row 13 evidence): RC-5/RC-6 style IR (which row 13 names as a
-  candidate: **naming it here removes it from row 13's list**, and row 13's
-  protocol must be chosen from outside this record's tables). Core: none.
+- **Protocols served.** Stretch: 10BASE-T transmit. Core: none. That is
+  **one** protocol, so **P3 fails admission test 3** and is not admitted
+  (Verdicts). The search for others, recorded so it is not repeated:
+
+  | Candidate (figures from memory, confirm) | Half-bit at 50 MHz | Needs P3? |
+  |---|---|---|
+  | Other 802.3 Manchester PHYs (10BASE5/10BASE2 style) | 2.5 cycles (5-cycle bit), same as 10BASE-T | Same family as 10BASE-T; counts once under test 3 |
+  | RC-5/RC-6 style IR, baseband | ~889 µs ≈ 44,000 cycles | No: an `OUT` plus a `WAIT` loop places the edge exactly. P3 also has no IR carrier, so it does not do the modulated part either |
+  | DALI forward frame (1200 bit/s) | ~417 µs ≈ 20,800 cycles | No, for the same reason |
+  | MIL-STD-1553 (1 Mbit/s, Manchester II) | 500 ns = 25 cycles | No: 25 cycles leaves the firmware ample slots for `OUT`, shift and loop |
+
+  These slower links *could* be configured onto P3, but none needs it, and
+  test 3 asks for need. Counting them would stretch the test to admit the
+  one primitive a target depends on. The ~20-flop size above also assumes a
+  small `H`; serving the slow links would need a counter of about 16 bits.
+  Because RC-5/RC-6 IR (a row 13 candidate) was considered here, **naming it
+  here still removes it from row 13's list**, and so do DALI and
+  MIL-STD-1553. Row 13's protocol must be chosen from outside this record's
+  tables.
 - **Half-cycle edges are not proposed.** A mid-bit edge at 2.5 cycles (50 MHz)
   needs a negative-edge output flop. That adds a second clock-edge timing
   domain to a flow that has no 50 MHz closure evidence across all corners
@@ -214,13 +241,15 @@ schedules below count that.
 |---|---|---|---|
 | P1 CRC / LFSR | ~210 | ~3,800 | 3,000–6,000 |
 | P2 NRZI + stuff | ~42 | ~800 | 500–1,200 |
-| P3 Manchester TX | ~50 | ~900 | 600–1,400 |
-| P4 sampler | ~180 | ~3,300 | 2,500–5,000 |
+| P3 Manchester TX (not admitted) | ~50 | ~900 | 600–1,400 |
+| P4 sampler (not admitted) | ~180 | ~3,300 | 2,500–5,000 |
+| **Admitted (P1, P2)** | ~252 | **~4,600** | 3,500–7,200 |
 | **All four** | ~480 | **~8,800** | 6,600–13,600 |
 
 Against DR 0014's numbers: current cells+macro 38,450 µm² (30.4 % of the 2×2
 core of 126,685 µm²). Adding ~8,800 gives ~47,250 µm², **~37 %** of the 2×2
-core (band 36–41 %), below the repo's 60 % density target. These are
+core (band 36–41 %), below the repo's 60 % density target; the admitted
+pair alone (~4,600) gives ~43,050 µm², **~34 %** (band 33–36 %). These are
 floors-plus-estimates, not placed areas (wire, clock tree, fill excluded). The
 conclusion for #129: **the primitives fit in 2×2** and do not, on these
 numbers, move the tile recommendation of DR 0014; their price is ISA and
@@ -327,6 +356,10 @@ the above) but is unproven.
 
 ### 10BASE-T, transmit, 50 MHz, 5-cycle bit
 
+**This schedule depends on P3, which is not admitted** (it fails test 3).
+It is kept as the cycle budget a future record would start from, not as a
+basis for a verdict here (Verdicts: 10BASE-T TX is deferred).
+
 Registers: `R0` octet, `R1` octet counter. P3 drives the pin and does the
 mid-bit toggle; P1 does CRC-32.
 
@@ -395,7 +428,7 @@ receiver front end (comparator, squelch, link detect) is external.
 |---|---|---|
 | USB TX | no registers for CRC16, stuff counter or byte position (168 words, no CRC) | fits: 11 of 33 cycles, ~80–100 words; CRC in P1, stuffing/NRZI in P2 |
 | USB RX | no CRC, no state, 60 ns poll | fits with P4: edge to 20 ns, ~18 of 264 cycles per byte; no packet storage |
-| 10BASE-T TX | no FCS, pin sharing, no state | fits: 3 of 5 slots per bit, CRC-32 and FCS from P1; skew ±10 ns unverified |
+| 10BASE-T TX | no FCS, pin sharing, no state | fits **only with P3** (not admitted): 3 of 5 slots per bit, CRC-32 and FCS from P1; skew ±10 ns unverified |
 | 10BASE-T RX | 60 ns poll > 50 ns half-bit | fits with P4: ~18 of 40 cycles per octet; no frame storage |
 
 ## Verdicts
@@ -407,27 +440,44 @@ model under cocotb (`CLAUDE.md`), not that anything is met.
 | Protocol | Verdict | Primitives | Claim limited to |
 |---|---|---|---|
 | Low-speed USB | **Admit TX-only** | P1, P2 | A packet transmitter: SYNC, PID, data, CRC5/CRC16, NRZI, stuffing, EOP, graded by an independent bit-level USB decoder with the 33-cycle timing checked. **Not** "a USB device": enumeration needs receive. RX deferred |
-| 10BASE-T | **Admit TX-only** | P1, P3 | A frame transmitter: preamble, SFD, payload, CRC-32 FCS, Manchester at 10 Mbit/s, graded by an independent Manchester/CRC-32 decoder (zlib CRC-32 is an independent oracle). RX deferred. Edge-rate and jitter unverified |
+| 10BASE-T TX | **Defer** (conditional) | P1, P3 | until P3, or a replacement for it, passes the admission test (reopening 2). If reopened, the claim would be: a frame transmitter (preamble, SFD, payload, CRC-32 FCS, Manchester at 10 Mbit/s) graded by an independent Manchester/CRC-32 decoder (zlib CRC-32 is an independent oracle), edge rate and jitter unverified |
 | Low-speed USB RX | **Defer** | P4 | until P4 is admitted (below) |
 | 10BASE-T RX | **Defer** | P4 | until P4 is admitted (below) |
 
 **Primitives.** Admit P1 and P2 as proposed control-space entries: they are
 cheap (about 4,600 µm², about 12 % of the existing cells-plus-macro floor), the
 admission test holds with the widest protocol reach, and they carry the "CRC
-and line coding" half of the organizers' wording. Admit P3 only together with
-10BASE-T TX (without that target it serves only IR). **P4 is not admitted
+and line coding" half of the organizers' wording.
+
+**P3 is not admitted.** It serves one protocol that needs it (10BASE-T
+transmit); the other Manchester links considered either belong to the same
+family or are slow enough for plain firmware (P3, table). It fails test 3.
+This record does **not** make an exception for it. Test 3 is the rule that
+keeps a primitive from being a single-protocol peripheral in parts. A
+Manchester stage whose only real user is 10BASE-T TX is that peripheral's
+line coder. Waiving the test for the one primitive a stretch verdict
+depends on would bend the record's own rule to fit the result it wants.
+So **10BASE-T TX is deferred**, conditionally. Its cycle budget (the
+schedule above) is kept so a later record does not have to recount it.
+Without P3, the baseline's pin sharing and missing mid-bit slot remain.
+Whether P1 alone, with firmware `OUT`s for both half-bits, fits in 5 cycles
+per bit was **not counted** here and is not claimed.
+
+**P4 is not admitted
 by this record**: it is the largest verification surface (a free-running
 asynchronous block that the formal timing property and the
 gate-level regression must cover), the closest to a peripheral, and the
 organizers' third item ("clock recovery") is the one it buys. It is deferred
 as a **separate proposal**, not rejected, because it is the only primitive that
-turns the two TX-only verdicts into protocols.
+turns the TX-only verdict into a protocol.
 
-Why TX-only is a real result and not a hedge: with P1 to P3 the chip does the
-line coding and CRC and holds exact bit timing for both protocols, which is
-two of the organizers' three named items for each, and the transmit claim is
-fully gradable against independent models. It is also the half that fits the
-2027-01-18 deadline discipline.
+Why TX-only is a real result and not a hedge: with P1 and P2 the chip does
+the line coding and CRC for low-speed USB and holds exact bit timing. That
+is two of the organizers' three named items, and the transmit claim is
+fully gradable against independent models. It is also the half that fits
+the 2027-01-18 deadline discipline. For 10BASE-T this record has no
+admitted result, only a costed path (P1 plus an admissible output-timing
+primitive).
 
 **Reopening conditions.**
 
@@ -437,17 +487,26 @@ fully gradable against independent models. It is also the half that fits the
    free-running block (the property constrains instruction latency; the block
    must be shown not to alter it), (c) the area band re-read from a LibreLane
    run, and (d) the pad/input-synchronizer assumption re-checked after #133.
-2. **Half-bit skew.** If the Clause 14 jitter limit (confirm) cannot tolerate
-   40/60 ns, or the pad cannot toggle at 10 MHz (#133), reopen 10BASE-T TX
-   with one of: a clock giving an integer half-bit (60 or 100 MHz, needing
-   row 4 evidence at that clock), an external retimer, or a negative-edge
-   output flop.
+2. **10BASE-T TX (P3).** Reopen when a follow-up record does one of these.
+   (a) It shows a third unrelated protocol that *needs* P3's interface,
+   under test 3 as worded here. (b) It replaces P3 with a more general
+   output-timing primitive, such as a scheduled masked-pin write at a fixed
+   cycle offset, that passes test 3 on its own merits. Any protocol named
+   to make that case is then excluded from row 13, as above. (c) It argues
+   for an exception to test 3 in the open, with reasons, and is ratified as
+   such. That record is not this one. Whichever path is taken, the half-bit
+   skew remains open: the Clause 14 jitter limit (confirm) may not tolerate
+   40/60 ns, and the pad may not toggle at 10 MHz (#133). If either holds,
+   the remedies are a clock giving an integer half-bit (60 or 100 MHz,
+   needing row 4 evidence at that clock), an external retimer, or a
+   negative-edge output flop.
 3. **Ratification.** None of this exists until DR 0012 and DR 0001 are
    ratified (#44) and the control indices are frozen. If they are not, every
    verdict above reverts to DR 0011's defer.
-4. **Area / runtime.** If a LibreLane run of the design with P1–P3 shows the
-   6-hour Actions limit (#134) or the density target is at risk, drop P3 and
-   10BASE-T TX first (smallest protocol reach), then P1's byte op.
+4. **Area / runtime.** If a LibreLane run of the design with P1 and P2 shows
+   the 6-hour Actions limit (#134) or the density target is at risk, drop
+   P1's byte op first. A reopened P3 (condition 2) is then the first
+   candidate to drop, because it has the smallest protocol reach.
 5. **A drop-out condition on USB TX.** If the USB-LS TX claim, once its
    independent decoder exists, would need receive to be meaningful to a judge,
    the record that admits P4 should be written; this record does not pre-empt
@@ -460,8 +519,10 @@ fully gradable against independent models. It is also the half that fits the
   DR 0012, also unratified. They must exist before the submission ISA freeze.
   **Row 13's rule** ("chosen after the ISA is frozen, so it cannot shape the
   ISA") is respected by excluding every protocol named in this record's
-  tables from row 13: they were considered here. That includes Manchester/IR,
-  which row 13 currently lists as a candidate; the row 13 choice must come from
+  tables from row 13: they were considered here, whether or not the
+  primitive they were weighed against was admitted. That includes
+  Manchester/IR, which row 13 currently lists as a candidate (weighed
+  against P3 and found not to need it); the row 13 choice must come from
   outside this record (for example WS2812-style single-wire timing, or a
   target-role protocol).
 - **Row 3.** Every primitive's latency is fixed by its index. P4 is
@@ -473,8 +534,9 @@ fully gradable against independent models. It is also the half that fits the
   the ratifying act, and the dated note in the target spec points here.
 - **Row 4.** No value changes. 50 MHz is the working clock; 60 and 100 MHz are
   sensitivity only.
-- **Row 7 / DR 0014.** About +8,800 µm² (all four) or +5,500 (P1–P3) in a
-  2×2 core; tile recommendation unchanged.
+- **Row 7 / DR 0014.** About +4,600 µm² (P1, P2: admitted), +5,500 (with a
+  reopened P3) or +8,800 (all four) in a 2×2 core; tile recommendation
+  unchanged.
 - **`CLAUDE.md`.** "The ISA is the product" is honoured: nothing here frames a
   USB or Ethernet packet; the firmware does, and the same primitives are
   configuration-only for other protocols. A hardware USB or Ethernet block is
@@ -482,20 +544,21 @@ fully gradable against independent models. It is also the half that fits the
 
 ## Consequences
 
-- If ratified, DR 0012's index range `0x10`–`0x1F` is allocated as: P1
-  (`CRC_*`), P2 (`LINE_*`), P3 (`MAN_*`) in that range; P4 (`SAMP_*`) is held
-  pending its own record. Indices are not assigned here; the 16-index range
-  is enough for P1–P3 (about 10 used) and not for P4 as well, which is
-  another reason P4 needs its own record (it may need a second block of
-  indices, a DR 0012 amendment).
+- If ratified, DR 0012's index range `0x10`–`0x1F` is allocated to P1
+  (`CRC_*`) and P2 (`LINE_*`); P3 (`MAN_*`, or its replacement) and P4
+  (`SAMP_*`) are held pending their own records. Indices are not assigned
+  here; the 16-index range is enough for P1–P3 (about 10 used) and not for
+  P4 as well, which is another reason P4 needs its own record (it may need a
+  second block of indices, a DR 0012 amendment).
 - If ratified and built, each primitive needs: a bench against an independent
   oracle (for CRC, zlib/known test vectors; for NRZI/stuffing and Manchester,
   an independent decoder), extension of `no_data_dependent_latency` to the new
   indices, and a re-run of the LibreLane corner timing (row 4) with the new
   logic present. `spec/verification-plan.md` §6 is updated to point here.
 - No RTL, firmware or reference model is added by this record. Per deadline
-  discipline, USB-TX and 10BASE-T-TX firmware are scheduled only after DR 0012
-  and the primitives exist.
+  discipline, USB-TX firmware is scheduled only after DR 0012 and P1/P2
+  exist; 10BASE-T-TX firmware is not scheduled until reopening condition 2
+  is met.
 - If no primitive is ever built, DR 0011's defer is the standing verdict.
 
 ## Alternatives considered

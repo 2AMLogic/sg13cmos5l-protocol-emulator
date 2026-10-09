@@ -37,7 +37,9 @@ Proposed specification and decision records.
 - `decision-records/0015-stretch-protocols-with-neutral-primitives.md` —
   **Proposed 2026-10-09** (not ratified). Rescopes the parked DR 0011
   (PR #128) for the stretch protocols around protocol-neutral ISA primitives
-  in DR 0012's control space; TX-only verdicts, receive deferred.
+  in DR 0012's control space; admits CRC/LFSR and NRZI/bit-stuff, proposes
+  low-speed USB TX-only, defers 10BASE-T (its Manchester stage fails the
+  record's admission test) and all receive.
 - `verification-plan.md` — what is verified and how, including the formal
   properties, constrained-random suites, and reference models.
 - `gap-to-submission.md` — every spec row and template checklist item
