@@ -138,6 +138,9 @@ def _(fx):
     for layer in ("schema", "metadata-capability", "concrete-firmware-bench"):
         assert f"[{layer}] PASS" in out, out
     assert "[implementation] COMPLETE" in out, out
+    # DR 0012: the UART RX bench-debug writes (issue #154) enable no pin,
+    # because those programs write no pin-mode register.
+    assert "uart_rx program(s) write bench-debug values" not in out, out
     code, out = fx.run("--require-implemented")
     assert code == 0 and "--require-implemented: PASS" in out, out
 
@@ -147,7 +150,10 @@ def _(fx):
     fx.mutate(TOP, RUNTIME_OE, "assign uio_oe = 8'h00;")
     code, out = fx.run()
     assert code == 0, out
-    assert "[implementation] INCOMPLETE: 3" in out, out
+    assert "[implementation] INCOMPLETE: 4" in out, out
+    # the UART RX bench-debug writes are reported as a hazard under the 0x81 mask
+    assert "uart_rx program(s) write bench-debug values to UIO_OUT" in out, out
+    assert "asserts low continuously: uio[7]; except while a debug bit is set: uio[0]" in out, out
     assert "uio[0] open_drain" in out and "uio[7] open_drain" in out, out
     assert "port_uio_out resets to 8'h00" in out, out
 
@@ -194,6 +200,19 @@ def _(fx):
     assert code == 0 and "i2c_fast_sr.asm: `WCTL UIO_OD` writes 0x80" in out, out
 
 
+@case("runtime pin mode: a UART RX program that also enables a uio pin is a hazard")
+def _(fx):
+    # Issue #154: the RX bench-debug writes to UIO_OUT are inert under DR 0012
+    # only while the program writes no pin-mode register.
+    p = fx.path("firmware/asm/uart_rx.asm")
+    text = p.read_text(encoding="utf-8")
+    anchor = next(l for l in text.splitlines() if l.strip().startswith("LDI"))
+    fx.mutate("firmware/asm/uart_rx.asm", anchor + "\n", anchor + "\n        WCTL  UIO_OD, R1\n")
+    code, out = fx.run()
+    assert "uart_rx.asm writes bench-debug values to UIO_OUT and also writes UIO_OD" in out, out
+    assert "[implementation] INCOMPLETE" in out, out
+
+
 @case("--require-implemented fails while uio_oe = 0")
 def _(fx):
     fx.mutate(TOP, RUNTIME_OE, "assign uio_oe = 8'h00;")
@@ -201,10 +220,29 @@ def _(fx):
     assert code == 1 and "--require-implemented: FAIL" in out, out
 
 
-@case("--require-implemented passes once the mask and reset are wired")
-def _(fx):
+def wire_mask_and_reset(fx):
     fx.mutate(TOP, RUNTIME_OE, "assign uio_oe = 8'h00 | (8'h81 & ~uio_out);")
     fx.mutate("rtl/protocol_core.v", "port_uio_out <= 8'h00;", "port_uio_out <= 8'hFF;")
+
+
+@case("--require-implemented still fails with the mask wired: UART RX debug writes pull uio low")
+def _(fx):
+    wire_mask_and_reset(fx)
+    code, out = fx.run("--require-implemented")
+    assert code == 1 and "[implementation] INCOMPLETE: 1" in out, out
+    assert "uart_rx program(s) write bench-debug values to UIO_OUT" in out, out
+
+
+@case("--require-implemented passes once the mask and reset are wired and the RX debug writes are gone")
+def _(fx):
+    wire_mask_and_reset(fx)
+    for stem in ("uart_rx", "uart_rx_115200", "uart_rx_9600"):
+        p = fx.path(f"firmware/asm/{stem}.asm")
+        text = p.read_text(encoding="utf-8")
+        kept = [l for l in text.splitlines() if not re.match(r"\s*OUT\s+UIO_OUT\b", l)]
+        assert len(kept) < len(text.splitlines()), f"no OUT UIO_OUT line in {stem}.asm"
+        p.write_text("\n".join(kept) + "\n", encoding="utf-8")
+    fx.mutate_table(lambda t: t.pop("bench_debug"))
     code, out = fx.run("--require-implemented")
     assert code == 0 and "[implementation] COMPLETE" in out, out
 
@@ -235,6 +273,110 @@ def _(fx):
     fx.mutate("firmware/asm/uart_tx.asm", "OUT   UO_OUT, R1       ; TX idles HIGH",
               "OUT   UIO_OUT, R1       ; TX idles HIGH")
     expect_fail(fx, "OUT to port UIO_OUT", "concrete-firmware-bench")
+
+
+@case("UART RX mask LDI mutated in each RX program")
+def _(fx):
+    for stem in ("uart_rx", "uart_rx_115200", "uart_rx_9600"):
+        f = Fixture()
+        try:
+            f.mutate(f"firmware/asm/{stem}.asm", "LDI   R1, 1", "LDI   R1, 2")
+            expect_fail(f, f"firmware/asm/{stem}.asm", "concrete-firmware-bench")
+        finally:
+            f.close()
+
+
+@case("UART RX sampled from the wrong port")
+def _(fx):
+    fx.mutate("firmware/asm/uart_rx.asm", "IN    R2, UI_IN        ; SAMPLE (bit centre)",
+              "IN    R2, UIO_IN        ; SAMPLE (bit centre)")
+    expect_fail(fx, "IN from port UIO_IN", "concrete-firmware-bench")
+
+
+@case("table moves UART RX to ui_in[1]: RX programs fail by file")
+def _(fx):
+    def mv(t):
+        pin(t, "ui_in[0]")["protocol_roles"]["uart_rx"] = "unused"
+        pin(t, "ui_in[1]")["protocol_roles"]["uart_rx"] = "RX"
+    fx.mutate_table(mv)
+    code, out = fx.run()
+    assert code == 1 and "[schema] PASS" in out and "[concrete-firmware-bench] FAIL" in out, out
+    for stem in ("uart_rx", "uart_rx_115200", "uart_rx_9600"):
+        assert f"firmware/asm/{stem}.asm" in out, out
+
+
+RX_STEMS = ("uart_rx", "uart_rx_115200", "uart_rx_9600")
+
+
+@case("UART RX received byte misrouted to uio_out in each RX program")
+def _(fx):
+    for stem in RX_STEMS:
+        f = Fixture()
+        try:
+            rel = f"firmware/asm/{stem}.asm"
+            f.mutate(rel, "OUT   UO_OUT, R0       ; emit the received byte",
+                     "OUT   UIO_OUT, R0       ; emit the received byte")
+            code, out = f.run()
+            assert code == 1 and "[concrete-firmware-bench] FAIL" in out, out
+            assert re.search(rf"{re.escape(rel)}:\d+: OUT UIO_OUT, R0 is not a recognised bench-debug write", out), out
+            assert f"{rel}: no `OUT UO_OUT, Rx` emits a received (computed) byte" in out, out
+        finally:
+            f.close()
+
+
+@case("UART RX received byte copied to uio_out as well as uo_out")
+def _(fx):
+    fx.mutate("firmware/asm/uart_rx.asm", "OUT   UO_OUT, R0       ; emit the received byte",
+              "OUT   UO_OUT, R0       ; emit the received byte\n        OUT   UIO_OUT, R0")
+    expect_fail(fx, "OUT UIO_OUT, R0 is not a recognised bench-debug write", "concrete-firmware-bench")
+
+
+@case("UART RX arbitrary constant written to uio_out")
+def _(fx):
+    fx.mutate("firmware/asm/uart_rx.asm", "LDI   R3, 0\n", "LDI   R3, 0x7E\n")
+    expect_fail(fx, "OUT UIO_OUT, R3 writes 0x7E; bench_debug.uart_rx allows only 0, "
+                    "SAMPLE_MARK 0x01 and FRAME_ERROR 0x02", "concrete-firmware-bench")
+
+
+@case("UART RX frame-error flag shifted onto an undeclared uio_out bit")
+def _(fx):
+    fx.mutate("firmware/asm/uart_rx.asm",
+              "SHF   R2, LEFT         ; -> UIO_OUT bit 1 (SHF leaves Z alone)",
+              "SHF   R2, RIGHT        ; -> UIO_OUT bit 1 (SHF leaves Z alone)")
+    expect_fail(fx, "is not a recognised bench-debug write", "concrete-firmware-bench")
+
+
+@case("table moves the UART RX debug bits: RX programs fail by file")
+def _(fx):
+    fx.mutate_table(lambda t: t["bench_debug"]["uart_rx"]["bits"].update(SAMPLE_MARK=2, FRAME_ERROR=3))
+    code, out = fx.run()
+    assert code == 1 and "[schema] PASS" in out and "[concrete-firmware-bench] FAIL" in out, out
+    for stem in RX_STEMS:
+        assert f"firmware/asm/{stem}.asm" in out, out
+
+
+@case("table drops bench_debug: any UART RX write to uio_out fails")
+def _(fx):
+    fx.mutate_table(lambda t: t.pop("bench_debug"))
+    expect_fail(fx, "firmware/asm/uart_rx.asm: OUT to port UIO_OUT", "concrete-firmware-bench")
+
+
+@case("schema: bench_debug with an unknown bit name or out-of-range bit")
+def _(fx):
+    fx.mutate_table(lambda t: t["bench_debug"]["uart_rx"]["bits"].update(RESULT=4))
+    expect_fail(fx, "table.bench_debug.uart_rx.bits: names", "schema")
+    fx2 = Fixture()
+    try:
+        fx2.mutate_table(lambda t: t["bench_debug"]["uart_rx"]["bits"].update(FRAME_ERROR=8))
+        expect_fail(fx2, "each bit must be a distinct integer 0..7", "schema")
+    finally:
+        fx2.close()
+
+
+@case("UART TX 9600 mask LDI mutated")
+def _(fx):
+    fx.mutate("firmware/asm/uart_tx_9600.asm", "LDI   R1, 1", "LDI   R1, 2")
+    expect_fail(fx, "firmware/asm/uart_tx_9600.asm", "concrete-firmware-bench")
 
 
 @case("SPI idle image (CS bit) mutated in each mode")
@@ -471,8 +613,8 @@ def _(fx):
 
 @case("schema: uninventoried committed firmware file")
 def _(fx):
-    fx.path("firmware/asm/uart_rx.asm").write_text("HALT\n", encoding="utf-8")
-    expect_fail(fx, "firmware/asm/uart_rx.asm: committed firmware file is not in the inventory", "schema")
+    fx.path("firmware/asm/uart_rx_57600.asm").write_text("HALT\n", encoding="utf-8")
+    expect_fail(fx, "firmware/asm/uart_rx_57600.asm: committed firmware file is not in the inventory", "schema")
 
 
 @case("schema: protocol role placed twice or not at all")

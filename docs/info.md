@@ -277,4 +277,49 @@ silicon or by the LibreLane flow.
 
 ## External hardware
 
-None.
+The chip has digital pins only: 3.3 V I/O on the Tiny Tapeout demo board, no
+analog pads. Anything else goes on a Pmod
+([Pmods and demo board](https://tinytapeout.com/specs/pcb-etr/)).
+
+**Required for I2C:**
+
+- A pull-up resistor from each of `uio[0]` (SCL) and `uio[7]` (SDA) to 3.3 V.
+  The design releases an I2C line by tri-stating the pad, so the line reads
+  high only with a pull-up. No pull-up is assumed to exist on the board.
+  (Today's RTL fixes `uio_oe` to 0, so the pad is never driven at all; see
+  Pins above. The pull-ups are needed once the pads can be driven: DR 0012's
+  runtime `UIO_OD` register (#135), or DR 0008's fixed wiring if that is
+  built instead.)
+
+**Wiring today.** Tiny Tapeout's
+[recommended pinouts](https://tinytapeout.com/specs/pinouts/) cover two
+things: a UART bridged to USB by the demo board's MCU (option A: RX
+`ui_in[3]`, TX `uo_out[4]`; option B: RX `ui_in[1]`, TX `uo_out[0]`), and
+Pmods that put UART, SPI or I2C on one four-pin `uio` row. Against those:
+
+- **UART transmit** is on `uo_out[0]`, which is option B's TX. It reaches the
+  host over the board's USB bridge with no extra wiring.
+- **UART receive** is on `ui_in[0]`, not option B's `ui_in[1]`. It needs one
+  jumper wire.
+- **SPI** (CS, SCLK, MOSI on `uo_out[0..2]`, MISO on `uio[0]`) and **I2C**
+  (SCL `uio[0]`, SDA `uio[7]`) do not match the Pmod rows (SPI: CS `uio[0]`,
+  MOSI `uio[1]`, MISO `uio[2]`, SCK `uio[3]`; I2C: SCL `uio[2]`, SDA
+  `uio[3]`). An off-the-shelf Pmod needs a wire adapter.
+
+The plan is to move to the recommended pins (UART option B, SPI and I2C on
+the upper Pmod row) once the `uio` pins can be driven. See DR 0010, "Target
+pin plan"; the move is tracked in #155.
+
+**Not required:** UART and SPI at 3.3 V with 3.3 V peers need no extra parts
+beyond that wiring.
+
+**Levels and other buses.** A 5 V peer needs level shifting on a Pmod. A
+differential bus (USB D+/D-, 10BASE-T) needs a transceiver on a Pmod; neither
+is in the submitted design (not built; DR 0015 holds the proposed verdict and
+DR 0011 the current-ISA baseline).
+
+**Pad speed is unverified.** CMOS5L has no silicon yet and no pad
+characterization; Tiny Tapeout is checking whether SG13G2-derived numbers
+exist. Any claim of a maximum toggle rate at the pins, including the SPI SCLK
+ceiling of f_clk/4 (12.5 MHz at 50 MHz), holds for the core's cycle timing
+only, not at the pad.
