@@ -1,0 +1,118 @@
+{
+  "schema_version": 2,
+  "engine": "yosys",
+  "engine_version": "0.67+post",
+  "hdl_toplevel": "protocol_program_memory",
+  "run_id": "run-620507195a0148d2b9e1a0cbb2bf8139",
+  "status": "ok",
+  "instance_count": 99,
+  "area_um2": 2369.6064,
+  "sequential_area_um2": 1518.6528,
+  "instance_counts_by_type": {
+    "RM_IHPSG13_1P_256x16_c2_bm_bist": 1,
+    "sg13cmos5l_a21o_1": 4,
+    "sg13cmos5l_a21oi_1": 4,
+    "sg13cmos5l_and2_1": 3,
+    "sg13cmos5l_and3_1": 1,
+    "sg13cmos5l_dfrbpq_1": 31,
+    "sg13cmos5l_inv_1": 3,
+    "sg13cmos5l_mux2_1": 21,
+    "sg13cmos5l_nand2_1": 1,
+    "sg13cmos5l_nand2b_1": 1,
+    "sg13cmos5l_nand3_1": 5,
+    "sg13cmos5l_nand4_1": 5,
+    "sg13cmos5l_nor2_1": 5,
+    "sg13cmos5l_nor3_1": 3,
+    "sg13cmos5l_or2_1": 2,
+    "sg13cmos5l_or3_1": 1,
+    "sg13cmos5l_xnor2_1": 7,
+    "sg13cmos5l_xor2_1": 1
+  },
+  "leakage_power_nw": 26.54215499999999,
+  "leakage_by_type_nw": {
+    "sg13cmos5l_a21o_1": 0.158296,
+    "sg13cmos5l_a21oi_1": 0.11447700000000001,
+    "sg13cmos5l_and2_1": 0.13761,
+    "sg13cmos5l_and3_1": 0.14666200000000001,
+    "sg13cmos5l_dfrbpq_1": 0.510517,
+    "sg13cmos5l_inv_1": 0.0630032,
+    "sg13cmos5l_mux2_1": 0.246339,
+    "sg13cmos5l_nand2_1": 0.0812456,
+    "sg13cmos5l_nand2b_1": 0.128618,
+    "sg13cmos5l_nand3_1": 0.08718479999999999,
+    "sg13cmos5l_nand4_1": 0.0915718,
+    "sg13cmos5l_nor2_1": 0.08292350000000001,
+    "sg13cmos5l_nor3_1": 0.0950841,
+    "sg13cmos5l_or2_1": 0.114895,
+    "sg13cmos5l_or3_1": 0.121923,
+    "sg13cmos5l_xnor2_1": 0.194767,
+    "sg13cmos5l_xor2_1": 0.184817
+  },
+  "timing": null,
+  "sta": null,
+  "sta_unavailable_reason": "the optional klt_statime_native extension is not installed, so no gate-level static timing analysis was attempted -- from a repo checkout, run `uv sync --group statime` (or `maturin develop --release` inside native/statime/) and re-run to populate `sta`",
+  "structural": {
+    "latches": 0,
+    "expected_latches": 0,
+    "unexpected_latches": 0,
+    "comb_loops": 0,
+    "multi_driven": 0,
+    "has_critical": false
+  },
+  "cell_exclusions": {
+    "mode": "additive",
+    "requested": [],
+    "library_defaults": [],
+    "effective": [],
+    "validated": null,
+    "engine_supports_dont_use": null
+  },
+  "warnings": {
+    "total": 1,
+    "by_category": {
+      "unsupported_cell_library": 1
+    },
+    "representatives": [
+      {
+        "category": "unsupported_cell_library",
+        "count": 1,
+        "text": "cell_library 'sg13cmos5l_stdcell' has no verified mapping for: ABC -constr (driving cell/output load), load-driven sizing/buffering and ABC timing (timing is null); setundef -zero/hilomap (bare 0/1/x constants may remain unroutable in place-and-route). These capabilities were skipped."
+      }
+    ]
+  },
+  "netlist_path": {
+    "path": "flow/.klt/synthesize/run-620507195a0148d2b9e1a0cbb2bf8139/protocol_program_memory_synth.v",
+    "scope": "repo"
+  },
+  "netlist_sha256": "133e287758e924aa6b8c6c48fd54a965297a57e1e5471fc86c618771969afb3a",
+  "script_path": {
+    "path": "flow/.klt/synthesize/run-620507195a0148d2b9e1a0cbb2bf8139/synth_protocol_program_memory.ys",
+    "scope": "repo"
+  },
+  "run_script_path": {
+    "path": "flow/.klt/synthesize/run-620507195a0148d2b9e1a0cbb2bf8139/synth_protocol_program_memory.run.ys",
+    "scope": "repo"
+  },
+  "provenance": {
+    "klt_version": "0.6.0+g6457a605d73e",
+    "klayout_version": "0.30.12",
+    "pdk": {
+      "name": "ihp-sg13cmos5l",
+      "source": "PDK_ROOT environment variable",
+      "version": null
+    },
+    "deck": {
+      "name": "sg13cmos5l_stdcell__typ_1p20V_25C",
+      "content_hash": "sha256:34163f3e7de9f854afac57332ba06f1739b78e7ac35660a8a5ddd39c570124ad",
+      "released": false
+    },
+    "input": {
+      "content_hash": "sha256:3d1e5223f428b358fa863b45842402298351f2fc2b4c6576c6580e5a2bd10726",
+      "role": "source"
+    }
+  },
+  "equivalence": null,
+  "restructuring": null,
+  "arithmetic": null,
+  "baseline": null
+}

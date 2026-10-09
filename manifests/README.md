@@ -121,6 +121,23 @@ capture, PVT corner sweeps, or Monte Carlo.
   (#24) are the unmet remainder. It renders
   `unmet`/`unverifiable_provenance` at the pinned `klt` for the same
   provenance-binding reason as item 7 (below).
+- **Items 3 and 4 (layout evidence), state as of 2026-10-09 (issue #82)** —
+  append-only; earlier states are in the superseded records. Both citations
+  now point at record `20261009-054750-676f8b2`
+  (`verification/records/librelane-gds-signoff-check/`), run at klt pin
+  `6457a605d73e`. **Item 3 (DRC clean) is `met`** (`status: clean`, 0
+  violations, same GDS `sha256:9a5eb00e…`; deck hash moved to
+  `sha256:db9f44fa…`, coverage unchanged). **Item 4 (LVS clean) is still
+  `unmet`/`check_errored`**: klayout-tools #2656 and #2657 are fixed (45
+  top-level pins now promoted; the vector-macro connections convert), but
+  the cited klt/Yosys reference now stops at three further `write_verilog`
+  shapes the converter rejects (an `assign` part-select, a sized-constant
+  bus `assign`, and `1'h0`/`1'h1`), filed as klayout-tools#2941. For
+  information, not cited: the same run's compare against the LibreLane
+  post-route reference is `status: match` with `power_connectivity.status:
+  match` (`klt-lvs-asrouted.json`); whether item 4 should be defined against
+  that reference rather than the pre-place-and-route klt/Yosys netlist is an
+  open question for the issue owner, not decided by this note.
 - **Every citation pins a `content_hash`** — the sha256 of the cited
   artifact file, verifiable with `sha256sum`. Two honest caveats, on
   record here because the issue calls freshness "the point":
