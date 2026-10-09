@@ -279,6 +279,11 @@ auditable rather than a bare assertion:
   either — per `spec/target-spec.md` row 2, they enter this plan only once
   DR 0001 (or a successor decision record) shows they fit the ISA's timing
   budget.
+  DR 0015 (Proposed) now shows a hand-counted budget for low-speed USB
+  transmit with protocol-neutral primitives (10BASE-T deferred there); if it
+  is ratified, a bench per admitted primitive and a USB TX-only firmware
+  bench (independent decoder, timing checked) are added here.
+  Nothing is added until then.
 - Exact tooling choices (which formal tool, which cocotb/Icarus versions,
   which specific open-source UART/SPI/I2C reference-model libraries) are
   deferred to the harness-bootstrap issue (#2) and the firmware/RTL issues

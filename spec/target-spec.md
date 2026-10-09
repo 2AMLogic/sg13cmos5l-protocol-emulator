@@ -122,6 +122,16 @@ the convention this file uses for dated notes.
   The row's entry condition ("DR 0001's ISA can show a cycle budget") assumes
   pure firmware on today's ISA. #130 re-evaluates it with protocol-neutral ISA
   primitives in DR 0012's reserved control indices `0x10`–`0x1F`.
+  *Update (DR 0015, Proposed, same day):* DR 0015 does that evaluation. With a
+  CRC/LFSR step and an NRZI/bit-stuff unit, hand counts show a cycle budget
+  for low-speed USB transmit, which it proposes TX-only. A Manchester
+  transmit stage would give 10BASE-T transmit a budget too, but it serves
+  one protocol and fails the record's admission test, so 10BASE-T is
+  deferred, conditionally. Receive (clock recovery) is deferred to a
+  separate record. The row's cells are unchanged and nothing numeric is
+  bound; the hand counts are not measurements, the area figures are
+  estimates, and the 10BASE-T edge-rate and jitter assumptions are
+  unverified (#133).
 - **Row 3.** This row constrains instruction *latency*, not branch
   *outcome*. DR 0001 already lets an outcome depend on data (the I2C ACK
   wait), so polling-based clock recovery is consistent with this row. Any
