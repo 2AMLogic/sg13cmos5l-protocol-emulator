@@ -58,7 +58,9 @@ Assembler lint (DR 0001 section "Timing model" delegates to DR 0003):
 data-dependent-latency violation" when used for protocol timing -- the
 assembler flags, as a *warning*, any conditional branch whose governing
 flags were last set by an instruction consuming an `IN`-sampled (tainted)
-register. Warning-level, not an error, because DR 0001 itself names the
+register. Taint survives a trip through writable control state (`WCTL`
+then `RCTL`); the per-register rules are at `_lint_data_dependent_branches`
+and in firmware/README.md. Warning-level, not an error, because DR 0001 itself names the
 legitimate case (an I2C ACK wait is a protocol handshake, not a timing
 budget).
 
@@ -316,6 +318,143 @@ def _parse_ctl(token: str, line_no: int, *, write: bool, allow_reserved: bool):
     return k, (wcyc if write else rcyc), name
 
 
+# -- the data-dependent-latency lint: control-space taint (DR 0012) ----------
+#
+# A control register is not a pin, but a writable one *stores* whatever a
+# program wrote, so pin-derived data written with WCTL and read back with
+# RCTL is still pin-derived. The lint therefore tracks taint per piece of
+# control state, following what rtl/protocol_core.v (and, for the CRC,
+# rtl/protocol_program_memory.v) actually does on each access:
+#
+#   UIO_DIR, UIO_OD, PM_ADDR   plain registers: RCTL returns the byte last
+#       written. WCTL of a tainted register taints the index, WCTL of an
+#       untainted one clears it. (WCTL/RCTL PM_DATA_LO also post-increment
+#       PM_ADDR; +1 neither adds nor removes taint.)
+#   PM_DATA_HI, PM_DATA_LO     ALWAYS tainted on read. RCTL PM_DATA_HI does
+#       not read back the WCTL PM_DATA_HI latch (`pm_hi`): it returns the
+#       high byte of PM[PM_ADDR] and parks the low byte in `pm_lo`, which is
+#       all RCTL PM_DATA_LO ever returns. Both are program-memory contents,
+#       and what a word holds depends on every commit ever made to it (by
+#       this program, a loader before it, or the serial load) -- provenance
+#       the assembler cannot establish per word, so it does not try.
+#   PM_CRC_LO, PM_CRC_HI       one 16-bit accumulator over every committed
+#       word {pm_hi, Rs}. Any WCTL to either index clears it (the written
+#       value is ignored, so even a tainted Rs clears the taint). A WCTL
+#       PM_DATA_LO whose word is tainted -- tainted Rs, or a tainted
+#       `pm_hi` latch from an earlier WCTL PM_DATA_HI -- taints it, and it
+#       stays tainted until cleared: a later clean commit folds into the
+#       tainted sum. The CRC does not cover the address, so a tainted
+#       PM_ADDR does not taint it.
+#   BOOT_STATUS, HW_ID         never tainted: a load-time status bit and a
+#       build-time constant; WCTL to them is a no-op.
+#   RUN (write-only) and unassigned indices   read a constant 0x00.
+#
+# The scan is linear, so stored state is only known along straight-line
+# code from reset (where every control register and the CRC are cleared;
+# a CRC that already covers a serial load is a load-time fact, like
+# BOOT_STATUS). Wherever control can arrive from somewhere else, the stored
+# state is unknown and is treated as tainted until the program rewrites
+# (or, for the CRC, clears) it:
+#
+#   - at every label, and at every numeric branch target (a merge with
+#     whatever jumps there);
+#   - after an unconditional transfer (JMP, HALT, WCTL RUN): what follows
+#     is reachable only from elsewhere;
+#   - everywhere, in a program containing a WCTL RUN: a computed jump can
+#     land on any address, labelled or not.
+_CTL_STORED = ("UIO_DIR", "UIO_OD", "PM_ADDR")
+_CTL_PM_READ = ("PM_DATA_HI", "PM_DATA_LO")
+_CTL_CRC = ("PM_CRC_LO", "PM_CRC_HI")
+
+
+def _lint_data_dependent_branches(program: Program, label_addrs: set) -> None:
+    """Append DR 0001's data-dependent-latency warnings to `program`.
+
+    Runs over the assembled instructions (it changes no word): a `BZ`/`BNZ`
+    warns when the flag-setting op governing it consumed a tainted
+    register. Taint enters at `IN`, and at `RCTL` under the control-space
+    rules in the comment above.
+    """
+    idx = {name: entry[0] for name, entry in CTL_REGS.items()}
+    stored = {idx[n] for n in _CTL_STORED}
+    pm_read = {idx[n] for n in _CTL_PM_READ}
+    crc = {idx[n] for n in _CTL_CRC}
+    run = idx["RUN"]
+
+    def is_run(ins: Instruction) -> bool:
+        return ins.mnemonic == "WCTL" and (ins.word & 0xFF) == run
+
+    has_run = any(is_run(i) for i in program.instructions)
+    # Labels, plus the targets of branches written as bare addresses
+    # (forward references are resolved by now, so every branch word
+    # carries its target in imm8).
+    merge_addrs = set(label_addrs) | {
+        i.word & 0xFF for i in program.instructions if i.mnemonic in ("JMP", "BZ", "BNZ")
+    }
+
+    tainted = [False, False, False, False]  # per-register taint
+    last_flag_setter: Optional[Tuple[str, Tuple[bool, ...]]] = None
+    # Stored control state. Keys: the plain register indices, "hi" (the
+    # WCTL PM_DATA_HI latch, write-only but half of every committed word)
+    # and "crc" (PM_CRC_HI:LO, one accumulator behind two indices).
+    ctl = {k: has_run for k in (*stored, "hi", "crc")}
+
+    def forget_ctl() -> None:
+        for key in ctl:
+            ctl[key] = True
+
+    for ins in program.instructions:
+        mnemonic = ins.mnemonic
+        rd = (ins.word >> 10) & 0x3
+        rs = (ins.word >> 8) & 0x3
+        k = ins.word & 0xFF
+
+        if ins.addr in merge_addrs:
+            forget_ctl()
+
+        if mnemonic == "LDI":
+            tainted[rd] = False
+        elif mnemonic == "IN":
+            tainted[rd] = True
+        elif mnemonic == "RCTL":
+            if k in stored:
+                tainted[rd] = ctl[k]
+            elif k in pm_read:
+                tainted[rd] = True
+            elif k in crc:
+                tainted[rd] = ctl["crc"]
+            else:  # BOOT_STATUS, HW_ID, and the constant-0x00 reads
+                tainted[rd] = False
+        elif mnemonic == "WCTL":
+            # The source register rides the Rd field (as OUT's does).
+            if k in stored:
+                ctl[k] = tainted[rd]
+            elif k == idx["PM_DATA_HI"]:
+                ctl["hi"] = tainted[rd]
+            elif k == idx["PM_DATA_LO"]:
+                ctl["crc"] = ctl["crc"] or ctl["hi"] or tainted[rd]
+            elif k in crc:
+                ctl["crc"] = False
+        elif mnemonic == "MOV":
+            tainted[rd] = tainted[rs]
+        elif mnemonic in FLAG_SETTING_OPS:
+            last_flag_setter = (mnemonic, (tainted[rd], tainted[rs]))
+            tainted[rd] = tainted[rd] or tainted[rs]
+        if mnemonic in ("BZ", "BNZ") and last_flag_setter is not None:
+            setter, taints = last_flag_setter
+            if any(taints):
+                program.warnings.append(
+                    f"line {ins.line_no}: {mnemonic} branches on flags set by "
+                    f"{setter} over IN-sampled (pin-derived) data -- a "
+                    "data-dependent-latency hazard if this loop produces "
+                    "protocol timing (DR 0001 'Timing model'; legitimate "
+                    "for protocol handshakes, e.g. an I2C ACK wait)"
+                )
+
+        if mnemonic in ("JMP", "HALT") or is_run(ins):
+            forget_ctl()
+
+
 def _split_operands(rest: str) -> List[str]:
     """Split an operand field on commas/whitespace (commas optional)."""
     return [p for p in re.split(r"[,\s]+", rest.strip()) if p]
@@ -332,9 +471,6 @@ def assemble_text(
     forward_refs: List[Tuple[str, int, int]] = []  # (label, addr, line_no)
     open_section: Optional[Tuple[str, int]] = None  # (name, start addr)
     closed_sections: List[Tuple[str, int, int]] = []  # (name, start, end)
-
-    tainted = [False, False, False, False]  # per-register IN taint
-    last_flag_setter: Optional[Tuple[str, Tuple[bool, ...]]] = None
 
     lines = text.splitlines()
     for line_no, raw in enumerate(lines, start=1):
@@ -492,31 +628,6 @@ def assemble_text(
             Instruction(addr, word, mnemonic, text_out, cycles, line_no)
         )
 
-        # -- taint bookkeeping for the data-dependent-latency lint ---------
-        if mnemonic == "LDI":
-            tainted[rd] = False
-        elif mnemonic == "IN":
-            tainted[rd] = True
-        elif mnemonic == "RCTL":
-            # A control register is not pin data: no DR 0012 register
-            # reads a pin (UIO_* return the register value, not uio_oe).
-            tainted[rd] = False
-        elif mnemonic == "MOV":
-            tainted[rd] = tainted[rs]
-        elif mnemonic in FLAG_SETTING_OPS:
-            last_flag_setter = (mnemonic, (tainted[rd], tainted[rs]))
-            tainted[rd] = tainted[rd] or tainted[rs]
-        if mnemonic in ("BZ", "BNZ") and last_flag_setter is not None:
-            setter, taints = last_flag_setter
-            if any(taints):
-                program.warnings.append(
-                    f"line {line_no}: {mnemonic} branches on flags set by "
-                    f"{setter} over IN-sampled (pin-derived) data -- a "
-                    "data-dependent-latency hazard if this loop produces "
-                    "protocol timing (DR 0001 'Timing model'; legitimate "
-                    "for protocol handshakes, e.g. an I2C ACK wait)"
-                )
-
     if open_section is not None:
         raise AsmError(len(lines), f".cyclesec {open_section[0]!r} never closed")
 
@@ -531,6 +642,8 @@ def assemble_text(
         opcode = ins.word >> 12
         ins.word = (opcode << 12) | target
         ins.text = f"{ins.mnemonic} {label}"
+
+    _lint_data_dependent_branches(program, set(labels.values()))
 
     # Build cycle sections.
     for name, start, end in closed_sections:

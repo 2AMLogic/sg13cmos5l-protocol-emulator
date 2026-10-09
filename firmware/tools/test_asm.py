@@ -393,11 +393,116 @@ def test_ctl_allow_reserved_assembles_them_as_one_cycle():
     assert (w("RCTL R0, RUN").word, w("RCTL R0, RUN").cycles) == (0x9205, 1)
 
 def test_ctl_lint_rctl_is_not_pin_data():
-    # A control register is not a pin: branching on one is not the
-    # data-dependent-latency hazard the lint exists for, and an RCTL into
-    # a previously IN-tainted register clears the taint (like LDI).
+    # A status register is not a pin: branching on one is not the
+    # data-dependent-latency hazard the lint exists for, and an RCTL of
+    # one into a previously IN-tainted register clears the taint (like
+    # LDI). Writable control state is a different matter: the tests below.
     p = one("IN R0, UI_IN\nRCTL R0, BOOT_STATUS\nLDI R1, 1\nAND R0, R1\nBZ 0\n")
     assert p.warnings == []
+
+# Control-space taint (asm.py, "control-space taint"): each case is the
+# shortest program that reads one class of control state and branches on it.
+BRANCH_ON_R1 = "LDI R2, 1\nAND R1, R2\nBZ done\ndone: HALT\n"
+
+def warns(src):
+    p = one(src)
+    assert all("data-dependent-latency" in w for w in p.warnings)
+    return len(p.warnings)
+
+def test_ctl_lint_taint_survives_wctl_rctl_roundtrip():
+    # The Judge's repro on PR #160: PM_ADDR reads back the stored byte
+    # unchanged (rtl/protocol_core.v rctl_val), so this is `MOV R1, R0`
+    # with extra steps and must warn exactly as the MOV version does.
+    roundtrip = (
+        "loop:\nIN R0, UI_IN\nWCTL PM_ADDR, R0\nRCTL R1, PM_ADDR\n"
+        "LDI R2, 1\nAND R1, R2\nBZ loop\n"
+    )
+    mov = "loop:\nIN R0, UI_IN\nMOV R1, R0\nLDI R2, 1\nAND R1, R2\nBZ loop\n"
+    assert warns(mov) == 1
+    assert warns(roundtrip) == 1, "WCTL/RCTL must not launder IN taint"
+    for reg in ("UIO_DIR", "UIO_OD", "PM_ADDR"):
+        src = f"IN R0, UI_IN\nWCTL {reg}, R0\nRCTL R1, {reg}\n" + BRANCH_ON_R1
+        assert warns(src) == 1, f"{reg} stores what was written"
+
+def test_ctl_lint_constant_write_readback_is_clean():
+    for reg in ("UIO_DIR", "UIO_OD", "PM_ADDR"):
+        src = f"LDI R0, 0x0F\nWCTL {reg}, R0\nRCTL R1, {reg}\n" + BRANCH_ON_R1
+        assert warns(src) == 0, f"constant written to {reg} reads back constant"
+    # A constant rewrite clears an earlier tainted write, per index:
+    # PM_ADDR is rewritten, UIO_DIR is not.
+    both = "IN R0, UI_IN\nWCTL PM_ADDR, R0\nWCTL UIO_DIR, R0\nLDI R0, 3\nWCTL PM_ADDR, R0\n"
+    assert warns(both + "RCTL R1, PM_ADDR\n" + BRANCH_ON_R1) == 0
+    assert warns(both + "RCTL R1, UIO_DIR\n" + BRANCH_ON_R1) == 1
+    # Reset values are constants too: straight-line from entry is clean.
+    assert warns("RCTL R1, UIO_DIR\n" + BRANCH_ON_R1) == 0
+    # PM_DATA_LO's PM_ADDR post-increment neither adds nor removes taint.
+    inc = "LDI R0, 1\nWCTL PM_ADDR, R0\nWCTL PM_DATA_LO, R0\nRCTL R1, PM_ADDR\n"
+    assert warns(inc + BRANCH_ON_R1) == 0
+
+def test_ctl_lint_unknown_provenance_is_tainted():
+    # Stored state reached across a label, a numeric branch target or an
+    # unconditional transfer could have been written anywhere.
+    assert warns("top: RCTL R1, PM_ADDR\nLDI R2, 1\nAND R1, R2\nBZ top\n") == 1
+    assert warns("RCTL R1, PM_ADDR\nLDI R2, 1\nAND R1, R2\nBZ 0\n") == 1
+    assert warns("JMP 1\nRCTL R1, UIO_OD\n" + BRANCH_ON_R1) == 1
+    assert warns("HALT\nRCTL R1, UIO_OD\n" + BRANCH_ON_R1) == 1
+    # ...until the program rewrites it on the straight-line path.
+    assert warns("top: LDI R0, 0\nWCTL PM_ADDR, R0\nRCTL R1, PM_ADDR\n"
+                 "LDI R2, 1\nAND R1, R2\nBZ top\n") == 0
+    # WCTL RUN can land anywhere, so a program with one never has known
+    # stored state at an unwritten index -- even before the RUN.
+    run = "RCTL R1, PM_ADDR\nLDI R2, 1\nAND R1, R2\nBZ 5\nLDI R0, 0\nWCTL RUN, R0\n"
+    assert warns(run) == 1
+
+def test_ctl_lint_pm_data_reads_are_always_tainted():
+    # RCTL PM_DATA_HI returns PM[PM_ADDR][15:8] and latches the low byte
+    # for RCTL PM_DATA_LO (protocol_core.v stall_pmrd); neither reads back
+    # the WCTL PM_DATA_HI latch. Program-memory contents have no
+    # provenance the assembler can establish, constant writes included.
+    const = "LDI R0, 0\nWCTL PM_ADDR, R0\nWCTL PM_DATA_HI, R0\nWCTL PM_DATA_LO, R0\nWCTL PM_ADDR, R0\n"
+    assert warns(const + "RCTL R1, PM_DATA_HI\n" + BRANCH_ON_R1) == 1
+    assert warns(const + "RCTL R3, PM_DATA_HI\nRCTL R1, PM_DATA_LO\n" + BRANCH_ON_R1) == 1
+    assert warns("RCTL R1, PM_DATA_LO\n" + BRANCH_ON_R1) == 1
+
+def test_ctl_lint_crc_follows_committed_words():
+    crc_branch = "RCTL R1, PM_CRC_LO\n" + BRANCH_ON_R1
+    # Clean from reset, and after constant commits.
+    assert warns(crc_branch) == 0
+    const = "LDI R0, 7\nWCTL PM_DATA_HI, R0\nWCTL PM_DATA_LO, R0\n"
+    assert warns(const + crc_branch) == 0
+    assert warns(const + "RCTL R1, PM_CRC_HI\n" + BRANCH_ON_R1) == 0
+    # A tainted low byte taints the sum; both halves read tainted.
+    lo = "IN R0, UI_IN\nWCTL PM_DATA_LO, R0\n"
+    assert warns(lo + crc_branch) == 1
+    assert warns(lo + "RCTL R1, PM_CRC_HI\n" + BRANCH_ON_R1) == 1
+    # So does a tainted high-byte latch, committed by a constant low byte.
+    hi = "IN R0, UI_IN\nWCTL PM_DATA_HI, R0\nLDI R0, 0\nWCTL PM_DATA_LO, R0\n"
+    assert warns(hi + crc_branch) == 1
+    # A later constant commit folds into the tainted sum: still tainted.
+    assert warns(lo + const + crc_branch) == 1
+    # WCTL to either CRC index clears it whatever the register holds
+    # (pm_crc_clr ignores the data), so a tainted Rs still clears.
+    assert warns(lo + "WCTL PM_CRC_HI, R0\n" + crc_branch) == 0
+    assert warns(lo + "LDI R3, 0\nWCTL PM_CRC_LO, R3\n" + crc_branch) == 0
+    # The CRC covers data, not the address.
+    addr = "IN R0, UI_IN\nWCTL PM_ADDR, R0\n" + const
+    assert warns(addr + crc_branch) == 0
+    # Unknown across a merge until cleared.
+    assert warns("top: RCTL R1, PM_CRC_LO\nLDI R2, 1\nAND R1, R2\nBZ top\n") == 1
+
+def test_ctl_lint_status_and_constant_reads_stay_clean():
+    # Never tainted, wherever they are read: after tainted writes, across
+    # a merge, in a program with a RUN, and into an IN-tainted register.
+    dirty = "top: IN R0, UI_IN\nWCTL PM_ADDR, R0\nWCTL PM_DATA_LO, R0\n"
+    for reg in ("HW_ID", "BOOT_STATUS"):
+        tail = f"MOV R1, R0\nRCTL R1, {reg}\nLDI R2, 1\nAND R1, R2\nBZ top\n"
+        assert warns(dirty + tail) == 0, f"{reg} is not stored program data"
+        assert warns(dirty + tail + "WCTL RUN, R2\n") == 0
+    # Write-only RUN and unassigned indices read a constant 0x00.
+    for reg in ("RUN", "0x10"):
+        p = asm.assemble_text(dirty + f"RCTL R1, {reg}\n" + BRANCH_ON_R1,
+                              allow_reserved=True)
+        assert p.warnings == []
 
 def test_ctl_mnemonics_are_not_new_opcodes():
     # DR 0012 adds no opcode: DR 0001's table stays exactly 16.
@@ -476,7 +581,14 @@ ALL_TESTS = [
     test_ctl_cycle_costs_follow_dr0012_table,
     test_ctl_reserved_indices_are_errors_without_flag,
     test_ctl_allow_reserved_assembles_them_as_one_cycle,
-    test_ctl_lint_rctl_is_not_pin_data, test_ctl_mnemonics_are_not_new_opcodes,
+    test_ctl_lint_rctl_is_not_pin_data,
+    test_ctl_lint_taint_survives_wctl_rctl_roundtrip,
+    test_ctl_lint_constant_write_readback_is_clean,
+    test_ctl_lint_unknown_provenance_is_tainted,
+    test_ctl_lint_pm_data_reads_are_always_tainted,
+    test_ctl_lint_crc_follows_committed_words,
+    test_ctl_lint_status_and_constant_reads_stay_clean,
+    test_ctl_mnemonics_are_not_new_opcodes,
     test_cli_allow_reserved_flag, test_label_errors,
     test_directive_errors, test_error_carries_line_number,
     test_demo_program_assembles_and_covers_all_opcodes,

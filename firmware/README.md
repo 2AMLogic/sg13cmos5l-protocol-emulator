@@ -353,6 +353,28 @@ set by an instruction over `IN`-sampled (pin-derived) data — legitimate
 for a protocol handshake (an I2C ACK wait), a hazard if that loop produces
 protocol timing.
 
+Taint enters at `IN` and follows the data through `MOV` and the ALU ops;
+`LDI` clears it. It also survives a trip through the control space:
+`WCTL` then `RCTL` is a `MOV` with extra steps, so the lint tracks what
+each piece of writable control state holds, by what `rtl/protocol_core.v`
+does on each access.
+
+| `RCTL` of | Reads tainted when |
+|---|---|
+| `UIO_DIR`, `UIO_OD`, `PM_ADDR` | the last `WCTL` to that index wrote a tainted register. A `WCTL` of an untainted register clears it. (`PM_DATA_LO`'s post-increment of `PM_ADDR` changes nothing.) |
+| `PM_DATA_HI`, `PM_DATA_LO` | always. These return a program-memory word (`PM_DATA_HI` reads `PM[PM_ADDR]` and latches its low byte for `PM_DATA_LO`), not the `WCTL PM_DATA_HI` latch, and the assembler cannot establish what a memory word holds: it depends on every commit ever made to it. |
+| `PM_CRC_LO`, `PM_CRC_HI` | a tainted word has been committed since the last clear: a `WCTL PM_DATA_LO` of a tainted register, or one following a tainted `WCTL PM_DATA_HI`. A later constant commit does not clean the sum. Any `WCTL` to either CRC index clears it, whatever the register holds. A tainted `PM_ADDR` does not taint it (the CRC covers data, not addresses). |
+| `BOOT_STATUS`, `HW_ID` | never: a load-time status bit and a build-time constant. |
+
+The scan is linear, so stored control state is known only along
+straight-line code from reset, where every control register and the CRC
+are cleared. Where control can arrive from somewhere else the stored
+state is **unknown and reads as tainted** until the program rewrites it
+(or clears the CRC): at every label and numeric branch target, after a
+`JMP`, `HALT` or `WCTL RUN`, and everywhere in a program that contains a
+`WCTL RUN`, since a computed jump can land on any address. `BOOT_STATUS`
+and `HW_ID` stay clean in all of those.
+
 ## Build artifacts
 
 For `foo.asm`, `firmware/build/` carries:
