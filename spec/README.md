@@ -34,6 +34,10 @@ Proposed specification and decision records.
   update (issues #129–#134). They cover the runtime `uio` direction and
   program-memory access through the ISA's two spare no-op encodings, and a
   layered loader (serial recovery path + boot ROM in this ISA).
+- `decision-records/0015-stretch-protocols-with-neutral-primitives.md` —
+  **Proposed 2026-10-09** (not ratified). Rescopes the parked DR 0011
+  (PR #128) for the stretch protocols around protocol-neutral ISA primitives
+  in DR 0012's control space; TX-only verdicts, receive deferred.
 - `verification-plan.md` — what is verified and how, including the formal
   properties, constrained-random suites, and reference models.
 - `gap-to-submission.md` — every spec row and template checklist item

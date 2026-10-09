@@ -212,6 +212,10 @@ auditable rather than a bare assertion:
   either — per `spec/target-spec.md` row 2, they enter this plan only once
   DR 0001 (or a successor decision record) shows they fit the ISA's timing
   budget.
+  DR 0015 (Proposed) now shows a hand-counted budget for the transmit side
+  with protocol-neutral primitives; if it is ratified, a bench per primitive
+  and a TX-only firmware bench per protocol (independent decoders, timing
+  checked) are added here. Nothing is added until then.
 - Exact tooling choices (which formal tool, which cocotb/Icarus versions,
   which specific open-source UART/SPI/I2C reference-model libraries) are
   deferred to the harness-bootstrap issue (#2) and the firmware/RTL issues
