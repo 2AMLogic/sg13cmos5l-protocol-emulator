@@ -26,6 +26,7 @@ UO_DECL = "output reg  [7:0]  port_uo_out,"
 UIO_DECL = "output reg  [7:0]  port_uio_out"
 UO_RESET = "port_uo_out  <= 8'h00;"
 UIO_RESET = "port_uio_out <= 8'h00;"
+LOAD_HOLD = "      pc          <= 8'd0;\n      fetch_valid <= 1'b0;\n    end else begin\n"
 RO_DEFAULT = "default: ;  // OUT to a read-only port"
 EXEC_GATE = "if (fetch_valid && !halted) begin"
 INSERT_AT = "  assign fetch_addr = next_addr;\n"
@@ -48,6 +49,23 @@ MUTANTS: dict[str, tuple[str, list[tuple[str, str]]]] = {
     "readonly_port_writes": (
         "OUT to a read-only port (00/01) writes port 10",
         [(RO_DEFAULT, "default: port_uo_out <= rd_val;  // MUTANT: OUT to a read-only port")],
+    ),
+    # --- load-phase fault (needs a run_phase-low window of >= 3 cycles) ---
+    "load_phase_leak": (
+        "after 3 consecutive run_phase-low (load) cycles since reset, port 10 "
+        "is overwritten from ui_in: invisible if the load window is only one "
+        "cycle long",
+        [
+            (UO_RESET, "port_uo_out  <= 8'h00;\n      ld_cnt       <= 2'd0;  // MUTANT"),
+            (
+                LOAD_HOLD,
+                "      pc          <= 8'd0;\n      fetch_valid <= 1'b0;\n"
+                "      ld_cnt      <= ld_cnt + 2'd1;  // MUTANT\n"
+                "      if (ld_cnt == 2'd2) port_uo_out <= port_ui_in;  // MUTANT\n"
+                "    end else begin\n",
+            ),
+            (INSERT_AT, "  reg [1:0] ld_cnt;  // MUTANT\n" + INSERT_AT),
+        ],
     ),
     # --- wrong update timing --------------------------------------------
     "late_one_cycle": (

@@ -119,7 +119,7 @@ program says") ultimately reduces to.
 > state, not from any core write enable. The monitor is bound to the
 > unmodified `rtl/protocol_core.v` by `verification/formal/formal_top_pin_write.v`.
 > Cold start: `./verification/formal/run-pin-write-latency.sh`. Evidence:
-> record `verification/records/pin-write-latency/records/20261009-161014-ac0cc47.md`
+> record `verification/records/pin-write-latency/records/20261009-164147-7cf622d.md`
 > (flow: Yosys + `yosys-abc` + `yosys-smtbmc`/Z3; RTL only, no synthesis or
 > timing flow ran).
 >
@@ -140,8 +140,8 @@ program says") ultimately reduces to.
 > *What was shown.* Every executed `OUT` writes the source register's
 > value to the addressed writable port at the retiring edge, and the other
 > port holds. No output moves for read-only-port `OUT`s, other
-> instructions, `WAIT` stalls, `HALT`, load phase or the priming cycle,
-> except on reset (both ports return to 0). Two clock models check this:
+> instructions, `WAIT` stalls, `HALT`, a `run_phase`-low (load) window of any length
+> of at least one cycle after reset, or the priming cycle, except on reset (both ports return to 0). Two clock models check this:
 >
 > - a once-per-cycle EDGE model;
 > - a `clk2fflogic` FINE model, in which the clock and inputs may change
@@ -150,10 +150,12 @@ program says") ultimately reduces to.
 > ABC `scorr`+`pdr` proved both. That proof is **unbounded only within the
 > harness model**, and it rests on that one engine. The model is a free
 > 8-word program table behind a registered fetch, the mode_pin-low phase
-> model, and reset synchronised to the clock. The scorr-independent bounded
+> model with a free-length `run_phase`-low window after each reset (a free
+> `go` input chooses when run phase starts; the serial shift-in itself is
+> not modelled), and reset synchronised to the clock. The scorr-independent bounded
 > cross-check reached only 9 cycles (EDGE) and 14 samples (FINE). All
-> non-vacuity covers were reached: 15 EDGE and 17 FINE. A structural check
-> confirms every output bit is a rising-edge flop output on `clk`. Seven
+> non-vacuity covers were reached: 16 EDGE and 18 FINE. A structural check
+> confirms every output bit is a rising-edge flop output on `clk`. Eight
 > faulty core copies are rejected by both ABC and Z3:
 >
 > - wrong destination;
@@ -162,7 +164,10 @@ program says") ultimately reduces to.
 > - one cycle late;
 > - combinational early visibility;
 > - executes in the priming cycle;
-> - falling-edge (half a cycle early).
+> - falling-edge (half a cycle early);
+> - a fault that only fires after three consecutive load-phase cycles
+>   (an earlier fixed one-cycle load window could not see it; the Judge
+>   review of PR #127 caught this and the harness was changed).
 >
 > The falling-edge mutant *passes* the EDGE model and fails only the FINE
 > model and the structural check. That is recorded as the reason a

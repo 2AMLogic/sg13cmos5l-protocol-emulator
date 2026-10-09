@@ -23,8 +23,9 @@
  *     `opt_dff`, which would silently turn the program into all-NOPs.)
  *   - Run phase: the program memory's own phase timing for mode_pin low
  *     (reset, one mode-sampling edge, then run), as in formal_top.v. The
- *     load phase proper (mode_pin high, serial shift-in) is not explored;
- *     during it the core sees run_phase low exactly as here.
+ *     load phase proper (mode_pin high, serial shift-in) is modelled only
+ *     by what the core can see of it: run_phase low for any number of
+ *     cycles (>= 1) after reset, chosen by the free `go` input.
  *   - exec_valid = run_phase delayed one cycle (DR 0005's priming cycle
  *     executes nothing). DERIVED HERE from the phase model, never from the
  *     core's fetch_valid.
@@ -47,7 +48,8 @@ module formal_top_pin_write (
     input wire        clk,
     input wire [7:0]  ui_in,
     input wire [7:0]  uio_in,
-    input wire        rst_req
+    input wire        rst_req,
+    input wire        go
 );
 
   reg rst_n_r = 1'b0;
@@ -60,12 +62,28 @@ module formal_top_pin_write (
     if (!rst_n_r) begin
       started     <= 1'b0;
       run_phase_r <= 1'b0;
-    end else if (!started) begin
+    end else if (!started && go) begin
       started     <= 1'b1;
-      run_phase_r <= 1'b1;  // mode_pin == 0: enter run phase directly
+      run_phase_r <= 1'b1;  // mode_pin == 0: enter run phase (free `go`: the
+                            // run_phase-low window after reset has ANY length >= 1)
     end
   end
   wire run_phase = run_phase_r;
+
+  // Cover: a run_phase-low window of at least 2 cycles after a reset,
+  // followed by run phase and a real pin write (nonzero output). Shows the
+  // multi-cycle load window is reachable, not just assumed.
+  reg [1:0] lw       = 2'd0;
+  reg       long_win = 1'b0;
+  always @(posedge clk or negedge rst_n_r)
+    if (!rst_n_r) begin
+      lw       <= 2'd0;
+      long_win <= 1'b0;
+    end else if (!run_phase_r) begin
+      lw <= (lw == 2'd3) ? 2'd3 : lw + 2'd1;
+    end else if (lw >= 2'd2) begin
+      long_win <= 1'b1;
+    end
 
   (* anyconst *) reg [15:0] prog0;
   (* anyconst *) reg [15:0] prog1;
@@ -115,6 +133,10 @@ module formal_top_pin_write (
       .uo_out     (core_uo),
       .uio_out    (core_uio)
   );
+
+  always @(posedge clk)
+    if (long_win && (core_uo != 8'h00 || core_uio != 8'h00))
+      cover (1'b1);
 
   // Harness-level cover (both builds): a mid-run reset returns a nonzero
   // pin to the documented reset value 0 -- the one sanctioned non-OUT

@@ -251,7 +251,8 @@ fi
 # name:required-model -- the model on which the checker MUST reject it.
 for spec in wrong_destination:edge wrong_value:edge readonly_port_writes:edge \
             late_one_cycle:edge comb_early_visibility:edge \
-            executes_in_priming_cycle:edge negedge_half_cycle_early:fine; do
+            executes_in_priming_cycle:edge negedge_half_cycle_early:fine \
+            load_phase_leak:edge; do
   m="${spec%%:*}"; model="${spec##*:}"; src="$MUT_DIR/protocol_core_$m.v"
   if [ ! -s "$src" ] || cmp -s "$CORE" "$src"; then
     echo "ERROR: mutant $m missing or identical to the core" >&2; fail=1; continue

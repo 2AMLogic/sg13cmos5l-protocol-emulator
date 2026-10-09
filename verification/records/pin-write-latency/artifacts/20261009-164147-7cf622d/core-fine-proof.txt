@@ -1,6 +1,6 @@
-======== ABC command line "read_aiger /tmp/pwl116/final/core-fine.aig; print_stats; scorr; print_stats; pdr -a -T 600"
-[1;37m/tmp/pwl116/final/core-fine   :[0m i/o =  733/    8  lat =  577  and =   5909  lev = 35
-[1;37m/tmp/pwl116/final/core-fine   :[0m i/o =  733/    8  lat =    0  and =      0  lev =  0
+======== ABC command line "read_aiger /tmp/pw127/core-fine.aig; print_stats; scorr; print_stats; pdr -a -T 600"
+[1;37m/tmp/pw127/core-fine          :[0m i/o =  734/    8  lat =  587  and =   5948  lev = 35
+[1;37m/tmp/pw127/core-fine          :[0m i/o =  734/    8  lat =    0  and =      0  lev =  0
 Proved output 0 in frame 0 (trivial).
 Proved output 1 in frame 0 (trivial).
 Proved output 2 in frame 0 (trivial).
