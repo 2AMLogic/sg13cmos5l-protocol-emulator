@@ -126,3 +126,5 @@ test/gate_level_netlist.v
 .loom/gh-config-by-owner-*/
 .loom-local/
 # <<< loom-managed <<<
+# gate-level firmware regression scratch (issue #108)
+flow/firmware-gate-level/

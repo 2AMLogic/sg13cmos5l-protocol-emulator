@@ -43,8 +43,11 @@ VERILOG_SOURCES += $(PDK_ROOT)/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilo
 VERILOG_SOURCES += $(PDK_ROOT)/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_udp.v
 VERILOG_SOURCES += $(addprefix $(SRAM_DIR)/,$(SRAM_MODELS))
 
-# this gets copied in by the GDS action workflow
-VERILOG_SOURCES += $(PWD)/gate_level_netlist.v
+# this gets copied in by the GDS action workflow. GATE_LEVEL_NETLIST may be
+# overridden on the command line (flow/run-firmware-gate-level.sh, issue #108,
+# points it at a frozen LibreLane netlist instead of copying a file in).
+GATE_LEVEL_NETLIST ?= $(PWD)/gate_level_netlist.v
+VERILOG_SOURCES += $(GATE_LEVEL_NETLIST)
 
 endif
 

@@ -1,0 +1,15 @@
+{
+  "netlist": "/home/ubuntu/GitHub/sg13cmos5l-protocol-emulator/.loom/worktrees/issue-108/verification/records/post-layout-sdf-regression/artifacts/20261009-103407-9716a9e/tt_um_2amlogic_protocol_emulator.v", "netlist_sha256": "1abcb4525366964fdf0e8f549df0d8e047af89caed3e63cd5669696434d5daec",
+  "flow": "LibreLane (Tiny Tapeout gds workflow) netlist; Icarus+cocotb zero-delay simulation",
+  "runs": [
+    {"kind": "golden", "module": "test_firmware_uart", "result": "tests=3 failed=0 unparsed=0 rc=0", "as_required": true}
+,    {"kind": "golden", "module": "test_firmware_spi", "result": "tests=3 failed=0 unparsed=0 rc=0", "as_required": true}
+,    {"kind": "golden", "module": "test_firmware_i2c", "result": "tests=3 failed=0 unparsed=0 rc=0", "as_required": true}
+,    {"kind": "golden", "module": "test_firmware_i2c_sr", "result": "tests=4 failed=0 unparsed=0 rc=0", "as_required": true}
+,    {"kind": "negative-control", "module": "test_firmware_uart", "result": "tests=3 failed=1 unparsed=0 rc=2", "as_required": true}
+,    {"kind": "negative-control", "module": "test_firmware_spi", "result": "tests=3 failed=1 unparsed=0 rc=2", "as_required": true}
+,    {"kind": "negative-control", "module": "test_firmware_i2c", "result": "tests=3 failed=1 unparsed=0 rc=2", "as_required": true}
+,    {"kind": "negative-control", "module": "test_firmware_i2c_sr", "result": "tests=4 failed=2 unparsed=0 rc=2", "as_required": true}
+
+  ]
+}

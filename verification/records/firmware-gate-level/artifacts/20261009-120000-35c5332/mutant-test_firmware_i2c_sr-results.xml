@@ -1,0 +1,13 @@
+<testsuites name="results">
+  <testsuite name="all" package="all">
+    <property name="random_seed" value="1791543857" />
+    <testcase name="test_sr_images_fresh" classname="test_firmware_i2c_sr" file="/home/ubuntu/GitHub/sg13cmos5l-protocol-emulator/.loom/worktrees/issue-108/verification/test_firmware_i2c_sr.py" lineno="283" time="0.010863780975341797" sim_time_ns="0.0" ratio_time="0.0" />
+    <testcase name="test_sr_exact_programs_pass_model_with_negative_controls" classname="test_firmware_i2c_sr" file="/home/ubuntu/GitHub/sg13cmos5l-protocol-emulator/.loom/worktrees/issue-108/verification/test_firmware_i2c_sr.py" lineno="313" time="1.3686566352844238" sim_time_ns="174741.0" ratio_time="127673.366347058">
+      <failure error_type="ValueError" error_msg="no START in window" />
+    </testcase>
+    <testcase name="test_sr_poll_programs_stretch" classname="test_firmware_i2c_sr" file="/home/ubuntu/GitHub/sg13cmos5l-protocol-emulator/.loom/worktrees/issue-108/verification/test_firmware_i2c_sr.py" lineno="369" time="1.235698938369751" sim_time_ns="189160.99999999997" ratio_time="153080.16712352182">
+      <failure error_type="ValueError" error_msg="no START in window" />
+    </testcase>
+    <testcase name="test_sr_model_nominal_repeated_start_passes" classname="test_firmware_i2c_sr" file="/home/ubuntu/GitHub/sg13cmos5l-protocol-emulator/.loom/worktrees/issue-108/verification/test_firmware_i2c_sr.py" lineno="460" time="0.0006361007690429688" sim_time_ns="0.0" ratio_time="0.0" />
+  </testsuite>
+</testsuites>

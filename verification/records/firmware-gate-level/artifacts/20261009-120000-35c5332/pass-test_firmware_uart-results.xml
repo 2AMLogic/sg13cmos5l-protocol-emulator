@@ -1,0 +1,8 @@
+<testsuites name="results">
+  <testsuite name="all" package="all">
+    <property name="random_seed" value="1791543806" />
+    <testcase name="test_committed_image_is_fresh" classname="test_firmware_uart" file="/home/ubuntu/GitHub/sg13cmos5l-protocol-emulator/.loom/worktrees/issue-108/verification/test_firmware_uart.py" lineno="342" time="0.0013229846954345703" sim_time_ns="0.0" ratio_time="0.0" />
+    <testcase name="test_uart_frames_pass_independent_reference_model" classname="test_firmware_uart" file="/home/ubuntu/GitHub/sg13cmos5l-protocol-emulator/.loom/worktrees/issue-108/verification/test_firmware_uart.py" lineno="375" time="0.25829410552978516" sim_time_ns="46681.0" ratio_time="180728.08864241382" />
+    <testcase name="test_reference_model_negative_control_still_fails" classname="test_firmware_uart" file="/home/ubuntu/GitHub/sg13cmos5l-protocol-emulator/.loom/worktrees/issue-108/verification/test_firmware_uart.py" lineno="471" time="9.131431579589844e-05" sim_time_ns="0.0" ratio_time="0.0" />
+  </testsuite>
+</testsuites>
