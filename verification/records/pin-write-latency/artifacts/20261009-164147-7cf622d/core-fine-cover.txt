@@ -1,0 +1,50 @@
+##   0:00:00  Solver: z3
+##   0:00:00  Checking cover reachability in step 0..
+##   0:00:00  Checking cover reachability in step 1..
+##   0:00:00  Checking cover reachability in step 2..
+##   0:00:00  Checking cover reachability in step 3..
+##   0:00:00  Checking cover reachability in step 4..
+##   0:00:00  Checking cover reachability in step 5..
+##   0:00:00  Checking cover reachability in step 6..
+##   0:00:00  Checking cover reachability in step 7..
+##   0:00:00  Checking cover reachability in step 8..
+##   0:00:00  Checking cover reachability in step 9..
+##   0:00:00  Reached cover statement at /home/ubuntu/GitHub/sg13cmos5l-protocol-emulator/.loom/worktrees/pr-127/verification/formal/pin_write_latency.sv:268.7-268.23 ($flatten/u_property.$cover$/home/ubuntu/GitHub/sg13cmos5l-protocol-emulator/.loom/worktrees/pr-127/verification/formal/pin_write_latency.sv:268$233) in step 9.
+##   0:00:00  Checking cover reachability in step 9..
+##   0:00:00  Reached cover statement at /home/ubuntu/GitHub/sg13cmos5l-protocol-emulator/.loom/worktrees/pr-127/verification/formal/formal_top_pin_write.v:180.7-180.32 ($cover$/home/ubuntu/GitHub/sg13cmos5l-protocol-emulator/.loom/worktrees/pr-127/verification/formal/formal_top_pin_write.v:180$411) in step 9.
+##   0:00:00  Checking cover reachability in step 9..
+##   0:00:00  Checking cover reachability in step 10..
+##   0:00:01  Reached cover statement at /home/ubuntu/GitHub/sg13cmos5l-protocol-emulator/.loom/worktrees/pr-127/verification/formal/formal_top_pin_write.v:177.7-177.71 ($cover$/home/ubuntu/GitHub/sg13cmos5l-protocol-emulator/.loom/worktrees/pr-127/verification/formal/formal_top_pin_write.v:177$403) in step 10.
+##   0:00:01  Checking cover reachability in step 10..
+##   0:00:01  Checking cover reachability in step 11..
+##   0:00:02  Reached cover statement at /home/ubuntu/GitHub/sg13cmos5l-protocol-emulator/.loom/worktrees/pr-127/verification/formal/pin_write_latency.sv:252.11-252.99 ($flatten/u_property.$cover$/home/ubuntu/GitHub/sg13cmos5l-protocol-emulator/.loom/worktrees/pr-127/verification/formal/pin_write_latency.sv:252$273) in step 11.
+##   0:00:02  Checking cover reachability in step 11..
+##   0:00:02  Reached cover statement at /home/ubuntu/GitHub/sg13cmos5l-protocol-emulator/.loom/worktrees/pr-127/verification/formal/pin_write_latency.sv:251.11-251.98 ($flatten/u_property.$cover$/home/ubuntu/GitHub/sg13cmos5l-protocol-emulator/.loom/worktrees/pr-127/verification/formal/pin_write_latency.sv:251$304) in step 11.
+##   0:00:02  Checking cover reachability in step 11..
+##   0:00:03  Reached cover statement at /home/ubuntu/GitHub/sg13cmos5l-protocol-emulator/.loom/worktrees/pr-127/verification/formal/pin_write_latency.sv:261.7-261.66 ($flatten/u_property.$cover$/home/ubuntu/GitHub/sg13cmos5l-protocol-emulator/.loom/worktrees/pr-127/verification/formal/pin_write_latency.sv:261$217) in step 11.
+##   0:00:03  Checking cover reachability in step 11..
+##   0:00:03  Reached cover statement at /home/ubuntu/GitHub/sg13cmos5l-protocol-emulator/.loom/worktrees/pr-127/verification/formal/pin_write_latency.sv:252.11-252.99 ($flatten/u_property.$cover$/home/ubuntu/GitHub/sg13cmos5l-protocol-emulator/.loom/worktrees/pr-127/verification/formal/pin_write_latency.sv:252$313) in step 11.
+##   0:00:03  Checking cover reachability in step 11..
+##   0:00:04  Reached cover statement at /home/ubuntu/GitHub/sg13cmos5l-protocol-emulator/.loom/worktrees/pr-127/verification/formal/pin_write_latency.sv:264.7-264.96 ($flatten/u_property.$cover$/home/ubuntu/GitHub/sg13cmos5l-protocol-emulator/.loom/worktrees/pr-127/verification/formal/pin_write_latency.sv:264$222) in step 11.
+##   0:00:04  Reached cover statement at /home/ubuntu/GitHub/sg13cmos5l-protocol-emulator/.loom/worktrees/pr-127/verification/formal/pin_write_latency.sv:251.11-251.98 ($flatten/u_property.$cover$/home/ubuntu/GitHub/sg13cmos5l-protocol-emulator/.loom/worktrees/pr-127/verification/formal/pin_write_latency.sv:251$264) in step 11.
+##   0:00:04  Checking cover reachability in step 11..
+##   0:00:04  Reached cover statement at /home/ubuntu/GitHub/sg13cmos5l-protocol-emulator/.loom/worktrees/pr-127/verification/formal/pin_write_latency.sv:266.7-266.54 ($flatten/u_property.$cover$/home/ubuntu/GitHub/sg13cmos5l-protocol-emulator/.loom/worktrees/pr-127/verification/formal/pin_write_latency.sv:266$230) in step 11.
+##   0:00:04  Checking cover reachability in step 11..
+##   0:00:04  Reached cover statement at /home/ubuntu/GitHub/sg13cmos5l-protocol-emulator/.loom/worktrees/pr-127/verification/formal/pin_write_latency.sv:252.11-252.99 ($flatten/u_property.$cover$/home/ubuntu/GitHub/sg13cmos5l-protocol-emulator/.loom/worktrees/pr-127/verification/formal/pin_write_latency.sv:252$293) in step 11.
+##   0:00:04  Checking cover reachability in step 11..
+##   0:00:05  Reached cover statement at /home/ubuntu/GitHub/sg13cmos5l-protocol-emulator/.loom/worktrees/pr-127/verification/formal/pin_write_latency.sv:251.11-251.98 ($flatten/u_property.$cover$/home/ubuntu/GitHub/sg13cmos5l-protocol-emulator/.loom/worktrees/pr-127/verification/formal/pin_write_latency.sv:251$284) in step 11.
+##   0:00:05  Checking cover reachability in step 11..
+##   0:00:06  Reached cover statement at /home/ubuntu/GitHub/sg13cmos5l-protocol-emulator/.loom/worktrees/pr-127/verification/formal/pin_write_latency.sv:252.11-252.99 ($flatten/u_property.$cover$/home/ubuntu/GitHub/sg13cmos5l-protocol-emulator/.loom/worktrees/pr-127/verification/formal/pin_write_latency.sv:252$333) in step 11.
+##   0:00:06  Checking cover reachability in step 11..
+##   0:00:06  Reached cover statement at /home/ubuntu/GitHub/sg13cmos5l-protocol-emulator/.loom/worktrees/pr-127/verification/formal/pin_write_latency.sv:251.11-251.98 ($flatten/u_property.$cover$/home/ubuntu/GitHub/sg13cmos5l-protocol-emulator/.loom/worktrees/pr-127/verification/formal/pin_write_latency.sv:251$324) in step 11.
+##   0:00:06  Checking cover reachability in step 11..
+##   0:00:07  Checking cover reachability in step 12..
+##   0:00:08  Checking cover reachability in step 13..
+##   0:00:08  Reached cover statement at /home/ubuntu/GitHub/sg13cmos5l-protocol-emulator/.loom/worktrees/pr-127/verification/formal/formal_top_pin_write.v:151.7-151.52 ($cover$/home/ubuntu/GitHub/sg13cmos5l-protocol-emulator/.loom/worktrees/pr-127/verification/formal/formal_top_pin_write.v:151$387) in step 13.
+##   0:00:08  Checking cover reachability in step 13..
+##   0:00:10  Reached cover statement at /home/ubuntu/GitHub/sg13cmos5l-protocol-emulator/.loom/worktrees/pr-127/verification/formal/formal_top_pin_write.v:139.7-139.19 ($cover$/home/ubuntu/GitHub/sg13cmos5l-protocol-emulator/.loom/worktrees/pr-127/verification/formal/formal_top_pin_write.v:139$378) in step 13.
+##   0:00:10  Checking cover reachability in step 13..
+##   0:00:11  Reached cover statement at /home/ubuntu/GitHub/sg13cmos5l-protocol-emulator/.loom/worktrees/pr-127/verification/formal/pin_write_latency.sv:272.7-272.64 ($flatten/u_property.$cover$/home/ubuntu/GitHub/sg13cmos5l-protocol-emulator/.loom/worktrees/pr-127/verification/formal/pin_write_latency.sv:272$239) in step 13.
+##   0:00:11  Checking cover reachability in step 13..
+##   0:00:12  Reached cover statement at /home/ubuntu/GitHub/sg13cmos5l-protocol-emulator/.loom/worktrees/pr-127/verification/formal/pin_write_latency.sv:270.7-270.64 ($flatten/u_property.$cover$/home/ubuntu/GitHub/sg13cmos5l-protocol-emulator/.loom/worktrees/pr-127/verification/formal/pin_write_latency.sv:270$234) in step 13.
+##   0:00:12  Status: PASSED
