@@ -1,0 +1,71 @@
+{
+  "schema_version": 1,
+  "engine": "icarus",
+  "hdl_toplevel": "tt_um_2amlogic_protocol_emulator",
+  "testbench": "test_random_regression",
+  "status": "pass",
+  "test_count": 8,
+  "passed_count": 8,
+  "failed_count": 0,
+  "skipped_count": 0,
+  "tests": [
+    {
+      "name": "test_recorded_seed_matches_request",
+      "status": "passed",
+      "sim_time_ns": 0.0,
+      "real_time_s": 0.0
+    },
+    {
+      "name": "test_uart_random_programs",
+      "status": "passed",
+      "sim_time_ns": 1332061.0,
+      "real_time_s": 1.203
+    },
+    {
+      "name": "test_spi_random_programs",
+      "status": "passed",
+      "sim_time_ns": 512201.0,
+      "real_time_s": 0.44
+    },
+    {
+      "name": "test_i2c_random_programs",
+      "status": "passed",
+      "sim_time_ns": 3898000.9999999995,
+      "real_time_s": 5.447
+    },
+    {
+      "name": "test_i2c_rd_random_programs",
+      "status": "passed",
+      "sim_time_ns": 7317741.000000001,
+      "real_time_s": 10.448
+    },
+    {
+      "name": "test_negative_controls_mutated_templates_fail",
+      "status": "passed",
+      "sim_time_ns": 444541.0,
+      "real_time_s": 0.511
+    },
+    {
+      "name": "test_i2c_rd_negative_controls",
+      "status": "passed",
+      "sim_time_ns": 1648681.0,
+      "real_time_s": 2.73
+    },
+    {
+      "name": "test_zz_write_report",
+      "status": "passed",
+      "sim_time_ns": 0.0,
+      "real_time_s": 0.001
+    }
+  ],
+  "coverage": null,
+  "trace": null,
+  "environment": {
+    "engine": "icarus",
+    "engine_version": "13.0",
+    "cocotb_version": "2.1.0",
+    "results_xml": "<repo>/verification/.klt/functional-verification/results_icarus.xml",
+    "random_seed": 20261009,
+    "sdf": null
+  }
+}

@@ -1,0 +1,40 @@
+Startpoint: ui_in[1] (input port clocked by clk)
+Endpoint: uo_out[1] (output port clocked by clk)
+Path Group: clk
+Path Type: max
+
+Fanout         Cap        Slew       Delay        Time   Description
+---------------------------------------------------------------------------------------------
+                                  0.000000    0.000000   clock clk (rise edge)
+                                  0.000000    0.000000   clock network delay (propagated)
+                                  4.000000    4.000000 ^ input external delay
+     1    0.003212    0.020417    0.002913    4.002913 ^ ui_in[1] (in)
+                                                         ui_in[1] (net)
+                      0.020417    0.000000    4.002913 ^ input3/A (sg13cmos5l_buf_1)
+     2    0.035359    0.149746    0.154643    4.157556 ^ input3/X (sg13cmos5l_buf_1)
+                                                         net3 (net)
+                      0.149909    0.004262    4.161818 ^ fanout105/A (sg13cmos5l_buf_1)
+     8    0.068086    0.281610    0.297615    4.459433 ^ fanout105/X (sg13cmos5l_buf_1)
+                                                         net105 (net)
+                      0.282037    0.009496    4.468928 ^ _0994_/S (sg13cmos5l_mux2_1)
+     1    0.026197    0.098729    0.299562    4.768491 v _0994_/X (sg13cmos5l_mux2_1)
+                                                         _0427_ (net)
+                      0.098849    0.003200    4.771691 v _0995_/A0 (sg13cmos5l_mux2_1)
+     1    0.020689    0.090197    0.203909    4.975600 v _0995_/X (sg13cmos5l_mux2_1)
+                                                         uo_out[1] (net)
+                      0.090265    0.002317    4.977916 v uo_out[1] (out)
+                                              4.977916   data arrival time
+
+                                 20.000000   20.000000   clock clk (rise edge)
+                                  0.000000   20.000000   clock network delay (propagated)
+                                 -0.250000   19.750002   clock uncertainty
+                                  0.000000   19.750002   clock reconvergence pessimism
+                                 -4.000000   15.750001   output external delay
+                                             15.750001   data required time
+---------------------------------------------------------------------------------------------
+                                             15.750001   data required time
+                                             -4.977916   data arrival time
+---------------------------------------------------------------------------------------------
+                                             10.772084   slack (MET)
+
+

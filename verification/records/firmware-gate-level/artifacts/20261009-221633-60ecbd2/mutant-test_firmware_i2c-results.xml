@@ -1,0 +1,13 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuites name="cocotb tests"><testsuite name="test_firmware_i2c" errors="0" failures="1" skipped="0" tests="3" time="0.405" timestamp="2026-10-09T22:17:15.640020+00:00" hostname="robb-studio"><testcase classname="test_firmware_i2c" name="test_committed_images_are_fresh" time="0.003"><properties><property name="cocotb" value="True" /><property name="random_seed" value="1791584235" /><property name="file" value="verification/test_firmware_i2c.py" /><property name="line" value="410" /><property name="sim_time_unit" value="ns" /><property name="sim_time_start" value="0.0" /><property name="sim_time_stop" value="0.0" /><property name="sim_time_duration" value="0.0" /><property name="sim_time_ratio" value="0.0" /></properties></testcase><testcase classname="test_firmware_i2c" name="test_i2c_both_grades_pass_independent_reference_model" time="0.402"><failure message="no START in window" type="ValueError">Traceback (most recent call last):
+  File "verification/test_firmware_i2c.py", line 470, in test_i2c_both_grades_pass_independent_reference_model
+    scl, sda, report = grade_transfer(caps, mode)
+                       ~~~~~~~~~~~~~~^^^^^^^^^^^^
+  File "verification/test_firmware_i2c.py", line 368, in grade_transfer
+    return scl, sda, check_transfer(scl, sda, fast_mode=mode.fast_mode)
+                     ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "verification/reference_models/i2c.py", line 223, in check_transfer
+    raise ValueError("no START in window")
+ValueError: no START in window
+</failure><properties><property name="cocotb" value="True" /><property name="random_seed" value="1791584235" /><property name="file" value="verification/test_firmware_i2c.py" /><property name="line" value="449" /><property name="sim_time_unit" value="ns" /><property name="sim_time_start" value="0.001" /><property name="sim_time_stop" value="131381.001" /><property name="sim_time_duration" value="131381.0" /><property name="sim_time_ratio" value="327051.5273594195" /></properties><system-err>Test failed with COCOTB_RANDOM_SEED=1791584235
+</system-err></testcase><testcase classname="test_firmware_i2c" name="test_reference_model_negative_control_still_fails" time="0.000"><properties><property name="cocotb" value="True" /><property name="random_seed" value="1791584235" /><property name="file" value="verification/test_firmware_i2c.py" /><property name="line" value="545" /><property name="sim_time_unit" value="ns" /><property name="sim_time_start" value="131381.002" /><property name="sim_time_stop" value="131381.002" /><property name="sim_time_duration" value="0.0" /><property name="sim_time_ratio" value="0.0" /></properties></testcase></testsuite></testsuites>

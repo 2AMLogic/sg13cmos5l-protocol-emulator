@@ -1,0 +1,50 @@
+     -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:242  in gpi_load_users                  Loaded entry library: '/opt/homebrew/Cellar/python@3.13/3.13.16/Frameworks/Python.framework/Versions/3.13/Python'
+     -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:234  in gpi_load_users                  Running entry func 'initialize' from loaded library '<scratch>/venv/lib/python3.13/site-packages/cocotb/simulator.cpython-313-darwin.so'
+     -.--ns INFO     pygpi                              ..ib/pygpi/embed.cpp:115  in initialize                      Using Python 3.13.14 interpreter at <scratch>/venv/bin/python
+     -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:74   in gpi_print_registered_impl       GPI: VPI support registered
+     0.00ns INFO     cocotb.initialize                  Seeding Python random module with 1
+     0.00ns INFO     cocotb.initialize                  Initialized cocotb v2.1.0 from <scratch>/venv/lib/python3.13/site-packages/cocotb
+     0.00ns INFO     cocotb.initialize                  Running on Icarus Verilog version 13.0 (stable)
+     0.00ns INFO     cocotb.regression                  Running tests
+     0.00ns INFO     cocotb.regression                  running test_load_integrity.test_readout_equals_crc_hqx_for_random_images (1/9)
+                                                            Random images of 1, 2, 3, 16, 97 and 256 words, three seeds each:
+181072.00ns INFO     cocotb.regression                  test_load_integrity.test_readout_equals_crc_hqx_for_random_images passed
+181072.00ns INFO     cocotb.regression                  running test_load_integrity.test_readout_is_the_running_crc_and_only_moves_on_a_commit (2/9)
+                                                            Through a 24-word load: after each word's 16th edge the readout is
+184975.00ns INFO     cocotb.regression                  test_load_integrity.test_readout_is_the_running_crc_and_only_moves_on_a_commit passed
+184975.00ns INFO     cocotb.regression                  running test_load_integrity.test_byte_select_is_ui_in_1_alone_and_needs_no_clock (3/9)
+                                                            With the clock between edges, uo_out follows ui_in[1] back and
+186325.60ns INFO     cocotb.regression                  test_load_integrity.test_byte_select_is_ui_in_1_alone_and_needs_no_clock passed
+186325.60ns INFO     cocotb.regression                  running test_load_integrity.test_truncated_load_mismatches (4/9)
+                                                            A host that stops early -- a whole number of words short, or part
+232977.60ns INFO     cocotb.regression                  test_load_integrity.test_truncated_load_mismatches passed
+232977.60ns INFO     cocotb.regression                  running test_load_integrity.test_dropped_clock_edge_mismatches (5/9)
+                                                            One clock edge lost anywhere in the load: every position of a
+472499.60ns INFO     cocotb.regression                  test_load_integrity.test_dropped_clock_edge_mismatches passed
+472499.60ns INFO     cocotb.regression                  running test_load_integrity.test_doubled_clock_edge_mismatches (6/9)
+                                                            One clock edge seen twice anywhere in the load: every position of a
+836071.60ns INFO     cocotb.regression                  test_load_integrity.test_doubled_clock_edge_mismatches passed
+836071.60ns INFO     cocotb.regression                  running test_load_integrity.test_load_protocol_unchanged_by_the_readout (7/9)
+                                                            The same image, loaded three ways, runs on the same edges:
+844472.61ns INFO     cocotb.regression                  test_load_integrity.test_load_protocol_unchanged_by_the_readout passed
+844472.61ns INFO     cocotb.regression                  running test_load_integrity.test_no_readout_outside_the_load_phase (8/9)
+                                                            uo_out is 0x00 while reset is held and on the mode-sampling cycle,
+845905.61ns INFO     cocotb.regression                  test_load_integrity.test_no_readout_outside_the_load_phase passed
+845905.61ns INFO     cocotb.regression                  running test_load_integrity.test_readout_holds_at_saturation (9/9)
+                                                            After 256 words the load saturates (DR 0001): further bits commit
+887248.61ns INFO     cocotb.regression                  test_load_integrity.test_readout_holds_at_saturation passed
+887248.61ns INFO     cocotb.regression                  ****************************************************************************************************************************************
+                                                        ** TEST                                                                            STATUS  SIM TIME (ns)  REAL TIME (s)  RATIO (ns/s) **
+                                                        ****************************************************************************************************************************************
+                                                        ** test_load_integrity.test_readout_equals_crc_hqx_for_random_images                PASS      181072.00           0.25     722022.53  **
+                                                        ** test_load_integrity.test_readout_is_the_running_crc_and_only_moves_on_a_commit   PASS        3903.00           0.01     493072.79  **
+                                                        ** test_load_integrity.test_byte_select_is_ui_in_1_alone_and_needs_no_clock         PASS        1350.60           0.00     505629.65  **
+                                                        ** test_load_integrity.test_truncated_load_mismatches                               PASS       46652.00           0.06     722894.08  **
+                                                        ** test_load_integrity.test_dropped_clock_edge_mismatches                           PASS      239522.00           0.33     719801.09  **
+                                                        ** test_load_integrity.test_doubled_clock_edge_mismatches                           PASS      363572.00           0.50     728504.48  **
+                                                        ** test_load_integrity.test_load_protocol_unchanged_by_the_readout                  PASS        8401.00           0.01     659557.17  **
+                                                        ** test_load_integrity.test_no_readout_outside_the_load_phase                       PASS        1433.00           0.00     659002.07  **
+                                                        ** test_load_integrity.test_readout_holds_at_saturation                             PASS       41343.00           0.06     735890.44  **
+                                                        ****************************************************************************************************************************************
+                                                        ** TESTS=9 PASS=9 FAIL=0 SKIP=0                                                               887248.61           1.23     720467.25  **
+                                                        ****************************************************************************************************************************************

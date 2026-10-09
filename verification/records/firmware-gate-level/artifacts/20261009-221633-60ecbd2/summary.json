@@ -1,0 +1,19 @@
+{
+  "netlist": "verification/records/post-layout-sdf-regression/artifacts/20261009-220508-ce64319/tt_um_2amlogic_protocol_emulator.v", "netlist_sha256": "2a674b88313e5dc5a519de086aa6dc9acfffc28397d2598c1b0a8e6a544a58db",
+  "flow": "LibreLane (Tiny Tapeout gds workflow) netlist; Icarus+cocotb zero-delay simulation",
+  "runs": [
+    {"kind": "golden", "module": "test_firmware_uart", "result": "tests=3 failed=0 unparsed=0 rc=0", "as_required": true}
+,    {"kind": "golden", "module": "test_firmware_spi", "result": "tests=3 failed=0 unparsed=0 rc=0", "as_required": true}
+,    {"kind": "golden", "module": "test_firmware_i2c", "result": "tests=3 failed=0 unparsed=0 rc=0", "as_required": true}
+,    {"kind": "golden", "module": "test_firmware_i2c_sr", "result": "tests=4 failed=0 unparsed=0 rc=0", "as_required": true}
+,    {"kind": "golden", "module": "test_control_space", "result": "tests=9 failed=0 unparsed=0 rc=0", "as_required": true}
+,    {"kind": "golden", "module": "test_load_integrity", "result": "tests=9 failed=0 unparsed=0 rc=0", "as_required": true}
+,    {"kind": "negative-control", "module": "test_firmware_uart", "result": "tests=3 failed=1 unparsed=0 rc=2", "as_required": true}
+,    {"kind": "negative-control", "module": "test_firmware_spi", "result": "tests=3 failed=1 unparsed=0 rc=2", "as_required": true}
+,    {"kind": "negative-control", "module": "test_firmware_i2c", "result": "tests=3 failed=1 unparsed=0 rc=2", "as_required": true}
+,    {"kind": "negative-control", "module": "test_firmware_i2c_sr", "result": "tests=4 failed=2 unparsed=0 rc=2", "as_required": true}
+,    {"kind": "negative-control", "module": "test_control_space", "result": "tests=9 failed=5 unparsed=0 rc=2", "as_required": true}
+,    {"kind": "negative-control", "module": "test_load_integrity", "result": "tests=9 failed=9 unparsed=0 rc=2", "as_required": true}
+
+  ]
+}

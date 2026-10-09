@@ -13,8 +13,10 @@
 # Which netlist: the `tt_submission` artifact's `<top>.v` of a `gds` workflow
 # run -- the final netlist that the template's own `gl_test` job compiles.
 # Default: the byte-identical copy frozen under verification/records/
-# post-layout-sdf-regression/ from run 37985271399 (the first netlist of the
-# DR 0012 control-space design, issue #135). Override with
+# post-layout-sdf-regression/ from run 37995950973 (the first netlist with
+# DR 0013 layer 1's load-phase CRC readout, issue #137; it supersedes the
+# copy from run 37985271399, the first netlist of the DR 0012 control-space
+# design, issue #135). Override with
 # --netlist <file> (e.g. one from `gh run download <id> -n tt_submission`).
 #
 # Negative control (a suite that cannot fail cannot cite its passes): the
@@ -39,10 +41,17 @@
 # control: the net `\u_core.ctl_stall` (the fixed stall of the
 # 2-cycle control accesses) stuck at 0 the same way, on a second mutated copy.
 #
-# Usage:  ./flow/run-firmware-gate-level.sh [--netlist FILE] [--full] [--control-space]
+# Load integrity (issue #137, DR 0013 layer 1): --load-integrity adds
+# verification/test_load_integrity.py, which is pin-only. Neither fault above
+# is aimed at it (the load phase executes nothing), so it gets its own: the
+# net `\pm_crc[0]` (bit 0 of PM_CRC, which feeds both the CRC's own feedback
+# and the uo_out readout mux) stuck at 0 the same way, on a third mutated copy.
+#
+# Usage:  ./flow/run-firmware-gate-level.sh [--netlist FILE] [--full] [--control-space] [--load-integrity]
 #   --full  also runs verification/test_firmware_i2c_sr.py (the Sr/stretch
 #           sibling bench); default is the three issue-#108 protocol benches.
 #   --control-space  also runs verification/test_control_space.py.
+#   --load-integrity also runs verification/test_load_integrity.py.
 # Env:    PDK_ROOT must contain ihp-sg13cmos5l/ (default ~/share/pdk).
 # Runs sims strictly one at a time. Writes flow/firmware-gate-level/
 # (gitignored): per-run results.xml, logs, mutated netlist, summary.json.
@@ -51,7 +60,7 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SCRATCH="${REPO_ROOT}/flow/firmware-gate-level"
-NETLIST="${REPO_ROOT}/verification/records/post-layout-sdf-regression/artifacts/20261009-203349-4ff0e14/tt_um_2amlogic_protocol_emulator.v"
+NETLIST="${REPO_ROOT}/verification/records/post-layout-sdf-regression/artifacts/20261009-220508-ce64319/tt_um_2amlogic_protocol_emulator.v"
 MODULES=(test_firmware_uart test_firmware_spi test_firmware_i2c)
 export PDK_ROOT="${PDK_ROOT:-$HOME/share/pdk}"
 
@@ -60,7 +69,8 @@ while [ $# -gt 0 ]; do
     --netlist) NETLIST="$2"; shift 2 ;;
     --full) MODULES+=(test_firmware_i2c_sr); shift ;;
     --control-space) MODULES+=(test_control_space); shift ;;
-    -h|--help) sed -n '2,40p' "${BASH_SOURCE[0]}"; exit 0 ;;
+    --load-integrity) MODULES+=(test_load_integrity); shift ;;
+    -h|--help) sed -n '2,57p' "${BASH_SOURCE[0]}"; exit 0 ;;
     *) echo "FATAL: unknown argument $1" >&2; exit 1 ;;
   esac
 done
@@ -74,6 +84,7 @@ command -v iverilog >/dev/null && command -v cocotb-config >/dev/null \
 rm -rf "$SCRATCH"; mkdir -p "$SCRATCH"
 MUTANT="${SCRATCH}/mutant-wait_cnt0-stuck0.v"
 MUTANT_CTL="${SCRATCH}/mutant-ctl_stall-stuck0.v"
+MUTANT_CRC="${SCRATCH}/mutant-pm_crc0-stuck0.v"
 inject_fault() {  # inject_fault <net-regex> <net-name-for-messages> <out-netlist>
   python3 -I - "$NETLIST" "$3" "$1" "$2" <<'PYEOF'
 import re, sys
@@ -93,9 +104,16 @@ for mod in "${MODULES[@]}"; do
   if [ "$mod" = test_control_space ]; then
     inject_fault '\\u_core\.ctl_stall' '\u_core.ctl_stall' "$MUTANT_CTL"
   fi
+  if [ "$mod" = test_load_integrity ]; then
+    inject_fault '\\pm_crc\[0\]' '\pm_crc[0]' "$MUTANT_CRC"
+  fi
 done
 mutant_for() {  # the faulted netlist that must make <module> fail
-  if [ "$1" = test_control_space ]; then echo "$MUTANT_CTL"; else echo "$MUTANT"; fi
+  case "$1" in
+    test_control_space) echo "$MUTANT_CTL" ;;
+    test_load_integrity) echo "$MUTANT_CRC" ;;
+    *) echo "$MUTANT" ;;
+  esac
 }
 
 run_bench() {  # run_bench <tag> <netlist> <module>  -> sets RC, prints counts

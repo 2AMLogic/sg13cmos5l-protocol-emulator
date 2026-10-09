@@ -1,0 +1,50 @@
+     -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:242  in gpi_load_users                  Loaded entry library: '/opt/homebrew/Cellar/python@3.13/3.13.16/Frameworks/Python.framework/Versions/3.13/Python'
+     -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:234  in gpi_load_users                  Running entry func 'initialize' from loaded library '<scratch>/venv/lib/python3.13/site-packages/cocotb/simulator.cpython-313-darwin.so'
+     -.--ns INFO     pygpi                              ..ib/pygpi/embed.cpp:115  in initialize                      Using Python 3.13.14 interpreter at <scratch>/venv/bin/python
+     -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:74   in gpi_print_registered_impl       GPI: VPI support registered
+     0.00ns INFO     cocotb.initialize                  Seeding Python random module with 1
+     0.00ns INFO     cocotb.initialize                  Initialized cocotb v2.1.0 from <scratch>/venv/lib/python3.13/site-packages/cocotb
+     0.00ns INFO     cocotb.initialize                  Running on Icarus Verilog version 13.0 (stable)
+     0.00ns INFO     cocotb.regression                  Running tests
+     0.00ns INFO     cocotb.regression                  running test_control_space.test_reset_values_and_identity (1/9)
+                                                            DR 0012 "Reset values: everything is an input": after reset and a
+  4441.00ns INFO     cocotb.regression                  test_control_space.test_reset_values_and_identity passed
+  4441.00ns INFO     cocotb.regression                  running test_control_space.test_readback_and_pin_mode_logic (2/9)
+                                                            Every read/write register reads back what was written, and uio_oe
+ 19062.00ns INFO     cocotb.regression                  test_control_space.test_readback_and_pin_mode_logic passed
+ 19062.00ns INFO     cocotb.regression                  running test_control_space.test_reserved_indices_and_remaining_noops (3/9)
+                                                            Writes to unassigned / read-only indices change nothing; reads of
+ 31983.00ns INFO     cocotb.regression                  test_control_space.test_reserved_indices_and_remaining_noops passed
+ 31983.00ns INFO     cocotb.regression                  running test_control_space.test_fixed_stall_is_exact_and_data_independent (4/9)
+                                                            The three 2-cycle accesses cost exactly 2 cycles and every other
+ 59984.00ns INFO     cocotb.regression                  test_control_space.test_fixed_stall_is_exact_and_data_independent passed
+ 59984.00ns INFO     cocotb.regression                  running test_control_space.test_no_flag_side_effects (5/9)
+                                                            No control access changes Z or C. Pin-level: a BZ / BNZ placed
+ 72205.00ns INFO     cocotb.regression                  test_control_space.test_no_flag_side_effects passed
+ 72205.00ns INFO     cocotb.regression                  running test_control_space.test_program_memory_write_read_roundtrip (6/9)
+                                                            Words written through PM_ADDR / PM_DATA_HI / PM_DATA_LO read back
+114746.01ns INFO     cocotb.regression                  test_control_space.test_program_memory_write_read_roundtrip passed
+114746.01ns INFO     cocotb.regression                  running test_control_space.test_written_code_executes_and_run_jumps (7/9)
+                                                            Firmware can load firmware: a routine written through the control
+120977.01ns INFO     cocotb.regression                  test_control_space.test_written_code_executes_and_run_jumps passed
+120977.01ns INFO     cocotb.regression                  running test_control_space.test_pm_crc_matches_binascii_crc_hqx (8/9)
+                                                            PM_CRC is CRC-16/XMODEM over every committed word, by any path,
+166298.01ns INFO     cocotb.regression                  test_control_space.test_pm_crc_matches_binascii_crc_hqx passed
+166298.01ns INFO     cocotb.regression                  running test_control_space.test_i2c_images_open_drain_preamble (9/9)
+                                                            The six committed I2C images now carry `WCTL UIO_OD` with 0x81 (DR
+478819.01ns INFO     cocotb.regression                  test_control_space.test_i2c_images_open_drain_preamble passed
+478819.01ns INFO     cocotb.regression                  ***************************************************************************************************************************
+                                                        ** TEST                                                               STATUS  SIM TIME (ns)  REAL TIME (s)  RATIO (ns/s) **
+                                                        ***************************************************************************************************************************
+                                                        ** test_control_space.test_reset_values_and_identity                   PASS        4441.00           0.01     603690.63  **
+                                                        ** test_control_space.test_readback_and_pin_mode_logic                 PASS       14621.00           0.02     656923.06  **
+                                                        ** test_control_space.test_reserved_indices_and_remaining_noops        PASS       12921.00           0.02     638099.03  **
+                                                        ** test_control_space.test_fixed_stall_is_exact_and_data_independent   PASS       28001.00           0.04     651413.28  **
+                                                        ** test_control_space.test_no_flag_side_effects                        PASS       12221.00           0.02     674420.21  **
+                                                        ** test_control_space.test_program_memory_write_read_roundtrip         PASS       42541.00           0.06     684999.81  **
+                                                        ** test_control_space.test_written_code_executes_and_run_jumps         PASS        6231.00           0.01     665992.73  **
+                                                        ** test_control_space.test_pm_crc_matches_binascii_crc_hqx             PASS       45321.00           0.07     665988.25  **
+                                                        ** test_control_space.test_i2c_images_open_drain_preamble              PASS      312521.00           0.53     589551.35  **
+                                                        ***************************************************************************************************************************
+                                                        ** TESTS=9 PASS=9 FAIL=0 SKIP=0                                                  478819.01           0.78     611495.03  **
+                                                        ***************************************************************************************************************************
