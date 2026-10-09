@@ -69,6 +69,16 @@ def test_bounds_and_clean_assembly():
                 assert len(prog.warnings) == 1 and "BNZ" in prog.warnings[0], c.name
                 assert ft.I2C_ADDR_MIN <= c.params["address"] <= ft.I2C_ADDR_MAX
                 assert c.params["grade"] in ft.I2C_GRADES
+            elif p == "i2c_rd":
+                # poll variant: one sanctioned BZ warning per polled rise
+                assert len(prog.warnings) == 10, (c.name, prog.warnings)
+                assert all(" BZ " in w for w in prog.warnings), c.name
+                assert ft.I2C_ADDR_MIN <= c.params["address"] <= ft.I2C_ADDR_MAX
+                assert 1 <= len(c.params["stretch"]) <= len(ft.I2C_RD_SITES)
+                for st in c.params["stretch"]:
+                    lo, hi = ft.I2C_RD_DURATIONS[st["duration_class"]]
+                    assert lo <= st["extra_cycles"] <= hi
+                    assert st["fall"] == ft.I2C_RD_SITES[st["site"]]
             else:
                 assert prog.warnings == [], (c.name, prog.warnings)
             if p == "uart":
@@ -114,6 +124,37 @@ def test_every_planned_bin_is_reachable_with_enough_cases():
     cov = ft.coverage([c for v in _all(n=400).values() for c in v])
     unhit = {t: [b for b, n in bins.items() if n == 0] for t, bins in cov.items()}
     assert not any(unhit.values()), unhit
+
+
+def test_i2c_rd_schedule_and_image_reproducible_and_cycles_unchanged():
+    """Same seed -> same source, image, cycle report and peripheral
+    schedule; the budgets are the committed polling program's (the
+    generator's defaults still reproduce the committed .asm)."""
+    import asm
+
+    a = ft.generate(SEED, "i2c_rd", 12)
+    b = ft.generate(SEED, "i2c_rd", 12)
+    for ca, cb in zip(a, b):
+        assert ca.source == cb.source
+        assert asm.render_cycles_report(ca.assemble()) == asm.render_cycles_report(
+            cb.assemble()
+        )
+        assert ft.i2c_rd_schedule(ca) == ft.i2c_rd_schedule(cb)
+    committed = {
+        g: asm.assemble_file(REPO / "firmware" / "asm" / f"i2c_{g}_sr_poll.asm")
+        for g in ("fast", "std")
+    }
+    for c in a:
+        g = "fast" if c.params["grade"] == "i2c_fast" else "std"
+        got = [(s.name, s.cycles) for s in c.assemble().sections]
+        assert got == [(s.name, s.cycles) for s in committed[g].sections], c.name
+        assert len(c.assemble().words) == len(committed[g].words)
+
+
+def test_i2c_rd_non_polling_control_assembles_without_warnings():
+    c = ft.gen_i2c_rd(SEED, 0, poll=False)
+    assert c.assemble().warnings == []
+    assert c.source != ft.gen_i2c_rd(SEED, 0).source
 
 
 def test_unhit_bins_are_listed_not_omitted():

@@ -138,8 +138,9 @@ coverage.
   opt-in via `RANDOM_REGRESSION_CASES=<n>`. `RANDOM_REGRESSION_ARTIFACT_DIR`
   makes it write the generated `.asm`/`.hex`/`.cycles.txt`, `verdicts.json`
   and `coverage.json` (this is how the record's artifacts were made). Mutated
-  templates run on the DUT as negative controls. Covers UART TX, SPI and I2C
-  write only (UART RX and I2C read are deferred). Driven by `klt
+  templates run on the DUT as negative controls. Covers UART TX, SPI, I2C
+  write, and (issue #104) the I2C write/repeated-START/read family with
+  seeded peripheral clock stretching (UART RX is deferred). Driven by `klt
   functional-verification` (see `request-random-regression.json`, whose
   `random_seed` the bench asserts equal to its `RECORDED_SEED`); evidence in
   `records/random-regression/`.

@@ -1,0 +1,228 @@
+cycle-accounting report (DR 0003 firmware toolchain)
+program: i2c_06
+source: i2c_06.asm
+WORDS 181
+TOTAL-CYCLES 3345
+CYCLES name=i2c_start start=6 end=10 cycles=65 branches=false
+CYCLES name=i2c_abit1_low start=11 end=13 cycles=65 branches=false
+CYCLES name=i2c_abit1_high start=14 end=18 cycles=60 branches=false
+CYCLES name=i2c_abit2_low start=19 end=21 cycles=65 branches=false
+CYCLES name=i2c_abit2_high start=22 end=26 cycles=60 branches=false
+CYCLES name=i2c_abit3_low start=27 end=29 cycles=65 branches=false
+CYCLES name=i2c_abit3_high start=30 end=34 cycles=60 branches=false
+CYCLES name=i2c_abit4_low start=35 end=37 cycles=65 branches=false
+CYCLES name=i2c_abit4_high start=38 end=42 cycles=60 branches=false
+CYCLES name=i2c_abit5_low start=43 end=45 cycles=65 branches=false
+CYCLES name=i2c_abit5_high start=46 end=50 cycles=60 branches=false
+CYCLES name=i2c_abit6_low start=51 end=53 cycles=65 branches=false
+CYCLES name=i2c_abit6_high start=54 end=58 cycles=60 branches=false
+CYCLES name=i2c_abit7_low start=59 end=61 cycles=65 branches=false
+CYCLES name=i2c_abit7_high start=62 end=66 cycles=60 branches=false
+CYCLES name=i2c_abit8_low start=67 end=69 cycles=65 branches=false
+CYCLES name=i2c_abit8_high start=70 end=72 cycles=60 branches=false
+CYCLES name=i2c_ack1_low start=73 end=78 cycles=65 branches=false
+CYCLES name=i2c_ack1_high start=79 end=84 cycles=60 branches=true
+CYCLES name=i2c_dbit1_low start=85 end=87 cycles=65 branches=false
+CYCLES name=i2c_dbit1_high start=88 end=92 cycles=60 branches=false
+CYCLES name=i2c_dbit2_low start=93 end=95 cycles=65 branches=false
+CYCLES name=i2c_dbit2_high start=96 end=100 cycles=60 branches=false
+CYCLES name=i2c_dbit3_low start=101 end=103 cycles=65 branches=false
+CYCLES name=i2c_dbit3_high start=104 end=108 cycles=60 branches=false
+CYCLES name=i2c_dbit4_low start=109 end=111 cycles=65 branches=false
+CYCLES name=i2c_dbit4_high start=112 end=116 cycles=60 branches=false
+CYCLES name=i2c_dbit5_low start=117 end=119 cycles=65 branches=false
+CYCLES name=i2c_dbit5_high start=120 end=124 cycles=60 branches=false
+CYCLES name=i2c_dbit6_low start=125 end=127 cycles=65 branches=false
+CYCLES name=i2c_dbit6_high start=128 end=132 cycles=60 branches=false
+CYCLES name=i2c_dbit7_low start=133 end=135 cycles=65 branches=false
+CYCLES name=i2c_dbit7_high start=136 end=140 cycles=60 branches=false
+CYCLES name=i2c_dbit8_low start=141 end=143 cycles=65 branches=false
+CYCLES name=i2c_dbit8_high start=144 end=146 cycles=60 branches=false
+CYCLES name=i2c_ack2_low start=147 end=152 cycles=65 branches=false
+CYCLES name=i2c_ack2_high start=153 end=156 cycles=60 branches=false
+CYCLES name=i2c_stop_data_low start=157 end=161 cycles=65 branches=false
+CYCLES name=i2c_stop_data start=162 end=164 cycles=60 branches=false
+CYCLES name=i2c_stop_addr_low start=170 end=174 cycles=65 branches=false
+CYCLES name=i2c_stop_addr start=175 end=177 cycles=60 branches=false
+WARNING line 138: BNZ branches on flags set by AND over IN-sampled (pin-derived) data -- a data-dependent-latency hazard if this loop produces protocol timing (DR 0001 'Timing model'; legitimate for protocol handshakes, e.g. an I2C ACK wait)
+ADDR 0x00 WORD 0x1480 LDI R1, 0x80 cycles=1
+ADDR 0x01 WORD 0x1801 LDI R2, 0x01 cycles=1
+ADDR 0x02 WORD 0x1C81 LDI R3, 0x81 cycles=1
+ADDR 0x03 WORD 0xAF00 OUT UIO_OUT, R3 cycles=1
+ADDR 0x04 WORD 0xB0FF WAIT 255 cycles=256
+ADDR 0x05 WORD 0x1C01 LDI R3, 0x01 cycles=1
+ADDR 0x06 WORD 0xAF00 OUT UIO_OUT, R3 cycles=1
+ADDR 0x07 WORD 0xB03C WAIT 60 cycles=61
+ADDR 0x08 WORD 0x10BE LDI R0, 0xbe cycles=1
+ADDR 0x09 WORD 0x2C00 MOV R3, R0 cycles=1
+ADDR 0x0A WORD 0x5D00 AND R3, R1 cycles=1
+ADDR 0x0B WORD 0xAF00 OUT UIO_OUT, R3 cycles=1
+ADDR 0x0C WORD 0xB03E WAIT 62 cycles=63
+ADDR 0x0D WORD 0x6E00 OR R3, R2 cycles=1
+ADDR 0x0E WORD 0xAF00 OUT UIO_OUT, R3 cycles=1
+ADDR 0x0F WORD 0x8100 SHF R0, LEFT cycles=1
+ADDR 0x10 WORD 0xB037 WAIT 55 cycles=56
+ADDR 0x11 WORD 0x2C00 MOV R3, R0 cycles=1
+ADDR 0x12 WORD 0x5D00 AND R3, R1 cycles=1
+ADDR 0x13 WORD 0xAF00 OUT UIO_OUT, R3 cycles=1
+ADDR 0x14 WORD 0xB03E WAIT 62 cycles=63
+ADDR 0x15 WORD 0x6E00 OR R3, R2 cycles=1
+ADDR 0x16 WORD 0xAF00 OUT UIO_OUT, R3 cycles=1
+ADDR 0x17 WORD 0x8100 SHF R0, LEFT cycles=1
+ADDR 0x18 WORD 0xB037 WAIT 55 cycles=56
+ADDR 0x19 WORD 0x2C00 MOV R3, R0 cycles=1
+ADDR 0x1A WORD 0x5D00 AND R3, R1 cycles=1
+ADDR 0x1B WORD 0xAF00 OUT UIO_OUT, R3 cycles=1
+ADDR 0x1C WORD 0xB03E WAIT 62 cycles=63
+ADDR 0x1D WORD 0x6E00 OR R3, R2 cycles=1
+ADDR 0x1E WORD 0xAF00 OUT UIO_OUT, R3 cycles=1
+ADDR 0x1F WORD 0x8100 SHF R0, LEFT cycles=1
+ADDR 0x20 WORD 0xB037 WAIT 55 cycles=56
+ADDR 0x21 WORD 0x2C00 MOV R3, R0 cycles=1
+ADDR 0x22 WORD 0x5D00 AND R3, R1 cycles=1
+ADDR 0x23 WORD 0xAF00 OUT UIO_OUT, R3 cycles=1
+ADDR 0x24 WORD 0xB03E WAIT 62 cycles=63
+ADDR 0x25 WORD 0x6E00 OR R3, R2 cycles=1
+ADDR 0x26 WORD 0xAF00 OUT UIO_OUT, R3 cycles=1
+ADDR 0x27 WORD 0x8100 SHF R0, LEFT cycles=1
+ADDR 0x28 WORD 0xB037 WAIT 55 cycles=56
+ADDR 0x29 WORD 0x2C00 MOV R3, R0 cycles=1
+ADDR 0x2A WORD 0x5D00 AND R3, R1 cycles=1
+ADDR 0x2B WORD 0xAF00 OUT UIO_OUT, R3 cycles=1
+ADDR 0x2C WORD 0xB03E WAIT 62 cycles=63
+ADDR 0x2D WORD 0x6E00 OR R3, R2 cycles=1
+ADDR 0x2E WORD 0xAF00 OUT UIO_OUT, R3 cycles=1
+ADDR 0x2F WORD 0x8100 SHF R0, LEFT cycles=1
+ADDR 0x30 WORD 0xB037 WAIT 55 cycles=56
+ADDR 0x31 WORD 0x2C00 MOV R3, R0 cycles=1
+ADDR 0x32 WORD 0x5D00 AND R3, R1 cycles=1
+ADDR 0x33 WORD 0xAF00 OUT UIO_OUT, R3 cycles=1
+ADDR 0x34 WORD 0xB03E WAIT 62 cycles=63
+ADDR 0x35 WORD 0x6E00 OR R3, R2 cycles=1
+ADDR 0x36 WORD 0xAF00 OUT UIO_OUT, R3 cycles=1
+ADDR 0x37 WORD 0x8100 SHF R0, LEFT cycles=1
+ADDR 0x38 WORD 0xB037 WAIT 55 cycles=56
+ADDR 0x39 WORD 0x2C00 MOV R3, R0 cycles=1
+ADDR 0x3A WORD 0x5D00 AND R3, R1 cycles=1
+ADDR 0x3B WORD 0xAF00 OUT UIO_OUT, R3 cycles=1
+ADDR 0x3C WORD 0xB03E WAIT 62 cycles=63
+ADDR 0x3D WORD 0x6E00 OR R3, R2 cycles=1
+ADDR 0x3E WORD 0xAF00 OUT UIO_OUT, R3 cycles=1
+ADDR 0x3F WORD 0x8100 SHF R0, LEFT cycles=1
+ADDR 0x40 WORD 0xB037 WAIT 55 cycles=56
+ADDR 0x41 WORD 0x2C00 MOV R3, R0 cycles=1
+ADDR 0x42 WORD 0x5D00 AND R3, R1 cycles=1
+ADDR 0x43 WORD 0xAF00 OUT UIO_OUT, R3 cycles=1
+ADDR 0x44 WORD 0xB03E WAIT 62 cycles=63
+ADDR 0x45 WORD 0x6E00 OR R3, R2 cycles=1
+ADDR 0x46 WORD 0xAF00 OUT UIO_OUT, R3 cycles=1
+ADDR 0x47 WORD 0xB039 WAIT 57 cycles=58
+ADDR 0x48 WORD 0x2D00 MOV R3, R1 cycles=1
+ADDR 0x49 WORD 0xAF00 OUT UIO_OUT, R3 cycles=1
+ADDR 0x4A WORD 0xB014 WAIT 20 cycles=21
+ADDR 0x4B WORD 0x9D00 IN R3, UIO_IN cycles=1
+ADDR 0x4C WORD 0xB027 WAIT 39 cycles=40
+ADDR 0x4D WORD 0x5D00 AND R3, R1 cycles=1
+ADDR 0x4E WORD 0x1C81 LDI R3, 0x81 cycles=1
+ADDR 0x4F WORD 0xAF00 OUT UIO_OUT, R3 cycles=1
+ADDR 0x50 WORD 0xB036 WAIT 54 cycles=55
+ADDR 0x51 WORD 0xE0A8 BNZ stop_from_addr cycles=1
+ADDR 0x52 WORD 0x1024 LDI R0, 0x24 cycles=1
+ADDR 0x53 WORD 0x2C00 MOV R3, R0 cycles=1
+ADDR 0x54 WORD 0x5D00 AND R3, R1 cycles=1
+ADDR 0x55 WORD 0xAF00 OUT UIO_OUT, R3 cycles=1
+ADDR 0x56 WORD 0xB03E WAIT 62 cycles=63
+ADDR 0x57 WORD 0x6E00 OR R3, R2 cycles=1
+ADDR 0x58 WORD 0xAF00 OUT UIO_OUT, R3 cycles=1
+ADDR 0x59 WORD 0x8100 SHF R0, LEFT cycles=1
+ADDR 0x5A WORD 0xB037 WAIT 55 cycles=56
+ADDR 0x5B WORD 0x2C00 MOV R3, R0 cycles=1
+ADDR 0x5C WORD 0x5D00 AND R3, R1 cycles=1
+ADDR 0x5D WORD 0xAF00 OUT UIO_OUT, R3 cycles=1
+ADDR 0x5E WORD 0xB03E WAIT 62 cycles=63
+ADDR 0x5F WORD 0x6E00 OR R3, R2 cycles=1
+ADDR 0x60 WORD 0xAF00 OUT UIO_OUT, R3 cycles=1
+ADDR 0x61 WORD 0x8100 SHF R0, LEFT cycles=1
+ADDR 0x62 WORD 0xB037 WAIT 55 cycles=56
+ADDR 0x63 WORD 0x2C00 MOV R3, R0 cycles=1
+ADDR 0x64 WORD 0x5D00 AND R3, R1 cycles=1
+ADDR 0x65 WORD 0xAF00 OUT UIO_OUT, R3 cycles=1
+ADDR 0x66 WORD 0xB03E WAIT 62 cycles=63
+ADDR 0x67 WORD 0x6E00 OR R3, R2 cycles=1
+ADDR 0x68 WORD 0xAF00 OUT UIO_OUT, R3 cycles=1
+ADDR 0x69 WORD 0x8100 SHF R0, LEFT cycles=1
+ADDR 0x6A WORD 0xB037 WAIT 55 cycles=56
+ADDR 0x6B WORD 0x2C00 MOV R3, R0 cycles=1
+ADDR 0x6C WORD 0x5D00 AND R3, R1 cycles=1
+ADDR 0x6D WORD 0xAF00 OUT UIO_OUT, R3 cycles=1
+ADDR 0x6E WORD 0xB03E WAIT 62 cycles=63
+ADDR 0x6F WORD 0x6E00 OR R3, R2 cycles=1
+ADDR 0x70 WORD 0xAF00 OUT UIO_OUT, R3 cycles=1
+ADDR 0x71 WORD 0x8100 SHF R0, LEFT cycles=1
+ADDR 0x72 WORD 0xB037 WAIT 55 cycles=56
+ADDR 0x73 WORD 0x2C00 MOV R3, R0 cycles=1
+ADDR 0x74 WORD 0x5D00 AND R3, R1 cycles=1
+ADDR 0x75 WORD 0xAF00 OUT UIO_OUT, R3 cycles=1
+ADDR 0x76 WORD 0xB03E WAIT 62 cycles=63
+ADDR 0x77 WORD 0x6E00 OR R3, R2 cycles=1
+ADDR 0x78 WORD 0xAF00 OUT UIO_OUT, R3 cycles=1
+ADDR 0x79 WORD 0x8100 SHF R0, LEFT cycles=1
+ADDR 0x7A WORD 0xB037 WAIT 55 cycles=56
+ADDR 0x7B WORD 0x2C00 MOV R3, R0 cycles=1
+ADDR 0x7C WORD 0x5D00 AND R3, R1 cycles=1
+ADDR 0x7D WORD 0xAF00 OUT UIO_OUT, R3 cycles=1
+ADDR 0x7E WORD 0xB03E WAIT 62 cycles=63
+ADDR 0x7F WORD 0x6E00 OR R3, R2 cycles=1
+ADDR 0x80 WORD 0xAF00 OUT UIO_OUT, R3 cycles=1
+ADDR 0x81 WORD 0x8100 SHF R0, LEFT cycles=1
+ADDR 0x82 WORD 0xB037 WAIT 55 cycles=56
+ADDR 0x83 WORD 0x2C00 MOV R3, R0 cycles=1
+ADDR 0x84 WORD 0x5D00 AND R3, R1 cycles=1
+ADDR 0x85 WORD 0xAF00 OUT UIO_OUT, R3 cycles=1
+ADDR 0x86 WORD 0xB03E WAIT 62 cycles=63
+ADDR 0x87 WORD 0x6E00 OR R3, R2 cycles=1
+ADDR 0x88 WORD 0xAF00 OUT UIO_OUT, R3 cycles=1
+ADDR 0x89 WORD 0x8100 SHF R0, LEFT cycles=1
+ADDR 0x8A WORD 0xB037 WAIT 55 cycles=56
+ADDR 0x8B WORD 0x2C00 MOV R3, R0 cycles=1
+ADDR 0x8C WORD 0x5D00 AND R3, R1 cycles=1
+ADDR 0x8D WORD 0xAF00 OUT UIO_OUT, R3 cycles=1
+ADDR 0x8E WORD 0xB03E WAIT 62 cycles=63
+ADDR 0x8F WORD 0x6E00 OR R3, R2 cycles=1
+ADDR 0x90 WORD 0xAF00 OUT UIO_OUT, R3 cycles=1
+ADDR 0x91 WORD 0xB039 WAIT 57 cycles=58
+ADDR 0x92 WORD 0x2D00 MOV R3, R1 cycles=1
+ADDR 0x93 WORD 0xAF00 OUT UIO_OUT, R3 cycles=1
+ADDR 0x94 WORD 0xB014 WAIT 20 cycles=21
+ADDR 0x95 WORD 0x9D00 IN R3, UIO_IN cycles=1
+ADDR 0x96 WORD 0xB027 WAIT 39 cycles=40
+ADDR 0x97 WORD 0x5D00 AND R3, R1 cycles=1
+ADDR 0x98 WORD 0x1C81 LDI R3, 0x81 cycles=1
+ADDR 0x99 WORD 0xAF00 OUT UIO_OUT, R3 cycles=1
+ADDR 0x9A WORD 0xB038 WAIT 56 cycles=57
+ADDR 0x9B WORD 0x1C80 LDI R3, 0x80 cycles=1
+ADDR 0x9C WORD 0xB000 WAIT 0 cycles=1
+ADDR 0x9D WORD 0xAF00 OUT UIO_OUT, R3 cycles=1
+ADDR 0x9E WORD 0x1C00 LDI R3, 0x00 cycles=1
+ADDR 0x9F WORD 0xAF00 OUT UIO_OUT, R3 cycles=1
+ADDR 0xA0 WORD 0xB03C WAIT 60 cycles=61
+ADDR 0xA1 WORD 0x1C01 LDI R3, 0x01 cycles=1
+ADDR 0xA2 WORD 0xAF00 OUT UIO_OUT, R3 cycles=1
+ADDR 0xA3 WORD 0xB039 WAIT 57 cycles=58
+ADDR 0xA4 WORD 0x1C81 LDI R3, 0x81 cycles=1
+ADDR 0xA5 WORD 0xAF00 OUT UIO_OUT, R3 cycles=1
+ADDR 0xA6 WORD 0xB0FF WAIT 255 cycles=256
+ADDR 0xA7 WORD 0xF000 HALT cycles=1
+ADDR 0xA8 WORD 0x1C80 LDI R3, 0x80 cycles=1
+ADDR 0xA9 WORD 0xB001 WAIT 1 cycles=2
+ADDR 0xAA WORD 0xAF00 OUT UIO_OUT, R3 cycles=1
+ADDR 0xAB WORD 0x1C00 LDI R3, 0x00 cycles=1
+ADDR 0xAC WORD 0xAF00 OUT UIO_OUT, R3 cycles=1
+ADDR 0xAD WORD 0xB03C WAIT 60 cycles=61
+ADDR 0xAE WORD 0x1C01 LDI R3, 0x01 cycles=1
+ADDR 0xAF WORD 0xAF00 OUT UIO_OUT, R3 cycles=1
+ADDR 0xB0 WORD 0xB039 WAIT 57 cycles=58
+ADDR 0xB1 WORD 0x1C81 LDI R3, 0x81 cycles=1
+ADDR 0xB2 WORD 0xAF00 OUT UIO_OUT, R3 cycles=1
+ADDR 0xB3 WORD 0xB0FF WAIT 255 cycles=256
+ADDR 0xB4 WORD 0xF000 HALT cycles=1

@@ -47,8 +47,25 @@ every SPI burst with a non-zero MOSI byte is re-graded under the three
 wrong modes and must fail.
 
 Like its siblings this file is *input* to `klt functional-verification`,
-not a pytest module. Directions not covered: UART RX and I2C read (no
-firmware exists for them yet; deferred, not implied).
+not a pytest module. Issue #104 adds the I2C write -> repeated START -> controller read family
+(`i2c_rd`, polling firmware from `firmware/tools/gen_i2c_sr.py` with the
+address and pointer as immediates; read payload drawn by class) with
+**bounded peripheral clock stretching**: the reactive peripheral of
+`test_firmware_i2c_sr.py` holds SCL low after 1-3 of three fixed sites
+(before the repeated START, first read clock, before the STOP) for a
+seeded duration (short/medium/long classes). The independent model grades
+every transfer and the received byte is checked at the DUT's observable
+result (`uo_out`). Determinism is claimed only for non-stretched phases:
+every SCL interval except the stretched low and the high that follows it
+is compared byte-identical against an unstretched run on the same grade;
+the poll/handshake interval is bounded, not asserted exact. Controls: the
+non-polling sibling under a selected schedule must fail, and a truncated
+capture must fail. This is a bench-composed wired-AND bus (`uio_oe` is
+fixed to 0): it says nothing about silicon open-drain pad behaviour and
+decides nothing about the pin plan (#94).
+
+Directions not covered: UART RX (no firmware exists for it yet; deferred,
+not implied).
 """
 
 import hashlib
@@ -79,6 +96,7 @@ sys.path.insert(0, str(REPO_ROOT / "verification"))
 sys.path.insert(0, str(REPO_ROOT / "firmware" / "tools"))
 import asm  # noqa: E402
 import firmware_templates as ft  # noqa: E402
+import gen_i2c_sr  # noqa: E402
 
 # Reused (functions only; importing registers no sibling tests).
 from test_protocol_emulator import load_program  # noqa: E402
@@ -98,6 +116,9 @@ from test_firmware_i2c import (  # noqa: E402
     drive_peripheral,
     grade_transfer,
 )
+from test_firmware_i2c_sr import drive_peripheral_sr  # noqa: E402
+from test_firmware_i2c import wired_and  # noqa: E402
+from reference_models.i2c import check_transfer  # noqa: E402
 from reference_models.spi import MODES, check_burst  # noqa: E402
 from reference_models.uart import UartDecoder  # noqa: E402
 
@@ -416,6 +437,202 @@ async def test_i2c_random_programs(dut):
 
 
 # =======================================================================
+# I2C write -> repeated START -> controller read, with peripheral clock
+# stretching (issue #104)
+# =======================================================================
+
+I2C_RD_CAPTURE_CLOCKS = 40  # SCL clocks incl. margin (the directed bench's)
+#: A poll pass is IN, AND, BZ: how late the firmware can notice SCL high.
+POLL_PASS_CYCLES = 3
+#: Tolerance on how long a stretched low lasts relative to the scheduled
+#: hold (the peripheral samples the fall one edge late).
+STRETCH_LOW_TOL = 3
+_REF_INTERVALS = {}  # grade -> (SCL interval list in ns) of an unstretched run
+
+
+def _rd_mode(case):
+    return "fast" if case.params["grade"] == "i2c_fast" else "std"
+
+
+def rd_budget(case):
+    return gen_i2c_sr.MODES[_rd_mode(case)]
+
+
+def rd_run_cycles(case):
+    """Bounded capture: the full unstretched transfer plus every scheduled
+    hold plus a margin. A program that has not finished by then is graded
+    as incomplete, never waited for."""
+    b = rd_budget(case)
+    extra = 0 if not case.params.get("poll", True) else gen_i2c_sr.POLL_EXTRA
+    holds = sum(st["hold_cycles"] for st in case.params["stretch"])
+    return (
+        I2C_RD_CAPTURE_CLOCKS * (b["L"] + b["H"] + extra + 8)
+        + 2 * (b["SUSTA"] + b["HD"] + b["SUSTO"])
+        + 700 + holds + I2C_CAPTURE_MARGIN
+    )
+
+
+def rd_driver_args(case, unstretched=False):
+    sched = ft.i2c_rd_schedule(case)
+    stretches = {} if unstretched else {int(k): v for k, v in sched["stretches"].items()}
+    return (
+        set(sched["ack_falls"]),
+        {int(k): v for k, v in sched["read_bits"].items()},
+        stretches,
+    )
+
+
+async def run_i2c_rd(dut, case, unstretched=False, cycles=None):
+    program = _assemble(case)
+    await load_program(dut, program.words)
+    ack, bits, stretches = rd_driver_args(case, unstretched)
+    cycles = rd_run_cycles(case) if cycles is None else cycles
+    driver = cocotb.start_soon(drive_peripheral_sr(dut, ack, bits, stretches))
+    caps = await capture_pin_bits(
+        dut,
+        {
+            "ctl_scl": (SCL_PIN, SCL_BIT),
+            "ctl_sda": (SDA_PIN, SDA_BIT),
+            "per_scl": ("uio_in", SCL_BIT),
+            "per_sda": ("uio_in", 7),
+        },
+        cycles,
+    )
+    uo = int(dut.uo_out.value)  # the DUT's observable result
+    driver.kill()
+    return caps, uo
+
+
+def _scl_intervals(scl):
+    ts = [t for (t, _v) in scl.transitions]
+    return [round(b - a, 3) for a, b in zip(ts, ts[1:])]
+
+
+def _rd_decode_ok(case, report, uo):
+    """Model-decoded transfer vs. what the template transmits and what the
+    peripheral drove; returns an error string or None."""
+    p = case.params
+    want = [p["pointer"], ((p["address"] << 1) | 1), p["read_byte"]]
+    if (report.address, report.read_bit) != (p["address"], False):
+        return f"decoded address 0x{report.address:02x} R={report.read_bit}"
+    if report.data_bytes != want:
+        return f"data {report.data_bytes} != {want}"
+    if report.acks != [True, True, True, False]:
+        return f"acks {report.acks} (last slot must be the controller NACK)"
+    if not any(k.startswith("t_SU;STO") for k in report.measurements):
+        return "no STOP measured: transfer incomplete within the bounded capture"
+    if uo != p["read_byte"]:
+        return f"uo_out 0x{uo:02x} != received byte 0x{p['read_byte']:02x}"
+    return None
+
+
+async def rd_reference(dut, case):
+    """Unstretched SCL intervals for this grade (SCL timing never depends
+    on the address/pointer/read data), measured on the DUT once per grade
+    and itself graded cycle-exact (the polling program's budget + 2 on
+    rise phases)."""
+    grade = case.params["grade"]
+    if grade not in _REF_INTERVALS:
+        caps, uo = await run_i2c_rd(dut, case, unstretched=True)
+        scl = wired_and(caps["ctl_scl"], caps["per_scl"])
+        sda = wired_and(caps["ctl_sda"], caps["per_sda"])
+        mode = _GRADE[grade]
+        rep = check_transfer(scl, sda, fast_mode=mode.fast_mode)
+        err = _rd_decode_ok(case, rep, uo)
+        assert rep.ok and err is None and rep.stretched_clocks == 0, (
+            f"unstretched reference for {grade} failed: {rep} {err}"
+        )
+        b = rd_budget(case)
+        e = gen_i2c_sr.POLL_EXTRA
+        m = rep.measurements
+        want = {"t_LOW(min)": b["L"], "t_HIGH(min)": b["H"] + e,
+                "t_SU;STO": b["SUSTO"] + e}
+        for key, cyc in want.items():
+            assert abs(m[key] - cyc * CLK_PERIOD_NS) <= TIME_TOL_NS, (
+                f"{grade} unstretched {key}={m[key]} ns, want {cyc} cycles"
+            )
+        _REF_INTERVALS[grade] = _scl_intervals(scl)
+    return _REF_INTERVALS[grade]
+
+
+def grade_i2c_rd(case, caps, uo, ref):
+    """Returns (ok, detail). The model grades the transfer; non-stretched
+    SCL phases must be byte-identical (to the picosecond) to the
+    unstretched run's. Only the stretched low and its following high are
+    exempt: how long a polling firmware takes to notice the release is a
+    handshake interval, not a determinism claim."""
+    mode = _GRADE[case.params["grade"]]
+    scl = wired_and(caps["ctl_scl"], caps["per_scl"])
+    sda = wired_and(caps["ctl_sda"], caps["per_sda"])
+    try:
+        report = check_transfer(scl, sda, fast_mode=mode.fast_mode)
+    except ValueError as exc:
+        return False, f"model rejected: {exc}"
+    if not report.ok:
+        return False, f"violations {report.violations}"
+    err = _rd_decode_ok(case, report, uo)
+    if err:
+        return False, err
+    b = rd_budget(case)
+    cyc = CLK_PERIOD_NS
+    got = _scl_intervals(scl)
+    if len(got) != len(ref):
+        return False, f"{len(got)} SCL intervals, unstretched run has {len(ref)}"
+    allowed, notes = set(), []
+    # Intervals alternate; if the line's first recorded transition is a RISE
+    # (SCL was low out of reset), interval 0 is that reset-low and the n-th
+    # fall starts interval 2(n-1)+1.
+    lead = 1 if scl.transitions[0][1] == 1 else 0
+    for st in case.params["stretch"]:
+        i = 2 * (st["fall"] - 1) + lead  # n-th fall starts a low interval
+        low_cycles = got[i] / cyc
+        if abs(low_cycles - st["hold_cycles"]) > STRETCH_LOW_TOL:
+            return False, (
+                f"stretch at fall {st['fall']}: SCL low lasted "
+                f"{low_cycles:.1f} cycles, scheduled hold {st['hold_cycles']}"
+            )
+        allowed.add(i)
+        if i + 1 < len(got):  # the STOP's high is the capture's last level
+            high_cycles = got[i + 1] / cyc
+            if not (b["H"] <= high_cycles <= ref[i + 1] / cyc + POLL_PASS_CYCLES):
+                return False, (
+                    f"high after the stretch at fall {st['fall']} lasted "
+                    f"{high_cycles:.1f} cycles (budget {b['H']})"
+                )
+            allowed.add(i + 1)
+        notes.append(f"{st['site']}:{st['duration_class']}={low_cycles:.0f}cy")
+    bad = [i for i, (a, r_) in enumerate(zip(got, ref)) if a != r_ and i not in allowed]
+    if bad:
+        return False, f"non-stretched SCL intervals {bad} differ from the unstretched run"
+    if abs(report.measurements["t_LOW(min)"] - b["L"] * cyc) > TIME_TOL_NS:
+        return False, f"t_LOW(min) {report.measurements['t_LOW(min)']} ns"
+    return True, (
+        f"{mode.name} 0x{case.params['address']:02x} read "
+        f"0x{case.params['read_byte']:02x}; stretches {notes}; "
+        f"{len(got) - len(allowed)} of {len(got)} SCL intervals identical"
+    )
+
+
+@cocotb.test()
+async def test_i2c_rd_random_programs(dut):
+    cocotb.start_soon(Clock(dut.clk, CLK_PERIOD_NS, unit="ns").start())
+    failures = []
+    for case in ft.generate(RECORDED_SEED, "i2c_rd", case_count()):
+        _emit(case)
+        CASES_RUN.append(case)
+        ref = await rd_reference(dut, case)
+        caps, uo = await run_i2c_rd(dut, case)
+        ok, detail = grade_i2c_rd(case, caps, uo, ref)
+        dut._log.info(f"{ident(case)} params={case.params} -> {ok} ({detail})")
+        _record(case, ok, detail)
+        if not ok:
+            failures.append(f"{ident(case)}: {detail}")
+    assert not failures, "I2C read/stretch random regression FAILED:\n" + "\n".join(
+        failures
+    )
+
+
+# =======================================================================
 # Negative controls: mutated templates, run on the DUT, must FAIL
 # =======================================================================
 
@@ -473,6 +690,60 @@ async def test_negative_controls_mutated_templates_fail(dut):
         assert failed, (
             f"NEGATIVE CONTROL FAILED TO FAIL: {mode.name} program with "
             "short t_LOW passed the model"
+        )
+
+
+@cocotb.test()
+async def test_i2c_rd_negative_controls(dut):
+    """(1) A selected stretch schedule applied to the NON-polling sibling
+    of a generated program must not yield a conformant, correctly
+    received transfer -- the polling is load-bearing and the driver
+    bites. One schedule per grade: the first generated case with a
+    medium or long stretch at the read clock. (2) An incomplete capture
+    (cut short) must fail, naming the case."""
+    cocotb.start_soon(Clock(dut.clk, CLK_PERIOD_NS, unit="ns").start())
+    cases = ft.generate(RECORDED_SEED, "i2c_rd", ft.DEFAULT_CASES)
+    for grade in ft.I2C_GRADES:
+        pick = next(
+            c for c in cases
+            if c.params["grade"] == grade and any(
+                st["site"] == "read_clock" and st["duration_class"] != "short"
+                for st in c.params["stretch"]
+            )
+        )
+        control = ft.gen_i2c_rd(RECORDED_SEED, pick.index, poll=False)
+        assert control.params["stretch"] == pick.params["stretch"]
+        ref = await rd_reference(dut, pick)
+        caps, uo = await run_i2c_rd(dut, control)
+        ok, detail = grade_i2c_rd(control, caps, uo, ref)
+        NEGATIVE_CONTROLS.append(
+            {"name": f"{grade}_non_polling_under_stretch", "params": control.params,
+             "model_verdict": "FAIL" if not ok else "PASS", "detail": detail}
+        )
+        dut._log.info(f"negative control {ident(control)} non-polling: {ok} ({detail})")
+        assert not ok, (
+            f"NEGATIVE CONTROL FAILED TO FAIL: {ident(control)} non-polling "
+            "program survived the stretch schedule"
+        )
+
+        # the same schedule on the polling program passes (the control is
+        # the program, not a broken schedule)
+        caps, uo = await run_i2c_rd(dut, pick)
+        ok, detail = grade_i2c_rd(pick, caps, uo, ref)
+        assert ok, f"{ident(pick)}: polling twin failed: {detail}"
+
+        # incomplete capture: cut off mid-transfer -> must fail
+        bud = rd_budget(pick)
+        cut_cycles = 20 * (bud["L"] + bud["H"])
+        caps, uo = await run_i2c_rd(dut, pick, cycles=cut_cycles)
+        ok_cut, detail_cut = grade_i2c_rd(pick, caps, uo, ref)
+        NEGATIVE_CONTROLS.append(
+            {"name": f"{grade}_truncated_capture", "params": pick.params,
+             "model_verdict": "FAIL" if not ok_cut else "PASS", "detail": detail_cut}
+        )
+        assert not ok_cut, (
+            f"NEGATIVE CONTROL FAILED TO FAIL: {ident(pick)} truncated capture "
+            "was graded complete"
         )
 
 
