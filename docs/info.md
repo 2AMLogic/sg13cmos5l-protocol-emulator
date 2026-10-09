@@ -135,12 +135,12 @@ The table is mechanically checked against `firmware/asm/`,
 | [`spi_mode1`](../firmware/asm/spi_mode1.asm) | SPI controller, CPOL 0 / CPHA 1 | 4 per SCLK period (ceiling burst), 8 per bit (functional burst) | 120 | 182 | [`test_firmware_spi.py`](../verification/test_firmware_spi.py) | [firmware-spi 20261002-212640-061b65d](../verification/records/firmware-spi/records/20261002-212640-061b65d.md) |
 | [`spi_mode2`](../firmware/asm/spi_mode2.asm) | SPI controller, CPOL 1 / CPHA 0 | 4 per SCLK period (ceiling burst), 8 per bit (functional burst) | 119 | 181 | [`test_firmware_spi.py`](../verification/test_firmware_spi.py) | [firmware-spi 20261002-212640-061b65d](../verification/records/firmware-spi/records/20261002-212640-061b65d.md) |
 | [`spi_mode3`](../firmware/asm/spi_mode3.asm) | SPI controller, CPOL 1 / CPHA 1 | 4 per SCLK period (ceiling burst), 8 per bit (functional burst) | 120 | 182 | [`test_firmware_spi.py`](../verification/test_firmware_spi.py) | [firmware-spi 20261002-212640-061b65d](../verification/records/firmware-spi/records/20261002-212640-061b65d.md) |
-| [`i2c_fast`](../firmware/asm/i2c_fast.asm) | I2C controller, Fast-mode budget, write only | 125 per SCL clock (low 65 + high 60) | 182 | 3346 | [`test_firmware_i2c.py`](../verification/test_firmware_i2c.py) | [firmware-i2c 20261009-210841-a46a399](../verification/records/firmware-i2c/records/20261009-210841-a46a399.md) |
-| [`i2c_std`](../firmware/asm/i2c_std.asm) | I2C controller, Standard-mode budget, write only | 435 per SCL clock (low 235 + high 200) | 182 | 9696 | [`test_firmware_i2c.py`](../verification/test_firmware_i2c.py) | [firmware-i2c 20261009-210841-a46a399](../verification/records/firmware-i2c/records/20261009-210841-a46a399.md) |
-| [`i2c_fast_sr`](../firmware/asm/i2c_fast_sr.asm) | I2C controller, Fast-mode budget, write + repeated START + read, no pin-dependent branch | 125 per SCL clock (low 65 + high 60) | 132 | 1869 | [`test_firmware_i2c_sr.py`](../verification/test_firmware_i2c_sr.py) | [firmware-i2c 20261009-210844-a46a399](../verification/records/firmware-i2c/records/20261009-210844-a46a399.md) |
-| [`i2c_fast_sr_poll`](../firmware/asm/i2c_fast_sr_poll.asm) | as `i2c_fast_sr`, polls SCL (tolerates clock stretching) | 127 per SCL clock unstretched (low 65 + high 62) | 172 | 1889 | [`test_firmware_i2c_sr.py`](../verification/test_firmware_i2c_sr.py) | [firmware-i2c 20261009-210844-a46a399](../verification/records/firmware-i2c/records/20261009-210844-a46a399.md) |
-| [`i2c_std_sr`](../firmware/asm/i2c_std_sr.asm) | I2C controller, Standard-mode budget, write + repeated START + read, no pin-dependent branch | 435 per SCL clock (low 235 + high 200) | 132 | 5319 | [`test_firmware_i2c_sr.py`](../verification/test_firmware_i2c_sr.py) | [firmware-i2c 20261009-210844-a46a399](../verification/records/firmware-i2c/records/20261009-210844-a46a399.md) |
-| [`i2c_std_sr_poll`](../firmware/asm/i2c_std_sr_poll.asm) | as `i2c_std_sr`, polls SCL (tolerates clock stretching) | 437 per SCL clock unstretched (low 235 + high 202) | 172 | 5339 | [`test_firmware_i2c_sr.py`](../verification/test_firmware_i2c_sr.py) | [firmware-i2c 20261009-210844-a46a399](../verification/records/firmware-i2c/records/20261009-210844-a46a399.md) |
+| [`i2c_fast`](../firmware/asm/i2c_fast.asm) | I2C controller, Fast-mode budget, write only | 125 per SCL clock (low 65 + high 60) | 182 | 3346 | [`test_firmware_i2c.py`](../verification/test_firmware_i2c.py) | [firmware-i2c 20261009-215216-8c2eb61](../verification/records/firmware-i2c/records/20261009-215216-8c2eb61.md) |
+| [`i2c_std`](../firmware/asm/i2c_std.asm) | I2C controller, Standard-mode budget, write only | 435 per SCL clock (low 235 + high 200) | 182 | 9696 | [`test_firmware_i2c.py`](../verification/test_firmware_i2c.py) | [firmware-i2c 20261009-215216-8c2eb61](../verification/records/firmware-i2c/records/20261009-215216-8c2eb61.md) |
+| [`i2c_fast_sr`](../firmware/asm/i2c_fast_sr.asm) | I2C controller, Fast-mode budget, write + repeated START + read, no pin-dependent branch | 125 per SCL clock (low 65 + high 60) | 132 | 1869 | [`test_firmware_i2c_sr.py`](../verification/test_firmware_i2c_sr.py) | [firmware-i2c 20261009-215218-8c2eb61](../verification/records/firmware-i2c/records/20261009-215218-8c2eb61.md) |
+| [`i2c_fast_sr_poll`](../firmware/asm/i2c_fast_sr_poll.asm) | as `i2c_fast_sr`, polls SCL (tolerates clock stretching) | 127 per SCL clock unstretched (low 65 + high 62) | 172 | 1889 | [`test_firmware_i2c_sr.py`](../verification/test_firmware_i2c_sr.py) | [firmware-i2c 20261009-215218-8c2eb61](../verification/records/firmware-i2c/records/20261009-215218-8c2eb61.md) |
+| [`i2c_std_sr`](../firmware/asm/i2c_std_sr.asm) | I2C controller, Standard-mode budget, write + repeated START + read, no pin-dependent branch | 435 per SCL clock (low 235 + high 200) | 132 | 5319 | [`test_firmware_i2c_sr.py`](../verification/test_firmware_i2c_sr.py) | [firmware-i2c 20261009-215218-8c2eb61](../verification/records/firmware-i2c/records/20261009-215218-8c2eb61.md) |
+| [`i2c_std_sr_poll`](../firmware/asm/i2c_std_sr_poll.asm) | as `i2c_std_sr`, polls SCL (tolerates clock stretching) | 437 per SCL clock unstretched (low 235 + high 202) | 172 | 5339 | [`test_firmware_i2c_sr.py`](../verification/test_firmware_i2c_sr.py) | [firmware-i2c 20261009-215218-8c2eb61](../verification/records/firmware-i2c/records/20261009-215218-8c2eb61.md) |
 | [`demo_roundtrip`](../firmware/asm/demo_roundtrip.asm) | none (assembler and load-phase round-trip coverage program) | n/a | 27 | 30 | [`test_firmware_roundtrip.py`](../verification/test_firmware_roundtrip.py) | [firmware-assembler-roundtrip 20260930-195410-ead870a](../verification/records/firmware-assembler-roundtrip/records/20260930-195410-ead870a.md) |
 <!-- firmware-images:end -->
 
@@ -160,9 +160,14 @@ Notes, all from the cited records:
   assembler reports as warnings (1 per write-only image, 10 per `_poll`
   image).
 - The I2C images set `UIO_OD` to `0x81` (SCL and SDA open-drain) right
-  after releasing both lines. The I2C benches still compose the open-drain
-  bus in the testbench (`line = uio_out AND peripheral`) and do not yet
-  consume `uio_oe`; the pad-level model is issue #136. See Pins.
+  after releasing both lines. The I2C benches run on a pad model
+  ([`uio_pads.py`](../verification/uio_pads.py),
+  [record](../verification/records/uio-pad-model/records/20261009-215247-8c2eb61.md))
+  that resolves each line from the design's `uio_oe` and `uio_out`, a
+  pull-up and the peripheral, and reads it back on `uio_in`; the lines the
+  reference model grades are those. With `UIO_OD` left at reset the same
+  images put no transfer on the bus, and the benches require that. See
+  Pins.
 
 ## How to run a protocol
 
@@ -240,8 +245,8 @@ Observed in committed firmware (provisional, per image family):
 | SPI | MOSI | `uo_out[2]` | yes |
 | SPI | MISO | `uio_in[0]` | yes (input) |
 | SPI, I2C `_sr` | result byte echo | `uo_out[7:0]` after the transfer | yes |
-| I2C | SCL (1 = released) | `uio_out[0]` | yes in RTL, open-drain (`UIO_OD` = `0x81`); not yet verified through a pad model (#136) |
-| I2C | SDA (1 = released) | `uio_out[7]` | yes in RTL, open-drain (`UIO_OD` = `0x81`); not yet verified through a pad model (#136) |
+| I2C | SCL (1 = released) | `uio_out[0]` | yes in RTL, open-drain (`UIO_OD` = `0x81`); verified through a logical pad model at RTL and on the gate-level netlist, zero delay |
+| I2C | SDA (1 = released) | `uio_out[7]` | yes in RTL, open-drain (`UIO_OD` = `0x81`); verified through a logical pad model at RTL and on the gate-level netlist, zero delay |
 | I2C | SCL / SDA sampled | `uio_in[0]` / `uio_in[7]` | yes (input) |
 
 Consequences, stated rather than papered over: the SPI and UART outputs
@@ -249,9 +254,11 @@ are on dedicated outputs and need no `uio_oe`. The I2C outputs are written
 to `uio_out` and reach the pins as open-drain once the image's `WCTL
 UIO_OD` has run; an I2C bus needs external pull-ups, which this design does
 not provide. What is verified today is the `uio_oe` logic
-(`verification/test_control_space.py`), not a pad: the I2C benches still
-model the wired-AND bus in the testbench (records above), and re-running
-them through `uio_oe` is issue #136. `uio_in[0]` is MISO in the SPI
+(`verification/test_control_space.py`) and, for the I2C images, the bus
+that logic produces on a pad model: the benches resolve SCL and SDA from
+`uio_oe`/`uio_out`, a pull-up and the peripheral, and grade those lines
+(records above). That model is logical and zero-delay; it is not a pad
+cell, and says nothing about rise time or drive strength. `uio_in[0]` is MISO in the SPI
 images and SCL-sense in the I2C images, so the families do not share one
 fixed plan; reconciling that is #94's job. No pin claim here is backed by
 silicon or by the LibreLane flow.
@@ -265,14 +272,17 @@ silicon or by the LibreLane flow.
   firmware above. LibreLane timing and area evidence is in
   [`librelane-corner-timing`](../verification/records/librelane-corner-timing/records/20261009-203554-4ff0e14.md).
   Firmware and the control-space bench on that netlist at zero delay:
-  [`firmware-gate-level`](../verification/records/firmware-gate-level/records/20261009-210948-a46a399.md).
+  [`firmware-gate-level`](../verification/records/firmware-gate-level/records/20261009-215316-8c2eb61.md).
   Firmware with back-annotated delays: none.
 - **klt synthesis and timing.** `klt sta` does not yet support the SRAM
   macro, so the two flows do not agree on timing; per the project rule that
   mismatch is a finding, not a number to pick from.
 - **Silicon:** none.
-- **Pads.** `uio_oe` is verified as logic only. No pad model consumes it
-  yet, so no I2C result here is a claim about a driven bus (issue #136).
+- **Pads.** The I2C results are on a logical, zero-delay pad model
+  ([record](../verification/records/uio-pad-model/records/20261009-215247-8c2eb61.md)):
+  they show which lines the design drives, and when, through `uio_oe`.
+  They are not electrical evidence: no pad cell, pull-up rise time, pad
+  delay or drive strength has been simulated or measured.
 - DR 0001, DR 0005 and DR 0012 are `Proposed`, not ratified.
 
 ## External hardware
@@ -288,7 +298,9 @@ analog pads. Anything else goes on a Pmod
   high only with a pull-up. No pull-up is assumed to exist on the board.
   (The RTL drives these two pads open-drain once an I2C image has written
   `0x81` to DR 0012's runtime `UIO_OD` register; see Pins above. That is
-  verified as logic, not yet through a pad model: #136.)
+  verified through a logical pad model with a pull-up on each line, at
+  RTL and on the gate-level netlist; without the pull-ups the model's
+  lines float, as a real bus would.)
 
 **Wiring today.** Tiny Tapeout's
 [recommended pinouts](https://tinytapeout.com/specs/pinouts/) cover two
