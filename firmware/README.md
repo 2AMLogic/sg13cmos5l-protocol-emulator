@@ -17,6 +17,11 @@ firmware/
                          opening issue #22; not a protocol program)
     uart_tx.asm          bit-banged 8N1 UART transmitter (issue #71, the
                          UART third of #23; SPI and I2C are its siblings)
+    uart_rx.asm          bit-banged 8N1 UART receiver, 50 cycles/bit
+                         (issue #91); uart_rx_115200.asm (434) and
+                         uart_rx_9600.asm (5,208) are the same receiver
+                         on nested-WAIT bit periods; uart_tx_9600.asm is
+                         the nested-WAIT transmitter
     i2c_fast.asm         bit-banged I2C controller, Fast-mode 400 kHz
                          phase budget (issue #73, the I2C third of #23)
     i2c_std.asm          the same controller on the Standard-mode
@@ -96,6 +101,44 @@ Run its DUT-facing bench with:
 
 ```bash
 klt functional-verification verification/request-firmware-uart.json --format json
+```
+
+### `uart_rx*.asm` / `uart_tx_9600.asm` — UART receive and low-baud (issue #91)
+
+`uart_tx.asm` covered one direction at one rate. These close the rest of
+target-spec row 1's UART line (9,600-1,000,000 baud, both directions) in
+firmware, with no UART hardware:
+
+| Program | Cycles/bit | Words | Notes |
+|---|---|---|---|
+| `uart_rx.asm` | 50 | 132 | one `WAIT` per bit |
+| `uart_rx_115200.asm` | 434 | 168 | nested `WAIT`, 1 outer pass |
+| `uart_rx_9600.asm` | 5,208 | 168 | nested `WAIT`, 20 outer passes |
+| `uart_tx_9600.asm` | 5,208 | 177 | nested `WAIT` transmitter |
+
+All fit DR 0001's 256-word program store. Baud figures are arithmetic at
+the unconfirmed 50 MHz clock (5,208 cycles x 20 ns = ~9,600 baud); the
+claim is the cycle count. A bit period above one `WAIT` (256 cycles) uses a
+compile-time-constant outer loop, `LDI n; WAIT 255; SUB; BNZ` = 258 cycles
+per pass plus a remainder `WAIT`; the bit blocks are unrolled because the
+loop needs the fourth register.
+
+**Receiver shape.** RX = `UI_IN` bit 0 (idle high). A 3-cycle poll
+(`IN`/`AND`/`BNZ`) finds the start edge; the first sample lands at the
+centre of data bit 0 (1.5 bit periods after the edge, within the poll's
+3-cycle granularity); later samples are exactly one period apart with no
+branch between them. The byte is assembled by shifting and emitted on
+`UO_OUT`; `UIO_OUT` bit 0 is a sample mark (the bench reads the real
+sample instants off it) and bit 1 a framing-error flag (stop bit read 0).
+The assembler's data-dependent-latency lint reports exactly three warnings
+per receiver: the two start-edge handshakes and the post-stop re-arm.
+
+Bench: `verification/test_firmware_uart_rx.py`
+(`verification/request-firmware-uart-rx.json`), evidence in
+`verification/records/firmware-uart-rx/`.
+
+```bash
+klt functional-verification verification/request-firmware-uart-rx.json --format json
 ```
 
 ### `i2c_fast.asm` / `i2c_std.asm` — bit-banged I2C controller, both speed grades (issue #73)

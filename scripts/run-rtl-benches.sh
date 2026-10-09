@@ -23,6 +23,7 @@ BENCHES=(
   program-memory
   protocol-models
   firmware-uart
+  firmware-uart-rx
   firmware-spi
   firmware-i2c
   firmware-i2c-sr

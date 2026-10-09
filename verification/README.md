@@ -151,6 +151,15 @@ coverage.
   run by `npm run lint`:
   `python3 verification/test_firmware_templates.py`. To regenerate a failing
   case: `python3 verification/firmware_templates.py --seed S --out DIR`.
+- `test_firmware_uart_rx.py` — the DUT-facing UART **receive-path and
+  low-baud** bench (issue #91, rows 1 and 10): committed `uart_rx*.asm`
+  receivers (50 / 434 / 5,208 cycles per bit) driven by waveforms from
+  `reference_models/uart.py` with bounded edge jitter and +-2 % rate
+  error, byte and cycle-exact sample timing checked at the pins, plus the
+  nested-`WAIT` `uart_tx_9600.asm` transmitter judged by `UartDecoder`;
+  negative controls included. Driven by `klt functional-verification` (see
+  `request-firmware-uart-rx.json`); evidence in
+  `records/firmware-uart-rx/`.
 - `formal/` — the §2 formal-properties leg (issue #24, distinct from the
   cocotb legs above: no `klt`, no PDK, no simulator — a Yosys+SMTBMC model
   checking harness). `formal/no_data_dependent_latency.sv` is
