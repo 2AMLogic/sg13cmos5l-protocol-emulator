@@ -1,0 +1,6 @@
+Yosys 0.67+post (git sha1 b8e7da6f40ae8f552c116bf6c359b07c6533e159, Release, GNU /usr/bin/c++ 13.3.0)
+Z3 version 5.1.0 - 64 bit
+yosys-abc: UC Berkeley, ABC 1.01 (compiled Oct  5 2026 18:35:18)
+yosys-smtbmc: /home/ubuntu/.cache/yosys-0.67/bin/yosys-smtbmc (ships with the Yosys distribution above; no version flag)
+Python 3.13.16
+Linux 7.0.0-1013-aws #13~24.04.1-Ubuntu SMP PREEMPT Sat Sep  5 01:10:01 UTC 2026 x86_64
