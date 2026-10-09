@@ -17,6 +17,9 @@
 # legs share: pin observables only, no hierarchical peeks, and checks
 # spaced by whole clock cycles.
 #
+# Issue #138 (DR 0013 layer 2) added `test_boot_rom` at the end: MODE low at
+# reset no longer runs program memory, it runs the boot ROM.
+#
 # The deep, cycle-exact per-opcode coverage lives in this program's own
 # bench, verification/test_protocol_emulator.py (13 directed cases driven
 # by `klt functional-verification`, with an append-only evidence record).
@@ -312,3 +315,91 @@ async def test_control_space(dut):
     await step(dut, 10)
     assert dut.uo_out.value == 0xC3, "RUN fell through, or the routine's HALT did not hold"
     assert dut.uio_oe.value == 0
+
+
+# ---------------------------------------------------------------------------
+# DR 0013 layer 2 (issue #138): the boot ROM, pin-only so it runs unchanged
+# on the gate-level netlist. With MODE (ui_in[7]) low at reset the core
+# fetches from an on-chip ROM whose program reads the straps ui_in[6:5];
+# strap 10 is the warm start (run program memory only if word 255 is the
+# CRC-16/XMODEM of words 0..254). The deep bench -- unwritten and random
+# memory, every strap, the corrupted-image set, the exact entry edge
+# against an independent model of the boot program -- is
+# verification/test_boot_rom.py; this is the sign-off-leg smoke of the same
+# behaviour on whatever netlist the gds workflow just built.
+STRAP_UART, STRAP_WARM = 0b00, 0b10
+# firmware/asm/boot/boot_rom.asm: word 0 of a verified image executes this
+# many cycles after the boot program's first instruction.
+WARM_START_CYCLES = 2323
+
+
+async def boot_reset(dut, straps):
+    """Reset with MODE low and `straps` on ui_in[6:5]. Returns just after
+    the mode-sampling edge, which starts the run phase (edge 0)."""
+    dut.ena.value = 1
+    dut.uio_in.value = 0
+    dut.ui_in.value = straps << 5
+    dut.rst_n.value = 0
+    await ClockCycles(dut.clk, 10)
+    dut.rst_n.value = 1
+    await RisingEdge(dut.clk)
+
+
+async def expect_quiet(dut, edges, what):
+    """Every pin holds its reset value for `edges` more edges."""
+    for _ in range(edges):
+        await step(dut, 1)
+        assert dut.uo_out.value == 0, f"{what}: uo_out moved"
+        assert dut.uio_out.value == 0, f"{what}: uio_out moved"
+        assert dut.uio_oe.value == 0, f"{what}: a uio pin is driven"
+
+
+@cocotb.test()
+async def test_boot_rom(dut):
+    dut._log.info("Start (DR 0013 boot ROM and warm start)")
+    cocotb.start_soon(Clock(dut.clk, 10, unit="us").start())
+
+    program = [
+        enc(OP_LDI, rd=R0, imm=0xEE),
+        rctl(R0, K_BOOT_STATUS),
+        enc(OP_OUT, rd=R0, rs=PORT_UO_OUT),   # 0x01 serial-loaded / 0x00 warm-started
+        enc(OP_LDI, rd=R0, imm=0xA5),
+        enc(OP_OUT, rd=R0, rs=PORT_UO_OUT),   # the marker
+        enc(OP_HALT),
+    ]
+    body = program + [0x0000] * (255 - len(program))
+    signature = binascii.crc_hqx(b"".join(bytes((w >> 8, w & 0xFF)) for w in body), 0)
+    image = body + [signature]
+
+    dut._log.info("Serial load (layer 1) runs the image and reads BOOT_STATUS = 0x01")
+    await load_program(dut, image)
+    await step(dut, 4)  # edge 4: the first OUT (index 2) has retired
+    assert dut.uo_out.value == 0x01, (
+        f"BOOT_STATUS after a serial load: uo_out {int(dut.uo_out.value):#04x}, want 0x01"
+    )
+    await step(dut, 2)  # edge 6: the marker
+    assert dut.uo_out.value == 0xA5
+
+    dut._log.info("MODE low, straps 00: the UART-load stub idles, the image is not run")
+    await boot_reset(dut, STRAP_UART)
+    await expect_quiet(dut, 64, "straps 00")
+
+    dut._log.info("MODE low, straps 10: the verified image is warm-started")
+    await boot_reset(dut, STRAP_WARM)
+    # Word 0 retires at edge 2 + WARM_START_CYCLES; the marker (index 4) four
+    # edges later. Until the edge before it, nothing moves: BOOT_STATUS is
+    # 0x00 after a warm start, so the first OUT writes the reset value.
+    marker_edge = 2 + WARM_START_CYCLES + 4
+    await expect_quiet(dut, marker_edge - 1, "warm start, before the marker")
+    await step(dut, 1)
+    assert dut.uo_out.value == 0xA5, (
+        f"warm start did not run the verified image on edge {marker_edge}: "
+        f"uo_out {int(dut.uo_out.value):#04x}"
+    )
+
+    dut._log.info("MODE low, straps 10, one flipped bit: the image is never run")
+    corrupted = list(image)
+    corrupted[100] ^= 0x0010
+    await load_program(dut, corrupted)
+    await boot_reset(dut, STRAP_WARM)
+    await expect_quiet(dut, marker_edge + 64, "corrupted image")

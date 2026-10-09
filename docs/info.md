@@ -37,7 +37,7 @@ to port `00`) writes one and `RCTL Rd, k` (`IN` from port `10`) reads one.
 | `0x04` | `PM_DATA_LO` | R/W | W 2, R 1 | W: commit `{high latch, Rs}` at `PM_ADDR`, then `PM_ADDR` + 1. R: return the latched low byte, then `PM_ADDR` + 1 |
 | `0x05` | `RUN` | W | 2 | jump: program counter ← `Rs` |
 | `0x06`, `0x07` | `PM_CRC_LO`, `PM_CRC_HI` | R, W clears | 1 | CRC-16/XMODEM (poly `0x1021`, init 0) over every word committed to program memory, by the serial load or by `PM_DATA_LO`; high byte of each word first |
-| `0x08` | `BOOT_STATUS` | R | 1 | bit 0: a serial load completed since reset. Bit 1 (boot ROM) reads 0: there is no boot ROM yet |
+| `0x08` | `BOOT_STATUS` | R | 1 | bit 0: a serial load completed since reset. Bit 1: the instruction reading it was fetched from the boot ROM (so a loaded program always reads 0 there) |
 | `0x09` | `HW_ID` | R | 1 | design revision byte, `0x01` |
 
 Any other index is reserved: a write does nothing and a read returns 0, in
@@ -67,6 +67,36 @@ program cannot be reprogrammed out from under itself — re-entering load
 phase needs a fresh `rst_n` pulse with MODE high. All other pins are
 untouched by loading.
 
+**With MODE low at reset the core does not run program memory. It runs a
+boot ROM** (`spec/decision-records/0013-program-loading.md` layer 2,
+Proposed). After a power-up or a reselect the SRAM holds nothing a host put
+there, so the core fetches from a small on-chip ROM instead. The ROM is
+synthesized logic, 30 words of the 128 the record allows, and its contents
+are a program in this same instruction set
+([`firmware/asm/boot/boot_rom.asm`](../firmware/asm/boot/boot_rom.asm));
+`rtl/protocol_boot_rom.v` is generated from the committed image. The boot
+program's first instruction reads two straps on `ui_in[6:5]`:
+
+| `ui_in[6:5]` | Boot program | Today |
+|---|---|---|
+| `00` | UART load | stub: idles |
+| `01` | SPI-flash boot | stub: idles |
+| `10` | warm start: run the image already in program memory if it checks | implemented |
+| `11` | reserved, behaves as `00` | stub: idles |
+
+A stub halts with every `uio` pin an input and `uo_out` at 0. The warm
+start is for an `rst_n` pulse while the design stays selected. It runs
+program memory from address 0 only if word 255 equals the CRC-16/XMODEM of
+words 0–254 (high byte of each word first); otherwise it falls through to
+the UART-load stub. A passing warm start executes the image's first
+instruction exactly 2,323 cycles after the boot program's own first
+instruction, with `R0`–`R3`, `Z` and `C` at their reset values and
+`BOOT_STATUS` reading `0x00`. One image passes that should not: 256 zero
+words are their own valid signature, and they run as 256 `NOP`s that drive
+nothing (recorded in DR 0013). Hold the straps steady for at least three
+clocks after `rst_n` is released; the boot program samples them once.
+Only a `WCTL RUN` leaves the ROM, and nothing re-enters it without a reset.
+
 `HALT` idles the core until the next reset. See the root
 [README](../README.md) for the target specification, and
 `spec/decision-records/0001-isa.md` for the full opcode table and the
@@ -92,7 +122,10 @@ Two committed cocotb benches do exactly this, byte-for-byte:
   MODE-high reprogram attempt does nothing. A second case exercises the
   control space from the pins: register reset values and readback, the
   `uio_oe` pin modes, a program written into memory by firmware and then
-  run, and `PM_CRC` against Python's `binascii.crc_hqx`.
+  run, and `PM_CRC` against Python's `binascii.crc_hqx`. A third exercises
+  the boot ROM: MODE low with straps `00` moves no pin, a signed image
+  warm-starts on the predicted edge, and the same image with one flipped
+  bit is never run.
 - `verification/test_protocol_emulator.py` — this program's own klt-driven
   bench (`klt functional-verification`), which exercises all 16 opcodes as
   loaded firmware and asserts each result on a *numbered* clock edge derived
@@ -230,7 +263,8 @@ Fixed by the RTL (`src/tt_um_2amlogic_protocol_emulator.v`), not provisional:
 
 | Pin | Role |
 |---|---|
-| `ui_in[7]` | MODE: high across `rst_n` release selects load phase |
+| `ui_in[7]` | MODE: high across `rst_n` release selects load phase; low runs the boot ROM |
+| `ui_in[6:5]` | straps, read once by the boot ROM's program when MODE is low at reset (`00`/`11` UART-load stub, `01` SPI-flash stub, `10` warm start). The read is an ordinary `IN`, not strap hardware; a loaded program sees these as plain input bits |
 | `ui_in[0]` | serial program data in load phase, MSB first |
 | `uio_oe[7:0]` | set by firmware: `UIO_OD[n]` → open-drain (`uio_oe[n] = ~uio_out[n]`), else `UIO_DIR[n]` → push-pull, else input. **0 after reset**: every bidirectional pin is an input until a program writes `UIO_DIR` or `UIO_OD` |
 | `uio_out[7:0]` | written by `OUT`; reaches a pin only where `uio_oe` enables it |
@@ -266,13 +300,13 @@ silicon or by the LibreLane flow.
 ## Evidence not yet in hand
 
 - **Tiny Tapeout LibreLane flow.** The routed-netlist SDF regression of the
-  submitted core ([record](../verification/records/post-layout-sdf-regression/records/20261009-203349-4ff0e14.md),
-  LibreLane run 37985271399) is a **recorded FAIL** at all three corners (1
+  submitted core ([record](../verification/records/post-layout-sdf-regression/records/20261009-220911-1dc1842.md),
+  LibreLane run 37996177546) is a **recorded FAIL** at all three corners (1
   of 13 core-bench tests passed) and ran only the core bench, not the
   firmware above. LibreLane timing and area evidence is in
-  [`librelane-corner-timing`](../verification/records/librelane-corner-timing/records/20261009-203554-4ff0e14.md).
-  Firmware and the control-space bench on that netlist at zero delay:
-  [`firmware-gate-level`](../verification/records/firmware-gate-level/records/20261009-222104-747aae3.md).
+  [`librelane-corner-timing`](../verification/records/librelane-corner-timing/records/20261009-221236-1dc1842.md).
+  Firmware, the control-space bench and the boot-ROM bench on that netlist at zero delay:
+  [`firmware-gate-level`](../verification/records/firmware-gate-level/records/20261009-221915-e5af804.md).
   Firmware with back-annotated delays: none.
 - **klt synthesis and timing.** `klt sta` does not yet support the SRAM
   macro, so the two flows do not agree on timing; per the project rule that

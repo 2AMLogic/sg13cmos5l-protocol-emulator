@@ -91,6 +91,23 @@ coverage.
   the pre-DR-0012 `uio_oe = 8'h00`), each of which the I2C benches must
   fail on. None of them changes `uio_out`, so none could change the
   verdict of the old bench-composed bus.
+- `test_boot_rom.py` — cocotb bench for DR 0013 layer 2 (issue #138) on
+  the top: the boot ROM, the fetch-source switch and the warm start, and
+  target-spec row 14 (c). With `MODE` low at reset the stub straps move no
+  pin on a never-written memory; a canary image and random images are
+  never run on any strap; a signed image warm-starts on the edge an
+  independent model of the boot program predicts, with the reset register
+  and flag state; seven corrupted images are rejected; and the all-zero
+  image is pinned as the known weak case. Expected numbers come from
+  `BootModel`, an ISA interpreter in the bench that runs the committed
+  boot image and shares no code with the RTL or the assembler.
+  Pin-observable except for labelled white-box reads (the fetch source and
+  the macro's read enable), so it also runs on a gate-level netlist
+  (`flow/run-firmware-gate-level.sh --boot-rom`). Driven by `klt
+  functional-verification` (see `request-boot-rom.json`);
+  `boot_rom_mutants.py` is its negative-control runner (ten single defects
+  in the RTL and in the boot program, each caught by a test meant to
+  catch it). Evidence in `records/boot-rom/`.
 - `test_program_memory.py` — cocotb testbench for
   `rtl/protocol_program_memory.v`, the program memory and serial
   load-phase logic (target-spec row 6, issue #19): loads known programs
@@ -230,8 +247,12 @@ coverage.
   ```
   It runs a structural output-register check, an ABC `scorr`+`pdr` proof on
   a once-per-cycle (EDGE) model and on a `clk2fflogic` (FINE) model, z3
-  covers, and seven core mutants. Each mutant must be rejected by ABC and by
+  covers, and fifteen core mutants. Each mutant must be rejected by ABC and by
   z3. Evidence lives in `records/pin-write-latency/`.
+  Both harnesses model the boot ROM of DR 0013 layer 2 (issue #138) as a
+  second free program table next to program memory, so each result holds
+  for every ROM image and across the fetch-source switch at `WCTL RUN`.
+  `pin_write_latency`'s shadow model derives the fetch source itself.
 - `check_records.py` — the evidence-record linter (see "Enforcement").
 - `test_check_records.py` — the linter's own self-test: one executable
   negative case per violation class named below, run against a throwaway
@@ -262,6 +283,7 @@ carry sources, defines and recorded seeds), provisioned by
 `scripts/run-rtl-benches.sh` (~50 s serial).
 
 CI-covered (RTL, Icarus, no PDK): `test_protocol_emulator`,
+`test_control_space`, `test_boot_rom`,
 `test_program_memory`, `test_protocol_models`, `test_firmware_uart`,
 `test_firmware_spi`, `test_uio_pads`, `test_firmware_i2c`,
 `test_firmware_i2c_sr`, `test_firmware_roundtrip`,

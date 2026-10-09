@@ -1,0 +1,36 @@
+2026-10-09T21:54:19Z
+== toolchain ==
+Yosys 0.69+post (git sha1 143eb14f9cc55d6f8927e68523b0c9d2166ed02c, Release, AppleClang clang++ 21.0.0.21000334)
+Z3 version 5.1.0 - 64 bit
+yosys-smtbmc [options] <yosys_smt2_output>
+
+== [1/4] conformant fixture: elaboration ==
+== [2/4] conformant fixture: BMC depth 30 (expect PASS) ==
+BMC: PASS (no counterexample within 30 cycles)
+== [3/4] conformant fixture: covers (non-vacuity) ==
+covers: all reachable (assertions genuinely exercised)
+== [3b/4] conformant fixture: k-induction attempt (informational) ==
+induction: did not close (expected as shipped; bounded result above is the shipped guarantee)
+
+== [4/4] mutant fixture (data-dependent WAIT early-out): BMC depth 30 (expect CEX) ==
+mutant: counterexample found as required; VCD: verification/records/no-data-dependent-latency/artifacts/20261009-215419-1dc1842/mutant-cex.vcd
+
+== [4b/4] control-space mutant fixture (data-dependent 2-cycle-access early-out, DR 0012): BMC depth 30 (expect CEX) ==
+control-space mutant: counterexample found as required; VCD: verification/records/no-data-dependent-latency/artifacts/20261009-215419-1dc1842/mutant-ctl-cex.vcd
+
+== monitor hash (must equal the fixture-run hash of record) ==
+0a687b4fa5c067a44dff2f00b9a950a6200a10fcae228e61dcad4593cb93a433  verification/formal/no_data_dependent_latency.sv
+fa692ae7ead0da374f414d104e2ff679414bd49f58e1cbb9ae7165961af8b791  rtl/protocol_core.v
+== [5/8] real core rtl/protocol_core.v: elaboration ==
+== [6/8] real core: BMC depth 30 (expect PASS) ==
+BMC: PASS (no counterexample within 30 cycles)
+== [7/8] real core: covers (non-vacuity) ==
+covers: all reachable
+== [7b/8] real core: k-induction attempt (informational) ==
+induction: did not close (bounded result above is the shipped guarantee)
+== [8/8] real-core mutant (WAIT stall cut to 1 cycle when ui_in == 0xA5): BMC depth 30 (expect CEX) ==
+core mutant: counterexample found as required; VCD: verification/records/no-data-dependent-latency/artifacts/20261009-215419-1dc1842/core-mutant-cex.vcd
+== [8b/8] real-core control-space mutant (2-cycle control access stalls on while ui_in == 0xA5, DR 0012): BMC depth 30 (expect CEX) ==
+core control-space mutant: counterexample found as required; VCD: verification/records/no-data-dependent-latency/artifacts/20261009-215419-1dc1842/core-mutant-ctl-cex.vcd
+
+RESULT: all expectations met (BMC pass + covers reachable + mutant caught, per selected DUT)

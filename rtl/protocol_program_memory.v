@@ -134,7 +134,9 @@
  *   A_ADDR <- wr_addr (load) / pm_addr (pm_we | pm_re) / fetch_addr
  *   A_DIN  <- load_word (load) / pm_wdata (run)
  *   A_WEN  <- a serial-load commit, or pm_we
- *   A_REN  <- run phase and not a write cycle
+ *   A_REN  <- not load phase, not a write cycle, and either a fetch the
+ *             core will consume from program memory (`fetch_en`, DR 0013)
+ *             or a `pm_re` data read
  *
  * `pm_crc` is DR 0012's PM_CRC: CRC-16/XMODEM (poly 0x1021, init 0x0000,
  * no reflection, no final XOR) over every word committed to the macro
@@ -159,6 +161,7 @@ module protocol_program_memory (
     input  wire        mode_pin,    // ui_in[7] - MODE: high at reset release enters load phase; during load, high = shifting, low = enter run phase
     input  wire        serial_in,   // ui_in[0] - serial program bit, sampled MSB-first during load phase
     input  wire [7:0]  fetch_addr,  // address of the instruction to execute NEXT cycle (fetch-ahead, DR 0005)
+    input  wire        fetch_en,    // this cycle's fetch_addr is a program-memory fetch (0 while the core fetches from the boot ROM, DR 0013)
     output wire [15:0] instr_word,  // the word read at the address presented one cycle earlier
     output wire        run_phase,   // high once the load phase has ended (or was never entered)
     // DR 0012 run-phase data access (from protocol_core's control space).
@@ -225,7 +228,13 @@ module protocol_program_memory (
   // core holds address 0 and executes nothing until run_phase rises). A
   // run-phase write cycle reads nothing (the core ignores instr_word in
   // the stall cycle that follows); a PM read (pm_re) reads pm_addr.
-  wire        mem_ren   = !load_active && !run_wen;
+  //
+  // DR 0013 layer 2 (issue #138): while the core fetches from the boot ROM
+  // (`fetch_en` low) the macro is not read for fetch at all -- only a
+  // `pm_re` data access reads it. With `MODE` low at reset the array's
+  // unloaded contents therefore never reach `instr_word` until the boot
+  // program's `WCTL RUN`, and the macro idles (A_MEN low) meanwhile.
+  wire        mem_ren   = !load_active && !run_wen && (fetch_en || pm_re);
 
   wire        mem_men   = mem_wen || mem_ren;
   wire [7:0]  mem_addr  = load_active          ? wr_addr :

@@ -1,0 +1,7 @@
+{
+  "schema_version": 1,
+  "error": {
+    "command": "functional-verification",
+    "message": "SDF back-annotation of 'flow/post-layout-sdf/sdf/nom_slow_1p08V_125C.normalized.sdf' did not fully apply: 1 diagnostic(s) in the icarus transcript -- SDF WARNING: flow/post-layout-sdf/nom_slow_1p08V_125C/.klt/functional-verification/klt_sdf_safe.sdf:21124: TIM   590.00ns INFO     cocotb.klt_sdf_dut_wrapper         watching uo_out against 4 edge checks. The simulator exits 0 after skipping an annotation it cannot apply, so this run's verdict would have been a zero-delay one reported as if it were annotated."
+  }
+}

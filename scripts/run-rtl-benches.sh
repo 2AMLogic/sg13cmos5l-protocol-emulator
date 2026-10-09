@@ -21,6 +21,7 @@ cd "$REPO_ROOT" || exit 1
 BENCHES=(
   protocol-emulator
   control-space
+  boot-rom
   program-memory
   protocol-models
   firmware-uart

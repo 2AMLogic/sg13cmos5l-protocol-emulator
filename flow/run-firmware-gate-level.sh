@@ -13,8 +13,8 @@
 # Which netlist: the `tt_submission` artifact's `<top>.v` of a `gds` workflow
 # run -- the final netlist that the template's own `gl_test` job compiles.
 # Default: the byte-identical copy frozen under verification/records/
-# post-layout-sdf-regression/ from run 37985271399 (the first netlist of the
-# DR 0012 control-space design, issue #135). Override with
+# post-layout-sdf-regression/ from run 37996177546 (the first netlist with
+# DR 0013's boot ROM, issue #138). Override with
 # --netlist <file> (e.g. one from `gh run download <id> -n tt_submission`).
 #
 # Negative control (a suite that cannot fail cannot cite its passes): the
@@ -49,10 +49,19 @@
 # the point: the bench-composed bus these benches graded before #136 would
 # pass on that netlist; the pad model must not.
 #
-# Usage:  ./flow/run-firmware-gate-level.sh [--netlist FILE] [--full] [--control-space]
+# Boot ROM (issue #138, DR 0013 layer 2): --boot-rom adds
+# verification/test_boot_rom.py, pin-only under GATES=yes like the
+# control-space bench. Its negative control is the net `\u_core.rom_exit`
+# (the flop that records that a WCTL RUN left the boot ROM) stuck at 0 on a
+# fourth mutated copy: the boot program still verifies the image and still
+# jumps, but the core goes on decoding the ROM, so a verified image never
+# runs and the bench's warm-start test must fail.
+#
+# Usage:  ./flow/run-firmware-gate-level.sh [--netlist FILE] [--full] [--control-space] [--boot-rom]
 #   --full  also runs verification/test_firmware_i2c_sr.py (the Sr/stretch
 #           sibling bench); default is the three issue-#108 protocol benches.
 #   --control-space  also runs verification/test_control_space.py.
+#   --boot-rom       also runs verification/test_boot_rom.py.
 # Env:    PDK_ROOT must contain ihp-sg13cmos5l/ (default ~/share/pdk).
 # Runs sims strictly one at a time. Writes flow/firmware-gate-level/
 # (gitignored): per-run results.xml, logs, mutated netlist, summary.json.
@@ -61,7 +70,7 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SCRATCH="${REPO_ROOT}/flow/firmware-gate-level"
-NETLIST="${REPO_ROOT}/verification/records/post-layout-sdf-regression/artifacts/20261009-203349-4ff0e14/tt_um_2amlogic_protocol_emulator.v"
+NETLIST="${REPO_ROOT}/verification/records/post-layout-sdf-regression/artifacts/20261009-220911-1dc1842/tt_um_2amlogic_protocol_emulator.v"
 MODULES=(test_firmware_uart test_firmware_spi test_firmware_i2c)
 export PDK_ROOT="${PDK_ROOT:-$HOME/share/pdk}"
 
@@ -70,7 +79,8 @@ while [ $# -gt 0 ]; do
     --netlist) NETLIST="$2"; shift 2 ;;
     --full) MODULES+=(test_firmware_i2c_sr); shift ;;
     --control-space) MODULES+=(test_control_space); shift ;;
-    -h|--help) sed -n '2,40p' "${BASH_SOURCE[0]}"; exit 0 ;;
+    --boot-rom) MODULES+=(test_boot_rom); shift ;;
+    -h|--help) sed -n '2,49p' "${BASH_SOURCE[0]}"; exit 0 ;;
     *) echo "FATAL: unknown argument $1" >&2; exit 1 ;;
   esac
 done
@@ -84,6 +94,7 @@ command -v iverilog >/dev/null && command -v cocotb-config >/dev/null \
 rm -rf "$SCRATCH"; mkdir -p "$SCRATCH"
 MUTANT="${SCRATCH}/mutant-wait_cnt0-stuck0.v"
 MUTANT_CTL="${SCRATCH}/mutant-ctl_stall-stuck0.v"
+MUTANT_BOOT="${SCRATCH}/mutant-rom_exit-stuck0.v"
 inject_fault() {  # inject_fault <net-regex> <net-name-for-messages> <out-netlist>
   python3 -I - "$NETLIST" "$3" "$1" "$2" <<'PYEOF'
 import re, sys
@@ -102,6 +113,9 @@ inject_fault '\\u_core\.wait_cnt\[0\]' '\u_core.wait_cnt[0]' "$MUTANT"
 for mod in "${MODULES[@]}"; do
   if [ "$mod" = test_control_space ]; then
     inject_fault '\\u_core\.ctl_stall' '\u_core.ctl_stall' "$MUTANT_CTL"
+  fi
+  if [ "$mod" = test_boot_rom ]; then
+    inject_fault '\\u_core\.rom_exit' '\u_core.rom_exit' "$MUTANT_BOOT"
   fi
 done
 MUTANT_PAD="${SCRATCH}/mutant-uio_oe0-stuck0.v"
@@ -122,7 +136,11 @@ print("fault injected: top-level output uio_oe[0] stuck at 0 (driver disconnecte
 PYEOF
 is_i2c() { case "$1" in test_firmware_i2c|test_firmware_i2c_sr) return 0 ;; *) return 1 ;; esac; }
 mutant_for() {  # the faulted netlist that must make <module> fail
-  if [ "$1" = test_control_space ]; then echo "$MUTANT_CTL"; else echo "$MUTANT"; fi
+  case "$1" in
+    test_control_space) echo "$MUTANT_CTL" ;;
+    test_boot_rom) echo "$MUTANT_BOOT" ;;
+    *) echo "$MUTANT" ;;
+  esac
 }
 
 run_bench() {  # run_bench <tag> <netlist> <module>  -> sets RC, prints counts

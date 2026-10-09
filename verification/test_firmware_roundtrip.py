@@ -101,6 +101,10 @@ async def reset_release(dut, mode, settle_cycles=0):
     dut.pm_wdata.value = 0
     dut.pm_crc_clr.value = 0
     dut.fetch_addr.value = 0
+    # DR 0013 (issue #138): the core lowers `fetch_en` while it fetches from
+    # the boot ROM. This bench reads the array through the fetch port, so
+    # it holds the port enabled, as the core does once it runs from memory.
+    dut.fetch_en.value = 1
     dut.rst_n.value = 0
     await ClockCycles(dut.clk, 10)
     dut.rst_n.value = 1
