@@ -251,6 +251,8 @@ fi
 # name:required-model -- the model on which the checker MUST reject it.
 for spec in wrong_destination:edge wrong_value:edge readonly_port_writes:edge \
             wctl_writes_pin:edge rctl_wrong_value:edge pm_read_wrong_byte:edge \
+            fetch_source_ignores_rom:edge run_does_not_leave_rom:edge \
+            boot_status_bit1_wrong:edge rom_decode_split:edge \
             late_one_cycle:edge comb_early_visibility:edge \
             executes_in_priming_cycle:edge negedge_half_cycle_early:fine \
             load_phase_leak:edge; do

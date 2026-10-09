@@ -5,6 +5,7 @@
     "blackbox-RM_IHPSG13_1P_256x16_c2_bm_bist.v",
     "../src/tt_um_2amlogic_protocol_emulator.v",
     "../rtl/protocol_core.v",
+    "../rtl/protocol_boot_rom.v",
     "../rtl/protocol_program_memory.v"
   ],
   "hdl_toplevel": "tt_um_2amlogic_protocol_emulator",

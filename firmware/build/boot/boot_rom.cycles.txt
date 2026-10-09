@@ -1,0 +1,39 @@
+cycle-accounting report (DR 0003 firmware toolchain)
+program: boot_rom
+source: firmware/asm/boot/boot_rom.asm
+WORDS 30
+TOTAL-CYCLES 33
+CYCLES name=warm_word start=15 end=21 cycles=9 branches=true
+WARNING line 66: BZ branches on flags set by SUB over IN-sampled (pin-derived) data -- a data-dependent-latency hazard if this loop produces protocol timing (DR 0001 'Timing model'; legitimate for protocol handshakes, e.g. an I2C ACK wait)
+WARNING line 69: BZ branches on flags set by SUB over IN-sampled (pin-derived) data -- a data-dependent-latency hazard if this loop produces protocol timing (DR 0001 'Timing model'; legitimate for protocol handshakes, e.g. an I2C ACK wait)
+WARNING line 98: BNZ branches on flags set by OR over IN-sampled (pin-derived) data -- a data-dependent-latency hazard if this loop produces protocol timing (DR 0001 'Timing model'; legitimate for protocol handshakes, e.g. an I2C ACK wait)
+ADDR 0x00 WORD 0x9000 IN R0, UI_IN cycles=1
+ADDR 0x01 WORD 0x1460 LDI R1, 0x60 cycles=1
+ADDR 0x02 WORD 0x5100 AND R0, R1 cycles=1
+ADDR 0x03 WORD 0x1440 LDI R1, 0x40 cycles=1
+ADDR 0x04 WORD 0x4400 SUB R1, R0 cycles=1
+ADDR 0x05 WORD 0xD00B BZ warm_start cycles=1
+ADDR 0x06 WORD 0x1420 LDI R1, 0x20 cycles=1
+ADDR 0x07 WORD 0x4400 SUB R1, R0 cycles=1
+ADDR 0x08 WORD 0xD00A BZ spi_boot cycles=1
+ADDR 0x09 WORD 0xF000 HALT cycles=1
+ADDR 0x0A WORD 0xF000 HALT cycles=1
+ADDR 0x0B WORD 0x1800 LDI R2, 0x00 cycles=1
+ADDR 0x0C WORD 0x1C01 LDI R3, 0x01 cycles=1
+ADDR 0x0D WORD 0xA802 WCTL PM_ADDR, R2 cycles=1
+ADDR 0x0E WORD 0xA806 WCTL PM_CRC_LO, R2 cycles=1
+ADDR 0x0F WORD 0x9203 RCTL R0, PM_DATA_HI cycles=2
+ADDR 0x10 WORD 0x9604 RCTL R1, PM_DATA_LO cycles=1
+ADDR 0x11 WORD 0xA802 WCTL PM_ADDR, R2 cycles=1
+ADDR 0x12 WORD 0xA003 WCTL PM_DATA_HI, R0 cycles=1
+ADDR 0x13 WORD 0xA404 WCTL PM_DATA_LO, R1 cycles=2
+ADDR 0x14 WORD 0x3B00 ADD R2, R3 cycles=1
+ADDR 0x15 WORD 0xE00F BNZ warm_loop cycles=1
+ADDR 0x16 WORD 0x9207 RCTL R0, PM_CRC_HI cycles=1
+ADDR 0x17 WORD 0x9606 RCTL R1, PM_CRC_LO cycles=1
+ADDR 0x18 WORD 0x6100 OR R0, R1 cycles=1
+ADDR 0x19 WORD 0xE009 BNZ uart_load cycles=1
+ADDR 0x1A WORD 0x6F00 OR R3, R3 cycles=1
+ADDR 0x1B WORD 0x1C00 LDI R3, 0x00 cycles=1
+ADDR 0x1C WORD 0x8C00 SHF R3, RIGHT cycles=1
+ADDR 0x1D WORD 0xA805 WCTL RUN, R2 cycles=2

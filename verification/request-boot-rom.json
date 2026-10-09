@@ -11,7 +11,7 @@
   ],
   "hdl_toplevel": "tt_um_2amlogic_protocol_emulator",
   "testbench": {
-    "module": "test_random_regression",
+    "module": "test_boot_rom",
     "testcase": null
   },
   "options": {
@@ -20,7 +20,7 @@
       "1ns",
       "1ps"
     ],
-    "random_seed": 20261009,
+    "random_seed": 1,
     "defines": {
       "FUNCTIONAL": "1"
     }

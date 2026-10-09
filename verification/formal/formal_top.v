@@ -29,6 +29,12 @@
  *     module header: reset, then one mode-sampling edge, then run phase):
  *     rst_n low holds it low; the first post-release edge latches the
  *     (constant-low) mode line and raises run_phase from the next cycle.
+ *     Since DR 0013 layer 2 (issue #138) that is the timing of BOTH ways
+ *     into the run phase as the core sees them -- straight into the boot
+ *     ROM (MODE low), or into program memory after a serial load -- and
+ *     which of the two it is reaches the core as `serial_loaded`, which
+ *     this harness leaves free, as a per-trace constant (see the REAL_CORE
+ *     notes below).
  *
  *   - The DUT under the property is selected by the MUTANT define:
  *     default = the conformant timing-contract fixture (property must
@@ -137,12 +143,59 @@ module formal_top (
   //     program the proof quantifies over, which is the abstraction this
   //     harness has always made; what a write does to memory *contents* is
   //     the cocotb bench's subject (verification/test_control_space.py),
-  //     not this latency property's. The two data inputs the control
-  //     space reads from the program memory, `pm_crc` and `serial_loaded`,
-  //     are free per-cycle (`anyseq`): the latency must not depend on
-  //     them either.
+  //     not this latency property's. `pm_crc`, a data input the control
+  //     space reads from the program memory, is free per-cycle (`anyseq`):
+  //     the latency must not depend on it either. (`serial_loaded` was
+  //     free per-cycle too until issue #138; see the next item.)
+  //   - DR 0013 layer 2 (issue #138): the core has two instruction sources
+  //     and a fetch-source mux. Before this, MODE low at reset ran program
+  //     memory, and this harness's one program table was that memory. Now
+  //     there are TWO free tables: `prog*` is program memory and `rom*` is
+  //     the boot ROM, each 8 `anyconst` words read through its own
+  //     registered port at the same fetch address -- so the proof
+  //     quantifies over every boot ROM as well as every program, not over
+  //     the one committed boot image. The monitor's `instr` is the word
+  //     the core decodes this cycle: `rom_q` while the core's `fetch_rom`
+  //     output is high, `instr_q` otherwise. `fetch_rom` is a core OUTPUT
+  //     (it is BOOT_STATUS[1]), not an internal signal, and the monitor
+  //     file is untouched.
+  //   - `serial_loaded` is now a free CONSTANT (`anyconst`), no longer free
+  //     per-cycle. It selects the fetch source, and in the design it cannot
+  //     change while anything executes: rtl/protocol_program_memory.v sets
+  //     it on the very edge that starts the run phase and only reset clears
+  //     it. A per-cycle-free value would swap the instruction under an
+  //     occupant the core has already decoded -- for example under a HALT,
+  //     which the monitor would then re-decode as something else -- a
+  //     behaviour no reachable state of the design has, and the property
+  //     fails on it for that reason alone (tried, and recorded in the
+  //     evidence record). As a constant it covers both ways into the run
+  //     phase: 1 = after a serial load (program memory from the first
+  //     instruction, never the ROM), 0 = MODE low (the boot ROM until a
+  //     WCTL RUN). The one in-run source switch the design has, at RUN, is
+  //     therefore inside the proof, with a free ROM on one side and a free
+  //     program on the other. Cost: BOOT_STATUS[0] as *data* is constant
+  //     within a trace; it is a 1-cycle RCTL index like any other.
+  //     That the mux selects the RIGHT source is not this property's
+  //     subject; `pin_write_latency`'s shadow model derives the source
+  //     independently and owns that.
   (* anyseq *) wire [15:0] free_pm_crc;
-  (* anyseq *) wire        free_serial_loaded;
+  (* anyconst *) reg       free_serial_loaded;
+
+  // The free, stable boot ROM (DR 0013 layer 2): 8 more anyconst words.
+  (* anyconst *) reg [15:0] rom0;
+  (* anyconst *) reg [15:0] rom1;
+  (* anyconst *) reg [15:0] rom2;
+  (* anyconst *) reg [15:0] rom3;
+  (* anyconst *) reg [15:0] rom4;
+  (* anyconst *) reg [15:0] rom5;
+  (* anyconst *) reg [15:0] rom6;
+  (* anyconst *) reg [15:0] rom7;
+  wire [15:0] rom_sel = fetch_addr[2] ?
+                        (fetch_addr[1] ? (fetch_addr[0] ? rom7 : rom6)
+                                       : (fetch_addr[0] ? rom5 : rom4)) :
+                        (fetch_addr[1] ? (fetch_addr[0] ? rom3 : rom2)
+                                       : (fetch_addr[0] ? rom1 : rom0));
+  wire        core_fetch_rom, core_pm_fetch;
   wire        core_pm_we, core_pm_re, core_pm_crc_clr;
   wire [7:0]  core_pm_addr;
   wire [15:0] core_pm_wdata;
@@ -152,6 +205,15 @@ module formal_top (
   reg [15:0] instr_q;
   always @(posedge clk)
     instr_q <= prog_sel;
+
+  // The boot ROM's registered read: always at the fetch address (the ROM
+  // has no data port), one cycle of delay like the macro's.
+  reg [15:0] rom_q;
+  always @(posedge clk)
+    rom_q <= rom_sel;
+
+  // The word the core decodes this cycle.
+  wire [15:0] exec_word = core_fetch_rom ? rom_q : instr_q;
 
   reg       exec_phase;
   reg [7:0] pc_q;
@@ -171,6 +233,9 @@ module formal_top (
       .run_phase    (run_phase),
       .instr_word   (instr_q),
       .fetch_addr   (fetch_addr),
+      .rom_word     (rom_q),
+      .fetch_rom    (core_fetch_rom),
+      .pm_fetch     (core_pm_fetch),
       .port_ui_in   (branch_data),
       .port_uio_in  (mutant_early_data),
       .port_uo_out  (core_uo),
@@ -191,8 +256,48 @@ module formal_top (
       .rst_n     (rst_n_r),
       .run_phase (exec_phase),
       .pc        (pc_q),
-      .instr     (instr_q)
+      .instr     (exec_word)
   );
+
+  // Harness-level covers for the fetch-source mux (non-vacuity of the
+  // DR 0013 part of the binding; the monitor's own covers c1-c9 do not
+  // know there are two sources).
+  //   h1: an instruction decoded from the boot ROM occupies execute;
+  //   h2: one decoded from program memory does, after one from the ROM
+  //       did -- the source switched under the property;
+  //   h3: that switch followed a WCTL RUN decoded from the ROM -- the way
+  //       the design leaves the boot ROM, and with `serial_loaded` a
+  //       constant the only way this harness can;
+  //   h4: a 2-cycle program-memory access (RCTL PM_DATA_HI) decoded from
+  //       the ROM completed its stall -- the boot program's own way of
+  //       reading program memory as data.
+  reg h_rom_seen = 1'b0;
+  reg h_rom_run  = 1'b0;   // previous cycle: the stall cycle of a RUN decoded from the ROM
+  reg h_run1     = 1'b0;   // previous cycle: a RUN decoded from the ROM, first cycle
+  reg h_pmrd1    = 1'b0;   // previous cycle: an RCTL PM_DATA_HI decoded from the ROM, first cycle
+  wire h_is_run  = (exec_word[15:12] == 4'hA) && (exec_word[9:8] == 2'b00) && (exec_word[7:0] == 8'h05);
+  wire h_is_pmrd = (exec_word[15:12] == 4'h9) && (exec_word[9:8] == 2'b10) && (exec_word[7:0] == 8'h03);
+  always @(posedge clk or negedge rst_n_r) begin
+    if (!rst_n_r) begin
+      h_rom_seen <= 1'b0;
+      h_rom_run  <= 1'b0;
+      h_run1     <= 1'b0;
+      h_pmrd1    <= 1'b0;
+    end else begin
+      if (exec_phase && core_fetch_rom) h_rom_seen <= 1'b1;
+      h_run1    <= exec_phase && core_fetch_rom && h_is_run && !h_run1 && !h_pmrd1;
+      h_rom_run <= h_run1 && core_fetch_rom;
+      h_pmrd1   <= exec_phase && core_fetch_rom && h_is_pmrd && !h_run1 && !h_pmrd1 && core_pm_re;
+    end
+  end
+  always @(posedge clk) begin
+    if (rst_n_r) begin
+      cover (exec_phase && core_fetch_rom);                                   // h1
+      cover (exec_phase && !core_fetch_rom && h_rom_seen);                    // h2
+      cover (exec_phase && !core_fetch_rom && h_rom_run);                     // h3
+      cover (exec_phase && core_fetch_rom && h_pmrd1);                        // h4
+    end
+  end
 `else
   assign mem_addr = fetch_addr;  // fixtures: same-cycle fetch at pc
 `ifdef MUTANT
