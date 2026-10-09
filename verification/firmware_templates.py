@@ -4,7 +4,8 @@
 
 Pure Python, stdlib only, no simulator: this module turns one recorded
 seed into a list of **assembler source programs** (UART TX, SPI modes 0-3,
-I2C write at both speed grades) whose payload/mode/address are immediates
+I2C write at both speed grades, plus the issue-#104 I2C
+write/repeated-START/read family with peripheral clock stretching) whose payload/mode/address are immediates
 rendered into protocol-shaped templates. `test_random_regression.py` then
 assembles them with the DR 0003 assembler, loads them through the real
 load-phase pins and grades the pin waveform with the independent reference
@@ -45,10 +46,11 @@ _HERE = Path(__file__).resolve().parent
 REPO_ROOT = _HERE.parent
 sys.path.insert(0, str(REPO_ROOT / "firmware" / "tools"))
 import asm  # noqa: E402  (path-shimmed import of the committed assembler)
+import gen_i2c_sr  # noqa: E402  (the committed read/Sr program generator)
 
 #: Default programs per protocol per run (shared-host limit: <= 20).
 DEFAULT_CASES = 20
-PROTOCOLS = ("uart", "spi", "i2c")
+PROTOCOLS = ("uart", "spi", "i2c", "i2c_rd")
 
 # --- pin plans, as used by the committed programs -------------------------
 SPI_CS, SPI_SCLK, SPI_MOSI = 0, 1, 2  # uo_out bits
@@ -390,10 +392,150 @@ def gen_i2c(seed, index, mistime_low_delta=0) -> Case:
 
 
 # =======================================================================
+# I2C write -> repeated START -> read, with peripheral clock stretching
+# (issue #104). Template = firmware/tools/gen_i2c_sr.py, the generator of
+# the committed i2c_{fast,std}_sr{,_poll}.asm programs, called with a
+# different address / pointer byte. Its instruction stream (hence every
+# per-phase cycle budget) is independent of those immediates.
+# =======================================================================
+
+#: Stretch sites: name -> the controller SCL-fall number after which the
+#: peripheral holds SCL low (numbering of test_firmware_i2c_sr.py's
+#: `drive_peripheral_sr`: 19 = low before the repeated START's rise, 29 =
+#: first read-data clock, 38 = low before the STOP's rise).
+I2C_RD_SITES = {"pre_sr": 19, "read_clock": 29, "pre_stop": 38}
+#: Duration classes: cycles the hold lasts BEYOND the controller's own
+#: t_LOW (so every drawn hold is a real stretch of that many cycles).
+I2C_RD_DURATIONS = {"short": (8, 40), "medium": (41, 200), "long": (201, 400)}
+#: Peripheral ACK slots (falls) and the first read-data fall, as in the
+#: directed bench; the schedule artifact states them explicitly.
+I2C_RD_ACK_FALLS = (9, 18, 28)
+I2C_RD_FIRST_READ_FALL = 29
+_I2C_RD_LOW = {"i2c_fast": gen_i2c_sr.MODES["fast"]["L"],
+               "i2c_std": gen_i2c_sr.MODES["std"]["L"]}
+
+
+def render_i2c_rd(name, seed, index, params) -> str:
+    mode = "fast" if params["grade"] == "i2c_fast" else "std"
+    _n, text, _sites = gen_i2c_sr.build(mode, params.get("poll", True))
+    # The generator inverts each byte (the inverted-data trick): substitute
+    # the three `LDI R0, ~byte` immediates in one pass (so a new value that
+    # equals another old one cannot be re-substituted). Comments still name
+    # the committed program's bytes; the header below says so.
+    inv = lambda v: (~v) & 0xFF
+    addr_w = (params["address"] << 1) & 0xFF
+    swaps = {
+        inv(gen_i2c_sr.ADDR_W): inv(addr_w),
+        inv(gen_i2c_sr.PTR): inv(params["pointer"]),
+        inv(gen_i2c_sr.ADDR_R): inv(addr_w | 1),
+    }
+    assert len(swaps) == 3
+    pat = re.compile(
+        r"(?m)^(\s*LDI\s+R0,\s*)0x(%s)\b"
+        % "|".join(f"{k:02X}" for k in swaps)
+    )
+    text, n = pat.subn(lambda m: f"{m.group(1)}0x{swaps[int(m.group(2), 16)]:02X}", text)
+    assert n == 3, f"expected 3 address/pointer immediates, found {n}"
+    return _header(name, seed, "i2c_rd", index, params) + (
+        "; Body is firmware/tools/gen_i2c_sr.py output (the committed\n"
+        "; i2c_%s_sr%s.asm stream) with only the three LDI R0 (inverted\n"
+        "; address-W / pointer / address-R) immediates changed; comments below\n"
+        "; still name the committed program's 0x50 / 0x5A bytes. The read\n"
+        "; byte and stretch schedule are driven\n"
+        "; by the PERIPHERAL (see %s.schedule.json), not by this source.\n"
+        % (mode, "_poll" if params.get("poll", True) else "", name)
+    ) + text
+
+
+def i2c_rd_schedule(case) -> dict:
+    """The peripheral side of a case, as plain data (also the
+    `.schedule.json` artifact): ACK slots, per-fall read bits, per-fall
+    hold cycles. Pure function of the case params."""
+    rb = case.params["read_byte"]
+    return {
+        "ack_falls": list(I2C_RD_ACK_FALLS),
+        "read_byte": rb,
+        "read_bits": {
+            str(I2C_RD_FIRST_READ_FALL + i): (rb >> (7 - i)) & 1 for i in range(8)
+        },
+        "stretches": {str(s["fall"]): s["hold_cycles"] for s in case.params["stretch"]},
+    }
+
+
+def _draw_i2c_address(rng):
+    addr_class = rng.choice(("bound", "power-of-two", "random"))
+    if addr_class == "bound":
+        return rng.choice((I2C_ADDR_MIN, I2C_ADDR_MAX))
+    if addr_class == "power-of-two":
+        return rng.choice((0x10, 0x20, 0x40))
+    while True:
+        a = rng.randrange(I2C_ADDR_MIN, I2C_ADDR_MAX + 1)
+        if i2c_address_class(a) == "random":
+            return a
+
+
+def gen_i2c_rd(seed, index, poll=True) -> Case:
+    rng = _rng(seed, "i2c_rd", index)
+    grade = I2C_GRADES[index % 2]
+    read_class = _PAYLOAD_CLASSES[(index // 2) % 4]
+    address = _draw_i2c_address(rng)
+    pointer = _draw_byte(rng, rng.choice(_PAYLOAD_CLASSES))
+    read_byte = _draw_byte(rng, read_class)
+    sites = list(I2C_RD_SITES)
+    primary = sites[index % 3]  # round-robin: every site x grade, site x duration
+    primary_dur = list(I2C_RD_DURATIONS)[(index // 3) % 3]
+    low = _I2C_RD_LOW[grade]
+    stretch = []
+    for site in sites:
+        if site == primary:
+            dur = primary_dur
+        elif rng.random() < 0.4:
+            dur = rng.choice(list(I2C_RD_DURATIONS))
+        else:
+            continue
+        lo, hi = I2C_RD_DURATIONS[dur]
+        stretch.append({
+            "site": site,
+            "fall": I2C_RD_SITES[site],
+            "duration_class": dur,
+            "extra_cycles": rng.randrange(lo, hi + 1),
+        })
+    for s in stretch:
+        s["hold_cycles"] = low + s["extra_cycles"]
+    params = {
+        "grade": grade,
+        "address": address,
+        "pointer": pointer,
+        "read_byte": read_byte,
+        "stretch": stretch,
+    }
+    if not poll:  # negative control only: the non-polling sibling program
+        params["poll"] = False
+    name = f"i2c_rd_{index:02d}"
+    src = render_i2c_rd(name, seed, index, params)
+    bins = (
+        ("i2c_rd.grade_x_read_class", f"{grade}/{payload_class(read_byte)}"),
+        ("i2c_rd.address_class", i2c_address_class(address)),
+        ("i2c_rd.pointer_class", payload_class(pointer)),
+        ("i2c_rd.stretch_count", str(len(stretch))),
+    ) + tuple(
+        bin_
+        for s in stretch
+        for bin_ in (
+            ("i2c_rd.site_x_duration", f"{s['site']}/{s['duration_class']}"),
+            ("i2c_rd.grade_x_site", f"{grade}/{s['site']}"),
+        )
+    )
+    return Case("i2c_rd", index, seed, params, bins, src)
+
+
+# =======================================================================
 # Public entry points
 # =======================================================================
 
-_GENERATORS = {"uart": gen_uart, "spi": gen_spi, "i2c": gen_i2c}
+_GENERATORS = {
+    "uart": gen_uart, "spi": gen_spi, "i2c": gen_i2c, "i2c_rd": gen_i2c_rd,
+}
 
 
 def generate(seed: int, protocol: str, n: int = DEFAULT_CASES):
@@ -420,6 +562,18 @@ def planned_bin_universe() -> dict:
             for d in _PAYLOAD_CLASSES
         ],
         "i2c.address_ack": ["ack", "nack"],
+        "i2c_rd.grade_x_read_class": [
+            f"{g}/{c}" for g in I2C_GRADES for c in _PAYLOAD_CLASSES
+        ],
+        "i2c_rd.address_class": ["bound", "power-of-two", "random"],
+        "i2c_rd.pointer_class": list(_PAYLOAD_CLASSES),
+        "i2c_rd.stretch_count": [str(n) for n in range(1, len(I2C_RD_SITES) + 1)],
+        "i2c_rd.site_x_duration": [
+            f"{s}/{d}" for s in I2C_RD_SITES for d in I2C_RD_DURATIONS
+        ],
+        "i2c_rd.grade_x_site": [
+            f"{g}/{s}" for g in I2C_GRADES for s in I2C_RD_SITES
+        ],
     }
     return u
 
@@ -441,6 +595,11 @@ def write_artifacts(case: Case, out_dir: Path) -> None:
     (out_dir / f"{case.name}.cycles.txt").write_text(
         asm.render_cycles_report(program), encoding="utf-8"
     )
+    if case.protocol == "i2c_rd":  # the peripheral's side is evidence too
+        (out_dir / f"{case.name}.schedule.json").write_text(
+            json.dumps(i2c_rd_schedule(case), indent=1, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
 
 
 def main(argv=None) -> int:
