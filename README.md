@@ -8,7 +8,8 @@ flow — cocotb + Icarus for verification, Yosys and OpenROAD for implementation
 It is a tiny CPU whose instruction set is built for exactly one job — reading
 pins, writing pins, counting cycles, and hitting timing precisely — so that a
 real serial protocol (UART, SPI, I2C to start; low-speed USB and 10 Mbit
-Ethernet as stretch goals) is implemented in firmware running on the chip
+Ethernet as stretch goals, currently deferred, see
+[`spec/decision-records/0011-stretch-protocols-feasibility.md`](spec/decision-records/0011-stretch-protocols-feasibility.md)) is implemented in firmware running on the chip
 rather than in fixed logic. One chip, many protocols, chosen at run time by
 the program it loads. It is this program's entry in the
 [Jane Street Protocol Emulator ASIC Competition](https://blog.janestreet.com/protocol-emulator-asic-competition/)
@@ -40,7 +41,10 @@ place-and-route legs remain blocked by
 Evidence from the two flows is recorded separately under
 [`spec/decision-records/0002-flow-of-record.md`](spec/decision-records/0002-flow-of-record.md).
 Nothing has been taped out or measured on silicon. Low-speed USB and
-10 Mbit Ethernet remain stretch goals.
+10 Mbit Ethernet remain stretch goals and are deferred, not built: the proposed
+[feasibility record](spec/decision-records/0011-stretch-protocols-feasibility.md)
+finds the current ISA cannot hold them (unratified, and it lists what would
+reopen them).
 
 ## Built agent-native
 

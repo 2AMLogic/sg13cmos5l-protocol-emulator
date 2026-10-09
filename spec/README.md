@@ -28,6 +28,10 @@ Proposed specification and decision records.
   profile, the open-drain mask value DR 0008 defers to it, and the
   machine-readable table that `scripts/check_protocol_pin_roles.py` checks
   against `info.yaml`, the committed firmware and the benches.
+- `decision-records/0011-stretch-protocols-feasibility.md` — **Proposed**
+  (not ratified) evaluation of target-spec row 2's entry condition for
+  low-speed USB and 10BASE-T against the ISA cycle budget: both deferred,
+  with the arithmetic, assumptions and reopening conditions.
 - `verification-plan.md` — what is verified and how, including the formal
   properties, constrained-random suites, and reference models.
 - `gap-to-submission.md` — every spec row and template checklist item
