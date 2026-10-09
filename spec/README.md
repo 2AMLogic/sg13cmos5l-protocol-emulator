@@ -34,6 +34,9 @@ Proposed specification and decision records.
   update (issues #129–#134). They cover the runtime `uio` direction and
   program-memory access through the ISA's two spare no-op encodings, and a
   layered loader (serial recovery path + boot ROM in this ISA).
+- `decision-records/0014-area-beyond-2x2.md` — **Proposed 2026-10-09** (not
+  ratified), issue #129: what tiles beyond 2×2 buy (second engine, more SRAM,
+  ISA assists) with sourced area costs, and a tile recommendation (keep 2×2).
 - `verification-plan.md` — what is verified and how, including the formal
   properties, constrained-random suites, and reference models.
 - `gap-to-submission.md` — every spec row and template checklist item
