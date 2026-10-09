@@ -28,6 +28,18 @@ without an ISA spec.
 | "Constrained random" | §4 |
 | "AI-assisted verification" | §5 — this entire program is built by AI agents from a ratified spec with an append-only evidence trail; §5 makes that auditable rather than just asserted. |
 
+> **2026-10-09: the organizers' own criteria.** The organizers' entrant update
+> (quoted verbatim in issues #129–#134) describes judging as having "no fixed
+> weighting. Flexibility is the main thing: can the chip be reprogrammed to
+> support protocols it wasn't designed for? Beyond that, we'll look at which
+> protocols you demonstrate, anything unique your architecture makes
+> possible, and how you designed and verified it." The table above, written
+> from the original blog post, has no row for the first of those. It is
+> answered by §7 (target-spec row 13), and the reset obligations the update
+> spells out are answered by §8 (row 14). The submission must also include "a
+> write-up of your verification approach" and a description of how AI tools
+> were used; §5 is the raw material for both (#134).
+
 ## 2. Formal properties
 
 Two properties are named now, both directly checking DR 0001's timing
@@ -108,6 +120,73 @@ program says") ultimately reduces to.
 > on landed RTL. It is therefore deferred to the #18 follow-up sweep that
 > re-runs `no_data_dependent_latency` against the real core; the deferral,
 > not silence, is recorded here per this plan's own evidence discipline.
+
+> **2026-10-09 (issue #116): the deferral is discharged; the property is
+> written and run on the real core.** The core and its output ports landed
+> with #18, so this section's second anchor now exists.
+> `verification/formal/pin_write_latency.sv` is this section's property of
+> record. It is an independent shadow-ISA monitor written from DR 0001's
+> text, and it reads no core-internal signal. Execution eligibility comes
+> from the harness phase model plus the monitor's own shadow `WAIT`/`HALT`
+> state, not from any core write enable. The monitor is bound to the
+> unmodified `rtl/protocol_core.v` by `verification/formal/formal_top_pin_write.v`.
+> Cold start: `./verification/formal/run-pin-write-latency.sh`. Evidence:
+> record `verification/records/pin-write-latency/records/20261009-164147-7cf622d.md`
+> (flow: Yosys + `yosys-abc` + `yosys-smtbmc`/Z3; RTL only, no synthesis or
+> timing flow ran).
+>
+> *Clock convention.* The statement above and DR 0001's "Drive on edge"
+> describe the same event; they do not conflict. Cycle `N` is the clock
+> period in which `OUT` occupies execute. During `N` the source register
+> holds the pre-edge value and the pin still shows its old value. The edge
+> that ends `N` is the retiring edge: the output flop captures the value
+> there. Throughout cycle `N+1` the pin shows the new value, which is the
+> state the next assertion sampling point observes. There is no extra
+> output pipeline stage. "Physical pin" in the statement is read here as
+> the core's output-port register, which the top
+> (`src/tt_um_2amlogic_protocol_emulator.v`) wires straight to
+> `uo_out`/`uio_out`. Pad, post-route and SDF behaviour are separate checks
+> (#106). No spec change is proposed and the statement above is not
+> relaxed.
+>
+> *What was shown.* Every executed `OUT` writes the source register's
+> value to the addressed writable port at the retiring edge, and the other
+> port holds. No output moves for read-only-port `OUT`s, other
+> instructions, `WAIT` stalls, `HALT`, a `run_phase`-low (load) window of any length
+> of at least one cycle after reset, or the priming cycle, except on reset (both ports return to 0). Two clock models check this:
+>
+> - a once-per-cycle EDGE model;
+> - a `clk2fflogic` FINE model, in which the clock and inputs may change
+>   between edges and an output may change only on a rising edge.
+>
+> ABC `scorr`+`pdr` proved both. That proof is **unbounded only within the
+> harness model**, and it rests on that one engine. The model is a free
+> 8-word program table behind a registered fetch, the mode_pin-low phase
+> model with a free-length `run_phase`-low window after each reset (a free
+> `go` input chooses when run phase starts; the serial shift-in itself is
+> not modelled), and reset synchronised to the clock. The scorr-independent bounded
+> cross-check reached only 9 cycles (EDGE) and 14 samples (FINE). All
+> non-vacuity covers were reached: 16 EDGE and 18 FINE. A structural check
+> confirms every output bit is a rising-edge flop output on `clk`. Eight
+> faulty core copies are rejected by both ABC and Z3:
+>
+> - wrong destination;
+> - wrong value;
+> - read-only-port write;
+> - one cycle late;
+> - combinational early visibility;
+> - executes in the priming cycle;
+> - falling-edge (half a cycle early);
+> - a fault that only fires after three consecutive load-phase cycles
+>   (an earlier fixed one-cycle load window could not see it; the Judge
+>   review of PR #127 caught this and the harness was changed).
+>
+> The falling-edge mutant *passes* the EDGE model and fails only the FINE
+> model and the structural check. That is recorded as the reason a
+> once-per-cycle result is not a claim about behaviour between edges. DR
+> 0001 and DR 0005 remain Proposed (DR 0006), so this is evidence against
+> the proposed contract, not ratification. The original text above is left
+> as written.
 
 ## 3. Gate-level regression
 
@@ -200,9 +279,79 @@ auditable rather than a bare assertion:
   either — per `spec/target-spec.md` row 2, they enter this plan only once
   DR 0001 (or a successor decision record) shows they fit the ISA's timing
   budget.
+  DR 0015 (Proposed) now shows a hand-counted budget for low-speed USB
+  transmit with protocol-neutral primitives (10BASE-T deferred there); if it
+  is ratified, a bench per admitted primitive and a USB TX-only firmware
+  bench (independent decoder, timing checked) are added here.
+  Nothing is added until then.
 - Exact tooling choices (which formal tool, which cocotb/Icarus versions,
   which specific open-source UART/SPI/I2C reference-model libraries) are
   deferred to the harness-bootstrap issue (#2) and the firmware/RTL issues
   that follow it — this plan fixes *what* is checked and *against what
   independent standard*, which is the part that has to be right before any
   tool is chosen.
+- Area (row 7): no area number is checked by a bench. DR 0014 (Proposed,
+  issue #129) recommends keeping 2×2; any multi-engine design it gates would
+  need the §2 formal properties re-proved per engine and for their interaction,
+  and the `gds` wall-clock recorded (6-hour Actions limit, #134).
+
+## 7. Reprogrammability, the control space and program loading (rows 6, 13; DRs 0012, 0013)
+
+*Added 2026-10-09. Proposed, like the rest of this plan.*
+
+- **Unplanned-protocol firmware (row 13).** Each protocol gets a committed
+  program and a cocotb bench graded by an **independent reference model**,
+  with the same bar as §4. The protocol is chosen after the submission ISA is
+  frozen, and the record states the freeze commit, so the evidence cannot have
+  shaped the ISA. Its stretch (a role or pin direction the core protocols
+  never use) runs on the silicon-true pad model below.
+- **Control-register bench (DR 0012).** It checks:
+  - reset values, readback, and reserved-index behaviour (no-op write, read
+    returns 0)
+  - the fixed stall of the `PM_*` accesses and `RUN`
+  - that no `WCTL`/`RCTL` sets the flags
+
+  `no_data_dependent_latency` (§2.1) extends to `WCTL`/`RCTL` with DR 0012's
+  per-index latency table.
+- **Silicon-true pad model.** Per pin, `uio_oe`/`uio_out` drive a resolved
+  line with an optional pull-up, and `uio_in` reads the resolved line. It
+  replaces the bench-composed wired-AND bus (DR 0008 § Context), and the I2C
+  evidence re-runs on it, because until DR 0012 is built no bench has shown
+  that I2C works through the real `uio_oe`.
+- **Load integrity (DR 0013 layer 1).** The `PM_CRC` exposed on `uo_out`
+  during load, and through `RCTL`, matches an independent CRC-16/XMODEM
+  (`binascii.crc_hqx`) for random images, including truncated loads and loads
+  with a dropped or doubled clock edge, which must produce a mismatch.
+- **Boot programs (DR 0013 layer 2).** Each boot ROM program is tested
+  against an independent host:
+  - a UART host model that frames, sends and checks the reply, at nominal
+    baud and at ± tolerance
+  - a SPI-flash behavioural model that answers `0x03` reads from an image
+  - corrupted frames and flash contents, which must never reach `RUN`
+
+  The ROM image is freshness-checked against its `.asm` source like every
+  other committed `.hex`.
+- **Runtime swap.** A program loads a second program through `PM_*` and runs
+  it with `RUN`. The second program's protocol is graded by its own reference
+  model.
+- All of the above also runs at gate level (§3).
+
+## 8. Reset, power-up and reselect (row 14)
+
+*Added 2026-10-09 (issue #131). Proposed.*
+
+- **Random-initial-state gate-level run.** Every flop of the flow-of-record
+  netlist starts at a seeded random value (and, separately, at X). Then
+  `rst_n` is applied. After reset deasserts, the top-level outputs must be
+  identical across seeds and free of X, and must equal the documented reset
+  state. Several seeds; the seeds are recorded.
+- **Reset-coverage listing.** Every flop the netlist leaves without a reset is
+  listed, with a justification (for example a datapath register always
+  written before it is read). A new unjustified entry fails the check.
+- **Uninitialized program memory.** With the SRAM model holding random
+  contents and `MODE` low at reset, the design runs the boot ROM, drives no
+  `uio` pin, and does not execute program memory until a load passes its CRC
+  (DR 0013). This is the post-reselect case the organizers describe.
+- **Re-select.** Load, run, power-cycle (state randomized), reset, reload,
+  run. The second run's output must match the first.
+

@@ -1,3 +1,4 @@
+<<<<<<< README.md.pr
 # sg13cmos5l-protocol-emulator
 
 A Protocol emulator ASIC on the [IHP SG13CMOS5L](https://github.com/IHP-GmbH/ihp-sg13cmos5l) open PDK,
@@ -133,3 +134,5 @@ still-open upstream-issue caveat: [`layout/README.md`](layout/README.md).
 ## License
 
 Apache License 2.0 — see [LICENSE](LICENSE).
+=======
+>>>>>>> /dev/fd/11

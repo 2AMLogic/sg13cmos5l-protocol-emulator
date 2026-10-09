@@ -324,6 +324,15 @@ dedicated outputs. **Rejected.**
    `docs/` carry no pull-up statement). Before the RTL follow-up signs
    off, confirm from Tiny Tapeout board documentation or name the
    external pull-up requirement in the submission's user-facing docs.
+   **Update 2026-10-09 (issue #133), appended; the text above stands as
+   written.** The organizers' 2026-10-09 entrant update answers it: the
+   chip has only digital pins (3.3 V I/O on the demo board), and "things
+   like pull-ups, transceivers or level shifting go on a Pmod ... Please
+   document anything your design needs." So the pull-ups on the masked
+   open-drain `uio` pins are **external, on a Pmod, not on the board**, and
+   the submission must document them: `docs/info.md` now carries a
+   required-external-parts section. The board is still not verified to
+   provide any `uio` pull-up, and none is assumed.
 2. **The pin-role decision record sets the mask value** (row 5's "later
    decision record"; also consumes the SCL/SDA pin choice the firmware's
    `uio[0]`/`uio[7]` plan proposes).
