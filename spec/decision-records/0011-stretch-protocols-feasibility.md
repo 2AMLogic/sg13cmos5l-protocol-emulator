@@ -20,7 +20,7 @@ Issue: #109
 | Protocol | Transmit | Receive | Verdict |
 |---|---|---|---|
 | Low-speed USB (1.5 Mbit/s) | Cycles are **not** the limit (33 cycles/bit; stuffing + NRZI uses ~10). Online CRC16 plus stuffing/NRZI needs more live state than 4 registers and 256 words hold. | Edge timing is representable (3-cycle poll vs a ±8.3-cycle window); CRC check and stuffing state are not. | **Defer** |
-| 10BASE-T (10 Mbit/s) | A raw Manchester serializer fits at 5 cycles/bit with zero cycle slack, but the half-bit is 2.5 cycles (mid-bit edge off by 10 ns) and CRC-32 cannot be computed. | The half-bit (50 ns) is shorter than the fastest possible poll loop (60 ns). | **Defer** |
+| 10BASE-T (10 Mbit/s) | A raw Manchester serializer fits at 5 cycles/bit (no slack in the half-bit placement, 5 spare slots per octet), but the half-bit is 2.5 cycles (mid-bit edge off by 10 ns) and CRC-32 cannot be computed. | The half-bit (50 ns) is shorter than the fastest possible poll loop (60 ns). | **Defer** |
 
 Neither protocol is admitted. Row 2 keeps committing to no value. No firmware
 or reference-model follow-up issue is opened, because nothing is admitted; the
@@ -52,7 +52,8 @@ reopening conditions below say what would change that.
   "estimate" where it is not.
 - **Sources.** USB: *Universal Serial Bus Specification Revision 2.0* (USB
   2.0 carries the low-speed signalling of USB 1.1 forward; the section
-  numbers below were checked against the 2024-09-27 USB-IF release text).
+  numbers below were checked against the 2024-09-27 USB-IF release text,
+  except the Table 7-10 source-jitter figures, which are marked "confirm").
   10BASE-T: IEEE 802.3 (Clauses 3, 4, 7, 14). **The IEEE text is paywalled
   and was not retrievable here, so the 802.3 citations are clause-level from
   memory; sub-clause numbers and the jitter/rate limits marked "confirm"
@@ -69,7 +70,7 @@ reopening conditions below say what would change that.
 
 ## Low-speed USB
 
-### Rate, quantization, jitter (USB 2.0 §7.1.11, §7.1.13.1.1, §7.1.15.1)
+### Rate, quantization, jitter (USB 2.0 §7.1.11, §7.1.13.1.1, Table 7-10, §7.1.15.1)
 
 - Nominal 1.5 Mbit/s, bit time 666.67 ns = **33.333 cycles** at 50 MHz.
   §7.1.11: low-speed rate 1.50 Mbit/s **±1.5 %** (15,000 ppm) when
@@ -78,14 +79,30 @@ reopening conditions below say what would change that.
   50/33 = 1.5152 Mbit/s, +1.01 %, inside ±1.5 %. 34 cycles is −1.96 % and 32
   is +4.2 %, both outside. A 33/33/34 repeating pattern has the exact average
   but each edge lands up to ±0.33 cycle (±6.7 ns) off the ideal grid, so two
-  edges can differ by 13.3 ns, which is over the §7.1.13.1.1 limit of ±10 ns
-  for paired transitions. **A uniform 33-cycle bit therefore wins**: zero
-  data-dependent jitter by construction, at the price of consuming 1.01 % of
-  the 1.5 % rate budget. The remaining 0.49 % (4,900 ppm) is all the 50 MHz
-  clock source may drift or be inaccurate by; the repository states no
-  clock-source accuracy yet, so this is an assumption to confirm.
-- Source jitter limit §7.1.13.1.1 for low-speed: ±25 ns consecutive
-  transitions (1.25 cycles), ±10 ns paired (0.5 cycle).
+  edges can differ by up to 13.3 ns. Jitter does **not** exclude that
+  pattern (see the next bullet). **A uniform 33-cycle bit is still chosen**,
+  for state, not timing: the 33/33/34 phase is a third counter that would
+  have to live in a register (none is free, see "No byte counter") or in
+  the program counter (3× the slot copies). The uniform bit has zero
+  data-dependent jitter by construction, and its price is 1.01 % of the
+  1.5 % rate budget. The remaining 0.49 % (4,900 ppm) is all the 50 MHz
+  clock source may drift or be inaccurate by. The repository does not yet
+  state a clock-source accuracy, so this is an assumption to confirm.
+- Source jitter limits (USB 2.0 Table 7-10, low-speed data timing; figures
+  read from memory of the table, **confirm**). Each limit includes frequency
+  tolerance.
+  - **Downstream-facing port** (a host or hub transmitting to a low-speed
+    device): T<sub>DDJ1</sub> ±25 ns to the next transition (1.25 cycles)
+    and T<sub>DDJ2</sub> ±14 ns for paired transitions (0.7 cycle). An
+    earlier draft of this record gave ±10 ns paired. That figure does not
+    match the table and is withdrawn. Against ±14 ns, the 33/33/34 pattern's
+    13.3 ns fits, but only just.
+  - **Upstream-facing port**: T<sub>UDJ1</sub> ±95 ns and T<sub>UDJ2</sub>
+    ±150 ns. A low-speed *device* transmits upstream, so these are the
+    limits that apply to this core in its only plausible role (no host
+    stack fits, see "No CRC"). They are far looser than either 33-cycle
+    scheme needs.
+  - Neither figure changes the verdict, which rests on state.
 - Receivers must decode edges within ±a quarter bit cell of nominal
   (§7.1.15.1) = ±166.7 ns = **±8.33 cycles**; Table 7-5 budgets the host
   receiver 164 ns for the next-transition case.
@@ -104,50 +121,70 @@ before a stuff" (reset value 6), `R3` temporary. One slot is one bit time on
 the wire: `s0` is the first cycle of the slot, the `OUT` is at `s9`, and every
 path is exactly 33 cycles.
 
+The listing is copy `k` (`k` = 0..7) of the slot; why there are 8 copies is
+under "No byte counter" below. A data slot consumes bit `k` and falls
+through to copy `k+1`. A stuff slot consumes no data bit, so it must
+return to the **same** copy's `s0_k`. It has its own `OUT` and exit for
+that reason, and it cannot share `emit_k`, which falls through to copy
+`k+1`.
+
 ```
+s0_k:
 s0   AND R2,R2        ; Z = (ones_left == 0)
-s1   BZ  stuff
+s1   BZ  stuff_k
 ; data bit
 s2   LDI R3,1
 s3   AND R3,R0        ; Z = (bit == 0)
 s4   SHF R0,right     ; C only; Z kept from s3
-s5   BZ  zero_bit
+s5   BZ  zero_bit_k
 s6   LDI R3,1         ; bit == 1: no toggle
 s7   SUB R2,R3        ; ones_left--
-s8   JMP emit
-zero_bit:             ; lands at s6
+s8   JMP emit_k
+zero_bit_k:           ; lands at s6
 s6   LDI R3,3
 s7   XOR R1,R3        ; toggle J<->K
-s8   LDI R2,6         ; fall through to emit
-emit:
+s8   LDI R2,6         ; fall through to emit_k
+emit_k:
 s9   OUT uo_out,R1    ; the same cycle in every path
-s10  WAIT 22          ; 23 cycles: s10..s32
-; (stuff path, entered at s2 from the BZ at s1, rejoins at s9)
-stuff:
+s10  WAIT 22          ; 23 cycles: s10..s32, then falls through to s0_(k+1)
+; stuff path, entered at s2 from the BZ at s1
+stuff_k:
 s2   LDI R3,3
-s3   XOR R1,R3
+s3   XOR R1,R3        ; stuffed 0: toggle J<->K
 s4   LDI R2,6
-s5   WAIT 2           ; s5..s7
-s8   JMP emit         ; data bit NOT consumed
+s5   WAIT 3           ; 4 cycles: s5..s8
+s9   OUT uo_out,R1    ; same cycle as emit_k
+s10  WAIT 21          ; 22 cycles: s10..s31
+s32  JMP s0_k         ; data bit NOT consumed: back to the same copy
 ```
 
-All three paths reach `OUT` at `s9` and the slot closes at `s32`, so the
-slot is 10 + 23 = **33 cycles** and the `OUT` repeats every 33 cycles with no
-data-dependent variation. Worst-case stuffing (the data `0xFF…` run) just
-makes every seventh slot a `stuff` slot: the wire carries 7 slots per 6 data
-bits and every slot is still 33 cycles, so the schedule holds under the
-worst case. Instruction use: 9 of 33 cycles on the longest path (about 27 %).
+All three paths reach `OUT` at `s9` and the slot closes at `s32`. The data
+paths take 10 + 23 (`WAIT 22`) = 33 cycles. The stuff path takes
+10 + 22 (`WAIT 21`) + 1 (`JMP`) = 33 cycles, with the `JMP` filling the
+cycle that the shorter `WAIT` frees. So the `OUT` repeats every 33 cycles
+with no data-dependent variation. Worst-case stuffing (a data run of
+`0xFF…`) makes every seventh slot a stuff slot: the wire carries 7 slots
+per 6 data bits and every slot is still 33 cycles, so the schedule holds
+under the worst case. A stuff slot leaves `R0` and the copy index
+unchanged, so the next slot sends the bit that was pending. Instruction
+use is 9 of 33 cycles on the longest path (about 27 %).
 
 What this does **not** hold:
 
 - **No byte counter.** All four registers are live. The bit position within
   the byte has to be encoded in the program counter, i.e. 8 copies of the
   slot. Words per copy: `s0`–`s1` 2, common data path 4, one-bit path 3,
-  zero-bit path 3, `OUT`+`WAIT` 2, stuff path 5 = **19**, so 8 copies is
-  about **152 of 256 words** before SYNC/PID/EOP code and the per-copy byte
-  reload. Packet length would have to come from an external end-of-packet
-  pin read with `IN` and `BZ`/`BNZ`; that is a deviation from the
-  "firmware owns the protocol" claim and is named as such.
+  zero-bit path 3, `emit` (`OUT`+`WAIT`) 2, and stuff path 7 (`LDI`,
+  `XOR`, `LDI`, `WAIT`, `OUT`, `WAIT`, `JMP`). That totals **21**, so
+  8 copies take **168 of 256 words** before SYNC/PID/EOP code and the
+  per-copy byte reload. (An earlier draft counted 19 words and 152 in
+  total, because its stuff path rejoined the shared `emit` and so dropped
+  a data bit. Review estimated about 22 words and 176 in total for the
+  corrected path. The listing above needs 21, because one `WAIT 3`
+  replaces the old `WAIT 2` + `JMP emit` pair.) Packet length would have
+  to come from an external end-of-packet pin read with `IN` and
+  `BZ`/`BNZ`. That deviates from the "firmware owns the protocol" claim,
+  and this record names the deviation.
 - **No CRC.** CRC16 (§8.3.5.2, G(X) = X¹⁶+X¹⁵+X²+1, seed all ones, shift
   left, residual 1000000000001101B) needs two more registers for the
   remainder. The 16-bit left shift crosses the register boundary, and since
@@ -204,7 +241,9 @@ USB would not be USB.
 
 **Assumptions:** 50 MHz proposed target; uniform 33-cycle bit (+1.01 %);
 external transceiver and level handling; clock-source accuracy within 4,900
-ppm; the §7.1.15.1 and §7.1.13.1.1 figures as read in the USB 2.0 text.
+ppm; the §7.1.15.1 and §7.1.13.1.1 figures as read in the USB 2.0 text;
+the Table 7-10 jitter figures marked "confirm" (the verdict does not rest
+on them).
 
 **Reopening conditions** (any of these needs its own decision record and ISA
 revision, not a firmware edit):
@@ -220,7 +259,8 @@ revision, not a firmware edit):
    and fixed tokens) *and* says why a subset is a meaningful protocol claim.
 4. Sensitivity: at **100 MHz** the bit is 66.67 cycles; 67 cycles is −0.50 %,
    which spends a third of the rate budget instead of two thirds, and the
-   slot has 2.2× more cycles for CRC. That helps the cycle count but not the
+   slot has about twice the cycles for CRC (67 vs 33; 57 vs 23 left after
+   the 10-cycle stuffing/NRZI path). That helps the cycle count but not the
    register and word limits, so 100 MHz alone does not reopen this. The 100
    MHz target is a row 4 stretch with no closure evidence.
 
@@ -269,10 +309,17 @@ t3   XOR R1,R3        ; R1 = ~next octet
 t4   MOV R0,R2
 ```
 
-The octet loop is 8 × 5 = **40 cycles with no wasted slot**: the spare `t4`
-of bits 0–6 hold `IN R2,ui_in` (the next octet) and the closing `JMP`, which
-costs a slot only because it occupies a spare. Five spare slots remain per
-octet. Output edges are at fixed cycles `0, 2, 5, 7, 10, …`, i.e. a 2/3-cycle
+The octet loop is 8 × 5 = **40 cycles**, and the loop branch costs no
+extra cycle because it sits in a spare `t4`. Bit 7's `t4` is taken by
+`MOV R0,R2`, so the loop is **rotated**. The loop label sits at the bit-7
+block, and the body in program order is: bit 7 of octet n−1, then bits
+0–6 of octet n. Bit 6's `t4` is `JMP` back to the bit-7 block, and the
+`t4` of one of bits 0–5 is `IN R2,ui_in` (the next octet, needed before
+bit 7's `t1`). The first octet enters at the bit-0 block after a
+prologue loads `R0`, `R1` and `R2`. The last octet's bit 7 and the loop
+exit are outside this schedule. That uses 2 of the 7 `t4` slots of bits
+0–6 and leaves **5 spare slots per octet**. The half-bit placement has
+no slack. Output edges are at fixed cycles `0, 2, 5, 7, 10, …`, i.e. a 2/3-cycle
 half-bit pattern (40 ns/60 ns), the bit cell is exact, and the preamble
 (`0x55`, SFD `0xD5`) uses the same structure with `LDI` for the octet.
 
@@ -340,16 +387,17 @@ All values at 50 MHz (T = 20 ns); recomputed twice.
 | Quantity | Value |
 |---|---|
 | USB LS bit time | 666.67 ns = 33.333 cycles; 33 cycles = 660 ns = 1.5152 Mbit/s (+1.01 %) |
-| USB ±1.5 % window | 32.83 to 33.83 cycles → only 33 is an integer |
+| USB ±1.5 % window | 33.333/1.015 to 33.333/0.985 = 32.84 to 33.84 cycles → only 33 is an integer |
 | USB quarter bit | 166.7 ns = 8.33 cycles |
-| USB TX slot | 9 instruction cycles + `OUT` + 23 pad = 33 |
-| USB TX words | 19 per bit copy × 8 = 152 of 256 (no CRC) |
+| USB TX slot | data: 9 instruction cycles + `OUT` + 23 pad = 33; stuff: 5 + 4 pad + `OUT` + 22 pad + `JMP` = 33 |
+| USB TX words | 21 per bit copy × 8 = 168 of 256 (no CRC) |
+| USB paired-edge jitter, 33/33/34 pattern | 13.3 ns vs T<sub>DDJ2</sub> ±14 ns downstream / T<sub>UDJ2</sub> ±150 ns upstream (confirm) |
 | 10BASE-T bit / half-bit | 100 ns = 5 cycles / 50 ns = 2.5 cycles |
 | Min frame (preamble to FCS) | 72 bytes = 576 bits = 57.6 µs = 2,880 cycles |
 | Max frame | 1526 bytes = 12,208 bits = 1.2208 ms = 61,040 cycles |
 | IFG | 96 bits = 9.6 µs = 480 cycles |
 | Poll loop `IN`/`AND`/`BZ` | 3 cycles = 60 ns |
-| TX octet loop | 8 × 5 = 40 cycles, 5 spare slots |
+| TX octet loop | 8 × 5 = 40 cycles (rotated: bit 7 of octet n−1, then bits 0–6 of octet n); 7 `t4` slots − `IN` − `JMP` = 5 spare |
 | Drift, 200 ppm over 12,208 bits | 2.44 bit times |
 | At 100 MHz: USB bit / 10BASE-T bit / poll | 66.67 cycles / 10 cycles / 30 ns |
 
