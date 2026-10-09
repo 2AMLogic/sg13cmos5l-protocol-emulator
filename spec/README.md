@@ -1,6 +1,15 @@
 # spec
 
-Proposed specification and decision records.
+Specification and decision records.
+
+> **2026-10-08 (issue #44): the two-key mechanism has now run.**
+> `target-spec.md` and decision records 0001–0004 are ratified by the two
+> `RATIFY-KEY` reviews on pull request #84; that PR's merge commit is the
+> ratification record, and
+> [`decision-records/0009-two-key-ratification-act.md`](decision-records/0009-two-key-ratification-act.md)
+> records the act and exactly what it binds. Decision records 0005, 0007 and
+> 0008 are **not** bound by it and stay `Proposed`. The 2026-09-26 banner
+> below is preserved as written: it was true until that PR merged.
 
 > **2026-09-26: nothing in this directory is ratified.** The two-key
 > (`RATIFY-KEY`) mechanism described below has never run — not on any PR in
@@ -14,15 +23,16 @@ Proposed specification and decision records.
 > see "How ratification works here" below and
 > [`docs/ratification-gate.md`](../docs/ratification-gate.md).
 
-- `target-spec.md` — the checkable target table (Status: **PROPOSED — not
-  ratified**; each row's proposed binding and its met/unmet evidence state
+- `target-spec.md` — the checkable target table (Status: **RATIFIED**, as
+  targets; each row's binding and its 2026-09-21 met/unmet evidence state
   are in the table's State column, registered per row in
   `decision-records/0004-target-spec-ratification.md`).
 - `decision-records/` — numbered decision records (0001-isa.md and up),
   including `0004-target-spec-ratification.md` — the per-row register and
-  *proposed* binding record of 2026-09-21, whose own invalidation clause
-  fired, and `0006-two-key-ratification-never-ran.md`, which records that it
-  did.
+  binding record of 2026-09-21, whose own invalidation clause
+  fired, `0006-two-key-ratification-never-ran.md`, which records that it
+  did, and `0009-two-key-ratification-act.md`, which records the act that was
+  then performed.
 - `verification-plan.md` — what is verified and how, including the formal
   properties, constrained-random suites, and reference models.
 - `gap-to-submission.md` — every spec row and template checklist item
@@ -56,7 +66,8 @@ surface still being written), `Proposed` (complete, awaiting the two-key act),
 cited with that PR's merge commit), or `Recorded` (a finding of fact plus the
 mechanical consequence another record already prescribed for it; decides and
 binds nothing, so nothing in it needs ratifying —
-`0006-two-key-ratification-never-ran.md` is the only such record). A record
+`0006-two-key-ratification-never-ran.md` and
+`0009-two-key-ratification-act.md` are the only such records). A record
 needs ratification when it **decides** something, not when it **observes**
 something. Nothing writes `Ratified` on the strength of a process description:
 the line must cite the carrying PR and its merge commit, and that PR's
@@ -79,5 +90,5 @@ is the authoritative description of what it checks, including the one question
 it deliberately leaves to an operator (DR 0006 § "Routed, not decided") and
 the operator step that makes the check *blocking* rather than merely red.
 
-See issue #1 for how this surface came to exist, and DR 0006 for why the act
-it describes had not happened as of 2026-09-26.
+See issue #1 for how this surface came to exist, DR 0006 for why the act
+it describes had not happened as of 2026-09-26, and DR 0009 for the act.
