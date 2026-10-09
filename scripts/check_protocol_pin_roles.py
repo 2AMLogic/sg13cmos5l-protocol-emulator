@@ -95,6 +95,7 @@ PHASE_VOCAB = {
 PATTERNS = {
     "asm_ports",            # set of OUT / IN port names used by the file
     "uart_tx_mask",         # first `LDI R1, imm` == TX bit mask; ALU mask LDIs
+    "uart_rx_debug",        # every OUT UIO_OUT in uart_rx*.asm is a declared bench-debug write
     "uart_rx_mask",         # first `LDI R1, imm` == RX bit mask; ALU masks; IN/AND masks
     "spi_images",           # LDI R2 -> OUT UO_OUT pin images
     "spi_miso_mask",        # IN UIO_IN ... AND Rx, Ry nearest-LDI mask
@@ -115,6 +116,11 @@ PATTERNS = {
     "isa_port_table",       # firmware/tools/asm.py PORTS codes
     "info_pinout",          # info.yaml pinout block
 }
+
+# Bench-debug writes a profile may make that are NOT pin roles. The table's
+# optional `bench_debug` block declares the bit of each; nothing else may be
+# written to that port by the profile.
+BENCH_DEBUG_VOCAB = {"uart_rx": {"SAMPLE_MARK", "FRAME_ERROR"}}
 
 ISA_PORT_CODES = {"UI_IN": 0, "UIO_IN": 1, "UO_OUT": 2, "UIO_OUT": 3}
 PORT_ASM = {
@@ -150,7 +156,7 @@ class Checker:
         self.meta = Layer("metadata-capability")
         self.concrete = Layer("concrete-firmware-bench")
         self.unwired: list[str] = []
-        self.rx_uio_writers: list[str] = []
+        self.uart_rx_debug: dict[str, set[int]] = {}  # file -> values written to UIO_OUT
         self.table: dict | None = None
         self.pins: dict[tuple[str, int], dict] = {}
         self._cache: dict[str, str | None] = {}
@@ -252,7 +258,33 @@ class Checker:
         self.validate_roles()
         self.validate_masks()
         self.validate_inventory()
+        self.validate_bench_debug()
         return s.ok
+
+    def validate_bench_debug(self) -> None:
+        """`bench_debug` declares writes that are NOT pin roles but that a
+        profile must still account for bit by bit. Only `uart_rx` has any."""
+        s = self.schema
+        self.debug_bits: dict[str, dict[str, int]] = {}
+        bd = self.table.get("bench_debug", {})
+        if not isinstance(bd, dict) or set(bd) - set(BENCH_DEBUG_VOCAB):
+            s.err(f"table.bench_debug: keys must be a subset of {sorted(BENCH_DEBUG_VOCAB)}")
+            return
+        for prof, ent in bd.items():
+            where = f"table.bench_debug.{prof}"
+            bits = ent.get("bits") if isinstance(ent, dict) else None
+            if not isinstance(ent, dict) or ent.get("port") != "uio" or not isinstance(bits, dict):
+                s.err(f"{where}: must be {{\"port\": \"uio\", \"bits\": {{name: bit}}}}")
+                continue
+            if set(bits) != BENCH_DEBUG_VOCAB[prof]:
+                s.err(f"{where}.bits: names {sorted(bits)} != {sorted(BENCH_DEBUG_VOCAB[prof])}")
+                continue
+            vals = list(bits.values())
+            if any(not isinstance(b, int) or isinstance(b, bool) or not 0 <= b <= 7 for b in vals) \
+                    or len(set(vals)) != len(vals):
+                s.err(f"{where}.bits: each bit must be a distinct integer 0..7")
+                continue
+            self.debug_bits[prof] = dict(bits)
 
     def validate_roles(self) -> None:
         s = self.schema
@@ -551,44 +583,68 @@ class Checker:
         if not any(i["m"] == "AND" and i["ops"][1] == "R1" for i in ins):
             c.err(f"{rel}: no `AND Rx, R1` bit-isolation site found")
 
+    def prev_write(self, ins: list[dict], idx: int, reg: str):
+        """(index, instr) of the nearest instruction before `idx` that writes `reg`."""
+        for j in range(idx - 1, -1, -1):
+            if ins[j]["m"] in self.WRITES and ins[j]["ops"][0] == reg:
+                return j, ins[j]
+        return None, None
+
+    def uart_rx_debug_value(self, text, ins, idx, mask_reg, mask, rx_port):
+        """The set of values `OUT UIO_OUT, <reg>` at ins[idx] can write, when
+        the source is one of the three recognised debug shapes; else None.
+
+          constant     nearest write is `LDI reg, imm`           -> {imm}
+          countdown    nearest write is `SUB reg, x` whose next
+                       source line is `BNZ` (loop exits at zero) -> {0}
+          frame error  IN reg, <RX port>; AND reg, M; XOR reg, M;
+                       SHF reg, LEFT   (M = the RX mask register) -> {0, mask << 1}
+        """
+        reg = ins[idx]["ops"][1]
+        j, w = self.prev_write(ins, idx, reg)
+        if w is None:
+            return None
+        if w["m"] == "LDI":
+            v = self.imm(w["ops"][1])
+            return None if v is None else {v}
+        if w["m"] == "SUB":
+            following = [l.split(";", 1)[0].split() for l in text.splitlines()[w["no"]:]]
+            nxt = next((t for t in following if t), None)
+            return {0} if nxt and nxt[0].upper() == "BNZ" else None
+        if w["m"] == "SHF" and w["ops"][1].upper() == "LEFT":
+            j2, x = self.prev_write(ins, j, reg)
+            j3, a = self.prev_write(ins, j2, reg) if x else (None, None)
+            _j4, i = self.prev_write(ins, j3, reg) if a else (None, None)
+            if (x and a and i and x["m"] == "XOR" and a["m"] == "AND" and i["m"] == "IN"
+                    and x["ops"][1] == mask_reg and a["ops"][1] == mask_reg
+                    and i["ops"][1].upper() == rx_port):
+                return {0, (mask << 1) & 0xFF}
+        return None
+
     def prof_uart_rx(self, rel, ent):
         """UART receive: RX sampled from the table's uart_rx.RX pin, the byte
-        (R0) written to the uart_rx_result port. `OUT UIO_OUT` is also
-        allowed, but only as bench debug writes: the sample mark (uio_out[0])
-        and frame error (uio_out[1]) from R1/R2/R3, never the received byte
-        (R0), with the clear value (first `LDI R3`) pinned to 0. These writes
-        are NOT pin roles -- the table assigns no uart_rx role on uio. They are
-        inert ONLY while `uio_oe` is 8'h00: under the proposed `uio_oe =
-        8'h81 & ~uio_out` wiring they would drive uio[0] low (SCL/MISO)
-        outside the sample marks and uio[7] (SDA) low for the whole run. That
-        is a recorded condition on the RTL follow-up (DR 0010 "UART receive")."""
+        written to the uart_rx_result port.
+
+        The RX programs also write `UIO_OUT` as a bench observability aid: a
+        sample mark and a frame-error flag. Those are NOT pin roles, but they
+        are checked: the table's `bench_debug.uart_rx` block names the two
+        bits, every `OUT UIO_OUT` must be one of the recognised debug shapes
+        (`uart_rx_debug_value`) and may only write 0, the mark bit, or the
+        frame-error bit. Anything else -- the received byte in particular --
+        is an error, and the received byte must reach the result port.
+
+        These writes are electrically inert ONLY while the top level has
+        `uio_oe = 8'h00`. Under DR 0010's proposed open-drain mask they would
+        pull the open-drain uio pins low; `implementation()` reports that as
+        an unmet prerequisite (DR 0010 "UART receive")."""
         text = self.read(rel, self.concrete)
         if text is None:
             return
         c = self.concrete
         ins = self.asm_instrs(text)
         _outs, in_ports, res = self.out_in_ports([], [("uart_rx", ["RX"])], "uart_rx_result")
-        self.check_ports(rel, ins, res | {"UIO_OUT"}, in_ports, res, in_ports)
-        # UIO_OUT is debug-only: the received byte (R0) must go to the result
-        # port, and must never be accepted on UIO_OUT.
-        res_port = sorted(res)[0] if res else "UO_OUT"
-        for i in ins:
-            if i["m"] == "OUT" and i["ops"][0].upper() == "UIO_OUT":
-                c.sites += 1
-                if rel not in self.rx_uio_writers:
-                    self.rx_uio_writers.append(rel)
-                if i["ops"][1].upper() == "R0":
-                    c.err(f"{rel}:{i['no']}: OUT UIO_OUT, R0 -- the received byte must go to "
-                          f"{res_port}; UIO_OUT accepts only the debug mark/error writes")
-        if not any(i["m"] == "OUT" and i["ops"][0].upper() in res and i["ops"][1].upper() == "R0"
-                   for i in ins):
-            c.err(f"{rel}: no `OUT {res_port}, R0` -- the received byte (R0) is not written to the result port")
-        clear = next((i for i in ins if i["m"] == "LDI" and i["ops"][0] == "R3"), None)
-        if clear is not None:
-            c.sites += 1
-            if self.imm(clear["ops"][1]) != 0:
-                c.err(f"{rel}:{clear['no']}: first `LDI R3, {clear['ops'][1]}` is the result/mark clear "
-                      f"value and must be 0, so UIO_OUT is not driven with an arbitrary value")
+        dbg = self.debug_bits.get("uart_rx")
+        self.check_ports(rel, ins, res | ({"UIO_OUT"} if dbg else set()), in_ports, res, in_ports)
         mask = self.mask_of("uart_rx", "RX")
         first = next((i for i in ins if i["m"] == "LDI" and i["ops"][0] == "R1"), None)
         if first is None:
@@ -607,6 +663,46 @@ class Checker:
                               port=PORT_ASM[(pb[0], "in")])
             if c.sites == before:
                 c.err(f"{rel}: no `IN Rx, {PORT_ASM[(pb[0], 'in')]}` ... `AND Rx, Ry` RX sample site found")
+        # the received byte: at least one OUT to the result port carries a
+        # computed value (the initial `LDI 0` clear does not count)
+        for port in sorted(res):
+            c.sites += 1
+            computed = False
+            for idx, i in enumerate(ins):
+                if i["m"] == "OUT" and i["ops"][0].upper() == port:
+                    _j, w = self.prev_write(ins, idx, i["ops"][1])
+                    computed |= w is not None and w["m"] != "LDI"
+            if not computed:
+                c.err(f"{rel}: no `OUT {port}, Rx` emits a received (computed) byte; only "
+                      f"constants reach the uart_rx_result port (pattern uart_rx_debug)")
+        if not dbg:
+            return
+        self.uart_rx_debug.setdefault(rel, set())
+        mark, ferr = 1 << dbg["SAMPLE_MARK"], 1 << dbg["FRAME_ERROR"]
+        rx_port = PORT_ASM[(pb[0], "in")] if pb else "UI_IN"
+        seen = set()
+        for idx, i in enumerate(ins):
+            if not (i["m"] == "OUT" and i["ops"][0].upper() == "UIO_OUT"):
+                continue
+            c.sites += 1
+            vals = self.uart_rx_debug_value(text, ins, idx, "R1", mask, rx_port)
+            if vals is None:
+                c.err(f"{rel}:{i['no']}: OUT UIO_OUT, {i['ops'][1]} is not a recognised bench-debug "
+                      f"write (constant, countdown-to-zero, or the frame-error shape); the "
+                      f"uart_rx profile allows only the sample mark and frame-error flag on "
+                      f"uio_out, and the received byte belongs on the uart_rx_result port")
+                continue
+            bad = sorted(v for v in vals if v not in (0, mark, ferr))
+            if bad:
+                c.err(f"{rel}:{i['no']}: OUT UIO_OUT, {i['ops'][1]} writes "
+                      f"{', '.join(f'0x{v:02X}' for v in bad)}; bench_debug.uart_rx allows only 0, "
+                      f"SAMPLE_MARK 0x{mark:02X} and FRAME_ERROR 0x{ferr:02X}")
+            seen |= vals
+            self.uart_rx_debug[rel] |= vals
+        for name, bit in (("SAMPLE_MARK", mark), ("FRAME_ERROR", ferr)):
+            if bit not in seen:
+                c.err(f"{rel}: no OUT UIO_OUT writes the declared {name} bit 0x{bit:02X} "
+                      f"(pattern uart_rx_debug)")
 
     # ----------------------------------------------------------- profile: spi
     def prof_spi(self, rel, ent):
@@ -1002,20 +1098,30 @@ class Checker:
                 self.unwired.append(f"uio_oe expression `{expr}` does not visibly realise open-drain mask 0x{od:02X}")
         else:
             self.concrete.err(f"top-level `uio_oe = {expr}` is an unsupported extraction pattern")
-        # prerequisite: the UART RX programs' debug writes are inert only while
-        # uio_oe does not drive the open-drain pins (DR 0010 "UART receive")
-        drives_od = (bool(int((lit.group(1) or lit.group(3)), 16) & od) if lit else "uio_out" in expr)
-        if od and self.rx_uio_writers and drives_od:
-            self.unwired.append(
-                f"prerequisite: {', '.join(sorted(self.rx_uio_writers))} write UIO_OUT debug bits, which would "
-                f"drive open-drain pins (mask 0x{od:02X}) low once `uio_oe = {expr}` enables them; the RX "
-                f"programs must release those pins or stop writing UIO_OUT first"
-            )
         reset = getattr(self, "uio_out_reset", None)
         if od and reset is not None and (reset & od) != od:
             self.unwired.append(
                 f"prerequisite: port_uio_out resets to 8'h{reset:02X}; open-drain pins (mask "
                 f"0x{od:02X}) must reset to 1 (released) or the pad asserts low from reset"
+            )
+
+        # UART RX bench-debug writes: every write leaves the open-drain bits it
+        # does not set at 0, which under `uio_oe = od & ~uio_out` asserts them.
+        if od and self.uart_rx_debug:
+            always = od
+            sometimes = 0
+            for vals in self.uart_rx_debug.values():
+                for v in vals:
+                    always &= ~v
+                    sometimes |= od & ~v
+            sometimes &= ~always
+            names = lambda m: ", ".join(f"uio[{b}]" for b in range(8) if (m >> b) & 1) or "none"
+            self.unwired.append(
+                f"prerequisite: {len(self.uart_rx_debug)} uart_rx program(s) write bench-debug "
+                f"values to UIO_OUT; under the open-drain mask 0x{od:02X} that asserts low "
+                f"continuously: {names(always)}; except while a debug bit is set: "
+                f"{names(sometimes)}. Inert only while uio_oe is 8'h00 -- move or remove the "
+                f"debug writes, or make the mask per-image (DR 0012), before the uio_oe wiring lands"
             )
 
     # -------------------------------------------------------------------- run

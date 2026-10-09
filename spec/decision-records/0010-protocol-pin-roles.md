@@ -134,6 +134,10 @@ bus held low until the first `OUT`. The RTL follow-up must reset the
 open-drain bits of `uio_out` to 1 (released), or SPI/UART firmware must
 release them first. The checker reports this as an unmet prerequisite.
 
+A second condition is **not met today**: the UART receive programs write
+`UIO_OUT` with bits 0 and 7 at 0, which re-asserts both pads after reset
+whatever the reset value is. See "UART receive" below.
+
 **Fallback if the ratifying keys reject the sharing**: move `MISO` to a
 dedicated input (e.g. `ui_in[1]`), which removes the conflict at the cost of
 the follow-up edits listed below. That is a different allocation; adopting it
@@ -147,6 +151,8 @@ The checker parses exactly the fenced block below (info string
 roles each phase must place exactly once. Every pin carries
 `electrical_role` (`input` / `push_pull` / `open_drain`), `load_role`, and a
 `protocol_roles` entry for every phase — `"unused"` is written explicitly.
+`bench_debug` declares writes that are not pin roles but are still checked bit
+by bit; only the `uart_rx` profile has any (see "UART receive").
 `metadata_class: generic_isa_capability` records that `info.yaml`'s labels are
 ISA capability descriptions, not claims that a protocol assignment is
 implemented. `inventory` lists every file the checker reads and the
@@ -159,6 +165,7 @@ inventory is a hard failure.
   "schema": 1,
   "open_drain_mask": "0x81",
   "push_pull_mask": "0x00",
+  "bench_debug": {"uart_rx": {"port": "uio", "bits": {"SAMPLE_MARK": 0, "FRAME_ERROR": 1}}},
   "phases": {
     "uart_tx": ["TX"],
     "uart_rx": ["RX"],
@@ -197,9 +204,9 @@ inventory is a hard failure.
   "inventory": [
     {"file": "firmware/asm/uart_tx.asm", "profile": "uart_tx", "patterns": ["asm_ports", "uart_tx_mask"]},
     {"file": "firmware/asm/uart_tx_9600.asm", "profile": "uart_tx", "patterns": ["asm_ports", "uart_tx_mask"]},
-    {"file": "firmware/asm/uart_rx.asm", "profile": "uart_rx", "patterns": ["asm_ports", "uart_rx_mask"]},
-    {"file": "firmware/asm/uart_rx_115200.asm", "profile": "uart_rx", "patterns": ["asm_ports", "uart_rx_mask"]},
-    {"file": "firmware/asm/uart_rx_9600.asm", "profile": "uart_rx", "patterns": ["asm_ports", "uart_rx_mask"]},
+    {"file": "firmware/asm/uart_rx.asm", "profile": "uart_rx", "patterns": ["asm_ports", "uart_rx_mask", "uart_rx_debug"]},
+    {"file": "firmware/asm/uart_rx_115200.asm", "profile": "uart_rx", "patterns": ["asm_ports", "uart_rx_mask", "uart_rx_debug"]},
+    {"file": "firmware/asm/uart_rx_9600.asm", "profile": "uart_rx", "patterns": ["asm_ports", "uart_rx_mask", "uart_rx_debug"]},
     {"file": "firmware/asm/spi_mode0.asm", "profile": "spi", "patterns": ["asm_ports", "spi_images", "spi_miso_mask"]},
     {"file": "firmware/asm/spi_mode1.asm", "profile": "spi", "patterns": ["asm_ports", "spi_images", "spi_miso_mask"]},
     {"file": "firmware/asm/spi_mode2.asm", "profile": "spi", "patterns": ["asm_ports", "spi_images", "spi_miso_mask"]},
@@ -232,6 +239,7 @@ inventory is a hard failure.
 | `asm_ports` | the set of `OUT` / `IN` port names; must match the ports of the table's pins for the profile |
 | `uart_tx_mask` | first `LDI R1, imm` in `uart_tx.asm` / `uart_tx_9600.asm` (the TX bit mask and idle level) and every `LDI` immediately feeding `AND`/`OR`/`XOR` |
 | `uart_rx_mask` | first `LDI R1, imm` in `uart_rx*.asm` (the RX bit mask), every `LDI` immediately feeding `AND`/`OR`/`XOR`, and, as `spi_miso_mask`, the mask of each `IN Rx, <RX port>` sample; at least one such sample site must exist |
+| `uart_rx_debug` | every `OUT UIO_OUT, Rx` in `uart_rx*.asm`: the source must be an `LDI` constant, a `SUB` countdown followed by `BNZ` (zero on loop exit), or the frame-error shape `IN`/`AND`/`XOR`/`SHF LEFT` on the RX mask register. Values are limited to 0 and the two `bench_debug.uart_rx` bits, both bits must be written, and one `OUT` to the result port must carry a non-constant value |
 | `spi_images` | each `LDI R2, imm` immediately followed by `OUT UO_OUT, R2`: the first is the idle image (CS high, SCLK at CPOL), every image may use only CS/SCLK/MOSI bits |
 | `spi_miso_mask` | for `IN Rx, UIO_IN`, the nearest `LDI Ry` before the next `AND Rx, Ry` must equal the MISO bit mask |
 | `i2c_idle_start` | the `LDI R3` feeding the first two `OUT UIO_OUT, R3`: bus-idle = SCL\|SDA, START = SCL |
@@ -264,23 +272,44 @@ profile. `uart_tx_9600.asm` is the low-baud transmitter and uses the existing
 
 `ui_in[0]` is also the `PROG_SER` load pin. The two never overlap: the loader
 shifts the program in while `PROG_MODE` is high, and the RX programs sample
-only after the MODE drop. The RX programs also pulse `uio_out[0]` (sample
-mark) and `uio_out[1]` (frame error) for the bench. Those writes are
-observability aids, **not** pin roles: the table assigns no `uart_rx` role on
-`uio`. They are inert **only while `uio_oe` is `8'h00`** (today's wiring). Under
-the `uio_oe = 8'h81 & ~uio_out` wiring proposed for the RTL follow-up, the
-programs write `0x00`, `0x01` and `0x00`/`0x02` to `UIO_OUT`, so they would
-hold `uio[7]` (SDA) low for the whole run and `uio[0]` (SCL / SPI MISO) low
-except during each sample mark. Only `uio[1]` (role `input`) is harmless. The
-`uart_rx` profile therefore allows `OUT UIO_OUT` only as debug writes: the
-source may not be `R0` (the received byte must go to `uo_out`), the program
-must contain `OUT UO_OUT, R0`, and the clear value (first `LDI R3`) must be 0.
-It does not check a mask on the debug bits. **Condition on the RTL
-follow-up (unmet, reported under `[implementation]`):** before `uio_oe` is
-wired non-zero, the RX programs must release `uio[0]`/`uio[7]` first or stop
-writing `UIO_OUT`. No pin moved in this change. The UART
-boot program of DR 0013 uses RX on `ui_in[1]` (Tiny Tapeout option B). Whether
-this profile's RX moves to match is #133's decision, not this record's.
+only after the MODE drop. No pin moved in this change. The UART boot program
+of DR 0013 uses RX on `ui_in[1]` (Tiny Tapeout option B). Whether this
+profile's RX moves to match is #133's decision, not this record's.
+
+**Bench-debug writes to `uio_out`.** The RX programs also write `UIO_OUT`: a
+sample mark on `uio_out[0]` and a frame-error flag on `uio_out[1]`. These are
+observability aids for the bench, **not** pin roles, and the table assigns no
+`uart_rx` role on `uio`. They are still checked. The table's `bench_debug`
+block declares the two bits, and the `uart_rx_debug` pattern requires every
+`OUT UIO_OUT` in an RX program to be one of three shapes: a constant, a
+countdown register that has reached zero, or the frame-error computation. The
+only values allowed are `0x00`, the mark bit and the frame-error bit. The
+received byte on `UIO_OUT` fails, and at least one `OUT` to the result port
+must carry a computed value, so the byte cannot be rerouted off `uo_out`.
+
+**Hazard: these writes are inert only while `uio_oe` is `8'h00`.** That is
+today's top level. Under the wiring this record proposes
+(`uio_oe = 8'h81 & ~uio_out`), a 0 in `uio_out[0]` or `uio_out[7]` asserts the
+pad low. Every debug write leaves bit 7 at 0, and leaves bit 0 at 0 except
+during a sample mark. So a loaded RX image would:
+
+- hold `uio[7]` (SDA) low for the whole run;
+- hold `uio[0]` (SCL / SPI MISO) low except during each sample mark.
+
+Only `uio[1]` is harmless, because its electrical role is `input`. This breaks
+the condition stated under "SPI `MISO` and I2C `SCL` both on `uio[0]`": UART
+firmware must leave the open-drain pins released, and the RX programs do not.
+It is a condition on follow-up 1, and the checker reports it under
+`[implementation]` as an unmet prerequisite, beside the `port_uio_out` reset
+value. This PR changes no firmware and moves no pin. Removing or moving the
+debug writes is #154.
+
+[DR 0012](0012-control-space-and-runtime-pin-direction.md) on `main` changes
+this once its RTL (#135) lands. It replaces the synthesis-time mask with the
+runtime `UIO_DIR` / `UIO_OD` registers, which reset to `0x00` (every `uio` pin
+an input). The RX programs set neither register, so under DR 0012 their
+`uio_out` writes drive no pad. Until #135 lands, and for as long as DR 0008's
+fixed mask could still be built, the hazard above stands.
 
 ## Checker behaviour
 
@@ -302,10 +331,10 @@ this profile's RX moves to match is #133's decision, not this record's.
    follow-up firmware and bench edits land; that is the intended outcome.
 4. **implementation** — proposed electrical roles not wired in the top level
    and unmet prerequisites. On the committed tree: `uio[0]` and `uio[7]`
-   open-drain are unwired (`assign uio_oe = 8'h00;`) and `port_uio_out`
-   resets to `8'h00` rather than releasing the masked pins. Once `uio_oe` drives
-the open-drain pins, the UART RX programs' `UIO_OUT` debug writes are also
-reported here as an unmet prerequisite.
+   open-drain are unwired (`assign uio_oe = 8'h00;`), `port_uio_out`
+   resets to `8'h00` rather than releasing the masked pins, and the three
+   UART receive programs write bench-debug values to `UIO_OUT` that would
+   assert `uio[7]`, and mostly `uio[0]`, low under the 0x81 mask.
 
 Default success means results 1–3 agree with this Proposed record, **not**
 that silicon implements every electrical role. `--require-implemented` also
@@ -320,7 +349,11 @@ target-spec row.
    `assign uio_oe = 8'h00 | (8'h81 & ~uio_out)` per DR 0008, reset the
    open-drain bits of `port_uio_out` to 1, and model the mask in the I2C
    bench so the composed bus is silicon-true. Re-measure on the flow of record
-   (DR 0002), flow-attributed.
+   (DR 0002), flow-attributed. **Prerequisite:** the UART receive programs'
+   debug writes to `UIO_OUT` must be removed or moved first (#154), or this
+   wiring makes every RX image pull `uio[0]` and `uio[7]` low. DR 0012 (#135)
+   proposes a runtime mask instead of this assign; if that lands, this
+   follow-up and its prerequisite are superseded.
 2. **`info.yaml`** and the template `docs/info.md`: add the protocol-profile
    pin table and the pull-up statement; these are generic ISA labels today.
 3. **If `MISO` moves** (fallback above): `firmware/asm/spi_mode0–3.asm`
