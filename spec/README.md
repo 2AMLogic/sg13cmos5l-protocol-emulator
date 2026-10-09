@@ -28,6 +28,11 @@ Proposed specification and decision records.
   profile, the open-drain mask value DR 0008 defers to it, and the
   machine-readable table that `scripts/check_protocol_pin_roles.py` checks
   against `info.yaml`, the committed firmware and the benches.
+- `decision-records/0011-stretch-protocols-feasibility.md` — **Proposed
+  baseline 2026-10-09** (not ratified), issue #109. Hand-counted TX/RX
+  instruction schedules for low-speed USB and 10BASE-T on the current ISA,
+  pure firmware, with assumptions. It gives the baseline only; the verdict
+  is in DR 0015.
 - `decision-records/0012-control-space-and-runtime-pin-direction.md` and
   `decision-records/0013-program-loading.md` — **Proposed 2026-10-09** (not
   ratified), written in response to the organizers' 2026-10-09 entrant
