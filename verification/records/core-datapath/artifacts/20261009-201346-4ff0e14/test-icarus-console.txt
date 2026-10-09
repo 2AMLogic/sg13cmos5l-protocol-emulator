@@ -1,0 +1,80 @@
+     -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:242  in gpi_load_users                  Loaded entry library: '/opt/homebrew/Cellar/python@3.13/3.13.16/Frameworks/Python.framework/Versions/3.13/Python'
+     -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:234  in gpi_load_users                  Running entry func 'initialize' from loaded library '<scratch>/kltvenv/lib/python3.13/site-packages/cocotb/simulator.cpython-313-darwin.so'
+     -.--ns INFO     pygpi                              ..ib/pygpi/embed.cpp:115  in initialize                      Using Python 3.13.14 interpreter at <scratch>/kltvenv/bin/python
+     -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:74   in gpi_print_registered_impl       GPI: VPI support registered
+     0.00ns INFO     cocotb.initialize                  Seeding Python random module with 1
+     0.00ns INFO     cocotb.initialize                  Initialized cocotb v2.1.0 from <scratch>/kltvenv/lib/python3.13/site-packages/cocotb
+     0.00ns INFO     cocotb.initialize                  Running on Icarus Verilog version 13.0 (stable)
+     0.00ns INFO     cocotb.regression                  Running tests
+     0.00ns INFO     cocotb.regression                  running test_protocol_emulator.test_run_entry_fetch_ahead_costs_exactly_one_cycle (1/13)
+                                                            DR 0005's one spec-visible timing consequence, pinned on its own:
+   590.00ns INFO     ..tt_um_2amlogic_protocol_emulator watching uo_out against 4 edge checks
+   641.00ns INFO     cocotb.regression                  test_protocol_emulator.test_run_entry_fetch_ahead_costs_exactly_one_cycle passed
+   641.00ns INFO     cocotb.regression                  running test_protocol_emulator.test_reset_and_load_leaves_pins_cleared (2/13)
+                                                            A one-word HALT program loaded over the real load phase: from
+  1024.00ns INFO     cocotb.regression                  test_protocol_emulator.test_reset_and_load_leaves_pins_cleared passed
+  1024.00ns INFO     cocotb.regression                  running test_protocol_emulator.test_ldi_mov_out_write_latency (3/13)
+                                                            LDI, MOV, OUT (port 10) and the "Drive on edge" contract: the
+  2104.00ns INFO     ..tt_um_2amlogic_protocol_emulator watching uo_out against 7 edge checks
+  2185.00ns INFO     cocotb.regression                  test_protocol_emulator.test_ldi_mov_out_write_latency passed
+  2185.00ns INFO     cocotb.regression                  running test_protocol_emulator.test_alu_results_pin_observable (4/13)
+                                                            ADD, SUB, AND, OR, XOR results on the pin, each computed from a
+  5025.00ns INFO     ..tt_um_2amlogic_protocol_emulator watching uo_out against 7 edge checks
+  5216.00ns INFO     cocotb.regression                  test_protocol_emulator.test_alu_results_pin_observable passed
+  5216.00ns INFO     cocotb.regression                  running test_protocol_emulator.test_alu_flags_whitebox (5/13)
+                                                            Z and C semantics per opcode, read inside the core
+  8907.00ns INFO     cocotb.regression                  test_protocol_emulator.test_alu_flags_whitebox passed
+  8907.00ns INFO     cocotb.regression                  running test_protocol_emulator.test_shf_results_pin_observable (6/13)
+                                                            SHF results through the pin: right shift 0x01 -> 0x00 and left
+ 10147.00ns INFO     ..tt_um_2amlogic_protocol_emulator watching uo_out against 3 edge checks
+ 10238.00ns INFO     cocotb.regression                  test_protocol_emulator.test_shf_results_pin_observable passed
+ 10238.00ns INFO     cocotb.regression                  running test_protocol_emulator.test_in_ports_and_direction_noops (7/13)
+                                                            IN port 00 (ui_in) and port 01 (uio_in) sample the pin value at
+ 11958.01ns INFO     ..tt_um_2amlogic_protocol_emulator watching uo_out against 5 edge checks
+ 12059.01ns INFO     cocotb.regression                  test_protocol_emulator.test_in_ports_and_direction_noops passed
+ 12059.01ns INFO     cocotb.regression                  running test_protocol_emulator.test_out_port11_drives_uio_out_not_oe (8/13)
+                                                            OUT to port 11 drives the uio_out register (visible one cycle
+ 12659.01ns INFO     ..tt_um_2amlogic_protocol_emulator watching uio_out against 3 edge checks
+ 12711.01ns INFO     cocotb.regression                  test_protocol_emulator.test_out_port11_drives_uio_out_not_oe passed
+ 12711.01ns INFO     cocotb.regression                  running test_protocol_emulator.test_wait_cycle_exact (9/13)
+                                                            WAIT imm8 stalls exactly imm8+1 cycles: markers OUTed before and
+ 14431.01ns INFO     ..tt_um_2amlogic_protocol_emulator watching uo_out against 6 edge checks
+ 14612.01ns INFO     cocotb.regression                  test_protocol_emulator.test_wait_cycle_exact passed
+ 14612.01ns INFO     cocotb.regression                  running test_protocol_emulator.test_branches_taken_and_not_taken (10/13)
+                                                            JMP absolute, BZ and BNZ taken and not taken, each observed by
+ 16972.01ns INFO     ..tt_um_2amlogic_protocol_emulator watching uo_out against 5 edge checks
+ 17113.01ns INFO     cocotb.regression                  test_protocol_emulator.test_branches_taken_and_not_taken passed
+ 17113.01ns INFO     cocotb.regression                  running test_protocol_emulator.test_bnz_taken_countdown_loop (11/13)
+                                                            The DR 0001 compile-time-constant countdown loop -- LDI-loaded
+ 18513.01ns INFO     ..tt_um_2amlogic_protocol_emulator watching uo_out against 6 edge checks
+ 18674.01ns INFO     cocotb.regression                  test_protocol_emulator.test_bnz_taken_countdown_loop passed
+ 18674.01ns INFO     cocotb.regression                  running test_protocol_emulator.test_nop_costs_one_cycle (12/13)
+                                                            NOP is a 1-cycle instruction: three NOPs between markers push the
+ 20074.01ns INFO     ..tt_um_2amlogic_protocol_emulator watching uo_out against 4 edge checks
+ 20175.01ns INFO     cocotb.regression                  test_protocol_emulator.test_nop_costs_one_cycle passed
+ 20175.01ns INFO     cocotb.regression                  running test_protocol_emulator.test_latency_independent_of_data (13/13)
+                                                            The bench-level shadow of verification-plan section 2.1's formal
+ 20175.01ns INFO     ..tt_um_2amlogic_protocol_emulator latency-independence pass: zeroing
+ 21575.01ns INFO     ..tt_um_2amlogic_protocol_emulator watching uo_out against 3 edge checks
+ 21676.01ns INFO     ..tt_um_2amlogic_protocol_emulator latency-independence pass: nonzero
+ 23075.01ns INFO     ..tt_um_2amlogic_protocol_emulator watching uo_out against 3 edge checks
+ 23176.01ns INFO     cocotb.regression                  test_protocol_emulator.test_latency_independent_of_data passed
+ 23176.01ns INFO     cocotb.regression                  ***********************************************************************************************************************************
+                                                        ** TEST                                                                       STATUS  SIM TIME (ns)  REAL TIME (s)  RATIO (ns/s) **
+                                                        ***********************************************************************************************************************************
+                                                        ** test_protocol_emulator.test_run_entry_fetch_ahead_costs_exactly_one_cycle   PASS         641.00           0.00     434686.78  **
+                                                        ** test_protocol_emulator.test_reset_and_load_leaves_pins_cleared              PASS         383.00           0.00     568354.67  **
+                                                        ** test_protocol_emulator.test_ldi_mov_out_write_latency                       PASS        1161.00           0.00     661287.13  **
+                                                        ** test_protocol_emulator.test_alu_results_pin_observable                      PASS        3031.00           0.00     695163.56  **
+                                                        ** test_protocol_emulator.test_alu_flags_whitebox                              PASS        3691.00           0.01     662419.24  **
+                                                        ** test_protocol_emulator.test_shf_results_pin_observable                      PASS        1331.00           0.00     683279.62  **
+                                                        ** test_protocol_emulator.test_in_ports_and_direction_noops                    PASS        1821.00           0.00     698024.22  **
+                                                        ** test_protocol_emulator.test_out_port11_drives_uio_out_not_oe                PASS         652.00           0.00     687915.37  **
+                                                        ** test_protocol_emulator.test_wait_cycle_exact                                PASS        1901.00           0.00     671701.78  **
+                                                        ** test_protocol_emulator.test_branches_taken_and_not_taken                    PASS        2501.00           0.00     699042.69  **
+                                                        ** test_protocol_emulator.test_bnz_taken_countdown_loop                        PASS        1561.00           0.00     686745.20  **
+                                                        ** test_protocol_emulator.test_nop_costs_one_cycle                             PASS        1501.00           0.00     664870.35  **
+                                                        ** test_protocol_emulator.test_latency_independent_of_data                     PASS        3001.00           0.00     606798.94  **
+                                                        ***********************************************************************************************************************************
+                                                        ** TESTS=13 PASS=13 FAIL=0 SKIP=0                                                         23176.01           0.04     623536.27  **
+                                                        ***********************************************************************************************************************************

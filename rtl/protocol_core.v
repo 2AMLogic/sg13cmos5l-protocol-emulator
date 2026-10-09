@@ -10,8 +10,10 @@
  * CPU -- no RAM, no stack, no interrupts, and no fixed-function protocol
  * peripherals. Every instruction the ISA defines retires in exactly one
  * clock cycle except `WAIT`, whose duration is fixed by its own
- * immediate, so the cycle count of any program is computable from the
- * instruction stream alone (DR 0001's timing-determinism guarantee,
+ * immediate, and DR 0012's three control accesses that take a fixed 2
+ * cycles (`WCTL PM_DATA_LO`, `WCTL RUN`, `RCTL PM_DATA_HI`; the k that
+ * selects them is an immediate too), so the cycle count of any program is
+ * computable from the instruction stream alone (DR 0001's timing-determinism guarantee,
  * target-spec row 3).
  *
  * ---------------------------------------------------------------------
@@ -50,7 +52,10 @@
  * available in the same cycle the branch executes. There is no
  * register-indirect or computed branch, hence no branch bubble that
  * could be taken or not taken, hence branch *cost* stays independent of
- * data and row 3's guarantee holds by construction.
+ * data and row 3's guarantee holds by construction. DR 0012's `WCTL RUN`
+ * is the one computed jump (PC <- Rs); it pays its fetch cycle *always*
+ * (a fixed 2 cycles, see CONTROL SPACE below), so its cost is still
+ * independent of the target.
  *
  * The one visible cost is at run-phase entry, and it is fixed and
  * data-independent (DR 0005): while `run_phase` is low the core holds
@@ -98,10 +103,8 @@
  *     its 1 cycle. `OUT` writes the port's output register at the
  *     retiring edge ("Drive on edge"), so the new pin value is visible
  *     exactly one clock cycle after the `OUT` executes; `OUT` to a
- *     read-only port is a likewise-1-cycle no-op. `uio_oe` direction is
- *     NOT runtime-programmable in this ISA revision ("Consequences") --
- *     `OUT` to port 11 only ever targets `uio_out`; the top level fixes
- *     `uio_oe` at synthesis time.
+ *     read-only port is a likewise-1-cycle no-op -- EXCEPT the two
+ *     encodings DR 0012 gives a meaning (the control space, below).
  *
  *   - Encoding ("Encoding"): fixed 16-bit words,
  *       [15:12] opcode, [11:10] Rd, [9:8] Rs/port, [7:0] imm8.
@@ -119,26 +122,104 @@
  *     reset-gated, and the Tiny Tapeout template documents `ena` as
  *     "always 1 when the design is powered, so you can ignore it".
  *
+ * ---------------------------------------------------------------------
+ * CONTROL SPACE (DR 0012, issue #135)
+ * ---------------------------------------------------------------------
+ *
+ * `spec/decision-records/0012-control-space-and-runtime-pin-direction.md`
+ * gives two of DR 0001's no-op encodings a meaning, with the control
+ * register index `k` in the otherwise-unused imm8 field:
+ *
+ *   `OUT` port 00, imm8 = k  ->  `WCTL k, Rs`  (control register k <- Rs;
+ *                                Rs rides the [11:10] field, as for OUT)
+ *   `IN`  port 10, imm8 = k  ->  `RCTL Rd, k`  (Rd <- control register k)
+ *   `OUT` port 01, `IN` port 11 stay 1-cycle no-ops (reserved).
+ *
+ * Register map (DR 0012 section 2), with the per-k latency it fixes:
+ *
+ *   k     name         W                          R                      cyc
+ *   0x00  UIO_DIR      push-pull enable per pin   register value         1
+ *   0x01  UIO_OD       open-drain enable per pin  register value         1
+ *   0x02  PM_ADDR      PM word address            register value         1
+ *   0x03  PM_DATA_HI   latch the high byte (1)    read PM[PM_ADDR]: Rd <- W1 R2
+ *                                                 high byte, latch low
+ *   0x04  PM_DATA_LO   commit {HI, Rs} to         latched low byte,      W2 R1
+ *                      PM[PM_ADDR], PM_ADDR++     then PM_ADDR++
+ *   0x05  RUN          PC <- Rs                   (unassigned: 0x00)     W2
+ *   0x06  PM_CRC_LO    clears the CRC             CRC[7:0]               1
+ *   0x07  PM_CRC_HI    clears the CRC             CRC[15:8]              1
+ *   0x08  BOOT_STATUS  (no-op)                    bit0 serial-loaded,    1
+ *                                                 bit1 boot ROM (0: no
+ *                                                 ROM yet, DR 0013/#138)
+ *   0x09  HW_ID        (no-op)                    the HW_ID parameter    1
+ *   other              1-cycle no-op              0x00 in 1 cycle        1
+ *
+ * Every latency is a function of the opcode, the port field and the
+ * immediate k alone -- never of a register, pin or flag -- so DR 0001's
+ * row-3 guarantee holds unchanged; the formal property
+ * `no_data_dependent_latency` carries this exact table. No control
+ * access touches Z or C.
+ *
+ * The three 2-cycle accesses share one mechanism, `ctl_stall`. In the
+ * access's own cycle N the core holds `fetch_addr` at `pc` (as WAIT does)
+ * and, for the two program-memory accesses, asks the program memory to
+ * use the single-port macro for the data access instead of the fetch
+ * (`pm_we` / `pm_re`, DR 0012 "Program-memory timing"). Cycle N+1 is the
+ * stall cycle: nothing new executes, `instr_word` carries the PM read data
+ * (or a stale word after a write, which is ignored), and the core presents
+ * the next fetch address -- `pc + 1`, or Rs for `RUN` (whose word is
+ * still on `instr_word`: RUN makes no program-memory access). The instruction
+ * after the access therefore executes in N+2: exactly one fetch stall,
+ * always. A PM write commits at the edge ending cycle N, so the fetch
+ * presented in N+1 already sees it (DR 0012: "a write to the word being
+ * fetched next takes effect for the fetches after the write retires").
+ *
+ * The CRC itself (CRC-16/XMODEM over every committed word, by either the
+ * serial load or `PM_DATA_LO`) lives in `protocol_program_memory`, the one
+ * module that sees both commit paths; the core reads it and requests its
+ * clear. `uio_dir` / `uio_od` leave the core for the top level's pin-mode
+ * logic (open-drain wins, then push-pull, else input).
+ *
  * Reset behavior: `rst_n` low clears the PC, all four registers, both
  * flags, the WAIT counter, the halt flag, the fetch-valid flag and both
  * pin-output registers, so a freshly reset core drives 0 on `uo_out` and
- * `uio_out`. While `run_phase` is low (reset, or reset released into the
+ * `uio_out`. It also clears every control register (DR 0012 "Reset values:
+ * everything is an input"): `UIO_DIR = UIO_OD = 0`, so no `uio` pin is
+ * driven until a program configures one, and `PM_ADDR`, both data latches
+ * and the control stall are cleared. While `run_phase` is low (reset, or reset released into the
  * load phase) the core changes nothing but holds the PC at 0, so the
  * first executed instruction runs with pristine architectural state.
  */
 
 `default_nettype none
 
-module protocol_core (
+module protocol_core #(
+    // DR 0012 `HW_ID` (k = 0x09): a constant design/revision byte. DR 0012
+    // fixes the register, not its value; 0x01 = the first revision that has
+    // a control space at all. Bump it when a silicon-visible change ships.
+    parameter [7:0] HW_ID = 8'h01
+) (
     input  wire        clk,          // clock
     input  wire        rst_n,        // reset_n - low to reset
     input  wire        run_phase,    // 1 in run phase (from protocol_program_memory)
     input  wire [15:0] instr_word,   // program word fetched one cycle ago: the instruction executing NOW
+                                     // (in a PM_DATA_HI stall cycle: the program-memory read data)
     output wire [7:0]  fetch_addr,   // fetch-ahead: address of the instruction to execute NEXT cycle
     input  wire [7:0]  port_ui_in,   // port 00: ui_in, read-only
     input  wire [7:0]  port_uio_in,  // port 01: uio_in, read-only
     output reg  [7:0]  port_uo_out,  // port 10: uo_out, write-only, registered ("Drive on edge")
-    output reg  [7:0]  port_uio_out  // port 11: uio_out, write-only, registered
+    output reg  [7:0]  port_uio_out, // port 11: uio_out, write-only, registered
+    // DR 0012 control space: runtime pin mode, to the top's uio_oe logic.
+    output reg  [7:0]  uio_dir,      // UIO_DIR (k=0x00): push-pull drive enable per uio pin
+    output reg  [7:0]  uio_od,       // UIO_OD  (k=0x01): open-drain enable per uio pin
+    // DR 0012 program-memory access, to protocol_program_memory.
+    output wire        pm_we,        // this cycle: commit pm_wdata to PM[pm_addr] (WCTL PM_DATA_LO)
+    output wire        pm_re,        // this cycle: read PM[pm_addr] instead of fetching (RCTL PM_DATA_HI)
+    output wire [7:0]  pm_addr,      // PM_ADDR (k=0x02)
+    output wire [15:0] pm_wdata,     // {PM_DATA_HI latch, Rs}
+    output wire        pm_crc_clr,   // this cycle: clear PM_CRC (WCTL PM_CRC_LO / PM_CRC_HI)
+    input  wire [15:0] pm_crc,       // PM_CRC_HI:PM_CRC_LO (k=0x07:0x06), kept by the program memory
+    input  wire        serial_loaded // BOOT_STATUS[0]: a serial load completed since reset
 );
 
   // Opcodes (DR 0001 "Encoding" table, exactly 16 -- the table is full).
@@ -165,6 +246,19 @@ module protocol_core (
   localparam [1:0] PORT_UO_OUT  = 2'd2; // write-only
   localparam [1:0] PORT_UIO_OUT = 2'd3; // write-only
 
+  // Control register indices (DR 0012 section 2). Any other k is
+  // unassigned: a write is a 1-cycle no-op, a read returns 0x00 in 1 cycle.
+  localparam [7:0] CTL_UIO_DIR     = 8'h00;
+  localparam [7:0] CTL_UIO_OD      = 8'h01;
+  localparam [7:0] CTL_PM_ADDR     = 8'h02;
+  localparam [7:0] CTL_PM_DATA_HI  = 8'h03;
+  localparam [7:0] CTL_PM_DATA_LO  = 8'h04;
+  localparam [7:0] CTL_RUN         = 8'h05;
+  localparam [7:0] CTL_PM_CRC_LO   = 8'h06;
+  localparam [7:0] CTL_PM_CRC_HI   = 8'h07;
+  localparam [7:0] CTL_BOOT_STATUS = 8'h08;
+  localparam [7:0] CTL_HW_ID       = 8'h09;
+
   // Architectural state.
   reg [7:0] regs [0:3];   // R0-R3
   reg       flag_z;       // zero flag, written by ADD/SUB/AND/OR/XOR, read by BZ/BNZ
@@ -183,6 +277,15 @@ module protocol_core (
   reg       waiting;      // a WAIT stall is in progress
   reg [7:0] wait_cnt;     // remaining stall cycles (loaded from the WAIT immediate)
   reg       halted;       // HALT executed: idle until reset
+
+  // DR 0012 control-space state (uio_dir / uio_od are the output regs above).
+  reg [7:0] pm_addr_r;    // PM_ADDR
+  reg [7:0] pm_hi;        // PM_DATA_HI write latch
+  reg [7:0] pm_lo;        // low-byte latch filled by an RCTL PM_DATA_HI read
+  reg       ctl_stall;    // this cycle is the fixed stall cycle of a 2-cycle control access
+  reg       stall_pmrd;   // ...and it completes an RCTL PM_DATA_HI (instr_word = PM data)
+  reg       stall_run;    // ...and it completes a WCTL RUN (next fetch from run_target)
+  reg [1:0] stall_rd;     // RCTL PM_DATA_HI destination register
 
   // Decode (combinational, fixed width -- part of the determinism argument).
   wire [3:0] opcode = instr_word[15:12];
@@ -212,6 +315,48 @@ module protocol_core (
   wire [7:0] in_val      = (rs == PORT_UI_IN) ? port_ui_in : port_uio_in;
 
   // ------------------------------------------------------------------
+  // Control space decode (DR 0012). `executing` is high in exactly the
+  // cycles in which the instruction at `pc` takes effect (the same gate the
+  // sequential block uses), so the program-memory strobes below fire once,
+  // in the access's own cycle, and never during WAIT/HALT/the stall cycle.
+  // ------------------------------------------------------------------
+  wire       executing = run_phase && fetch_valid && !halted && !waiting && !ctl_stall;
+  wire       is_wctl   = (opcode == OP_OUT) && (rs == PORT_UI_IN);   // OUT port 00
+  wire       is_rctl   = (opcode == OP_IN)  && (rs == PORT_UO_OUT);  // IN  port 10
+  wire       wctl_lo   = is_wctl && (imm8 == CTL_PM_DATA_LO);
+  wire       wctl_run  = is_wctl && (imm8 == CTL_RUN);
+  wire       rctl_hi   = is_rctl && (imm8 == CTL_PM_DATA_HI);
+  // The fixed-2-cycle accesses (DR 0012 table): a function of the encoded
+  // fields alone.
+  wire       ctl_two   = wctl_lo || wctl_run || rctl_hi;
+
+  assign pm_we      = executing && wctl_lo;
+  assign pm_re      = executing && rctl_hi;
+  assign pm_addr    = pm_addr_r;
+  assign pm_wdata   = {pm_hi, rd_val};  // OUT/WCTL source register rides [11:10]
+  assign pm_crc_clr = executing && is_wctl &&
+                      ((imm8 == CTL_PM_CRC_LO) || (imm8 == CTL_PM_CRC_HI));
+
+  // RCTL read mux for every 1-cycle readable index (PM_DATA_HI is read in
+  // its stall cycle, from instr_word, below).
+  reg [7:0] rctl_val;
+  always @(*) begin
+    case (imm8)
+      CTL_UIO_DIR:     rctl_val = uio_dir;
+      CTL_UIO_OD:      rctl_val = uio_od;
+      CTL_PM_ADDR:     rctl_val = pm_addr_r;
+      CTL_PM_DATA_LO:  rctl_val = pm_lo;
+      CTL_PM_CRC_LO:   rctl_val = pm_crc[7:0];
+      CTL_PM_CRC_HI:   rctl_val = pm_crc[15:8];
+      // bit 1 (running from the boot ROM) reads 0: there is no boot ROM
+      // in this revision (DR 0013 layer 2 is issue #138).
+      CTL_BOOT_STATUS: rctl_val = {6'b000000, 1'b0, serial_loaded};
+      CTL_HW_ID:       rctl_val = HW_ID;
+      default:         rctl_val = 8'h00;  // unassigned (and write-only RUN)
+    endcase
+  end
+
+  // ------------------------------------------------------------------
   // Fetch-ahead next-address mux (DR 0005's amendment to DR 0001). This
   // is DR 0001's next-PC mux verbatim -- branch target vs. PC+1 --
   // relocated from the PC register's input to the memory's address
@@ -229,6 +374,15 @@ module protocol_core (
       next_addr = 8'd0;
     end else if (halted) begin
       next_addr = pc;                                  // HALT: hold forever
+    end else if (ctl_stall) begin
+      // Stall cycle of a 2-cycle control access: the macro was busy with
+      // the data access last cycle, so fetch now. RUN's target is Rs (a
+      // data-chosen *where*, at a fixed *how long*, like a branch
+      // outcome). RUN held the fetch address and made no program-memory
+      // access in its own cycle, so `instr_word` is still the RUN word
+      // here and `rd_val` is still its Rs -- the same held-word argument
+      // WAIT relies on -- which is why no target latch is needed.
+      next_addr = stall_run ? rd_val : pc_next;
     end else if (waiting) begin
       // Mid-WAIT: hold the address (the macro re-reads the same word, so
       // `instr_word` is stable) until the final stall cycle, which
@@ -241,6 +395,11 @@ module protocol_core (
         OP_BZ:   next_addr = flag_z  ? imm8 : pc_next;
         OP_BNZ:  next_addr = !flag_z ? imm8 : pc_next;
         OP_HALT: next_addr = pc;
+        // 2-cycle control accesses hold the address for their own cycle
+        // (the macro's single port is busy with the PM access, or -- for
+        // RUN -- the target is fetched from the stall cycle).
+        OP_OUT,
+        OP_IN:   next_addr = ctl_two ? pc : pc_next;
         default: next_addr = pc_next;
       endcase
     end
@@ -263,6 +422,15 @@ module protocol_core (
       halted       <= 1'b0;
       port_uo_out  <= 8'h00;
       port_uio_out <= 8'h00;
+      uio_dir      <= 8'h00;  // DR 0012: every uio pin an input at reset
+      uio_od       <= 8'h00;
+      pm_addr_r    <= 8'h00;
+      pm_hi        <= 8'h00;
+      pm_lo        <= 8'h00;
+      ctl_stall    <= 1'b0;
+      stall_pmrd   <= 1'b0;
+      stall_run    <= 1'b0;
+      stall_rd     <= 2'd0;
     end else if (!run_phase) begin
       // Load phase (or the pre-sampling cycle): hold the PC at 0 and keep
       // the fetched word marked invalid. No architectural state changes --
@@ -277,7 +445,19 @@ module protocol_core (
       fetch_valid <= 1'b1;
 
       if (fetch_valid && !halted) begin
-        if (waiting) begin
+        if (ctl_stall) begin
+          // The fixed second cycle of a 2-cycle control access. Nothing
+          // here reads data to decide anything about timing: it always
+          // ends after this one cycle.
+          ctl_stall  <= 1'b0;
+          stall_pmrd <= 1'b0;
+          stall_run  <= 1'b0;
+          if (stall_pmrd) begin
+            // RCTL PM_DATA_HI: instr_word is PM[PM_ADDR] (read in cycle N).
+            regs[stall_rd] <= instr_word[15:8];
+            pm_lo          <= instr_word[7:0];
+          end
+        end else if (waiting) begin
           // WAIT stall in progress. The stall length was fixed by the
           // WAIT's own immediate when it executed; nothing sampled here
           // can change it (the no-data-dependent-latency property).
@@ -326,14 +506,50 @@ module protocol_core (
             OP_IN: begin
               if (in_readable) begin
                 regs[rd] <= in_val;
+              end else if (is_rctl) begin
+                // RCTL Rd, k (DR 0012). PM_DATA_HI takes the stall path;
+                // every other index retires now.
+                if (rctl_hi) begin
+                  ctl_stall  <= 1'b1;
+                  stall_pmrd <= 1'b1;
+                  stall_rd   <= rd;
+                end else begin
+                  regs[rd] <= rctl_val;
+                  if (imm8 == CTL_PM_DATA_LO) begin
+                    pm_addr_r <= pm_addr_r + 8'd1;
+                  end
+                end
               end
-              // IN to a write-only port: no-op, still 1 cycle.
+              // IN from port 11 (write-only): no-op, still 1 cycle (reserved).
             end
             OP_OUT: begin
               case (rs)
                 PORT_UO_OUT:  port_uo_out  <= rd_val;
                 PORT_UIO_OUT: port_uio_out <= rd_val;
-                default: ;  // OUT to a read-only port: no-op, still 1 cycle.
+                PORT_UI_IN: begin
+                  // WCTL k, Rs (DR 0012).
+                  case (imm8)
+                    CTL_UIO_DIR:    uio_dir   <= rd_val;
+                    CTL_UIO_OD:     uio_od    <= rd_val;
+                    CTL_PM_ADDR:    pm_addr_r <= rd_val;
+                    CTL_PM_DATA_HI: pm_hi     <= rd_val;
+                    CTL_PM_DATA_LO: begin
+                      // The commit itself is pm_we this cycle; the
+                      // address advances on the same edge.
+                      pm_addr_r <= pm_addr_r + 8'd1;
+                      ctl_stall <= 1'b1;
+                    end
+                    CTL_RUN: begin
+                      // The jump itself is next_addr in the stall cycle.
+                      ctl_stall <= 1'b1;
+                      stall_run <= 1'b1;
+                    end
+                    // PM_CRC_LO/HI: the clear is pm_crc_clr this cycle.
+                    // BOOT_STATUS, HW_ID and unassigned k: no-op.
+                    default: ;
+                  endcase
+                end
+                default: ;  // OUT to port 01 (read-only): no-op, still 1 cycle (reserved).
               endcase
             end
             OP_WAIT: begin

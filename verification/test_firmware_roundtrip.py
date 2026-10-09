@@ -102,6 +102,13 @@ async def reset_release(dut, mode, settle_cycles=0):
     mode-sampling edge and shifts nothing)."""
     dut.mode_pin.value = mode
     dut.serial_in.value = 0
+    # DR 0012's run-phase data-access port (issue #135) is the core's to
+    # drive; this module-level bench has no core, so tie it idle.
+    dut.pm_we.value = 0
+    dut.pm_re.value = 0
+    dut.pm_addr.value = 0
+    dut.pm_wdata.value = 0
+    dut.pm_crc_clr.value = 0
     dut.fetch_addr.value = 0
     dut.rst_n.value = 0
     await ClockCycles(dut.clk, 10)

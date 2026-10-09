@@ -211,8 +211,8 @@ async def test_reset_and_load_leaves_pins_cleared(dut):
     """A one-word HALT program loaded over the real load phase: from
     reset through load and HALT retirement, both pin-output registers
     stay cleared (the stub-era reset contract, now through the core),
-    the bidirectional pins stay inputs (uio_oe fixed at synthesis
-    time), and HALT freezes the core: later cycles change nothing. This
+    the bidirectional pins stay inputs (uio_oe = 0, DR 0012's reset
+    state, which this program never changes), and HALT freezes the core: later cycles change nothing. This
     is the pin-level behavior the superseded reset-pin-through record
     documented for the stub, restated for the core."""
     cocotb.start_soon(Clock(dut.clk, CLK_PERIOD_NS, unit="ns").start())
@@ -393,20 +393,27 @@ async def test_shf_results_pin_observable(dut):
 @cocotb.test()
 async def test_in_ports_and_direction_noops(dut):
     """IN port 00 (ui_in) and port 01 (uio_in) sample the pin value at
-    the retiring edge ("Sample on edge"); IN to a write-only port (10)
-    is a no-op that leaves the destination register untouched; OUT to a
-    read-only port (00) is a no-op that leaves uo_out untouched -- each
-    still costing its fixed 1 cycle."""
+    the retiring edge ("Sample on edge"); IN from the reserved write-only
+    port (11) is a no-op that leaves the destination register untouched;
+    OUT to the reserved read-only port (01) is a no-op that leaves uo_out
+    untouched -- each still costing its fixed 1 cycle.
+
+    Issue #135 / DR 0012: before the control space existed this test used
+    the *other* two no-op encodings (IN port 10, OUT port 00). DR 0012
+    gives those a meaning (RCTL / WCTL -- `IN R0, port 10, imm 0` is now
+    `RCTL R0, UIO_DIR` and would load 0x00), so the no-op claim moved to
+    the two encodings DR 0012 keeps reserved. The control space itself is
+    `test_control_space.py`'s subject."""
     cocotb.start_soon(Clock(dut.clk, CLK_PERIOD_NS, unit="ns").start())
     program = [
         enc(OP_LDI, rd=R0, imm=0x77),        # 0: R0 = 0x77           @ edge 2
-        enc(OP_IN, rd=R0, rs=PORT_UO_OUT),   # 1: IN to write-only    @ 3
+        enc(OP_IN, rd=R0, rs=PORT_UIO_OUT),  # 1: IN from port 11     @ 3
         enc(OP_OUT, rd=R0, rs=PORT_UO_OUT),  # 2: uo_out = 0x77       @ 4
         enc(OP_IN, rd=R1, rs=PORT_UI_IN),    # 3: R1 <- ui_in  (0x5A) @ 5
         enc(OP_OUT, rd=R1, rs=PORT_UO_OUT),  # 4: uo_out = 0x5A       @ 6
         enc(OP_IN, rd=R2, rs=PORT_UIO_IN),   # 5: R2 <- uio_in (0x3C) @ 7
         enc(OP_OUT, rd=R2, rs=PORT_UO_OUT),  # 6: uo_out = 0x3C       @ 8
-        enc(OP_OUT, rd=R2, rs=PORT_UI_IN),   # 7: OUT to read-only    @ 9
+        enc(OP_OUT, rd=R2, rs=PORT_UIO_IN),  # 7: OUT to port 01      @ 9
         enc(OP_OUT, rd=R2, rs=PORT_UO_OUT),  # 8: still 0x3C          @ 10
         enc(OP_HALT),                        # 9                      @ 11
     ]
@@ -430,9 +437,10 @@ async def test_in_ports_and_direction_noops(dut):
 @cocotb.test()
 async def test_out_port11_drives_uio_out_not_oe(dut):
     """OUT to port 11 drives the uio_out register (visible one cycle
-    later, like port 10) and never the direction: uio_oe is fixed at
-    synthesis time (DR 0001 'Consequences') and stays 0 -- the ISA has
-    no runtime direction control in this revision."""
+    later, like port 10) and never the direction: uio_oe moves only
+    through DR 0012's UIO_DIR / UIO_OD control registers (issue #135),
+    which reset to 0 and which this program never writes, so uio_oe
+    stays 0 here. `test_control_space.py` covers the pin-mode logic."""
     cocotb.start_soon(Clock(dut.clk, CLK_PERIOD_NS, unit="ns").start())
     program = [
         enc(OP_LDI, rd=R0, imm=0x9C),          # 0                  @ edge 2

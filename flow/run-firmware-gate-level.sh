@@ -13,18 +13,36 @@
 # Which netlist: the `tt_submission` artifact's `<top>.v` of a `gds` workflow
 # run -- the final netlist that the template's own `gl_test` job compiles.
 # Default: the byte-identical copy frozen under verification/records/
-# post-layout-sdf-regression/ from run 37911842396. Override with
+# post-layout-sdf-regression/ from run 37985271399 (the first netlist of the
+# DR 0012 control-space design, issue #135). Override with
 # --netlist <file> (e.g. one from `gh run download <id> -n tt_submission`).
 #
 # Negative control (a suite that cannot fail cannot cite its passes): the
 # same benches are re-run on a copy of the netlist with ONE fault injected --
-# the first combinational input pin fed by `\u_core.wait_cnt[3]` (the WAIT
-# counter) is tied to 1'b0. Every bench module must FAIL on it (a parsed
-# results.xml with failures, not a compile error), else this script fails.
+# the net `\u_core.wait_cnt[0]` (bit 0 of the WAIT counter) stuck at 0: every
+# combinational input pin it feeds is tied to 1'b0. Every bench module must
+# FAIL on it (a parsed results.xml with failures, not a compile error), else
+# this script fails.
 #
-# Usage:  ./flow/run-firmware-gate-level.sh [--netlist FILE] [--full]
+# Why bit 0 on every sink, and not "the first sink of bit 3" as this runner
+# first had it (issue #135 finding): "the first sink" is whatever gate the
+# flow happens to emit first, so the fault moves when the netlist is
+# re-synthesized. On the first netlist of the control-space design that sink
+# is an inverter, and the faulted netlist still PASSED the SPI bench (whose
+# only WAITs are inter-burst gaps) -- the control silently stopped
+# controlling one of four modules. A whole-net stuck-at does not depend on
+# gate order, and bit 0 is the bit every non-zero WAIT must count through.
+#
+# Control space (issue #135, DR 0012): --control-space adds
+# verification/test_control_space.py, which is pin-only under GATES=yes. The
+# WAIT-counter fault is not aimed at it, so it gets its own negative
+# control: the net `\u_core.ctl_stall` (the fixed stall of the
+# 2-cycle control accesses) stuck at 0 the same way, on a second mutated copy.
+#
+# Usage:  ./flow/run-firmware-gate-level.sh [--netlist FILE] [--full] [--control-space]
 #   --full  also runs verification/test_firmware_i2c_sr.py (the Sr/stretch
 #           sibling bench); default is the three issue-#108 protocol benches.
+#   --control-space  also runs verification/test_control_space.py.
 # Env:    PDK_ROOT must contain ihp-sg13cmos5l/ (default ~/share/pdk).
 # Runs sims strictly one at a time. Writes flow/firmware-gate-level/
 # (gitignored): per-run results.xml, logs, mutated netlist, summary.json.
@@ -33,7 +51,7 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SCRATCH="${REPO_ROOT}/flow/firmware-gate-level"
-NETLIST="${REPO_ROOT}/verification/records/post-layout-sdf-regression/artifacts/20261009-103407-9716a9e/tt_um_2amlogic_protocol_emulator.v"
+NETLIST="${REPO_ROOT}/verification/records/post-layout-sdf-regression/artifacts/20261009-203349-4ff0e14/tt_um_2amlogic_protocol_emulator.v"
 MODULES=(test_firmware_uart test_firmware_spi test_firmware_i2c)
 export PDK_ROOT="${PDK_ROOT:-$HOME/share/pdk}"
 
@@ -41,7 +59,8 @@ while [ $# -gt 0 ]; do
   case "$1" in
     --netlist) NETLIST="$2"; shift 2 ;;
     --full) MODULES+=(test_firmware_i2c_sr); shift ;;
-    -h|--help) sed -n '2,32p' "${BASH_SOURCE[0]}"; exit 0 ;;
+    --control-space) MODULES+=(test_control_space); shift ;;
+    -h|--help) sed -n '2,40p' "${BASH_SOURCE[0]}"; exit 0 ;;
     *) echo "FATAL: unknown argument $1" >&2; exit 1 ;;
   esac
 done
@@ -53,20 +72,31 @@ command -v iverilog >/dev/null && command -v cocotb-config >/dev/null \
   || { echo "FATAL: iverilog and cocotb-config are required." >&2; exit 1; }
 
 rm -rf "$SCRATCH"; mkdir -p "$SCRATCH"
-MUTANT="${SCRATCH}/mutant-wait_cnt3-stuck0.v"
-python3 -I - "$NETLIST" "$MUTANT" <<'PYEOF'
+MUTANT="${SCRATCH}/mutant-wait_cnt0-stuck0.v"
+MUTANT_CTL="${SCRATCH}/mutant-ctl_stall-stuck0.v"
+inject_fault() {  # inject_fault <net-regex> <net-name-for-messages> <out-netlist>
+  python3 -I - "$NETLIST" "$3" "$1" "$2" <<'PYEOF'
 import re, sys
-src, dst = sys.argv[1:3]
+src, dst, net_re, net_name = sys.argv[1:5]
 text = open(src, encoding="utf-8").read()
-# first input-pin connection (.A.., .B.., .S.. -- never .Q/.Y/.D) to the net
-pat = re.compile(r"(\.(?:A|B|C|D1|S|A_N|B_N|A1|A2|B1|B2)\d?)\(\\u_core\.wait_cnt\[3\] \)")
-m = pat.search(text)
-if not m:
-    sys.exit("FATAL: no combinational sink of \\u_core.wait_cnt[3] found to inject the fault")
-text = text[:m.start()] + m.group(1) + "(1'b0)" + text[m.end():]
+# every input-pin connection (.A.., .B.., .S.. -- never .Q/.Y/.X/.D) to the net
+pat = re.compile(r"(\.(?:A|B|C|D1|S|A_N|B_N|A1|A2|B1|B2)\d?)\(" + net_re + r" \)")
+text, n = pat.subn(lambda m: m.group(1) + "(1'b0)", text)
+if n == 0:
+    sys.exit(f"FATAL: no combinational sink of {net_name} found to inject the fault")
 open(dst, "w", encoding="utf-8").write(text)
-print(f"fault injected: {m.group(0)} -> {m.group(1)}(1'b0)", file=sys.stderr)
+print(f"fault injected: {net_name} stuck at 0 on {n} input pin(s)", file=sys.stderr)
 PYEOF
+}
+inject_fault '\\u_core\.wait_cnt\[0\]' '\u_core.wait_cnt[0]' "$MUTANT"
+for mod in "${MODULES[@]}"; do
+  if [ "$mod" = test_control_space ]; then
+    inject_fault '\\u_core\.ctl_stall' '\u_core.ctl_stall' "$MUTANT_CTL"
+  fi
+done
+mutant_for() {  # the faulted netlist that must make <module> fail
+  if [ "$1" = test_control_space ]; then echo "$MUTANT_CTL"; else echo "$MUTANT"; fi
+}
 
 run_bench() {  # run_bench <tag> <netlist> <module>  -> sets RC, prints counts
   local tag="$1" nl="$2" mod="$3" dir="${SCRATCH}/${1}/${3}"
@@ -106,7 +136,7 @@ for mod in "${MODULES[@]}"; do
   echo "${sep}    {\"kind\": \"golden\", \"module\": \"${mod}\", \"result\": \"${out}\", \"as_required\": $([ $ok -eq 1 ] && echo true || echo false)}" >> "${SCRATCH}/summary.json"; sep=","
 done
 for mod in "${MODULES[@]}"; do
-  out="$(run_bench mutant "$MUTANT" "$mod")"
+  out="$(run_bench mutant "$(mutant_for "$mod")" "$mod")"
   echo "MUTANT-RUN ${mod}: ${out}" >&2
   ok=1
   # must fail inside the bench: parsed results with >=1 failed test

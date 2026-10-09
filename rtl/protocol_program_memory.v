@@ -114,6 +114,41 @@
  * table is exactly full), so the verifiable path for "the bits landed
  * where the ISA says" is the fetch port itself -- what the core will
  * execute -- exercised by `verification/test_program_memory.py`.
+ *
+ * ---------------------------------------------------------------------
+ * DR 0012: RUN-PHASE PROGRAM-MEMORY ACCESS AND PM_CRC (issue #135)
+ * ---------------------------------------------------------------------
+ *
+ * `spec/decision-records/0012-control-space-and-runtime-pin-direction.md`
+ * makes program memory reachable from firmware through the core's control
+ * space (`WCTL PM_DATA_LO` writes, `RCTL PM_DATA_HI` reads). The macro is
+ * still single-port, so a run-phase data access *takes the port* for one
+ * cycle: when the core raises `pm_we` or `pm_re` it presents `pm_addr` to
+ * the macro instead of `fetch_addr`, and the core stalls fetch for exactly
+ * that one cycle (see `rtl/protocol_core.v`, CONTROL SPACE). `pm_re` puts
+ * PM[pm_addr] on `instr_word` the next cycle -- the core consumes it as
+ * data there, not as an instruction. The load phase and the run phase are
+ * still mutually exclusive, so the port has at most one requester per
+ * cycle: the loader in load phase, the core in run phase.
+ *
+ *   A_ADDR <- wr_addr (load) / pm_addr (pm_we | pm_re) / fetch_addr
+ *   A_DIN  <- load_word (load) / pm_wdata (run)
+ *   A_WEN  <- a serial-load commit, or pm_we
+ *   A_REN  <- run phase and not a write cycle
+ *
+ * `pm_crc` is DR 0012's PM_CRC: CRC-16/XMODEM (poly 0x1021, init 0x0000,
+ * no reflection, no final XOR) over every word committed to the macro
+ * since reset or since the last `pm_crc_clr`, **by either path** -- the
+ * serial load's commits and the core's `PM_DATA_LO` commits update the same
+ * register, through the same `mem_wen`/`mem_din` the macro itself sees, so
+ * no commit can reach the array without reaching the CRC. Each word is
+ * fed MSB first (high byte, then low byte), i.e. the CRC of the image as a
+ * big-endian byte string -- `binascii.crc_hqx(bytes, 0)` on the host side
+ * (DR 0013's UART frame is big-endian too). This module only keeps the
+ * register; exposing it on `uo_out` during load is issue #137.
+ *
+ * `serial_loaded` is DR 0012's `BOOT_STATUS[0]`: set when a load phase
+ * ends (MODE dropped), cleared only by reset.
  */
 
 `default_nettype none
@@ -125,8 +160,32 @@ module protocol_program_memory (
     input  wire        serial_in,   // ui_in[0] - serial program bit, sampled MSB-first during load phase
     input  wire [7:0]  fetch_addr,  // address of the instruction to execute NEXT cycle (fetch-ahead, DR 0005)
     output wire [15:0] instr_word,  // the word read at the address presented one cycle earlier
-    output wire        run_phase    // high once the load phase has ended (or was never entered)
+    output wire        run_phase,   // high once the load phase has ended (or was never entered)
+    // DR 0012 run-phase data access (from protocol_core's control space).
+    input  wire        pm_we,       // commit pm_wdata to PM[pm_addr] this cycle (WCTL PM_DATA_LO)
+    input  wire        pm_re,       // read PM[pm_addr] this cycle instead of fetching (RCTL PM_DATA_HI)
+    input  wire [7:0]  pm_addr,     // PM_ADDR
+    input  wire [15:0] pm_wdata,    // word to commit
+    input  wire        pm_crc_clr,  // clear pm_crc this cycle (WCTL PM_CRC_LO / PM_CRC_HI)
+    output reg  [15:0] pm_crc,      // PM_CRC: CRC-16/XMODEM over every committed word
+    output reg         serial_loaded // BOOT_STATUS[0]: a serial load completed since reset
 );
+
+  // One CRC-16/XMODEM step over a whole 16-bit word, MSB first (high byte
+  // then low byte, the order binascii.crc_hqx sees a big-endian image in).
+  function [15:0] crc16_word;
+    input [15:0] crc_in;
+    input [15:0] data;
+    integer i;
+    reg [15:0] c;
+    begin
+      c = crc_in;
+      for (i = 15; i >= 0; i = i - 1) begin
+        c = {c[14:0], 1'b0} ^ ((c[15] ^ data[i]) ? 16'h1021 : 16'h0000);
+      end
+      crc16_word = c;
+    end
+  endfunction
 
   // Load-phase state.
   reg        started;      // has the post-reset mode-sampling edge happened?
@@ -154,15 +213,25 @@ module protocol_program_memory (
   // A commit cycle: in the load phase, with MODE still high (a MODE drop
   // on this edge exits instead of shifting), on the 16th bit of a word,
   // and not yet saturated.
-  wire        mem_wen   = load_active && mode_pin && (bit_cnt == 4'd15) && !full;
+  wire        load_wen  = load_active && mode_pin && (bit_cnt == 4'd15) && !full;
+
+  // A run-phase commit from the core (DR 0012 WCTL PM_DATA_LO). Gated on
+  // run_phase so nothing the core does outside run phase can write.
+  wire        run_wen   = run_phase_r && pm_we;
+  wire        mem_wen   = load_wen || run_wen;
 
   // The fetch port is live whenever the load phase is not. That includes
   // the single pre-sampling cycle after reset release (harmless: the
-  // core holds address 0 and executes nothing until run_phase rises).
-  wire        mem_ren   = !load_active;
+  // core holds address 0 and executes nothing until run_phase rises). A
+  // run-phase write cycle reads nothing (the core ignores instr_word in
+  // the stall cycle that follows); a PM read (pm_re) reads pm_addr.
+  wire        mem_ren   = !load_active && !run_wen;
 
   wire        mem_men   = mem_wen || mem_ren;
-  wire [7:0]  mem_addr  = load_active ? wr_addr : fetch_addr;
+  wire [7:0]  mem_addr  = load_active          ? wr_addr :
+                          (run_wen || pm_re)   ? pm_addr :
+                                                 fetch_addr;
+  wire [15:0] mem_din   = load_active ? load_word : pm_wdata;
 
   RM_IHPSG13_1P_256x16_c2_bm_bist u_sram (
       .A_CLK      (clk),
@@ -170,7 +239,7 @@ module protocol_program_memory (
       .A_WEN      (mem_wen),
       .A_REN      (mem_ren),
       .A_ADDR     (mem_addr),
-      .A_DIN      (load_word),
+      .A_DIN      (mem_din),
       .A_DLY      (1'b1),          // datasheet's mandatory setting (DR 0005)
       .A_DOUT     (instr_word),
       .A_BM       (16'hFFFF),      // whole-word writes only
@@ -184,6 +253,30 @@ module protocol_program_memory (
       .A_BIST_DIN (16'h0000),
       .A_BIST_BM  (16'h0000)
   );
+
+  // ------------------------------------------------------------------
+  // PM_CRC and BOOT_STATUS[0] (DR 0012). The CRC advances on exactly the
+  // macro's own write strobe and data, so it covers every commit by any
+  // path. A commit and a clear cannot coincide (a clear is a WCTL in run
+  // phase, a commit there is a different WCTL; load-phase commits happen
+  // while the core executes nothing), but if they did the commit would
+  // win, so no committed word ever escapes the CRC.
+  // ------------------------------------------------------------------
+  always @(posedge clk or negedge rst_n) begin
+    if (!rst_n) begin
+      pm_crc        <= 16'h0000;
+      serial_loaded <= 1'b0;
+    end else begin
+      if (mem_wen) begin
+        pm_crc <= crc16_word(pm_crc, mem_din);
+      end else if (pm_crc_clr) begin
+        pm_crc <= 16'h0000;
+      end
+      if (load_active && !mode_pin) begin
+        serial_loaded <= 1'b1;  // the load phase ends on this edge
+      end
+    end
+  end
 
   // ------------------------------------------------------------------
   // Load-phase sequencer. Unchanged from the flip-flop implementation
@@ -242,9 +335,10 @@ module protocol_program_memory (
           end
         end
       end
-      // In run phase there is nothing to do: MODE is not sampled again
-      // (no re-entry without a rst_n pulse with MODE high), and program
-      // memory is not data-addressable by the ISA.
+      // In run phase there is nothing to do here: MODE is not sampled
+      // again (no re-entry without a rst_n pulse with MODE high). Program
+      // memory is data-addressable only through the core's DR 0012
+      // control space (pm_we / pm_re above), never through this sequencer.
     end
   end
 

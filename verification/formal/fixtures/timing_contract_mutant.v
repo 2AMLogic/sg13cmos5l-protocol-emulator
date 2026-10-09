@@ -34,6 +34,15 @@ module timing_contract_mutant (
   wire [3:0] op  = instr_word[15:12];
   wire [7:0] imm = instr_word[7:0];
 
+  // DR 0012 control space (issue #135): WCTL = OUT (1010) to port 00, RCTL
+  // = IN (1001) from port 10, index k in imm8. Three accesses occupy a
+  // fixed 2 cycles: WCTL PM_DATA_LO (0x04), WCTL RUN (0x05), RCTL
+  // PM_DATA_HI (0x03). Every other index, in either direction, is 1 cycle.
+  wire is_wctl = (op == 4'b1010) && (instr_word[9:8] == 2'b00);
+  wire is_rctl = (op == 4'b1001) && (instr_word[9:8] == 2'b10);
+  wire is_run  = is_wctl && (imm == 8'h05);
+  wire is_ctl2 = is_run || (is_wctl && (imm == 8'h04)) || (is_rctl && (imm == 8'h03));
+
   // THE INJECTED DEFECT (the only difference from the conformant shell):
   // a WAIT whose data happens to equal the magic value terminates in one
   // cycle regardless of its immediate. Latency now depends on data.
@@ -53,7 +62,9 @@ module timing_contract_mutant (
     end else if (wait_rem > 9'd1) begin
       wait_rem <= wait_rem - 9'd1;
       if (wait_rem == 9'd2)
-        fetch_addr <= pc_p1;
+        fetch_addr <= is_run ? branch_data : pc_p1;
+    end else if (is_ctl2) begin
+      wait_rem <= 9'd2;
     end else begin
       case (op)
         4'b1011: begin

@@ -24,6 +24,8 @@
 # loaded program really executes on the fabricated netlist, not a second
 # copy of that suite.
 
+import binascii
+
 import cocotb
 from cocotb.clock import Clock
 from cocotb.triggers import ClockCycles, RisingEdge, Timer
@@ -110,9 +112,10 @@ async def test_project(dut):
     # changed nothing: the first instruction has not executed yet.
     await step(dut, 1)  # edge 1: the fetch-ahead priming edge
     assert dut.uo_out.value == 0, "reset/load must leave uo_out cleared"
-    # The bidirectional pins are configured as inputs (uio_oe == 0):
-    # DR 0001 fixes direction at synthesis time, so nothing the firmware
-    # does may ever move it.
+    # The bidirectional pins are inputs (uio_oe == 0): DR 0012's reset
+    # state. Direction moves only through the UIO_DIR / UIO_OD control
+    # registers, which this program never writes (test_control_space
+    # below does).
     assert dut.uio_oe.value == 0
 
     dut._log.info("Test the loaded firmware drives uo_out")
@@ -155,4 +158,157 @@ async def test_project(dut):
     await step(dut, 20)
     assert dut.uo_out.value == 0x22, "HALT must freeze the pin registers"
     assert dut.uio_out.value == 0, "no OUT to port 11 ever ran"
+    assert dut.uio_oe.value == 0
+
+
+# ---------------------------------------------------------------------------
+# DR 0012 control space (issue #135), pin-only so it runs unchanged on the
+# gate-level netlist. `WCTL k, Rs` is OUT (opcode 0xA) to port 00 with the
+# control-register index k in imm8 and Rs in the [11:10] field; `RCTL Rd, k`
+# is IN (opcode 0x9) from port 10 with k in imm8. The deep bench, with the
+# cycle-exact stall checks and the reserved-index sweep, is
+# verification/test_control_space.py; this is the sign-off-leg smoke of the
+# same behaviour on whatever netlist the gds workflow just built.
+PORT_UIO_OUT = 3
+R2, R3 = 2, 3
+K_UIO_DIR, K_UIO_OD, K_PM_ADDR, K_PM_DATA_HI, K_PM_DATA_LO = 0, 1, 2, 3, 4
+K_RUN, K_PM_CRC_LO, K_PM_CRC_HI, K_BOOT_STATUS, K_HW_ID = 5, 6, 7, 8, 9
+
+
+def wctl(k, rs):
+    return enc(OP_OUT, rd=rs, rs=0, imm=k)
+
+
+def rctl(rd, k):
+    return enc(OP_IN, rd=rd, rs=2, imm=k)
+
+
+def ctl_cycles(word):
+    """DR 0001 / DR 0012 latency table, restated here for the edge
+    arithmetic: WAIT imm8+1; WCTL PM_DATA_LO, WCTL RUN and RCTL PM_DATA_HI
+    a fixed 2; everything else 1."""
+    op, port, k = word >> 12, (word >> 8) & 3, word & 0xFF
+    if op == OP_WAIT:
+        return k + 1
+    if op == OP_OUT and port == 0 and k in (K_PM_DATA_LO, K_RUN):
+        return 2
+    if op == OP_IN and port == 2 and k == K_PM_DATA_HI:
+        return 2
+    return 1
+
+
+@cocotb.test()
+async def test_control_space(dut):
+    dut._log.info("Start (DR 0012 control space)")
+    cocotb.start_soon(Clock(dut.clk, 10, unit="us").start())
+
+    program = []
+    checks = []  # (instruction index, signal name, expected value, what)
+
+    def emit(word):
+        program.append(word)
+        return len(program) - 1
+
+    def show(k, want, what):
+        """LDI R0, 0xEE; RCTL R0, k; OUT uo_out, R0 -> uo_out must read `want`."""
+        emit(enc(OP_LDI, rd=R0, imm=0xEE))
+        emit(rctl(R0, k))
+        checks.append((emit(enc(OP_OUT, rd=R0, rs=PORT_UO_OUT)), "uo_out", want, what))
+
+    # 1. Identity and reset state, read by firmware.
+    show(K_UIO_DIR, 0x00, "UIO_DIR resets to 0")
+    show(K_UIO_OD, 0x00, "UIO_OD resets to 0")
+    show(K_BOOT_STATUS, 0x01, "BOOT_STATUS: serial-loaded, no boot ROM")
+    show(K_HW_ID, 0x01, "HW_ID")
+    crc_lo_at = len(program)
+    show(K_PM_CRC_LO, None, "PM_CRC_LO over the serial load")
+    show(K_PM_CRC_HI, None, "PM_CRC_HI over the serial load")
+
+    # 2. Pin mode: push-pull on uio[3:0], then open-drain on uio[7] and
+    #    uio[0] (the I2C images' SDA / SCL), which wins over push-pull.
+    emit(enc(OP_LDI, rd=R1, imm=0x0F))
+    checks.append((emit(wctl(K_UIO_DIR, R1)), "uio_oe", 0x0F, "UIO_DIR=0x0F: push-pull enables"))
+    show(K_UIO_DIR, 0x0F, "UIO_DIR readback")
+    emit(enc(OP_LDI, rd=R1, imm=0x81))
+    checks.append((emit(enc(OP_OUT, rd=R1, rs=PORT_UIO_OUT)), "uio_oe", 0x0F,
+                   "uio_out=0x81 does not move push-pull enables"))
+    checks.append((emit(wctl(K_UIO_OD, R1)), "uio_oe", 0x0E,
+                   "UIO_OD=0x81: OD wins on uio[0], released pins are not driven"))
+    emit(enc(OP_LDI, rd=R1, imm=0x01))
+    checks.append((emit(enc(OP_OUT, rd=R1, rs=PORT_UIO_OUT)), "uio_oe", 0x8E,
+                   "uio_out=0x01: SDA (uio[7]) pulled low, SCL released"))
+    emit(enc(OP_LDI, rd=R1, imm=0x00))
+    emit(wctl(K_UIO_OD, R1))
+    checks.append((emit(wctl(K_UIO_DIR, R1)), "uio_oe", 0x00, "all uio pins back to inputs"))
+
+    # 3. Program memory: write a 3-word routine at 0xC0 through the control
+    #    space, read word 0 back, check PM_ADDR and the CRC, then RUN it.
+    routine = [
+        enc(OP_LDI, rd=R2, imm=0xC3),
+        enc(OP_OUT, rd=R2, rs=PORT_UO_OUT),
+        enc(OP_HALT),
+    ]
+    emit(enc(OP_LDI, rd=R1, imm=0xC0))
+    emit(wctl(K_PM_ADDR, R1))
+    emit(wctl(K_PM_CRC_LO, R1))  # clear: the CRC below covers the routine only
+    for word in routine:
+        emit(enc(OP_LDI, rd=R0, imm=word >> 8))
+        emit(wctl(K_PM_DATA_HI, R0))
+        emit(enc(OP_LDI, rd=R0, imm=word & 0xFF))
+        emit(wctl(K_PM_DATA_LO, R0))   # 2 cycles
+    show(K_PM_ADDR, 0xC3, "PM_ADDR auto-incremented over 3 writes")
+    crc = binascii.crc_hqx(b"".join(bytes((w >> 8, w & 0xFF)) for w in routine), 0)
+    show(K_PM_CRC_LO, crc & 0xFF, "PM_CRC_LO over the PM_DATA_LO writes (binascii.crc_hqx)")
+    show(K_PM_CRC_HI, crc >> 8, "PM_CRC_HI over the PM_DATA_LO writes (binascii.crc_hqx)")
+    # Read back routine word 1 (the OUT, 0xAA00): its low byte, 0x00, is
+    # the last value on uo_out before the routine runs and shows 0xC3.
+    emit(enc(OP_LDI, rd=R3, imm=0xC1))
+    emit(wctl(K_PM_ADDR, R3))
+    emit(rctl(R0, K_PM_DATA_HI))       # 2 cycles
+    checks.append((emit(enc(OP_OUT, rd=R0, rs=PORT_UO_OUT)), "uo_out", routine[1] >> 8,
+                   "PM_DATA_HI readback"))
+    emit(rctl(R0, K_PM_DATA_LO))
+    checks.append((emit(enc(OP_OUT, rd=R0, rs=PORT_UO_OUT)), "uo_out", routine[1] & 0xFF,
+                   "PM_DATA_LO readback"))
+    run_at = emit(wctl(K_RUN, R1))     # 2 cycles, PC <- 0xC0
+    emit(enc(OP_LDI, rd=R3, imm=0xBD))  # must never execute
+    emit(enc(OP_OUT, rd=R3, rs=PORT_UO_OUT))
+    emit(enc(OP_HALT))
+
+    # The serial-load CRC is over the image itself, so it is known only now.
+    image_crc = binascii.crc_hqx(b"".join(bytes((w >> 8, w & 0xFF)) for w in program), 0)
+    checks = [
+        (i, sig, (image_crc & 0xFF if "PM_CRC_LO over the serial" in what else image_crc >> 8)
+         if want is None else want, what)
+        for i, sig, want, what in checks
+    ]
+    assert program[crc_lo_at + 1] == rctl(R0, K_PM_CRC_LO)
+
+    def retire_edge(index):
+        return 2 + sum(ctl_cycles(w) for w in program[:index])
+
+    await load_program(dut, program)
+    assert dut.uio_oe.value == 0, "nothing may drive a uio pin before a program asks"
+
+    edge = 0
+    for index, sig, want, what in sorted(checks):
+        target = retire_edge(index)
+        await step(dut, target - edge)
+        edge = target
+        got = int(getattr(dut, sig).value)
+        assert got == want, f"{what}: {sig} after edge {edge} is {got:#04x}, want {want:#04x}"
+
+    dut._log.info("Test RUN jumps into the routine written through PM_DATA")
+    # RUN occupies edges run and run+1; the routine's LDI retires at run+2
+    # and its OUT at run+3.
+    target = retire_edge(run_at) + 3
+    await step(dut, target - 1 - edge)
+    assert dut.uo_out.value == (routine[1] & 0xFF), "the routine's OUT arrived early"
+    await step(dut, 1)
+    assert dut.uo_out.value == 0xC3, (
+        f"routine written through the control space did not run: uo_out "
+        f"{int(dut.uo_out.value):#04x}"
+    )
+    await step(dut, 10)
+    assert dut.uo_out.value == 0xC3, "RUN fell through, or the routine's HALT did not hold"
     assert dut.uio_oe.value == 0

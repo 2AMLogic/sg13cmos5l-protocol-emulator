@@ -54,6 +54,16 @@ coverage.
   `src/tt_um_2amlogic_protocol_emulator.v` (the harness-bootstrap stub top,
   issue #2). Driven by `klt functional-verification` (see
   `request-protocol-emulator.json`).
+- `test_control_space.py` — cocotb bench for DR 0012's control space
+  (issue #135) on the top: reset values, readback, the `uio_oe` pin-mode
+  rule, reserved-index behaviour, the fixed 2-cycle stall and its
+  data-independence, no flag side effects, a program-memory
+  write-then-read round trip, code written through the control space
+  executed via `RUN`, `PM_CRC` against `binascii.crc_hqx`, and the I2C
+  images' open-drain preamble. Pin-observable except for two labelled
+  white-box reads, so it also runs on a gate-level netlist. Driven by
+  `klt functional-verification` (see `request-control-space.json`);
+  `control_space_mutants.py` is its negative-control runner.
 - `test_program_memory.py` — cocotb testbench for
   `rtl/protocol_program_memory.v`, the program memory and serial
   load-phase logic (target-spec row 6, issue #19): loads known programs

@@ -122,12 +122,34 @@ def expect_fail(fx: Fixture, needle: str, layer: str | None = None, *extra: str)
 
 
 # ---------------------------------------------------------------- baseline
-@case("committed tree: consistency passes, implementation incomplete")
+# Issue #135 (DR 0012): the committed top level now derives uio_oe from the
+# core's UIO_OD / UIO_DIR control registers, and the committed I2C programs
+# set the table's open-drain mask with `WCTL UIO_OD`. So the committed tree
+# is implementation-COMPLETE, and the cases that used to start from
+# `assign uio_oe = 8'h00;` first put that synthesis-time shape back.
+TOP = "src/tt_um_2amlogic_protocol_emulator.v"
+RUNTIME_OE = "assign uio_oe = (uio_od & ~uio_out) | (~uio_od & uio_dir);"
+
+
+@case("committed tree: consistency passes, runtime pin mode is complete")
 def _(fx):
     code, out = fx.run()
     assert code == 0, out
     for layer in ("schema", "metadata-capability", "concrete-firmware-bench"):
         assert f"[{layer}] PASS" in out, out
+    assert "[implementation] COMPLETE" in out, out
+    # DR 0012: the UART RX bench-debug writes (issue #154) enable no pin,
+    # because those programs write no pin-mode register.
+    assert "uart_rx program(s) write bench-debug values" not in out, out
+    code, out = fx.run("--require-implemented")
+    assert code == 0 and "--require-implemented: PASS" in out, out
+
+
+@case("synthesis-time uio_oe = 0: consistency passes, implementation incomplete")
+def _(fx):
+    fx.mutate(TOP, RUNTIME_OE, "assign uio_oe = 8'h00;")
+    code, out = fx.run()
+    assert code == 0, out
     assert "[implementation] INCOMPLETE: 4" in out, out
     # the UART RX bench-debug writes are reported as a hazard under the 0x81 mask
     assert "uart_rx program(s) write bench-debug values to UIO_OUT" in out, out
@@ -136,15 +158,70 @@ def _(fx):
     assert "port_uio_out resets to 8'h00" in out, out
 
 
+@case("runtime pin mode: a top-level uio_oe that is not DR 0012's rule fails")
+def _(fx):
+    # open-drain no longer wins over push-pull
+    fx.mutate(TOP, RUNTIME_OE, "assign uio_oe = (uio_od & ~uio_out) | uio_dir;")
+    expect_fail(fx, "is not DR 0012's pin-mode rule", "concrete-firmware-bench")
+
+
+@case("runtime pin mode: a pin-mode register that does not reset to 0 fails")
+def _(fx):
+    fx.mutate("rtl/protocol_core.v", "uio_od       <= 8'h00;", "uio_od       <= 8'h81;")
+    expect_fail(fx, "uio_od resets to 8'h81", "concrete-firmware-bench")
+
+
+@case("runtime pin mode: an I2C program without the WCTL UIO_OD preamble is unwired")
+def _(fx):
+    fx.mutate("firmware/asm/i2c_fast.asm",
+              "        WCTL  UIO_OD, R3      ; DR 0012: SCL|SDA open-drain (after the OUT)\n", "")
+    code, out = fx.run()
+    assert code == 0 and "[implementation] INCOMPLETE: 1" in out, out
+    assert "i2c_fast.asm: drives open-drain pins (mask 0x81) but has no `WCTL UIO_OD`" in out, out
+    code, out = fx.run("--require-implemented")
+    assert code == 1 and "--require-implemented: FAIL" in out, out
+
+
+@case("runtime pin mode: WCTL UIO_OD before the releasing OUT is unwired")
+def _(fx):
+    fx.mutate("firmware/asm/i2c_std.asm",
+              "        OUT   UIO_OUT, R3\n        WCTL  UIO_OD, R3      ; DR 0012: SCL|SDA open-drain (after the OUT)\n",
+              "        WCTL  UIO_OD, R3\n        OUT   UIO_OUT, R3\n")
+    code, out = fx.run()
+    assert code == 0 and "i2c_std.asm: `WCTL UIO_OD` precedes the first `OUT UIO_OUT`" in out, out
+
+
+@case("runtime pin mode: a WCTL UIO_OD mask that differs from the table is unwired")
+def _(fx):
+    fx.mutate("firmware/asm/i2c_fast_sr.asm",
+              "        WCTL  UIO_OD, R3      ; DR 0012: SCL|SDA open-drain (after the OUT)\n",
+              "        LDI   R2, 0x80\n        WCTL  UIO_OD, R2\n")
+    code, out = fx.run()
+    assert code == 0 and "i2c_fast_sr.asm: `WCTL UIO_OD` writes 0x80" in out, out
+
+
+@case("runtime pin mode: a UART RX program that also enables a uio pin is a hazard")
+def _(fx):
+    # Issue #154: the RX bench-debug writes to UIO_OUT are inert under DR 0012
+    # only while the program writes no pin-mode register.
+    p = fx.path("firmware/asm/uart_rx.asm")
+    text = p.read_text(encoding="utf-8")
+    anchor = next(l for l in text.splitlines() if l.strip().startswith("LDI"))
+    fx.mutate("firmware/asm/uart_rx.asm", anchor + "\n", anchor + "\n        WCTL  UIO_OD, R1\n")
+    code, out = fx.run()
+    assert "uart_rx.asm writes bench-debug values to UIO_OUT and also writes UIO_OD" in out, out
+    assert "[implementation] INCOMPLETE" in out, out
+
+
 @case("--require-implemented fails while uio_oe = 0")
 def _(fx):
+    fx.mutate(TOP, RUNTIME_OE, "assign uio_oe = 8'h00;")
     code, out = fx.run("--require-implemented")
     assert code == 1 and "--require-implemented: FAIL" in out, out
 
 
 def wire_mask_and_reset(fx):
-    fx.mutate("src/tt_um_2amlogic_protocol_emulator.v", "assign uio_oe = 8'h00;",
-              "assign uio_oe = 8'h00 | (8'h81 & ~uio_out);")
+    fx.mutate(TOP, RUNTIME_OE, "assign uio_oe = 8'h00 | (8'h81 & ~uio_out);")
     fx.mutate("rtl/protocol_core.v", "port_uio_out <= 8'h00;", "port_uio_out <= 8'hFF;")
 
 
@@ -172,7 +249,7 @@ def _(fx):
 
 @case("a top-level uio_oe that drives a table input pin fails")
 def _(fx):
-    fx.mutate("src/tt_um_2amlogic_protocol_emulator.v", "assign uio_oe = 8'h00;", "assign uio_oe = 8'h02;")
+    fx.mutate(TOP, RUNTIME_OE, "assign uio_oe = 8'h02;")
     expect_fail(fx, "uio[1] is an input in the table", "concrete-firmware-bench")
 
 

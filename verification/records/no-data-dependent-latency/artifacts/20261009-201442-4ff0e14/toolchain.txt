@@ -1,0 +1,6 @@
+Yosys 0.69+post (git sha1 143eb14f9cc55d6f8927e68523b0c9d2166ed02c, Release, AppleClang clang++ 21.0.0.21000334)
+Z3 version 5.1.0 - 64 bit
+yosys-smtbmc: ships with the Yosys distribution above (no version flag)
+Darwin 27.0.0 arm64
+run: DUT=all ./verification/formal/run-no-data-dependent-latency.sh <artifacts-dir>, BMC_DEPTH=30 (default), started 2026-10-09T20:14:42Z, ended 2026-10-09T20:23:15Z, exit 0
+The committed *.smt2 models have the producing checkout's absolute path prefix removed from embedded source locations (a consistent textual substitution; the models were re-checked after it, see the record).

@@ -19,13 +19,17 @@
 ;   UIO_OUT bit 0 = SCL (controller side of the open-drain line)
 ;   UIO_OUT bit 7 = SDA (controller side)
 ; Open-drain convention: writing 1 RELEASES the line (pull-up wins),
-; writing 0 asserts it low. The bench composes the wired-AND bus
-; (line = controller_output AND peripheral_output) from uio_out/uio_in --
-; see the record under verification/records/firmware-i2c/ for why the
-; composed-in-bench stance is the honest one on this RTL (uio_oe is fixed
-; to 0 at the top level, so no firmware drive reaches a physical pin yet;
-; that gap is DR 0001's own flagged open question, raised as an issue
-; rather than worked around here).
+; writing 0 asserts it low. On silicon that convention is DR 0012's
+; open-drain pin mode: the setup below writes 0x81 to the UIO_OD control
+; register (`WCTL UIO_OD`, SCL|SDA), after which uio_oe[n] = ~uio_out[n]
+; on those two pins -- a 0 drives the pad low, a 1 releases it. The OUT of
+; 0x81 comes BEFORE the WCTL on purpose: uio_out resets to 0x00, so
+; enabling open-drain first would pull both lines low for a cycle. Until
+; the WCTL retires both pins are inputs (DR 0012's reset state), i.e.
+; released. The bench still composes the wired-AND bus (line =
+; controller_output AND peripheral_output) from uio_out/uio_in; the
+; silicon-true pad model that consumes uio_oe, and the re-run of this
+; evidence on it, are issue #136.
 ;
 ; The 0x80 mask (R1) does double duty: it extracts the current data bit
 ; from R0's MSB AND is exactly the "SCL low, SDA released" ACK-slot pin
@@ -80,6 +84,7 @@
         LDI   R2, 0x01        ; SCL bit, OR-ed in for the high phase
         LDI   R3, 0x81        ; both lines released: bus idle
         OUT   UIO_OUT, R3
+        WCTL  UIO_OD, R3      ; DR 0012: SCL|SDA open-drain (after the OUT)
         WAIT  255             ; > 1 SCL period of guaranteed idle
 
 ; --------------------------------------------------------------- START

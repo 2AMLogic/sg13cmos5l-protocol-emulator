@@ -117,8 +117,8 @@ elab () {
   yosys -ql "$out.yosys.log" -p "read_verilog -formal -sv $core; read_verilog -formal -sv -nomem2reg $defs $MONITOR $HARNESS; hierarchy -top formal_top_pin_write; proc; flatten; $OPT_SEQ; $clocking; setundef -anyseq; write_smt2 -wires $out.smt2; chformal -remove -cover; techmap; opt_clean; aigmap; opt_clean; write_aiger -zinit -ywmap $out.ywb $out.aig" 2>"$out.yosys.stderr" \
     && [ -s "$out.smt2" ] && [ -s "$out.aig" ]
   # Expected stderr: the mem2reg note for the core's register array, and the
-  # AIGER backend's notice that top-level inputs (clk in FINE, ui_in, uio_in)
-  # become free AIGER inputs. Anything else is shown.
+  # AIGER backend's notice that top-level inputs (clk in FINE, ui_in, uio_in,
+  # and DR 0012's pm_crc / serial_loaded) become free AIGER inputs. Anything else is shown.
   grep -v -E "Replacing memory .regs with list of registers|Treating (undriven bit|a total of [0-9]+ undriven bits) .*like .anyseq" \
     "$out.yosys.stderr" >&2 || true
 }
@@ -250,6 +250,7 @@ if ! python3 -I "$MUTGEN" "$CORE" "$MUT_DIR" >"$MUT_DIR/generated.txt"; then
 fi
 # name:required-model -- the model on which the checker MUST reject it.
 for spec in wrong_destination:edge wrong_value:edge readonly_port_writes:edge \
+            wctl_writes_pin:edge rctl_wrong_value:edge pm_read_wrong_byte:edge \
             late_one_cycle:edge comb_early_visibility:edge \
             executes_in_priming_cycle:edge negedge_half_cycle_early:fine \
             load_phase_leak:edge; do

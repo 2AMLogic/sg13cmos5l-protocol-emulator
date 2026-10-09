@@ -1,0 +1,42 @@
+2026-10-09T20:14:42Z
+== toolchain ==
+Yosys 0.69+post (git sha1 143eb14f9cc55d6f8927e68523b0c9d2166ed02c, Release, AppleClang clang++ 21.0.0.21000334)
+Z3 version 5.1.0 - 64 bit
+yosys-smtbmc [options] <yosys_smt2_output>
+
+== [1/4] conformant fixture: elaboration ==
+== [2/4] conformant fixture: BMC depth 30 (expect PASS) ==
+BMC: PASS (no counterexample within 30 cycles)
+== [3/4] conformant fixture: covers (non-vacuity) ==
+covers: all reachable (assertions genuinely exercised)
+== [3b/4] conformant fixture: k-induction attempt (informational) ==
+induction: did not close (expected as shipped; bounded result above is the shipped guarantee)
+
+== [4/4] mutant fixture (data-dependent WAIT early-out): BMC depth 30 (expect CEX) ==
+mutant: counterexample found as required; VCD: verification/records/no-data-dependent-latency/artifacts/20261009-201442-4ff0e14/mutant-cex.vcd
+
+== [4b/4] control-space mutant fixture (data-dependent 2-cycle-access early-out, DR 0012): BMC depth 30 (expect CEX) ==
+control-space mutant: counterexample found as required; VCD: verification/records/no-data-dependent-latency/artifacts/20261009-201442-4ff0e14/mutant-ctl-cex.vcd
+
+== monitor hash (must equal the fixture-run hash of record) ==
+0a687b4fa5c067a44dff2f00b9a950a6200a10fcae228e61dcad4593cb93a433  verification/formal/no_data_dependent_latency.sv
+d60de4339dd26cbd58ff3a01e2d4535907f90f2abed76dedb1d917140a804e56  rtl/protocol_core.v
+== [5/8] real core rtl/protocol_core.v: elaboration ==
+Warning: Replacing memory \regs with list of registers. See rtl/protocol_core.v:412
+== [6/8] real core: BMC depth 30 (expect PASS) ==
+BMC: PASS (no counterexample within 30 cycles)
+== [7/8] real core: covers (non-vacuity) ==
+covers: all reachable
+== [7b/8] real core: k-induction attempt (informational) ==
+induction: did not close (bounded result above is the shipped guarantee)
+== [8/8] real-core mutant (WAIT stall cut to 1 cycle when ui_in == 0xA5): BMC depth 30 (expect CEX) ==
+Warning: Replacing memory \regs with list of registers. See verification/records/no-data-dependent-latency/artifacts/20261009-201442-4ff0e14/protocol_core_mutant.v:412
+core mutant: counterexample found as required; VCD: verification/records/no-data-dependent-latency/artifacts/20261009-201442-4ff0e14/core-mutant-cex.vcd
+== [8b/8] real-core control-space mutant (2-cycle control access stalls on while ui_in == 0xA5, DR 0012): BMC depth 30 (expect CEX) ==
+Warning: Replacing memory \regs with list of registers. See verification/records/no-data-dependent-latency/artifacts/20261009-201442-4ff0e14/protocol_core_mutant_ctl.v:412
+core control-space mutant: counterexample found as required; VCD: verification/records/no-data-dependent-latency/artifacts/20261009-201442-4ff0e14/core-mutant-ctl-cex.vcd
+
+RESULT: all expectations met (BMC pass + covers reachable + mutant caught, per selected DUT)
+DUT=all ./verification/formal/run-no-data-dependent-latency.sh $A  504.10s user 1.38s system 98% cpu 8:32.61 total
+exit=0
+2026-10-09T20:23:15Z
