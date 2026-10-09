@@ -377,29 +377,33 @@ only values allowed are `0x00`, the mark bit and the frame-error bit. The
 received byte on `UIO_OUT` fails, and at least one `OUT` to the result port
 must carry a computed value, so the byte cannot be rerouted off `uo_out`.
 
-**Hazard: these writes are inert only while `uio_oe` is `8'h00`.** That is
-today's top level. Under the wiring this record proposes
+**These writes drive no pad (#154, resolved by DR 0012).** The top level is
+[DR 0012](0012-control-space-and-runtime-pin-direction.md)'s pin-mode rule
+since #135: `uio_oe = (uio_od & ~uio_out) | (~uio_od & uio_dir)`. `UIO_OD` and
+`UIO_DIR` both reset to `0x00`, so every `uio` pin is an input until a program
+writes one of them. The three RX programs execute no `WCTL`, so their
+`uio_out` values never reach a pad, whatever bits they hold.
+
+#154 offered three ways to deal with these writes: remove them, move them, or
+rely on the runtime mask. **This record takes the third.** The debug writes
+stay, no firmware changes, and the cycle-exact RX timing in
+`verification/test_firmware_uart_rx.py` is untouched.
+
+The checker holds the condition. For each RX image it reports an unmet
+prerequisite under `[implementation]` if the image also writes a pin-mode
+register (`WCTL UIO_OD` or `WCTL UIO_DIR`, by name or as index `0x00` /
+`0x01`). An RX image that gains such a write fails `--require-implemented`.
+That is the general rule of #159, section 4: a program that writes `UIO_OUT`
+for bench-debug reasons is harmless only while it executes no `WCTL`.
+
+What this replaced: under DR 0008's fixed synthesis-time mask
 (`uio_oe = 8'h81 & ~uio_out`), a 0 in `uio_out[0]` or `uio_out[7]` asserts the
 pad low. Every debug write leaves bit 7 at 0, and leaves bit 0 at 0 except
-during a sample mark. So a loaded RX image would:
-
-- hold `uio[7]` (SDA) low for the whole run;
-- hold `uio[0]` (SCL / SPI MISO) low except during each sample mark.
-
-Only `uio[1]` is harmless, because its electrical role is `input`. This breaks
-the condition stated under "SPI `MISO` and I2C `SCL` both on `uio[0]`": UART
-firmware must leave the open-drain pins released, and the RX programs do not.
-It is a condition on follow-up 1, and the checker reports it under
-`[implementation]` as an unmet prerequisite, beside the `port_uio_out` reset
-value. This PR changes no firmware and moves no pin. Removing or moving the
-debug writes is #154.
-
-[DR 0012](0012-control-space-and-runtime-pin-direction.md) on `main` changes
-this once its RTL (#135) lands. It replaces the synthesis-time mask with the
-runtime `UIO_DIR` / `UIO_OD` registers, which reset to `0x00` (every `uio` pin
-an input). The RX programs set neither register, so under DR 0012 their
-`uio_out` writes drive no pad. Until #135 lands, and for as long as DR 0008's
-fixed mask could still be built, the hazard above stands.
+during a sample mark, so a loaded RX image would have held `uio[7]` (SDA) low
+for the whole run and `uio[0]` (SCL / SPI MISO) low except during each sample
+mark. That mask was not built. If it is ever built in place of DR 0012's
+registers, the debug writes must be removed or moved first; the checker still
+reports them as an unmet prerequisite for that top-level shape.
 
 ## Checker behaviour
 
@@ -420,15 +424,16 @@ fixed mask could still be built, the hazard above stands.
    in this table is changed to move a pin, this result **fails** until the
    follow-up firmware and bench edits land; that is the intended outcome.
 4. **implementation** — proposed electrical roles not wired in the top level
-   and unmet prerequisites. On the committed tree: `uio[0]` and `uio[7]`
-   open-drain are unwired (`assign uio_oe = 8'h00;`), `port_uio_out`
-   resets to `8'h00` rather than releasing the masked pins, and the three
-   UART receive programs write bench-debug values to `UIO_OUT` that would
-   assert `uio[7]`, and mostly `uio[0]`, low under the 0x81 mask.
+   and unmet prerequisites. On the committed tree it lists nothing. The top
+   level is DR 0012's pin-mode rule (#135), so an open-drain role is wired by
+   the firmware image that uses it: each I2C image releases the lines and
+   then sets `UIO_OD`. The UART receive programs' bench-debug writes to
+   `UIO_OUT` are not listed, because those programs write no pin-mode
+   register (see "UART receive" above). They would be listed if one did.
 
 Default success means results 1–3 agree with this Proposed record, **not**
 that silicon implements every electrical role. `--require-implemented` also
-fails while result 4 lists anything, so it fails today.
+fails while result 4 lists anything. It passes today.
 
 ## Follow-up edits (separate issues after the keys accept this record)
 
@@ -439,11 +444,11 @@ target-spec row.
    `assign uio_oe = 8'h00 | (8'h81 & ~uio_out)` per DR 0008, reset the
    open-drain bits of `port_uio_out` to 1, and model the mask in the I2C
    bench so the composed bus is silicon-true. Re-measure on the flow of record
-   (DR 0002), flow-attributed. **Prerequisite:** the UART receive programs'
-   debug writes to `UIO_OUT` must be removed or moved first (#154), or this
-   wiring makes every RX image pull `uio[0]` and `uio[7]` low. DR 0012 (#135)
-   proposes a runtime mask instead of this assign; if that lands, this
-   follow-up and its prerequisite are superseded.
+   (DR 0002), flow-attributed. **Superseded:** DR 0012 (#135) landed a
+   runtime mask instead of this assign, so this follow-up is not built. Its
+   prerequisite, that the UART receive programs' debug writes to `UIO_OUT`
+   be removed or moved, is closed by #154 without a firmware change (see
+   "UART receive" above). It applies again only if this fixed assign is built.
 2. **`info.yaml`** and the template `docs/info.md`: add the protocol-profile
    pin table and the pull-up statement; these are generic ISA labels today.
 3. **When SPI moves** (#155, or the `MISO` fallback above): `firmware/asm/spi_mode0–3.asm`
