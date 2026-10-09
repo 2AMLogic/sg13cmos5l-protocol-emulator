@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "engine": "icarus",
+  "hdl_toplevel": "tt_um_2amlogic_protocol_emulator",
+  "testbench": "test_firmware_i2c_sr",
+  "status": "pass",
+  "test_count": 4,
+  "passed_count": 4,
+  "failed_count": 0,
+  "skipped_count": 0,
+  "tests": [
+    {
+      "name": "test_sr_images_fresh",
+      "status": "passed",
+      "sim_time_ns": 0.0,
+      "real_time_s": 0.004
+    },
+    {
+      "name": "test_sr_exact_programs_pass_model_with_negative_controls",
+      "status": "passed",
+      "sim_time_ns": 1851341.0,
+      "real_time_s": 4.083
+    },
+    {
+      "name": "test_sr_poll_programs_stretch",
+      "status": "passed",
+      "sim_time_ns": 1974080.9999999998,
+      "real_time_s": 4.331
+    },
+    {
+      "name": "test_sr_model_nominal_repeated_start_passes",
+      "status": "passed",
+      "sim_time_ns": 0.0,
+      "real_time_s": 0.0
+    }
+  ],
+  "coverage": null,
+  "trace": null,
+  "environment": {
+    "engine": "icarus",
+    "engine_version": "13.0",
+    "cocotb_version": "2.1.0",
+    "results_xml": "/home/ubuntu/GitHub/sg13cmos5l-protocol-emulator/.loom/worktrees/issue-92/verification/.klt/functional-verification/results_icarus.xml",
+    "random_seed": 1,
+    "sdf": null
+  }
+}

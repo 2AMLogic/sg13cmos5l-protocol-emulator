@@ -1,0 +1,52 @@
+     -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:242  in gpi_load_users                  Loaded entry library: '/home/ubuntu/.local/share/uv/python/cpython-3.14.6-linux-x86_64-gnu/lib/libpython3.14.so.1.0'
+     -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:233  in gpi_load_users                  Running entry func 'initialize' from loaded library '/home/ubuntu/GitHub/sg13cmos5l-protocol-emulator/.loom/worktrees/issue-92/.venv/lib/python3.14/site-packages/cocotb/simulator.cpython-314-x86_64-linux-gnu.so'
+     -.--ns INFO     pygpi                              ..ib/pygpi/embed.cpp:114  in initialize                      Using Python 3.14.0 interpreter at /home/ubuntu/GitHub/sg13cmos5l-protocol-emulator/.loom/worktrees/issue-92/.venv/bin/python
+     -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:74   in gpi_print_registered_impl       GPI: VPI support registered
+     0.00ns INFO     cocotb.initialize                  Seeding Python random module with 1
+     0.00ns INFO     cocotb.initialize                  Initialized cocotb v2.1.0 from /home/ubuntu/GitHub/sg13cmos5l-protocol-emulator/.loom/worktrees/issue-92/.venv/lib/python3.14/site-packages/cocotb
+     0.00ns INFO     cocotb.initialize                  Running on Icarus Verilog version 13.0 (stable)
+     0.00ns INFO     cocotb.regression                  Running tests
+     0.00ns INFO     cocotb.regression                  running test_firmware_i2c_sr.test_sr_images_fresh (1/4)
+                                                            Committed images/reports match the committed sources, the sources
+     0.00ns INFO     ..tt_um_2amlogic_protocol_emulator i2c_fast_sr: 131/256 words, 22 sections at budget, 0 sanctioned warning(s)
+     0.00ns INFO     ..tt_um_2amlogic_protocol_emulator i2c_fast_sr_poll: 171/256 words, 22 sections at budget, 10 sanctioned warning(s)
+     0.00ns INFO     ..tt_um_2amlogic_protocol_emulator i2c_std_sr: 131/256 words, 22 sections at budget, 0 sanctioned warning(s)
+     0.00ns INFO     ..tt_um_2amlogic_protocol_emulator i2c_std_sr_poll: 171/256 words, 22 sections at budget, 10 sanctioned warning(s)
+     0.00ns INFO     cocotb.regression                  test_firmware_i2c_sr.test_sr_images_fresh passed
+     0.00ns INFO     cocotb.regression                  running test_firmware_i2c_sr.test_sr_exact_programs_pass_model_with_negative_controls (2/4)
+                                                            EXACT programs, both grades: write -> Sr -> read passes the
+174741.00ns WARNING  py.warnings                        /home/ubuntu/GitHub/sg13cmos5l-protocol-emulator/.loom/worktrees/issue-92/verification/test_firmware_i2c_sr.py:233: DeprecationWarning: `task.kill()` is deprecated in favor of `task.cancel()`
+                                                          driver.kill()
+174741.00ns INFO     ..tt_um_2amlogic_protocol_emulator i2c_fast_sr: I2cReport(addr=0x50W, data=['0x5a', '0xa1', '0xb4'], acks=[True, True, True, False], stretched=0, violations=[]) measurements={'t_HD;STA@47360': 1300.0, 't_HD;STA@95560': 1300.0, 't_SU;STA@95560': 600.0, 't_SU;STO': 1200.0, 't_LOW(min)': 1300.0, 't_HIGH(min)': 1199.9999999999854}
+349501.00ns INFO     ..tt_um_2amlogic_protocol_emulator i2c_fast_sr SUSTA-1: I2cReport(addr=0x50W, data=['0x5a', '0xa1', '0xb4'], acks=[True, True, True, False], stretched=0, violations=['t_SU;STA 580.000ns < 600.000ns minimum'])
+524261.00ns INFO     ..tt_um_2amlogic_protocol_emulator i2c_fast_sr SUSTA-15: I2cReport(addr=0x50W, data=['0x5a', '0xa1', '0xb4'], acks=[True, True, True, False], stretched=0, violations=['t_SU;STA 300.000ns < 600.000ns minimum'])
+966621.00ns INFO     ..tt_um_2amlogic_protocol_emulator i2c_std_sr: I2cReport(addr=0x50W, data=['0x5a', '0xa1', '0xb4'], acks=[True, True, True, False], stretched=0, violations=[]) measurements={'t_HD;STA@571640': 4100.0, 't_HD;STA@741740': 4100.0, 't_SU;STA@741740': 4700.0, 't_SU;STO': 4100.0, 't_LOW(min)': 4700.0, 't_HIGH(min)': 4000.0}
+1408981.00ns INFO     ..tt_um_2amlogic_protocol_emulator i2c_std_sr SUSTA-1: I2cReport(addr=0x50W, data=['0x5a', '0xa1', '0xb4'], acks=[True, True, True, False], stretched=0, violations=['t_SU;STA 4680.000ns < 4700.000ns minimum'])
+1851341.00ns INFO     ..tt_um_2amlogic_protocol_emulator i2c_std_sr SUSTA-117: I2cReport(addr=0x50W, data=['0x5a', '0xa1', '0xb4'], acks=[True, True, True, False], stretched=0, violations=['t_SU;STA 2360.000ns < 4700.000ns minimum'])
+1851341.00ns INFO     cocotb.regression                  test_firmware_i2c_sr.test_sr_exact_programs_pass_model_with_negative_controls passed
+1851341.00ns INFO     cocotb.regression                  running test_firmware_i2c_sr.test_sr_poll_programs_stretch (3/4)
+                                                            Poll programs, both grades: unstretched they are exact (rise phases
+2040502.00ns INFO     ..tt_um_2amlogic_protocol_emulator i2c_fast_sr_poll unstretched: I2cReport(addr=0x50W, data=['0x5a', '0xa1', '0xb4'], acks=[True, True, True, False], stretched=0, violations=[]) {'t_HD;STA@1911521': 1300.0, 't_HD;STA@1960481': 1300.0, 't_SU;STA@1960481': 640.0, 't_SU;STO': 1240.0, 't_LOW(min)': 1300.0, 't_HIGH(min)': 1240.0} uo_out=0xb4
+2239142.00ns INFO     ..tt_um_2amlogic_protocol_emulator i2c_fast_sr_poll stretched: I2cReport(addr=0x50W, data=['0x5a', '0xa1', '0xb4'], acks=[True, True, True, False], stretched=1, violations=[]) {'t_HD;STA@2100681': 1300.0, 't_HD;STA@2151621': 1300.0, 't_SU;STA@2151621': 600.0, 't_SU;STO': 1240.0, 't_LOW(min)': 1300.0, 't_HIGH(min)': 1220.0}
+2239142.00ns INFO     ..tt_um_2amlogic_protocol_emulator i2c_fast_sr_poll: stretched lows [166, 168, 143] cy; 71 of 76 SCL intervals identical to the unstretched run
+2423382.00ns INFO     ..tt_um_2amlogic_protocol_emulator i2c_fast_sr under stretch: model rejected the waveform: no STOP in window
+2880142.00ns INFO     ..tt_um_2amlogic_protocol_emulator i2c_std_sr_poll unstretched: I2cReport(addr=0x50W, data=['0x5a', '0xa1', '0xb4'], acks=[True, True, True, False], stretched=0, violations=[]) {'t_HD;STA@2483561': 4100.0, 't_HD;STA@2654421': 4100.0, 't_SU;STA@2654421': 4740.0, 't_SU;STO': 4140.0, 't_LOW(min)': 4700.0, 't_HIGH(min)': 4040.0} uo_out=0xb4
+3359982.00ns INFO     ..tt_um_2amlogic_protocol_emulator i2c_std_sr_poll stretched: I2cReport(addr=0x50W, data=['0x5a', '0xa1', '0xb4'], acks=[True, True, True, False], stretched=1, violations=[]) {'t_HD;STA@2940321': 4100.0, 't_HD;STA@3113161': 4100.0, 't_SU;STA@3113161': 4700.0, 't_SU;STO': 4140.0, 't_LOW(min)': 4700.0, 't_HIGH(min)': 4040.0}
+3359982.00ns INFO     ..tt_um_2amlogic_protocol_emulator i2c_std_sr_poll: stretched lows [336, 508, 313] cy; 72 of 76 SCL intervals identical to the unstretched run
+3825422.00ns INFO     ..tt_um_2amlogic_protocol_emulator i2c_std_sr under stretch: model rejected the waveform: 35 data clocks is not a whole number of 9-clock bytes
+3825422.00ns INFO     cocotb.regression                  test_firmware_i2c_sr.test_sr_poll_programs_stretch passed
+3825422.00ns INFO     cocotb.regression                  running test_firmware_i2c_sr.test_sr_model_nominal_repeated_start_passes (4/4)
+                                                            Calibration of the grader: the model's own nominal Sr transfer
+3825422.00ns INFO     ..tt_um_2amlogic_protocol_emulator model nominal Sr (fast=True): I2cReport(addr=0x50W, data=['0x5a', '0xa0', '0xb4'], acks=[True, True, True, False], stretched=0, violations=[])
+3825422.00ns INFO     ..tt_um_2amlogic_protocol_emulator model nominal Sr (fast=False): I2cReport(addr=0x50W, data=['0x5a', '0xa0', '0xb4'], acks=[True, True, True, False], stretched=0, violations=[])
+3825422.00ns INFO     cocotb.regression                  test_firmware_i2c_sr.test_sr_model_nominal_repeated_start_passes passed
+3825422.00ns INFO     cocotb.regression                  ***************************************************************************************************************************************
+                                                        ** TEST                                                                           STATUS  SIM TIME (ns)  REAL TIME (s)  RATIO (ns/s) **
+                                                        ***************************************************************************************************************************************
+                                                        ** test_firmware_i2c_sr.test_sr_images_fresh                                       PASS           0.00           0.00          0.00  **
+                                                        ** test_firmware_i2c_sr.test_sr_exact_programs_pass_model_with_negative_controls   PASS     1851341.00           4.08     453474.15  **
+                                                        ** test_firmware_i2c_sr.test_sr_poll_programs_stretch                              PASS     1974081.00           4.33     455829.93  **
+                                                        ** test_firmware_i2c_sr.test_sr_model_nominal_repeated_start_passes                PASS           0.00           0.00          0.00  **
+                                                        ***************************************************************************************************************************************
+                                                        ** TESTS=4 PASS=4 FAIL=0 SKIP=0                                                             3825422.00           8.42     454375.30  **
+                                                        ***************************************************************************************************************************************
