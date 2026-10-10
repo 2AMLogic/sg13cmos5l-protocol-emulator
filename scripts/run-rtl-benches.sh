@@ -33,6 +33,7 @@ BENCHES=(
   firmware-i2c-sr
   firmware-roundtrip
   random-regression
+  isa-lockstep
 )
 
 command -v klt >/dev/null || { echo "ERROR: klt not on PATH (run scripts/setup-env.sh)" >&2; exit 1; }

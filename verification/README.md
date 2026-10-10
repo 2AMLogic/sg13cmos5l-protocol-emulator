@@ -294,6 +294,37 @@ gates. The host-side loader is issue #118.
   run by `npm run lint`:
   `python3 verification/test_firmware_templates.py`. To regenerate a failing
   case: `python3 verification/firmware_templates.py --seed S --out DIR`.
+- `reference_models/isa.py`, `isa_lockstep_gen.py`, `test_isa_lockstep.py`,
+  `test_isa_model.py`, `isa_lockstep_mutants.py`, `request-isa-lockstep.json`
+  — the **ISA reference simulator and lockstep co-simulation** (issue #152;
+  verification-plan §4.1). `reference_models/isa.py` is a table-driven
+  instruction-set simulator written from DR 0001 and DR 0012 alone (it
+  imports nothing from `rtl/`, `firmware/tools/asm.py` or any bench); it
+  emits one trace row per clock edge. `isa_lockstep_gen.py` draws seeded,
+  terminating-by-construction programs (forward-only branches plus bounded
+  loops, a static edge cap, a short `RUN`-into-just-written-code tail) and
+  owns the counted coverage-bucket gate. `test_isa_lockstep.py` loads each
+  program over the real serial load phase and compares, on **every** edge of
+  the run phase, `pc`, `R0..R3`, `Z`, `C`, `halted` (hierarchy into
+  `dut.u_core`) and `uo_out` / `uio_out` / `uio_oe` (pins) against the ISS,
+  including `WAIT` stall edges, two-cycle control accesses and the idle edges
+  after `HALT`; a mismatch prints seed, program index, edge, field and both
+  values, and `ISA_LOCKSTEP_SEED=<s> ISA_LOCKSTEP_ONLY=<i>` replays it. The
+  seed set, program count and coverage thresholds live in the request
+  (`options.random_seed`, `options.isa_lockstep`) and are asserted equal to
+  the bench's constants. Scope: programs run from program memory after a
+  serial load; boot-ROM / warm-start / SPI-boot fetch is owned by
+  `test_boot_rom.py` / `test_boot_spi.py`; the compare is RTL-only
+  (gate-level lockstep is deferred). The SUB `C` polarity is an open detail
+  of DR 0001 that the model carries as a labelled RTL pin
+  (`isa.OPEN_DETAILS`), and `test_sub_carry_polarity_pin` checks it on its
+  own. `test_isa_model.py` is the simulator-free unit-test suite (hand-
+  computed expectations; also the generator, the coverage gate and the
+  ISS-vs-assembler cycle cross-check), run by `npm run lint`:
+  `python3 verification/test_isa_model.py`. `isa_lockstep_mutants.py` is the
+  negative-control runner (8 single-defect copies of the core, each caught by
+  the lockstep). Driven by `klt functional-verification` (see
+  `request-isa-lockstep.json`); evidence in `records/isa-lockstep/`.
 - `test_firmware_uart_rx.py` — the DUT-facing UART **receive-path and
   low-baud** bench (issue #91, rows 1 and 10): committed `uart_rx*.asm`
   receivers (50 / 434 / 5,208 cycles per bit) driven by waveforms from
@@ -376,7 +407,7 @@ CI-covered (RTL, Icarus, no PDK): `test_protocol_emulator`,
 `test_program_memory`, `test_protocol_models`, `test_firmware_uart`,
 `test_firmware_spi`, `test_uio_pads`, `test_firmware_i2c`,
 `test_firmware_i2c_sr`, `test_firmware_roundtrip`,
-`test_random_regression`.
+`test_random_regression`, `test_isa_lockstep`.
 
 Covered elsewhere in CI: `test_check_records.py`,
 `test_firmware_templates.py` and `test_uio_pad_resolution.py` (`npm run
