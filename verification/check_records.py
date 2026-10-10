@@ -18,8 +18,19 @@ Checks, per record `verification/records/<experiment>/records/<record-id>.md`:
    must be valid JSON with the required keys (see `REQUIRED_META_KEYS`), and
    every field in `REQUIRED_PROSE_FIELDS` must appear as a non-empty
    top-level markdown bullet (`- **Field**: <non-empty value>`).
+0. **Layout** -- a record must sit at exactly
+   `verification/records/<experiment>/records/<record-id>.md`. The tracked
+   pathspec (`**`) also matches nested directories, so a nested path such as
+   `verification/records/zz/<experiment>/records/<id>.md` is rejected
+   outright: a nested copy must never alias a real experiment (#157).
+   Experiments are identified everywhere by their path relative to
+   `verification/records/`, never by a directory's leaf name.
 3. **Supersedes integrity** -- a non-null `supersedes` value must name a
-   record that exists in the same experiment directory.
+   record that exists in the same experiment directory, must not be the
+   record's own ID, and must sort strictly earlier than the record's own ID
+   (IDs lead with a timestamp). The ordering rule makes supersession cycles
+   (A supersedes B, B supersedes A) impossible. A supersession that breaks
+   any of these rules is an error and exempts nothing (#157).
 4. **Provenance hash freshness** -- for every record that is *not*
    superseded by another record (a "live" record), every
    `provenance.inputs[].content_hash` is recomputed from the working tree
@@ -88,6 +99,51 @@ class LintError(Exception):
     pass
 
 
+def experiment_key(path: Path) -> str:
+    """The experiment a record belongs to, as its directory path relative
+    to `RECORDS_ROOT` (e.g. `die-area-baseline`). Never the leaf name alone:
+    `zz/die-area-baseline` and `die-area-baseline` are different keys, so a
+    nested copy cannot alias a real experiment (#157)."""
+    return path.parent.parent.relative_to(RECORDS_ROOT).as_posix()
+
+
+def layout_error(path: Path) -> str | None:
+    """Records must sit at exactly `<experiment>/records/<id>.md` under
+    `RECORDS_ROOT`. Anything deeper (or shallower) is rejected (#157)."""
+    try:
+        parts = path.relative_to(RECORDS_ROOT).parts
+    except ValueError:
+        return f"{path}: record is not under {RECORDS_ROOT}"
+    if len(parts) != 3 or parts[1] != "records":
+        return (
+            f"{path}: record must sit at "
+            f"`verification/records/<experiment>/records/<record-id>.md`; "
+            f"nested experiment directories are not allowed"
+        )
+    return None
+
+
+def supersession_error(path: Path, supersedes, known_ids: set) -> str | None:
+    """Why `path`'s `supersedes` value is invalid, or None if it is a
+    valid supersession that may exempt its target from freshness."""
+    stem = path.stem
+    experiment = experiment_key(path)
+    if supersedes not in known_ids:
+        return (
+            f"{path}: supersedes `{supersedes}`, which has no record "
+            f"in `{experiment}/records/`"
+        )
+    if supersedes == stem:
+        return f"{path}: supersedes itself (`{supersedes}`); a record cannot supersede its own ID"
+    if not str(supersedes) < stem:
+        return (
+            f"{path}: supersedes `{supersedes}`, which does not sort strictly "
+            f"earlier than this record's ID `{stem}`; a record may only supersede "
+            f"an earlier record (this also rules out supersession cycles)"
+        )
+    return None
+
+
 def _tracked_record_files() -> list[Path]:
     out = run_git("ls-files", "--", "verification/records/**/records/*.md")
     return sorted(REPO_ROOT / line for line in out.splitlines() if line.strip())
@@ -144,8 +200,14 @@ def _extract_prose_fields(text: str) -> dict:
 def lint_record(path: Path, all_record_ids_by_experiment: dict) -> list[str]:
     errors = []
     text = path.read_text(encoding="utf-8")
-    experiment = path.parent.parent.name  # .../<experiment>/records/<id>.md
     stem = path.stem
+
+    layout = layout_error(path)
+    if layout:
+        errors.append(layout)
+        return errors  # experiment identity is meaningless off-layout
+
+    experiment = experiment_key(path)  # .../<experiment>/records/<id>.md
 
     if not RECORD_ID_RE.match(stem):
         errors.append(f"{path}: filename `{path.name}` is not a valid record-id")
@@ -195,20 +257,20 @@ def lint_record(path: Path, all_record_ids_by_experiment: dict) -> list[str]:
     supersedes = meta.get("supersedes")
     if supersedes not in (None, "none"):
         known_ids = all_record_ids_by_experiment.get(experiment, set())
-        if supersedes not in known_ids:
-            errors.append(
-                f"{path}: supersedes `{supersedes}`, which has no record "
-                f"in `{experiment}/records/`"
-            )
+        problem = supersession_error(path, supersedes, known_ids)
+        if problem:
+            errors.append(problem)
 
     return errors
 
 
 def check_hash_freshness(path: Path, superseded: set) -> list[str]:
-    """`superseded` holds `(experiment, record_id)` pairs. Record IDs are not
-    unique across experiments (a batch mint stamps one ID on many), so the
-    exemption must be keyed on the pair: superseding one experiment's copy of
-    an ID must not exempt another experiment's live copy (#157)."""
+    """`superseded` holds `(experiment, record_id)` pairs, where
+    `experiment` is the experiment's path relative to `RECORDS_ROOT`
+    (`experiment_key`). Record IDs are not unique across experiments (a batch
+    mint stamps one ID on many), and leaf directory names are not unique
+    across nesting, so the exemption is keyed on the full relative path plus
+    the ID: superseding one record never exempts any other (#157)."""
     errors = []
     text = path.read_text(encoding="utf-8")
     try:
@@ -216,8 +278,7 @@ def check_hash_freshness(path: Path, superseded: set) -> list[str]:
     except LintError:
         return errors  # already reported by lint_record
 
-    experiment = path.parent.parent.name
-    if (experiment, path.stem) in superseded:
+    if layout_error(path) is None and (experiment_key(path), path.stem) in superseded:
         return errors  # frozen history, exempt from freshness
 
     for item in meta.get("provenance", {}).get("inputs", []) or []:
@@ -318,7 +379,9 @@ def main() -> int:
     all_ids_by_experiment: dict[str, set] = {}
     metas_by_path: dict[Path, dict] = {}
     for path in record_files:
-        experiment = path.parent.parent.name
+        if layout_error(path):
+            continue  # reported by lint_record; never a supersession target
+        experiment = experiment_key(path)
         stem = path.stem
         all_ids_by_experiment.setdefault(experiment, set()).add(stem)
         try:
@@ -328,11 +391,18 @@ def main() -> int:
         except LintError:
             metas_by_path[path] = {}
 
-    superseded = {
-        (path.parent.parent.name, meta["supersedes"])
-        for path, meta in metas_by_path.items()
-        if meta.get("supersedes") not in (None, "none")
-    }
+    # Only a VALID supersession exempts its target: an on-layout record that
+    # names an existing, strictly earlier record in its own experiment. A
+    # self-supersession, a cycle, or a nested record exempts nothing (#157).
+    superseded = set()
+    for path, meta in metas_by_path.items():
+        target = meta.get("supersedes")
+        if target in (None, "none") or layout_error(path):
+            continue
+        experiment = experiment_key(path)
+        known_ids = all_ids_by_experiment.get(experiment, set())
+        if supersession_error(path, target, known_ids) is None:
+            superseded.add((experiment, target))
 
     for path in record_files:
         errors = lint_record(path, all_ids_by_experiment)

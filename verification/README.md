@@ -463,12 +463,19 @@ on:
   a placeholder/empty value;
 - a filename or metadata `record_id` that is not a well-formed
   `<record-id>`, or the two disagreeing;
+- a record that is not at exactly
+  `verification/records/<experiment>/records/<record-id>.md` (nested
+  experiment directories are rejected, so a nested copy can never alias a
+  real experiment by sharing its leaf name, #157);
 - a `supersedes` value naming a record that does not exist in the same
-  experiment directory;
+  experiment directory, naming the record's own ID, or naming an ID that
+  does not sort strictly earlier than the record's own (this rules out
+  supersession cycles); an invalid supersession exempts nothing;
 - a live record whose `provenance.inputs[].content_hash` no longer matches
-  the current working tree (a record is "live" unless a record in its own
-  experiment directory supersedes it; the same record ID superseded in a
-  different experiment does not count, #157);
+  the current working tree (a record is "live" unless a valid supersession
+  in its own experiment directory names it; the same record ID superseded in
+  a different experiment, or in a directory that merely shares the
+  experiment's leaf name, does not count, #157);
 - **append-only violations**: any file under `verification/records/`
   modified, renamed, or deleted relative to the merge base with
   `origin/main`.

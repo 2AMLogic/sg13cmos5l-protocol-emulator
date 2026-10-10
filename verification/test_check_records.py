@@ -277,6 +277,58 @@ def case_shared_id_superseded_elsewhere_still_checked(repo: Path) -> None:
     case_superseded_record_exempt_from_freshness(repo)
 
 
+ZEROED_HASH = "sha256:" + "0" * 64
+
+
+def case_nested_copy_not_exempted_by_leaf_name(repo: Path) -> None:
+    """The Judge's repro on #183: a tampered copy of a superseded record
+    (every input hash zeroed) planted under a NESTED directory whose leaf name
+    matches a real experiment, `verification/records/zz/demo/records/`. The
+    genuine `demo` supersession must not exempt it -- and nested experiment
+    directories are rejected outright, so the leaf name can never alias."""
+    case_superseded_record_exempt_from_freshness(repo)  # demo: B supersedes A
+    old_id = "20260101-000000-abc1234"
+    nested = repo / "verification" / "records" / "zz" / "demo" / "records"
+    nested.mkdir(parents=True)
+    (nested / f"{old_id}.md").write_text(
+        make_record(old_id, "demo", inputs=[("rtl/dut.v", ZEROED_HASH)]),
+        encoding="utf-8",
+    )
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "--quiet", "-m", "fixture: tampered nested copy")
+
+
+def case_self_supersession_rejected(repo: Path) -> None:
+    """A record that lists its own ID in `supersedes` must not exempt itself
+    from the freshness check (#183 review)."""
+    rid = "20260102-000000-abc1234"
+    (repo / "verification" / "records" / "selfsup" / "records").mkdir(parents=True)
+    record_path(repo, "selfsup", rid).write_text(
+        make_record(rid, "selfsup", inputs=[("rtl/dut.v", ZEROED_HASH)], supersedes=rid),
+        encoding="utf-8",
+    )
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "--quiet", "-m", "fixture: record supersedes itself")
+
+
+def case_supersession_cycle_rejected(repo: Path) -> None:
+    """Two records that supersede each other (A -> B -> A) would each exempt
+    the other. A record may only supersede a strictly earlier ID, so a cycle
+    cannot be expressed (#183 review)."""
+    a, b = "20260102-000000-abc1234", "20260103-000000-abc1234"
+    (repo / "verification" / "records" / "cyc" / "records").mkdir(parents=True)
+    record_path(repo, "cyc", a).write_text(
+        make_record(a, "cyc", inputs=[("rtl/dut.v", ZEROED_HASH)], supersedes=b),
+        encoding="utf-8",
+    )
+    record_path(repo, "cyc", b).write_text(
+        make_record(b, "cyc", inputs=[("rtl/dut.v", ZEROED_HASH)], supersedes=a),
+        encoding="utf-8",
+    )
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "--quiet", "-m", "fixture: supersession cycle")
+
+
 def case_bad_record_id_grammar(repo: Path) -> None:
     bad = record_path(repo, "demo", "not-a-record-id")
     bad.write_text(
@@ -364,6 +416,36 @@ CASES = [
         case_shared_id_superseded_elsewhere_still_checked,
         1,
         "other/records/20260101-000000-abc1234.md: provenance hash for `rtl/dut.v` is stale",
+    ),
+    (
+        "nested copy of a superseded record is not exempted by its leaf name",
+        case_nested_copy_not_exempted_by_leaf_name,
+        1,
+        "nested experiment directories are not allowed",
+    ),
+    (
+        "nested copy is also checked for freshness",
+        case_nested_copy_not_exempted_by_leaf_name,
+        1,
+        "zz/demo/records/20260101-000000-abc1234.md: provenance hash for `rtl/dut.v` is stale",
+    ),
+    (
+        "a record superseding itself fails",
+        case_self_supersession_rejected,
+        1,
+        "supersedes itself",
+    ),
+    (
+        "a self-superseding record is not exempt from freshness",
+        case_self_supersession_rejected,
+        1,
+        "selfsup/records/20260102-000000-abc1234.md: provenance hash for `rtl/dut.v` is stale",
+    ),
+    (
+        "a supersession cycle fails",
+        case_supersession_cycle_rejected,
+        1,
+        "does not sort strictly earlier",
     ),
     (
         "malformed record id fails",
