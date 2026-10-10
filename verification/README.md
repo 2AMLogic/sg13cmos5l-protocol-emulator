@@ -54,6 +54,16 @@ coverage.
   `src/tt_um_2amlogic_protocol_emulator.v` (the harness-bootstrap stub top,
   issue #2). Driven by `klt functional-verification` (see
   `request-protocol-emulator.json`).
+- `sdf_alignment.py` — the post-layout entry point for that bench (issue
+  #106), used only by `flow/run-post-layout-sdf.sh`. It imports the
+  bench's tests unchanged and, when the runner sets `PE_ALIGN_*` from the
+  gds run's final SDC, starts the clock at the SDC period, applies each
+  post-edge stimulus the SDC input delay after the clock pin edge and reads
+  each pin the SDC output delay before the next edge, by rebinding the
+  bench's `RisingEdge`, `ClockCycles`, `settle_read` and `CLK_PERIOD_NS`.
+  `test_alu_flags_whitebox` is registered as skipped (a flattened netlist
+  has no `u_core`). With the variables unset it rebinds nothing; no RTL
+  request names it.
 - `test_control_space.py` — cocotb bench for DR 0012's control space
   (issue #135) on the top: reset values, readback, the `uio_oe` pin-mode
   rule, reserved-index behaviour, the fixed 2-cycle stall and its

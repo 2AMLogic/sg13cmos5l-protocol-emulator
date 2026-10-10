@@ -11,8 +11,8 @@
       "content_hash": "sha256:c9672c88be49084ae7fdc54fab7c6bc724e4c6d3e0193080cd29d609805a0c14"
     },
     "7": {
-      "file": "verification/records/post-layout-sdf-regression/artifacts/20261010-083555-704a3fb/klt-functional-verification-nom_typ_1p20V_25C.json",
-      "content_hash": "sha256:dea3a18427645859770430a68595979400f0701e7a5ad3bed06d66323e262051"
+      "file": "verification/records/post-layout-sdf-regression/artifacts/20261010-102552-d43f89c/klt-functional-verification-nom_typ_1p20V_25C.json",
+      "content_hash": "sha256:793db11ff1b2866ade6e3d3a1337bb844a46bfee6e9c9753d436e1af160336ca"
     },
     "9": {
       "file": "verification/records/reset-pin-through/artifacts/20260914-031931-7e4a21a/klt-functional-verification.json",

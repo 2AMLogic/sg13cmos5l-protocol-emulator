@@ -358,10 +358,19 @@ No pin claim here is backed by silicon or by the LibreLane flow.
 ## Evidence not yet in hand
 
 - **Tiny Tapeout LibreLane flow.** The routed-netlist SDF regression of the
-  submitted core ([record](../verification/records/post-layout-sdf-regression/records/20261010-083555-704a3fb.md),
-  LibreLane run 38037477407) is a **recorded FAIL** at all three corners (1
-  of 13 core-bench tests passed) and ran only the core bench, not the
-  firmware above. LibreLane timing and area evidence is in
+  submitted core ([record](../verification/records/post-layout-sdf-regression/records/20261010-102552-d43f89c.md),
+  LibreLane run 38044212536) passes at all three corners: 12 of the core
+  bench's 13 tests pass and the white-box flag test is skipped (it reads
+  core internals a flattened netlist does not have), so the C flag has no
+  post-layout evidence. The bench runs at the flow's own constraint: a
+  20 ns clock, inputs changed 4 ns after each edge, outputs read 4 ns
+  before the next. The SRAM runs as a zero-delay model there (its read
+  timing is LibreLane STA evidence only), setup/hold is checked only
+  against the cell models' 0 ns placeholder limits, not the SDF's
+  characterised ones,
+  and only the core bench ran, not the firmware above. The sign-off grader
+  still renders T1 item 7 unmet, on provenance binding (see
+  `manifests/README.md`). LibreLane timing and area evidence is in
   [`librelane-corner-timing`](../verification/records/librelane-corner-timing/records/20261010-084500-704a3fb.md).
   Firmware, the control-space, boot-ROM and SPI-flash-boot benches on that netlist at zero delay:
   [`firmware-gate-level`](../verification/records/firmware-gate-level/records/20261010-083703-704a3fb.md).

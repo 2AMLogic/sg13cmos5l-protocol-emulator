@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 #
 # flow/run-post-layout-sdf.sh -- re-run this program's own committed cocotb
-# bench (`verification/test_protocol_emulator.py`, unmodified) against the
+# bench (`verification/test_protocol_emulator.py`: the same file and test
+# bodies, run through `verification/sdf_alignment.py` with the drive/sample
+# alignment this runner enables, issue #106) against the
 # **post-route gate-level netlist** of the current top, with real post-route
 # delays back-annotated from the SDF files the Tiny Tapeout LibreLane flow
 # (`gds` GitHub Actions workflow) emits -- the T1 checklist item 7
@@ -21,10 +23,29 @@
 # true` shape `klt signoff` grades item 7 on, never mistakable for the
 # zero-delay regression the template's `gl_test` already covers.
 #
-# Same bench, unmodified, is the point (klt functional-verification's SDF
-# contract): the coverage signal is "does the testbench's own pass/fail
-# outcome change once real delay is present?". A test that passed zero-delay
-# and fails annotated is a *finding* to record, not a harness bug.
+# Same bench, offsets enabled by this runner, is the point (klt
+# functional-verification's SDF contract): the coverage signal is "does the
+# testbench's own pass/fail outcome change once real delay is present?". A
+# test that passed zero-delay and fails annotated is a *finding* to record,
+# not a harness bug.
+#
+# Drive/sample alignment (issue #106). The bench file itself is not edited,
+# but it is not run raw either: it drives inputs in the same time step as the
+# clock pin edge and reads outputs in that step, which is a race once the
+# clock tree and output paths have real delay. The testbench module is
+# therefore `sdf_alignment`, which imports the bench's tests unchanged and,
+# when the three PE_ALIGN_* environment variables are set, (a) starts the
+# clock at the SDC period, (b) applies every post-edge stimulus the SDC input
+# delay after the pin edge and (c) samples every pin the SDC output delay
+# before the next edge. This runner reads those three numbers from the gds
+# run's own final SDC (`final/sdc/<top>.sdc`: `create_clock -period`, the
+# uniform `set_input_delay`, the uniform `set_output_delay`) -- never from a
+# constant here -- FAILS if the SDC is missing or the IO delays are not
+# uniform, freezes the SDC and the derived `alignment.json` beside the
+# netlist, and exports the variables to every klt run. The RTL requests never
+# name `sdf_alignment`, so the RTL bench run is unchanged. The bench's one
+# white-box test (`test_alu_flags_whitebox`, reads `u_core`, which a flattened
+# netlist does not have) is reported SKIPPED by that module, never passed.
 #
 # Environment requirements (docs/environment.md, layout/toolchain.json):
 #   - `klt` at the exact commit layout/toolchain.json pins (KLT_BIN
@@ -79,7 +100,7 @@ DOWNLOAD_DIR="${SCRATCH_DIR}/download"
 PDK_VARIANT="ihp-sg13cmos5l"
 CELL_LIBRARY="sg13cmos5l_stdcell"
 HDL_TOPLEVEL="tt_um_2amlogic_protocol_emulator"
-BENCH_MODULE="test_protocol_emulator"
+BENCH_MODULE="sdf_alignment"   # wraps test_protocol_emulator (issue #106)
 
 # The corner set this script sweeps is not chosen here -- it is whatever
 # the LibreLane flow itself emitted for this design (the `nom_*` corners of
@@ -106,7 +127,7 @@ while [ $# -gt 0 ]; do
     --from)
       FROM_DIR="$2"; shift 2 ;;
     -h|--help)
-      sed -n '2,71p' "${BASH_SOURCE[0]}"; exit 0 ;;
+      sed -n '2,92p' "${BASH_SOURCE[0]}"; exit 0 ;;
     *)
       CORNERS+=("$1"); shift ;;
   esac
@@ -238,6 +259,69 @@ fi
 
 echo "== swept netlist: ${NETLIST_FOR_FV}" >&2
 echo "== sdf corners: ${CORNERS[*]}" >&2
+
+# --- Drive/sample alignment from the run's own SDC (issue #106) -----------
+# The external environment LibreLane's STA signed this netlist off against:
+# clock period, input delay, output delay. Read from the final SDC of the
+# same gds run the netlist and SDFs come from, frozen beside them, and
+# exported to the sdf_alignment testbench module (see the header). Fails if
+# the SDC is absent, has no clk period, or carries non-uniform IO delays (a
+# per-pin delay would need a per-pin offset, which the module does not model).
+SDC_FILE="$(find "$ACQUIRE_DIR" -path "*final/sdc/*" -name "${HDL_TOPLEVEL}.sdc" -type f | sort | head -1)"
+if [ -z "$SDC_FILE" ]; then
+  echo "FATAL: final/sdc/${HDL_TOPLEVEL}.sdc not found under ${ACQUIRE_DIR} (expected in the GDS_logs artifact): no constraint to align the bench to." >&2
+  exit 1
+fi
+mkdir -p "${SCRATCH_DIR}/sdc"
+cp "$SDC_FILE" "${SCRATCH_DIR}/sdc/${HDL_TOPLEVEL}.sdc"
+ALIGNMENT_JSON="${SCRATCH_DIR}/sdc/alignment.json"
+eval "$(python3 - "${SCRATCH_DIR}/sdc/${HDL_TOPLEVEL}.sdc" "$ALIGNMENT_JSON" <<'PYEOF'
+import json
+import re
+import sys
+
+sdc_path, out_path = sys.argv[1:3]
+text = open(sdc_path, encoding="utf-8").read()
+clocks = re.findall(r"create_clock\s+-name\s+(\S+)\s+-period\s+([0-9.]+)\s+\[get_ports\s+\{?clk\}?\]", text)
+if len(clocks) != 1:
+    sys.exit(f"FATAL: expected exactly one create_clock on port clk in {sdc_path}, found {clocks}")
+period = float(clocks[0][1])
+ins = re.findall(r"set_input_delay\s+([0-9.]+)\s+-clock\s+\[get_clocks\s+\{?clk\}?\]\s+-add_delay\s+\[get_ports\s+\{([^}]+)\}\]", text)
+outs = re.findall(r"set_output_delay\s+([0-9.]+)\s+-clock\s+\[get_clocks\s+\{?clk\}?\]\s+-add_delay\s+\[get_ports\s+\{([^}]+)\}\]", text)
+if not ins or not outs:
+    sys.exit(f"FATAL: {sdc_path} has no set_input_delay or no set_output_delay on clk")
+in_vals = sorted({float(v) for v, _ in ins})
+out_vals = sorted({float(v) for v, _ in outs})
+if len(in_vals) != 1 or len(out_vals) != 1:
+    sys.exit(f"FATAL: non-uniform IO delays in {sdc_path}: inputs {in_vals}, outputs {out_vals}")
+drive, sample = in_vals[0], period - out_vals[0]
+if not 0 <= drive < sample < period:
+    sys.exit(f"FATAL: derived alignment drive={drive} sample={sample} period={period} is not 0 <= drive < sample < period")
+doc = {
+    "source": "final/sdc/<top>.sdc of the gds run (frozen beside this file)",
+    "clock_period_ns": period,
+    "input_delay_ns": in_vals[0],
+    "input_delay_ports": sorted(p for _, p in ins),
+    "output_delay_ns": out_vals[0],
+    "output_delay_ports": sorted(p for _, p in outs),
+    "drive_offset_ns": drive,
+    "sample_offset_ns": sample,
+    "rule": "drive = input delay; sample = period - output delay; tests start the clock at the SDC period",
+}
+with open(out_path, "w", encoding="utf-8") as handle:
+    json.dump(doc, handle, indent=2)
+    handle.write("\n")
+print(f"PE_ALIGN_CLK_PERIOD_NS={period!r}")
+print(f"PE_ALIGN_DRIVE_OFFSET_NS={drive!r}")
+print(f"PE_ALIGN_SAMPLE_OFFSET_NS={sample!r}")
+PYEOF
+)"
+if [ -z "${PE_ALIGN_CLK_PERIOD_NS:-}" ]; then
+  echo "FATAL: could not derive the drive/sample alignment from ${SDC_FILE}." >&2
+  exit 1
+fi
+export PE_ALIGN_CLK_PERIOD_NS PE_ALIGN_DRIVE_OFFSET_NS PE_ALIGN_SAMPLE_OFFSET_NS
+echo "== alignment (from SDC): period ${PE_ALIGN_CLK_PERIOD_NS} ns, drive +${PE_ALIGN_DRIVE_OFFSET_NS} ns, sample +${PE_ALIGN_SAMPLE_OFFSET_NS} ns" >&2
 
 # --- Macro-instance rename (Icarus INTERCONNECT limitation) ----------------
 # Flattening leaves the SRAM instance named by an escaped identifier holding
@@ -460,8 +544,9 @@ request = {
     ],
     "hdl_toplevel": hdl_toplevel,
     "testbench": {
-        # The SAME committed bench the RTL request drives, unmodified --
-        # resolved by path so this request can live in the sweep scratch dir.
+        # The SAME committed bench the RTL request drives (its tests, via
+        # the sdf_alignment wrapper, issue #106) -- resolved by path so this
+        # request can live in the sweep scratch dir.
         "module": bench_module,
         "search_path": bench_dir,
         "testcase": None,
@@ -535,18 +620,20 @@ PYEOF
   fi
   first=0
   python3 - "$corner" "${corner_dir}/klt-functional-verification.json" \
-    "$run_rc" "$annotated" "$status" "$elapsed" >> "${RESULTS_FILE}" <<'PYEOF'
+    "$run_rc" "$annotated" "$status" "$elapsed" "$ALIGNMENT_JSON" >> "${RESULTS_FILE}" <<'PYEOF'
 import json
 import sys
 
-corner, output_path, run_rc, annotated, status, elapsed = sys.argv[1:7]
+corner, output_path, run_rc, annotated, status, elapsed, alignment_path = sys.argv[1:8]
 try:
     with open(output_path, encoding="utf-8") as handle:
         response = json.load(handle)
 except (OSError, json.JSONDecodeError):
     response = None
+alignment = json.load(open(alignment_path, encoding="utf-8"))
 entry = {
     "corner": corner,
+    "alignment": {k: alignment[k] for k in ("clock_period_ns", "drive_offset_ns", "sample_offset_ns")},
     "run_rc": int(run_rc),
     "sdf_annotated": annotated == "true",
     "status": status,
