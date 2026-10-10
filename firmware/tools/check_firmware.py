@@ -7,6 +7,11 @@ Runs, without rewriting any artifact:
   3. asm.py <each firmware/asm/boot/*.asm> --out-dir firmware/build/boot
      --check   (the boot ROM image matches its source; issue #138)
   4. gen_boot_rom.py --check   (rtl/protocol_boot_rom.v matches that image)
+  5. loadseq.py --check <firmware/build/*.hex>   (issue #118: the direct-load
+     pin sequence generated in memory for each application image replays,
+     through an independent load-protocol model, to exactly that image;
+     nothing is written. Boot-ROM images under build/boot/ are not
+     application images for this loader and are not covered.)
 
 Steps 3 and 4 are the two links of DR 0013 layer 2's chain, source -> hex
 -> generated Verilog: a boot ROM that no longer matches the committed boot
@@ -41,6 +46,12 @@ def main() -> int:
     cmds += [[sys.executable, str(TOOLS / "asm.py"), str(a),
               "--out-dir", str(BOOT_BUILD), "--check"] for a in boot_asms]
     cmds += [[sys.executable, str(TOOLS / "gen_boot_rom.py"), "--check"]]
+    hexes = sorted((ROOT / "firmware" / "build").glob("*.hex"))
+    if not hexes:
+        print("check_firmware: no firmware/build/*.hex found", file=sys.stderr)
+        return 1
+    cmds += [[sys.executable, str(TOOLS / "loadseq.py"), "--check"]
+             + [str(h) for h in hexes]]
     failed = 0
     for cmd in cmds:
         rc = subprocess.call(cmd, cwd=ROOT)
@@ -49,6 +60,7 @@ def main() -> int:
             failed += 1
     print(f"check_firmware: {len(asms)} assembly inputs, "
           f"{len(boot_asms)} boot assembly input(s), 1 generated ROM, "
+          f"{len(hexes)} load sequence(s), "
           f"{failed} failing check(s)")
     return 1 if failed else 0
 
