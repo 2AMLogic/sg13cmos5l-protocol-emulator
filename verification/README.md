@@ -513,6 +513,19 @@ Each record is a markdown file, `records/<record-id>.md`, with two parts:
      agent) minted the record.
    - **Supersedes** — `none`, or the prior `<record-id>` this corrects.
 
+## Stale records: report and re-mint
+
+`python3 verification/remint_records.py` lists every live record whose
+hashed input has changed (recorded vs current hash) and the
+`verification/request-*.json` file(s) the record hashes, i.e. the request that
+produced it. `--rerun [--only EXPERIMENT] [--klt CMD]` re-runs just those
+requests with `klt functional-verification` and mints superseding records
+(new ID, `supersedes` = the stale record, artifacts under `artifacts/<new-id>/`).
+Old records are never touched. The new prose is copied from the old record
+with Record ID, Result, Timestamp and Supersedes rewritten; review the Claim
+and Run configuration before committing. Records with no request file are
+reported and must be re-minted by hand. Self-test: `test_remint_records.py`.
+
 ## Append-only rule
 
 `records/*.md` and `artifacts/**` are never edited or deleted after
