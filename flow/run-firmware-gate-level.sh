@@ -67,12 +67,19 @@
 # SCK/MISO pads. Its negative control is the same `\u_core.rom_exit` stuck-
 # at-0 netlist: a good image never runs, so the bench's boot tests must fail.
 #
-# Usage:  ./flow/run-firmware-gate-level.sh [--netlist FILE] [--full] [--control-space] [--boot-rom] [--boot-spi]
+# DR 0015 primitives (issue #208): --primitives adds
+# verification/test_primitives.py (P1 CRC/LFSR and P2 NRZI/stuffing against
+# independent oracles), pin-only under GATES=yes. Its negative control is the
+# WAIT-counter fault above: WCTL CRC_BYTE shares that counter, so its 8 steps
+# and its 9-cycle latency both break, and the bench must fail.
+#
+# Usage:  ./flow/run-firmware-gate-level.sh [--netlist FILE] [--full] [--control-space] [--boot-rom] [--boot-spi] [--primitives]
 #   --full  also runs verification/test_firmware_i2c_sr.py (the Sr/stretch
 #           sibling bench); default is the three issue-#108 protocol benches.
 #   --control-space  also runs verification/test_control_space.py.
 #   --boot-rom       also runs verification/test_boot_rom.py.
 #   --boot-spi       also runs verification/test_boot_spi.py.
+#   --primitives     also runs verification/test_primitives.py.
 # Env:    PDK_ROOT must contain ihp-sg13cmos5l/ (default ~/share/pdk).
 # Runs sims strictly one at a time. Writes flow/firmware-gate-level/
 # (gitignored): per-run results.xml, logs, mutated netlist, summary.json.
@@ -92,6 +99,7 @@ while [ $# -gt 0 ]; do
     --control-space) MODULES+=(test_control_space); shift ;;
     --boot-rom) MODULES+=(test_boot_rom); shift ;;
     --boot-spi) MODULES+=(test_boot_spi); shift ;;
+    --primitives) MODULES+=(test_primitives); shift ;;
     -h|--help) sed -n '2,77p' "${BASH_SOURCE[0]}"; exit 0 ;;
     *) echo "FATAL: unknown argument $1" >&2; exit 1 ;;
   esac

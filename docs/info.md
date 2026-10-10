@@ -24,7 +24,7 @@ bidirectional pin is set by firmware at run time, through the control
 space below; after reset every one is an input.
 
 **Control space** (`spec/decision-records/0012-control-space-and-runtime-pin-direction.md`,
-Proposed). Two operand combinations that used to be no-ops address ten
+Proposed). Two operand combinations that used to be no-ops address
 control registers, with the register index in `imm8`: `WCTL k, Rs` (`OUT`
 to port `00`) writes one and `RCTL Rd, k` (`IN` from port `10`) reads one.
 
@@ -39,18 +39,38 @@ to port `00`) writes one and `RCTL Rd, k` (`IN` from port `10`) reads one.
 | `0x06`, `0x07` | `PM_CRC_LO`, `PM_CRC_HI` | R, W clears | 1 | CRC-16/XMODEM (poly `0x1021`, init 0) over every word committed to program memory, by the serial load or by `PM_DATA_LO`; high byte of each word first |
 | `0x08` | `BOOT_STATUS` | R | 1 | bit 0: a serial load completed since reset. Bit 1: the instruction reading it was fetched from the boot ROM (so a loaded program always reads 0 there) |
 | `0x09` | `HW_ID` | R | 1 | design revision byte, `0x01` |
+| `0x10` | `CRC_CFG` | R/W | 1 | P1 configuration: bits 4:0 width − 1 (1 to 32 bits), bit 5 reflected (LSB first), bit 6 read-out inversion. A write rewinds the byte pointer |
+| `0x11` | `CRC_POLY` | R/W | 1 | P1 polynomial, one byte per access at the byte pointer (byte 0 first), pointer + 1. Normal form for normal mode, bit-reversed for reflected mode |
+| `0x12` | `CRC_STATE` | R/W | 1 | P1 register, one byte per access at the byte pointer, pointer + 1; reads mask to the width |
+| `0x13` | `CRC_BIT` | W | 1 | one CRC/LFSR step with data bit `Rs[0]` |
+| `0x14` | `CRC_BYTE` | W | **9** | eight steps with the bits of `Rs` (LSB first if reflected), 1 + 8 stall cycles |
+| `0x15` | `CRC_NEXT` | R | 1 | the register, complemented if inversion is on, masked to the width, one byte at the pointer, pointer + 1 |
+| `0x16` | `LINE_CFG` | R/W | 1 | P2 configuration: bits 1:0 NRZI (01 toggle on 0, 10 toggle on 1, else none), bits 3:2 stuffing (01 a 0 after N ones, 10 the complement after N equal bits), bits 6:4 N; bit 7 sets the line level. A write clears the run count |
+| `0x17` | `LINE_PUT` | W | 1 | present data bit `Rs[0]`; on a stuff slot the stuff bit goes out instead and the data bit is not consumed |
+| `0x18` | `LINE_OUT` | R | 1 | bit 0 the line level, bit 1 its complement (one `OUT` drives a differential pair) |
+| `0x19` | `LINE_STUF` | R | 1 | bit 0: the last `LINE_PUT` was a stuff slot, so present the same bit again |
+
+`0x10`–`0x19` are DR 0015's protocol-neutral primitives (Proposed): **P1**,
+a CRC / LFSR step with a programmable polynomial, and **P2**, NRZI coding
+with a bit-stuffing counter. Neither knows a frame; the firmware builds the
+packet and uses them for the line coding and the CRC. They are checked
+against the published CRC catalogue values (CRC-5/USB, CRC-16/USB, CRC-32,
+CRC-8/MAXIM, CRC-15/CAN), a PRBS7 sequence, and an independent USB / HDLC /
+CAN line decoder (`verification/test_primitives.py`).
 
 Any other index is reserved: a write does nothing and a read returns 0, in
 one cycle, and the assembler refuses it unless given `--allow-reserved`.
-All ten registers reset to 0 except `HW_ID`. No control access changes a
+Every control register resets to 0 except `HW_ID` (and `LINE_OUT`, which
+reads its complement bit as 1). No control access changes a
 flag. `OUT` to port `01` and `IN` from port `11` remain no-ops.
 
 **Timing is the product, so it is fixed by construction.** Every instruction
 retires in exactly one cycle, with two kinds of exception, both fixed by
 the instruction word itself and never by a register or a pin: `WAIT imm8`
-stalls `imm8 + 1` cycles, and the three control accesses marked 2 in the
+stalls `imm8 + 1` cycles, the three control accesses marked 2 in the
 table above take exactly 2 (the program memory has one port, so a data
-access to it stalls instruction fetch for one cycle, always). A conditional branch costs the
+access to it stalls instruction fetch for one cycle, always), and
+`WCTL CRC_BYTE` takes exactly 9. A conditional branch costs the
 same one cycle taken or not taken. So the exact clock cycle of any pin read
 or pin write is computable from the instruction stream alone, without
 simulating anything. An `IN` samples its port on the edge that retires it;
