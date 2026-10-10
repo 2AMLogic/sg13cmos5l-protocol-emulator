@@ -311,6 +311,13 @@ superseded for its own reasons.
   record. The row stays **unmet; not carried as met**. Three things keep
   it unmet: this record is `Proposed`, `spec/target-spec.md` is
   `PROPOSED — not ratified`, and open item 1 is unresolved.
+  *Dated note 2026-10-10 (issue #85, item 3):* the row 4 State cell no
+  longer gives the spec's own ratification status as a reason the row is
+  unmet. That reason would contradict the cell the moment the spec is
+  ratified. The cell now says the row's Target names no corner set, that
+  this record (Proposed) proposes one, that open item 1 is unresolved, and
+  that the klt flow has no result. Nothing in this record's decision
+  changes.
 - **`spec/gap-to-submission.md` row 4** gets a dated note. Its Status cell
   names this record as the proposed resolution of the corner-set question.
 - **`flow/run-sta-corner-sweep.sh` is not changed by this record's PR.** The
