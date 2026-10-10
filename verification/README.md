@@ -127,6 +127,43 @@ coverage.
   `request-boot-uart.json`); `boot_uart_mutants.py` is its negative-control
   runner (seven single defects in the boot ROM, each caught by a test meant
   to catch it). Evidence in `records/boot-uart/`.
+- `test_reset_power_up.py` — **gate-level only** cocotb bench for
+  target-spec row 14 / `spec/verification-plan.md` section 8 (issue #131):
+  reset, power-up and reselect on the LibreLane netlist. Every flop of the
+  netlist is forced to X or to a seeded random value (through its own `D`
+  pin and one real clock edge, so the PDK UDP holds it), the SRAM array
+  gets X or random words, the design runs on that state, and only then is
+  `rst_n` pulsed. Per edge: no X on a pin and every pin at its reset value
+  (`[row14-b]`), every flop at its reset value in reset and none X after
+  (`[row14-a]`), the fetch source never leaves the boot ROM and the SRAM is
+  read only as data (`[row14-c]`); across the all-X run and 8 seeds the
+  whole flop trace is bit-identical. Also: a canary SRAM image is never
+  executed, and the reselect cycle (load, run, power-cycle, reset without
+  reload = safe idle, power-cycle, reload, run) repeats the first run edge
+  for edge. Driven by `flow/run-reset-power-up-gate-level.sh`, not by
+  `klt functional-verification` (no request file: klt has no gate-level
+  initial-state control). Evidence in `records/reset-power-up/`.
+- `reset_coverage.py` / `reset_coverage_justifications.json` — the
+  reset-coverage listing of section 8: classifies every state element of a
+  netlist (from the PDK's own cell models, not names) as reset from
+  `rst_n` alone or not, and fails on any non-reset element the
+  justification file does not explain, or on a justification that names
+  nothing. `test_reset_coverage.py` is its stdlib self-test (`npm run
+  lint`).
+
+**Host obligation after deselect (target-spec row 14; organizers'
+2026-10-09 update).** Deselecting the design powers it down: the program
+memory's contents are lost, and nothing on the chip restores them. After
+every select the host must pulse `rst_n` and reload the program (a serial
+load with `MODE` high, DR 0001 layer 1; or, once they exist, a boot
+loader DR 0013 layer 2 names). A reset *without* a reload is safe but
+useless: the core runs the boot ROM, which on strap 00 waits in the UART
+loader (issue #139: TX idles high, no `uio` pin is driven, `uio_out` reads
+its 0xFF guard) and on strap 01 halts in the SPI stub with every pin at its
+reset value (on strap 10 it first checks the memory and runs it
+only if it holds a signed image, which power-up contents are not, short
+of DR 0013's all-zero weak case: 256 NOPs) — `test_reset_power_up.py::test_reselect` shows this on
+gates. The host-side loader is issue #118.
 - `test_program_memory.py` — cocotb testbench for
   `rtl/protocol_program_memory.v`, the program memory and serial
   load-phase logic (target-spec row 6, issue #19): loads known programs
