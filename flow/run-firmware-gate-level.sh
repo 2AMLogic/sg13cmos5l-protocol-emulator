@@ -90,7 +90,7 @@ while [ $# -gt 0 ]; do
     --control-space) MODULES+=(test_control_space); shift ;;
     --boot-rom) MODULES+=(test_boot_rom); shift ;;
     --boot-uart) MODULES+=(test_boot_uart); shift ;;
-    -h|--help) sed -n '2,58p' "${BASH_SOURCE[0]}"; exit 0 ;;
+    -h|--help) sed -n '2,76p' "${BASH_SOURCE[0]}"; exit 0 ;;
     *) echo "FATAL: unknown argument $1" >&2; exit 1 ;;
   esac
 done
