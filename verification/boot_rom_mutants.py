@@ -47,7 +47,7 @@ PMEM = "rtl/protocol_program_memory.v"
 ROM = "rtl/protocol_boot_rom.v"
 REQUEST = "verification/request-boot-rom.json"
 
-# The warm-start words moved to 0x97.. when the UART load (issue #139) was
+# The warm-start words moved to 0x95.. when the UART load (issue #139) was
 # placed ahead of them; the strap dispatch at 0x00..0x08 did not move.
 T_STUB = "test_stub_straps_idle_on_unwritten_memory"
 T_UNVERIFIED = "test_mode_low_never_runs_unverified_memory"

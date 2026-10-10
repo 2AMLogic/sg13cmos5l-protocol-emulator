@@ -834,9 +834,10 @@ async def test_warm_start_refuses_a_zero_signature(dut):
     signature of 0x0000 before it looks at the CRC, as the SPI-flash boot
     does, and falls through to the UART load. The same rule refuses a real
     image whose CRC happens to be 0x0000; here that is the probe program,
-    which drives pins within a few instructions if it runs. No pin moves.
-    White-box (RTL): the core never leaves the ROM and halts in the
-    UART-load stub."""
+    which drives pins within a few instructions if it runs. No pin moves
+    beyond the loader's own (TX idle high, the 0xFF guard on uio_out, no uio
+    driven). White-box (RTL): the core never leaves the ROM and waits in the
+    UART loader's start-edge poll."""
     start_clock(dut)
     p, _ = probe_program()
     uart_stub = stub_addresses()["uart_load"]
@@ -845,14 +846,14 @@ async def test_warm_start_refuses_a_zero_signature(dut):
             f"premise: '{name}' must pass the CRC and carry a zero signature"
         )
         result, model = boot_outcome(STRAP_WARM, image)
-        assert result["outcome"] == "halt" and result["pc"] == uart_stub, (name, result)
+        assert result["outcome"] == "uart_wait" and result["pc"] == uart_stub, (name, result)
         assert model.pm == image, f"model: the warm start changed program memory ({name})"
         label = f"{name}, warm start"
         await serial_load(dut, image)
         watch = RomWatch(dut, label)
         await boot_reset(dut, STRAP_WARM)
         trace = await trace_edges(dut, WARM_START_CYCLES + p.edge(len(p.lines)) + 32, label, watch)
-        assert_quiet(trace, label)
+        assert_quiet(trace, label, uart_stub)
         watch.assert_never_left()
         watch.assert_stopped_at(uart_stub)
 
