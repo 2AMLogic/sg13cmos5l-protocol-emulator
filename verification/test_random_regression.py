@@ -92,10 +92,24 @@ graded with the model's back-to-back frame-pitch check plus an exact
 frames, where a single frame's timing is graded on its last in-frame edge
 only (the model's documented isolated-frame limitation).
 
-Directions not covered: UART RX (no firmware exists for it yet; deferred,
-not implied).
+UART RX (issue #192). The committed receive programs (`uart_rx` 50,
+`uart_rx_115200` 434, `uart_rx_9600` 5,208 core cycles per bit) are run
+unchanged; what is seeded is the stimulus on `ui_in[1]` (payload class,
+in-bound rate error / jitter, spacing), built and graded with the directed
+bench's own helpers (`test_firmware_uart_rx.py`: the independent
+`reference_models.uart` encoder / decoder, `frame_ok`): the received byte on
+`uo_out`, the framing flag, cycle-exact sample spacing and sample position
+inside the sender's bit. `ui_in[0]` (PROG_SER) is held low. Controls: the
+receiver with one inter-sample WAIT stretched by 2 cycles must be rejected
+for sample spacing, and a +-10 % per-bit sender must be rejected for a wrong
+byte or an out-of-bit sample.
+
+Limits: RTL, zero-delay Icarus simulation only. No SDF, no electrical pad
+behaviour and no measured wall-clock baud is implied; baud figures are
+arithmetic at row 4's unconfirmed clock.
 """
 
+import copy
 import hashlib
 import json
 import os
@@ -135,9 +149,16 @@ from test_firmware_i2c import (  # noqa: E402
 )
 from test_firmware_i2c import run_words as run_i2c_on_pads  # noqa: E402
 from test_firmware_i2c_sr import run_on_pads as run_i2c_rd_on_pads  # noqa: E402
+from test_firmware_uart_rx import (  # noqa: E402
+    FrameSpec,
+    frame_ok,
+    model_check_verdicts,
+    run_rx,
+)
 from reference_models.i2c import check_transfer  # noqa: E402
 from reference_models.spi import MODES, check_burst  # noqa: E402
 from reference_models.uart import MAX_FRAME_DRIFT_PCT, UartDecoder  # noqa: E402
+from reference_models.waveform import Signal  # noqa: E402
 
 #: The one recorded seed; mirrored into the request's `random_seed`.
 RECORDED_SEED = 20261009
@@ -309,6 +330,68 @@ async def test_uart_random_programs(dut):
         if not ok:
             failures.append(f"{ident(case)}: {detail}")
     assert not failures, "UART random regression FAILED:\n" + "\n".join(failures)
+
+
+# =======================================================================
+# UART RX (issue #192)
+# =======================================================================
+
+
+def rx_frames(case):
+    """Fresh `FrameSpec`s for a case (run_rx mutates them)."""
+    p = case.params
+    return [
+        FrameSpec(f["data"], scale=p["scale"], jitter_frac=p["jitter_frac"],
+                  gap_bits=f["gap_bits"], label=p["variation"])
+        for f in p["frames"]
+    ]
+
+
+async def run_uart_rx(dut, case):
+    """Load the case's receive program over the load-phase pins and play its
+    seeded frames on `ui_in[1]`. Returns `(frames, results, line)`."""
+    program = _assemble(case)  # the case's own assembly is what runs
+    frames = rx_frames(case)
+    results, line = await run_rx(
+        dut, case.params["program"], frames, seed=case.params["stim_seed"],
+        start_clock=False, words=program.words,
+    )
+    return frames, results, line
+
+
+def grade_uart_rx(case, frames, results, line):
+    """Returns (ok, detail, failures). Every verdict is the directed bench's:
+    byte on `uo_out`, framing flag, cycle-exact sample spacing, sample
+    position in the sender's bit; plus the independent model's opinion of
+    the nominal (in-bound) stimulus."""
+    period = case.params["period"]
+    fails = []
+    for n, (spec, res) in enumerate(zip(frames, results)):
+        strict = spec.scale == 1.0 and not spec.jitter_frac
+        fails += [f"frame {n} 0x{spec.data:02x}: {m}"
+                  for m in frame_ok(spec, res, period, strict)]
+    if case.params["variation"] == "nominal":
+        # The model looks for a start edge with a 1e-9 ns look-back, which a
+        # float64 absolute time past ~1e7 ns (late in a long run) cannot
+        # resolve; hand it the same waveform rebased close to zero.
+        off = frames[0].t_start - 1000.0
+        near = Signal(line.initial, name=line.name)
+        near.transitions = [(t - off, v) for t, v in line.transitions]
+        rebased = []
+        for f in frames:
+            g = copy.copy(f)
+            g.t_start, g.t_end = f.t_start - off, f.t_end - off
+            rebased.append(g)
+        for n, ok in enumerate(model_check_verdicts(near, period, rebased)):
+            if not ok:
+                fails.append(f"frame {n}: model rejects its own in-bound stimulus")
+    if fails:
+        return False, "; ".join(fails), fails
+    got = [f"0x{r['got']:02x}" for r in results]
+    return True, (
+        f"{case.params['program']} @ {period} cycles/bit, {case.params['variation']}, "
+        f"rx on {case.params['rx_pin']}, received {got}"
+    ), []
 
 
 # =======================================================================
@@ -844,6 +927,70 @@ async def test_i2c_rd_negative_controls(dut):
         assert not ok_od, (
             f"NEGATIVE CONTROL FAILED TO FAIL: {ident(pick)} passed with "
             "UIO_OD left at reset (no pad enabled)"
+        )
+
+
+# =======================================================================
+# UART RX legs (issue #192). They run LAST (before the report): the
+# 5,208-cycle/bit profile advances simulated time by tens of milliseconds, and
+# the SPI / UART models look for edges with a 1e-9 ns look-back that float64
+# absolute times past ~1e7 ns cannot resolve. Ordering them after the
+# existing legs leaves those legs' absolute times, and so their records,
+# unchanged.
+# =======================================================================
+
+
+@cocotb.test()
+async def test_uart_rx_random_programs(dut):
+    cocotb.start_soon(Clock(dut.clk, CLK_PERIOD_NS, unit="ns").start())
+    failures = []
+    for case in ft.generate(RECORDED_SEED, "uart_rx", case_count()):
+        _emit(case)
+        CASES_RUN.append(case)
+        frames, results, line = await run_uart_rx(dut, case)
+        ok, detail, _fails = grade_uart_rx(case, frames, results, line)
+        dut._log.info(f"{ident(case)} params={case.params} -> {ok} ({detail})")
+        _record(case, ok, detail)
+        if not ok:
+            failures.append(f"{ident(case)}: {detail}")
+    assert not failures, "UART RX random regression FAILED:\n" + "\n".join(failures)
+
+
+@cocotb.test()
+async def test_uart_rx_negative_controls(dut):
+    cocotb.start_soon(Clock(dut.clk, CLK_PERIOD_NS, unit="ns").start())
+    # UART RX (issue #192): (1) the committed 50-cycle receiver with its first
+    # inter-sample WAIT stretched by 2 cycles must be rejected for sample
+    # spacing; (2) a sender 10 % off per bit, both directions, must be
+    # rejected for a wrong byte / out-of-bit sample (the receiver tolerates
+    # +-2 %, not +-10 %).
+    probes = [0x80, 0x40, 0x01, 0xA5]
+    rx_controls = [
+        ("uart_rx_wait_plus_2", ft.gen_uart_rx(RECORDED_SEED, 0, mistime_wait_delta=2),
+         ("sample spacing",)),
+        ("uart_rx_sender_rate_plus_10pct",
+         ft.gen_uart_rx(RECORDED_SEED, 0, force_frames=probes, force_scale=1.10),
+         ("received 0x", "of its bit")),
+        ("uart_rx_sender_rate_minus_10pct",
+         ft.gen_uart_rx(RECORDED_SEED, 0, force_frames=probes, force_scale=0.90),
+         ("received 0x", "of its bit")),
+    ]
+    for name, case, reasons in rx_controls:
+        assert case.params["rx_pin"] == "ui_in[1]"
+        frames, results, line = await run_uart_rx(dut, case)
+        ok, detail, fails = grade_uart_rx(case, frames, results, line)
+        intended = [m for m in fails if any(r in m for r in reasons)]
+        NEGATIVE_CONTROLS.append(
+            {"name": name, "protocol": "uart_rx", "params": case.params,
+             "model_verdict": "FAIL" if not ok else "PASS",
+             "intended_reason": list(reasons),
+             "intended_reason_seen": bool(intended), "detail": detail}
+        )
+        dut._log.info(f"negative control {name}: ok={ok} intended={bool(intended)} ({detail})")
+        assert not ok, f"NEGATIVE CONTROL FAILED TO FAIL: {name} passed ({detail})"
+        assert intended, (
+            f"NEGATIVE CONTROL {name} was rejected, but not for the intended "
+            f"reason {reasons}: {detail}"
         )
 
 
