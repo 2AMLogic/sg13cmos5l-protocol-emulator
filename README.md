@@ -33,8 +33,13 @@ DR 0012's control space is implemented: `WCTL`/`RCTL` provide runtime pin
 direction and open-drain control, program-memory access, CRC-16/XMODEM over
 committed words, and a fixed-latency `RUN` jump. The
 [control-space evidence](verification/records/control-space/records/20261009-210912-a46a399.md)
-records the RTL bench and mutant checks. The silicon-true I2C pad-model
-verification and DR 0013 boot ROM remain in progress (#136 and #138).
+records the RTL bench and mutant checks. The
+[logical, zero-delay I2C pad model](verification/records/uio-pad-model/records/20261010-025453-865cf4a.md)
+now resolves the bus through the design's own `uio_oe` and `uio_out`; it does
+not characterize electrical pad timing. The
+[DR 0013 boot ROM](verification/records/boot-rom/records/20261010-004726-197191d.md)
+is implemented. UART and SPI-flash boot firmware remain in progress (#139
+and #140); the serial-load CRC readout awaits an operator decision (#167).
 
 The competition's LibreLane flow has routed the macro-backed core in a 2×2
 Tiny Tapeout die. Its [committed PDN/area record](verification/records/librelane-pdn-bridge/records/20261001-085017-21a2a63.md)
