@@ -437,7 +437,8 @@ Each record is a markdown file, `records/<record-id>.md`, with two parts:
    with the stdlib `json` module — no YAML dependency). Required keys:
 
    - `record_id` — must equal the filename stem.
-   - `experiment` — the experiment-slug this record belongs to.
+   - `experiment` — the experiment-slug this record belongs to; it must
+     equal the name of the experiment directory the record sits in.
    - `supersedes` — `null`, or the `record_id` of a prior record in the
      same experiment directory this one corrects/replaces.
    - `git_revision` — the full design git revision this record was
@@ -506,6 +507,11 @@ on:
 - any symlink under `verification/records/`, file or directory: git versions
   only the link text, so a symlink's target could be edited after merge with
   no append-only violation (#183);
+- any tracked entry under `verification/records/` whose git mode is not
+  `100644` (e.g. a `160000` gitlink/submodule), reported as a validation
+  error naming the path and mode rather than read (#187);
+- a record whose `record-meta.experiment` differs from its directory name
+  (#187);
 - a `provenance.inputs[]` entry whose `content_hash` is not
   `sha256:<64 hex>`, or whose `path` is empty, absolute (e.g. `/dev/null`) or
   contains `..`; for a live record, also an input that is not a git-tracked
