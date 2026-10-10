@@ -164,11 +164,29 @@ gates. The host-side loader is issue #118.
 - `reference_models/` — the §4 independent reference models (pure Python,
   sharing no code with `src/`/`rtl/`): `waveform.py` (piecewise-constant
   signal abstraction), `uart.py` (8N1 + per-frame drift measurement
-  against row 10's ~2% bound), `spi.py` (Motorola-convention modes 0-3 +
+  against row 10's ~2% bound, on two observables: the frame's last
+  in-frame edge, and since issue #97 the start-to-start pitch to a
+  following frame; see the isolated-frame limitation below), `spi.py` (Motorola-convention modes 0-3 +
   row 11's f_clk/4 ceiling), `i2c.py` (NXP UM10204 Table 10 timing checks
   directly, both modes, repeated-START + clock-stretching aware), and
   `stimulus.py` (the constrained-random generators and deterministic
   negative controls).
+- **UART timing: what the model can see (issue #97).** Drift is only
+  measurable where the transmitter puts an edge. The last-edge
+  measurement scales with the last edge's bit index, so for payload 0xFF
+  (no edge after the bit-1 rise) a frame with a nominal start and first
+  data bit reads 0 % drift whatever its later bits do. The frame-pitch
+  measurement sees the whole frame, stop bit included, but needs a
+  following frame: a short pitch always fails; a long pitch fails only on
+  a stream the caller declares back to back
+  (`UartDecoder(baud, back_to_back=True)`), since otherwise it is a legal
+  idle gap. **An isolated frame, or one followed by idle, is graded on its
+  last edge alone**: a caller that needs row 10's bound to mean something
+  must use a payload with a late edge (e.g. 0x5A) or a back-to-back
+  stream. `test_protocol_models.py` asserts this limitation as documented
+  behaviour; the random regression sends half its multi-frame UART
+  programs back to back and fails a 0xFF stream with 3-cycle-long bits on
+  pitch.
 - `_dut.py` — shared `reset(dut)` coroutine, imported as a sibling module by
   `test_protocol_emulator.py` (and any future bench added here) so reset
   sequencing lives in one place.
