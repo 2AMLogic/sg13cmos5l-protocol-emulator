@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "kind": "generic",
+  "status": "pass",
+  "t1_item": 1,
+  "summary": "Design sources (Digital): the committed RTL under src/ and rtl/, the boot-ROM generator chain, the klt/Yosys synthesis request, and the two derived gate-level netlists of record (klt/Yosys: librelane-gds-signoff-check 20261010-110300-5669077; LibreLane post-route: gds run 38037477407), each listed with its sha256. Audited 2026-10-10 against main 5669077 (design last changed by 704a3fb), issue #83.",
+  "source": "manifests/evidence/design-sources.txt",
+  "provenance": {
+    "klt_version": "0.7.0",
+    "klayout_version": "0.30.12",
+    "pdk": null,
+    "deck": null,
+    "input": {
+      "content_hash": "sha256:d9004f7b6e65e5f2052465ea51d1db7801172355e6457c36a52a57714ae83141",
+      "path": "design-sources.txt"
+    }
+  }
+}

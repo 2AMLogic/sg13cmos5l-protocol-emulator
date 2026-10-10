@@ -1,0 +1,61 @@
+# T1 item 10 (Repo hygiene): a README stating what the block is, its spec
+# table, and how to reproduce every result; a license; CI that at minimum
+# keeps the harness and evidence formats valid.
+#
+# Audited 2026-10-10 for issue #83 against main @ 5669077. Attested by
+# hygiene.json beside this file; the manifest cites that envelope for item 10.
+#
+# This inventory pins structure, not bytes: README edits are routine and must
+# not force a signoff re-mint, but losing a section this audit relied on must
+# fail. scripts/check_evidence_inventories.py (`npm run lint`, CI records job)
+# checks every directive below.
+#
+# Directive grammar (column 0; other lines are prose):
+#   heading  <path> :: <line>   the file has this line (blanks at either end ignored)
+#   file  <path>                present
+
+## README
+
+# What the block is: the opening section (title and the paragraphs under it:
+# a protocol-emulator CPU on IHP SG13CMOS5L whose protocols are firmware, the
+# competition it is for, and its Tiny Tapeout target).
+heading  README.md :: # sg13cmos5l-protocol-emulator
+# Its spec table: the README section links the table, which lives in
+# spec/target-spec.md (rows 1-14 with target, source, checking artifact and
+# state). The table is not copied into the README; the link is the statement.
+heading  README.md :: ## Target specification
+file  spec/target-spec.md
+# How to reproduce every result: this section, added by issue #83, points at
+# the per-experiment cold-start index (T1 item 9's inventory).
+heading  README.md :: ## Reproducing the results
+file  manifests/evidence/testbenches.txt
+file  docs/environment.md
+heading  README.md :: ## License
+
+## License
+
+# Apache License 2.0 (the README's License section names it).
+file  LICENSE
+heading  LICENSE :: Apache License
+
+## CI that keeps the harness and evidence formats valid
+
+# .github/workflows/ci.yml, on every push and pull request:
+#   records      verification/check_records.py (record format, append-only
+#                against origin/main, provenance-hash freshness) and its
+#                self-test, firmware build freshness, the datasheet and
+#                inventory checks (`npm run lint`)
+#   signoff      scripts/signoff-report.sh --check-latest at the klt pin
+#   rtl-benches  every PDK-free cocotb bench via klt functional-verification
+#   formal       (workflow_dispatch only) the formal legs
+# plus the template's test.yaml (cocotb harness under test/) and gds.yaml
+# (LibreLane GDS, precheck, gate-level test).
+file  .github/workflows/ci.yml
+heading  .github/workflows/ci.yml :: jobs:
+heading  .github/workflows/ci.yml ::   records:
+heading  .github/workflows/ci.yml ::   signoff:
+heading  .github/workflows/ci.yml ::   rtl-benches:
+file  .github/workflows/test.yaml
+file  .github/workflows/gds.yaml
+file  verification/check_records.py
+file  scripts/check_evidence_inventories.py

@@ -107,6 +107,30 @@ is this program's klt iteration flow. The competition's submitted GDS uses the
 Tiny Tapeout template's LibreLane flow, as described in the proposed
 [`flow-of-record decision`](spec/decision-records/0002-flow-of-record.md).
 
+## Reproducing the results
+
+Every recorded result lives under
+[`verification/records/`](verification/records/), one directory per kind of
+measurement, and each record's *Run configuration* names the exact command
+that produced it. The index of all of them, with the bench, the cold-start
+command and the pinned tool and PDK revisions, is
+[`manifests/evidence/testbenches.txt`](manifests/evidence/testbenches.txt);
+CI fails if a new kind of record appears without a line there. In short:
+
+```bash
+./scripts/setup-env.sh          # klt at the layout/toolchain.json pin + pinned cocotb
+scripts/run-rtl-benches.sh      # every PDK-free RTL bench (Icarus + cocotb)
+npm run lint                    # evidence-record, firmware and inventory checks
+scripts/signoff-report.sh --check-latest   # re-grade the T1 checklist
+```
+
+Legs that need the PDK (synthesis, DRC/LVS, gate-level and post-layout
+simulation) take `PDK_ROOT` pointing at IHP-Open-PDK `2bbec755dc67`; the
+formal legs need the OSS CAD Suite release pinned in
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml); the GDS and its
+timing come from the `gds` workflow. The environment record is
+[`docs/environment.md`](docs/environment.md).
+
 ## Repo layout
 
 ```
