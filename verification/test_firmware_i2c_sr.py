@@ -195,7 +195,7 @@ def mutate_sr_wait(text, remove_cycles):
 
 async def drive_peripheral_sr(dut, pads, ack_falls, read_bits, stretches):
     """Reactive open-drain peripheral on the pad model's external side
-    (SCL = uio[0], SDA = uio[7]; it pulls a line low or lets go).
+    (SCL = uio[2], SDA = uio[3]; it pulls a line low or lets go).
 
     Counts the falls of the SCL **line** -- fall N starts the low phase of
     the Nth SCL low period: 1-8 address bits, 9 ACK, 10-17 payload, 18 ACK,

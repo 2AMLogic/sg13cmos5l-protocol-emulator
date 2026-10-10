@@ -41,13 +41,16 @@
 #
 # Pad path (issue #136, DR 0012): the I2C benches run on the silicon-true
 # pad model (verification/uio_pads.py), so on this netlist the SCL/SDA lines
-# they grade are resolved from the netlist's own `uio_oe` / `uio_out`. The
-# WAIT-counter fault says nothing about that path, so every I2C module gets a
-# second negative control on a third mutated copy: the top-level output
-# `uio_oe[0]` (SCL's pad enable) stuck at 0 -- its driving cell is rewired to
-# a dangling net and the port tied to 1'b0. `uio_out` is untouched, which is
-# the point: the bench-composed bus these benches graded before #136 would
-# pass on that netlist; the pad model must not.
+# they grade are resolved from the netlist's own `uio_oe` / `uio_out`; since
+# issue #155 the SPI bench does too (CS/MOSI/SCLK on uio[0]/[1]/[3]). The
+# WAIT-counter fault says nothing about that path, so every pad-model module
+# gets a second negative control on a third mutated copy: the top-level
+# output `uio_oe[3]` stuck at 0 -- the pad enable of SPI's SCLK and of I2C's
+# SDA (DR 0010's target plan; it was SCL's `uio_oe[0]` before #155) -- its
+# driving cell is rewired to a dangling net and the port tied to 1'b0.
+# `uio_out` is untouched, which is the point: the bench-composed bus these
+# benches graded before #136 would pass on that netlist; the pad model must
+# not.
 #
 # Boot ROM (issue #138, DR 0013 layer 2): --boot-rom adds
 # verification/test_boot_rom.py, pin-only under GATES=yes like the
@@ -88,7 +91,7 @@ while [ $# -gt 0 ]; do
     --control-space) MODULES+=(test_control_space); shift ;;
     --boot-rom) MODULES+=(test_boot_rom); shift ;;
     --boot-spi) MODULES+=(test_boot_spi); shift ;;
-    -h|--help) sed -n '2,58p' "${BASH_SOURCE[0]}"; exit 0 ;;
+    -h|--help) sed -n '2,77p' "${BASH_SOURCE[0]}"; exit 0 ;;
     *) echo "FATAL: unknown argument $1" >&2; exit 1 ;;
   esac
 done
@@ -126,23 +129,23 @@ for mod in "${MODULES[@]}"; do
     inject_fault '\\u_core\.rom_exit' '\u_core.rom_exit' "$MUTANT_BOOT"
   fi
 done
-MUTANT_PAD="${SCRATCH}/mutant-uio_oe0-stuck0.v"
+MUTANT_PAD="${SCRATCH}/mutant-uio_oe3-stuck0.v"
 python3 -I - "$NETLIST" "$MUTANT_PAD" <<'PYEOF'
 import re, sys
 src, dst = sys.argv[1:3]
 text = open(src, encoding="utf-8").read()
 # the one cell output that drives the port, rewired to a dangling net
-text, n = re.subn(r"\.(Y|X|Q|Z)\(uio_oe\[0\]\)", r".\1(pad_fault_uio_oe0_unconnected)", text)
+text, n = re.subn(r"\.(Y|X|Q|Z)\(uio_oe\[3\]\)", r".\1(pad_fault_uio_oe3_unconnected)", text)
 if n != 1:
-    sys.exit(f"FATAL: expected exactly one cell output driving uio_oe[0], found {n}")
+    sys.exit(f"FATAL: expected exactly one cell output driving uio_oe[3], found {n}")
 text, m = re.subn(r"(\n output \[7:0\] uio_oe;\n)",
-                  r"\1 wire pad_fault_uio_oe0_unconnected;\n assign uio_oe[0] = 1'b0;\n", text)
+                  r"\1 wire pad_fault_uio_oe3_unconnected;\n assign uio_oe[3] = 1'b0;\n", text)
 if m != 1:
     sys.exit("FATAL: top-level `output [7:0] uio_oe;` declaration not found")
 open(dst, "w", encoding="utf-8").write(text)
-print("fault injected: top-level output uio_oe[0] stuck at 0 (driver disconnected)", file=sys.stderr)
+print("fault injected: top-level output uio_oe[3] stuck at 0 (driver disconnected)", file=sys.stderr)
 PYEOF
-is_i2c() { case "$1" in test_firmware_i2c|test_firmware_i2c_sr) return 0 ;; *) return 1 ;; esac; }
+on_pads() { case "$1" in test_firmware_spi|test_firmware_i2c|test_firmware_i2c_sr) return 0 ;; *) return 1 ;; esac; }
 mutant_for() {  # the faulted netlist that must make <module> fail
   case "$1" in
     test_control_space) echo "$MUTANT_CTL" ;;
@@ -198,13 +201,13 @@ for mod in "${MODULES[@]}"; do
   echo "${sep}    {\"kind\": \"negative-control\", \"module\": \"${mod}\", \"result\": \"${out}\", \"as_required\": $([ $ok -eq 1 ] && echo true || echo false)}" >> "${SCRATCH}/summary.json"; sep=","
 done
 for mod in "${MODULES[@]}"; do
-  is_i2c "$mod" || continue
+  on_pads "$mod" || continue
   out="$(run_bench mutant-pad "$MUTANT_PAD" "$mod")"
   echo "PAD-FAULT-RUN ${mod}: ${out}" >&2
   ok=1
   [[ "$out" == *"unparsed=0"* && "$out" != *"failed=0"* && "$out" != *"rc=0" ]] || ok=0
   [ "$ok" -eq 1 ] || FAILED=1
-  echo "${sep}    {\"kind\": \"negative-control-pad\", \"fault\": \"uio_oe[0] stuck at 0\", \"module\": \"${mod}\", \"result\": \"${out}\", \"as_required\": $([ $ok -eq 1 ] && echo true || echo false)}" >> "${SCRATCH}/summary.json"; sep=","
+  echo "${sep}    {\"kind\": \"negative-control-pad\", \"fault\": \"uio_oe[3] stuck at 0\", \"module\": \"${mod}\", \"result\": \"${out}\", \"as_required\": $([ $ok -eq 1 ] && echo true || echo false)}" >> "${SCRATCH}/summary.json"; sep=","
 done
 echo "" >> "${SCRATCH}/summary.json"; echo "  ]" >> "${SCRATCH}/summary.json"; echo "}" >> "${SCRATCH}/summary.json"
 python3 -I -c "import json,sys; json.load(open(sys.argv[1]))" "${SCRATCH}/summary.json"

@@ -54,7 +54,7 @@ class Builder:
             n = self.poll_sites
             self.poll_sites += 1
             body[1:1] = [
-                "LDI   R3, 0x01       ; poll mask",
+                "LDI   R3, 0x04       ; poll mask",
                 f"poll{n}: IN    R2, UIO_IN   ; peripheral's SCL level",
                 "AND   R2, R3",
                 f"BZ    poll{n}          ; SCL held low -> poll again",
@@ -81,24 +81,30 @@ class Builder:
         return slack
 
 
+#: Moves R0's MSB onto SDA's bit (uio bit 3, DR 0010's target plan, issue
+#: #155). On the earlier plan SDA was bit 7 and no shift was needed.
+SDA_ALIGN = ["SHF   R3, RIGHT"] * 3 + ["SHF   R3, RIGHT      ; MSB -> SDA (bit 3)"]
+
+
 def first_bit_pins(inv):
     """Instructions that leave R0 = ~byte, R1 = 8, R3 = SCL-low pins whose
-    SDA is the byte's MSB (AND isolates the inverted bit, XOR flips it, so
-    that after eight SHFs R0 = 0 yields SDA released = 0x80)."""
+    SDA is the byte's MSB (the shifts move it to bit 3, AND isolates the
+    inverted bit, XOR flips it, so that after eight SHFs R0 = 0 yields SDA
+    released = 0x08)."""
     return [
         f"LDI   R0, 0x{inv:02X}       ; ~byte (inverted-data trick)",
         "LDI   R1, 0x08       ; bit counter",
         "MOV   R3, R0",
-        "LDI   R2, 0x80",
+    ] + SDA_ALIGN + [
+        "LDI   R2, 0x08",
         "AND   R3, R2",
         "XOR   R3, R2         ; R3 = SDA(bit 1), SCL low",
     ]
 
 
 def next_pins_only():
-    return [
-        "MOV   R3, R0",
-        "LDI   R2, 0x80",
+    return ["MOV   R3, R0"] + SDA_ALIGN + [
+        "LDI   R2, 0x08",
         "AND   R3, R2",
         "XOR   R3, R2         ; R3 = SDA(bit 1), SCL low",
     ]
@@ -123,10 +129,11 @@ def build(mode, poll):
 ; The received byte is published on UO_OUT before HALT so the bench can
 ; check what the core actually shifted in from the bus.
 ;
-; Pin plan (same as i2c_fast.asm / i2c_std.asm): UIO_OUT bit 0 = SCL,
-; bit 7 = SDA, writing 1 RELEASES the line. On silicon that is DR 0012's
-; open-drain pin mode: the setup writes 0x81 to UIO_OD (`WCTL UIO_OD`)
-; right AFTER the OUT of 0x81 (uio_out resets to 0x00; enabling open-drain
+; Pin plan (same as i2c_fast.asm / i2c_std.asm; DR 0010's target plan, the
+; standard Tiny Tapeout I2C Pmod, issue #155): UIO_OUT bit 2 = SCL, bit 3 =
+; SDA, writing 1 RELEASES the line. On silicon that is DR 0012's
+; open-drain pin mode: the setup writes 0x0C to UIO_OD (`WCTL UIO_OD`)
+; right AFTER the OUT of 0x0C (uio_out resets to 0x00; enabling open-drain
 ; first would pull both lines low for a cycle). The bench runs on a pad
 ; model that resolves each line from uio_oe/uio_out (uio_pads.py, #136).
 ;
@@ -136,7 +143,7 @@ def build(mode, poll):
 ; setup time, here paced AT the Table 10 minimum.""")
     if poll:
         b.raw(f"""; Variant: SCL POLLING. After EVERY SCL rise (data, ACK, repeated START and
-; STOP) the program polls the peripheral's SCL level (IN uio_in bit 0) and
+; STOP) the program polls the peripheral's SCL level (IN uio_in bit 2) and
 ; loops while it reads low -- clock stretching (UM10204 section 3.1.9).
 ; The poll costs {POLL_EXTRA} extra cycles per rise phase (LDI + IN precede the
 ; hold) so the hold after the IN that sees SCL high is the full budget: an
@@ -155,7 +162,9 @@ def build(mode, poll):
 ; transfer is fully deterministic. It does not tolerate clock stretching.""")
     b.raw(f"""; The bit loops need a counter, and the ISA has four registers, so the
 ; loop keeps R0 = ~byte (shifted left; after 8 shifts it is 0, which the
-; AND/XOR pin recipe turns into SDA released for the following ACK slot),
+; AND/XOR pin recipe turns into SDA released for the following ACK slot;
+; the recipe first shifts a copy right four times, because SDA is bit 3
+; and the byte's next bit is R0's MSB),
 ; R1 = counter, R2 = scratch (constants are re-LDI'd where needed), R3 =
 ; the pin value for the next OUT. LDI/MOV/SHF/OUT/BNZ are 1 cycle each
 ; (taken or not), so the loop-back costs no extra cycle in any phase.
@@ -165,11 +174,11 @@ def build(mode, poll):
 ; cycle count IS the phase's measured length.
 """)
     b.raw("; ---------------------------------------------------------------- setup")
-    b.raw("        LDI   R3, 0x81        ; both lines released: bus idle")
+    b.raw("        LDI   R3, 0x0C        ; both lines released: bus idle")
     b.raw("        OUT   UIO_OUT, R3")
     b.raw("        WCTL  UIO_OD, R3      ; DR 0012: SCL|SDA open-drain (after the OUT)")
     b.raw("        WAIT  255             ; idle bus before the START")
-    b.raw("        LDI   R3, 0x01        ; SCL high, SDA low")
+    b.raw("        LDI   R3, 0x04        ; SCL high, SDA low")
     b.raw("; --------------------------------------------------------------- START")
     b.phase("i2c_start_hold", HD,
             ["OUT   UIO_OUT, R3   ; START: SDA falls while SCL high"]
@@ -181,14 +190,14 @@ def build(mode, poll):
         b.phase(f"i2c_tx{n}_low", L,
                 ["OUT   UIO_OUT, R3   ; SCL falls, SDA = data bit",
                  "WAIT*",
-                 "LDI   R2, 0x01",
+                 "LDI   R2, 0x04",
                  "OR    R3, R2         ; raise SCL, SDA unchanged"])
         b.phase(f"i2c_tx{n}_high", H,
                 ["OUT   UIO_OUT, R3   ; SCL rises: bit sampled on the line",
                  "WAIT*",
                  "SHF   R0, LEFT       ; next bit into position",
-                 "MOV   R3, R0",
-                 "LDI   R2, 0x80",
+                 "MOV   R3, R0"] + SDA_ALIGN + [
+                 "LDI   R2, 0x08",
                  "AND   R3, R2",
                  "XOR   R3, R2         ; R3 = next SDA, SCL low",
                  "LDI   R2, 0x01",
@@ -196,7 +205,7 @@ def build(mode, poll):
                  f"BNZ   tx{n}_loop      ; 8 data clocks"], rise=True)
         b.phase(f"i2c_ack{n}_low", L,
                 ["OUT   UIO_OUT, R3   ; 9th clock: SCL falls, SDA released",
-                 "LDI   R3, 0x81",
+                 "LDI   R3, 0x0C",
                  "WAIT*"])
 
     # ---- byte 1: address + W
@@ -208,19 +217,19 @@ def build(mode, poll):
     tx_byte(2, "payload 0x5A")
     b.phase("i2c_ack2_high", H,
             ["OUT   UIO_OUT, R3   ; ACK clock rises",
-             "LDI   R3, 0x80       ; SCL low, SDA released (for the Sr)",
+             "LDI   R3, 0x08       ; SCL low, SDA released (for the Sr)",
              "WAIT*"], rise=True)
     # ---- repeated START
     b.raw("; ------------------------------------------------- repeated START")
     b.phase("i2c_sr_low", L,
             ["OUT   UIO_OUT, R3   ; SCL falls, SDA released (high)",
-             "LDI   R3, 0x81",
+             "LDI   R3, 0x0C",
              "LDI   R0, 0x%02X       ; ~0xA1 for the next byte" % inv(ADDR_R),
              "LDI   R1, 0x08",
              "WAIT*"])
     b.phase("i2c_sr_rise", SUSTA,
             ["OUT   UIO_OUT, R3   ; SCL rises with SDA high: Sr setup begins",
-             "LDI   R3, 0x01       ; SCL high, SDA low",
+             "LDI   R3, 0x04       ; SCL high, SDA low",
              "WAIT* NEGCTL-SUSTA"], rise=True)
     b.phase("i2c_sr_hold", HD,
             ["OUT   UIO_OUT, R3   ; repeated START: SDA falls while SCL high"]
@@ -231,23 +240,22 @@ def build(mode, poll):
             ["OUT   UIO_OUT, R3   ; ACK clock rises",
              "LDI   R0, 0x00       ; receive accumulator",
              "LDI   R1, 0x08",
-             "LDI   R3, 0x80       ; SCL low, SDA released",
+             "LDI   R3, 0x08       ; SCL low, SDA released",
              "WAIT*"], rise=True)
     # ---- read byte
     b.raw("; ----------------------------------- read byte (peripheral drives SDA)")
     b.raw("rd_loop:")
     b.phase("i2c_rd_low", L,
             ["OUT   UIO_OUT, R3   ; SCL falls, SDA released to the peripheral",
-             "LDI   R3, 0x81",
+             "LDI   R3, 0x0C",
              "WAIT*"])
     b.phase("i2c_rd_high", H,
             ["OUT   UIO_OUT, R3   ; SCL rises: peripheral's bit is on the line",
              "IN    R2, UIO_IN     ; sample the bus",
-             "LDI   R3, 0x80       ; mask AND next SCL-low pins",
-             "AND   R2, R3         ; isolate SDA (bit 7)",
-             "SHF   R2, RIGHT", "SHF   R2, RIGHT", "SHF   R2, RIGHT",
-             "SHF   R2, RIGHT", "SHF   R2, RIGHT", "SHF   R2, RIGHT",
-             "SHF   R2, RIGHT      ; bit 7 -> bit 0",
+             "LDI   R3, 0x08       ; mask AND next SCL-low pins",
+             "AND   R2, R3         ; isolate SDA (bit 3)",
+             "SHF   R2, RIGHT", "SHF   R2, RIGHT",
+             "SHF   R2, RIGHT      ; bit 3 -> bit 0",
              "SHF   R0, LEFT",
              "OR    R0, R2         ; MSB first",
              "WAIT*",
@@ -256,11 +264,11 @@ def build(mode, poll):
              "BNZ   rd_loop        ; 8 data clocks"], rise=True)
     b.phase("i2c_nack_low", L,
             ["OUT   UIO_OUT, R3   ; 9th clock: SCL falls, SDA stays released",
-             "LDI   R3, 0x81",
+             "LDI   R3, 0x0C",
              "WAIT*"])
     b.phase("i2c_nack_high", H,
             ["OUT   UIO_OUT, R3   ; SCL rises, SDA released: controller NACK",
-             "LDI   R3, 0x80",
+             "LDI   R3, 0x08",
              "WAIT*"], rise=True)
     b.raw("; ------------------------------------------------------------- STOP")
     b.phase("i2c_stop_low", L,
@@ -268,10 +276,10 @@ def build(mode, poll):
              "LDI   R3, 0x00       ; SDA low during the low period",
              "OUT   UIO_OUT, R3",
              "WAIT*",
-             "LDI   R3, 0x01       ; SCL high, SDA low"])
+             "LDI   R3, 0x04       ; SCL high, SDA low"])
     b.phase("i2c_stop_setup", SUSTO,
             ["OUT   UIO_OUT, R3   ; SCL rises: STOP setup begins",
-             "LDI   R3, 0x81       ; SDA released",
+             "LDI   R3, 0x0C       ; SDA released",
              "WAIT*"], rise=True)
     b.raw("        OUT   UIO_OUT, R3     ; SDA rises while SCL high: STOP")
     b.raw("        OUT   UO_OUT, R0      ; publish the received byte")

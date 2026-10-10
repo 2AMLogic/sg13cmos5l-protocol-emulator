@@ -187,11 +187,18 @@ def tracked_symlink_errors() -> list[str]:
         if not entry:
             continue
         info, _, name = entry.partition("\t")
-        if info.split(" ")[0] == "120000":
+        mode = info.split(" ")[0]
+        if mode == "120000":
             errors.append(
                 f"{REPO_ROOT / name}: is a symlink; nothing under "
                 f"verification/records/ may be a symlink (its target could be "
                 f"edited with no append-only violation)"
+            )
+        elif mode != "100644":
+            errors.append(
+                f"{REPO_ROOT / name}: has git mode {mode}; every tracked entry "
+                f"under verification/records/ must be a regular file (mode "
+                f"100644), not a gitlink, executable or other special entry"
             )
     return errors
 
@@ -338,6 +345,12 @@ def lint_record(path: Path, all_record_ids_by_experiment: dict) -> list[str]:
     for key in REQUIRED_META_KEYS:
         if key not in meta:
             errors.append(f"{path}: record-meta missing required key `{key}`")
+
+    if "experiment" in meta and meta["experiment"] != experiment:
+        errors.append(
+            f"{path}: record-meta experiment `{meta['experiment']}` "
+            f"disagrees with its directory `{experiment}`"
+        )
 
     if meta.get("record_id") != stem:
         errors.append(
@@ -502,6 +515,11 @@ def main() -> int:
     print(f"== linting {len(record_files)} record(s) ==")
     for error in all_errors:
         print(f"  - {error}")
+
+    # A tracked gitlink / special entry is already reported above by mode;
+    # never read it (it may be an empty directory or absent on disk).
+    # Symlinks stay in: lint_record reports them without reading through.
+    record_files = [p for p in record_files if p.is_file() or p.is_symlink()]
 
     all_ids_by_experiment: dict[str, set] = {}
     metas_by_path: dict[Path, dict] = {}
