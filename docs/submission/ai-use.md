@@ -99,11 +99,18 @@ reports but is not a required check on `main`.
   unchanged:
   [record](../../verification/records/post-layout-sdf-regression/records/20261009-103407-9716a9e.md).
   The cause was diagnosed as stimulus and sampling racing the routed delays.
-  PR #202 then drove the same, unmodified bench at the flow's own SDC timing,
+  The failure was kept. As the design moved on, it was re-run on each later
+  netlist and re-recorded five more times, still failing 12 of 13, each record
+  superseding the one before by reference. PR #202 then drove the unmodified
+  bench file at the flow's own SDC timing, on the design current at the time,
   which gave 12 passes and 1 skip:
   [record](../../verification/records/post-layout-sdf-regression/records/20261010-102552-d43f89c.md).
-  The later record supersedes the failing one by reference, and states what
-  it still does not show.
+  That record supersedes the last failing one
+  ([`704a3fb`](../../verification/records/post-layout-sdf-regression/records/20261010-083555-704a3fb.md)),
+  whose netlist it shares, and states what it still does not show. A later
+  record on a newer netlist
+  ([`a0f91e3`](../../verification/records/post-layout-sdf-regression/records/20261010-133000-a0f91e3.md))
+  has since superseded it, still passing.
 - **Independent references.** Protocol firmware is graded against separately
   written reference models
   ([record](../../verification/records/protocol-reference-models/records/20261010-002540-b63cb8f.md)).
