@@ -32,12 +32,13 @@ Scope (stated, not implied)
   this bench failing on new RTL behaviour is the signal that the table was
   not updated.
 * The ISS is not a copy of the RTL.  Where DR 0001 is silent it names the
-  choice (`isa.OPEN_DETAILS`).  The SUB `C` polarity is such a case: the ISS
-  carries the RTL's documented borrow convention as an explicit pin, and a
-  `C` mismatch after a SUB is reported as "OPEN DETAIL: SUB C polarity (an
-  RTL pin, DR 0001 is silent)", separately from a spec disagreement; the
-  pin itself is also checked in `test_sub_carry_polarity_pin`.  Nothing in
-  the spec is relaxed to make a mismatch pass.
+  choice (`isa.OPEN_DETAILS`); DR 0016 (Proposed, issue #203) rules each of
+  them.  The SUB `C` polarity is such a case: the ISS carries the borrow
+  convention of DR 0016 Ruling 1, and a `C` mismatch after a SUB is reported
+  as "OPEN DETAIL: SUB C polarity -- DR 0016 Ruling 1 (Proposed): borrow",
+  separately from other mismatches; the polarity is also checked on its own
+  in `test_sub_carry_polarity_pin`.  Nothing in the spec is relaxed to make
+  a mismatch pass.
 
 Coverage is a counted gate: `test_coverage_gate_and_generator` runs the ISS
 over the committed seed set and fails if any bucket (every opcode >=
@@ -91,7 +92,8 @@ _REQUEST = REPO_ROOT / "verification" / "request-isa-lockstep.json"
 SEED = int(os.environ.get("ISA_LOCKSTEP_SEED", RECORDED_SEED))
 ONLY = [int(x) for x in os.environ.get("ISA_LOCKSTEP_ONLY", "").split(",") if x.strip()]
 
-OPEN_DETAIL_C = ("OPEN DETAIL: SUB C polarity -- an RTL pin; DR 0001 says only 'sets Z, C' "
+OPEN_DETAIL_C = ("OPEN DETAIL: SUB C polarity -- DR 0016 Ruling 1 (Proposed, not ratified): "
+                 "C is a borrow, C=1 when minuend < subtrahend; DR 0001 says only 'sets Z, C' "
                  "(see isa.OPEN_DETAILS['sub-c-polarity'])")
 
 
@@ -254,11 +256,12 @@ async def test_isa_lockstep_random_programs(dut):
 
 @cocotb.test()
 async def test_sub_carry_polarity_pin(dut):
-    """The SUB `C` polarity is an OPEN DETAIL of DR 0001 (it says only
-    'sets Z, C'; no instruction reads C).  The ISS carries the borrow
-    convention as an explicit pin; this checks the core against that pin on
-    its own, so a disagreement is reported as a polarity finding and not as
-    a general ISA mismatch.  `flag_c` is white-box state (RTL only)."""
+    """The SUB `C` polarity is a detail DR 0001 leaves open (it says only
+    'sets Z, C'; no instruction reads C).  DR 0016 Ruling 1 (Proposed, issue
+    #203) rules it a borrow, and the ISS carries that; this checks the core
+    against it on its own, so a disagreement is reported as a polarity
+    finding and not as a general ISA mismatch.  `flag_c` is white-box state
+    (RTL only)."""
     if skip_if_gates(dut):
         return
     start_clock(dut)

@@ -59,7 +59,9 @@ row 0).  Cycle structure, with the DR that states it:
 Open details: where DR 0001 is silent this model does not copy the RTL
 silently; it names the choice.  See `OPEN_DETAILS` below -- the bench
 reports any mismatch that touches one of them as such, and never relaxes
-the spec to make it pass.
+the spec to make it pass.  All four are now ruled by DR 0016
+(`spec/decision-records/0016-isa-flag-and-shift-details.md`, issue #203),
+which is Proposed, not ratified (issue #44); each label cites its ruling.
 
 The opcode table (`OPCODES`) and the control-register table (`CONTROL`)
 are data.  A future decision record that adds an encoding is a row in
@@ -72,35 +74,38 @@ from __future__ import annotations
 from collections import namedtuple
 
 # ---------------------------------------------------------------------------
-# Open details (DR text is silent or ambiguous).  Each is a named, labelled
-# choice, not a silent copy of the RTL.  `tag` is what a Row/event carries.
+# Open details (DR 0001's text is silent or ambiguous).  Each is a named,
+# labelled choice, not a silent copy of the RTL.  `tag` is what a Row/event
+# carries.  DR 0016 (issue #203) rules all four, each as modelled here; it is
+# Proposed, not ratified (issue #44), so the labels say "proposed ruling".
+# The keys are stable: benches and records cite them.
 # ---------------------------------------------------------------------------
 OPEN_DETAILS = {
     "sub-c-polarity": (
-        "DR 0001 says SUB 'sets Z, C' and no instruction reads C, so the "
-        "polarity of C after SUB is not defined by the record.  This model "
-        "carries the BORROW convention (C=1 when minuend < subtrahend) as an "
-        "explicit pin: rtl/protocol_core.v documents the same choice.  It is "
-        "an RTL pin of an open detail, not a ratified behaviour."
+        "DR 0001 says SUB 'sets Z, C' and does not define the polarity of C.  "
+        "DR 0016 Ruling 1 (Proposed): C is a BORROW, C=1 when minuend < "
+        "subtrahend (unsigned), bit 8 of the 9-bit difference; any later "
+        "instruction that reads C uses this definition.  rtl/protocol_core.v "
+        "implements the same.  Not yet ratified (issue #44)."
     ),
     "shf-z": (
         "DR 0001's prose lists SHF among the instructions that write the "
         "flag register, but its opcode table gives only 'shifted-out bit -> "
-        "C'.  This model follows the table: SHF writes C and leaves Z "
+        "C'.  DR 0016 Ruling 2 (Proposed): SHF writes C and leaves Z "
         "unchanged."
     ),
     "logic-c": (
-        "AND/OR/XOR 'set Z' (DR 0001 table); C is not mentioned, so it is "
-        "left unchanged."
+        "AND/OR/XOR 'set Z' (DR 0001 table) and C is not mentioned.  DR 0016 "
+        "Ruling 3 (Proposed): C is left unchanged."
     ),
     "shf-fill": (
-        "DR 0001 says 'shift Rd by 1' and does not name the fill bit; a "
-        "logical shift (zero fill) is modelled, consistent with the dated "
-        "note in DR 0001 that SHF cannot merge a sampled bit."
+        "DR 0001 says 'shift Rd by 1' and does not name the fill bit.  DR 0016 "
+        "Ruling 4 (Proposed): a logical shift, 0 fills the vacated bit in both "
+        "directions (DR 0001's 2026-10-10 dated note already relies on it)."
     ),
 }
 
-SUB_C_POLARITY = "borrow"  # open detail 'sub-c-polarity': 'borrow' | 'carry'
+SUB_C_POLARITY = "borrow"  # DR 0016 Ruling 1 ('sub-c-polarity'): 'borrow' | 'carry'
 
 # ---------------------------------------------------------------------------
 # Constants from the DRs.

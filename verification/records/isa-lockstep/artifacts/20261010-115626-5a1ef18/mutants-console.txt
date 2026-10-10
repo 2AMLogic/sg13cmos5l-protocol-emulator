@@ -1,0 +1,22 @@
+ok   golden (unmodified copy): 4/4 passed
+ok   sub-carry-polarity-flipped: 2/4 tests failed -- SUB writes C as 'no borrow' instead of a borrow (DR 0016 Ruling 1, Proposed)
+       first mismatch: AssertionError: ISA LOCKSTEP MISMATCH seed=20261010 program=1 (wait255-then-bz) edge=4   [replay: ISA_LOCKSTEP_SEED=20261010 ISA_LOCKSTEP_ONLY=1] | ISS was executing (previous row): SUB R0, R1 @pc=0x02 | field c: rtl=1 iss=0
+ok   shf-direction-swapped: 1/4 tests failed -- SHF shifts left when Rs[0] = 0 and right when 1
+       first mismatch: AssertionError: ISA LOCKSTEP MISMATCH seed=20261010 program=9 (shf-all) edge=3   [replay: ISA_LOCKSTEP_SEED=20261010 ISA_LOCKSTEP_ONLY=9] | ISS was executing (previous row): SHF R0, LEFT @pc=0x01 | field regs: rtl=[0x40, 0x00, 0x00, 0x00] iss=[0x02, 0x00, 0x00, 0x00]
+ok   bz-bnz-swapped: 1/4 tests failed -- BZ branches when Z = 0 and BNZ when Z = 1
+       first mismatch: AssertionError: ISA LOCKSTEP MISMATCH seed=20261010 program=1 (wait255-then-bz) edge=261   [replay: ISA_LOCKSTEP_SEED=20261010 ISA_LOCKSTEP_ONLY=1] | ISS was executing (previous row): BZ 6 @pc=0x04 | field pc: rtl=0x05 iss=0x06
+ok   wait-off-by-one: 1/4 tests failed -- WAIT n stalls n+2 cycles instead of n+1
+       first mismatch: AssertionError: ISA LOCKSTEP MISMATCH seed=20261010 program=1 (wait255-then-bz) edge=260   [replay: ISA_LOCKSTEP_SEED=20261010 ISA_LOCKSTEP_ONLY=1] | ISS was executing (previous row): WAIT 255 @pc=0x03 | field pc: rtl=0x03 iss=0x04
+ok   add-carry-dropped: 1/4 tests failed -- ADD never sets C
+       first mismatch: AssertionError: ISA LOCKSTEP MISMATCH seed=20261010 program=64 (random-straight-64) edge=16   [replay: ISA_LOCKSTEP_SEED=20261010 ISA_LOCKSTEP_ONLY=64] | ISS was executing (previous row): ADD R1, R0 @pc=0x0d | field c: rtl=0 iss=1
+ok   and-clears-c: 1/4 tests failed -- AND clears C (DR 0001: AND sets Z only; DR 0016 Ruling 3, Proposed: C is unchanged)
+       first mismatch: AssertionError: ISA LOCKSTEP MISMATCH seed=20261010 program=21 (random-21) edge=10   [replay: ISA_LOCKSTEP_SEED=20261010 ISA_LOCKSTEP_ONLY=21] | ISS was executing (previous row): AND R0, R1 @pc=0x08 | field c: rtl=0 iss=1
+ok   shf-writes-z: 1/4 tests failed -- SHF sets Z from its result (DR 0016 Ruling 2, Proposed: SHF leaves Z unchanged)
+       first mismatch: AssertionError: ISA LOCKSTEP MISMATCH seed=20261010 program=8 (bounded-loop) edge=5   [replay: ISA_LOCKSTEP_SEED=20261010 ISA_LOCKSTEP_ONLY=8] | ISS was executing (previous row): SHF R1, LEFT @pc=0x03 | field z: rtl=1 iss=0
+ok   shf-fills-from-c: 1/4 tests failed -- SHF shifts C into the vacated bit, a rotate through carry (DR 0016 Ruling 4, Proposed: 0 fills)
+       first mismatch: AssertionError: ISA LOCKSTEP MISMATCH seed=20261010 program=9 (shf-all) edge=4   [replay: ISA_LOCKSTEP_SEED=20261010 ISA_LOCKSTEP_ONLY=9] | ISS was executing (previous row): SHF R0, LEFT @pc=0x02 | field regs: rtl=[0x05, 0x00, 0x00, 0x00] iss=[0x04, 0x00, 0x00, 0x00]
+ok   halt-does-not-hold-pc: 1/4 tests failed -- after HALT the fetch address keeps advancing
+       first mismatch: AssertionError: ISA LOCKSTEP MISMATCH seed=20261010 program=0 (halt-first) edge=3   [replay: ISA_LOCKSTEP_SEED=20261010 ISA_LOCKSTEP_ONLY=0] | ISS was executing (previous row): HALT @pc=0x00 | field pc: rtl=0x01 iss=0x00
+ok   reserved-in-port-reads-uio: 1/4 tests failed -- IN from the reserved port 11 reads uio_in instead of being a no-op
+       first mismatch: AssertionError: ISA LOCKSTEP MISMATCH seed=20261010 program=6 (all-ports) edge=5   [replay: ISA_LOCKSTEP_SEED=20261010 ISA_LOCKSTEP_ONLY=6] | ISS was executing (previous row): IN R3, port11 @pc=0x03 | field regs: rtl=[0x5a, 0x2e, 0x1e, 0x15] iss=[0x5a, 0x2e, 0x1e, 0x00]
+RESULT: golden passes and every mutant is caught by its target test
