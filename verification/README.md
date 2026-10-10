@@ -70,7 +70,8 @@ coverage.
   peripheral model) into one line, feeds that line back on `uio_in`, and
   records contention (the design and the external driver driving opposite
   values). `i2c_board()` is the wiring the I2C benches use (pull-ups on
-  SCL = `uio[0]` and SDA = `uio[7]`, the rest tied low) and
+  SCL = `uio[2]` and SDA = `uio[3]`, the rest tied low; `spi_board()` is
+  the SPI benches' wiring, issue #155) and
   `assert_i2c_open_drain()` the check each I2C run ends with: the design
   drove exactly SCL and SDA, only ever low, without contention. It
   replaces the bench-composed bus (`line = uio_out AND uio_in`, `uio_oe`
@@ -230,6 +231,16 @@ gates. The host-side loader is issue #118.
 - `request-firmware-roundtrip.json` — `klt functional-verification`
   request driving `test_firmware_roundtrip.py` against
   `rtl/protocol_program_memory.v` via Icarus.
+- `test_loadseq.py` / `request-loadseq.json` — issue #118: replays the
+  operations `firmware/tools/loadseq.py` generates (via
+  `loadseq_playback.iter_ops`, clock driven by the operations themselves, no
+  reuse of the other benches' loader helpers) on `protocol_program_memory`
+  and reads every word back through the fetch port: all committed
+  application images, 1 word, the 256-word boundary, reload, plus byte-swap,
+  bit-reversal and missing-latch-edge mutants that must read back as
+  mutated. `test_loadseq_top.py` / `request-loadseq-top.json` checks the
+  MODE-drop/run transition at the pins of the submitted top. Simulation
+  evidence only; nothing here was run on a board.
 - `request-protocol-models.json` — `klt functional-verification` request
   driving `test_protocol_models.py` against the declared fixture
   `duts/model_validation_top.v` via Icarus, carrying the recorded seed.
@@ -367,10 +378,41 @@ Covered elsewhere in CI: `test_check_records.py`,
 `test_firmware_templates.py` and `test_uio_pad_resolution.py` (`npm run
 lint`).
 
-Local-only: the formal leg (`formal/`, needs yosys + yosys-smtbmc + z3;
-CI follow-up), and everything needing the PDK or a synthesized/laid-out
-netlist (`klt synthesize`, gate-level and post-layout SDF regressions,
-STA, DRC/LVS). A green CI run is not an evidence record.
+Local-only (per PR): the formal leg (`formal/`, needs yosys +
+yosys-smtbmc + yosys-abc + z3), and everything needing the PDK or a
+synthesized/laid-out netlist (`klt synthesize`, gate-level and post-layout
+SDF regressions, STA, DRC/LVS). A green CI run is not an evidence record.
+
+### Formal gate on a hosted runner: measured (issue #122)
+
+The `formal` job in `ci.yml` is **manual (`workflow_dispatch`) only**; it is
+not run on pull requests. Provisioning is feasible and the verdicts
+reproduce; the runtime is what keeps it off the per-PR path. Measured on
+`ubuntu-24.04` (image 20261004.327.1) with the pinned OSS CAD Suite
+`2026-10-09` (`oss-cad-suite-linux-x64-20261009.tgz`, sha256
+`20b7bd2d...a477ca0d`, verified in the job; ~750 MB, ~20 s to fetch and
+unpack): Yosys 0.69+272 (git 230fb23f8), ABC 1.01, Z3 4.15.5 (the committed
+records used Z3 5.1.0; the suite ships 4.15.5,
+no PASS/FAIL verdict differed). Ubuntu 24.04's own apt `yosys` was not tried:
+it predates the 0.67/0.69 the records were produced with.
+
+| step (default timeouts) | run 1 | run 2 |
+| --- | --- | --- |
+| `run-no-data-dependent-latency.sh` (DUT=all, BMC depth 30) | 13 m 05 s | 9 m 26 s |
+| `test-mutant-gate.sh` | 1 s | <1 s |
+| `run-pin-write-latency.sh` (294 s in run 1's own log) | 4 m 54 s | 4 m 37 s |
+| job total | ~18 m | ~14 m |
+
+Both runs: green, `RESULT: all expectations met` from both runners, EDGE and
+FINE ABC proofs closed, same PASS verdicts as the committed records, nothing
+written under `records/`. Runs: <https://github.com/2AMLogic/sg13cmos5l-protocol-emulator/actions/runs/38015916676>
+and <https://github.com/2AMLogic/sg13cmos5l-protocol-emulator/actions/runs/38017073021>.
+Findings: (1) total is 14-18 min, over the ~10 min per-PR bar, and the
+two depth-30 real-core/fixture BMC legs vary by ~40% between runs on
+shared hosted CPUs; (2) the verdicts are not flaky, only the time is. So it
+stays local per PR; dispatch the `formal` job to re-check on demand. Lowering
+`BMC_DEPTH` to fit would weaken the property of record and is not done here.
+This is not an evidence record.
 
 ## The `klt functional-verification` cocotb dependency (a local-environment note)
 
@@ -427,7 +469,8 @@ Each record is a markdown file, `records/<record-id>.md`, with two parts:
    with the stdlib `json` module — no YAML dependency). Required keys:
 
    - `record_id` — must equal the filename stem.
-   - `experiment` — the experiment-slug this record belongs to.
+   - `experiment` — the experiment-slug this record belongs to; it must
+     equal the name of the experiment directory the record sits in.
    - `supersedes` — `null`, or the `record_id` of a prior record in the
      same experiment directory this one corrects/replaces.
    - `git_revision` — the full design git revision this record was
@@ -469,6 +512,19 @@ Each record is a markdown file, `records/<record-id>.md`, with two parts:
      agent) minted the record.
    - **Supersedes** — `none`, or the prior `<record-id>` this corrects.
 
+## Stale records: report and re-mint
+
+`python3 verification/remint_records.py` lists every live record whose
+hashed input has changed (recorded vs current hash) and the
+`verification/request-*.json` file(s) the record hashes, i.e. the request that
+produced it. `--rerun [--only EXPERIMENT] [--klt CMD]` re-runs just those
+requests with `klt functional-verification` and mints superseding records
+(new ID, `supersedes` = the stale record, artifacts under `artifacts/<new-id>/`).
+Old records are never touched. The new prose is copied from the old record
+with Record ID, Result, Timestamp and Supersedes rewritten; review the Claim
+and Run configuration before committing. Records with no request file are
+reported and must be re-minted by hand. Self-test: `test_remint_records.py`.
+
 ## Append-only rule
 
 `records/*.md` and `artifacts/**` are never edited or deleted after
@@ -496,6 +552,11 @@ on:
 - any symlink under `verification/records/`, file or directory: git versions
   only the link text, so a symlink's target could be edited after merge with
   no append-only violation (#183);
+- any tracked entry under `verification/records/` whose git mode is not
+  `100644` (e.g. a `160000` gitlink/submodule), reported as a validation
+  error naming the path and mode rather than read (#187);
+- a record whose `record-meta.experiment` differs from its directory name
+  (#187);
 - a `provenance.inputs[]` entry whose `content_hash` is not
   `sha256:<64 hex>`, or whose `path` is empty, absolute (e.g. `/dev/null`) or
   contains `..`; for a live record, also an input that is not a git-tracked

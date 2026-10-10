@@ -1,0 +1,59 @@
+     -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:242  in gpi_load_users                  Loaded entry library: '/opt/homebrew/Cellar/python@3.13/3.13.16/Frameworks/Python.framework/Versions/3.13/Python'
+     -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:234  in gpi_load_users                  Running entry func 'initialize' from loaded library '<repo>/.venv/lib/python3.13/site-packages/cocotb/simulator.cpython-313-darwin.so'
+     -.--ns INFO     pygpi                              ..ib/pygpi/embed.cpp:115  in initialize                      Using Python 3.13.14 interpreter at <repo>/.venv/bin/python3
+     -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:74   in gpi_print_registered_impl       GPI: VPI support registered
+     0.00ns INFO     cocotb.initialize                  Seeding Python random module with 1
+     0.00ns INFO     cocotb.initialize                  Initialized cocotb v2.1.0 from <repo>/.venv/lib/python3.13/site-packages/cocotb
+     0.00ns INFO     cocotb.initialize                  Running on Icarus Verilog version 13.0 (stable)
+     0.00ns INFO     cocotb.regression                  Running tests
+     0.00ns INFO     cocotb.regression                  running test_firmware_i2c.test_committed_images_are_fresh (1/4)
+                                                            Both committed build artifacts match their committed `.asm`
+     0.00ns INFO     ..tt_um_2amlogic_protocol_emulator i2c_fast: 246 words, 3350 fall-through cycles, 41 cycle sections at budget, 1 sanctioned warning
+     0.00ns INFO     ..tt_um_2amlogic_protocol_emulator i2c_std: 246 words, 9700 fall-through cycles, 41 cycle sections at budget, 1 sanctioned warning
+     0.00ns INFO     cocotb.regression                  test_firmware_i2c.test_committed_images_are_fresh passed
+     0.00ns INFO     cocotb.regression                  running test_firmware_i2c.test_i2c_both_grades_pass_independent_reference_model (2/4)
+                                                            The claim: each committed program, loaded over the real
+     0.00ns INFO     ..tt_um_2amlogic_protocol_emulator i2c_fast: capturing 3650 cycles, peripheral ACKs SCL falls [9]
+151941.00ns WARNING  py.warnings                        <repo>/verification/test_firmware_i2c.py:400: DeprecationWarning: `task.kill()` is deprecated in favor of `task.cancel()`
+                                                          driver.kill()
+151941.00ns WARNING  py.warnings                        <repo>/verification/uio_pads.py:319: DeprecationWarning: `task.kill()` is deprecated in favor of `task.cancel()`
+                                                          task.kill()
+151941.00ns INFO     ..tt_um_2amlogic_protocol_emulator i2c_fast run A: I2cReport(addr=0x50W, data=['0x5a'], acks=[True, False], stretched=0, violations=[])
+151941.00ns INFO     ..tt_um_2amlogic_protocol_emulator i2c_fast: measured t_LOW(min) 1300.0 ns (65 cy), t_HIGH(min) 1200.0 ns (60 cy), t_HD;STA 1300.0 ns, t_SU;STO 1200.0 ns -- all at the committed budgets
+151941.00ns INFO     ..tt_um_2amlogic_protocol_emulator i2c_fast: capturing 3650 cycles, peripheral ACKs SCL falls []
+303901.00ns INFO     ..tt_um_2amlogic_protocol_emulator i2c_fast run B: I2cReport(addr=0x50W, data=[], acks=[False], stretched=0, violations=[])
+303901.00ns INFO     ..tt_um_2amlogic_protocol_emulator i2c_fast: measured t_LOW(min) 1300.0 ns (65 cy), t_HIGH(min) 1200.0 ns (60 cy), t_HD;STA 1300.0 ns, t_SU;STO 1200.0 ns -- all at the committed budgets
+303901.00ns INFO     ..tt_um_2amlogic_protocol_emulator negative control (i2c_fast run A x0.9): 18 violation(s), first 't_LOW 1170.000ns < 1300.000ns minimum'
+303901.00ns INFO     ..tt_um_2amlogic_protocol_emulator negative control (i2c_fast run B x0.9): 9 violation(s), first 't_LOW 1170.000ns < 1300.000ns minimum'
+303901.00ns INFO     ..tt_um_2amlogic_protocol_emulator i2c_std: capturing 10000 cycles, peripheral ACKs SCL falls [9]
+582861.00ns INFO     ..tt_um_2amlogic_protocol_emulator i2c_std run A: I2cReport(addr=0x50W, data=['0x5a'], acks=[True, False], stretched=0, violations=[])
+582861.00ns INFO     ..tt_um_2amlogic_protocol_emulator i2c_std: measured t_LOW(min) 4700.0 ns (235 cy), t_HIGH(min) 4000.0 ns (200 cy), t_HD;STA 4100.0 ns, t_SU;STO 4100.0 ns -- all at the committed budgets
+582861.00ns INFO     ..tt_um_2amlogic_protocol_emulator i2c_std: capturing 10000 cycles, peripheral ACKs SCL falls []
+861821.00ns INFO     ..tt_um_2amlogic_protocol_emulator i2c_std run B: I2cReport(addr=0x50W, data=[], acks=[False], stretched=0, violations=[])
+861821.00ns INFO     ..tt_um_2amlogic_protocol_emulator i2c_std: measured t_LOW(min) 4700.0 ns (235 cy), t_HIGH(min) 4000.0 ns (200 cy), t_HD;STA 4100.0 ns, t_SU;STO 4100.0 ns -- all at the committed budgets
+861821.00ns INFO     ..tt_um_2amlogic_protocol_emulator negative control (i2c_std run A x0.9): 38 violation(s), first 't_HD;STA 3690.000ns < 4000.000ns minimum'
+861821.00ns INFO     ..tt_um_2amlogic_protocol_emulator negative control (i2c_std run B x0.9): 20 violation(s), first 't_HD;STA 3690.000ns < 4000.000ns minimum'
+861821.00ns INFO     cocotb.regression                  test_firmware_i2c.test_i2c_both_grades_pass_independent_reference_model passed
+861821.00ns INFO     cocotb.regression                  running test_firmware_i2c.test_uio_od_left_at_reset_cannot_drive_the_bus (3/4)
+                                                            Negative control for the pad path (issue #136): the committed
+1013782.00ns INFO     ..tt_um_2amlogic_protocol_emulator negative control (i2c_fast with UIO_OD at reset), lines: model rejected the lines: no START in window
+1013782.00ns INFO     ..tt_um_2amlogic_protocol_emulator negative control (i2c_fast with UIO_OD at reset), bench-composed from uio_out intent (pads ignored, NOT evidence): I2cReport(addr=0x50W, data=[], acks=[False], stretched=0, violations=[])
+1292742.00ns INFO     ..tt_um_2amlogic_protocol_emulator negative control (i2c_std with UIO_OD at reset), lines: model rejected the lines: no START in window
+1292742.00ns INFO     ..tt_um_2amlogic_protocol_emulator negative control (i2c_std with UIO_OD at reset), bench-composed from uio_out intent (pads ignored, NOT evidence): I2cReport(addr=0x50W, data=[], acks=[False], stretched=0, violations=[])
+1292742.00ns INFO     cocotb.regression                  test_firmware_i2c.test_uio_od_left_at_reset_cannot_drive_the_bus passed
+1292742.00ns INFO     cocotb.regression                  running test_firmware_i2c.test_reference_model_negative_control_still_fails (4/4)
+                                                            The reference model's own deterministic negative control, re-run
+1292742.00ns INFO     ..tt_um_2amlogic_protocol_emulator model nominal (i2c_fast): I2cReport(addr=0x50W, data=['0x5a'], acks=[True, False], stretched=0, violations=[])
+1292742.00ns INFO     ..tt_um_2amlogic_protocol_emulator model nominal (i2c_std): I2cReport(addr=0x50W, data=['0x5a'], acks=[True, False], stretched=0, violations=[])
+1292742.00ns INFO     ..tt_um_2amlogic_protocol_emulator negative control (short stop setup): I2cReport(addr=0x50W, data=['0x00'], acks=[True, True], stretched=0, violations=['t_SU;STO 2000.000ns < 4000.000ns minimum'])
+1292742.00ns INFO     cocotb.regression                  test_firmware_i2c.test_reference_model_negative_control_still_fails passed
+1292742.00ns INFO     cocotb.regression                  *********************************************************************************************************************************
+                                                        ** TEST                                                                     STATUS  SIM TIME (ns)  REAL TIME (s)  RATIO (ns/s) **
+                                                        *********************************************************************************************************************************
+                                                        ** test_firmware_i2c.test_committed_images_are_fresh                         PASS           0.00           0.00          0.00  **
+                                                        ** test_firmware_i2c.test_i2c_both_grades_pass_independent_reference_model   PASS      861821.00           0.95     910801.63  **
+                                                        ** test_firmware_i2c.test_uio_od_left_at_reset_cannot_drive_the_bus          PASS      430921.00           0.48     905944.59  **
+                                                        ** test_firmware_i2c.test_reference_model_negative_control_still_fails       PASS           0.00           0.00          0.00  **
+                                                        *********************************************************************************************************************************
+                                                        ** TESTS=4 PASS=4 FAIL=0 SKIP=0                                                       1292742.00           1.43     905862.59  **
+                                                        *********************************************************************************************************************************

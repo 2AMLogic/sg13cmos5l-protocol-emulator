@@ -49,6 +49,15 @@ No firmware pin moves. The plan below is exactly what the committed sources
 already do; the new content is the electrical column, the open-drain mask and
 the mechanical check.
 
+**Update 2026-10-09 (issue #155).** The SPI and I2C profiles have moved to
+the target plan ("Target pin plan" below): SPI on the standard SPI Pmod, I2C
+on the standard I2C Pmod, both on the upper `uio` row. As that section said
+it would, the "Run phase" table, the open-drain mask, the "today" table and
+the machine-readable table are rewritten to describe the moved profiles;
+what they said before is in this file's history (PRs #148, #149, #170). The UART
+RX move followed in #178 (below). The Status line above is unchanged; this
+record is still Proposed.
+
 ### Load phase (reset released with `ui_in[7]` high)
 
 | Pin | Role |
@@ -57,57 +66,77 @@ the mechanical check.
 | `ui_in[0]` | `PROG_SER` — serial program bit, MSB-first, one bit per rising clock edge |
 
 All other pins have no load role. In the run phase `ui_in[7:0]` is ISA input
-port 00 and carries no protocol role in any current profile.
+port 00; since #178 the only protocol role on it is UART RX on `ui_in[1]`.
+`ui_in[0]` (`PROG_SER`) carries no protocol role in the run phase.
 
 ### Run phase, per firmware profile
 
-| Pin | Electrical | UART TX | SPI transfer | SPI result | I2C transfer | I2C result |
-|---|---|---|---|---|---|---|
-| `uo_out[0]` | push-pull | `TX` | `CS` (active low) | `RESULT[0]` | unused | `RESULT[0]` |
-| `uo_out[1]` | push-pull | unused | `SCLK` | `RESULT[1]` | unused | `RESULT[1]` |
-| `uo_out[2]` | push-pull | unused | `MOSI` | `RESULT[2]` | unused | `RESULT[2]` |
-| `uo_out[3..7]` | push-pull | unused | unused | `RESULT[n]` | unused | `RESULT[n]` |
-| `uio[0]` | **open-drain** | unused | `MISO` (sampled) | unused | `SCL` | unused |
-| `uio[7]` | **open-drain** | unused | unused | unused | `SDA` | unused |
-| `uio[1..6]` | input | unused | unused | unused | unused | unused |
-| `ui_in[1..6]` | input | unused | unused | unused | unused | unused |
+| Pin | Electrical | UART TX | UART RX | UART RX result | SPI transfer | SPI result | I2C transfer | I2C result |
+|---|---|---|---|---|---|---|---|---|
+| `uo_out[0]` | push-pull | `TX` | unused | `RESULT[0]` | unused | `RESULT[0]` | unused | `RESULT[0]` |
+| `uo_out[1..7]` | push-pull | unused | unused | `RESULT[n]` | unused | `RESULT[n]` | unused | `RESULT[n]` |
+| `uio[0]` | runtime: push-pull in SPI images | unused | unused | unused | `CS` (active low) | unused | unused | unused |
+| `uio[1]` | runtime: push-pull in SPI images | unused | unused | unused | `MOSI` | unused | unused | unused |
+| `uio[2]` | runtime: input in SPI images, **open-drain** in I2C images | unused | unused | unused | `MISO` (sampled) | unused | `SCL` | unused |
+| `uio[3]` | runtime: push-pull in SPI images, **open-drain** in I2C images | unused | unused | unused | `SCLK` (the Pmod's SCK) | unused | `SDA` | unused |
+| `uio[4..7]` | input | unused | unused | unused | unused | unused | unused | unused |
+| `ui_in[0]` | input (`PROG_SER` in the load phase only) | unused | unused | unused | unused | unused | unused | unused |
+| `ui_in[1]` | input | unused | `RX` (sampled, idle high) | unused | unused | unused | unused | unused |
+| `ui_in[2..6]` | input | unused | unused | unused | unused | unused | unused | unused |
 
 "Result publication" is the cycle-exact convention the SPI functional burst
 and the I2C read-back programs already use: the received byte is written to
 `uo_out[7:0]` after the transfer so the bench can compare it, which is why
 every `uo_out` bit carries a `RESULT[n]` role in those two phases. `uo_out[0]`
-is therefore time-multiplexed by firmware profile (UART TX, SPI CS, result
-bit 0); all of its roles are push-pull outputs, so there is no electrical
-conflict. I2C open-drain intent is written to `uio_out` (SCL bit 0, SDA bit 7,
-writing 1 releases) and sampled from `uio_in`; the SCL-polling variants read
-the peripheral's SCL level on `uio_in[0]`.
+is therefore time-multiplexed by firmware profile (UART TX, result bit 0);
+both roles are push-pull outputs, so there is no electrical conflict. SPI
+writes its CS / MOSI / SCLK images to `uio_out` and samples MISO on
+`uio_in[2]`. I2C open-drain intent is written to `uio_out` (SCL bit 2, SDA
+bit 3, writing 1 releases) and sampled from `uio_in`; the SCL-polling
+variants read the peripheral's SCL level on `uio_in[2]`.
+
+"Runtime" is DR 0012's pin mode: a `uio` pin's electrical role is whatever
+the loaded image writes to `UIO_DIR` / `UIO_OD`, so one pad can be push-pull
+SCLK in an SPI image and open-drain SDA in an I2C image. Each SPI image writes
+`UIO_DIR = 0x0B` (CS | MOSI | SCLK) after its idle image; each I2C image
+writes `UIO_OD = 0x0C` (SCL | SDA) after releasing both lines. The UART
+images write neither.
 
 ### Open-drain mask and derivation
 
 DR 0008's three-role contract is `uio_oe = PUSH_PULL_MASK | (OPEN_DRAIN_MASK &
-~uio_out)`. Deriving the masks from the table above:
+~uio_out)`, with both masks fixed at synthesis. Deriving them from the table
+above, only pins with a *fixed* electrical role count:
 
 | uio pin | Electrical role | Reason |
 |---|---|---|
-| `uio[0]` | open-drain | I2C `SCL` |
-| `uio[7]` | open-drain | I2C `SDA` |
-| `uio[1..6]` | input | no protocol role |
+| `uio[0..3]` | runtime | SPI and I2C roles, set per image (DR 0012) |
+| `uio[4..7]` | input | no protocol role |
 
-`OPEN_DRAIN_MASK = (1<<0) | (1<<7) = 0x81`, `PUSH_PULL_MASK = 0x00`, i.e.
+`OPEN_DRAIN_MASK = 0x00`, `PUSH_PULL_MASK = 0x00`. A synthesis-time mask
+cannot serve the moved profiles at all: `uio[3]` is push-pull for SPI and
+open-drain for I2C. That is why the moves waited for DR 0012 (#135), whose
+runtime registers the top level has. The per-profile register values are
+declared in the table's `pin_modes` block instead:
 
-```verilog
-assign uio_oe = 8'h00 | (8'h81 & ~uio_out);
-```
+| Profile | `UIO_DIR` | `UIO_OD` |
+|---|---|---|
+| UART | `0x00` | `0x00` |
+| SPI | `0x0B` (CS, MOSI, SCLK) | `0x00` |
+| I2C | `0x00` | `0x0C` (SCL, SDA) |
 
-The checker recomputes both masks from the per-pin electrical roles and fails
-if the table's declared values differ. The dedicated outputs `uo_out[7:0]`
-are always driven (`push_pull`); `ui_in[7:0]` are inputs.
+The checker recomputes both fixed masks and every `pin_modes` value from the
+per-pin roles and fails if the table's declared values differ. The dedicated
+outputs `uo_out[7:0]` are always driven (`push_pull`); `ui_in[7:0]` are
+inputs. (Before #155 the table had `uio[0]` and `uio[7]` open-drain, mask
+`0x81`.)
 
 ### Pull-up requirement
 
 Releasing an open-drain pin is hi-Z; the line reads high only with an
-external pull-up. I2C needs a pull-up on `uio[0]` (SCL) and `uio[7]` (SDA) —
-typically the bus's own. Whether the Tiny Tapeout demo board provides pull-ups
+external pull-up. I2C needs a pull-up on `uio[2]` (SCL) and `uio[3]` (SDA) —
+typically the bus's own (an I2C Pmod usually carries them). Before #155 these
+were `uio[0]` and `uio[7]`. Whether the Tiny Tapeout demo board provides pull-ups
 on `uio` is **not verified** here (DR 0008 open item 1 stands); the
 submission's user-facing `docs/info.md` must name the requirement.
 
@@ -142,17 +171,18 @@ design's side:
 #### Today's assignments against the recommendations
 
 These are the pins the committed firmware, benches and the machine-readable
-table below use today:
+table below use today (rewritten by #155 for SPI and I2C and by #178 for UART RX):
 
 | Protocol | Today | Recommended | Works unmodified? |
 |---|---|---|---|
-| UART | TX `uo_out[0]`, RX `ui_in[0]` (`uart_rx` phase, added by #143) | USB bridge option B: TX `uo_out[0]`, RX `ui_in[1]` | **TX yes** (it is option B's TX). **RX no**: `ui_in[0]` against option B's `ui_in[1]` |
-| SPI | CS, SCLK, MOSI on `uo_out[0..2]`; MISO `uio[0]` | CS `uio[0]`, MOSI `uio[1]`, MISO `uio[2]`, SCK `uio[3]` | No |
-| I2C | SCL `uio[0]`, SDA `uio[7]` | SCL `uio[2]`, SDA `uio[3]` (upper row) | No. SDA matches the lower row's `uio[7]`, but SCL does not (`uio[0]` against `uio[6]`) |
+| UART | TX `uo_out[0]`, RX `ui_in[1]` (`uart_rx` phase, added by #143; moved from `ui_in[0]` by #178) | USB bridge option B: TX `uo_out[0]`, RX `ui_in[1]` | **Yes**, option B's TX and RX |
+| SPI | CS `uio[0]`, MOSI `uio[1]`, MISO `uio[2]`, SCLK `uio[3]` (#155) | CS `uio[0]`, MOSI `uio[1]`, MISO `uio[2]`, SCK `uio[3]` | **Yes**, the standard SPI Pmod, upper row |
+| I2C | SCL `uio[2]`, SDA `uio[3]` (#155) | SCL `uio[2]`, SDA `uio[3]` (upper row) | **Yes**, the standard I2C Pmod, upper row (with its pull-ups) |
 
-Consequence today: the UART transmit profiles reach the host over the board's
-USB bridge with no extra wiring. UART receive, SPI and I2C need a jumper-wire
-adapter, not an off-the-shelf Tiny Tapeout Pmod, and `docs/info.md` says so.
+Consequence today: the UART profiles, transmit and receive, reach the host
+over the board's USB bridge with no extra wiring, and an off-the-shelf SPI or
+I2C Pmod plugs into the upper `uio` row. No firmware profile needs a jumper
+wire (#178 moved UART RX).
 
 #### Target pin plan (proposed, issue #133)
 
@@ -175,6 +205,13 @@ Why these:
 - **The upper Pmod row** is the one the pinouts page prefers. SPI and I2C
   overlap on `uio[2]` and `uio[3]`, which is by the page's design: one row
   carries one protocol, and only one firmware image is loaded per run.
+
+**Update 2026-10-09 (issue #155): SPI and I2C have moved.** The paragraph
+below describes the change that recorded this plan, and is left as written.
+#155 made the SPI and I2C moves in one PR, with the firmware, benches,
+generator and this record's tables. **Update 2026-10-10 (issue #178): UART RX
+has moved too** (`ui_in[0]` to `ui_in[1]`), with the RX firmware, its bench,
+its evidence records and this record's tables in one PR.
 
 **No pin moves in the change that records this plan.** The "Run phase" table
 above, the machine-readable table and the open-drain mask all still describe
@@ -199,7 +236,26 @@ to 5. When #155 lands, this section's "today" table and the "Run phase" table
 are rewritten to the target plan, and the `uio[0]` sharing below goes away
 (MISO moves to `uio[2]`, SCL to `uio[2]` in a different image).
 
-### SPI `MISO` and I2C `SCL` both on `uio[0]` — electrical compatibility
+### Shared pads on the upper row: `uio[2]` and `uio[3]` (since #155)
+
+The standard SPI and I2C Pmods overlap: `uio[2]` is SPI `MISO` and I2C `SCL`,
+`uio[3]` is SPI `SCLK` and I2C `SDA`. That is by Tiny Tapeout's design (one
+row, one protocol) and it is electrically sound here because the pin mode is
+per image (DR 0012) and one image is loaded per run:
+
+1. **SPI images** write `UIO_DIR = 0x0B` and never `UIO_OD`: `uio[3]` is a
+   push-pull SCLK, and `uio[2]` stays an input that follows the peripheral's
+   MISO.
+2. **I2C images** write `UIO_OD = 0x0C` and never `UIO_DIR`: both pins are
+   open-drain, released on a 1, and pulled up by the Pmod.
+3. Both registers reset to 0, so whatever ran before a reset, every `uio`
+   pin is an input until the new image writes its own mode.
+
+The checker holds every SPI and I2C image to its profile's `pin_modes` and
+reports any pin-mode write the profile does not declare. The section below
+is the analysis of the pre-#155 plan and is kept as history.
+
+### SPI `MISO` and I2C `SCL` both on `uio[0]` — electrical compatibility (pre-#155 plan)
 
 This is a real conflict, stated rather than hidden. DR 0008 fixes a pin's
 electrical role at synthesis time, so `uio[0]` cannot be push-pull for one
@@ -237,8 +293,12 @@ benches until those edits land (see "Checker behaviour").
 The checker parses exactly the fenced block below (info string
 `json pin-roles`); nothing is inferred from the prose. `phases` lists the
 roles each phase must place exactly once. Every pin carries
-`electrical_role` (`input` / `push_pull` / `open_drain`), `load_role`, and a
-`protocol_roles` entry for every phase — `"unused"` is written explicitly.
+`electrical_role` (`input` / `push_pull` / `open_drain`, or `runtime` for a
+`uio` pin whose role the firmware image sets through DR 0012, issue #155),
+`load_role`, and a `protocol_roles` entry for every phase — `"unused"` is
+written explicitly. `pin_modes` declares, per profile, the `UIO_DIR` and
+`UIO_OD` values the runtime pins' roles imply; the checker derives them
+again and holds every SPI and I2C image to them.
 `bench_debug` declares writes that are not pin roles but are still checked bit
 by bit; only the `uart_rx` profile has any (see "UART receive").
 `metadata_class: generic_isa_capability` records that `info.yaml`'s labels are
@@ -251,9 +311,14 @@ inventory is a hard failure.
 ```json pin-roles
 {
   "schema": 1,
-  "open_drain_mask": "0x81",
+  "open_drain_mask": "0x00",
   "push_pull_mask": "0x00",
-  "bench_debug": {"uart_rx": {"port": "uio", "bits": {"SAMPLE_MARK": 0, "FRAME_ERROR": 1}}},
+  "pin_modes": {
+    "uart": {"uio_dir": "0x00", "uio_od": "0x00"},
+    "spi": {"uio_dir": "0x0B", "uio_od": "0x00"},
+    "i2c": {"uio_dir": "0x00", "uio_od": "0x0C"}
+  },
+  "bench_debug": {"uart_rx": {"port": "uio", "bits": {"SAMPLE_MARK": 1, "FRAME_ERROR": 2}}},
   "phases": {
     "uart_tx": ["TX"],
     "uart_rx": ["RX"],
@@ -264,30 +329,30 @@ inventory is a hard failure.
     "i2c_result": ["RESULT[0]", "RESULT[1]", "RESULT[2]", "RESULT[3]", "RESULT[4]", "RESULT[5]", "RESULT[6]", "RESULT[7]"]
   },
   "pins": [
-    {"pin": "ui_in[0]", "port": "ui_in", "bit": 0, "electrical_role": "input", "load_role": "PROG_SER", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "uart_rx": "RX", "uart_rx_result": "unused", "spi_transfer": "unused", "spi_result": "unused", "i2c_transfer": "unused", "i2c_result": "unused"}, "shared_pin_rationale": "UART RX shares the PROG_SER load pin: the loader shifts the program in while PROG_MODE is high, and the UART receive programs sample RX only after the MODE drop, so the two uses never overlap in time. DR 0013's boot UART uses ui_in[1] instead; the target plan moves this RX to ui_in[1] too (issue #133), and the move is tracked in #155."},
-    {"pin": "ui_in[1]", "port": "ui_in", "bit": 1, "electrical_role": "input", "load_role": "none", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "uart_rx": "unused", "uart_rx_result": "unused", "spi_transfer": "unused", "spi_result": "unused", "i2c_transfer": "unused", "i2c_result": "unused"}, "shared_pin_rationale": ""},
+    {"pin": "ui_in[0]", "port": "ui_in", "bit": 0, "electrical_role": "input", "load_role": "PROG_SER", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "uart_rx": "unused", "uart_rx_result": "unused", "spi_transfer": "unused", "spi_result": "unused", "i2c_transfer": "unused", "i2c_result": "unused"}, "shared_pin_rationale": ""},
+    {"pin": "ui_in[1]", "port": "ui_in", "bit": 1, "electrical_role": "input", "load_role": "none", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "uart_rx": "RX", "uart_rx_result": "unused", "spi_transfer": "unused", "spi_result": "unused", "i2c_transfer": "unused", "i2c_result": "unused"}, "shared_pin_rationale": ""},
     {"pin": "ui_in[2]", "port": "ui_in", "bit": 2, "electrical_role": "input", "load_role": "none", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "uart_rx": "unused", "uart_rx_result": "unused", "spi_transfer": "unused", "spi_result": "unused", "i2c_transfer": "unused", "i2c_result": "unused"}, "shared_pin_rationale": ""},
     {"pin": "ui_in[3]", "port": "ui_in", "bit": 3, "electrical_role": "input", "load_role": "none", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "uart_rx": "unused", "uart_rx_result": "unused", "spi_transfer": "unused", "spi_result": "unused", "i2c_transfer": "unused", "i2c_result": "unused"}, "shared_pin_rationale": ""},
     {"pin": "ui_in[4]", "port": "ui_in", "bit": 4, "electrical_role": "input", "load_role": "none", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "uart_rx": "unused", "uart_rx_result": "unused", "spi_transfer": "unused", "spi_result": "unused", "i2c_transfer": "unused", "i2c_result": "unused"}, "shared_pin_rationale": ""},
     {"pin": "ui_in[5]", "port": "ui_in", "bit": 5, "electrical_role": "input", "load_role": "none", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "uart_rx": "unused", "uart_rx_result": "unused", "spi_transfer": "unused", "spi_result": "unused", "i2c_transfer": "unused", "i2c_result": "unused"}, "shared_pin_rationale": ""},
     {"pin": "ui_in[6]", "port": "ui_in", "bit": 6, "electrical_role": "input", "load_role": "none", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "uart_rx": "unused", "uart_rx_result": "unused", "spi_transfer": "unused", "spi_result": "unused", "i2c_transfer": "unused", "i2c_result": "unused"}, "shared_pin_rationale": ""},
     {"pin": "ui_in[7]", "port": "ui_in", "bit": 7, "electrical_role": "input", "load_role": "PROG_MODE", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "uart_rx": "unused", "uart_rx_result": "unused", "spi_transfer": "unused", "spi_result": "unused", "i2c_transfer": "unused", "i2c_result": "unused"}, "shared_pin_rationale": ""},
-    {"pin": "uo_out[0]", "port": "uo_out", "bit": 0, "electrical_role": "push_pull", "load_role": "none", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "TX", "uart_rx": "unused", "uart_rx_result": "RESULT[0]", "spi_transfer": "CS", "spi_result": "RESULT[0]", "i2c_transfer": "unused", "i2c_result": "RESULT[0]"}, "shared_pin_rationale": ""},
-    {"pin": "uo_out[1]", "port": "uo_out", "bit": 1, "electrical_role": "push_pull", "load_role": "none", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "uart_rx": "unused", "uart_rx_result": "RESULT[1]", "spi_transfer": "SCLK", "spi_result": "RESULT[1]", "i2c_transfer": "unused", "i2c_result": "RESULT[1]"}, "shared_pin_rationale": ""},
-    {"pin": "uo_out[2]", "port": "uo_out", "bit": 2, "electrical_role": "push_pull", "load_role": "none", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "uart_rx": "unused", "uart_rx_result": "RESULT[2]", "spi_transfer": "MOSI", "spi_result": "RESULT[2]", "i2c_transfer": "unused", "i2c_result": "RESULT[2]"}, "shared_pin_rationale": ""},
+    {"pin": "uo_out[0]", "port": "uo_out", "bit": 0, "electrical_role": "push_pull", "load_role": "none", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "TX", "uart_rx": "unused", "uart_rx_result": "RESULT[0]", "spi_transfer": "unused", "spi_result": "RESULT[0]", "i2c_transfer": "unused", "i2c_result": "RESULT[0]"}, "shared_pin_rationale": ""},
+    {"pin": "uo_out[1]", "port": "uo_out", "bit": 1, "electrical_role": "push_pull", "load_role": "none", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "uart_rx": "unused", "uart_rx_result": "RESULT[1]", "spi_transfer": "unused", "spi_result": "RESULT[1]", "i2c_transfer": "unused", "i2c_result": "RESULT[1]"}, "shared_pin_rationale": ""},
+    {"pin": "uo_out[2]", "port": "uo_out", "bit": 2, "electrical_role": "push_pull", "load_role": "none", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "uart_rx": "unused", "uart_rx_result": "RESULT[2]", "spi_transfer": "unused", "spi_result": "RESULT[2]", "i2c_transfer": "unused", "i2c_result": "RESULT[2]"}, "shared_pin_rationale": ""},
     {"pin": "uo_out[3]", "port": "uo_out", "bit": 3, "electrical_role": "push_pull", "load_role": "none", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "uart_rx": "unused", "uart_rx_result": "RESULT[3]", "spi_transfer": "unused", "spi_result": "RESULT[3]", "i2c_transfer": "unused", "i2c_result": "RESULT[3]"}, "shared_pin_rationale": ""},
     {"pin": "uo_out[4]", "port": "uo_out", "bit": 4, "electrical_role": "push_pull", "load_role": "none", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "uart_rx": "unused", "uart_rx_result": "RESULT[4]", "spi_transfer": "unused", "spi_result": "RESULT[4]", "i2c_transfer": "unused", "i2c_result": "RESULT[4]"}, "shared_pin_rationale": ""},
     {"pin": "uo_out[5]", "port": "uo_out", "bit": 5, "electrical_role": "push_pull", "load_role": "none", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "uart_rx": "unused", "uart_rx_result": "RESULT[5]", "spi_transfer": "unused", "spi_result": "RESULT[5]", "i2c_transfer": "unused", "i2c_result": "RESULT[5]"}, "shared_pin_rationale": ""},
     {"pin": "uo_out[6]", "port": "uo_out", "bit": 6, "electrical_role": "push_pull", "load_role": "none", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "uart_rx": "unused", "uart_rx_result": "RESULT[6]", "spi_transfer": "unused", "spi_result": "RESULT[6]", "i2c_transfer": "unused", "i2c_result": "RESULT[6]"}, "shared_pin_rationale": ""},
     {"pin": "uo_out[7]", "port": "uo_out", "bit": 7, "electrical_role": "push_pull", "load_role": "none", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "uart_rx": "unused", "uart_rx_result": "RESULT[7]", "spi_transfer": "unused", "spi_result": "RESULT[7]", "i2c_transfer": "unused", "i2c_result": "RESULT[7]"}, "shared_pin_rationale": ""},
-    {"pin": "uio[0]", "port": "uio", "bit": 0, "electrical_role": "open_drain", "load_role": "none", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "uart_rx": "unused", "uart_rx_result": "unused", "spi_transfer": "MISO", "spi_result": "unused", "i2c_transfer": "SCL", "i2c_result": "unused"}, "shared_pin_rationale": "SPI firmware never writes uio_out, so with uio_out[0] = 1 the open-drain pad is released (hi-Z) and MISO is read on uio_in[0] as a plain input; I2C and SPI are never in one firmware image. Requires uio_out[0] = 1 before SPI runs (reset value change, DR 0010 follow-up) and tolerates the SCL pull-up on MISO."},
-    {"pin": "uio[1]", "port": "uio", "bit": 1, "electrical_role": "input", "load_role": "none", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "uart_rx": "unused", "uart_rx_result": "unused", "spi_transfer": "unused", "spi_result": "unused", "i2c_transfer": "unused", "i2c_result": "unused"}, "shared_pin_rationale": ""},
-    {"pin": "uio[2]", "port": "uio", "bit": 2, "electrical_role": "input", "load_role": "none", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "uart_rx": "unused", "uart_rx_result": "unused", "spi_transfer": "unused", "spi_result": "unused", "i2c_transfer": "unused", "i2c_result": "unused"}, "shared_pin_rationale": ""},
-    {"pin": "uio[3]", "port": "uio", "bit": 3, "electrical_role": "input", "load_role": "none", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "uart_rx": "unused", "uart_rx_result": "unused", "spi_transfer": "unused", "spi_result": "unused", "i2c_transfer": "unused", "i2c_result": "unused"}, "shared_pin_rationale": ""},
+    {"pin": "uio[0]", "port": "uio", "bit": 0, "electrical_role": "runtime", "load_role": "none", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "uart_rx": "unused", "uart_rx_result": "unused", "spi_transfer": "CS", "spi_result": "unused", "i2c_transfer": "unused", "i2c_result": "unused"}, "shared_pin_rationale": ""},
+    {"pin": "uio[1]", "port": "uio", "bit": 1, "electrical_role": "runtime", "load_role": "none", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "uart_rx": "unused", "uart_rx_result": "unused", "spi_transfer": "MOSI", "spi_result": "unused", "i2c_transfer": "unused", "i2c_result": "unused"}, "shared_pin_rationale": ""},
+    {"pin": "uio[2]", "port": "uio", "bit": 2, "electrical_role": "runtime", "load_role": "none", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "uart_rx": "unused", "uart_rx_result": "unused", "spi_transfer": "MISO", "spi_result": "unused", "i2c_transfer": "SCL", "i2c_result": "unused"}, "shared_pin_rationale": "Standard SPI and I2C Pmod rows overlap here by Tiny Tapeout's design: one row carries one protocol and one firmware image is loaded per run. The SPI images leave the pin an input (UIO_DIR bit 2 = 0, UIO_OD bit 2 = 0) and sample MISO on uio_in[2]; the I2C images make it open-drain SCL (UIO_OD bit 2). DR 0012 sets the mode per image, so no image sees the other's role."},
+    {"pin": "uio[3]", "port": "uio", "bit": 3, "electrical_role": "runtime", "load_role": "none", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "uart_rx": "unused", "uart_rx_result": "unused", "spi_transfer": "SCLK", "spi_result": "unused", "i2c_transfer": "SDA", "i2c_result": "unused"}, "shared_pin_rationale": "Push-pull SCLK (SCK) in the SPI images (UIO_DIR bit 3) and open-drain SDA in the I2C images (UIO_OD bit 3): two electrical roles on one pad, legal only because DR 0012 sets the pin mode at run time per image and one image is loaded per run. Neither role exists while the other profile runs."},
     {"pin": "uio[4]", "port": "uio", "bit": 4, "electrical_role": "input", "load_role": "none", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "uart_rx": "unused", "uart_rx_result": "unused", "spi_transfer": "unused", "spi_result": "unused", "i2c_transfer": "unused", "i2c_result": "unused"}, "shared_pin_rationale": ""},
     {"pin": "uio[5]", "port": "uio", "bit": 5, "electrical_role": "input", "load_role": "none", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "uart_rx": "unused", "uart_rx_result": "unused", "spi_transfer": "unused", "spi_result": "unused", "i2c_transfer": "unused", "i2c_result": "unused"}, "shared_pin_rationale": ""},
     {"pin": "uio[6]", "port": "uio", "bit": 6, "electrical_role": "input", "load_role": "none", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "uart_rx": "unused", "uart_rx_result": "unused", "spi_transfer": "unused", "spi_result": "unused", "i2c_transfer": "unused", "i2c_result": "unused"}, "shared_pin_rationale": ""},
-    {"pin": "uio[7]", "port": "uio", "bit": 7, "electrical_role": "open_drain", "load_role": "none", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "uart_rx": "unused", "uart_rx_result": "unused", "spi_transfer": "unused", "spi_result": "unused", "i2c_transfer": "SDA", "i2c_result": "unused"}, "shared_pin_rationale": ""}
+    {"pin": "uio[7]", "port": "uio", "bit": 7, "electrical_role": "input", "load_role": "none", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "uart_rx": "unused", "uart_rx_result": "unused", "spi_transfer": "unused", "spi_result": "unused", "i2c_transfer": "unused", "i2c_result": "unused"}, "shared_pin_rationale": ""}
   ],
   "inventory": [
     {"file": "firmware/asm/uart_tx.asm", "profile": "uart_tx", "patterns": ["asm_ports", "uart_tx_mask"]},
@@ -328,14 +393,14 @@ inventory is a hard failure.
 | `uart_tx_mask` | first `LDI R1, imm` in `uart_tx.asm` / `uart_tx_9600.asm` (the TX bit mask and idle level) and every `LDI` immediately feeding `AND`/`OR`/`XOR` |
 | `uart_rx_mask` | first `LDI R1, imm` in `uart_rx*.asm` (the RX bit mask), every `LDI` immediately feeding `AND`/`OR`/`XOR`, and, as `spi_miso_mask`, the mask of each `IN Rx, <RX port>` sample; at least one such sample site must exist |
 | `uart_rx_debug` | every `OUT UIO_OUT, Rx` in `uart_rx*.asm`: the source must be an `LDI` constant, a `SUB` countdown followed by `BNZ` (zero on loop exit), or the frame-error shape `IN`/`AND`/`XOR`/`SHF LEFT` on the RX mask register. Values are limited to 0 and the two `bench_debug.uart_rx` bits, both bits must be written, and one `OUT` to the result port must carry a non-constant value |
-| `spi_images` | each `LDI R2, imm` immediately followed by `OUT UO_OUT, R2`: the first is the idle image (CS high, SCLK at CPOL), every image may use only CS/SCLK/MOSI bits |
+| `spi_images` | each `LDI R2, imm` immediately followed by `OUT <port>, R2`, where `<port>` is the output port the table puts CS/SCLK/MOSI on (`UIO_OUT` since #155): the first is the idle image (CS high, SCLK at CPOL), every image may use only CS/SCLK/MOSI bits, and no constant image goes to any other port |
 | `spi_miso_mask` | for `IN Rx, UIO_IN`, the nearest `LDI Ry` before the next `AND Rx, Ry` must equal the MISO bit mask |
 | `i2c_idle_start` | the `LDI R3` feeding the first two `OUT UIO_OUT, R3`: bus-idle = SCL\|SDA, START = SCL |
 | `i2c_alu_masks` | an `LDI Rn, imm` immediately followed by `AND`/`OR`/`XOR` using `Rn` must be the SCL or SDA mask (counter, data and timing literals are not pin masks and are not counted) |
 | `i2c_in_masks` | as `spi_miso_mask`, SDA mask for ACK/read sampling, SCL mask for `pollN:` sites |
 | `i2c_poll_mask` | the `LDI R3, imm` before each `pollN: IN` equals the SCL mask |
 | `gen_strings` | the instruction string literals of `firmware/tools/gen_i2c_sr.py`, parsed with `ast` and the same line grammar as assembly |
-| `bench_*` | the named module-level constants and capture specs of each bench (`TX_PIN/TX_BIT`, `CS_BIT…`, `MISO_PIN/MISO_BIT`, `SCL_PIN/SDA_PIN`; since issue #136 also `LINE_PIN`, `CAPTURE_SPECS`, the `i2c_board(dut, scl=SCL_BIT, sda=SDA_BIT)` wiring of the pad model, and every `pads.*` call naming a pad as `SCL_BIT`/`SDA_BIT`, in place of the removed `_RELEASED`, `_ACK_PULL`, `(sda_drive << N)` and `per_scl`/`per_sda`), and `load_program`'s `ui_in` assignments |
+| `bench_*` | the named module-level constants and capture specs of each bench (`TX_PIN/TX_BIT`, `CS_BIT…`, `MISO_PIN/MISO_BIT`, `SCL_PIN/SDA_PIN`; since issue #136 also `LINE_PIN`, `CAPTURE_SPECS`, the `i2c_board(dut, scl=SCL_BIT, sda=SDA_BIT)` wiring of the pad model, and every `pads.*` call naming a pad as `SCL_BIT`/`SDA_BIT`, in place of the removed `_RELEASED`, `_ACK_PULL`, `(sda_drive << N)` and `per_scl`/`per_sda`; since issue #155 the SPI bench's `CAPTURE_SPECS` port and bit for CS/SCLK/MOSI, `LINE_PIN`, the `spi_board(dut, cs=CS_BIT, sclk=SCLK_BIT, mosi=MOSI_BIT, miso=MISO_BIT)` wiring and its `pads.*` calls by named bit), and `load_program`'s `ui_in` assignments |
 | `top_load_wiring` / `top_uio_oe` / `top_port_passthrough` | `.mode_pin(ui_in[n])`, `.serial_in(ui_in[n])`, `assign uio_oe = …;`, whole-bus `.port_*` connections |
 | `core_uio_out_reset` | the `port_uio_out <= 8'hXX;` reset literal |
 | `isa_port_table` | `firmware/tools/asm.py` port codes 00/01/10/11 |
@@ -352,22 +417,33 @@ afterwards by #143 (see "UART receive" below). The checker runs in
 ### UART receive (added by #143)
 
 `uart_rx.asm`, `uart_rx_115200.asm` and `uart_rx_9600.asm` sample RX on
-`ui_in[0]` and write the received byte to all of `uo_out`. The table records
-that as the `uart_rx` phase (`RX` on `ui_in[0]`, a sampled role) and the
+`ui_in[1]` (since #178; it was `ui_in[0]`) and write the received byte to all of `uo_out`. The table records
+that as the `uart_rx` phase (`RX` on `ui_in[1]`, a sampled role) and the
 `uart_rx_result` phase (`RESULT[n]` on `uo_out[n]`), checked by the `uart_rx`
 profile. `uart_tx_9600.asm` is the low-baud transmitter and uses the existing
 `uart_tx` profile (TX on `uo_out[0]`).
 
-`ui_in[0]` is also the `PROG_SER` load pin. The two never overlap: the loader
-shifts the program in while `PROG_MODE` is high, and the RX programs sample
-only after the MODE drop. No pin moved in this change. The UART boot program
-of DR 0013 uses RX on `ui_in[1]` (Tiny Tapeout option B). #143 left the
-question of whether this profile's RX moves to match to #133. #133 answers it:
-the target plan puts RX on `ui_in[1]` ("Target pin plan" above), and the move
-itself is #155. Until then RX stays on `ui_in[0]`.
+RX shares no pin with the `PROG_SER` load pin any more. #143 recorded RX on
+`ui_in[0]`, shared with `PROG_SER` (the two never overlapped in time: the
+loader shifts the program in while `PROG_MODE` is high, and the RX programs
+sampled only after the MODE drop). The UART boot program of DR 0013 uses RX
+on `ui_in[1]` (Tiny Tapeout option B). #133's target plan put RX on
+`ui_in[1]` too, and #178 made the move. `ui_in[0]` is `PROG_SER` in the load
+phase only; the RX programs never read it, and the bench toggles it
+mid-frame to prove that.
+
+**Register consequence of the move (#178).** `R1` is the RX bit mask and the
+program's constant: it is now 2, not 1. The same register is the sample-mark
+value, the XOR mask and the delay-loop decrement, so those follow it: the
+debug bits are `uio_out[1]` (sample mark) and `uio_out[2]` (frame-error
+flag), the outer delay counts are doubled (decrement 2), and each data-bit
+sample has six `SHF LEFT` plus a `NOP` where it had seven `SHF LEFT` (bit 1
+needs six shifts to reach bit 7). Word count, total cycles and every `WAIT`
+count are unchanged, so the sample instants are the same.
 
 **Bench-debug writes to `uio_out`.** The RX programs also write `UIO_OUT`: a
-sample mark on `uio_out[0]` and a frame-error flag on `uio_out[1]`. These are
+sample mark on `uio_out[1]` and a frame-error flag on `uio_out[2]` (they were
+`uio_out[0]` and `uio_out[1]` until #178 moved RX). These are
 observability aids for the bench, **not** pin roles, and the table assigns no
 `uart_rx` role on `uio`. They are still checked. The table's `bench_debug`
 block declares the two bits, and the `uart_rx_debug` pattern requires every
@@ -376,6 +452,10 @@ countdown register that has reached zero, or the frame-error computation. The
 only values allowed are `0x00`, the mark bit and the frame-error bit. The
 received byte on `UIO_OUT` fails, and at least one `OUT` to the result port
 must carry a computed value, so the byte cannot be rerouted off `uo_out`.
+
+Since #178 the two debug bits sit on the SPI profile's MOSI (`uio[1]`) and
+MISO/I2C-SCL (`uio[2]`) pins. That changes nothing below: a UART RX image writes no
+pin-mode register, so neither pin is driven while it runs.
 
 **These writes drive no pad (#154, resolved by DR 0012).** The top level is
 [DR 0012](0012-control-space-and-runtime-pin-direction.md)'s pin-mode rule
@@ -427,7 +507,8 @@ reports them as an unmet prerequisite for that top-level shape.
    and unmet prerequisites. On the committed tree it lists nothing. The top
    level is DR 0012's pin-mode rule (#135), so an open-drain role is wired by
    the firmware image that uses it: each I2C image releases the lines and
-   then sets `UIO_OD`. The UART receive programs' bench-debug writes to
+   then sets `UIO_OD`, and since #155 each SPI image writes its idle image
+   and then sets `UIO_DIR`. The UART receive programs' bench-debug writes to
    `UIO_OUT` are not listed, because those programs write no pin-mode
    register (see "UART receive" above). They would be listed if one did.
 
@@ -451,11 +532,11 @@ target-spec row.
    "UART receive" above). It applies again only if this fixed assign is built.
 2. **`info.yaml`** and the template `docs/info.md`: add the protocol-profile
    pin table and the pull-up statement; these are generic ISA labels today.
-3. **When SPI moves** (#155, or the `MISO` fallback above): `firmware/asm/spi_mode0–3.asm`
+3. **Done by #155.** **When SPI moves** (#155, or the `MISO` fallback above): `firmware/asm/spi_mode0–3.asm`
    (`IN … UIO_IN` and the MISO mask), `verification/test_firmware_spi.py`
    (`MISO_PIN`/`MISO_BIT`, the `dut.uio_in` driver), `firmware_templates.py`
    if it embeds the SPI template, and this table.
-4. **When I2C SCL/SDA move** (#155): `firmware/asm/i2c_*.asm`,
+4. **Done by #155.** **When I2C SCL/SDA move** (#155): `firmware/asm/i2c_*.asm`,
    `firmware/tools/gen_i2c_sr.py` (and regenerate the `*_sr` files),
    `verification/test_firmware_i2c.py` (`SCL_*`/`SDA_*`; since issue
    #136 these are the only place the I2C benches name the pins --
@@ -463,9 +544,10 @@ target-spec row.
    `verification/uio_pads.py` take them from there).
 5. **If UART TX moves**: `firmware/asm/uart_tx.asm`,
    `firmware/asm/uart_tx_9600.asm` and `verification/test_firmware_uart.py`.
-   **When UART RX moves** to `ui_in[1]` (#155): `firmware/asm/uart_rx*.asm` (the `IN … UI_IN`
-   port and the `LDI R1` mask) and `verification/test_firmware_uart_rx.py`
-   (its `dut.ui_in` driver).
+   **UART RX has moved** to `ui_in[1]` (#178): `firmware/asm/uart_rx*.asm`
+   (the `LDI R1` mask, which also sets the debug bits and the delay-loop
+   step) and `verification/test_firmware_uart_rx.py` (its `set_rx` driver and
+   mark / flag bits). A further RX move edits those same places.
 6. **If load pins move**: the top-level `.mode_pin`/`.serial_in`,
    `verification/test_protocol_emulator.py::load_program`, `info.yaml`.
 
@@ -477,8 +559,8 @@ target-spec row.
 - The pin moves themselves. #133 proposes the target plan ("Target pin
   plan": UART RX to `ui_in[1]`, SPI and I2C onto the upper `uio` Pmod row),
   so *whether* the pins move is no longer open. *Making* the moves is #155,
-  after #135. This record's tables still carry today's assignments, including
-  the `ui_in[0]` RX that #143 recorded.
+  after #135. #155 moved SPI and I2C and #178 moved UART RX to `ui_in[1]`, so
+  this record's tables now carry the target plan for all three protocols.
 
 ## Cross-references
 

@@ -1,0 +1,25 @@
+{
+  "schema": "klt.functional_verification.request/1",
+  "engine": "icarus",
+  "sources": [
+    "../rtl/protocol_program_memory.v",
+    "../rtl/vendor/RM_IHPSG13_1P_256x16_c2_bm_bist.v",
+    "../rtl/vendor/RM_IHPSG13_1P_core_behavioral_bm_bist.v"
+  ],
+  "hdl_toplevel": "protocol_program_memory",
+  "testbench": {
+    "module": "test_loadseq",
+    "testcase": null
+  },
+  "options": {
+    "coverage": false,
+    "timescale": [
+      "1ns",
+      "1ps"
+    ],
+    "random_seed": 1,
+    "defines": {
+      "FUNCTIONAL": "1"
+    }
+  }
+}

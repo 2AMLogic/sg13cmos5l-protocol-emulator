@@ -183,10 +183,12 @@ pinout:
   # Inputs after reset (uio_oe = 0). IN Rd, 01 always reads them. OUT 11, Rs
   # writes the uio_out register, which reaches the pad only on pins that
   # firmware has enabled through UIO_DIR (push-pull) or UIO_OD (open-drain).
-  uio[0]: "ISA input port 01 bit 0 (read by IN Rd, 01); input at reset, firmware-configured output (OUT 11, Rs via UIO_DIR / UIO_OD)"
-  uio[1]: "ISA input port 01 bit 1 (read by IN Rd, 01); input at reset, firmware-configured output (OUT 11, Rs via UIO_DIR / UIO_OD)"
-  uio[2]: "ISA input port 01 bit 2 (read by IN Rd, 01); input at reset, firmware-configured output (OUT 11, Rs via UIO_DIR / UIO_OD)"
-  uio[3]: "ISA input port 01 bit 3 (read by IN Rd, 01); input at reset, firmware-configured output (OUT 11, Rs via UIO_DIR / UIO_OD)"
+  # The shipped SPI and I2C profiles use the upper Pmod row (DR 0010's target
+  # plan, issue #155); one firmware image, so one protocol, per run.
+  uio[0]: "ISA input port 01 bit 0 (read by IN Rd, 01); input at reset, firmware-configured output (OUT 11, Rs via UIO_DIR / UIO_OD); shipped SPI firmware: CS (Tiny Tapeout SPI Pmod)"
+  uio[1]: "ISA input port 01 bit 1 (read by IN Rd, 01); input at reset, firmware-configured output (OUT 11, Rs via UIO_DIR / UIO_OD); shipped SPI firmware: MOSI (SPI Pmod)"
+  uio[2]: "ISA input port 01 bit 2 (read by IN Rd, 01); input at reset, firmware-configured output (OUT 11, Rs via UIO_DIR / UIO_OD); shipped SPI firmware: MISO (SPI Pmod); shipped I2C firmware: SCL (Tiny Tapeout I2C Pmod)"
+  uio[3]: "ISA input port 01 bit 3 (read by IN Rd, 01); input at reset, firmware-configured output (OUT 11, Rs via UIO_DIR / UIO_OD); shipped SPI firmware: SCLK, the Pmod's SCK (SPI Pmod); shipped I2C firmware: SDA (I2C Pmod)"
   uio[4]: "ISA input port 01 bit 4 (read by IN Rd, 01); input at reset, firmware-configured output (OUT 11, Rs via UIO_DIR / UIO_OD)"
   uio[5]: "ISA input port 01 bit 5 (read by IN Rd, 01); input at reset, firmware-configured output (OUT 11, Rs via UIO_DIR / UIO_OD)"
   uio[6]: "ISA input port 01 bit 6 (read by IN Rd, 01); input at reset, firmware-configured output (OUT 11, Rs via UIO_DIR / UIO_OD)"
