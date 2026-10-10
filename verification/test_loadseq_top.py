@@ -7,7 +7,11 @@ submitted top `tt_um_2amlogic_protocol_emulator`, through its real pins, and
 checks that the transition is right at the pins:
 
 - while the sequence is loading (everything before the final step) the core
-  does not run: `uo_out` stays 0 and no pin is driven by firmware;
+  does not run: `uo_out` is the load-phase CRC readout of DR 0013 layer 1,
+  not a program's output. The generated steps hold `ui_in[1]` low, so it is
+  the low byte of `binascii.crc_hqx` over the words committed so far
+  (target-spec row 14(b) excepts the serial-load phase for exactly this:
+  operator ruling on issue #166, 2026-10-10), and no `uio` pin is driven;
 - the final, separate MODE-drop step is edge 0; the first instruction
   retires at edge 2 and the OUT shows at edge 3 (DR 0005 fetch-ahead,
   the same numbering `test_protocol_emulator.py` documents);
@@ -20,6 +24,7 @@ Independent of `_dut.load_program` and the module-bench helpers. Driven by
 `klt functional-verification` (see `request-loadseq-top.json`).
 """
 
+import binascii
 import sys
 from pathlib import Path
 
@@ -44,6 +49,12 @@ SETUP, HIGH, LOW = 2, 5, 3
 #   OUT uo_out,R0 = 0xA<<12 | R0<<10 | port 2<<8
 #   HALT = 0xF000
 PROGRAM = [0x10A5, 0xA200, 0xF000]
+
+
+def crc_lo(words):
+    """Low byte of the CRC-16/XMODEM the load-phase readout shows with
+    ui_in[1] low: `binascii.crc_hqx` over the words, high byte first."""
+    return binascii.crc_hqx(b"".join(bytes((w >> 8, w & 0xFF)) for w in words), 0) & 0xFF
 
 
 class TopAdapter:
@@ -90,7 +101,8 @@ async def edge(dut):
 async def test_program_stays_idle_until_mode_drop_then_runs(dut):
     steps = loadseq.generate_steps(PROGRAM)
     await replay(dut, steps[:-1])  # reset, latch, 48 data edges; MODE still high
-    assert int(dut.uo_out.value) == 0
+    assert int(dut.uo_out.value) == crc_lo(PROGRAM), "load phase: uo_out is the CRC readout"
+    assert int(dut.uio_oe.value) == 0
     await replay(dut, steps[-1:])  # the MODE-drop step: edge 0
     assert int(dut.uo_out.value) == 0
     seen = [await edge(dut) for _ in range(1, 6)]  # edges 1..5
@@ -104,8 +116,18 @@ async def test_program_stays_idle_until_mode_drop_then_runs(dut):
 async def test_without_mode_drop_the_program_never_runs(dut):
     steps = loadseq.generate_steps(PROGRAM)[:-1]
     await replay(dut, steps)
-    for _ in range(20):
-        assert await edge(dut) == 0, "ran without a MODE drop"
+    # MODE stays high, so every further edge is still load phase and shifts
+    # in ui_in[0] (0, the last data step's bit): the 16th commits a 0x0000
+    # word. uo_out must be the CRC readout of what is committed on every
+    # edge; a program that ran would put 0xA5 there instead.
+    for k in range(1, 21):
+        committed = PROGRAM + [0x0000] * (k // 16)
+        got = await edge(dut)
+        assert got == crc_lo(committed), (
+            f"ran without a MODE drop? edge {k}: uo_out {got:#04x}, "
+            f"want the CRC readout {crc_lo(committed):#04x}"
+        )
+        assert int(dut.uio_oe.value) == 0
 
 
 @cocotb.test()

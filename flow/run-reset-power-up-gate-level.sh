@@ -63,7 +63,7 @@ export PDK_ROOT="${PDK_ROOT:-$HOME/share/pdk}"
 while [ $# -gt 0 ]; do
   case "$1" in
     --netlist) NETLIST="$2"; shift 2 ;;
-    -h|--help) sed -n '2,50p' "${BASH_SOURCE[0]}"; exit 0 ;;
+    -h|--help) sed -n '2,52p' "${BASH_SOURCE[0]}"; exit 0 ;;
     *) echo "FATAL: unknown argument $1" >&2; exit 1 ;;
   esac
 done

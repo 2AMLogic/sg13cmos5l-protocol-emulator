@@ -74,6 +74,8 @@ bench is byte-reproducible; the "Statistical convention" in the evidence
 record this feeds is deterministic, not sampled.
 """
 
+import binascii
+
 import cocotb
 from cocotb.clock import Clock
 from cocotb.triggers import ClockCycles, ReadOnly, RisingEdge, Timer
@@ -208,26 +210,84 @@ async def test_run_entry_fetch_ahead_costs_exactly_one_cycle(dut):
 
 @cocotb.test()
 async def test_reset_and_load_leaves_pins_cleared(dut):
-    """A one-word HALT program loaded over the real load phase: from
-    reset through load and HALT retirement, both pin-output registers
-    stay cleared (the stub-era reset contract, now through the core),
-    the bidirectional pins stay inputs (uio_oe = 0, DR 0012's reset
-    state, which this program never changes), and HALT freezes the core: later cycles change nothing. This
-    is the pin-level behavior the superseded reset-pin-through record
-    documented for the stub, restated for the core."""
+    """Every output pin, sampled once per cycle, from reset through a
+    serial load of a one-word HALT program and on past HALT retirement.
+
+    - In reset, `uo_out`, `uio_out` and `uio_oe` are 0 whatever `ui_in[1]`
+      is (`PM_CRC` resets to 0x0000, so even the load-phase readout shows 0).
+    - Through the serial-load phase (MODE high at reset release, until the
+      MODE-drop edge), `uo_out` is the `PM_CRC` byte that `ui_in[1]`
+      selects: DR 0013 layer 1 (issue #137), and the exception target-spec
+      row 14(b) makes for exactly this phase (amended 2026-10-10 by the
+      operator's ruling on issue #166). The expected bytes come from
+      `binascii.crc_hqx` over the words committed so far, not from the
+      RTL: 0x00 until the word commits, then the image's CRC. `ui_in[1]`
+      alternates every cycle, so both bytes are graded, and one spare bit
+      after the word (a partial word, discarded at the MODE drop) gives the
+      final CRC a second cycle on the pins. `uio_out` and `uio_oe` stay 0
+      (every bidirectional pin an input, DR 0012's reset state).
+    - From the MODE-drop edge on, `uo_out` is the core's register again:
+      0, whatever `ui_in[1]` does, and HALT (index 0, edge 2) freezes the
+      core, so nothing moves for the rest of the window.
+
+    Every read goes through `settle_read` after the cycle's inputs are
+    applied, and every edge through the module's `RisingEdge` /
+    `ClockCycles`, so the post-layout run (`sdf_alignment`) samples each
+    cycle at the SDC output-delay point after inputs that changed at the
+    SDC input-delay point."""
     cocotb.start_soon(Clock(dut.clk, CLK_PERIOD_NS, unit="ns").start())
-    await load_program(dut, [enc(OP_HALT)])
+    program = [enc(OP_HALT)]
+    cycle = 0
 
-    assert await settle_read(dut, "uo_out") == 0
-    assert await settle_read(dut, "uio_out") == 0
-    assert await settle_read(dut, "uio_oe") == 0
+    async def expect_cycle(base, sel, uo_want, what):
+        """Drive `base` (MODE on ui_in[7], serial data on ui_in[0]) with
+        byte select `sel` on ui_in[1], then grade this cycle's pins."""
+        nonlocal cycle
+        dut.ui_in.value = base | (sel << 1)
+        got = await settle_read(dut, "uo_out")
+        assert got == uo_want, (
+            f"{what}, cycle {cycle}, ui_in[1]={sel}: uo_out {got:#04x}, want {uo_want:#04x}"
+        )
+        assert await settle_read(dut, "uio_out") == 0, f"{what}, cycle {cycle}: uio_out moved"
+        assert await settle_read(dut, "uio_oe") == 0, f"{what}, cycle {cycle}: a uio pin is driven"
+        cycle += 1
 
-    # HALT (index 0) retires at edge 2 and idles the core; nothing a
-    # later cycle does -- including pin traffic -- may move any output.
-    await ClockCycles(dut.clk, 10)
-    assert await settle_read(dut, "uo_out") == 0
-    assert await settle_read(dut, "uio_out") == 0
-    assert await settle_read(dut, "uio_oe") == 0
+    def crc_byte(words, sel):
+        crc = binascii.crc_hqx(b"".join(bytes((w >> 8, w & 0xFF)) for w in words), 0)
+        return (crc >> 8) if sel else (crc & 0xFF)
+
+    dut.ena.value = 1
+    dut.uio_in.value = 0
+    dut.ui_in.value = 0x80  # MODE high, serial line idle low
+    dut.rst_n.value = 0
+    await ClockCycles(dut.clk, 2)
+    for i in range(8):
+        await expect_cycle(0x80, i & 1, 0x00, "in reset")
+        await RisingEdge(dut.clk)
+    dut.rst_n.value = 1
+    await expect_cycle(0x80, 1, 0x00, "reset released, before the mode-sampling edge")
+    await RisingEdge(dut.clk)  # the mode-sampling edge: load phase
+
+    committed = []
+    for word in program:
+        for bit in range(15, -1, -1):
+            sel = cycle & 1
+            await expect_cycle(0x80 | ((word >> bit) & 1), sel, crc_byte(committed, sel), "load phase")
+            await RisingEdge(dut.clk)  # the 16th of these commits the word
+        committed.append(word)
+    assert crc_byte(committed, 0) != 0 or crc_byte(committed, 1) != 0, "test premise"
+
+    # One spare bit with MODE high (a partial word: never committed).
+    await expect_cycle(0x80, 0, crc_byte(committed, 0), "load phase, after the last word")
+    await RisingEdge(dut.clk)
+    # The MODE-drop cycle is still load phase until its edge.
+    await expect_cycle(0x00, 1, crc_byte(committed, 1), "load phase, MODE low before its edge")
+    await RisingEdge(dut.clk)  # edge 0: run phase begins
+
+    # Run phase: the core's register, 0 (no OUT); HALT retires at edge 2.
+    for i in range(12):
+        await expect_cycle(0x00, i & 1, 0x00, f"run phase, edge {i}")
+        await RisingEdge(dut.clk)
 
 
 @cocotb.test()

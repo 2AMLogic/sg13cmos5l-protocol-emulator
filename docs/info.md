@@ -84,8 +84,19 @@ and every 16th bit commits one word at an auto-incrementing address from 0.
 Drop MODE to enter **run phase**, which resets the program counter to 0 and
 begins executing. MODE is latched only at reset release, so a running
 program cannot be reprogrammed out from under itself — re-entering load
-phase needs a fresh `rst_n` pulse with MODE high. All other pins are
-untouched by loading.
+phase needs a fresh `rst_n` pulse with MODE high.
+
+**The load can be checked before anything runs**
+(`spec/decision-records/0013-program-loading.md` layer 1, Proposed). For
+as long as the design is in load phase, `uo_out` shows the running
+`PM_CRC` of the words committed so far: its low byte while `ui_in[1]` is 0
+and its high byte while `ui_in[1]` is 1. The host compares the two bytes
+with its own CRC-16/XMODEM of the image and drops MODE only if they match;
+the procedure is under "How to run a protocol". From the edge that takes
+MODE low onward, `uo_out` is the program's port again and `ui_in[1]` is an
+ordinary input. The readout changes nothing else about loading: the same
+pins, the same edges, and a host that ignores `uo_out` loads exactly as
+before. The remaining pins (`ui_in[6:2]`, `uio`) are untouched by loading.
 
 **With MODE low at reset the core does not run program memory. It runs a
 boot ROM** (`spec/decision-records/0013-program-loading.md` layer 2,
@@ -183,7 +194,9 @@ Two committed cocotb benches do exactly this, byte-for-byte:
   run, and `PM_CRC` against Python's `binascii.crc_hqx`. A third exercises
   the boot ROM: MODE low with straps `00` leaves no `uio` pin driven and TX idle high, a signed image
   warm-starts on the predicted edge, and the same image with one flipped
-  bit is never run.
+  bit is never run. A fourth performs the load check described under "How
+  to run a protocol": it reads the CRC from `uo_out` before dropping MODE,
+  for a good load and for a load one clock edge short.
 - `verification/test_protocol_emulator.py` — this program's own klt-driven
   bench (`klt functional-verification`), which exercises all 16 opcodes as
   loaded firmware and asserts each result on a *numbered* clock edge derived
@@ -286,9 +299,46 @@ Icarus, provisioned by `./scripts/setup-env.sh` (see
    - clock one edge with MODE still high (the edge that latches MODE);
    - for each word in file order, for bit 15 down to 0, put the bit on
      `ui_in[0]` (keeping `ui_in[7]` high) and clock once;
+   - **check the load** (optional, and the reason to do it is below). With
+     `ui_in[7]` still high: set `ui_in[1]` low and read `uo_out`, the CRC's
+     low byte; set `ui_in[1]` high and read `uo_out`, the high byte. No
+     clock edge is needed between the two reads, since `ui_in[1]` selects
+     the byte directly. Compare with the CRC-16/XMODEM of the image as
+     big-endian bytes, word 0 first (polynomial `0x1021`, initial value 0,
+     no reflection, no final XOR; in Python,
+     `binascii.crc_hqx(image_bytes, 0)`). **On a mismatch, do not drop
+     MODE:** pulse `rst_n` with MODE high and load again. Reset clears the
+     CRC;
    - drop `ui_in[7]` to enter run phase, on its own edge. The first
      instruction retires two edges later (fetch-ahead, DR 0005); execution
      then follows the cycle report exactly.
+
+   Reading the CRC with the clock stopped is simplest, and this load path
+   already needs a host that drives `clk`. A host that cannot stop the
+   clock has 15 edges after the last bit in which the readout is stable
+   (the CRC moves only on the edge that commits a word); whatever is on
+   `ui_in[0]` during those edges is a partial word, discarded when MODE
+   drops. A 16th edge would commit one more word and change the CRC.
+
+   What the check catches: a load that stopped early, and a clock edge the
+   chip missed or saw twice, because either one shifts or shortens what
+   was committed. `verification/test_load_integrity.py` tries every
+   single-edge fault position of a 4-word image and seeded positions in
+   16- to 256-word images. What it cannot promise: the CRC is 16 bits, so
+   about one corrupted load in 65,536 reads as good; and because it starts
+   from 0, an image that is all zero words reads `0x0000` at any length.
+   One doubled edge is correctly reported as a match: a repeat of the last
+   bit of the image (or of any bit in a run of equal bits reaching the end
+   of the image) leaves every word intact, and the spare bit is discarded.
+
+   While the load is in progress `uo_out` carries CRC bytes, not its reset
+   value 0. Target-spec row 14(b) excepts the serial-load phase for exactly
+   this (amended 2026-10-10 by the operator's ruling on issue #166).
+   Anything wired to `uo_out` sees those bytes change every 16 clocks until
+   MODE drops, at which point `uo_out` returns to 0 until the program's
+   first `OUT`, so a peripheral on `uo_out` (a UART peer on `uo_out[0]`,
+   for one) must tolerate them or be held off during a load. The boot ROM's
+   paths (MODE low at reset) never show the readout.
 
    **Host-side generator (no simulator).**
    [`firmware/tools/loadseq.py`](../firmware/tools/loadseq.py) turns an image
@@ -367,6 +417,8 @@ Fixed by the RTL (`src/tt_um_2amlogic_protocol_emulator.v`), not provisional:
 | `ui_in[7]` | MODE: high across `rst_n` release selects load phase; low runs the boot ROM |
 | `ui_in[6:5]` | straps, read once by the boot ROM's program when MODE is low at reset (`00`/`11` UART load, `01` SPI-flash boot, `10` warm start). The read is an ordinary `IN`, not strap hardware; a loaded program sees these as plain input bits |
 | `ui_in[0]` | serial program data in load phase, MSB first (no run-phase role; UART RX is `ui_in[1]`) |
+| `ui_in[1]` | serial-load phase (MODE high at reset, until it drops): selects which `PM_CRC` byte `uo_out` shows (0 = low, 1 = high). Otherwise an ordinary input read by `IN`; the boot ROM's UART load (strap `00`) uses it as RX |
+| `uo_out[7:0]` | serial-load phase: the selected `PM_CRC` byte. Run phase (including the boot ROM, whose UART TX is `uo_out[0]`): written by `OUT`. 0 in reset |
 | `uio_oe[7:0]` | set by firmware: `UIO_OD[n]` → open-drain (`uio_oe[n] = ~uio_out[n]`), else `UIO_DIR[n]` → push-pull, else input. **0 after reset**: every bidirectional pin is an input until a program writes `UIO_DIR` or `UIO_OD` |
 | `uio_out[7:0]` | written by `OUT`; reaches a pin only where `uio_oe` enables it |
 
@@ -409,7 +461,9 @@ No pin claim here is backed by silicon or by the LibreLane flow.
   LibreLane run 38071502150, with DR 0015's P1 and P2 and the UART-load boot ROM) passes at all three corners: 12 of the core
   bench's 13 tests pass and the white-box flag test is skipped (it reads
   core internals a flattened netlist does not have), so the C flag has no
-  post-layout evidence. The bench runs at the flow's own constraint: a
+  post-layout evidence. One of the 12 grades the load check's readout every
+  cycle of a serial load: `uo_out` shows the `PM_CRC` byte `ui_in[1]`
+  selects, and 0 in reset and after the MODE drop. The bench runs at the flow's own constraint: a
   20 ns clock, inputs changed 4 ns after each edge, outputs read 4 ns
   before the next. The SRAM runs as a zero-delay model there (its read
   timing is LibreLane STA evidence only), setup/hold is checked only

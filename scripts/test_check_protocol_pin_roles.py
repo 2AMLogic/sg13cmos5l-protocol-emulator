@@ -168,6 +168,50 @@ def _(fx):
     expect_fail(fx, "is not DR 0012's pin-mode rule", "concrete-firmware-bench")
 
 
+# Issue #137 (DR 0013 layer 1): outside the run phase uo_out shows the load
+# CRC, so the core's port reaches uo_out through a mux. The check accepts
+# exactly one shape of it -- the run-phase arm is the core's port, whole.
+UO_MUX_HEAD = "assign uo_out = run_phase ? core_uo_out :"
+
+
+@case("load CRC readout: the committed run_phase mux on uo_out is accepted")
+def _(fx):
+    assert UO_MUX_HEAD in fx.path(TOP).read_text(encoding="utf-8"), (
+        "fixture premise: the committed top has the readout mux")
+    code, out = fx.run()
+    assert code == 0 and "[metadata-capability] PASS" in out, out
+
+
+@case("load CRC readout: a direct core-to-uo_out connection is still accepted")
+def _(fx):
+    # the top as it was before issue #137: no mux, the port straight on the pins
+    fx.mutate(TOP, ".port_uo_out (core_uo_out),", ".port_uo_out (uo_out),")
+    fx.mutate(TOP, UO_MUX_HEAD, "wire [7:0] unused_readout = run_phase ? core_uo_out :")
+    code, out = fx.run()
+    assert code == 0 and "[metadata-capability] PASS" in out, out
+
+
+@case("load CRC readout: a mux not selected by run_phase fails")
+def _(fx):
+    fx.mutate(TOP, UO_MUX_HEAD, "assign uo_out = !ui_in[7] ? core_uo_out :")
+    expect_fail(fx, "core port_uo_out is not connected to the whole uo_out bus in run phase",
+                "metadata-capability")
+
+
+@case("load CRC readout: a run-phase arm that is not the core's port fails")
+def _(fx):
+    fx.mutate(TOP, UO_MUX_HEAD, "assign uo_out = run_phase ? (core_uo_out & 8'h7F) :")
+    expect_fail(fx, "core port_uo_out is not connected to the whole uo_out bus in run phase",
+                "metadata-capability")
+
+
+@case("load CRC readout: the core's port left off uo_out altogether fails")
+def _(fx):
+    fx.mutate(TOP, UO_MUX_HEAD, "assign uo_out = run_phase ? pm_crc[7:0] :")
+    expect_fail(fx, "core port_uo_out is not connected to the whole uo_out bus in run phase",
+                "metadata-capability")
+
+
 @case("runtime pin mode: a pin-mode register that does not reset to 0 fails")
 def _(fx):
     fx.mutate("rtl/protocol_core.v", "uio_od       <= 8'h00;", "uio_od       <= 8'h81;")
