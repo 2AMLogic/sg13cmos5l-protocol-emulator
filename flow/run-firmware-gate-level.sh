@@ -13,8 +13,9 @@
 # Which netlist: the `tt_submission` artifact's `<top>.v` of a `gds` workflow
 # run -- the final netlist that the template's own `gl_test` job compiles.
 # Default: the byte-identical copy frozen under verification/records/
-# post-layout-sdf-regression/ from run 38013383254 (the first netlist with
-# the SPI-flash boot program, issue #140). Override with
+# post-layout-sdf-regression/ from run 38032061275 (the first netlist with
+# the A_REN drive buffer, issue #173; before it, run 38013383254's, the
+# first with the SPI-flash boot program, issue #140). Override with
 # --netlist <file> (e.g. one from `gh run download <id> -n tt_submission`).
 #
 # Negative control (a suite that cannot fail cannot cite its passes): the
@@ -80,7 +81,7 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SCRATCH="${REPO_ROOT}/flow/firmware-gate-level"
-NETLIST="${REPO_ROOT}/verification/records/post-layout-sdf-regression/artifacts/20261010-020805-ed5f2d1/tt_um_2amlogic_protocol_emulator.v"
+NETLIST="${REPO_ROOT}/verification/records/post-layout-sdf-regression/artifacts/20261010-072000-c914bbc/tt_um_2amlogic_protocol_emulator.v"
 MODULES=(test_firmware_uart test_firmware_spi test_firmware_i2c)
 export PDK_ROOT="${PDK_ROOT:-$HOME/share/pdk}"
 

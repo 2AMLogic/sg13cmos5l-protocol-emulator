@@ -1,0 +1,4 @@
+12155c12155
+<  sg13cmos5l_dfrbpq_1 _2389_ (.RESET_B(net152),
+---
+>  sg13cmos5l_dfrbpq_1 _2389_ (.RESET_B(1'b1),

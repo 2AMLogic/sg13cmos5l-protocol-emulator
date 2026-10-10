@@ -1,11 +1,11 @@
 {
   "schema": "klt.lvs.request/1",
   "layout": {
-    "netlist": "../verification/records/librelane-gds-signoff-check/artifacts/20261010-041033-fb86d71/layout-gate-level.spice",
+    "netlist": "../verification/records/librelane-gds-signoff-check/artifacts/20261010-070156-c914bbc/layout-gate-level.spice",
     "top": "tt_um_2amlogic_protocol_emulator"
   },
   "reference": {
-    "netlist": "../verification/records/librelane-gds-signoff-check/artifacts/20261010-041033-fb86d71/reference-klt-yosys-with-macro-stub.v",
+    "netlist": "../verification/records/librelane-gds-signoff-check/artifacts/20261010-070156-c914bbc/reference-klt-yosys-with-macro-stub.v",
     "top": "tt_um_2amlogic_protocol_emulator",
     "form": "gate-level-verilog",
     "library": "sg13cmos5l_stdcell",

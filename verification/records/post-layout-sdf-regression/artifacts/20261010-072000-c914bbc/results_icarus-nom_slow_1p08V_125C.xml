@@ -1,0 +1,114 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuites name="cocotb tests"><testsuite name="test_protocol_emulator" errors="0" failures="12" skipped="0" tests="13" time="2.206" timestamp="2026-10-10T07:04:48.629754+00:00" hostname="robb-studio"><testcase classname="test_protocol_emulator" name="test_run_entry_fetch_ahead_costs_exactly_one_cycle" time="2.030"><failure message="uo_out after edge 3: got 0x00, want 0xa5&#10;assert 0 == 165" type="AssertionError">Traceback (most recent call last):
+  File "verification/test_protocol_emulator.py", line 206, in test_run_entry_fetch_ahead_costs_exactly_one_cycle
+    await watch_pin(dut, "uo_out", {1: 0x00, 2: 0x00, 3: 0xA5, 5: 0xA5})
+  File "verification/test_protocol_emulator.py", line 180, in watch_pin
+    assert got == want, (
+AssertionError: uo_out after edge 3: got 0x00, want 0xa5
+assert 0 == 165
+</failure><properties><property name="cocotb" value="True" /><property name="random_seed" value="1" /><property name="file" value="verification/test_protocol_emulator.py" /><property name="line" value="185" /><property name="sim_time_unit" value="ns" /><property name="sim_time_start" value="0.0" /><property name="sim_time_stop" value="621.0" /><property name="sim_time_duration" value="621.0" /><property name="sim_time_ratio" value="305.9545731862838" /><property name="attachment" value="flow/post-layout-sdf/nom_slow_1p08V_125C/.klt/functional-verification/test_icarus.log" /></properties><system-out>[[ATTACHMENT|flow/post-layout-sdf/nom_slow_1p08V_125C/.klt/functional-verification/test_icarus.log]]
+</system-out><system-err>Test failed with COCOTB_RANDOM_SEED=1
+</system-err></testcase><testcase classname="test_protocol_emulator" name="test_reset_and_load_leaves_pins_cleared" time="0.004"><properties><property name="cocotb" value="True" /><property name="random_seed" value="1" /><property name="file" value="verification/test_protocol_emulator.py" /><property name="line" value="209" /><property name="sim_time_unit" value="ns" /><property name="sim_time_start" value="621.001" /><property name="sim_time_stop" value="1004.001" /><property name="sim_time_duration" value="383.0" /><property name="sim_time_ratio" value="102297.00850708307" /><property name="attachment" value="flow/post-layout-sdf/nom_slow_1p08V_125C/.klt/functional-verification/test_icarus.log" /></properties><system-out>[[ATTACHMENT|flow/post-layout-sdf/nom_slow_1p08V_125C/.klt/functional-verification/test_icarus.log]]
+</system-out></testcase><testcase classname="test_protocol_emulator" name="test_ldi_mov_out_write_latency" time="0.009"><failure message="uo_out after edge 4: got 0x00, want 0x11&#10;assert 0 == 17" type="AssertionError">Traceback (most recent call last):
+  File "verification/test_protocol_emulator.py", line 254, in test_ldi_mov_out_write_latency
+    await watch_pin(dut, "uo_out", {
+  File "verification/test_protocol_emulator.py", line 180, in watch_pin
+    assert got == want, (
+AssertionError: uo_out after edge 4: got 0x00, want 0x11
+assert 0 == 17
+</failure><properties><property name="cocotb" value="True" /><property name="random_seed" value="1" /><property name="file" value="verification/test_protocol_emulator.py" /><property name="line" value="233" /><property name="sim_time_unit" value="ns" /><property name="sim_time_start" value="1004.002" /><property name="sim_time_stop" value="2125.002" /><property name="sim_time_duration" value="1121.0" /><property name="sim_time_ratio" value="119767.63154091091" /><property name="attachment" value="flow/post-layout-sdf/nom_slow_1p08V_125C/.klt/functional-verification/test_icarus.log" /></properties><system-out>[[ATTACHMENT|flow/post-layout-sdf/nom_slow_1p08V_125C/.klt/functional-verification/test_icarus.log]]
+</system-out><system-err>Test failed with COCOTB_RANDOM_SEED=1
+</system-err></testcase><testcase classname="test_protocol_emulator" name="test_alu_results_pin_observable" time="0.024"><failure message="uo_out after edge 5: got 0x00, want 0xf9&#10;assert 0 == 249" type="AssertionError">Traceback (most recent call last):
+  File "verification/test_protocol_emulator.py", line 291, in test_alu_results_pin_observable
+    await watch_pin(dut, "uo_out", {
+  File "verification/test_protocol_emulator.py", line 180, in watch_pin
+    assert got == want, (
+AssertionError: uo_out after edge 5: got 0x00, want 0xf9
+assert 0 == 249
+</failure><properties><property name="cocotb" value="True" /><property name="random_seed" value="1" /><property name="file" value="verification/test_protocol_emulator.py" /><property name="line" value="263" /><property name="sim_time_unit" value="ns" /><property name="sim_time_start" value="2125.003" /><property name="sim_time_stop" value="5016.003" /><property name="sim_time_duration" value="2890.9999999999995" /><property name="sim_time_ratio" value="121604.50136414064" /><property name="attachment" value="flow/post-layout-sdf/nom_slow_1p08V_125C/.klt/functional-verification/test_icarus.log" /></properties><system-out>[[ATTACHMENT|flow/post-layout-sdf/nom_slow_1p08V_125C/.klt/functional-verification/test_icarus.log]]
+</system-out><system-err>Test failed with COCOTB_RANDOM_SEED=1
+</system-err></testcase><testcase classname="test_protocol_emulator" name="test_alu_flags_whitebox" time="0.029"><failure message="klt_sdf_dut_wrapper contains no child object named u_core" type="AttributeError">Traceback (most recent call last):
+  File "verification/test_protocol_emulator.py", line 359, in test_alu_flags_whitebox
+    z, c = await flags_at(retire_edge(program, 3))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "verification/test_protocol_emulator.py", line 350, in flags_at
+    z = int(dut.u_core.flag_z.value)
+            ^^^^^^^^^^
+  File "<scratch>/kltvenv/lib/python3.12/site-packages/cocotb/handle.py", line 461, in __getattr__
+    raise AttributeError(f"{self._path} contains no child object named {name}")
+AttributeError: klt_sdf_dut_wrapper contains no child object named u_core
+</failure><properties><property name="cocotb" value="True" /><property name="random_seed" value="1" /><property name="file" value="verification/test_protocol_emulator.py" /><property name="line" value="302" /><property name="sim_time_unit" value="ns" /><property name="sim_time_start" value="5016.004" /><property name="sim_time_stop" value="8546.004" /><property name="sim_time_duration" value="3530.000000000001" /><property name="sim_time_ratio" value="123627.75813613427" /><property name="attachment" value="flow/post-layout-sdf/nom_slow_1p08V_125C/.klt/functional-verification/test_icarus.log" /></properties><system-out>[[ATTACHMENT|flow/post-layout-sdf/nom_slow_1p08V_125C/.klt/functional-verification/test_icarus.log]]
+</system-out><system-err>Test failed with COCOTB_RANDOM_SEED=1
+</system-err></testcase><testcase classname="test_protocol_emulator" name="test_shf_results_pin_observable" time="0.012"><failure message="uo_out after edge 7: got 0x00, want 0x80&#10;assert 0 == 128" type="AssertionError">Traceback (most recent call last):
+  File "verification/test_protocol_emulator.py", line 390, in test_shf_results_pin_observable
+    await watch_pin(dut, "uo_out", {4: 0x00, 7: 0x80, 9: 0x80})
+  File "verification/test_protocol_emulator.py", line 180, in watch_pin
+    assert got == want, (
+AssertionError: uo_out after edge 7: got 0x00, want 0x80
+assert 0 == 128
+</failure><properties><property name="cocotb" value="True" /><property name="random_seed" value="1" /><property name="file" value="verification/test_protocol_emulator.py" /><property name="line" value="375" /><property name="sim_time_unit" value="ns" /><property name="sim_time_start" value="8546.005" /><property name="sim_time_stop" value="9857.005" /><property name="sim_time_duration" value="1311.0" /><property name="sim_time_ratio" value="105384.43739388844" /><property name="attachment" value="flow/post-layout-sdf/nom_slow_1p08V_125C/.klt/functional-verification/test_icarus.log" /></properties><system-out>[[ATTACHMENT|flow/post-layout-sdf/nom_slow_1p08V_125C/.klt/functional-verification/test_icarus.log]]
+</system-out><system-err>Test failed with COCOTB_RANDOM_SEED=1
+</system-err></testcase><testcase classname="test_protocol_emulator" name="test_in_ports_and_direction_noops" time="0.015"><failure message="uo_out after edge 4: got 0x00, want 0x77&#10;assert 0 == 119" type="AssertionError">Traceback (most recent call last):
+  File "verification/test_protocol_emulator.py", line 428, in test_in_ports_and_direction_noops
+    await watch_pin(dut, "uo_out", {
+  File "verification/test_protocol_emulator.py", line 180, in watch_pin
+    assert got == want, (
+AssertionError: uo_out after edge 4: got 0x00, want 0x77
+assert 0 == 119
+</failure><properties><property name="cocotb" value="True" /><property name="random_seed" value="1" /><property name="file" value="verification/test_protocol_emulator.py" /><property name="line" value="393" /><property name="sim_time_unit" value="ns" /><property name="sim_time_start" value="9857.006" /><property name="sim_time_stop" value="11618.006" /><property name="sim_time_duration" value="1761.0" /><property name="sim_time_ratio" value="113699.09448086366" /><property name="attachment" value="flow/post-layout-sdf/nom_slow_1p08V_125C/.klt/functional-verification/test_icarus.log" /></properties><system-out>[[ATTACHMENT|flow/post-layout-sdf/nom_slow_1p08V_125C/.klt/functional-verification/test_icarus.log]]
+</system-out><system-err>Test failed with COCOTB_RANDOM_SEED=1
+</system-err></testcase><testcase classname="test_protocol_emulator" name="test_out_port11_drives_uio_out_not_oe" time="0.006"><failure message="uio_out after edge 3: got 0x00, want 0x9c&#10;assert 0 == 156" type="AssertionError">Traceback (most recent call last):
+  File "verification/test_protocol_emulator.py", line 451, in test_out_port11_drives_uio_out_not_oe
+    await watch_pin(dut, "uio_out", {2: 0x00, 3: 0x9C, 5: 0x9C})
+  File "verification/test_protocol_emulator.py", line 180, in watch_pin
+    assert got == want, (
+AssertionError: uio_out after edge 3: got 0x00, want 0x9c
+assert 0 == 156
+</failure><properties><property name="cocotb" value="True" /><property name="random_seed" value="1" /><property name="file" value="verification/test_protocol_emulator.py" /><property name="line" value="437" /><property name="sim_time_unit" value="ns" /><property name="sim_time_start" value="11618.007" /><property name="sim_time_stop" value="12249.007" /><property name="sim_time_duration" value="631.0" /><property name="sim_time_ratio" value="102765.24841892724" /><property name="attachment" value="flow/post-layout-sdf/nom_slow_1p08V_125C/.klt/functional-verification/test_icarus.log" /></properties><system-out>[[ATTACHMENT|flow/post-layout-sdf/nom_slow_1p08V_125C/.klt/functional-verification/test_icarus.log]]
+</system-out><system-err>Test failed with COCOTB_RANDOM_SEED=1
+</system-err></testcase><testcase classname="test_protocol_emulator" name="test_wait_cycle_exact" time="0.015"><failure message="uo_out after edge 3: got 0x00, want 0x01&#10;assert 0 == 1" type="AssertionError">Traceback (most recent call last):
+  File "verification/test_protocol_emulator.py", line 479, in test_wait_cycle_exact
+    await watch_pin(dut, "uo_out", {
+  File "verification/test_protocol_emulator.py", line 180, in watch_pin
+    assert got == want, (
+AssertionError: uo_out after edge 3: got 0x00, want 0x01
+assert 0 == 1
+</failure><properties><property name="cocotb" value="True" /><property name="random_seed" value="1" /><property name="file" value="verification/test_protocol_emulator.py" /><property name="line" value="455" /><property name="sim_time_unit" value="ns" /><property name="sim_time_start" value="12249.008" /><property name="sim_time_stop" value="14000.008" /><property name="sim_time_duration" value="1751.0" /><property name="sim_time_ratio" value="118541.08490535358" /><property name="attachment" value="flow/post-layout-sdf/nom_slow_1p08V_125C/.klt/functional-verification/test_icarus.log" /></properties><system-out>[[ATTACHMENT|flow/post-layout-sdf/nom_slow_1p08V_125C/.klt/functional-verification/test_icarus.log]]
+</system-out><system-err>Test failed with COCOTB_RANDOM_SEED=1
+</system-err></testcase><testcase classname="test_protocol_emulator" name="test_branches_taken_and_not_taken" time="0.022"><failure message="uo_out after edge 7: got 0x00, want 0xbb&#10;assert 0 == 187" type="AssertionError">Traceback (most recent call last):
+  File "verification/test_protocol_emulator.py", line 523, in test_branches_taken_and_not_taken
+    await watch_pin(dut, "uo_out", {
+  File "verification/test_protocol_emulator.py", line 180, in watch_pin
+    assert got == want, (
+AssertionError: uo_out after edge 7: got 0x00, want 0xbb
+assert 0 == 187
+</failure><properties><property name="cocotb" value="True" /><property name="random_seed" value="1" /><property name="file" value="verification/test_protocol_emulator.py" /><property name="line" value="489" /><property name="sim_time_unit" value="ns" /><property name="sim_time_start" value="14000.009" /><property name="sim_time_stop" value="16431.009" /><property name="sim_time_duration" value="2430.999999999998" /><property name="sim_time_ratio" value="109844.26470687105" /><property name="attachment" value="flow/post-layout-sdf/nom_slow_1p08V_125C/.klt/functional-verification/test_icarus.log" /></properties><system-out>[[ATTACHMENT|flow/post-layout-sdf/nom_slow_1p08V_125C/.klt/functional-verification/test_icarus.log]]
+</system-out><system-err>Test failed with COCOTB_RANDOM_SEED=1
+</system-err></testcase><testcase classname="test_protocol_emulator" name="test_bnz_taken_countdown_loop" time="0.013"><failure message="uo_out after edge 4: got 0x00, want 0x03&#10;assert 0 == 3" type="AssertionError">Traceback (most recent call last):
+  File "verification/test_protocol_emulator.py", line 556, in test_bnz_taken_countdown_loop
+    await watch_pin(dut, "uo_out", {
+  File "verification/test_protocol_emulator.py", line 180, in watch_pin
+    assert got == want, (
+AssertionError: uo_out after edge 4: got 0x00, want 0x03
+assert 0 == 3
+</failure><properties><property name="cocotb" value="True" /><property name="random_seed" value="1" /><property name="file" value="verification/test_protocol_emulator.py" /><property name="line" value="532" /><property name="sim_time_unit" value="ns" /><property name="sim_time_start" value="16431.01" /><property name="sim_time_stop" value="17872.01" /><property name="sim_time_duration" value="1441.0" /><property name="sim_time_ratio" value="111128.95996732844" /><property name="attachment" value="flow/post-layout-sdf/nom_slow_1p08V_125C/.klt/functional-verification/test_icarus.log" /></properties><system-out>[[ATTACHMENT|flow/post-layout-sdf/nom_slow_1p08V_125C/.klt/functional-verification/test_icarus.log]]
+</system-out><system-err>Test failed with COCOTB_RANDOM_SEED=1
+</system-err></testcase><testcase classname="test_protocol_emulator" name="test_nop_costs_one_cycle" time="0.012"><failure message="uo_out after edge 3: got 0x00, want 0xe1&#10;assert 0 == 225" type="AssertionError">Traceback (most recent call last):
+  File "verification/test_protocol_emulator.py", line 582, in test_nop_costs_one_cycle
+    await watch_pin(dut, "uo_out", {3: 0xE1, 7: 0xE1, 8: 0xE2, 10: 0xE2})
+  File "verification/test_protocol_emulator.py", line 180, in watch_pin
+    assert got == want, (
+AssertionError: uo_out after edge 3: got 0x00, want 0xe1
+assert 0 == 225
+</failure><properties><property name="cocotb" value="True" /><property name="random_seed" value="1" /><property name="file" value="verification/test_protocol_emulator.py" /><property name="line" value="566" /><property name="sim_time_unit" value="ns" /><property name="sim_time_start" value="17872.011" /><property name="sim_time_stop" value="19303.011" /><property name="sim_time_duration" value="1431.0" /><property name="sim_time_ratio" value="115474.6151959601" /><property name="attachment" value="flow/post-layout-sdf/nom_slow_1p08V_125C/.klt/functional-verification/test_icarus.log" /></properties><system-out>[[ATTACHMENT|flow/post-layout-sdf/nom_slow_1p08V_125C/.klt/functional-verification/test_icarus.log]]
+</system-out><system-err>Test failed with COCOTB_RANDOM_SEED=1
+</system-err></testcase><testcase classname="test_protocol_emulator" name="test_latency_independent_of_data" time="0.015"><failure message="uo_out after edge 8: got 0x00, want 0xd1&#10;assert 0 == 209" type="AssertionError">Traceback (most recent call last):
+  File "verification/test_protocol_emulator.py", line 614, in test_latency_independent_of_data
+    await watch_pin(dut, "uo_out", {7: 0x00, 8: 0xD1, 10: 0xD1})
+  File "verification/test_protocol_emulator.py", line 180, in watch_pin
+    assert got == want, (
+AssertionError: uo_out after edge 8: got 0x00, want 0xd1
+assert 0 == 209
+</failure><properties><property name="cocotb" value="True" /><property name="random_seed" value="1" /><property name="file" value="verification/test_protocol_emulator.py" /><property name="line" value="585" /><property name="sim_time_unit" value="ns" /><property name="sim_time_start" value="19303.012" /><property name="sim_time_stop" value="20784.012" /><property name="sim_time_duration" value="1481.0" /><property name="sim_time_ratio" value="99889.554970071" /><property name="attachment" value="flow/post-layout-sdf/nom_slow_1p08V_125C/.klt/functional-verification/test_icarus.log" /></properties><system-out>[[ATTACHMENT|flow/post-layout-sdf/nom_slow_1p08V_125C/.klt/functional-verification/test_icarus.log]]
+</system-out><system-err>Test failed with COCOTB_RANDOM_SEED=1
+</system-err></testcase></testsuite></testsuites>
