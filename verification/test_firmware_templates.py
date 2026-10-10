@@ -79,8 +79,23 @@ def test_bounds_and_clean_assembly():
                     lo, hi = ft.I2C_RD_DURATIONS[st["duration_class"]]
                     assert lo <= st["extra_cycles"] <= hi
                     assert st["fall"] == ft.I2C_RD_SITES[st["site"]]
+            elif p == "uart_rx":
+                # the committed receivers' three sanctioned handshake branches
+                assert len(prog.warnings) == 3, (c.name, prog.warnings)
             else:
                 assert prog.warnings == [], (c.name, prog.warnings)
+            if p == "uart_rx":
+                assert c.params["rx_pin"] == "ui_in[1]"
+                assert c.params["program"] in ft.UART_RX_PROFILES
+                assert c.params["period"] == ft.UART_RX_PROFILES[c.params["program"]]
+                assert c.params["variation"] in ft.UART_RX_VARIATIONS
+                assert 1 <= len(c.params["frames"]) <= ft.UART_RX_FRAMES_MAX
+                datas = [f["data"] for f in c.params["frames"]]
+                assert datas[0] != 0x00 and all(0 <= d <= 255 for d in datas)
+                assert all(a != b for a, b in zip(datas, datas[1:])), c.name
+                assert all(f["gap_bits"] in ft.UART_RX_GAPS for f in c.params["frames"])
+                assert abs(c.params["scale"] - 1.0) <= 0.02 + 1e-9
+                assert 0.0 <= c.params["jitter_frac"] <= 0.10
             if p == "uart":
                 assert c.params["period"] in ft.UART_PERIODS
                 assert 1 <= len(c.params["payloads"]) <= ft.UART_FRAMES_MAX
@@ -155,6 +170,43 @@ def test_i2c_rd_non_polling_control_assembles_without_warnings():
     c = ft.gen_i2c_rd(SEED, 0, poll=False)
     assert c.assemble().warnings == []
     assert c.source != ft.gen_i2c_rd(SEED, 0).source
+
+
+def test_uart_rx_uses_committed_programs_byte_for_byte():
+    """Image selection: every case assembles to exactly the committed
+    firmware/build image of its profile, and the period matches the program's
+    own BIT-PERIOD-CYCLES header."""
+    import asm
+
+    for stem, period in ft.UART_RX_PROFILES.items():
+        text = (REPO / "firmware" / "asm" / f"{stem}.asm").read_text()
+        assert int(re.search(r"^; BIT-PERIOD-CYCLES (\d+)$", text, re.M).group(1)) == period
+    seen = set()
+    for c in ft.generate(SEED, "uart_rx", 9):
+        committed = asm.assemble_file(REPO / "firmware" / "asm" / f"{c.params['program']}.asm")
+        assert c.assemble().words == committed.words, c.name
+        seen.add(c.params["period"])
+    assert seen == {50, 434, 5208}
+
+
+def test_uart_rx_default_sweep_covers_profiles_and_listed_unhit_bins():
+    cov = ft.coverage(ft.generate(SEED, "uart_rx", ft.DEFAULT_CASES))
+    assert all(n > 0 for n in cov["uart_rx.profile_cycles"].values())
+    assert all(n > 0 for n in cov["uart_rx.profile_x_variation"].values())
+    assert all(n > 0 for n in cov["uart_rx.byte_class"].values())
+    assert set(cov["uart_rx.frame_spacing"]) == {"single", "gap1.0b", "gap2.5b"}
+
+
+def test_uart_rx_mutants_and_replay():
+    base = ft.gen_uart_rx(SEED, 0)
+    mut = ft.gen_uart_rx(SEED, 0, mistime_wait_delta=2)
+    assert mut.source != base.source and mut.params["frames"] == base.params["frames"]
+    assert mut.assemble().words != base.assemble().words
+    ctl = ft.gen_uart_rx(SEED, 0, force_frames=[0x80, 0x01], force_scale=1.10)
+    assert ctl.params["scale"] == 1.10 and len(ctl.params["frames"]) == 2
+    # replay from (seed, protocol, index) alone is byte-identical
+    assert ft.gen_uart_rx(SEED, 7).source == ft.generate(SEED, "uart_rx", 20)[7].source
+    assert ft.gen_uart_rx(SEED, 7).params == ft.generate(SEED, "uart_rx", 40)[7].params
 
 
 def test_unhit_bins_are_listed_not_omitted():

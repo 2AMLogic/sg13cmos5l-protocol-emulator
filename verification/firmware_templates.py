@@ -4,7 +4,8 @@
 
 Pure Python, stdlib only, no simulator: this module turns one recorded
 seed into a list of **assembler source programs** (UART TX, SPI modes 0-3,
-I2C write at both speed grades, plus the issue-#104 I2C
+I2C write at both speed grades, UART RX stimulus for the committed
+receive programs (issue #192), plus the issue-#104 I2C
 write/repeated-START/read family with peripheral clock stretching) whose payload/mode/address are immediates
 rendered into protocol-shaped templates. `test_random_regression.py` then
 assembles them with the DR 0003 assembler, loads them through the real
@@ -50,10 +51,13 @@ import gen_i2c_sr  # noqa: E402  (the committed read/Sr program generator)
 
 #: Default programs per protocol per run (shared-host limit: <= 20).
 DEFAULT_CASES = 20
-PROTOCOLS = ("uart", "spi", "i2c", "i2c_rd")
+PROTOCOLS = ("uart", "spi", "i2c", "i2c_rd", "uart_rx")
 
 # --- pin plans, as used by the committed programs -------------------------
-SPI_CS, SPI_SCLK, SPI_MOSI = 0, 1, 2  # uo_out bits
+#: SPI on the standard Tiny Tapeout SPI Pmod (DR 0010's target plan, issue
+#: #155): uio bits, made push-pull with `WCTL UIO_DIR`; MISO is uio[2].
+SPI_CS, SPI_SCLK, SPI_MOSI = 0, 3, 1
+SPI_DIR = (1 << SPI_CS) | (1 << SPI_SCLK) | (1 << SPI_MOSI)
 
 # --- UART --------------------------------------------------------------
 #: Bit periods in core cycles. 50 is the committed program's; the others
@@ -62,6 +66,26 @@ SPI_CS, SPI_SCLK, SPI_MOSI = 0, 1, 2  # uo_out bits
 #: first-bit WAIT immediate (period - 4) must be <= 255.
 UART_PERIODS = (50, 100, 217, 250)
 UART_FRAMES_MAX = 2
+
+# --- UART RX (committed receive programs, issue #192) ---------------------
+#: Committed receive programs: stem -> core cycles per bit (cross-checked
+#: against each program's `; BIT-PERIOD-CYCLES n` header by the unit tests).
+UART_RX_PROFILES = {"uart_rx": 50, "uart_rx_115200": 434, "uart_rx_9600": 5208}
+#: Legal receive stimulus variations: name -> (per-bit rate scale, jitter as a
+#: fraction of a bit). The +-2 % per-bit rate error is the receiver tolerance
+#: the issue-#91 bench asserts; both are inside what that bench grades.
+UART_RX_VARIATIONS = {
+    "nominal": (1.0, 0.0),
+    "jitter10%": (1.0, 0.10),
+    "+2%": (1.02, 0.0),
+    "-2%": (0.98, 0.0),
+    "+2%+jit10%": (1.02, 0.10),
+    "-2%+jit10%": (0.98, 0.10),
+}
+#: Idle gaps (in bit times) after a frame: the directed bench's 1.0 and 2.5.
+UART_RX_GAPS = (1.0, 2.5)
+UART_RX_SPACINGS = ("single", "gap1.0b", "gap2.5b")
+UART_RX_FRAMES_MAX = 2
 
 # --- SPI -----------------------------------------------------------------
 #: Half-period in core cycles (period = 2x). 2 is the f_clk/4 ceiling
@@ -154,14 +178,24 @@ def render_uart(name, seed, index, params) -> str:
     w_loop = period - 7 + delta  # loop body = 7 + w cycles
     w_first = period - 4  # OUT + WAIT(w+1) + MOV + AND
     w_stop = 1  # OUT SHF SUB WAIT(w+1) BNZ WAIT(2) fixes the stop bit pitch
-    assert 0 <= w_loop <= 255 and 0 <= w_first <= 255
+    # Back-to-back stream (issue #97): the next START follows the STOP by
+    # exactly one bit, OUT + WAIT(w+1) + 3x LDI = period, so the frame
+    # pitch is 10 bits and the model's pitch check sees every bit period.
+    w_b2b = period - 5
+    back_to_back = params.get("back_to_back", False)
+    assert 0 <= w_loop <= 255 and 0 <= w_first <= 255 and 0 <= w_b2b <= 255
     out = [_header(name, seed, "uart", index, params)]
     out.append(
         "        LDI   R1, 1\n"
         "        OUT   UO_OUT, R1       ; TX idles HIGH\n"
         "        WAIT  255              ; idle before the first start bit\n"
     )
+    n_frames = len(params["payloads"])
     for n, payload in enumerate(params["payloads"], start=1):
+        if back_to_back and n < n_frames:
+            after_stop = f"        WAIT  {w_b2b}              ; next START one bit on\n"
+        else:
+            after_stop = "        WAIT  255\n"
         out.append(
             f"; ---- frame {n}: 0x{payload:02X}\n"
             f"        LDI   R0, 0x{payload:02X}\n"
@@ -181,13 +215,14 @@ def render_uart(name, seed, index, params) -> str:
             ".endcyclesec\n"
             f"        WAIT  {w_stop}\n"
             "        OUT   UO_OUT, R1       ; STOP\n"
-            "        WAIT  255\n"
+            + after_stop
         )
     out.append("        HALT\n")
     return "".join(out)
 
 
-def gen_uart(seed, index, mistime_delta=0, force_payloads=None) -> Case:
+def gen_uart(seed, index, mistime_delta=0, force_payloads=None,
+             back_to_back=None) -> Case:
     rng = _rng(seed, "uart", index)
     period = rng.choice(UART_PERIODS)
     n_frames = rng.randrange(1, UART_FRAMES_MAX + 1)
@@ -196,13 +231,26 @@ def gen_uart(seed, index, mistime_delta=0, force_payloads=None) -> Case:
     payloads = [_draw_byte(rng, c) for c in classes]
     if force_payloads is not None:  # negative control only
         payloads = list(force_payloads)
+    if back_to_back is None:
+        # Issue #97: odd-indexed multi-frame cases send their frames back
+        # to back so the model's frame-pitch check grades them. Decided
+        # by index, not drawn, so the seeded draws above are unchanged.
+        back_to_back = index % 2 == 1
+    back_to_back = bool(back_to_back) and len(payloads) > 1
     params = {"period": period, "payloads": payloads}
     if mistime_delta:
         params["mistime_delta"] = mistime_delta
+    if back_to_back:
+        params["back_to_back"] = True
     name = f"uart_{index:02d}"
     src = render_uart(name, seed, index, params)
+    if len(payloads) == 1:
+        spacing = "single"
+    else:
+        spacing = "back_to_back" if back_to_back else "idle"
     bins = tuple(("uart.byte_class", payload_class(p)) for p in payloads) + (
         ("uart.bit_period_cycles", str(period)),
+        ("uart.frame_spacing", spacing),
     )
     return Case("uart", index, seed, params, bins, src)
 
@@ -214,6 +262,87 @@ def uart_run_cycles(case: Case, program) -> int:
     return program.total_cycles + 7 * case.params["period"] * len(
         case.params["payloads"]
     )
+
+
+# =======================================================================
+# UART RX (issue #192): the committed receive programs
+# (firmware/asm/uart_rx{,_115200,_9600}.asm) driven with seeded legal receive
+# stimulus. The *program* is the committed one, byte for byte (no firmware is
+# re-derived here); the seeded part is the stimulus the bench plays on
+# ui_in[1]: payload, in-bound rate error / jitter, and spacing.
+# =======================================================================
+
+
+def render_uart_rx(name, seed, index, params) -> str:
+    text = (REPO_ROOT / "firmware" / "asm" / f"{params['program']}.asm").read_text(
+        encoding="utf-8"
+    )
+    delta = params.get("mistime_wait_delta", 0)
+    if delta:  # negative control only: stretch the first inter-sample WAIT
+        text, n = re.subn(
+            r"(?m)^(\s*WAIT\s+)36\b", lambda m: f"{m.group(1)}{36 + delta}",
+            text, count=1,
+        )
+        assert n == 1, f"{params['program']}.asm lost its 'WAIT 36' inter-sample slot"
+    return _header(name, seed, "uart_rx", index, params) + (
+        "; Receiver below is firmware/asm/%s.asm byte for byte%s; the seeded\n"
+        "; part of this case is the stimulus on ui_in[1] (params above).\n"
+        % (params["program"], " except one WAIT literal (negative control)" if delta else "")
+    ) + text
+
+
+def gen_uart_rx(seed, index, mistime_wait_delta=0, force_frames=None,
+                force_scale=None) -> Case:
+    rng = _rng(seed, "uart_rx", index)
+    program = tuple(UART_RX_PROFILES)[index % 3]
+    period = UART_RX_PROFILES[program]
+    variation = tuple(UART_RX_VARIATIONS)[(index // 3) % len(UART_RX_VARIATIONS)]
+    scale, jitter = UART_RX_VARIATIONS[variation]
+    cls = _PAYLOAD_CLASSES[index % 4]
+    spacing = UART_RX_SPACINGS[(index // 2) % 3]
+    stim_seed = rng.randrange(1 << 31)
+    tested = _draw_byte(rng, cls)
+    lead = _draw_byte(rng, "random")
+    follow = _draw_byte(rng, "random")
+    if spacing == "single" and tested == 0x00:
+        # A lone 0x00 would match the idle result register: it could not be
+        # told from "nothing received". Give it a lead frame instead.
+        spacing = "gap1.0b"
+    gap = 2.5 if spacing == "gap2.5b" else 1.0
+    if spacing == "single":
+        data = [tested]
+    else:
+        # tested byte first unless it is 0x00 (needs a non-zero predecessor)
+        data = [lead, tested] if tested == 0x00 else [tested, follow]
+        if data[0] == data[1]:
+            data[1] ^= 0xFF
+    gaps = [gap] * len(data)
+    if force_frames is not None:  # negative control only
+        data = list(force_frames)
+        gaps = [12.0] * len(data)
+    if force_scale is not None:
+        scale, jitter, variation = force_scale, 0.0, f"x{force_scale:g}"
+    params = {
+        "program": program,
+        "period": period,
+        "variation": variation,
+        "scale": scale,
+        "jitter_frac": jitter,
+        "frames": [{"data": d, "gap_bits": g} for d, g in zip(data, gaps)],
+        "stim_seed": stim_seed,
+        "rx_pin": "ui_in[1]",
+    }
+    if mistime_wait_delta:
+        params["mistime_wait_delta"] = mistime_wait_delta
+    name = f"uart_rx_{index:02d}"
+    src = render_uart_rx(name, seed, index, params)
+    bins = (
+        ("uart_rx.profile_cycles", str(period)),
+        ("uart_rx.profile_x_variation", f"{period}/{variation}"),
+        ("uart_rx.byte_class", payload_class(tested)),
+        ("uart_rx.frame_spacing", "single" if len(data) == 1 else f"gap{gaps[0]:.1f}b"),
+    )
+    return Case("uart_rx", index, seed, params, bins, src)
 
 
 # =======================================================================
@@ -234,8 +363,10 @@ def render_spi(name, seed, index, params) -> str:
     out = [_header(name, seed, "spi", index, params)]
     out.append(
         f"        LDI   R2, 0x{img(idle) | cs_hi:02X}      ; CS released, SCLK idle\n"
-        "        OUT   UO_OUT, R2\n"
-        "        WAIT  15\n"
+        "        OUT   UIO_OUT, R2      ; idle image before the drivers are on\n"
+        f"        LDI   R3, 0x{SPI_DIR:02X}      ; CS|MOSI|SCLK\n"
+        "        WCTL  UIO_DIR, R3      ; DR 0012: push-pull\n"
+        "        WAIT  13\n"
     )
     pad = f"        WAIT  {g - 3}\n" if g >= 3 else ""
     for b, mosi_byte in enumerate(params["mosi"]):
@@ -253,7 +384,7 @@ def render_spi(name, seed, index, params) -> str:
         out.append(
             f"; ---- burst {b}: MOSI 0x{mosi_byte:02X}\n"
             f"        LDI   R2, 0x{img(idle):02X}      ; CS asserted\n"
-            "        OUT   UO_OUT, R2\n"
+            "        OUT   UIO_OUT, R2\n"
             "        WAIT  3\n"
             f"        LDI   R1, 0x{r1:02X}\n"
             f"        LDI   R2, 0x{data_img[0]:02X}\n"
@@ -262,10 +393,10 @@ def render_spi(name, seed, index, params) -> str:
         for k in range(8):
             nxt = data_img[k + 1] if k < 7 else 0
             out.append(
-                f"        OUT   UO_OUT, {lead}\n"
+                f"        OUT   UIO_OUT, {lead}\n"
                 "        IN    R3, UIO_IN\n"
                 f"{pad}"
-                f"        OUT   UO_OUT, {trail}\n"
+                f"        OUT   UIO_OUT, {trail}\n"
                 f"        LDI   R2, 0x{nxt:02X}\n"
                 f"{pad}"
             )
@@ -273,7 +404,7 @@ def render_spi(name, seed, index, params) -> str:
             ".endcyclesec\n"
             "        WAIT  3\n"
             f"        LDI   R2, 0x{img(idle) | cs_hi:02X}      ; CS released\n"
-            "        OUT   UO_OUT, R2\n"
+            "        OUT   UIO_OUT, R2\n"
             "        WAIT  31\n"
         )
     out.append("        HALT\n")
@@ -535,6 +666,7 @@ def gen_i2c_rd(seed, index, poll=True) -> Case:
 
 _GENERATORS = {
     "uart": gen_uart, "spi": gen_spi, "i2c": gen_i2c, "i2c_rd": gen_i2c_rd,
+    "uart_rx": gen_uart_rx,
 }
 
 
@@ -548,6 +680,13 @@ def planned_bin_universe() -> dict:
     u = {
         "uart.byte_class": list(_PAYLOAD_CLASSES),
         "uart.bit_period_cycles": [str(p) for p in UART_PERIODS],
+        "uart.frame_spacing": ["single", "idle", "back_to_back"],
+        "uart_rx.profile_cycles": [str(p) for p in UART_RX_PROFILES.values()],
+        "uart_rx.profile_x_variation": [
+            f"{p}/{v}" for p in UART_RX_PROFILES.values() for v in UART_RX_VARIATIONS
+        ],
+        "uart_rx.byte_class": list(_PAYLOAD_CLASSES),
+        "uart_rx.frame_spacing": ["single", "gap1.0b", "gap2.5b"],
         "spi.mode_x_bursts": [
             f"mode{m}/bursts{n}"
             for m in range(4)

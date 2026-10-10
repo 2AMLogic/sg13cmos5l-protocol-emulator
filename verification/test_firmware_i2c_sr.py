@@ -12,10 +12,18 @@ SCL rise, i.e. clock-stretch tolerant) -- each a complete
     + ACK, one byte read from the peripheral, controller NACK, STOP
 
 loaded over the real serial load-phase pins onto the real top and executed
-by the ISA core. As in the sibling bench, the open-drain bus is the
-wired-AND the bench composes from `uio_out` (controller intent) and
-`uio_in` (peripheral intent) -- `uio_oe` is fixed to 0 on this RTL, and the
-silicon-true half is DR 0008 / #75 -- and the decode and every timing
+by the ISA core. As in the sibling bench, every run goes through the
+silicon-true pad model (`verification/uio_pads.py`; issue #136, DR 0012):
+the SCL and SDA lines are resolved per pin from the design's `uio_oe` /
+`uio_out`, a pull-up each, and the peripheral as an external open-drain
+driver, and read back on `uio_in`. The lines graded are the ones sampled
+on `uio_in`; the peripheral watches the SCL line, not the controller's
+intent; and every run ends with the check that the design drove exactly
+SCL and SDA, only ever low, with no contention -- including the runs in
+which the peripheral holds SCL low while the controller has released it,
+which is the case a push-pull pad would turn into a fight. (Until #136
+the bench composed `uio_out AND uio_in` itself and never read `uio_oe`;
+the records minted that way are superseded.) The decode and every timing
 verdict come from the independent model
 `verification/reference_models/i2c.py` (unchanged). The only bench-side
 inputs to a comparison are the expected bytes.
@@ -29,7 +37,8 @@ What this bench adds over the sibling
   negative control can be a single cycle short.
 * **Controller read.** The peripheral drives a byte (0xB4, chosen so a
   bit-reversed or off-by-one capture cannot pass) on SDA while the core
-  releases it; the core samples it through its real `IN` path, shifts it in
+  releases it (on the pads: `uio_oe[7]` drops, and the line is the
+  peripheral's); the core samples it through its real `IN` path, shifts it in
   MSB first, and publishes it on `uo_out`, which the bench compares. The
   controller NACKs by releasing SDA on the 9th clock; the model decodes the
   final ACK slot as a NACK.
@@ -56,6 +65,13 @@ Negative controls (a suite that cannot fail cannot cite its passes)
    proof that the poll is load-bearing and that the stretch driver bites.
 4. The model's own nominal repeated-START transfer passes in both grades
    (calibration that the minimums are not misread).
+5. *`UIO_OD` left at reset* (issue #136). Each of the four images with its
+   `WCTL UIO_OD` replaced by a reserved 1-cycle no-op: no pad is enabled,
+   the lines never move, and the model finds no transfer. The poll
+   programs are the sharper half of this control -- they read SCL back
+   after every rise, and with the pads modelled what they read is the
+   line the pull-up holds high, so they run to completion without ever
+   having clocked the bus.
 
 Everything is deterministic: committed programs, fixed scripts, no
 randomization.
@@ -73,16 +89,17 @@ from reference_models.waveform import Signal
 
 from test_firmware_i2c import (  # noqa: E402  (helpers; no test objects)
     CAPTURE_MARGIN_CYCLES,
+    CAPTURE_SPECS,
     CLK_PERIOD_NS,
     NEGATIVE_CONTROL_SCALE,
     REPO_ROOT,
     SCL_BIT,
-    SCL_PIN,
     SDA_BIT,
-    SDA_PIN,
+    i2c_pads,
     scale_signal,
-    wired_and,
+    without_uio_od,
 )
+from uio_pads import assert_i2c_open_drain  # noqa: E402
 from test_firmware_uart import capture_pin_bits  # noqa: E402
 from test_protocol_emulator import load_program  # noqa: E402
 
@@ -176,27 +193,32 @@ def mutate_sr_wait(text, remove_cycles):
 # =======================================================================
 
 
-async def drive_peripheral_sr(dut, ack_falls, read_bits, stretches):
-    """Reactive peripheral on `uio_in` (SCL bit 0, SDA bit 7; 1 = released).
+async def drive_peripheral_sr(dut, pads, ack_falls, read_bits, stretches):
+    """Reactive open-drain peripheral on the pad model's external side
+    (SCL = uio[2], SDA = uio[3]; it pulls a line low or lets go).
 
-    Counts the controller's SCL falls (`uio_out` bit 0) -- fall N starts the
-    low phase of the Nth SCL low period: 1-8 address bits, 9 ACK, 10-17
-    payload, 18 ACK, 19 the low before the repeated START, 20-27 address-R
-    bits, 28 ACK, 29-36 read data, 37 the NACK clock, 38 the low before the
-    STOP. On each fall the peripheral sets its SDA drive: low for an ACK
-    slot, the data bit for a read-data fall, released otherwise; and, for a
-    fall in `stretches`, pulls SCL low and holds it that many cycles. Writes
-    land 1 ns after the read-only sample (never racing the bench captures).
+    Counts the falls of the SCL **line** -- fall N starts the low phase of
+    the Nth SCL low period: 1-8 address bits, 9 ACK, 10-17 payload, 18 ACK,
+    19 the low before the repeated START, 20-27 address-R bits, 28 ACK,
+    29-36 read data, 37 the NACK clock, 38 the low before the STOP. On each
+    fall the peripheral sets its SDA drive: low for an ACK slot, the data
+    bit for a read-data fall, released otherwise; and, for a fall in
+    `stretches`, pulls SCL low and holds it that many cycles. Its drive
+    changes 1 ns after the read-only sample (never racing the bench
+    captures).
+
+    While the peripheral holds SCL the line stays low whatever the
+    controller does, so a controller that does not wait for the release
+    (the EXACT programs under a stretch) loses clocks here exactly as it
+    would on a board: this peripheral cannot see a "fall" of a line that
+    is already low.
     """
-    await RisingEdge(dut.clk)
-    await Timer(1, unit="ns")
-    dut.uio_in.value = 0x81
-    previous, falls = 0, 0
+    previous, falls = pads.level(SCL_BIT), 0
     scl_drive, sda_drive, hold = 1, 1, 0
     while True:
         await RisingEdge(dut.clk)
         await ReadOnly()
-        scl = (int(dut.uio_out.value) >> SCL_BIT) & 1
+        scl = pads.level(SCL_BIT)
         await Timer(1, unit="ns")
         if hold:
             hold -= 1
@@ -210,33 +232,48 @@ async def drive_peripheral_sr(dut, ack_falls, read_bits, stretches):
                 sda_drive = read_bits.get(falls, 1)
             if falls in stretches:
                 scl_drive, hold = 0, stretches[falls]
-        dut.uio_in.value = (sda_drive << 7) | scl_drive
+        pads.set_open_drain(SDA_BIT, sda_drive)
+        pads.set_open_drain(SCL_BIT, scl_drive)
         previous = scl
 
 
-async def run_words(dut, words, cycles, stretches=None):
+async def run_on_pads(dut, tag, words, cycles, ack_falls, read_bits,
+                      stretches, expect_open_drain=True):
+    """Load `words`, run them on the I2C board (`test_firmware_i2c.i2c_pads`) with
+    the reactive peripheral, and capture the SCL/SDA lines plus the
+    controller's intent every clock edge. Returns `(captures, uo_out,
+    pads)`. No pad may be enabled from reset release through the load; with
+    `expect_open_drain` the run must have driven exactly SCL and SDA, only
+    ever low, without contention."""
     assert len(words) <= 256
+    pads = i2c_pads(dut).start()
     await load_program(dut, words)
+    assert pads.resets == 1 and pads.oe_seen == 0, (
+        f"{tag}: uio pads 0x{pads.oe_seen:02x} enabled between reset release and the end of the load"
+    )
     driver = cocotb.start_soon(
-        drive_peripheral_sr(dut, ACK_FALLS, READ_FALLS, stretches or {})
+        drive_peripheral_sr(dut, pads, ack_falls, read_bits, stretches)
     )
-    caps = await capture_pin_bits(
-        dut,
-        {
-            "ctl_scl": (SCL_PIN, SCL_BIT),
-            "ctl_sda": (SDA_PIN, SDA_BIT),
-            "per_scl": ("uio_in", SCL_BIT),
-            "per_sda": ("uio_in", SDA_BIT),
-        },
-        cycles,
-    )
+    caps = await capture_pin_bits(dut, CAPTURE_SPECS, cycles)
+    uo = int(dut.uo_out.value)
     driver.kill()
-    return caps, int(dut.uo_out.value)
+    pads.stop()
+    if expect_open_drain:
+        assert_i2c_open_drain(pads, tag)
+    return caps, uo, pads
+
+
+async def run_words(dut, words, cycles, stretches=None, tag="i2c_sr"):
+    caps, uo, _pads = await run_on_pads(
+        dut, tag, words, cycles, ACK_FALLS, READ_FALLS, stretches or {}
+    )
+    return caps, uo
 
 
 def grade(caps, v):
-    scl = wired_and(caps["ctl_scl"], caps["per_scl"])
-    sda = wired_and(caps["ctl_sda"], caps["per_sda"])
+    """The two pad-resolved lines, judged by the independent model."""
+    scl = caps["scl"].signal
+    sda = caps["sda"].signal
     return scl, sda, check_transfer(scl, sda, fast_mode=v.fast_mode)
 
 
@@ -317,7 +354,8 @@ async def test_sr_exact_programs_pass_model_with_negative_controls(dut):
     core's received byte is on uo_out; and three controls fail."""
     cocotb.start_soon(Clock(dut.clk, CLK_PERIOD_NS, unit="ns").start())
     for v in EXACT:
-        caps, uo = await run_words(dut, committed_words(v), v.run_cycles())
+        caps, uo = await run_words(dut, committed_words(v), v.run_cycles(),
+                                   tag=v.name)
         scl, sda, report = grade(caps, v)
         dut._log.info(f"{v.name}: {report} measurements={report.measurements}")
         assert report.ok, f"{v.name}: {report}"
@@ -455,6 +493,54 @@ async def test_sr_poll_programs_stretch(dut):
             "NEGATIVE CONTROL FAILED TO FAIL: the non-polling program "
             f"survived the stretches: {detail}"
         )
+
+
+@cocotb.test()
+async def test_sr_uio_od_left_at_reset_cannot_drive_the_bus(dut):
+    """Negative control for the pad path (issue #136), all four images:
+    with `WCTL UIO_OD` replaced by a reserved no-op of the same length no
+    pad is ever enabled, SCL and SDA never leave the pulled-up level, the
+    peripheral is never clocked, the model finds no transfer, and the
+    byte the "read" leaves on `uo_out` is 0xFF -- eight samples of a
+    released line, not the peripheral's 0xB4."""
+    cocotb.start_soon(Clock(dut.clk, CLK_PERIOD_NS, unit="ns").start())
+    for v in VARIANTS:
+        tag = f"{v.name} with UIO_OD at reset"
+        caps, uo, pads = await run_on_pads(
+            dut, tag, without_uio_od(committed_words(v)), v.run_cycles(),
+            ACK_FALLS, READ_FALLS, {}, expect_open_drain=False,
+        )
+        pads.assert_no_contention()
+        assert pads.oe_unknown == 0
+        assert pads.oe_seen == 0, (
+            f"NEGATIVE CONTROL FAILED TO FAIL ({tag}): pads "
+            f"0x{pads.oe_seen:02x} enabled without a UIO_OD write"
+        )
+        for line in ("scl", "sda"):
+            sig = caps[line].signal
+            assert sig.initial == 1 and not sig.transitions, (
+                f"NEGATIVE CONTROL FAILED TO FAIL ({tag}): the {line} line moved"
+            )
+        assert pads.ext[SDA_BIT] is None and pads.ext[SCL_BIT] is None, (
+            f"{tag}: the peripheral drove a line though SCL never fell"
+        )
+        assert caps["ctl_scl"].signal.transitions, (
+            f"{tag}: the mutation must leave the controller's OUTs intact"
+        )
+        try:
+            _scl, _sda, report = grade(caps, v)
+            found, detail = True, repr(report)
+        except ValueError as exc:
+            found, detail = False, f"model rejected the lines: {exc}"
+        assert not found, (
+            f"NEGATIVE CONTROL FAILED TO FAIL ({tag}): the model found a "
+            f"transfer on lines that never moved: {detail}"
+        )
+        assert uo != READ_BYTE and uo == 0xFF, (
+            f"{tag}: uo_out 0x{uo:02x}; a controller that cannot clock the "
+            "bus must read the released line (0xFF), not the peripheral"
+        )
+        dut._log.info(f"negative control ({tag}): {detail}; uo_out=0x{uo:02x}")
 
 
 @cocotb.test()

@@ -65,10 +65,17 @@ recorded rather than silently resolved.
   `GDS_logs` artifacts (or takes `--from <dir>`), freezes the final
   **post-route gate-level netlist** and the **per-corner SDFs** LibreLane's
   post-route STA stage emits, and re-runs this repo's own committed cocotb
-  bench (`verification/test_protocol_emulator.py`, unmodified, via
+  bench (`verification/test_protocol_emulator.py`, via
   `testbench.search_path`) against that netlist with `options.sdf` set —
   one `klt functional-verification` run per emitted corner, each required
-  to report `environment.sdf.annotated: true` and `status: "pass"`. The
+  to report `environment.sdf.annotated: true` and `status: "pass"`. Since
+  issue #106 the bench file is the same but the testbench module is
+  `verification/sdf_alignment.py`, which runs the bench's tests at the
+  clock period, input delay and output delay of the gds run's own final
+  SDC (read by the runner, frozen as `alignment.json`): stimulus at +input
+  delay after each clock pin edge, pin reads at period minus output delay.
+  The white-box `test_alu_flags_whitebox` is reported skipped there (no
+  `u_core` scope in a flattened netlist). The
   SDF normalization it applies for Icarus 13.0 (header `min::max` triplets
   filled, klayout-tools#1880; all-zero INTERCONNECTs onto assign-aliased
   ports dropped, klayout-tools#2285) is mechanically audited per corner in
@@ -78,6 +85,25 @@ recorded rather than silently resolved.
   `klt` at the `layout/toolchain.json` pin (`KLT_BIN` honored), Icarus
   >= 13.0, a resolvable `ihp-sg13cmos5l` PDK, and `gh` for `--run-id`
   mode.
+- `run-reset-power-up-gate-level.sh` — target-spec row 14 /
+  `spec/verification-plan.md` section 8 (issue #131): reset, power-up and
+  reselect on the **LibreLane gate-level netlist** (default: the frozen
+  copy under `verification/records/post-layout-sdf-regression/`),
+  zero-delay, Icarus + cocotb through `test/Makefile` `GATES=yes`, the same
+  plumbing `run-firmware-gate-level.sh` uses. It runs the reset-coverage
+  listing (`verification/reset_coverage.py` against
+  `verification/reset_coverage_justifications.json`) and the bench
+  `verification/test_reset_power_up.py` (every flop forced to X or to a
+  seeded random value, 8 recorded seeds, the SRAM array random or X, then
+  `rst_n`), then three negative controls that must fail: a flop whose
+  reset is tied off and which drives `uio_oe[0]` (bench and coverage
+  check), a stale justification entry (coverage check), and the boot ROM
+  bypassed at reset (bench). The netlist file is never edited; the
+  mutants are copies, diffed into the scratch dir. Produces no synthesis
+  or timing number of either flow. Needs `PDK_ROOT`, `iverilog` and
+  `cocotb-config` (a throwaway venv is enough). Scratch:
+  `flow/reset-power-up/` (gitignored). Evidence:
+  `verification/records/reset-power-up/`.
 - `run-sram-macro-feasibility.py` — the issue #39 program-memory feasibility
   probe: does an SRAM macro implementing DR 0001's ratified 256×16 program
   memory exist for this PDK, and does it fit a legal Tiny Tapeout CMOS5L tile

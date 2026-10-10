@@ -147,15 +147,18 @@ def _(fx):
 
 @case("synthesis-time uio_oe = 0: consistency passes, implementation incomplete")
 def _(fx):
+    # Issue #155: SPI and I2C sit on uio[0..3], whose electrical role is set
+    # per firmware image (`runtime`). No synthesis-time uio_oe can serve them.
     fx.mutate(TOP, RUNTIME_OE, "assign uio_oe = 8'h00;")
     code, out = fx.run()
     assert code == 0, out
     assert "[implementation] INCOMPLETE: 4" in out, out
-    # the UART RX bench-debug writes are reported as a hazard under the 0x81 mask
-    assert "uart_rx program(s) write bench-debug values to UIO_OUT" in out, out
-    assert "asserts low continuously: uio[7]; except while a debug bit is set: uio[0]" in out, out
-    assert "uio[0] open_drain" in out and "uio[7] open_drain" in out, out
-    assert "port_uio_out resets to 8'h00" in out, out
+    for bit in range(4):
+        assert f"uio[{bit}] runtime: its electrical role is set per firmware image" in out, out
+    # no pin is a fixed open-drain pin any more, so the UART RX debug
+    # writes are no hazard under this shape and uio_out's reset is moot
+    assert "uart_rx program(s) write bench-debug values" not in out, out
+    assert "port_uio_out resets" not in out, out
 
 
 @case("runtime pin mode: a top-level uio_oe that is not DR 0012's rule fails")
@@ -177,7 +180,7 @@ def _(fx):
               "        WCTL  UIO_OD, R3      ; DR 0012: SCL|SDA open-drain (after the OUT)\n", "")
     code, out = fx.run()
     assert code == 0 and "[implementation] INCOMPLETE: 1" in out, out
-    assert "i2c_fast.asm: drives open-drain pins (mask 0x81) but has no `WCTL UIO_OD`" in out, out
+    assert "i2c_fast.asm: drives open-drain pins (mask 0x0C) but has no `WCTL UIO_OD`" in out, out
     code, out = fx.run("--require-implemented")
     assert code == 1 and "--require-implemented: FAIL" in out, out
 
@@ -200,6 +203,42 @@ def _(fx):
     assert code == 0 and "i2c_fast_sr.asm: `WCTL UIO_OD` writes 0x80" in out, out
 
 
+@case("runtime pin mode: an SPI program without the WCTL UIO_DIR preamble is unwired")
+def _(fx):
+    fx.mutate("firmware/asm/spi_mode2.asm",
+              "        WCTL  UIO_DIR, R3       ; DR 0012: push-pull on uio[0], uio[1], uio[3]\n", "")
+    code, out = fx.run()
+    assert code == 0 and "[implementation] INCOMPLETE: 1" in out, out
+    assert "spi_mode2.asm: drives push-pull pins (mask 0x0B) but has no `WCTL UIO_DIR`" in out, out
+    code, out = fx.run("--require-implemented")
+    assert code == 1 and "--require-implemented: FAIL" in out, out
+
+
+@case("runtime pin mode: SPI WCTL UIO_DIR before the idle image, or with the wrong mask, is unwired")
+def _(fx):
+    fx.mutate("firmware/asm/spi_mode0.asm",
+              "        LDI   R2, 0x01          ; CS released, SCLK at CPOL idle\n"
+              "        OUT   UIO_OUT, R2       ; the idle image, BEFORE the drivers are on\n"
+              "        LDI   R3, 0x0B          ; CS|MOSI|SCLK: the pins this program drives\n"
+              "        WCTL  UIO_DIR, R3       ; DR 0012: push-pull on uio[0], uio[1], uio[3]\n",
+              "        LDI   R3, 0x0F\n        WCTL  UIO_DIR, R3\n"
+              "        LDI   R2, 0x01\n        OUT   UIO_OUT, R2\n")
+    code, out = fx.run()
+    assert code == 0, out
+    assert "spi_mode0.asm: `WCTL UIO_DIR` precedes the first `OUT UIO_OUT`" in out, out
+    assert "spi_mode0.asm: `WCTL UIO_DIR` writes 0xf, table push-pull mask is 0x0B" in out, out
+
+
+@case("runtime pin mode: an SPI program that also writes UIO_OD is unwired")
+def _(fx):
+    fx.mutate("firmware/asm/spi_mode1.asm",
+              "        WCTL  UIO_DIR, R3       ; DR 0012: push-pull on uio[0], uio[1], uio[3]\n",
+              "        WCTL  UIO_DIR, R3       ; DR 0012: push-pull on uio[0], uio[1], uio[3]\n"
+              "        WCTL  UIO_OD, R3\n")
+    code, out = fx.run()
+    assert "spi_mode1.asm: writes UIO_OD, but the table's spi profile drives no open-drain pin" in out, out
+
+
 @case("runtime pin mode: a UART RX program that also enables a uio pin is a hazard")
 def _(fx):
     # Issue #154: the RX bench-debug writes to UIO_OUT are inert under DR 0012
@@ -220,37 +259,20 @@ def _(fx):
     assert code == 1 and "--require-implemented: FAIL" in out, out
 
 
-def wire_mask_and_reset(fx):
+@case("DR 0008's synthesis-time mask cannot serve the runtime pins")
+def _(fx):
+    # Issue #155 retired the cases that wired DR 0008's 0x81 mask: the table
+    # has no fixed open-drain pin left, so SPI and I2C need DR 0012.
     fx.mutate(TOP, RUNTIME_OE, "assign uio_oe = 8'h00 | (8'h81 & ~uio_out);")
-    fx.mutate("rtl/protocol_core.v", "port_uio_out <= 8'h00;", "port_uio_out <= 8'hFF;")
-
-
-@case("--require-implemented still fails with the mask wired: UART RX debug writes pull uio low")
-def _(fx):
-    wire_mask_and_reset(fx)
     code, out = fx.run("--require-implemented")
-    assert code == 1 and "[implementation] INCOMPLETE: 1" in out, out
-    assert "uart_rx program(s) write bench-debug values to UIO_OUT" in out, out
-
-
-@case("--require-implemented passes once the mask and reset are wired and the RX debug writes are gone")
-def _(fx):
-    wire_mask_and_reset(fx)
-    for stem in ("uart_rx", "uart_rx_115200", "uart_rx_9600"):
-        p = fx.path(f"firmware/asm/{stem}.asm")
-        text = p.read_text(encoding="utf-8")
-        kept = [l for l in text.splitlines() if not re.match(r"\s*OUT\s+UIO_OUT\b", l)]
-        assert len(kept) < len(text.splitlines()), f"no OUT UIO_OUT line in {stem}.asm"
-        p.write_text("\n".join(kept) + "\n", encoding="utf-8")
-    fx.mutate_table(lambda t: t.pop("bench_debug"))
-    code, out = fx.run("--require-implemented")
-    assert code == 0 and "[implementation] COMPLETE" in out, out
+    assert code == 1 and "[implementation] INCOMPLETE: 4" in out, out
+    assert "DR 0008's synthesis-time mask cannot serve it" in out, out
 
 
 @case("a top-level uio_oe that drives a table input pin fails")
 def _(fx):
-    fx.mutate(TOP, RUNTIME_OE, "assign uio_oe = 8'h02;")
-    expect_fail(fx, "uio[1] is an input in the table", "concrete-firmware-bench")
+    fx.mutate(TOP, RUNTIME_OE, "assign uio_oe = 8'h10;")
+    expect_fail(fx, "uio[4] is an input in the table", "concrete-firmware-bench")
 
 
 @case("no broad allow-mismatch switch exists")
@@ -280,7 +302,7 @@ def _(fx):
     for stem in ("uart_rx", "uart_rx_115200", "uart_rx_9600"):
         f = Fixture()
         try:
-            f.mutate(f"firmware/asm/{stem}.asm", "LDI   R1, 1", "LDI   R1, 2")
+            f.mutate(f"firmware/asm/{stem}.asm", "LDI   R1, 2", "LDI   R1, 1")
             expect_fail(f, f"firmware/asm/{stem}.asm", "concrete-firmware-bench")
         finally:
             f.close()
@@ -293,11 +315,12 @@ def _(fx):
     expect_fail(fx, "IN from port UIO_IN", "concrete-firmware-bench")
 
 
-@case("table moves UART RX to ui_in[1]: RX programs fail by file")
+@case("table moves UART RX back to ui_in[0]: RX programs fail by file")
 def _(fx):
     def mv(t):
-        pin(t, "ui_in[0]")["protocol_roles"]["uart_rx"] = "unused"
-        pin(t, "ui_in[1]")["protocol_roles"]["uart_rx"] = "RX"
+        pin(t, "ui_in[1]")["protocol_roles"]["uart_rx"] = "unused"
+        pin(t, "ui_in[0]")["protocol_roles"]["uart_rx"] = "RX"
+        pin(t, "ui_in[0]")["shared_pin_rationale"] = "UART RX shares PROG_SER (mutation)."
     fx.mutate_table(mv)
     code, out = fx.run()
     assert code == 1 and "[schema] PASS" in out and "[concrete-firmware-bench] FAIL" in out, out
@@ -335,14 +358,14 @@ def _(fx):
 def _(fx):
     fx.mutate("firmware/asm/uart_rx.asm", "LDI   R3, 0\n", "LDI   R3, 0x7E\n")
     expect_fail(fx, "OUT UIO_OUT, R3 writes 0x7E; bench_debug.uart_rx allows only 0, "
-                    "SAMPLE_MARK 0x01 and FRAME_ERROR 0x02", "concrete-firmware-bench")
+                    "SAMPLE_MARK 0x02 and FRAME_ERROR 0x04", "concrete-firmware-bench")
 
 
 @case("UART RX frame-error flag shifted onto an undeclared uio_out bit")
 def _(fx):
     fx.mutate("firmware/asm/uart_rx.asm",
-              "SHF   R2, LEFT         ; -> UIO_OUT bit 1 (SHF leaves Z alone)",
-              "SHF   R2, RIGHT        ; -> UIO_OUT bit 1 (SHF leaves Z alone)")
+              "SHF   R2, LEFT         ; -> UIO_OUT bit 2 (SHF leaves Z alone)",
+              "SHF   R2, RIGHT        ; -> UIO_OUT bit 2 (SHF leaves Z alone)")
     expect_fail(fx, "is not a recognised bench-debug write", "concrete-firmware-bench")
 
 
@@ -384,10 +407,10 @@ def _(fx):
     for n in range(4):
         f = Fixture()
         try:
-            anchor = "0x03" if n >= 2 else "0x01"
+            anchor, wrong = ("0x09", "0x01") if n >= 2 else ("0x01", "0x09")
             first = re.search(rf"LDI   R2, {anchor}", f.path(f"firmware/asm/spi_mode{n}.asm").read_text())
             assert first, f"mode {n} anchor missing"
-            f.mutate(f"firmware/asm/spi_mode{n}.asm", first.group(0), "LDI   R2, 0x09")
+            f.mutate(f"firmware/asm/spi_mode{n}.asm", first.group(0), f"LDI   R2, {wrong}")
             expect_fail(f, f"firmware/asm/spi_mode{n}.asm", "concrete-firmware-bench")
         finally:
             f.close()
@@ -395,9 +418,16 @@ def _(fx):
 
 @case("SPI MISO mask LDI mutated")
 def _(fx):
-    fx.mutate("firmware/asm/spi_mode0.asm", "LDI   R1, 0x01            ; MISO mask (uio_in bit 0)",
-              "LDI   R1, 0x08            ; MISO mask (uio_in bit 0)")
+    fx.mutate("firmware/asm/spi_mode0.asm", "LDI   R1, 0x04            ; MISO mask (uio_in bit 2)",
+              "LDI   R1, 0x01            ; MISO mask (uio_in bit 2)")
     expect_fail(fx, "firmware/asm/spi_mode0.asm", "concrete-firmware-bench")
+
+
+@case("SPI pin image written to uo_out instead of uio_out")
+def _(fx):
+    fx.mutate("firmware/asm/spi_mode0.asm", "OUT   UIO_OUT, R2          ; CS falls",
+              "OUT   UO_OUT, R2          ; CS falls")
+    expect_fail(fx, "constant pin image 0x00 written to UO_OUT", "concrete-firmware-bench")
 
 
 @case("SPI MISO sampled from the wrong port")
@@ -408,27 +438,27 @@ def _(fx):
 
 @case("I2C idle image mutated (SDA moved)")
 def _(fx):
-    fx.mutate("firmware/asm/i2c_fast.asm", "LDI   R3, 0x81        ; both lines released",
-              "LDI   R3, 0x41        ; both lines released")
+    fx.mutate("firmware/asm/i2c_fast.asm", "LDI   R3, 0x0C        ; both lines released",
+              "LDI   R3, 0x0A        ; both lines released")
     expect_fail(fx, "bus-idle image", "concrete-firmware-bench")
 
 
 @case("I2C SDA mask register LDI mutated")
 def _(fx):
-    fx.mutate("firmware/asm/i2c_std.asm", "LDI   R1, 0x80", "LDI   R1, 0x40")
+    fx.mutate("firmware/asm/i2c_std.asm", "LDI   R1, 0x08", "LDI   R1, 0x40")
     expect_fail(fx, "firmware/asm/i2c_std.asm", "concrete-firmware-bench")
 
 
 @case("I2C SCL poll mask mutated in a poll variant")
 def _(fx):
-    fx.mutate("firmware/asm/i2c_fast_sr_poll.asm", "LDI   R3, 0x01       ; poll mask",
+    fx.mutate("firmware/asm/i2c_fast_sr_poll.asm", "LDI   R3, 0x04       ; poll mask",
               "LDI   R3, 0x02       ; poll mask")
     expect_fail(fx, "SCL poll mask", "concrete-firmware-bench")
 
 
 @case("I2C generator string literal mutated")
 def _(fx):
-    fx.mutate("firmware/tools/gen_i2c_sr.py", '"LDI   R3, 0x01       ; poll mask"',
+    fx.mutate("firmware/tools/gen_i2c_sr.py", '"LDI   R3, 0x04       ; poll mask"',
               '"LDI   R3, 0x02       ; poll mask"')
     expect_fail(fx, "firmware/tools/gen_i2c_sr.py", "concrete-firmware-bench")
 
@@ -436,16 +466,38 @@ def _(fx):
 # ------------------------------------------------- concrete: bench sites
 @case("SPI bench CS/SCLK swap")
 def _(fx):
-    fx.mutate("verification/test_firmware_spi.py", "CS_BIT, SCLK_BIT, MOSI_BIT = 0, 1, 2",
-              "CS_BIT, SCLK_BIT, MOSI_BIT = 1, 0, 2")
+    fx.mutate("verification/test_firmware_spi.py", "CS_BIT, SCLK_BIT, MOSI_BIT = 0, 3, 1",
+              "CS_BIT, SCLK_BIT, MOSI_BIT = 3, 0, 1")
     expect_fail(fx, "verification/test_firmware_spi.py", "concrete-firmware-bench")
 
 
 @case("SPI bench MISO pin/bit mutated")
 def _(fx):
-    fx.mutate("verification/test_firmware_spi.py", 'MISO_PIN, MISO_BIT = "uio_in", 0',
+    fx.mutate("verification/test_firmware_spi.py", 'MISO_PIN, MISO_BIT = "uio_in", 2',
               'MISO_PIN, MISO_BIT = "uio_in", 3')
     expect_fail(fx, "MISO_PIN/MISO_BIT", "concrete-firmware-bench")
+
+
+@case("SPI bench grades a line captured on uo_out")
+def _(fx):
+    fx.mutate("verification/test_firmware_spi.py", '"sclk": (LINE_PIN, SCLK_BIT)',
+              '"sclk": ("uo_out", SCLK_BIT)')
+    expect_fail(fx, "SCLK_BIT (captured on uo_out) is uo_out[3]", "concrete-firmware-bench")
+
+
+@case("SPI bench board wired with a literal pin, or uio_in written directly")
+def _(fx):
+    fx.mutate("verification/test_firmware_spi.py",
+              "spi_board(dut, cs=CS_BIT, sclk=SCLK_BIT, mosi=MOSI_BIT, miso=MISO_BIT)",
+              "spi_board(dut, cs=CS_BIT, sclk=SCLK_BIT, mosi=MOSI_BIT, miso=2)")
+    expect_fail(fx, "spi_board(dut, cs=CS_BIT", "concrete-firmware-bench")
+    fx2 = Fixture()
+    try:
+        fx2.mutate("verification/test_firmware_spi.py", "            pads.drive(MISO_BIT, write)",
+                   "            dut.uio_in.value = write << 2")
+        expect_fail(fx2, "writes dut.uio_in directly", "concrete-firmware-bench")
+    finally:
+        fx2.close()
 
 
 @case("UART bench TX pin mutated")
@@ -457,21 +509,62 @@ def _(fx):
 
 @case("I2C bench SCL/SDA constants mutated")
 def _(fx):
-    fx.mutate("verification/test_firmware_i2c.py", 'SDA_PIN, SDA_BIT = "uio_out", 7',
+    fx.mutate("verification/test_firmware_i2c.py", 'SDA_PIN, SDA_BIT = "uio_out", 3',
               'SDA_PIN, SDA_BIT = "uio_out", 6')
     expect_fail(fx, "SDA_PIN/SDA_BIT", "concrete-firmware-bench")
 
 
-@case("I2C bench released literal mutated")
+@case("I2C bench line read on the wrong port")
 def _(fx):
-    fx.mutate("verification/test_firmware_i2c.py", "_RELEASED = 0x81", "_RELEASED = 0x82")
-    expect_fail(fx, "_RELEASED", "concrete-firmware-bench")
+    fx.mutate("verification/test_firmware_i2c.py", 'LINE_PIN = "uio_in"', 'LINE_PIN = "uio_out"')
+    expect_fail(fx, "LINE_PIN", "concrete-firmware-bench")
 
 
-@case("I2C SR bench peripheral SDA shift mutated")
+@case("I2C bench grades a line captured on the wrong bit")
 def _(fx):
-    fx.mutate("verification/test_firmware_i2c_sr.py", "(sda_drive << 7)", "(sda_drive << 6)")
-    expect_fail(fx, "peripheral SDA drive shift", "concrete-firmware-bench")
+    fx.mutate("verification/test_firmware_i2c.py", '"sda": (LINE_PIN, SDA_BIT)',
+              '"sda": (LINE_PIN, 6)')
+    expect_fail(fx, '"sda": (LINE_PIN, SDA_BIT) capture spec', "concrete-firmware-bench")
+
+
+@case("I2C bench board wired with a literal pin")
+def _(fx):
+    fx.mutate("verification/test_firmware_i2c.py", "i2c_board(dut, scl=SCL_BIT, sda=SDA_BIT)",
+              "i2c_board(dut, scl=SCL_BIT, sda=6)")
+    expect_fail(fx, "i2c_board(dut, scl=SCL_BIT, sda=SDA_BIT)", "concrete-firmware-bench")
+
+
+@case("I2C bench peripheral names a pad by literal")
+def _(fx):
+    fx.mutate("verification/test_firmware_i2c.py", "pads.pull_low(SDA_BIT)", "pads.pull_low(6)")
+    expect_fail(fx, "pads.pull_low(6, ...)", "concrete-firmware-bench")
+
+
+@case("I2C bench bypasses the pad model by writing uio_in")
+def _(fx):
+    fx.mutate("verification/test_firmware_i2c.py", "                pads.pull_low(SDA_BIT)",
+              "                pads.pull_low(SDA_BIT)\n                dut.uio_in.value = 0x01")
+    expect_fail(fx, "writes dut.uio_in directly", "concrete-firmware-bench")
+
+
+@case("I2C SR bench peripheral drives a pad named by literal")
+def _(fx):
+    fx.mutate("verification/test_firmware_i2c_sr.py", "pads.set_open_drain(SDA_BIT, sda_drive)",
+              "pads.set_open_drain(6, sda_drive)")
+    expect_fail(fx, "pads.set_open_drain(6, ...)", "concrete-firmware-bench")
+
+
+@case("I2C SR bench wires its own board")
+def _(fx):
+    fx.mutate("verification/test_firmware_i2c_sr.py", "    pads = i2c_pads(dut).start()",
+              "    pads = i2c_board(dut, scl=0, sda=6).start()")
+    expect_fail(fx, "i2c_pads(dut)", "concrete-firmware-bench")
+
+
+@case("I2C SR bench does not import the capture specs")
+def _(fx):
+    fx.mutate("verification/test_firmware_i2c_sr.py", "    CAPTURE_SPECS,\n", "")
+    expect_fail(fx, "does not import CAPTURE_SPECS", "concrete-firmware-bench")
 
 
 @case("load bench MODE literal and serial position mutated")
@@ -530,10 +623,17 @@ def _(fx):
 
 @case("info.yaml concrete claim that the table does assign is accepted")
 def _(fx):
-    fx.mutate("info.yaml", 'uo[1]: "ISA output port 10 bit 1 (driven by OUT 10, Rs)"',
-              'uo[1]: "ISA output port 10 bit 1 (driven by OUT 10, Rs); SPI SCLK"')
+    fx.mutate("info.yaml", 'uo[0]: "ISA output port 10 bit 0 (driven by OUT 10, Rs;',
+              'uo[0]: "ISA output port 10 bit 0, UART TX (driven by OUT 10, Rs;')
     code, out = fx.run()
     assert code == 0, out
+
+
+@case("info.yaml keeps a moved SPI role on its old pin")
+def _(fx):
+    fx.mutate("info.yaml", 'uo[1]: "ISA output port 10 bit 1 (driven by OUT 10, Rs)"',
+              'uo[1]: "ISA output port 10 bit 1 (driven by OUT 10, Rs); SPI SCLK"')
+    expect_fail(fx, "uo[1] claims protocol role SCLK", "metadata-capability")
 
 
 @case("info.yaml load label missing")
@@ -575,8 +675,10 @@ def _(fx):
 
 @case("schema: contradictory electrical role")
 def _(fx):
-    fx.mutate_table(lambda t: pin(t, "uio[7]").update(electrical_role="push_pull"))
-    expect_fail(fx, "SDA", "schema")
+    # a fixed (non-runtime) role cannot carry push-pull SCLK and open-drain SDA
+    fx.mutate_table(lambda t: pin(t, "uio[3]").update(electrical_role="push_pull"))
+    expect_fail(fx, "uio[3]: SDA (i2c_transfer) needs open_drain", "schema")
+    assert "contradictory driven roles" in fx.run()[1]
     fx2 = Fixture()
     try:
         fx2.mutate_table(lambda t: pin(t, "uo_out[0]").update(electrical_role="open_drain"))
@@ -588,13 +690,37 @@ def _(fx):
 @case("schema: declared mask disagrees with derived mask")
 def _(fx):
     fx.mutate_table(lambda t: t.update(open_drain_mask="0x80"))
-    expect_fail(fx, "open_drain_mask 0x80 != 0x81", "schema")
+    expect_fail(fx, "open_drain_mask 0x80 != 0x00", "schema")
+
+
+@case("schema: declared pin_modes disagree with the runtime pins' roles")
+def _(fx):
+    fx.mutate_table(lambda t: t["pin_modes"]["spi"].update(uio_dir="0x0F"))
+    expect_fail(fx, "table.pin_modes.spi.uio_dir 0x0F != 0x0B", "schema")
+    fx2 = Fixture()
+    try:
+        fx2.mutate_table(lambda t: t.pop("pin_modes"))
+        expect_fail(fx2, "runtime pins need a top-level `pin_modes`", "schema")
+    finally:
+        fx2.close()
+
+
+@case("schema: runtime electrical role off uio")
+def _(fx):
+    fx.mutate_table(lambda t: pin(t, "uo_out[5]").update(electrical_role="runtime"))
+    expect_fail(fx, "uo_out[5]: electrical_role runtime (DR 0012 pin mode) exists only on uio", "schema")
 
 
 @case("schema: shared pad without rationale")
 def _(fx):
-    fx.mutate_table(lambda t: pin(t, "uio[0]").update(shared_pin_rationale=""))
-    expect_fail(fx, "no shared_pin_rationale", "schema")
+    fx.mutate_table(lambda t: pin(t, "uio[2]").update(shared_pin_rationale=""))
+    expect_fail(fx, "uio[2]: input role shares a driven pad but has no shared_pin_rationale", "schema")
+    fx2 = Fixture()
+    try:
+        fx2.mutate_table(lambda t: pin(t, "uio[3]").update(shared_pin_rationale=""))
+        expect_fail(fx2, "uio[3]: runtime pin is open_drain and push_pull in different phases", "schema")
+    finally:
+        fx2.close()
 
 
 @case("schema: unsupported extraction pattern")
@@ -623,7 +749,7 @@ def _(fx):
     expect_fail(fx, "role MOSI placed on", "schema")
     fx2 = Fixture()
     try:
-        fx2.mutate_table(lambda t: pin(t, "uo_out[2]")["protocol_roles"].update(spi_transfer="unused"))
+        fx2.mutate_table(lambda t: pin(t, "uio[1]")["protocol_roles"].update(spi_transfer="unused"))
         expect_fail(fx2, "role MOSI placed on no pin", "schema")
     finally:
         fx2.close()
@@ -640,8 +766,10 @@ def _(fx):
 @case("table moves SCLK: schema passes, concrete firmware/bench fails (documented outcome)")
 def _(fx):
     def f(t):
-        pin(t, "uo_out[1]")["protocol_roles"]["spi_transfer"] = "unused"
-        pin(t, "uo_out[3]")["protocol_roles"]["spi_transfer"] = "SCLK"
+        pin(t, "uio[3]")["protocol_roles"]["spi_transfer"] = "unused"
+        pin(t, "uio[5]")["protocol_roles"]["spi_transfer"] = "SCLK"
+        pin(t, "uio[5]")["electrical_role"] = "runtime"
+        t["pin_modes"]["spi"]["uio_dir"] = "0x23"
     fx.mutate_table(f)
     code, out = fx.run()
     assert code == 1, out
@@ -652,8 +780,8 @@ def _(fx):
 @case("table moves SPI MISO to ui_in[1]: SPI asm and bench fail by file")
 def _(fx):
     def f(t):
-        pin(t, "uio[0]")["protocol_roles"]["spi_transfer"] = "unused"
-        pin(t, "uio[0]")["shared_pin_rationale"] = ""
+        pin(t, "uio[2]")["protocol_roles"]["spi_transfer"] = "unused"
+        pin(t, "uio[2]")["shared_pin_rationale"] = ""
         pin(t, "ui_in[1]")["protocol_roles"]["spi_transfer"] = "MISO"
     fx.mutate_table(f)
     code, out = fx.run()

@@ -1,0 +1,86 @@
+# T1 item 1 (Design sources), Digital column: the committed RTL sources and
+# the synthesized gate-level netlists derived from them.
+#
+# Refreshed 2026-10-10 for issue #139 (the UART load): the boot ROM is now
+# 223 words, so the ROM, its assembly source and its hex below, the two
+# netlists of record and their artifact paths describe the design of gds run
+# 38054423540 at a0f91e3 (this branch merged with main @ 05fa893). The audit
+# text that follows is issue #83's and describes the 95-word design it was
+# written against.
+#
+# Audited 2026-10-10 for issue #83 against main @ 5669077. The design these
+# lines describe was last changed by 704a3fb (issue #168, the warm start
+# refuses a zero signature); every hashed source below is byte-identical at
+# 704a3fb and at 5669077. Attested by design-sources.json beside this file;
+# the manifest cites that envelope for item 1.
+#
+# How this stays true: `klt signoff` re-hashes only this file. The bytes it
+# lists are checked by scripts/check_evidence_inventories.py (`npm run lint`,
+# CI records job), which fails when any listed file no longer matches. A
+# design change therefore needs, in the same PR: a new synthesis and GDS-check
+# record (which check_records.py already demands), new lines here, a new
+# envelope hash, the manifest pin, and a new signoff-baseline record.
+#
+# Directive grammar (column 0; other lines are prose):
+#   sha256:<hex>  <path>     these exact bytes
+#   link  <path> -> <target> a symlink
+#   file  <path>             present, content not pinned here
+
+## RTL, as the klt/Yosys synthesis request and the Tiny Tapeout template read it
+
+sha256:03b53d290605df6589c76a7212474b894735cbc84215e959a1cb90b2fb1fee72  src/tt_um_2amlogic_protocol_emulator.v
+sha256:fa692ae7ead0da374f414d104e2ff679414bd49f58e1cbb9ae7165961af8b791  rtl/protocol_core.v
+sha256:f2440338178b680a1c47ea23a9d09d1edb1125eade000660e732855e6135b98f  rtl/protocol_program_memory.v
+sha256:8aa3044e6671f85d6f9154e808f0392e9e55da41a5c69d7159243d1193abd32b  rtl/protocol_boot_rom.v
+
+# The template's "sources live in src/" rule is met by symlinks, so there is
+# one copy of each module (rtl/README.md).
+link  src/protocol_core.v -> ../rtl/protocol_core.v
+link  src/protocol_program_memory.v -> ../rtl/protocol_program_memory.v
+link  src/protocol_boot_rom.v -> ../rtl/protocol_boot_rom.v
+
+# rtl/protocol_boot_rom.v is generated: firmware/tools/asm.py assembles the
+# boot program, firmware/tools/gen_boot_rom.py writes the ROM module from the
+# hex. firmware/tools/check_firmware.py (CI records job) fails on any stale
+# link in that chain. Its source and intermediate:
+sha256:f985f0d26b35bb0502c724b166ba3dc19faae18e1e94f8c0141d837cf8590ff1  firmware/asm/boot/boot_rom.asm
+sha256:b3a58d4f56f7d6590030486b42ddea54dbacdbd1657deb36d1c69a976b614729  firmware/build/boot/boot_rom.hex
+
+## The program-memory hard macro (RM_IHPSG13_1P_256x16_c2_bm_bist, PDK SRAM)
+
+# Not RTL of this repository: a PDK hard block. The klt/Yosys leg reads this
+# port-list declaration as a black box; the LibreLane leg reads the PDK's
+# LEF/liberty named in src/config.json.
+sha256:f6db947091f94805d4e178cf31cbaa2d185bed36d4747ad165c34c592e07ac6f  flow/blackbox-RM_IHPSG13_1P_256x16_c2_bm_bist.v
+# Simulation only (vendored byte-for-byte from the PDK; provenance and licence
+# in rtl/vendor/README.md). Never synthesized.
+sha256:9d456840a37dff650ee6a09dc1f3d4e2d8d3348fcea7dc305933dd4543feff1a  rtl/vendor/RM_IHPSG13_1P_256x16_c2_bm_bist.v
+sha256:e2e43ec0159cbc34662fe91114e8cb03a697a2a829ad63b0d4f06631908ea787  rtl/vendor/RM_IHPSG13_1P_core_behavioral_bm_bist.v
+
+## How the netlists are derived (two flows, named separately per CLAUDE.md)
+
+# klt/Yosys flow: the synthesis request (sources, top, cell library
+# sg13cmos5l_stdcell, corner typ_1p20V_25C, 20 ns).
+sha256:e62454e3eb50689dfc4d4ef9b7012de44633e661b3841be4c46137c93511885d  flow/synthesize-protocol-emulator.json
+# LibreLane flow (the competition's, via the gds workflow): the template's
+# project file and this design's LibreLane configuration. src/config.json is
+# also pinned by the GDS-check record's provenance; info.yaml and
+# src/pdn_cfg.tcl carry no logic and are listed for presence only.
+sha256:d220d13614dde4db44ee9f51e038d250b3479510732dd3ec3857814d811b8d2f  src/config.json
+file  info.yaml
+file  src/pdn_cfg.tcl
+
+## The derived gate-level netlists of record
+
+# klt/Yosys flow: `klt synthesize flow/synthesize-protocol-emulator.json`
+# run at the klt v0.7.0 pin by librelane-gds-signoff-check record
+# 20261010-133100-a0f91e3 (1,614 instances, 23,729.0256 um^2 on that flow, see
+# synthesis-baseline 20261010-133300-a0f91e3). This is the reference T1 item
+# 4's LVS compares against.
+sha256:75d9cf854511160c491d46484bd04d1377e4f1e8758310c4f5addf855ad9cf52  verification/records/librelane-gds-signoff-check/artifacts/20261010-133100-a0f91e3/reference-klt-yosys.v
+
+# LibreLane flow: the post-route netlist of gds run 38054423540 at a0f91e3
+# (tt_submission artifact), frozen by librelane-gds-signoff-check record
+# 20261010-133100-a0f91e3. It is the netlist the committed GDS (T1 item 2) was
+# routed as, and the one the post-layout SDF regression (T1 item 7) simulates.
+sha256:244eefee73d3e488954e50e44d4b35dd547decd1a31e775823bb289596cca9c1  verification/records/librelane-gds-signoff-check/artifacts/20261010-133100-a0f91e3/reference-asrouted.v

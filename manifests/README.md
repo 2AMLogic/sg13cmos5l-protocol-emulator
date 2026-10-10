@@ -20,6 +20,7 @@ this block's row by its `block` field.
 | File | What it is |
 |---|---|
 | [`sg13cmos5l-protocol-emulator.json`](sg13cmos5l-protocol-emulator.json) | The block manifest itself. `block` (required — the fleet roll-up's row identity) and `kind` are the two declarations; `evidence` maps T1 item ids to their citations. |
+| [`evidence/`](evidence/) | Added 2026-10-10 (issue #83). The audited artifacts behind T1 items 1, 2, 9 and 10 and the artifact-anchored `generic` envelope that attests each: `design-sources.txt` + `design-sources.json` (item 1), `layout-gds.json` (item 2, bound to the committed GDS directly), `testbenches.txt` + `testbenches.json` (item 9), `hygiene.txt` + `hygiene.json` (item 10). See "Items 1, 2, 9 and 10" below. |
 
 There is no longer a vendored copy of the evidence-tiers checklist in this
 directory — see "The vendored tiers doc" below for why it was retired.
@@ -138,8 +139,126 @@ capture, PVT corner sweeps, or Monte Carlo.
   match` (`klt-lvs-asrouted.json`); whether item 4 should be defined against
   that reference rather than the pre-place-and-route klt/Yosys netlist is an
   open question for the issue owner, not decided by this note.
-- **Every citation pins a `content_hash`** — the sha256 of the cited
-  artifact file, verifiable with `sha256sum`. Two honest caveats, on
+- **Items 3, 4 and 7, state as of 2026-10-10 (issue #158).** Append-only;
+  the bullet above is the earlier state. All three citations now describe
+  the layout the LibreLane flow builds for the design with the control space
+  (DR 0012) and the boot ROM (DR 0013). Items 3 and 4 cite record
+  `20261010-020408-5a5cddc` (`librelane-gds-signoff-check/`, the GDS of gds
+  run 38014090810, `sha256:ca28f860…`). Item 7 cites
+  `post-layout-sdf-regression` record `20261009-220911-1dc1842`, whose routed
+  netlist is byte-identical to that run's. **Item 3 stays `met`.** **Item 4
+  stays `unmet`/`check_errored`**: the converter now stops at a different
+  Yosys shape (an `assign` with a concatenation on the left given a sized
+  constant), added to klayout-tools#2941. The compare against the post-route
+  reference is again `match` with `power_connectivity` `match`, and is again
+  not cited; the open question above stands. **Item 7 stays
+  `unmet`/`check_failed`** (#106). Baseline: `signoff-baseline` record
+  `20261010-020408-5a5cddc`, 1 of 11.
+- **Items 3, 4 and 7, state as of 2026-10-10 (issue #140, PR #188).**
+  Append-only; the bullet above is the earlier state. The SPI-flash boot
+  program changed the boot ROM, so the layout changed. Items 3 and 4 cite
+  record `20261010-041033-fb86d71` (`librelane-gds-signoff-check/`, the GDS
+  of gds run 38018615820, `sha256:60e37b52…`). Item 7 cites
+  `post-layout-sdf-regression` record `20261010-020805-ed5f2d1`, whose routed
+  netlist is byte-identical to that run's. **Item 3 stays `met`.** **Item 4
+  stays `unmet`/`check_errored`**: the converter now stops at a multi-bit
+  range slice in an instance port connection (`pm_wdata[7:0]`), the same
+  grammar gap as klayout-tools#2941. The compare against the post-route
+  reference is `match` with `power_connectivity` `match`, and is not cited.
+  **Item 7 stays `unmet`/`check_failed`** (#106). Baseline:
+  `signoff-baseline` record `20261010-044125-89cd241`, 1 of 11.
+- **Items 3, 4 and 7, state as of 2026-10-10 (issue #173).** Append-only;
+  the bullet above is the earlier state. A LibreLane-only drive buffer on the
+  SRAM macro's `A_REN` input changed the layout. Items 3 and 4 cite record
+  `20261010-070156-c914bbc` (`librelane-gds-signoff-check/`, the GDS of gds
+  run 38032061275, `sha256:5de2d0ad…`). Item 7 cites
+  `post-layout-sdf-regression` record `20261010-072000-c914bbc`, whose routed
+  netlist is byte-identical to that run's. **Item 3 stays `met`.** **Item 4
+  stays `unmet`/`check_errored`** on the same converter shape
+  (`pm_wdata[7:0]`, klayout-tools#2941). The compare against the post-route
+  reference is `match` with `power_connectivity` `match`, and is not cited.
+  **Item 7 stays `unmet`/`check_failed`** (#106). Baseline:
+  `signoff-baseline` record `20261010-080000-c914bbc`, 1 of 11.
+- **Items 3, 4 and 7, state as of 2026-10-10 (issue #168).** Append-only;
+  the bullet above is the earlier state. The warm start's zero-signature
+  refusal (two boot-ROM words) changed the layout. Items 3 and 4 cite record
+  `20261010-083721-704a3fb` (`librelane-gds-signoff-check/`, the GDS of gds
+  run 38037477407, `sha256:c59b4c7a…`). Item 7 cites
+  `post-layout-sdf-regression` record `20261010-083555-704a3fb`, whose routed
+  netlist is byte-identical to that run's. **Item 3 stays `met`.** **Item 4
+  stays `unmet`/`check_errored`** on the same converter shape
+  (`pm_wdata[7:0]`, klayout-tools#2941). The compare against the post-route
+  reference is `match` with `power_connectivity` `match`, and is not cited.
+  **Item 7 stays `unmet`/`check_failed`** (#106). Baseline:
+  `signoff-baseline` record `20261010-090628-704a3fb`, 1 of 11.
+- **Item 7, state as of 2026-10-10 (issue #106).** Append-only; the bullet
+  above is the earlier state. Item 7 cites `post-layout-sdf-regression`
+  record `20261010-102552-d43f89c` (gds run 38044212536; routed netlist
+  byte-identical to run 38037477407's, so items 3 and 4 keep their
+  citations). The core bench's tests now run SDC-aligned
+  (`verification/sdf_alignment.py`: the SDC's 20 ns clock, stimulus at
+  +4 ns, pin reads at +16 ns) and give **12 passed, 0 failed, 1 skipped**
+  (`test_alu_flags_whitebox`, no `u_core` in a flattened netlist) at all
+  three corners, annotated. **Item 7 moves from `unmet`/`check_failed` to
+  `unmet`/`unverifiable_provenance`**: the regression no longer fails, and
+  the grader stops at the provenance binding a `functional-verification`
+  envelope cannot satisfy (the reason item 9 renders, described above). It
+  is not met. Baseline: `signoff-baseline` record
+  `20261010-102923-d43f89c`, 1 of 11.
+- **Items 1, 2, 9 and 10, state as of 2026-10-10 (issue #83).** Append-only;
+  the item 9 bullet above and the "Every other item is uncited" bullet below
+  are the earlier state. The klt pin moved to v0.7.0 (`0e2362bd`, which
+  contains klayout-tools#2718's artifact-anchored `generic` evidence), and
+  each of the four items now cites a `generic` envelope under `evidence/`
+  that names the audited artifact and its hash (see "Items 1, 2, 9 and 10"
+  below). **Item 1 is `met`** (`design-sources.txt`: the RTL, the boot-ROM
+  chain, the synthesis request and both derived netlists, each with its
+  sha256). **Item 2 is `met`**, bound directly to the routed GDS of
+  `librelane-gds-signoff-check` record `20261010-083721-704a3fb`
+  (`sha256:c59b4c7a…`, gds run 38037477407). **Item 9 is `met`**
+  (`testbenches.txt`); it no longer cites the zero-delay `reset-pin-through`
+  envelope. **Item 10 is `met`** (`hygiene.txt`; the README gained its
+  "Reproducing the results" section for it). Each row carries
+  `artifact_binding.input_verified: true`. Items 3, 4 and 7 are unchanged:
+  item 3 stays `met`, now citing record `20261010-110300-5669077`'s DRC (the
+  same GDS, re-run at the new pin); item 4 `unmet`/`check_errored`
+  (klayout-tools#2941); item 7 `unmet`/`unverifiable_provenance`. Baseline:
+  `signoff-baseline` record `20261010-113255-5669077`, **5 of 11**. **If PR #167 (load
+  CRC) or any other design change merges, items 1 and 2 describe the
+  previous design** until `design-sources.txt`, the GDS binding and their
+  envelopes are refreshed with the new GDS-check record; the inventory check
+  below fails the CI records job until they are.
+- **Items 1, 2, 3, 4, 7 and 9, state as of 2026-10-10 (issue #139).** Append-only;
+  the bullets above are the earlier states. The UART load grew the boot ROM
+  to 223 words, so the design and the layout changed, and every citation that
+  names their bytes moved. Item 1 (`evidence/design-sources.txt`, refreshed:
+  the ROM and its assembly and hex, both netlists) and item 2 (the routed GDS
+  of gds run 38054423540 at `a0f91e3`, `sha256:b71ece88…`, via
+  `evidence/layout-gds.json`) are `met` against the new bytes. Items 3 and 4
+  cite record `20261010-133100-a0f91e3` (`librelane-gds-signoff-check/`):
+  **item 3 stays `met`**, **item 4 stays `unmet`/`check_errored`** on the same
+  converter shape (`pm_wdata[7:0]`, klayout-tools#2941); the compare against
+  the post-route reference is `match` with `power_connectivity` `match`, and
+  is not cited. Item 7 cites `post-layout-sdf-regression` record
+  `20261010-133000-a0f91e3` (12 passed, 0 failed, 1 skipped at all three
+  corners, annotated): **`unmet`/`unverifiable_provenance`**, as before.
+  Item 9 (`evidence/testbenches.txt`) gains the `boot-uart` bench and the
+  `--boot-uart` gate-level command. Baseline: `signoff-baseline` record
+  `20261010-133500-a0f91e3`, **5 of 11**, unchanged.
+- **Every citation pins a `content_hash`**, and what it is the hash of
+  depends on the cited envelope (clarified 2026-10-10, issue #168; the
+  manifests on `main` have always followed this, the sentence here did
+  not say it). For an envelope that records the layout it checked in
+  `provenance.input.content_hash` (`klt drc`, `klt extract`, a completed
+  `klt lvs`, `klt pex`), the pin is **that layout hash** -- for item 3,
+  the sha256 of the GDS, not of `klt-drc.json`. `klt signoff` gates
+  `manifest.content_hash == envelope.provenance.input.content_hash` and
+  then re-hashes the GDS itself (`input_verified`, klayout-tools#2196);
+  pinning the envelope file's own hash instead grades the item
+  `stale_evidence`. For an envelope with no input hash (`klt
+  functional-verification`, and a `klt` error envelope such as item 4's),
+  the pin is the sha256 of the cited file itself, verifiable with
+  `sha256sum`. Two honest caveats, on
   record here because the issue calls freshness "the point":
   `klt functional-verification` envelopes carry no `provenance` block (by
   design) — there is no recorded
@@ -200,6 +319,51 @@ capture, PVT corner sweeps, or Monte Carlo.
   the checklist's own text ("a block whose spec has no statistical row
   must say so explicitly rather than omitting the item") is satisfied by
   this paragraph (and tracker issue #27's item-6 row), not by a citation.
+
+## Items 1, 2, 9 and 10: artifact-anchored attestations (issue #83)
+
+These four items have no `klt` verb behind them. Since klayout-tools#2718
+(in the pin since v0.7.0) `klt signoff` accepts a `generic` envelope for them
+only when it is bound to the artifact that was audited: the envelope
+declares `"t1_item"`, names the artifact in `provenance.input.path` with its
+`content_hash`, the manifest pins that same hash, and the grader re-hashes
+the artifact (`artifact_binding.input_verified`). An edit to the artifact
+after the attestation grades the row `unmet`/`stale_evidence`, and
+`--check-latest` reports it as drift. A native envelope (`drc`, `sim`,
+`functional-verification`, …) is still accepted by the grader for these
+items but says nothing about them, so it must not be cited; the check below
+fails if one is.
+
+| Item | Envelope | Audited artifact | What `content_hash` pins |
+|---|---|---|---|
+| 1 Design sources | `evidence/design-sources.json` | `evidence/design-sources.txt` | the inventory's bytes |
+| 2 Layout | `evidence/layout-gds.json` | the routed GDS in `verification/records/librelane-gds-signoff-check/artifacts/<record>/` (`{path, scope: "repo"}`) | the GDS bytes (the same value item 3 pins) |
+| 9 Testbenches | `evidence/testbenches.json` | `evidence/testbenches.txt` | the inventory's bytes |
+| 10 Repo hygiene | `evidence/hygiene.json` | `evidence/hygiene.txt` | the inventory's bytes |
+
+**What the grader does not check, and what does.** `klt signoff` re-hashes
+the inventory, not the files the inventory lists. So an RTL edit that leaves
+`design-sources.txt` alone would still grade item 1 `met` while the
+inventory describes bytes that are gone. `scripts/check_evidence_inventories.py`
+(run by `npm run lint`, so by CI's records job) closes that: it re-hashes
+every `sha256:` line of `design-sources.txt`, checks the symlinks, files and
+README/CI headings the other inventories name, requires one `experiment`
+line in `testbenches.txt` per directory under `verification/records/`, and
+checks that each envelope, its artifact and the manifest pin agree.
+`hygiene.txt` and `testbenches.txt` pin structure (presence of files,
+sections and bench lines), not bytes, so a routine README or bench edit does
+not force a re-mint; `design-sources.txt` and the GDS binding pin bytes,
+because "regenerated on design change" is what items 1 and 2 claim.
+
+**Refreshing after a design change** (all in the PR that changes the design):
+mint the new synthesis and `librelane-gds-signoff-check` records (as
+`verification/check_records.py` already requires); rewrite the affected
+`sha256:` lines of `design-sources.txt` and point its netlist lines at the
+new record; point `layout-gds.json` at the new GDS; recompute each changed
+envelope's `content_hash` and the matching manifest pins; re-render and mint
+a `signoff-baseline` record. Editing an inventory without the rest is caught
+twice: `klt signoff --check` reports drift (`stale_evidence` on the row) and
+`check_evidence_inventories.py` names the stale envelope.
 
 ## The vendored tiers doc — provenance and refresh rule
 

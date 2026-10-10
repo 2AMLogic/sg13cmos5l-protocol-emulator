@@ -37,7 +37,14 @@ merged into one green/red bit:
                             registers); in that shape an open-drain role is
                             "wired" when each I2C program sets the table's
                             mask with `WCTL UIO_OD` after releasing the
-                            lines, and the registers must reset to 0. Default success
+                            lines, and the registers must reset to 0. Since
+                            issue #155 a `uio` pin may be `runtime`: its
+                            electrical role is set per firmware image
+                            (push-pull for a driven SPI line, open-drain for
+                            an I2C line), the table's `pin_modes` declares
+                            the UIO_DIR / UIO_OD value each profile's images
+                            must write, and every inventoried SPI / I2C
+                            program is held to it. Default success
                             means results 1-3 agree with the Proposed record;
                             `--require-implemented` additionally fails while
                             this list is non-empty.
@@ -66,7 +73,19 @@ DEFAULT_RECORD = "spec/decision-records/0010-protocol-pin-roles.md"
 TABLE_FENCE_RE = re.compile(r"^```json pin-roles[ \t]*\n(.*?)^```[ \t]*$", re.M | re.S)
 
 PORTS = ("ui_in", "uo_out", "uio")
-ELECTRICAL = ("input", "push_pull", "open_drain")
+ELECTRICAL = ("input", "push_pull", "open_drain", "runtime")
+RUNTIME = "runtime"
+
+# DR 0012 pin-mode profiles (issue #155): the phases whose roles decide what
+# a profile's firmware images must write to UIO_DIR / UIO_OD for the table's
+# `runtime` pins, and the inventory profile of those images.
+PIN_MODE_PROFILES = {
+    "uart": ("uart_tx", "uart_rx"),
+    "spi": ("spi_transfer",),
+    "i2c": ("i2c_transfer",),
+}
+PIN_MODE_REGS = ("uio_dir", "uio_od")
+CTL_INDEX = {"UIO_DIR": "0X00", "UIO_OD": "0X01"}
 PHASES = (
     "uart_tx",
     "uart_rx",
@@ -112,8 +131,8 @@ PATTERNS = {
     "gen_strings",          # instruction string literals of gen_i2c_sr.py
     "bench_uart_tx",        # TX_PIN, TX_BIT = "port", n
     "bench_spi_consts",     # CS/SCLK/MOSI/MISO constants and capture ports
-    "bench_i2c_consts",     # SCL/SDA constants, _RELEASED, _ACK_PULL
-    "bench_i2c_sr_consts",  # imports, 0x81 / (sda_drive << N), capture ports
+    "bench_i2c_consts",     # SCL/SDA constants, LINE_PIN, CAPTURE_SPECS, i2c_board(scl=, sda=), pad calls
+    "bench_i2c_sr_consts",  # imports from test_firmware_i2c, pad calls by named bit, no uio_in write
     "bench_load_pins",      # load_program ui_in MODE / serial assignments
     "top_load_wiring",      # .mode_pin(ui_in[n]) / .serial_in(ui_in[n])
     "top_uio_oe",           # assign uio_oe = <literal | DR 0008 mask | DR 0012 pin-mode rule>;
@@ -263,6 +282,7 @@ class Checker:
         self.pins = seen
         self.validate_roles()
         self.validate_masks()
+        self.validate_pin_modes()
         self.validate_inventory()
         self.validate_bench_debug()
         return s.ok
@@ -297,7 +317,11 @@ class Checker:
         for (port, bit), pin in sorted(self.pins.items()):
             label = f"{port}[{bit}]"
             el = pin["electrical_role"]
+            runtime = el == RUNTIME
             # electrical role vs port
+            if runtime and port != "uio":
+                s.err(f"{label}: electrical_role runtime (DR 0012 pin mode) exists only on uio")
+                continue
             if port == "ui_in" and el != "input":
                 s.err(f"{label}: dedicated input cannot be {el}")
             if port == "uo_out" and el != "push_pull":
@@ -313,24 +337,27 @@ class Checker:
                     driving.add("push_pull")
                     if port == "ui_in":
                         s.err(f"{label}: output role {role} on a dedicated input")
-                    if el != "push_pull":
+                    if el != "push_pull" and not runtime:
                         s.err(f"{label}: {role} ({ph}) needs push_pull, table says {el}")
                 elif role in DRIVE_OD:
                     driving.add("open_drain")
                     if port != "uio":
                         s.err(f"{label}: open-drain role {role} must sit on uio")
-                    if el != "open_drain":
+                    if el != "open_drain" and not runtime:
                         s.err(f"{label}: {role} ({ph}) needs open_drain, table says {el}")
                 elif role in SAMPLE:
                     if port == "uo_out":
                         s.err(f"{label}: input role {role} on a dedicated output")
             kinds = driving
-            if len(kinds) > 1:
+            if len(kinds) > 1 and not runtime:
                 s.err(f"{label}: contradictory driven roles across phases: {sorted(kinds)}")
+            if len(kinds) > 1 and runtime and not str(pin["shared_pin_rationale"]).strip():
+                s.err(f"{label}: runtime pin is {' and '.join(sorted(kinds))} in different "
+                      f"phases but has no shared_pin_rationale")
             if pin["load_role"] != "none" and port != "ui_in":
                 s.err(f"{label}: load role {pin['load_role']} must be on ui_in")
             sampled = any(r in SAMPLE for r in pin["protocol_roles"].values())
-            if sampled and el != "input" and not driving:
+            if sampled and el != "input" and not driving and not runtime:
                 s.err(f"{label}: sampled-only role needs electrical_role input, table says {el}")
             if sampled and driving and not str(pin["shared_pin_rationale"]).strip():
                 s.err(f"{label}: input role shares a driven pad but has no shared_pin_rationale")
@@ -379,6 +406,56 @@ class Checker:
                     f"from the per-pin electrical roles on uio"
                 )
         self.od_mask, self.pp_mask = od, pp
+
+    def derived_pin_modes(self) -> dict[str, dict[str, int]]:
+        """Per profile, the UIO_DIR / UIO_OD values its images must write:
+        a runtime pin's bit is set in UIO_DIR where the profile's phases
+        give it a push-pull role and in UIO_OD where they give it an
+        open-drain role (DR 0012; issue #155)."""
+        out = {}
+        for prof, phases in PIN_MODE_PROFILES.items():
+            d = o = 0
+            for (port, bit), pin in self.pins.items():
+                if pin["electrical_role"] != RUNTIME:
+                    continue
+                for ph in phases:
+                    role = pin["protocol_roles"].get(ph, UNUSED)
+                    if role in DRIVE_PP:
+                        d |= 1 << bit
+                    elif role in DRIVE_OD:
+                        o |= 1 << bit
+            out[prof] = {"uio_dir": d, "uio_od": o}
+        return out
+
+    def validate_pin_modes(self) -> None:
+        """`pin_modes` declares, per profile, the DR 0012 pin-mode register
+        values; they must equal what the runtime pins' roles derive."""
+        s = self.schema
+        self.pin_modes = self.derived_pin_modes()
+        has_runtime = any(p["electrical_role"] == RUNTIME for p in self.pins.values())
+        pm = self.table.get("pin_modes")
+        if pm is None:
+            if has_runtime:
+                s.err("table: runtime pins need a top-level `pin_modes` object (DR 0012)")
+            return
+        if not isinstance(pm, dict) or set(pm) != set(PIN_MODE_PROFILES):
+            s.err(f"table.pin_modes: keys must be exactly {sorted(PIN_MODE_PROFILES)}")
+            return
+        for prof in PIN_MODE_PROFILES:
+            ent = pm[prof]
+            if not isinstance(ent, dict) or set(ent) != set(PIN_MODE_REGS):
+                s.err(f"table.pin_modes.{prof}: must be {{\"uio_dir\": ..., \"uio_od\": ...}}")
+                continue
+            for reg in PIN_MODE_REGS:
+                try:
+                    declared = int(ent[reg], 0)
+                except (TypeError, ValueError):
+                    s.err(f"table.pin_modes.{prof}.{reg}: {ent[reg]!r} is not an integer literal")
+                    continue
+                derived = self.pin_modes[prof][reg]
+                if declared != derived:
+                    s.err(f"table.pin_modes.{prof}.{reg} 0x{declared:02X} != 0x{derived:02X} "
+                          f"derived from the runtime pins' {prof} roles")
 
     def validate_inventory(self) -> None:
         s = self.schema
@@ -730,14 +807,30 @@ class Checker:
         cs = self.mask_of("spi_transfer", "CS")
         sclk = self.mask_of("spi_transfer", "SCLK")
         mosi = self.mask_of("spi_transfer", "MOSI")
+        ports = {self.role_pin("spi_transfer", r)[0] for r in ("CS", "SCLK", "MOSI")
+                 if self.role_pin("spi_transfer", r)}
+        if len(ports) != 1:
+            c.err(f"{rel}: the table splits CS/SCLK/MOSI across ports {sorted(ports)}; "
+                  f"pattern spi_images needs one pin-image port")
+            return
+        img_port = PORT_ASM[(ports.pop(), "out")]
         idle_s = sclk if cpol else 0
         allowed = {(idle_s ^ (sclk * a)) | (mosi * b) for a in (0, 1) for b in (0, 1)} | {cs | idle_s}
         pairs = [(a, b) for a, b in zip(ins, ins[1:])
-                 if a["m"] == "LDI" and b["m"] == "OUT" and b["ops"][0].upper() == "UO_OUT"
+                 if a["m"] == "LDI" and b["m"] == "OUT" and b["ops"][0].upper() == img_port
                  and b["ops"][1] == a["ops"][0]]
         if not pairs:
-            c.err(f"{rel}: no LDI -> OUT UO_OUT pin-image sites found (pattern spi_images)")
+            c.err(f"{rel}: no LDI -> OUT {img_port} pin-image sites found (pattern spi_images)")
             return
+        # An LDI constant written straight to any other output port is a pin
+        # image on the wrong port (the result port only ever carries the
+        # assembled byte, a computed value).
+        for a, b in zip(ins, ins[1:]):
+            if (a["m"] == "LDI" and b["m"] == "OUT" and b["ops"][1] == a["ops"][0]
+                    and b["ops"][0].upper() != img_port):
+                c.sites += 1
+                c.err(f"{rel}:{b['no']}: constant pin image {a['ops'][1]} written to "
+                      f"{b['ops'][0].upper()}; the table puts CS/SCLK/MOSI on {img_port}")
         first_img = self.imm(pairs[0][0]["ops"][1])
         c.sites += 1
         if first_img != (cs | idle_s):
@@ -876,21 +969,43 @@ class Checker:
             return
         m = self.need(text, r"^CS_BIT,\s*SCLK_BIT,\s*MOSI_BIT\s*=\s*(\d+),\s*(\d+),\s*(\d+)", rel,
                       "CS_BIT, SCLK_BIT, MOSI_BIT")
-        if m:
-            for name, val in zip(("CS", "SCLK", "MOSI"), m.groups()):
-                self.check_pb(rel, f"{name}_BIT", "uo_out", int(val), "spi_transfer", name)
+        bits = dict(zip(("CS", "SCLK", "MOSI"), (int(v) for v in m.groups()))) if m else {}
         m = self.need(text, r'^MISO_PIN,\s*MISO_BIT\s*=\s*"(\w+)",\s*(\d+)', rel, "MISO_PIN, MISO_BIT")
         if m:
             self.check_pb(rel, "MISO_PIN/MISO_BIT", m.group(1), int(m.group(2)), "spi_transfer", "MISO")
             if m.group(1) != "uio_in":
                 self.concrete.err(f"{rel}: MISO_PIN {m.group(1)!r} must be the input path uio_in")
-        for name in ("cs", "sclk", "mosi"):
-            m = self.need(text, rf'"{name}":\s*\("(\w+)",\s*{name.upper()}_BIT\)', rel, f"{name} capture spec")
-            if m and m.group(1) != "uo_out":
-                self.concrete.err(f"{rel}: {name} captured on {m.group(1)}, table puts it on uo_out")
-        m = self.need(text, r'specs\[f"uo\{i\}"\]\s*=\s*\("(\w+)",\s*i\)', rel, "result-byte capture")
-        if m and m.group(1) != "uo_out":
-            self.concrete.err(f"{rel}: RESULT bits captured on {m.group(1)}, table says uo_out")
+        # Each driven line is graded where the bench captures it: on uo_out,
+        # or (issue #155) as the pad-resolved uio line read on uio_in via
+        # LINE_PIN. The capture's port and bit together must be the table's.
+        line = re.search(r'^LINE_PIN\s*=\s*"(\w+)"', text, re.M)
+        on_uio = False
+        for name in ("CS", "SCLK", "MOSI"):
+            m = self.need(text, rf'"{name.lower()}":\s*\((LINE_PIN|"\w+"),\s*{name}_BIT\)', rel,
+                          f"{name.lower()} capture spec")
+            if not m or name not in bits:
+                continue
+            port = m.group(1).strip('"') if m.group(1) != "LINE_PIN" else (line.group(1) if line else None)
+            if port is None:
+                self.concrete.err(f"{rel}: {name.lower()} is captured on LINE_PIN but LINE_PIN is not defined")
+                continue
+            if port in ("uio_in", "uio_out") and port != "uio_in":
+                self.concrete.err(f"{rel}: {name.lower()} captured on {port}; a driven uio line is "
+                                  f"graded as the pad-resolved line on uio_in")
+            on_uio |= port == "uio_in"
+            self.check_pb(rel, f"{name}_BIT (captured on {port})", port, bits[name], "spi_transfer", name)
+        m = self.need(text, r'\[f"uo\{(\w+)\}"\]\s*=\s*\("(\w+)",\s*\1\)', rel, "result-byte capture")
+        if m and m.group(2) != "uo_out":
+            self.concrete.err(f"{rel}: RESULT bits captured on {m.group(2)}, table says uo_out")
+        if on_uio:
+            # The lines are the pad model's (verification/uio_pads.py), wired
+            # by named bit; the bench must not write uio_in itself.
+            self.need(text, r"spi_board\(\s*dut,\s*cs=CS_BIT,\s*sclk=SCLK_BIT,\s*mosi=MOSI_BIT,"
+                            r"\s*miso=MISO_BIT\s*\)", rel,
+                      "spi_board(dut, cs=CS_BIT, sclk=SCLK_BIT, mosi=MOSI_BIT, miso=MISO_BIT)")
+            self.pad_calls(rel, text, required=(("level", "CS_BIT"), ("level", "SCLK_BIT"),
+                                                ("drive", "MISO_BIT")),
+                           names=("CS_BIT", "SCLK_BIT", "MOSI_BIT", "MISO_BIT"))
 
     def prof_bench_i2c(self, rel, ent):
         text = self.read(rel, self.concrete)
@@ -904,13 +1019,43 @@ class Checker:
                               "i2c_transfer", role)
                 if m.group(1) != "uio_out":
                     self.concrete.err(f"{rel}: {role}_PIN {m.group(1)!r}; controller intent is uio_out")
-        scl, sda = self.mask_of("i2c_transfer", "SCL"), self.mask_of("i2c_transfer", "SDA")
-        m = self.need(text, r"^_RELEASED\s*=\s*(0x[0-9A-Fa-f]+)", rel, "_RELEASED")
-        if m and int(m.group(1), 16) != (scl | sda):
-            self.concrete.err(f"{rel}: _RELEASED {m.group(1)} != table SCL|SDA 0x{scl | sda:02X}")
-        m = self.need(text, r"^_ACK_PULL\s*=\s*(0x[0-9A-Fa-f]+)", rel, "_ACK_PULL")
-        if m and int(m.group(1), 16) != scl:
-            self.concrete.err(f"{rel}: _ACK_PULL {m.group(1)} != SCL-released/SDA-low 0x{scl:02X}")
+        # Issue #136: the bus is the pad-resolved line (verification/uio_pads.py),
+        # read on uio_in. The bench names the lines only through SCL_BIT /
+        # SDA_BIT, so the pin plan is stated once in this file.
+        m = self.need(text, r'^LINE_PIN\s*=\s*"(\w+)"', rel, "LINE_PIN")
+        if m and m.group(1) != "uio_in":
+            self.concrete.err(f"{rel}: LINE_PIN {m.group(1)!r}; the pad-resolved line is read on uio_in")
+        for key, role, pin in (("scl", "SCL", "LINE_PIN"), ("sda", "SDA", "LINE_PIN"),
+                               ("ctl_scl", "SCL", "SCL_PIN"), ("ctl_sda", "SDA", "SDA_PIN")):
+            self.need(text, rf'"{key}":\s*\({pin},\s*{role}_BIT\)', rel,
+                      f'"{key}": ({pin}, {role}_BIT) capture spec')
+        self.need(text, r"i2c_board\(\s*dut,\s*scl=SCL_BIT,\s*sda=SDA_BIT\s*\)", rel,
+                  "i2c_board(dut, scl=SCL_BIT, sda=SDA_BIT)")
+        self.pad_calls(rel, text, required=(("level", "SCL_BIT"), ("pull_low", "SDA_BIT"),
+                                            ("release", "SDA_BIT")))
+
+    PAD_CALL_RE = re.compile(r"\bpads\.(level|line|drive|release|pull_low|set_open_drain)\(\s*([^,)\s]+)")
+
+    def pad_calls(self, rel, text, required, names=("SCL_BIT", "SDA_BIT")) -> None:
+        """Every call that names a pad (`pads.level(...)`, `pads.pull_low(...)`,
+        ...) must name it as SCL_BIT or SDA_BIT -- a literal pin number here
+        would be a second copy of the pin plan -- and the bench must not write
+        `uio_in` itself: the pad model owns that port (issue #136)."""
+        calls = self.PAD_CALL_RE.findall(text)
+        for method, arg in calls:
+            self.concrete.sites += 1
+            if arg not in names:
+                self.concrete.err(f"{rel}: pads.{method}({arg}, ...) names a pad other than "
+                                  f"{' / '.join(names)} (would re-derive the pin)")
+        for method, arg in required:
+            self.concrete.sites += 1
+            if (method, arg) not in calls:
+                self.concrete.err(f"{rel}: cannot find pads.{method}({arg}) "
+                                  f"(unsupported/missing extraction pattern)")
+        self.concrete.sites += 1
+        if re.search(r"\bdut\.uio_in\.value\s*=", text):
+            self.concrete.err(f"{rel}: writes dut.uio_in directly; the uio lines are resolved by "
+                              f"the pad model (verification/uio_pads.py), which owns uio_in")
 
     def prof_bench_i2c_sr(self, rel, ent):
         text = self.read(rel, self.concrete)
@@ -921,25 +1066,20 @@ class Checker:
         if m:
             body = re.sub(r"#[^\n]*", "", m.group(1))
             names = {n.strip() for n in body.split(",")}
-            for n in ("SCL_BIT", "SCL_PIN", "SDA_BIT", "SDA_PIN"):
+            for n in ("SCL_BIT", "SDA_BIT", "CAPTURE_SPECS", "i2c_pads"):
                 if n not in names:
                     self.concrete.err(f"{rel}: does not import {n} from test_firmware_i2c "
                                       f"(would re-derive the pin)")
-        scl, sda = self.mask_of("i2c_transfer", "SCL"), self.mask_of("i2c_transfer", "SDA")
-        m = self.need(text, r"dut\.uio_in\.value\s*=\s*(0x[0-9A-Fa-f]+)", rel, "uio_in released literal")
-        if m and int(m.group(1), 16) != (scl | sda):
-            self.concrete.err(f"{rel}: uio_in released literal {m.group(1)} != table SCL|SDA 0x{scl | sda:02X}")
-        m = self.need(text, r"dut\.uio_in\.value\s*=\s*\(sda_drive\s*<<\s*(\d+)\)\s*\|\s*scl_drive", rel,
-                      "(sda_drive << N) | scl_drive composition")
-        if m:
-            self.check_pb(rel, "peripheral SDA drive shift", "uio_in", int(m.group(1)), "i2c_transfer", "SDA")
-            if scl != 1:
-                self.concrete.err(f"{rel}: scl_drive is composed unshifted (bit 0) but the table's "
-                                  f"SCL mask is 0x{scl:02X}")
-        for key in ("per_scl", "per_sda"):
-            m = self.need(text, rf'"{key}":\s*\("(\w+)",\s*(SCL|SDA)_BIT\)', rel, f"{key} capture spec")
-            if m and m.group(1) != "uio_in":
-                self.concrete.err(f"{rel}: {key} captured on {m.group(1)}, peripheral intent is uio_in")
+        # The peripheral drives the two lines through the pad model, by named
+        # bit; and the board and the captures are test_firmware_i2c's own.
+        self.pad_calls(rel, text, required=(("level", "SCL_BIT"), ("set_open_drain", "SDA_BIT"),
+                                            ("set_open_drain", "SCL_BIT")))
+        self.need(text, r"\bi2c_pads\(dut\)", rel, "i2c_pads(dut)")
+        self.need(text, r"capture_pin_bits\(dut,\s*CAPTURE_SPECS\b", rel,
+                  "capture_pin_bits(dut, CAPTURE_SPECS, ...)")
+        if re.search(r"\bi2c_board\(", text):
+            self.concrete.err(f"{rel}: calls i2c_board() itself; use test_firmware_i2c.i2c_pads "
+                              f"(would re-derive the pin)")
 
     def prof_bench_load(self, rel, ent):
         text = self.read(rel, self.concrete)
@@ -1091,7 +1231,11 @@ class Checker:
             for bit in range(8):
                 role = self.pins[("uio", bit)]["electrical_role"]
                 bitset = (val >> bit) & 1
-                if role == "open_drain":
+                if role == RUNTIME:
+                    self.unwired.append(
+                        f"uio[{bit}] runtime: its electrical role is set per firmware image "
+                        f"(DR 0012 UIO_DIR / UIO_OD); a top level with `uio_oe = {expr}` cannot serve it")
+                elif role == "open_drain":
                     self.unwired.append(
                         f"uio[{bit}] open_drain: needs uio_oe[{bit}] = ~uio_out[{bit}]; top level has "
                         f"`uio_oe = {expr}`")
@@ -1109,6 +1253,11 @@ class Checker:
             # the DR 0008 shape: PUSH_PULL | (OPEN_DRAIN & ~uio_out)
             if f"{od:02X}".lower() not in expr.lower() or "~" not in expr:
                 self.unwired.append(f"uio_oe expression `{expr}` does not visibly realise open-drain mask 0x{od:02X}")
+            for bit in range(8):
+                if self.pins[("uio", bit)]["electrical_role"] == RUNTIME:
+                    self.unwired.append(
+                        f"uio[{bit}] runtime: its electrical role is set per firmware image "
+                        f"(DR 0012 UIO_DIR / UIO_OD); DR 0008's synthesis-time mask cannot serve it")
         else:
             self.concrete.err(f"top-level `uio_oe = {expr}` is an unsupported extraction pattern")
         reset = getattr(self, "uio_out_reset", None)
@@ -1149,12 +1298,15 @@ class Checker:
         - both registers reset to 0, so every uio pin is an input from
           reset (an error otherwise: a pin would be driven before any
           program asked);
-        - each open-drain role in the table is a *firmware* convention:
-          every inventoried assembly file that drives `UIO_OUT` in an I2C
-          phase must set the table's open-drain mask with `WCTL UIO_OD`,
-          and must have released the lines (`OUT UIO_OUT`) first, because
-          `uio_out` resets to 0 and open-drain on a 0 pulls the pad low.
-          A file that does not is reported as unwired, not as an error.
+        - each runtime pin's role is a *firmware* convention (issue
+          #155): every inventoried SPI / I2C assembly file must write its
+          profile's `pin_modes` values (`WCTL UIO_DIR` for the push-pull
+          SPI lines, `WCTL UIO_OD` for the open-drain I2C lines), must
+          write no pin-mode register its profile leaves at 0, and must
+          have written its idle image (`OUT UIO_OUT`) first, because
+          `uio_out` resets to 0 and a driver or an open-drain pin enabled
+          on a 0 asserts the line. A file that does not is reported as
+          unwired, not as an error.
 
         The DR 0008 prerequisite "uio_out must reset released" does not
         apply in this shape: the pins are inputs at reset whatever
@@ -1172,10 +1324,6 @@ class Checker:
             elif int(m.group(1), 16) != 0:
                 self.concrete.err(
                     f"core: {reg} resets to 8'h{m.group(1)}; DR 0012 requires 0 (every uio pin an input at reset)")
-        od = self.od_mask
-        if not od:
-            return
-        asm_dir = self.root / "firmware" / "asm"
         # UART RX bench-debug writes to UIO_OUT (issue #154). Under a
         # synthesis-time open-drain mask they would pull uio pins low (the
         # prerequisite reported in the other shapes). Under DR 0012 they
@@ -1192,28 +1340,52 @@ class Checker:
                 self.unwired.append(
                     f"prerequisite: {rel} writes bench-debug values to UIO_OUT and also writes "
                     f"{', '.join(modes)}: the debug values would reach uio pads (DR 0012; issue #154)")
-        for path in sorted(asm_dir.glob("i2c_*.asm")) if asm_dir.is_dir() else []:
-            rel = str(path.relative_to(self.root))
-            ins = self.asm_instrs(path.read_text(encoding="utf-8"))
-            site = next((i for i, x in enumerate(ins)
-                         if x["m"] == "WCTL" and x["ops"][0].upper() == "UIO_OD"), None)
-            if site is None:
-                self.unwired.append(
-                    f"{rel}: drives open-drain pins (mask 0x{od:02X}) but has no `WCTL UIO_OD` "
-                    "(DR 0012: the pins stay inputs and the bus is never pulled low)")
+        # Each SPI / I2C image must put its runtime pins in the table's mode:
+        # write the profile's `pin_modes` value to UIO_DIR / UIO_OD, after
+        # its first `OUT UIO_OUT` (uio_out resets to 0, so enabling a driver
+        # or an open-drain pin first would assert the line), and write no
+        # pin-mode register the profile leaves at 0. A file that does not is
+        # reported as unwired, not as an error.
+        modes = getattr(self, "pin_modes", {})
+        what = {"uio_dir": ("UIO_DIR", "push-pull"), "uio_od": ("UIO_OD", "open-drain")}
+        for rel, ent in sorted(self.inv.items()):
+            prof = ent["profile"]
+            if prof not in ("spi", "i2c") or prof not in modes:
                 continue
-            reg = ins[site]["ops"][1]
-            val = next((self.imm(x["ops"][1]) for x in reversed(ins[:site])
-                        if x["m"] == "LDI" and x["ops"][0] == reg), None)
-            if val != od:
-                self.unwired.append(
-                    f"{rel}: `WCTL UIO_OD` writes {val if val is None else hex(val)}, "
-                    f"table open-drain mask is 0x{od:02X}")
-            released = any(x["m"] == "OUT" and x["ops"] == ["UIO_OUT", reg] for x in ins[:site])
-            if not released:
-                self.unwired.append(
-                    f"{rel}: `WCTL UIO_OD` precedes the first `OUT UIO_OUT` (uio_out resets to 0: "
-                    "the open-drain pins would be pulled low until released)")
+            text = self.read(rel, self.concrete)
+            if text is None:
+                continue
+            ins = self.asm_instrs(text)
+            for reg in PIN_MODE_REGS:
+                name, kind = what[reg]
+                want = modes[prof][reg]
+                sites = [i for i, x in enumerate(ins) if x["m"] == "WCTL"
+                         and x["ops"][0].upper() in (name, CTL_INDEX[name])]
+                self.concrete.sites += 1
+                if not want:
+                    if sites:
+                        self.unwired.append(
+                            f"{rel}: writes {name}, but the table's {prof} profile drives no "
+                            f"{kind} pin (pin_modes.{prof}.{reg} = 0x00)")
+                    continue
+                if not sites:
+                    self.unwired.append(
+                        f"{rel}: drives {kind} pins (mask 0x{want:02X}) but has no `WCTL {name}` "
+                        "(DR 0012: the pins stay inputs and never reach the bus)")
+                    continue
+                site = sites[0]
+                src = ins[site]["ops"][1]
+                val = next((self.imm(x["ops"][1]) for x in reversed(ins[:site])
+                            if x["m"] in self.WRITES and x["ops"][0] == src and x["m"] == "LDI"), None)
+                if val != want:
+                    self.unwired.append(
+                        f"{rel}: `WCTL {name}` writes {val if val is None else hex(val)}, "
+                        f"table {kind} mask is 0x{want:02X}")
+                released = any(x["m"] == "OUT" and x["ops"][0].upper() == "UIO_OUT" for x in ins[:site])
+                if not released:
+                    self.unwired.append(
+                        f"{rel}: `WCTL {name}` precedes the first `OUT UIO_OUT` (uio_out resets to 0: "
+                        f"the {kind} pins would be asserted low until the image is written)")
 
     # -------------------------------------------------------------------- run
     def run(self) -> None:

@@ -1,0 +1,8 @@
+13035c13035
+<  sg13cmos5l_buf_1 fanout124 (.A(\u_core.rom_exit ),
+---
+>  sg13cmos5l_buf_1 fanout124 (.A(1'b0),
+13403c13403
+<  sg13cmos5l_dlygate4sd3_1 hold289 (.A(\u_core.rom_exit ),
+---
+>  sg13cmos5l_dlygate4sd3_1 hold289 (.A(1'b0),

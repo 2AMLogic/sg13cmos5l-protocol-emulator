@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "kind": "generic",
+  "status": "pass",
+  "t1_item": 1,
+  "summary": "Design sources (Digital): the committed RTL under src/ and rtl/, the boot-ROM generator chain, the klt/Yosys synthesis request, and the two derived gate-level netlists of record (klt/Yosys: librelane-gds-signoff-check 20261010-133100-a0f91e3; LibreLane post-route: gds run 38054423540 at a0f91e3), each listed with its sha256. Refreshed 2026-10-10 for issue #139 (the boot ROM now holds the UART load, 223 words); first written by issue #83.",
+  "source": "manifests/evidence/design-sources.txt",
+  "provenance": {
+    "klt_version": "0.7.0",
+    "klayout_version": "0.30.12",
+    "pdk": null,
+    "deck": null,
+    "input": {
+      "content_hash": "sha256:d2f9a47cbc0dacc8c6627feabc54caa992cfbe764a3a80555f51e75928318401",
+      "path": "design-sources.txt"
+    }
+  }
+}

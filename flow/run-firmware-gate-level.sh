@@ -10,11 +10,20 @@
 # vendored SRAM macro behavioural model, -DFUNCTIONAL). No klt synthesis or
 # timing number is produced or implied.
 #
+# UART RX (issue #192): test_firmware_uart_rx drives the reference-model
+# receive frames on ui_in[1] into the netlist and reads the byte on uo_out and
+# the sample marks on uio_out. It is pin-only, so the WAIT-counter fault is
+# the right negative control (the receiver's inter-sample delays are WAITs).
+# Zero-delay: no SDF, no SRAM timing annotation, no pad electrical behaviour,
+# no measured wall-clock baud.
+#
 # Which netlist: the `tt_submission` artifact's `<top>.v` of a `gds` workflow
 # run -- the final netlist that the template's own `gl_test` job compiles.
 # Default: the byte-identical copy frozen under verification/records/
-# post-layout-sdf-regression/ from run 37996177546 (the first netlist with
-# DR 0013's boot ROM, issue #138). Override with
+# post-layout-sdf-regression/ from run 38054423540 (the first netlist with
+# the UART load in the boot ROM, issue #139, on top of the SPI-flash boot,
+# issue #140, the warm start's zero-signature refusal, issue #168, and the
+# A_REN drive buffer, issue #173). Override with
 # --netlist <file> (e.g. one from `gh run download <id> -n tt_submission`).
 #
 # Negative control (a suite that cannot fail cannot cite its passes): the
@@ -39,19 +48,48 @@
 # control: the net `\u_core.ctl_stall` (the fixed stall of the
 # 2-cycle control accesses) stuck at 0 the same way, on a second mutated copy.
 #
+# Pad path (issue #136, DR 0012): the I2C benches run on the silicon-true
+# pad model (verification/uio_pads.py), so on this netlist the SCL/SDA lines
+# they grade are resolved from the netlist's own `uio_oe` / `uio_out`; since
+# issue #155 the SPI bench does too (CS/MOSI/SCLK on uio[0]/[1]/[3]). The
+# WAIT-counter fault says nothing about that path, so every pad-model module
+# gets a second negative control on a third mutated copy: the top-level
+# output `uio_oe[3]` stuck at 0 -- the pad enable of SPI's SCLK and of I2C's
+# SDA (DR 0010's target plan; it was SCL's `uio_oe[0]` before #155) -- its
+# driving cell is rewired to a dangling net and the port tied to 1'b0.
+# `uio_out` is untouched, which is the point: the bench-composed bus these
+# benches graded before #136 would pass on that netlist; the pad model must
+# not.
+#
 # Boot ROM (issue #138, DR 0013 layer 2): --boot-rom adds
 # verification/test_boot_rom.py, pin-only under GATES=yes like the
 # control-space bench. Its negative control is the net `\u_core.rom_exit`
 # (the flop that records that a WCTL RUN left the boot ROM) stuck at 0 on a
-# third mutated copy: the boot program still verifies the image and still
+# fourth mutated copy: the boot program still verifies the image and still
 # jumps, but the core goes on decoding the ROM, so a verified image never
 # runs and the bench's warm-start test must fail.
 #
-# Usage:  ./flow/run-firmware-gate-level.sh [--netlist FILE] [--full] [--control-space] [--boot-rom]
+# SPI-flash boot (issue #140, DR 0013 strap 01): --boot-spi adds
+# verification/test_boot_spi.py, pin-only under GATES=yes. It boots signed
+# images from the independent flash model over the netlist's own CS0/MOSI/
+# SCK/MISO pads. Its negative control is the same `\u_core.rom_exit` stuck-
+# at-0 netlist: a good image never runs, so the bench's boot tests must fail.
+#
+# UART boot (issue #139, DR 0013 layer 2 strap 00): --boot-uart adds
+# verification/test_boot_uart.py, pin-only under GATES=yes (its white-box
+# reads and its two long runs -- the host-rate sweep and the 256-word image --
+# are skipped there). It shares the boot-rom negative control (`rom_exit`
+# stuck at 0: a verified UART load then never leaves the ROM).
+#
+# Usage:  ./flow/run-firmware-gate-level.sh [--netlist FILE] [--full] [--control-space] [--boot-rom] [--boot-spi] [--boot-uart]
 #   --full  also runs verification/test_firmware_i2c_sr.py (the Sr/stretch
-#           sibling bench); default is the three issue-#108 protocol benches.
+#           sibling bench); default is the UART TX, UART RX, SPI and I2C
+#           protocol benches (the three issue-#108 benches plus the UART RX
+#           bench, issue #192).
 #   --control-space  also runs verification/test_control_space.py.
 #   --boot-rom       also runs verification/test_boot_rom.py.
+#   --boot-spi       also runs verification/test_boot_spi.py.
+#   --boot-uart      also runs verification/test_boot_uart.py.
 # Env:    PDK_ROOT must contain ihp-sg13cmos5l/ (default ~/share/pdk).
 # Runs sims strictly one at a time. Writes flow/firmware-gate-level/
 # (gitignored): per-run results.xml, logs, mutated netlist, summary.json.
@@ -60,8 +98,8 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SCRATCH="${REPO_ROOT}/flow/firmware-gate-level"
-NETLIST="${REPO_ROOT}/verification/records/post-layout-sdf-regression/artifacts/20261009-220911-1dc1842/tt_um_2amlogic_protocol_emulator.v"
-MODULES=(test_firmware_uart test_firmware_spi test_firmware_i2c)
+NETLIST="${REPO_ROOT}/verification/records/post-layout-sdf-regression/artifacts/20261010-133000-a0f91e3/tt_um_2amlogic_protocol_emulator.v"
+MODULES=(test_firmware_uart test_firmware_uart_rx test_firmware_spi test_firmware_i2c)
 export PDK_ROOT="${PDK_ROOT:-$HOME/share/pdk}"
 
 while [ $# -gt 0 ]; do
@@ -70,7 +108,9 @@ while [ $# -gt 0 ]; do
     --full) MODULES+=(test_firmware_i2c_sr); shift ;;
     --control-space) MODULES+=(test_control_space); shift ;;
     --boot-rom) MODULES+=(test_boot_rom); shift ;;
-    -h|--help) sed -n '2,49p' "${BASH_SOURCE[0]}"; exit 0 ;;
+    --boot-spi) MODULES+=(test_boot_spi); shift ;;
+    --boot-uart) MODULES+=(test_boot_uart); shift ;;
+    -h|--help) sed -n '2,95p' "${BASH_SOURCE[0]}"; exit 0 ;;
     *) echo "FATAL: unknown argument $1" >&2; exit 1 ;;
   esac
 done
@@ -104,14 +144,31 @@ for mod in "${MODULES[@]}"; do
   if [ "$mod" = test_control_space ]; then
     inject_fault '\\u_core\.ctl_stall' '\u_core.ctl_stall' "$MUTANT_CTL"
   fi
-  if [ "$mod" = test_boot_rom ]; then
+  if [ "$mod" = test_boot_rom ] || [ "$mod" = test_boot_spi ] || [ "$mod" = test_boot_uart ]; then
     inject_fault '\\u_core\.rom_exit' '\u_core.rom_exit' "$MUTANT_BOOT"
   fi
 done
+MUTANT_PAD="${SCRATCH}/mutant-uio_oe3-stuck0.v"
+python3 -I - "$NETLIST" "$MUTANT_PAD" <<'PYEOF'
+import re, sys
+src, dst = sys.argv[1:3]
+text = open(src, encoding="utf-8").read()
+# the one cell output that drives the port, rewired to a dangling net
+text, n = re.subn(r"\.(Y|X|Q|Z)\(uio_oe\[3\]\)", r".\1(pad_fault_uio_oe3_unconnected)", text)
+if n != 1:
+    sys.exit(f"FATAL: expected exactly one cell output driving uio_oe[3], found {n}")
+text, m = re.subn(r"(\n output \[7:0\] uio_oe;\n)",
+                  r"\1 wire pad_fault_uio_oe3_unconnected;\n assign uio_oe[3] = 1'b0;\n", text)
+if m != 1:
+    sys.exit("FATAL: top-level `output [7:0] uio_oe;` declaration not found")
+open(dst, "w", encoding="utf-8").write(text)
+print("fault injected: top-level output uio_oe[3] stuck at 0 (driver disconnected)", file=sys.stderr)
+PYEOF
+on_pads() { case "$1" in test_firmware_spi|test_firmware_i2c|test_firmware_i2c_sr) return 0 ;; *) return 1 ;; esac; }
 mutant_for() {  # the faulted netlist that must make <module> fail
   case "$1" in
     test_control_space) echo "$MUTANT_CTL" ;;
-    test_boot_rom) echo "$MUTANT_BOOT" ;;
+    test_boot_rom|test_boot_spi|test_boot_uart) echo "$MUTANT_BOOT" ;;
     *) echo "$MUTANT" ;;
   esac
 }
@@ -161,6 +218,15 @@ for mod in "${MODULES[@]}"; do
   [[ "$out" == *"unparsed=0"* && "$out" != *"failed=0"* && "$out" != *"rc=0" ]] || ok=0
   [ "$ok" -eq 1 ] || FAILED=1
   echo "${sep}    {\"kind\": \"negative-control\", \"module\": \"${mod}\", \"result\": \"${out}\", \"as_required\": $([ $ok -eq 1 ] && echo true || echo false)}" >> "${SCRATCH}/summary.json"; sep=","
+done
+for mod in "${MODULES[@]}"; do
+  on_pads "$mod" || continue
+  out="$(run_bench mutant-pad "$MUTANT_PAD" "$mod")"
+  echo "PAD-FAULT-RUN ${mod}: ${out}" >&2
+  ok=1
+  [[ "$out" == *"unparsed=0"* && "$out" != *"failed=0"* && "$out" != *"rc=0" ]] || ok=0
+  [ "$ok" -eq 1 ] || FAILED=1
+  echo "${sep}    {\"kind\": \"negative-control-pad\", \"fault\": \"uio_oe[3] stuck at 0\", \"module\": \"${mod}\", \"result\": \"${out}\", \"as_required\": $([ $ok -eq 1 ] && echo true || echo false)}" >> "${SCRATCH}/summary.json"; sep=","
 done
 echo "" >> "${SCRATCH}/summary.json"; echo "  ]" >> "${SCRATCH}/summary.json"; echo "}" >> "${SCRATCH}/summary.json"
 python3 -I -c "import json,sys; json.load(open(sys.argv[1]))" "${SCRATCH}/summary.json"

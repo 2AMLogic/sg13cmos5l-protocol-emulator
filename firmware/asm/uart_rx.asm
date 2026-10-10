@@ -10,21 +10,23 @@
 ; arithmetic at an unconfirmed clock; the claim is the cycle count.
 ;
 ; Pins:
-;   RX          UI_IN bit 0 (idle HIGH). Held high by the bench from the MODE
-;               drop onward; the program also waits for a high line (`sync`)
+;   RX          UI_IN bit 1 (idle HIGH; DR 0010 target pin plan, USB-bridge
+;               option B). UI_IN bit 0 is PROG_SER and plays no part here.
+;               Held high by the bench from the MODE drop onward; the program also waits for a high line (`sync`)
 ;               before arming start detect, so a low line at boot is not a
 ;               start bit.
 ;   result      UO_OUT, all 8 bits: the received byte, written as soon as the
 ;               8th data bit has been sampled; holds until the next frame.
-;   sample mark UIO_OUT bit 0: high for the cycles between each `IN` of the
+;   sample mark UIO_OUT bit 1: high for the cycles between each `IN` of the
 ;               line and the following clear. Observability aid so the bench
 ;               can read the firmware's real sample instants off the pins.
-;   frame error UIO_OUT bit 1: set after the stop-bit sample when the stop bit
+;   frame error UIO_OUT bit 2: set after the stop-bit sample when the stop bit
 ;               read 0; cleared by the next frame's first sample mark.
 ;
 ; Registers: R0 = shift accumulator (bits enter at bit 7, shift right, so
 ;            the first (LSB) bit lands in bit 0 after 8 shifts)
-;            R1 = constant 1 (bit mask, XOR mask, and loop decrement)
+;            R1 = constant 2 (RX bit mask, XOR mask, sample-mark value and loop
+;                 decrement; delay-loop counts below are doubled to match)
 ;            R2 = pin sample / scratch
 ;            R3 = constant 0 outside delay loops (strobe clear); the outer
 ;                 delay counter inside them, back to 0 on exit
@@ -43,7 +45,7 @@
 ; all are start-edge/framing handshakes taken AFTER the last sample of a
 ; frame or BEFORE the first, never between samples (DR 0001 'Timing model').
 
-        LDI   R1, 1
+        LDI   R1, 2
         LDI   R3, 0
         OUT   UO_OUT, R3       ; result register cleared
         OUT   UIO_OUT, R3      ; marks and error flag cleared
@@ -60,7 +62,7 @@ poll:
         IN    R2, UI_IN        ; SAMPLE (bit centre)
         OUT   UIO_OUT, R1      ; sample mark high
         AND   R2, R1
-        SHF   R2, LEFT         ; move the sampled bit up to bit 7
+        NOP                    ; RX is bit 1: six shifts reach bit 7; the NOP keeps the 7-cycle slot
         SHF   R2, LEFT         ; move the sampled bit up to bit 7
         SHF   R2, LEFT         ; move the sampled bit up to bit 7
         SHF   R2, LEFT         ; move the sampled bit up to bit 7
@@ -75,7 +77,7 @@ poll:
         IN    R2, UI_IN        ; SAMPLE (bit centre)
         OUT   UIO_OUT, R1      ; sample mark high
         AND   R2, R1
-        SHF   R2, LEFT         ; move the sampled bit up to bit 7
+        NOP                    ; RX is bit 1: six shifts reach bit 7; the NOP keeps the 7-cycle slot
         SHF   R2, LEFT         ; move the sampled bit up to bit 7
         SHF   R2, LEFT         ; move the sampled bit up to bit 7
         SHF   R2, LEFT         ; move the sampled bit up to bit 7
@@ -90,7 +92,7 @@ poll:
         IN    R2, UI_IN        ; SAMPLE (bit centre)
         OUT   UIO_OUT, R1      ; sample mark high
         AND   R2, R1
-        SHF   R2, LEFT         ; move the sampled bit up to bit 7
+        NOP                    ; RX is bit 1: six shifts reach bit 7; the NOP keeps the 7-cycle slot
         SHF   R2, LEFT         ; move the sampled bit up to bit 7
         SHF   R2, LEFT         ; move the sampled bit up to bit 7
         SHF   R2, LEFT         ; move the sampled bit up to bit 7
@@ -105,7 +107,7 @@ poll:
         IN    R2, UI_IN        ; SAMPLE (bit centre)
         OUT   UIO_OUT, R1      ; sample mark high
         AND   R2, R1
-        SHF   R2, LEFT         ; move the sampled bit up to bit 7
+        NOP                    ; RX is bit 1: six shifts reach bit 7; the NOP keeps the 7-cycle slot
         SHF   R2, LEFT         ; move the sampled bit up to bit 7
         SHF   R2, LEFT         ; move the sampled bit up to bit 7
         SHF   R2, LEFT         ; move the sampled bit up to bit 7
@@ -120,7 +122,7 @@ poll:
         IN    R2, UI_IN        ; SAMPLE (bit centre)
         OUT   UIO_OUT, R1      ; sample mark high
         AND   R2, R1
-        SHF   R2, LEFT         ; move the sampled bit up to bit 7
+        NOP                    ; RX is bit 1: six shifts reach bit 7; the NOP keeps the 7-cycle slot
         SHF   R2, LEFT         ; move the sampled bit up to bit 7
         SHF   R2, LEFT         ; move the sampled bit up to bit 7
         SHF   R2, LEFT         ; move the sampled bit up to bit 7
@@ -135,7 +137,7 @@ poll:
         IN    R2, UI_IN        ; SAMPLE (bit centre)
         OUT   UIO_OUT, R1      ; sample mark high
         AND   R2, R1
-        SHF   R2, LEFT         ; move the sampled bit up to bit 7
+        NOP                    ; RX is bit 1: six shifts reach bit 7; the NOP keeps the 7-cycle slot
         SHF   R2, LEFT         ; move the sampled bit up to bit 7
         SHF   R2, LEFT         ; move the sampled bit up to bit 7
         SHF   R2, LEFT         ; move the sampled bit up to bit 7
@@ -150,7 +152,7 @@ poll:
         IN    R2, UI_IN        ; SAMPLE (bit centre)
         OUT   UIO_OUT, R1      ; sample mark high
         AND   R2, R1
-        SHF   R2, LEFT         ; move the sampled bit up to bit 7
+        NOP                    ; RX is bit 1: six shifts reach bit 7; the NOP keeps the 7-cycle slot
         SHF   R2, LEFT         ; move the sampled bit up to bit 7
         SHF   R2, LEFT         ; move the sampled bit up to bit 7
         SHF   R2, LEFT         ; move the sampled bit up to bit 7
@@ -165,7 +167,7 @@ poll:
         IN    R2, UI_IN        ; SAMPLE (bit centre)
         OUT   UIO_OUT, R1      ; sample mark high
         AND   R2, R1
-        SHF   R2, LEFT         ; move the sampled bit up to bit 7
+        NOP                    ; RX is bit 1: six shifts reach bit 7; the NOP keeps the 7-cycle slot
         SHF   R2, LEFT         ; move the sampled bit up to bit 7
         SHF   R2, LEFT         ; move the sampled bit up to bit 7
         SHF   R2, LEFT         ; move the sampled bit up to bit 7
@@ -182,7 +184,7 @@ poll:
         OUT   UIO_OUT, R1      ; sample mark high
         AND   R2, R1
         XOR   R2, R1           ; 1 when the stop bit read 0 (framing error)
-        SHF   R2, LEFT         ; -> UIO_OUT bit 1 (SHF leaves Z alone)
+        SHF   R2, LEFT         ; -> UIO_OUT bit 2 (SHF leaves Z alone)
         OUT   UIO_OUT, R2      ; also clears the mark
         BZ    poll             ; clean stop bit: re-arm start detect at once
         JMP   sync             ; stop bit read 0: wait for the line to go high first

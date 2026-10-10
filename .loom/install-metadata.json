@@ -1,8 +1,8 @@
 {
-  "loom_version": "0.19.982",
-  "loom_commit": "2bc4cba624b9053535663441e6f0daf08a7acf2e",
+  "loom_version": "0.19.1019",
+  "loom_commit": "febfc4335d0554865fadbecba718245cd88c6678",
   "install_date": "2026-09-12",
-  "loom_source_remote": "https://github.com/rjwalters/loom.git",
+  "loom_source_remote": "git@github.com:rjwalters/loom.git",
   "installed_files": [
     ".claude/agents/loom-architect.md",
     ".claude/agents/loom-auditor.md",
@@ -511,7 +511,6 @@
     ".claude/commands/loom/cargo-target-isolation.md",
     ".claude/commands/loom/sweep-backend-detection.md",
     ".claude/commands/loom/sweep-reference.md",
-    ".loom/docs/eta.md",
     ".loom/docs/tracing.md",
     ".loom/hooks/guard-readonly-dirs.sh.template",
     ".loom/hooks/tests/test-guard-worktree-paths.sh",
@@ -532,8 +531,21 @@
     ".loom/scripts/tests/test-spawn-claude-ambient-scrub.sh",
     ".loom/scripts/tests/test-spawn-claude-credential-proxy.sh",
     ".loom/scripts/tests/test-worktree-stale-closed-branch.sh",
-    ".loom/docs/telemetry-replay.md"
+    ".loom/docs/telemetry-replay.md",
+    ".loom/docs/comment-body-heredoc-quoting.md",
+    ".agents/skills/loom-auditor/SKILL.md",
+    ".agents/skills/loom-comment-body-literal-path/SKILL.md",
+    ".agents/skills/loom-curator/SKILL.md",
+    ".loom/docs/comment-trust.md",
+    ".loom/docs/merge-pr-exit-code-exceptions.md",
+    ".loom/scripts/tests/test-merge-pr-label-freshness.sh",
+    ".loom/scripts/tests/test-spawn-codex-session-exec.sh",
+    ".loom/docs/priority-model.md",
+    ".claude/commands/loom/champion-critical-file-hold.md",
+    ".loom/docs/rollout-check.md",
+    ".loom/docs/telemetry-kind-pick-decision.md",
+    ".loom/scripts/tests/test-sweep-lease-renew-lifecycle.sh"
   ],
-  "last_resync": "2026-10-09",
+  "last_resync": "2026-10-10",
   "requires_daemon": "0.19.772"
 }

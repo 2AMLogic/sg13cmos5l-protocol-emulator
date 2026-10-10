@@ -1083,6 +1083,15 @@ can still opt a single command back in with an inline `CARGO_INCREMENTAL=1
 cargo …` prefix. Full rationale:
 [`build-gate.md` → Worker builds run with `CARGO_INCREMENTAL=0`](build-gate.md).
 
+Beside it, the dispatcher caps dev/test debuginfo (#11190):
+`CARGO_PROFILE_DEV_DEBUG` and `CARGO_PROFILE_TEST_DEBUG` are set to
+`line-tables-only`. These are `${VAR:-default}` defaults. An ambient value, or a
+`debug` key the repo sets in its `dev` or `test` profile table, is kept. The
+per-repo opt-out is `cargo.debuginfo: "full"` or `false` (env
+`LOOM_CARGO_DEBUGINFO`).
+Details:
+[`build-gate.md` → Worker builds cap debuginfo at `line-tables-only`](build-gate.md).
+
 ### Adapter observability markers
 
 Daemon-compatible runners emit a small, secret-free contract on stderr:
@@ -1913,6 +1922,54 @@ covers the image build, the version-pin assertions, two-worker
 disjointness, and the writable-layer credential scan, but — like #8434's own
 still-open canary item — **not** a credentialed functional run (no Kimi
 account was available either).
+
+#### Observe mode: passive per-request telemetry (issue #11300, slice 1)
+
+The egress proxy can also **read** the responses it already relays and export
+one telemetry record per request, so a flat-rate seat's token spend, latency
+and rate-limit pressure are visible without a second client in the path.
+Default **off**. Both of these must be true for a launch:
+
+| Switch | Where |
+|---|---|
+| Profile opt-in | `credentialProxy.observe: true` in the model profile |
+| Workspace flag | `LOOM_EGRESS_PROXY_OBSERVE` (`1`/`true`/`yes`, env wins) over `runtimes.containment.credentialProxyObserve` |
+
+What it guarantees:
+
+- **Transparent.** The forwarded request is the client's own: every header
+  (`User-Agent` included) arrives byte-identical, only the placeholder is
+  swapped for the credential, `host` / `content-length` are recomputed, and
+  nothing Loom-identifying is added. (One library default: a client that
+  sent no `Accept` gets `Accept: */*`, which RFC 9110 defines an absent
+  `Accept` to mean anyway; a client's own `Accept` is never touched.) `observe_tests.rs` pins this, with
+  observe mode on and off. Whether a given provider's terms allow a
+  pass-through proxy is the operator's call; get it in writing before a fleet
+  rollout.
+- **Passive.** Chunks are relayed as received; the parser sees a copy after the
+  relay decided to forward it, never awaits, and any parse failure only stops
+  parsing. It keeps at most 256 KiB of one partial SSE line (longer lines are
+  skipped) and copies a non-streaming body up to 1 MiB. Measured bound: under
+  1 ms per chunk, asserted in the unit tests.
+- **No bodies, no credentials.** Exported: token counts (input uncached /
+  output / cache read / cache write), model (sanitised), status, latency, time
+  to first byte, and for a non-2xx response a closed error code
+  (`rate_limited`, `exhausted`, `credential`, `http_4xx`, `http_5xx`,
+  `upstream_error`). An error body is classified and dropped.
+
+Emitted through `observability::ops`: metrics `loom.egress.requests`,
+`.tokens` (`kind`), `.latency`, `.ttft` (labels `provider`, `account` = seat,
+`model`, `role`, `outcome`, `reason`), and one `loom.egress.request` span per
+request with `loom.egress.{seat,tap,profile,launch_id,status,latency_ms,
+ttft_ms,error_code,stream}` plus `loom.runtime`, `loom.role`, `loom.issue`,
+`loom.pr_number`, `loom.sweep_id`, `loom.model`, `loom.tokens.*`. Role, issue,
+PR and sweep come from the launching environment (`LOOM_ROLE`,
+`LOOM_ISSUE_NUMBER` or the `sweep-issue-<N>-` sweep id, `LOOM_PR_NUMBER`,
+`LOOM_SWEEP_ID`).
+
+Not in this slice (tracked on #11300): marking the pool from the live 429,
+loopback proxying of uncontained launches, and injecting the OpenCode base URL
+through `XDG_CONFIG_HOME`.
 
 ### Containerized dispatch mode for Claude sweeps (issue #7429, epic #6896 Phase 3)
 

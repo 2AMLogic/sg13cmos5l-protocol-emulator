@@ -47,7 +47,13 @@ jobs:
         run: git fetch --no-tags --quiet origin +refs/heads/main:refs/remotes/origin/main
 
       - name: Syntax-check the verification scripts
-        run: python3 -m compileall -q verification firmware flow
+        run: |
+          python3 -m compileall -q verification firmware flow
+          # The ISA reference simulator, its lockstep bench, generator, mutant
+          # runner and unit tests (issue #152), named so a rename cannot drop them.
+          python3 -m py_compile verification/reference_models/isa.py \
+            verification/isa_lockstep_gen.py verification/test_isa_model.py \
+            verification/test_isa_lockstep.py verification/isa_lockstep_mutants.py
 
       # Firmware toolchain (issue #22, DR 0003): the assembler's unit
       # tests (whole instruction set + malformed input) and a freshness
@@ -62,6 +68,7 @@ jobs:
         run: |
           python3 firmware/tools/test_asm.py
           python3 firmware/tools/test_gen_boot_rom.py
+          python3 firmware/tools/test_loadseq.py
           python3 firmware/tools/check_firmware.py
 
       # Datasheet drift (issue #110): docs/info.md's image table must agree
@@ -117,7 +124,8 @@ jobs:
   # deliberate local runs. Benches need `klt functional-verification` (the
   # requests carry the sources, defines and recorded seeds), so klt +
   # cocotb are provisioned with the same setup-env.sh as the signoff job.
-  # The formal mutant gate (yosys/SBY) is not run here: follow-up.
+  # The formal gate is NOT part of the per-PR run: see the `formal` job
+  # below (manual workflow_dispatch only, issue #122).
   rtl-benches:
     name: RTL cocotb benches (no PDK)
     runs-on: ubuntu-24.04
@@ -134,3 +142,70 @@ jobs:
 
       - name: Run the RTL benches (gate only, no records written)
         run: scripts/run-rtl-benches.sh
+
+  # Formal gate (issue #122): the Yosys+SMTBMC/ABC harnesses under
+  # verification/formal/ (no klt, no PDK, no simulator). The toolchain is a
+  # pinned OSS CAD Suite release (yosys, yosys-abc, yosys-smtbmc, z3) fetched
+  # as a tarball verified against a sha256 (the digest GitHub reports for the
+  # release asset). Versions are printed in the log. Pass/fail gate only:
+  # artifacts go to $RUNNER_TEMP, nothing is written under
+  # verification/records/ (evidence records stay deliberate local runs, and a
+  # green run is not one). Scripts run with their default timeouts.
+  #
+  # Manual (workflow_dispatch) only, by measurement (issue #122): two
+  # consecutive hosted-runner runs were green with identical PASS verdicts but
+  # took ~18 min and ~14 min of job time (the no-data-dependent-latency
+  # real-core BMC dominates and varies 9.4-13.1 min), over the ~10 min
+  # per-PR bar. See verification/README.md "What CI runs vs. what stays
+  # local" for the numbers. Dispatch it to re-measure or to re-check a
+  # toolchain bump.
+  formal:
+    name: formal gate (yosys/ABC/z3)
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      OSS_CAD_DATE: '20261009'
+      OSS_CAD_SHA256: 20b7bd2d24e187aa87bbb3a0b70369a6aa352dac2048033eb2e68439a477ca0d
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch pinned OSS CAD Suite (checksum verified)
+        run: |
+          set -euo pipefail
+          d="$RUNNER_TEMP/oss-cad"
+          mkdir -p "$d"
+          url="https://github.com/YosysHQ/oss-cad-suite-build/releases/download/${OSS_CAD_DATE:0:4}-${OSS_CAD_DATE:4:2}-${OSS_CAD_DATE:6:2}/oss-cad-suite-linux-x64-${OSS_CAD_DATE}.tgz"
+          curl -fsSL --retry 3 -o "$RUNNER_TEMP/oss-cad.tgz" "$url"
+          echo "${OSS_CAD_SHA256}  $RUNNER_TEMP/oss-cad.tgz" | sha256sum -c -
+          tar -xzf "$RUNNER_TEMP/oss-cad.tgz" -C "$d" --strip-components=1
+          echo "$d/bin" >> "$GITHUB_PATH"
+          echo "$d/lib" >> "$GITHUB_PATH"
+
+      - name: Print tool versions
+        run: |
+          yosys -V
+          yosys-abc -q 'version' || true
+          yosys-smtbmc --help | head -1 || true
+          z3 --version
+
+      - name: no-data-dependent-latency (property + controls)
+        run: |
+          start=$SECONDS
+          verification/formal/run-no-data-dependent-latency.sh "$RUNNER_TEMP/formal-ndl"
+          echo "wall: $((SECONDS-start)) s"
+
+      - name: mutant-gate regression
+        run: |
+          start=$SECONDS
+          verification/formal/test-mutant-gate.sh
+          echo "wall: $((SECONDS-start)) s"
+
+      - name: pin-write-latency (ABC proofs, covers, mutants)
+        run: |
+          start=$SECONDS
+          verification/formal/run-pin-write-latency.sh "$RUNNER_TEMP/formal-pwl"
+          echo "wall: $((SECONDS-start)) s"
+
+      - name: Nothing written under verification/records
+        run: test -z "$(git status --porcelain -- verification/records)"

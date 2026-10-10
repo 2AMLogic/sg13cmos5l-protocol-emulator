@@ -1,0 +1,103 @@
+{
+ "bench": "verification/test_boot_uart.py",
+ "runs": [
+  {
+   "kind": "mutant",
+   "name": "verdict-always-accepts",
+   "defect": "the trailer comparison's branch is a NOP: every frame is answered 0x06 and run",
+   "file": "rtl/protocol_boot_rom.v",
+   "tests": 1,
+   "failed": [
+    "test_bad_images_never_run"
+   ],
+   "expected_catchers": [
+    "test_bad_images_never_run"
+   ],
+   "as_required": true
+  },
+  {
+   "kind": "mutant",
+   "name": "trailer-high-byte-unchecked",
+   "defect": "the trailer comparison ORs R0 with itself, so only the low CRC byte is compared",
+   "file": "rtl/protocol_boot_rom.v",
+   "tests": 1,
+   "failed": [
+    "test_bad_images_never_run"
+   ],
+   "expected_catchers": [
+    "test_bad_images_never_run"
+   ],
+   "as_required": true
+  },
+  {
+   "kind": "mutant",
+   "name": "crc-not-cleared-at-the-count",
+   "defect": "the count handler no longer clears PM_CRC, so a retry after a rejected frame carries the old frame's residue",
+   "file": "rtl/protocol_boot_rom.v",
+   "tests": 1,
+   "failed": [
+    "test_bad_images_never_run"
+   ],
+   "expected_catchers": [
+    "test_bad_images_never_run"
+   ],
+   "as_required": true
+  },
+  {
+   "kind": "mutant",
+   "name": "rx-bit-period-wrong",
+   "defect": "the receiver's bit period is 466 cycles, not 434",
+   "file": "rtl/protocol_boot_rom.v",
+   "tests": 1,
+   "failed": [
+    "test_nominal_load_runs_the_image"
+   ],
+   "expected_catchers": [
+    "test_nominal_load_runs_the_image"
+   ],
+   "as_required": true
+  },
+  {
+   "kind": "mutant",
+   "name": "rx-reads-ui-in-bit-0",
+   "defect": "the receiver masks ui_in[0] instead of ui_in[1]",
+   "file": "rtl/protocol_boot_rom.v",
+   "tests": 1,
+   "failed": [
+    "test_nominal_load_runs_the_image"
+   ],
+   "expected_catchers": [
+    "test_nominal_load_runs_the_image"
+   ],
+   "as_required": true
+  },
+  {
+   "kind": "mutant",
+   "name": "tx-stop-bit-too-short",
+   "defect": "the reply's stop bit is padded for 82 cycles, not 171",
+   "file": "rtl/protocol_boot_rom.v",
+   "tests": 1,
+   "failed": [
+    "test_nominal_load_runs_the_image"
+   ],
+   "expected_catchers": [
+    "test_nominal_load_runs_the_image"
+   ],
+   "as_required": true
+  },
+  {
+   "kind": "mutant",
+   "name": "handover-drops-the-guard-last",
+   "defect": "the hand-over clears uio_out before UIO_OD and UIO_DIR: for two cycles every uio pin drives low",
+   "file": "rtl/protocol_boot_rom.v",
+   "tests": 1,
+   "failed": [
+    "test_nominal_load_runs_the_image"
+   ],
+   "expected_catchers": [
+    "test_nominal_load_runs_the_image"
+   ],
+   "as_required": true
+  }
+ ]
+}
