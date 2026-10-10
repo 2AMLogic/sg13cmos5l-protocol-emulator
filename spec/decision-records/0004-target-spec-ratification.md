@@ -200,6 +200,8 @@ the row's 2 % bound is now derived from Maxim Integrated tutorial 2141 and
 written as "≤ 2 %", the same value.
 Row 9: the competition post asks for open source and names no licence;
 Apache-2.0 is this repo's own choice (`LICENSE`), still required by the row.
+Row 12: the current UM10204 is Rev. 7.0, where the same minimums are in
+Table 11.
 
 *klayout-tools issue citations above: [#1784] and [#1786] are
 `2AMLogic/klayout-tools` issues 1784 and 1786, both closed as of
