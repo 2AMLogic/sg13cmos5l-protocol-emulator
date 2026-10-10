@@ -462,16 +462,57 @@ def _(fx):
     expect_fail(fx, "SDA_PIN/SDA_BIT", "concrete-firmware-bench")
 
 
-@case("I2C bench released literal mutated")
+@case("I2C bench line read on the wrong port")
 def _(fx):
-    fx.mutate("verification/test_firmware_i2c.py", "_RELEASED = 0x81", "_RELEASED = 0x82")
-    expect_fail(fx, "_RELEASED", "concrete-firmware-bench")
+    fx.mutate("verification/test_firmware_i2c.py", 'LINE_PIN = "uio_in"', 'LINE_PIN = "uio_out"')
+    expect_fail(fx, "LINE_PIN", "concrete-firmware-bench")
 
 
-@case("I2C SR bench peripheral SDA shift mutated")
+@case("I2C bench grades a line captured on the wrong bit")
 def _(fx):
-    fx.mutate("verification/test_firmware_i2c_sr.py", "(sda_drive << 7)", "(sda_drive << 6)")
-    expect_fail(fx, "peripheral SDA drive shift", "concrete-firmware-bench")
+    fx.mutate("verification/test_firmware_i2c.py", '"sda": (LINE_PIN, SDA_BIT)',
+              '"sda": (LINE_PIN, 6)')
+    expect_fail(fx, '"sda": (LINE_PIN, SDA_BIT) capture spec', "concrete-firmware-bench")
+
+
+@case("I2C bench board wired with a literal pin")
+def _(fx):
+    fx.mutate("verification/test_firmware_i2c.py", "i2c_board(dut, scl=SCL_BIT, sda=SDA_BIT)",
+              "i2c_board(dut, scl=SCL_BIT, sda=6)")
+    expect_fail(fx, "i2c_board(dut, scl=SCL_BIT, sda=SDA_BIT)", "concrete-firmware-bench")
+
+
+@case("I2C bench peripheral names a pad by literal")
+def _(fx):
+    fx.mutate("verification/test_firmware_i2c.py", "pads.pull_low(SDA_BIT)", "pads.pull_low(6)")
+    expect_fail(fx, "pads.pull_low(6, ...)", "concrete-firmware-bench")
+
+
+@case("I2C bench bypasses the pad model by writing uio_in")
+def _(fx):
+    fx.mutate("verification/test_firmware_i2c.py", "                pads.pull_low(SDA_BIT)",
+              "                pads.pull_low(SDA_BIT)\n                dut.uio_in.value = 0x01")
+    expect_fail(fx, "writes dut.uio_in directly", "concrete-firmware-bench")
+
+
+@case("I2C SR bench peripheral drives a pad named by literal")
+def _(fx):
+    fx.mutate("verification/test_firmware_i2c_sr.py", "pads.set_open_drain(SDA_BIT, sda_drive)",
+              "pads.set_open_drain(6, sda_drive)")
+    expect_fail(fx, "pads.set_open_drain(6, ...)", "concrete-firmware-bench")
+
+
+@case("I2C SR bench wires its own board")
+def _(fx):
+    fx.mutate("verification/test_firmware_i2c_sr.py", "    pads = i2c_pads(dut).start()",
+              "    pads = i2c_board(dut, scl=0, sda=6).start()")
+    expect_fail(fx, "i2c_pads(dut)", "concrete-firmware-bench")
+
+
+@case("I2C SR bench does not import the capture specs")
+def _(fx):
+    fx.mutate("verification/test_firmware_i2c_sr.py", "    CAPTURE_SPECS,\n", "")
+    expect_fail(fx, "does not import CAPTURE_SPECS", "concrete-firmware-bench")
 
 
 @case("load bench MODE literal and serial position mutated")

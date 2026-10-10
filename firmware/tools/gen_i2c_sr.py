@@ -127,8 +127,8 @@ def build(mode, poll):
 ; bit 7 = SDA, writing 1 RELEASES the line. On silicon that is DR 0012's
 ; open-drain pin mode: the setup writes 0x81 to UIO_OD (`WCTL UIO_OD`)
 ; right AFTER the OUT of 0x81 (uio_out resets to 0x00; enabling open-drain
-; first would pull both lines low for a cycle). The bench still composes
-; the wired-AND from uio_out/uio_in; the silicon-true pad model is #136.
+; first would pull both lines low for a cycle). The bench runs on a pad
+; model that resolves each line from uio_oe/uio_out (uio_pads.py, #136).
 ;
 ; Budgets (cycles): t_LOW {L}, t_HIGH {H}, t_HD;STA {HD}, t_SU;STA {SUSTA},
 ; t_SU;STO {SUSTO}.  t_SU;STA is the span from the SCL rise that precedes the

@@ -27,6 +27,7 @@ BENCHES=(
   firmware-uart
   firmware-uart-rx
   firmware-spi
+  uio-pads
   firmware-i2c
   firmware-i2c-sr
   firmware-roundtrip

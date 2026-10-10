@@ -22,10 +22,10 @@
 ; 0x81 comes BEFORE the WCTL on purpose: uio_out resets to 0x00, so
 ; enabling open-drain first would pull both lines low for a cycle. Until
 ; the WCTL retires both pins are inputs (DR 0012's reset state), i.e.
-; released. The bench still composes the wired-AND bus (line =
-; controller_output AND peripheral_output) from uio_out/uio_in; the
-; silicon-true pad model that consumes uio_oe, and the re-run of this
-; evidence on it, are issue #136.
+; released. The bench runs this program on a pad model that resolves
+; each line from uio_oe/uio_out, a pull-up and the peripheral, and reads
+; it back on uio_in (verification/uio_pads.py, issue #136): the bus it
+; grades goes low only where this program's pad is enabled and driving 0.
 ;
 ; The 0x80 mask (R1) does double duty: it extracts the current data bit
 ; from R0's MSB AND is exactly the "SCL low, SDA released" ACK-slot pin
