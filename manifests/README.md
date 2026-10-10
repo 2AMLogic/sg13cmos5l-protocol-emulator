@@ -20,6 +20,7 @@ this block's row by its `block` field.
 | File | What it is |
 |---|---|
 | [`sg13cmos5l-protocol-emulator.json`](sg13cmos5l-protocol-emulator.json) | The block manifest itself. `block` (required — the fleet roll-up's row identity) and `kind` are the two declarations; `evidence` maps T1 item ids to their citations. |
+| [`evidence/`](evidence/) | Added 2026-10-10 (issue #83). The audited artifacts behind T1 items 1, 2, 9 and 10 and the artifact-anchored `generic` envelope that attests each: `design-sources.txt` + `design-sources.json` (item 1), `layout-gds.json` (item 2, bound to the committed GDS directly), `testbenches.txt` + `testbenches.json` (item 9), `hygiene.txt` + `hygiene.json` (item 10). See "Items 1, 2, 9 and 10" below. |
 
 There is no longer a vendored copy of the evidence-tiers checklist in this
 directory — see "The vendored tiers doc" below for why it was retired.
@@ -204,6 +205,29 @@ capture, PVT corner sweeps, or Monte Carlo.
   envelope cannot satisfy (the reason item 9 renders, described above). It
   is not met. Baseline: `signoff-baseline` record
   `20261010-102923-d43f89c`, 1 of 11.
+- **Items 1, 2, 9 and 10, state as of 2026-10-10 (issue #83).** Append-only;
+  the item 9 bullet above and the "Every other item is uncited" bullet below
+  are the earlier state. The klt pin moved to v0.7.0 (`0e2362bd`, which
+  contains klayout-tools#2718's artifact-anchored `generic` evidence), and
+  each of the four items now cites a `generic` envelope under `evidence/`
+  that names the audited artifact and its hash (see "Items 1, 2, 9 and 10"
+  below). **Item 1 is `met`** (`design-sources.txt`: the RTL, the boot-ROM
+  chain, the synthesis request and both derived netlists, each with its
+  sha256). **Item 2 is `met`**, bound directly to the routed GDS of
+  `librelane-gds-signoff-check` record `20261010-083721-704a3fb`
+  (`sha256:c59b4c7a…`, gds run 38037477407). **Item 9 is `met`**
+  (`testbenches.txt`); it no longer cites the zero-delay `reset-pin-through`
+  envelope. **Item 10 is `met`** (`hygiene.txt`; the README gained its
+  "Reproducing the results" section for it). Each row carries
+  `artifact_binding.input_verified: true`. Items 3, 4 and 7 are unchanged:
+  item 3 stays `met`, now citing record `20261010-110300-5669077`'s DRC (the
+  same GDS, re-run at the new pin); item 4 `unmet`/`check_errored`
+  (klayout-tools#2941); item 7 `unmet`/`unverifiable_provenance`. Baseline:
+  `signoff-baseline` record `20261010-113255-5669077`, **5 of 11**. **If PR #167 (load
+  CRC) or any other design change merges, items 1 and 2 describe the
+  previous design** until `design-sources.txt`, the GDS binding and their
+  envelopes are refreshed with the new GDS-check record; the inventory check
+  below fails the CI records job until they are.
 - **Every citation pins a `content_hash`**, and what it is the hash of
   depends on the cited envelope (clarified 2026-10-10, issue #168; the
   manifests on `main` have always followed this, the sentence here did
@@ -278,6 +302,51 @@ capture, PVT corner sweeps, or Monte Carlo.
   the checklist's own text ("a block whose spec has no statistical row
   must say so explicitly rather than omitting the item") is satisfied by
   this paragraph (and tracker issue #27's item-6 row), not by a citation.
+
+## Items 1, 2, 9 and 10: artifact-anchored attestations (issue #83)
+
+These four items have no `klt` verb behind them. Since klayout-tools#2718
+(in the pin since v0.7.0) `klt signoff` accepts a `generic` envelope for them
+only when it is bound to the artifact that was audited: the envelope
+declares `"t1_item"`, names the artifact in `provenance.input.path` with its
+`content_hash`, the manifest pins that same hash, and the grader re-hashes
+the artifact (`artifact_binding.input_verified`). An edit to the artifact
+after the attestation grades the row `unmet`/`stale_evidence`, and
+`--check-latest` reports it as drift. A native envelope (`drc`, `sim`,
+`functional-verification`, …) is still accepted by the grader for these
+items but says nothing about them, so it must not be cited; the check below
+fails if one is.
+
+| Item | Envelope | Audited artifact | What `content_hash` pins |
+|---|---|---|---|
+| 1 Design sources | `evidence/design-sources.json` | `evidence/design-sources.txt` | the inventory's bytes |
+| 2 Layout | `evidence/layout-gds.json` | the routed GDS in `verification/records/librelane-gds-signoff-check/artifacts/<record>/` (`{path, scope: "repo"}`) | the GDS bytes (the same value item 3 pins) |
+| 9 Testbenches | `evidence/testbenches.json` | `evidence/testbenches.txt` | the inventory's bytes |
+| 10 Repo hygiene | `evidence/hygiene.json` | `evidence/hygiene.txt` | the inventory's bytes |
+
+**What the grader does not check, and what does.** `klt signoff` re-hashes
+the inventory, not the files the inventory lists. So an RTL edit that leaves
+`design-sources.txt` alone would still grade item 1 `met` while the
+inventory describes bytes that are gone. `scripts/check_evidence_inventories.py`
+(run by `npm run lint`, so by CI's records job) closes that: it re-hashes
+every `sha256:` line of `design-sources.txt`, checks the symlinks, files and
+README/CI headings the other inventories name, requires one `experiment`
+line in `testbenches.txt` per directory under `verification/records/`, and
+checks that each envelope, its artifact and the manifest pin agree.
+`hygiene.txt` and `testbenches.txt` pin structure (presence of files,
+sections and bench lines), not bytes, so a routine README or bench edit does
+not force a re-mint; `design-sources.txt` and the GDS binding pin bytes,
+because "regenerated on design change" is what items 1 and 2 claim.
+
+**Refreshing after a design change** (all in the PR that changes the design):
+mint the new synthesis and `librelane-gds-signoff-check` records (as
+`verification/check_records.py` already requires); rewrite the affected
+`sha256:` lines of `design-sources.txt` and point its netlist lines at the
+new record; point `layout-gds.json` at the new GDS; recompute each changed
+envelope's `content_hash` and the matching manifest pins; re-render and mint
+a `signoff-baseline` record. Editing an inventory without the rest is caught
+twice: `klt signoff --check` reports drift (`stale_evidence` on the row) and
+`check_evidence_inventories.py` names the stale envelope.
 
 ## The vendored tiers doc — provenance and refresh rule
 

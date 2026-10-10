@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "kind": "generic",
+  "status": "pass",
+  "t1_item": 2,
+  "summary": "Layout (Digital): the committed routed GDS of the LibreLane flow (gds workflow run 38037477407 at 704a3fb: TinyTapeout/tt-gds-action@ihp-cmos5l, LibreLane 3.1.0.dev3, IHP-Open-PDK 2bbec755), placed and routed from the LibreLane gate-level netlist reference-asrouted.v by the committed flow (.github/workflows/gds.yaml, src/config.json, src/pdn_cfg.tcl, info.yaml). The design sources are unchanged from 704a3fb to main 5669077; the gds run of main at 5a31595 (38043438168) produced a GDS that differs from this one only in its BGNLIB/BGNSTR timestamp fields (1,122 bytes, all inside the 187 date records) and a byte-identical netlist. DRC/LVS of these bytes: librelane-gds-signoff-check 20261010-110300-5669077. Issue #83.",
+  "source": "verification/records/librelane-gds-signoff-check/records/20261010-083721-704a3fb.md",
+  "provenance": {
+    "klt_version": "0.7.0",
+    "klayout_version": "0.30.12",
+    "pdk": null,
+    "deck": null,
+    "input": {
+      "content_hash": "sha256:c59b4c7a1dca7ebcef9ce59ed2edeafe516e44e7004d30a6be9c8b519f439b97",
+      "path": {
+        "path": "verification/records/librelane-gds-signoff-check/artifacts/20261010-083721-704a3fb/tt_um_2amlogic_protocol_emulator.gds",
+        "scope": "repo"
+      }
+    }
+  }
+}
