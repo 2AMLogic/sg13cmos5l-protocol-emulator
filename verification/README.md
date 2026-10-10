@@ -129,6 +129,41 @@ coverage.
   `boot_spi_mutants.py` rebuilds the boot chain from a mutated source per
   defect, so the bench has to see each one in the flash model's record, the
   pins or the outcome. Evidence in `records/boot-spi/`.
+- `test_reset_power_up.py` — **gate-level only** cocotb bench for
+  target-spec row 14 / `spec/verification-plan.md` section 8 (issue #131):
+  reset, power-up and reselect on the LibreLane netlist. Every flop of the
+  netlist is forced to X or to a seeded random value (through its own `D`
+  pin and one real clock edge, so the PDK UDP holds it), the SRAM array
+  gets X or random words, the design runs on that state, and only then is
+  `rst_n` pulsed. Per edge: no X on a pin and every pin at its reset value
+  (`[row14-b]`), every flop at its reset value in reset and none X after
+  (`[row14-a]`), the fetch source never leaves the boot ROM and the SRAM is
+  read only as data (`[row14-c]`); across the all-X run and 8 seeds the
+  whole flop trace is bit-identical. Also: a canary SRAM image is never
+  executed, and the reselect cycle (load, run, power-cycle, reset without
+  reload = safe idle, power-cycle, reload, run) repeats the first run edge
+  for edge. Driven by `flow/run-reset-power-up-gate-level.sh`, not by
+  `klt functional-verification` (no request file: klt has no gate-level
+  initial-state control). Evidence in `records/reset-power-up/`.
+- `reset_coverage.py` / `reset_coverage_justifications.json` — the
+  reset-coverage listing of section 8: classifies every state element of a
+  netlist (from the PDK's own cell models, not names) as reset from
+  `rst_n` alone or not, and fails on any non-reset element the
+  justification file does not explain, or on a justification that names
+  nothing. `test_reset_coverage.py` is its stdlib self-test (`npm run
+  lint`).
+
+**Host obligation after deselect (target-spec row 14; organizers'
+2026-10-09 update).** Deselecting the design powers it down: the program
+memory's contents are lost, and nothing on the chip restores them. After
+every select the host must pulse `rst_n` and reload the program (a serial
+load with `MODE` high, DR 0001 layer 1; or, once they exist, a boot
+loader DR 0013 layer 2 names). A reset *without* a reload is safe but
+useless: the core runs the boot ROM, which halts in a stub with every pin
+at its reset value (on strap 10 it first checks the memory and runs it
+only if it holds a signed image, which power-up contents are not, short
+of DR 0013's all-zero weak case: 256 NOPs) — `test_reset_power_up.py::test_reselect` shows this on
+gates. The host-side loader is issue #118.
 - `test_program_memory.py` — cocotb testbench for
   `rtl/protocol_program_memory.v`, the program memory and serial
   load-phase logic (target-spec row 6, issue #19): loads known programs
@@ -150,11 +185,29 @@ coverage.
 - `reference_models/` — the §4 independent reference models (pure Python,
   sharing no code with `src/`/`rtl/`): `waveform.py` (piecewise-constant
   signal abstraction), `uart.py` (8N1 + per-frame drift measurement
-  against row 10's ~2% bound), `spi.py` (Motorola-convention modes 0-3 +
+  against row 10's ~2% bound, on two observables: the frame's last
+  in-frame edge, and since issue #97 the start-to-start pitch to a
+  following frame; see the isolated-frame limitation below), `spi.py` (Motorola-convention modes 0-3 +
   row 11's f_clk/4 ceiling), `i2c.py` (NXP UM10204 Table 10 timing checks
   directly, both modes, repeated-START + clock-stretching aware), and
   `stimulus.py` (the constrained-random generators and deterministic
   negative controls).
+- **UART timing: what the model can see (issue #97).** Drift is only
+  measurable where the transmitter puts an edge. The last-edge
+  measurement scales with the last edge's bit index, so for payload 0xFF
+  (no edge after the bit-1 rise) a frame with a nominal start and first
+  data bit reads 0 % drift whatever its later bits do. The frame-pitch
+  measurement sees the whole frame, stop bit included, but needs a
+  following frame: a short pitch always fails; a long pitch fails only on
+  a stream the caller declares back to back
+  (`UartDecoder(baud, back_to_back=True)`), since otherwise it is a legal
+  idle gap. **An isolated frame, or one followed by idle, is graded on its
+  last edge alone**: a caller that needs row 10's bound to mean something
+  must use a payload with a late edge (e.g. 0x5A) or a back-to-back
+  stream. `test_protocol_models.py` asserts this limitation as documented
+  behaviour; the random regression sends half its multi-frame UART
+  programs back to back and fails a 0xFF stream with 3-cycle-long bits on
+  pitch.
 - `_dut.py` — shared `reset(dut)` coroutine, imported as a sibling module by
   `test_protocol_emulator.py` (and any future bench added here) so reset
   sequencing lives in one place.
@@ -388,7 +441,10 @@ Each record is a markdown file, `records/<record-id>.md`, with two parts:
        `"n/a"` when not applicable.
      - `inputs` — a non-empty list of `{"path": ..., "content_hash": ...}`
        for every source file this record's claim depends on (at minimum,
-       the RTL under test). Hashes use klt's own `"sha256:<hex>"` format.
+       the RTL under test). Hashes use klt's own `"sha256:<hex>"` format
+       (exactly 64 lowercase hex digits; never empty or null). A `path` is a
+       non-empty, repo-relative POSIX path with no `..` component, and for a
+       live record it names a git-tracked regular file in the repo.
 
 2. Human-readable prose bullets, each a **required field**:
 
@@ -431,10 +487,30 @@ on:
   a placeholder/empty value;
 - a filename or metadata `record_id` that is not a well-formed
   `<record-id>`, or the two disagreeing;
+- a record that is not at exactly
+  `verification/records/<experiment>/records/<record-id>.md` (nested
+  experiment directories are rejected, so a nested copy can never alias a
+  real experiment by sharing its leaf name, #157), or whose experiment
+  directory name does not match `[a-z0-9][a-z0-9._-]*` (so a Unicode
+  look-alike cannot pose as a real experiment, #183);
+- any symlink under `verification/records/`, file or directory: git versions
+  only the link text, so a symlink's target could be edited after merge with
+  no append-only violation (#183);
+- a `provenance.inputs[]` entry whose `content_hash` is not
+  `sha256:<64 hex>`, or whose `path` is empty, absolute (e.g. `/dev/null`) or
+  contains `..`; for a live record, also an input that is not a git-tracked
+  regular file inside the repo. A superseded record's input file may since
+  have been deleted, but its entry must still be well-formed (#183);
+- a `supersedes` value that is neither a record-id string nor null;
 - a `supersedes` value naming a record that does not exist in the same
-  experiment directory;
+  experiment directory, naming the record's own ID, or naming an ID that
+  does not sort strictly earlier than the record's own (this rules out
+  supersession cycles); an invalid supersession exempts nothing;
 - a live record whose `provenance.inputs[].content_hash` no longer matches
-  the current working tree;
+  the current working tree (a record is "live" unless a valid supersession
+  in its own experiment directory names it; the same record ID superseded in
+  a different experiment, or in a directory that merely shares the
+  experiment's leaf name, does not count, #157);
 - **append-only violations**: any file under `verification/records/`
   modified, renamed, or deleted relative to the merge base with
   `origin/main`.

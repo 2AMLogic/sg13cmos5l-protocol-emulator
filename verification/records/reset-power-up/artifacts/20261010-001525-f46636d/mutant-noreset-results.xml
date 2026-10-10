@@ -1,0 +1,49 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuites name="cocotb tests"><testsuite name="test_reset_power_up" errors="0" failures="4" skipped="0" tests="5" time="1.002" timestamp="2026-10-10T00:15:39.475525+00:00" hostname="loom-worker-3"><testcase classname="test_reset_power_up" name="test_netlist_state_elements" time="0.224"><properties><property name="cocotb" value="True" /><property name="random_seed" value="1791591339" /><property name="file" value="verification/test_reset_power_up.py" /><property name="line" value="133" /><property name="sim_time_unit" value="ns" /><property name="sim_time_start" value="0.0" /><property name="sim_time_stop" value="10.0" /><property name="sim_time_duration" value="10.0" /><property name="sim_time_ratio" value="44.59615183134201" /></properties></testcase><testcase classname="test_reset_power_up" name="test_power_up_all_x" time="0.005"><failure message="all-X power-up, straps 00, rst_n asserted: [row14-b] uio_oe = 0000000X (X/Z on a pin); [row14-a] in reset, 1 flop(s) not at their documented reset value 0: ['u_core.uio_dir[0]']&#10;assert not ['[row14-b] uio_oe = 0000000X (X/Z on a pin)', &quot;[row14-a] in reset, 1 flop(s) not at their documented reset value 0: ['u_core.uio_dir[0]']&quot;]" type="AssertionError">Traceback (most recent call last):
+  File "verification/test_reset_power_up.py", line 136, in wrapper
+    await test(dut)
+  File "verification/test_reset_power_up.py", line 384, in test_power_up_all_x
+    run = await reset_and_observe(dut, h, straps, label)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "verification/test_reset_power_up.py", line 299, in reset_and_observe
+    await sample(dut, h, f"{label}, rst_n asserted", in_reset=True)
+  File "verification/test_reset_power_up.py", line 285, in sample
+    assert not v, f"{label}: " + "; ".join(v)
+AssertionError: all-X power-up, straps 00, rst_n asserted: [row14-b] uio_oe = 0000000X (X/Z on a pin); [row14-a] in reset, 1 flop(s) not at their documented reset value 0: ['u_core.uio_dir[0]']
+assert not ['[row14-b] uio_oe = 0000000X (X/Z on a pin)', "[row14-a] in reset, 1 flop(s) not at their documented reset value 0: ['u_core.uio_dir[0]']"]
+</failure><properties><property name="cocotb" value="True" /><property name="random_seed" value="1791591339" /><property name="file" value="verification/test_reset_power_up.py" /><property name="line" value="133" /><property name="sim_time_unit" value="ns" /><property name="sim_time_start" value="10.001" /><property name="sim_time_stop" value="101.001" /><property name="sim_time_duration" value="91.0" /><property name="sim_time_ratio" value="18482.88800940672" /></properties><system-err>Test failed with COCOTB_RANDOM_SEED=1791591339
+</system-err></testcase><testcase classname="test_reset_power_up" name="test_power_up_random_seeds" time="0.004"><failure message="seed 0x131, straps 00, rst_n asserted: [row14-b] uio_oe = 0x01, documented reset state is 0x00; [row14-a] in reset, 1 flop(s) not at their documented reset value 0: ['u_core.uio_dir[0]']&#10;assert not ['[row14-b] uio_oe = 0x01, documented reset state is 0x00', &quot;[row14-a] in reset, 1 flop(s) not at their documented reset value 0: ['u_core.uio_dir[0]']&quot;]" type="AssertionError">Traceback (most recent call last):
+  File "verification/test_reset_power_up.py", line 136, in wrapper
+    await test(dut)
+  File "verification/test_reset_power_up.py", line 410, in test_power_up_random_seeds
+    run = await reset_and_observe(dut, h, straps, label)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "verification/test_reset_power_up.py", line 299, in reset_and_observe
+    await sample(dut, h, f"{label}, rst_n asserted", in_reset=True)
+  File "verification/test_reset_power_up.py", line 285, in sample
+    assert not v, f"{label}: " + "; ".join(v)
+AssertionError: seed 0x131, straps 00, rst_n asserted: [row14-b] uio_oe = 0x01, documented reset state is 0x00; [row14-a] in reset, 1 flop(s) not at their documented reset value 0: ['u_core.uio_dir[0]']
+assert not ['[row14-b] uio_oe = 0x01, documented reset state is 0x00', "[row14-a] in reset, 1 flop(s) not at their documented reset value 0: ['u_core.uio_dir[0]']"]
+</failure><properties><property name="cocotb" value="True" /><property name="random_seed" value="1791591339" /><property name="file" value="verification/test_reset_power_up.py" /><property name="line" value="133" /><property name="sim_time_unit" value="ns" /><property name="sim_time_start" value="101.002" /><property name="sim_time_stop" value="192.002" /><property name="sim_time_duration" value="91.00000000000001" /><property name="sim_time_ratio" value="23376.07560435268" /></properties><system-err>Test failed with COCOTB_RANDOM_SEED=1791591339
+</system-err></testcase><testcase classname="test_reset_power_up" name="test_uninitialised_program_memory" time="0.289"><failure message="canary SRAM, random flops, straps 00, rst_n asserted: [row14-b] uio_oe = 0x01, documented reset state is 0x00; [row14-a] in reset, 1 flop(s) not at their documented reset value 0: ['u_core.uio_dir[0]']&#10;assert not ['[row14-b] uio_oe = 0x01, documented reset state is 0x00', &quot;[row14-a] in reset, 1 flop(s) not at their documented reset value 0: ['u_core.uio_dir[0]']&quot;]" type="AssertionError">Traceback (most recent call last):
+  File "verification/test_reset_power_up.py", line 136, in wrapper
+    await test(dut)
+  File "verification/test_reset_power_up.py", line 458, in test_uninitialised_program_memory
+    run = await reset_and_observe(dut, h, straps, label)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "verification/test_reset_power_up.py", line 299, in reset_and_observe
+    await sample(dut, h, f"{label}, rst_n asserted", in_reset=True)
+  File "verification/test_reset_power_up.py", line 285, in sample
+    assert not v, f"{label}: " + "; ".join(v)
+AssertionError: canary SRAM, random flops, straps 00, rst_n asserted: [row14-b] uio_oe = 0x01, documented reset state is 0x00; [row14-a] in reset, 1 flop(s) not at their documented reset value 0: ['u_core.uio_dir[0]']
+assert not ['[row14-b] uio_oe = 0x01, documented reset state is 0x00', "[row14-a] in reset, 1 flop(s) not at their documented reset value 0: ['u_core.uio_dir[0]']"]
+</failure><properties><property name="cocotb" value="True" /><property name="random_seed" value="1791591339" /><property name="file" value="verification/test_reset_power_up.py" /><property name="line" value="133" /><property name="sim_time_unit" value="ns" /><property name="sim_time_start" value="192.003" /><property name="sim_time_stop" value="41483.003" /><property name="sim_time_duration" value="41291.0" /><property name="sim_time_ratio" value="142739.3791772875" /></properties><system-err>Test failed with COCOTB_RANDOM_SEED=1791591339
+</system-err></testcase><testcase classname="test_reset_power_up" name="test_reselect" time="0.479"><failure message="reselect 0x131: pins differ at edge 0: first 000000, second 000001&#10;assert '000000' == '000001'" type="AssertionError">Traceback (most recent call last):
+  File "verification/test_reset_power_up.py", line 136, in wrapper
+    await test(dut)
+  File "verification/test_reset_power_up.py", line 512, in test_reselect
+    assert a == b, f"reselect {seed:#x}: pins differ at edge {e}: first {a}, second {b}"
+AssertionError: reselect 0x131: pins differ at edge 0: first 000000, second 000001
+assert '000000' == '000001'
+</failure><properties><property name="cocotb" value="True" /><property name="random_seed" value="1791591339" /><property name="file" value="verification/test_reset_power_up.py" /><property name="line" value="133" /><property name="sim_time_unit" value="ns" /><property name="sim_time_start" value="41483.004" /><property name="sim_time_stop" value="73674.004" /><property name="sim_time_duration" value="32191.0" /><property name="sim_time_ratio" value="67144.45670131281" /></properties><system-err>Test failed with COCOTB_RANDOM_SEED=1791591339
+</system-err></testcase></testsuite></testsuites>

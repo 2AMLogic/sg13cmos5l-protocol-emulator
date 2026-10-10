@@ -343,7 +343,16 @@ auditable rather than a bare assertion:
 
 ## 8. Reset, power-up and reselect (row 14)
 
-*Added 2026-10-09 (issue #131). Proposed.*
+*Added 2026-10-09 (issue #131). Recorded 2026-10-10 on the LibreLane
+netlist (Icarus + cocotb, zero-delay): (a), (b) and the reselect cycle
+pass; (c) is met on the serial-load and boot-ROM paths **except** the
+all-zero warm-start case -- an all-zero program memory is its own valid
+CRC signature and warm-starts unloaded on strap `10` (256 `NOP`s), tracked
+in #168 and pending operator decision #166 (CRC initial value), so (c) is
+not fully met. The negative controls fail as required --
+`verification/records/reset-power-up/records/20261010-012219-02f84e3.md`.
+The host's reload obligation after deselect is in `verification/README.md`
+(issue #118).*
 
 - **Random-initial-state gate-level run.** Every flop of the flow-of-record
   netlist starts at a seeded random value (and, separately, at X). Then

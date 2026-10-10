@@ -130,3 +130,5 @@ test/gate_level_netlist.v
 # <<< loom-managed <<<
 # gate-level firmware regression scratch (issue #108)
 flow/firmware-gate-level/
+# reset / power-up / reselect gate-level regression scratch (issue #131)
+flow/reset-power-up/

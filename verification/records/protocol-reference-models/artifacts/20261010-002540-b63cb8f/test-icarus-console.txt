@@ -1,0 +1,60 @@
+     -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:242  in gpi_load_users                  Loaded entry library: '<uv-python>/cpython-3.12.13-macos-aarch64-none/lib/libpython3.12.dylib'
+     -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:234  in gpi_load_users                  Running entry func 'initialize' from loaded library '<scratch>/venv/lib/python3.12/site-packages/cocotb/simulator.cpython-312-darwin.so'
+     -.--ns INFO     pygpi                              ..ib/pygpi/embed.cpp:115  in initialize                      Using Python 3.12.10 interpreter at <scratch>/venv/bin/python3
+     -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:74   in gpi_print_registered_impl       GPI: VPI support registered
+     0.00ns INFO     cocotb.initialize                  Seeding Python random module with 20260922
+     0.00ns INFO     cocotb.initialize                  Initialized cocotb v2.1.0 from <scratch>/venv/lib/python3.12/site-packages/cocotb
+     0.00ns INFO     cocotb.initialize                  Running on Icarus Verilog version 13.0 (stable)
+     0.00ns INFO     cocotb.regression                  Running tests
+     0.00ns INFO     cocotb.regression                  running test_protocol_models.test_recorded_seed_matches_request (1/11)
+                                                            The seed is recorded in the request document, not just in source.
+     0.00ns WARNING  py.warnings                        <repo>/verification/test_protocol_models.py:62: DeprecationWarning: The 'units' argument has been renamed to 'unit'.
+                                                          await Timer(1, units="ns")
+     1.00ns INFO     cocotb.regression                  test_protocol_models.test_recorded_seed_matches_request passed
+     1.00ns INFO     cocotb.regression                  running test_protocol_models.test_uart_random_legal_frames_round_trip_and_stay_in_budget (2/11)
+                                                            Random 8N1 frames at random legal bauds decode correctly, and their
+     2.00ns INFO     cocotb.regression                  test_protocol_models.test_uart_random_legal_frames_round_trip_and_stay_in_budget passed
+     2.00ns INFO     cocotb.regression                  running test_protocol_models.test_uart_negative_control_flags_drift_over_bound (3/11)
+                                                            A frame clocked 2.5% slow must be flagged by the drift measurement
+     3.00ns INFO     cocotb.regression                  test_protocol_models.test_uart_negative_control_flags_drift_over_bound passed
+     3.00ns INFO     cocotb.regression                  running test_protocol_models.test_uart_frame_pitch_grades_back_to_back_0xff (4/11)
+                                                            Issue #97: 0xFF frames have no in-frame edge past bit 1, so the
+     4.00ns INFO     cocotb.regression                  test_protocol_models.test_uart_frame_pitch_grades_back_to_back_0xff passed
+     4.00ns INFO     cocotb.regression                  running test_protocol_models.test_uart_isolated_0xff_frame_is_documented_unobservable (5/11)
+                                                            The documented limitation (issue #97, model docstring): an isolated
+     5.00ns INFO     cocotb.regression                  test_protocol_models.test_uart_isolated_0xff_frame_is_documented_unobservable passed
+     5.00ns INFO     cocotb.regression                  running test_protocol_models.test_spi_random_legal_traffic_passes_in_all_modes (6/11)
+                                                            Random full-duplex bursts in all four modes decode bit-exactly on
+     6.00ns INFO     cocotb.regression                  test_protocol_models.test_spi_random_legal_traffic_passes_in_all_modes passed
+     6.00ns INFO     cocotb.regression                  running test_protocol_models.test_spi_negative_control_flags_clock_ceiling_violation (7/11)
+                                                            A burst clocked at f_clk/3 -- over the row-11 SCLK <= f_clk/4
+     7.01ns INFO     cocotb.regression                  test_protocol_models.test_spi_negative_control_flags_clock_ceiling_violation passed
+     7.01ns INFO     cocotb.regression                  running test_protocol_models.test_spi_negative_control_wrong_mode_sampling_mismatches (8/11)
+                                                            Mode-0 traffic judged as mode 1 must NOT round-trip: the sample
+     8.01ns INFO     cocotb.regression                  test_protocol_models.test_spi_negative_control_wrong_mode_sampling_mismatches passed
+     8.01ns INFO     cocotb.regression                  running test_protocol_models.test_i2c_random_legal_traffic_meets_table10_minimums (9/11)
+                                                            Random transfers in both modes decode address/RW/data/ACKs
+     9.01ns INFO     cocotb.regression                  test_protocol_models.test_i2c_random_legal_traffic_meets_table10_minimums passed
+     9.01ns INFO     cocotb.regression                  running test_protocol_models.test_i2c_clock_stretching_is_legal_and_reported (10/11)
+                                                            Peripheral clock-stretching (UM10204 section 3.1.9) extends SCL low
+    10.01ns INFO     cocotb.regression                  test_protocol_models.test_i2c_clock_stretching_is_legal_and_reported passed
+    10.01ns INFO     cocotb.regression                  running test_protocol_models.test_i2c_negative_control_flags_stop_setup_violation (11/11)
+                                                            A STOP with t_SU;STO at half the Table-10 minimum must be flagged,
+    11.01ns INFO     cocotb.regression                  test_protocol_models.test_i2c_negative_control_flags_stop_setup_violation passed
+    11.01ns INFO     cocotb.regression                  ******************************************************************************************************************************************
+                                                        ** TEST                                                                              STATUS  SIM TIME (ns)  REAL TIME (s)  RATIO (ns/s) **
+                                                        ******************************************************************************************************************************************
+                                                        ** test_protocol_models.test_recorded_seed_matches_request                            PASS           1.00           0.00       2466.34  **
+                                                        ** test_protocol_models.test_uart_random_legal_frames_round_trip_and_stay_in_budget   PASS           1.00           0.00       1906.58  **
+                                                        ** test_protocol_models.test_uart_negative_control_flags_drift_over_bound             PASS           1.00           0.00      38647.35  **
+                                                        ** test_protocol_models.test_uart_frame_pitch_grades_back_to_back_0xff                PASS           1.00           0.00      11582.92  **
+                                                        ** test_protocol_models.test_uart_isolated_0xff_frame_is_documented_unobservable      PASS           1.00           0.00      32258.06  **
+                                                        ** test_protocol_models.test_spi_random_legal_traffic_passes_in_all_modes             PASS           1.00           0.01        118.65  **
+                                                        ** test_protocol_models.test_spi_negative_control_flags_clock_ceiling_violation       PASS           1.00           0.00      23076.57  **
+                                                        ** test_protocol_models.test_spi_negative_control_wrong_mode_sampling_mismatches      PASS           1.00           0.00      26115.11  **
+                                                        ** test_protocol_models.test_i2c_random_legal_traffic_meets_table10_minimums          PASS           1.00           0.01        137.74  **
+                                                        ** test_protocol_models.test_i2c_clock_stretching_is_legal_and_reported               PASS           1.00           0.00       8568.39  **
+                                                        ** test_protocol_models.test_i2c_negative_control_flags_stop_setup_violation          PASS           1.00           0.00      14934.51  **
+                                                        ******************************************************************************************************************************************
+                                                        ** TESTS=11 PASS=11 FAIL=0 SKIP=0                                                                   11.01           0.02        572.32  **
+                                                        ******************************************************************************************************************************************
