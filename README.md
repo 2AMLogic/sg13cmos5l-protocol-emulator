@@ -39,10 +39,10 @@ now resolves the bus through the design's own `uio_oe` and `uio_out`; it does
 not characterize electrical pad timing. The
 [DR 0013 boot ROM](verification/records/boot-rom/records/20261010-004726-197191d.md)
 is implemented, with UART and SPI-flash boot loaders
-([UART record](verification/records/boot-uart/records/20261010-181353-6e9a315.md),
+([UART record](verification/records/boot-uart/records/20261010-132617-8372c57.md),
 with its count-byte aliasing limitation recorded as
-[DR 0013 finding F8](verification/records/boot-uart/records/20261010-181354-6e9a315.md);
-[SPI-flash record](verification/records/boot-spi/records/20261010-181352-6e9a315.md);
+[DR 0013 finding F8](verification/records/boot-uart/records/20261010-164351-57c5c8c.md);
+[SPI-flash record](verification/records/boot-spi/records/20261010-132616-8372c57.md);
 #139, #140). The serial-load CRC readout is still open (#167).
 
 The competition's LibreLane flow has routed the macro-backed core in a 2×2

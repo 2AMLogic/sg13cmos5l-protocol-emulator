@@ -116,7 +116,7 @@ reports but is not a required check on `main`.
   ([record](../../verification/records/protocol-reference-models/records/20261010-002540-b63cb8f.md)).
   The core is checked edge by edge against an independent instruction-set
   simulator written from the decision records (PR #204,
-  [record](../../verification/records/isa-lockstep/records/20261010-181406-6e9a315.md)).
+  [record](../../verification/records/isa-lockstep/records/20261010-132631-8372c57.md)).
   The control space is checked with mutants
   ([record](../../verification/records/control-space/records/20261009-210912-a46a399.md)).
 - **Two flows, both named.** Every number is attributed either to the

@@ -332,7 +332,10 @@ auditable rather than a bare assertion:
   transmit with protocol-neutral primitives (10BASE-T deferred there); if it
   is ratified, a bench per admitted primitive and a USB TX-only firmware
   bench (independent decoder, timing checked) are added here.
-  Nothing is added until then.
+  Nothing is added until then. (Dated note, 2026-10-10, issue #208: the P1
+  and P2 benches, mutants and latency checks DR 0015 requires exist now, on
+  the Proposed record; the USB firmware bench does not. See DR 0015's dated
+  note.)
 - Exact tooling choices (which formal tool, which cocotb/Icarus versions,
   which specific open-source UART/SPI/I2C reference-model libraries) are
   deferred to the harness-bootstrap issue (#2) and the firmware/RTL issues

@@ -72,3 +72,30 @@ re-hardening for a newer flow, are allowed after it.
 5. Do D6, the row-13 unplanned-protocol firmware, on the frozen ISA.
 6. Do the final `gds` run on the final top (D1), link it, then update every
    row here to **Ready** with citations.
+
+## R2 update, 2026-10-10 (#216): repository-owned GL results gate
+
+- **Action revision checked.** `ihp-cmos5l` resolved via `gh api` to
+  `3412659307918422f3f0727917cf9b499aaca588` on 2026-10-10 (unchanged from the
+  2026-10-09 tip). Its `gl_test/action.yml` at that SHA runs `GATES=yes make` in
+  `test/` directly on the runner workspace (no container), after
+  `rm -f ... results.xml`, and its only verdict is `test -f results.xml` then
+  `! grep failure results.xml`. The results file is therefore `test/results.xml`
+  in the workspace. This confirms R2(b). The branch ref still floats; the SHA
+  above is what was inspected, not a pin.
+- **Change.** `.github/workflows/gds.yaml` `gl_test` now (1) removes
+  `test/results.xml` before simulation, (2) runs the action as step
+  `gl_sim`, and (3) runs `python3 scripts/check_test_results.py test/results.xml`
+  when `gl_sim` succeeded or failed (not skipped, not cancelled). There is no
+  `continue-on-error`, so a failed `gl_sim` keeps the job red even if the XML
+  says pass; a missing file fails in the checker.
+- **Verified locally (fixtures only).** `python3 scripts/test_check_test_results.py`
+  passes, including the workflow's exact relative-path invocation against
+  passing, error-only, failure, contradictory, malformed, empty, all-skipped
+  and missing results, the stale-result ordering check, and structural checks
+  of the step conditions. The workflow parses as YAML.
+- **Not verified.** No GitHub Actions run of the modified `gds.yaml` exists yet,
+  so a passing GDS/GL run with the new gate is **not** claimed, and the
+  `if:` expression has not been exercised by the Actions runner. The R2
+  state stays **Open** until a run on this change is green and linked here.
+  Re-check the branch tip and tags before submission.

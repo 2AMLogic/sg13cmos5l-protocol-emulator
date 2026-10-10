@@ -335,6 +335,89 @@ def case_default_path_resolves_to_repo_root() -> tuple[bool, str]:
     return (expected_path in result.stdout), result.stdout + result.stderr
 
 
+# ------------------------------------------- gds.yaml gl_test integration (#216)
+
+GDS_WORKFLOW = SCRIPT_DIR.parent / ".github" / "workflows" / "gds.yaml"
+GL_RESULTS_PATH = "test/results.xml"
+
+
+def _gl_job_text() -> str:
+    text = GDS_WORKFLOW.read_text(encoding="utf-8")
+    start = text.index("\n  gl_test:")
+    end = text.find("\n  viewer:", start)
+    return text[start:end if end != -1 else len(text)]
+
+
+def _run_in_workspace(results_xml: str | None) -> tuple[int, str]:
+    """Run the exact workflow command (relative path, cwd = workspace root)."""
+    with tempfile.TemporaryDirectory() as ws:
+        (Path(ws) / "test").mkdir()
+        if results_xml is not None:
+            (Path(ws) / GL_RESULTS_PATH).write_text(results_xml, encoding="utf-8")
+        result = subprocess.run(
+            [sys.executable, str(CHECKER), GL_RESULTS_PATH],
+            capture_output=True, text=True, check=False, cwd=ws,
+        )
+        return result.returncode, result.stdout + result.stderr
+
+
+def case_gl_workflow_path_matrix() -> tuple[bool, str]:
+    """The workflow's exact invocation (relative test/results.xml) passes a
+    good run and fails error-only, failure, contradictory, malformed, empty,
+    all-skipped and missing results."""
+    expect = (
+        (PASSING_ATTRIBUTE_SHAPE, 0), (PASSING_NO_ATTRIBUTE_SHAPE, 0),
+        (ERROR_ONLY_SHAPE, 1), (FAILING_ATTRIBUTE_SHAPE, 1),
+        (CONTRADICTORY_ERRORS_ATTR, 1), (NEGATIVE_TESTS, 1),
+        ("<testsuites><testsuite", 1), ("", 1), (ALL_SKIPPED, 1), (None, 1),
+    )
+    bad = []
+    for xml, want in expect:
+        code, out = _run_in_workspace(xml)
+        if code != want:
+            bad.append(f"want {want} got {code} for {xml!r}: {out}")
+    return (not bad), "\n".join(bad)
+
+
+def case_gl_workflow_stale_result_cannot_satisfy_gate() -> tuple[bool, str]:
+    """A stale passing results.xml passes the checker (it cannot know), so the
+    workflow must delete it before simulation; once deleted, the gate fails."""
+    job = _gl_job_text()
+    rm_at = job.find("rm -f test/results.xml")
+    sim_at = job.find("tt-gds-action/gl_test@")
+    if not (0 <= rm_at < sim_at):
+        return False, "gl_test must `rm -f test/results.xml` before the action step"
+    with tempfile.TemporaryDirectory() as ws:
+        (Path(ws) / "test").mkdir()
+        stale = Path(ws) / GL_RESULTS_PATH
+        stale.write_text(PASSING_ATTRIBUTE_SHAPE, encoding="utf-8")
+        stale.unlink()  # what the workflow's first step does
+        result = subprocess.run(
+            [sys.executable, str(CHECKER), GL_RESULTS_PATH],
+            capture_output=True, text=True, check=False, cwd=ws,
+        )
+    return (result.returncode == 1), result.stdout + result.stderr
+
+
+def case_gl_workflow_step_conditions_preserve_sim_verdict() -> tuple[bool, str]:
+    """Structural checks on the gl_test job text (no YAML dependency)."""
+    job = _gl_job_text()
+    problems = []
+    if "continue-on-error" in job:
+        problems.append("continue-on-error must not appear in gl_test")
+    if "id: gl_sim" not in job:
+        problems.append("simulation step needs `id: gl_sim`")
+    if "check_test_results.py test/results.xml" not in job:
+        problems.append("checker must be invoked with explicit test/results.xml")
+    if "!cancelled()" not in job:
+        problems.append("validation step must use !cancelled()")
+    if "steps.gl_sim.outcome == 'success'" not in job or "steps.gl_sim.outcome == 'failure'" not in job:
+        problems.append("validation must run on gl_sim success or failure only")
+    if "always()" in job.split("Validate GL results")[1]:
+        problems.append("validation must not use always() (would run when cancelled)")
+    return (not problems), "; ".join(problems)
+
+
 CASES = (
     case_passing_attribute_shape,
     case_failing_attribute_shape,
@@ -356,6 +439,9 @@ CASES = (
     case_multi_suite_with_empty_auxiliary_passes,
     case_too_many_arguments_is_a_usage_error,
     case_default_path_resolves_to_repo_root,
+    case_gl_workflow_path_matrix,
+    case_gl_workflow_stale_result_cannot_satisfy_gate,
+    case_gl_workflow_step_conditions_preserve_sim_verdict,
 )
 
 

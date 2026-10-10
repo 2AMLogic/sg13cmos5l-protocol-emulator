@@ -24,7 +24,7 @@ bidirectional pin is set by firmware at run time, through the control
 space below; after reset every one is an input.
 
 **Control space** (`spec/decision-records/0012-control-space-and-runtime-pin-direction.md`,
-Proposed). Two operand combinations that used to be no-ops address ten
+Proposed). Two operand combinations that used to be no-ops address
 control registers, with the register index in `imm8`: `WCTL k, Rs` (`OUT`
 to port `00`) writes one and `RCTL Rd, k` (`IN` from port `10`) reads one.
 
@@ -39,18 +39,38 @@ to port `00`) writes one and `RCTL Rd, k` (`IN` from port `10`) reads one.
 | `0x06`, `0x07` | `PM_CRC_LO`, `PM_CRC_HI` | R, W clears | 1 | CRC-16/XMODEM (poly `0x1021`, init 0) over every word committed to program memory, by the serial load or by `PM_DATA_LO`; high byte of each word first |
 | `0x08` | `BOOT_STATUS` | R | 1 | bit 0: a serial load completed since reset. Bit 1: the instruction reading it was fetched from the boot ROM (so a loaded program always reads 0 there) |
 | `0x09` | `HW_ID` | R | 1 | design revision byte, `0x01` |
+| `0x10` | `CRC_CFG` | R/W | 1 | P1 configuration: bits 4:0 width − 1 (1 to 32 bits), bit 5 reflected (LSB first), bit 6 read-out inversion. A write rewinds the byte pointer |
+| `0x11` | `CRC_POLY` | R/W | 1 | P1 polynomial, one byte per access at the byte pointer (byte 0 first), pointer + 1. Normal form for normal mode, bit-reversed for reflected mode |
+| `0x12` | `CRC_STATE` | R/W | 1 | P1 register, one byte per access at the byte pointer, pointer + 1; reads mask to the width |
+| `0x13` | `CRC_BIT` | W | 1 | one CRC/LFSR step with data bit `Rs[0]` |
+| `0x14` | `CRC_BYTE` | W | **9** | eight steps with the bits of `Rs` (LSB first if reflected), 1 + 8 stall cycles |
+| `0x15` | `CRC_NEXT` | R | 1 | the register, complemented if inversion is on, masked to the width, one byte at the pointer, pointer + 1 |
+| `0x16` | `LINE_CFG` | R/W | 1 | P2 configuration: bits 1:0 NRZI (01 toggle on 0, 10 toggle on 1, else none), bits 3:2 stuffing (01 a 0 after N ones, 10 the complement after N equal bits), bits 6:4 N; bit 7 sets the line level. A write clears the run count |
+| `0x17` | `LINE_PUT` | W | 1 | present data bit `Rs[0]`; on a stuff slot the stuff bit goes out instead and the data bit is not consumed |
+| `0x18` | `LINE_OUT` | R | 1 | bit 0 the line level, bit 1 its complement (one `OUT` drives a differential pair) |
+| `0x19` | `LINE_STUF` | R | 1 | bit 0: the last `LINE_PUT` was a stuff slot, so present the same bit again |
+
+`0x10`–`0x19` are DR 0015's protocol-neutral primitives (Proposed): **P1**,
+a CRC / LFSR step with a programmable polynomial, and **P2**, NRZI coding
+with a bit-stuffing counter. Neither knows a frame; the firmware builds the
+packet and uses them for the line coding and the CRC. They are checked
+against the published CRC catalogue values (CRC-5/USB, CRC-16/USB, CRC-32,
+CRC-8/MAXIM, CRC-15/CAN), a PRBS7 sequence, and an independent USB / HDLC /
+CAN line decoder (`verification/test_primitives.py`).
 
 Any other index is reserved: a write does nothing and a read returns 0, in
 one cycle, and the assembler refuses it unless given `--allow-reserved`.
-All ten registers reset to 0 except `HW_ID`. No control access changes a
+Every control register resets to 0 except `HW_ID` (and `LINE_OUT`, which
+reads its complement bit as 1). No control access changes a
 flag. `OUT` to port `01` and `IN` from port `11` remain no-ops.
 
 **Timing is the product, so it is fixed by construction.** Every instruction
 retires in exactly one cycle, with two kinds of exception, both fixed by
 the instruction word itself and never by a register or a pin: `WAIT imm8`
-stalls `imm8 + 1` cycles, and the three control accesses marked 2 in the
+stalls `imm8 + 1` cycles, the three control accesses marked 2 in the
 table above take exactly 2 (the program memory has one port, so a data
-access to it stalls instruction fetch for one cycle, always). A conditional branch costs the
+access to it stalls instruction fetch for one cycle, always), and
+`WCTL CRC_BYTE` takes exactly 9. A conditional branch costs the
 same one cycle taken or not taken. So the exact clock cycle of any pin read
 or pin write is computable from the instruction stream alone, without
 simulating anything. An `IN` samples its port on the edge that retires it;
@@ -198,7 +218,7 @@ independent reference model, in **RTL simulation (Icarus 13.0 driven by
 `klt functional-verification` — the klt flow)**. The cycle count is the
 claim; any baud/MHz reading is arithmetic at target-spec row 4's 50 MHz
 clock, which is **unconfirmed on the klt flow** (`klt sta` produced 0 of 6
-corners, [record](../verification/records/sta-corner-sweep/records/20261010-190853-b7b2b35.md)),
+corners, [record](../verification/records/sta-corner-sweep/records/20261010-172500-f8428aa.md)),
 so no wall-clock rate is claimed here. Nothing in this table was run on
 the Tiny Tapeout LibreLane flow or on silicon (see the
 "Evidence not yet in hand" section below).
@@ -210,22 +230,22 @@ The table is mechanically checked against `firmware/asm/`,
 <!-- firmware-images:begin -->
 | Image | Protocol and mode | Rate (cycles, klt-flow RTL sim) | Words | Total cycles | Bench | Record |
 |---|---|---|---|---|---|---|
-| [`uart_tx`](../firmware/asm/uart_tx.asm) | UART TX, 8N1, frames 0x5A then 0xA5 | 50 per bit | 34 | 979 | [`test_firmware_uart.py`](../verification/test_firmware_uart.py) | [firmware-uart 20261010-181404-6e9a315](../verification/records/firmware-uart/records/20261010-181404-6e9a315.md) |
-| [`uart_rx`](../firmware/asm/uart_rx.asm) | UART RX, 8N1 | 50 per bit | 132 | 488 | [`test_firmware_uart_rx.py`](../verification/test_firmware_uart_rx.py) | [firmware-uart-rx 20261010-181405-6e9a315](../verification/records/firmware-uart-rx/records/20261010-181405-6e9a315.md) |
-| [`uart_rx_115200`](../firmware/asm/uart_rx_115200.asm) | UART RX, 8N1, 115200-baud class | 434 per bit | 168 | 3878 | [`test_firmware_uart_rx.py`](../verification/test_firmware_uart_rx.py) | [firmware-uart-rx 20261010-181405-6e9a315](../verification/records/firmware-uart-rx/records/20261010-181405-6e9a315.md) |
-| [`uart_rx_9600`](../firmware/asm/uart_rx_9600.asm) | UART RX, 8N1, 9600-baud class (nested `WAIT`) | 5208 per bit | 168 | 2791 | [`test_firmware_uart_rx.py`](../verification/test_firmware_uart_rx.py) | [firmware-uart-rx 20261010-181405-6e9a315](../verification/records/firmware-uart-rx/records/20261010-181405-6e9a315.md) |
-| [`uart_tx_9600`](../firmware/asm/uart_tx_9600.asm) | UART TX, 8N1, 9600-baud class (nested `WAIT`), frames 0x5A then 0xA5 | 5208 per bit | 177 | 6578 | [`test_firmware_uart_rx.py`](../verification/test_firmware_uart_rx.py) | [firmware-uart-rx 20261010-181405-6e9a315](../verification/records/firmware-uart-rx/records/20261010-181405-6e9a315.md) |
-| [`spi_mode0`](../firmware/asm/spi_mode0.asm) | SPI controller, CPOL 0 / CPHA 0 | 4 per SCLK period (ceiling burst), 10 per bit (functional burst) | 137 | 197 | [`test_firmware_spi.py`](../verification/test_firmware_spi.py) | [firmware-spi 20261010-181403-6e9a315](../verification/records/firmware-spi/records/20261010-181403-6e9a315.md) |
-| [`spi_mode1`](../firmware/asm/spi_mode1.asm) | SPI controller, CPOL 0 / CPHA 1 | 4 per SCLK period (ceiling burst), 10 per bit (functional burst) | 138 | 198 | [`test_firmware_spi.py`](../verification/test_firmware_spi.py) | [firmware-spi 20261010-181403-6e9a315](../verification/records/firmware-spi/records/20261010-181403-6e9a315.md) |
-| [`spi_mode2`](../firmware/asm/spi_mode2.asm) | SPI controller, CPOL 1 / CPHA 0 | 4 per SCLK period (ceiling burst), 10 per bit (functional burst) | 137 | 197 | [`test_firmware_spi.py`](../verification/test_firmware_spi.py) | [firmware-spi 20261010-181403-6e9a315](../verification/records/firmware-spi/records/20261010-181403-6e9a315.md) |
-| [`spi_mode3`](../firmware/asm/spi_mode3.asm) | SPI controller, CPOL 1 / CPHA 1 | 4 per SCLK period (ceiling burst), 10 per bit (functional burst) | 138 | 198 | [`test_firmware_spi.py`](../verification/test_firmware_spi.py) | [firmware-spi 20261010-181403-6e9a315](../verification/records/firmware-spi/records/20261010-181403-6e9a315.md) |
-| [`i2c_fast`](../firmware/asm/i2c_fast.asm) | I2C controller, Fast-mode budget, write only | 125 per SCL clock (low 65 + high 60) | 246 | 3350 | [`test_firmware_i2c.py`](../verification/test_firmware_i2c.py) | [firmware-i2c 20261010-181357-6e9a315](../verification/records/firmware-i2c/records/20261010-181357-6e9a315.md) |
-| [`i2c_std`](../firmware/asm/i2c_std.asm) | I2C controller, Standard-mode budget, write only | 435 per SCL clock (low 235 + high 200) | 246 | 9700 | [`test_firmware_i2c.py`](../verification/test_firmware_i2c.py) | [firmware-i2c 20261010-181357-6e9a315](../verification/records/firmware-i2c/records/20261010-181357-6e9a315.md) |
-| [`i2c_fast_sr`](../firmware/asm/i2c_fast_sr.asm) | I2C controller, Fast-mode budget, write + repeated START + read, no pin-dependent branch | 125 per SCL clock (low 65 + high 60) | 152 | 1869 | [`test_firmware_i2c_sr.py`](../verification/test_firmware_i2c_sr.py) | [firmware-i2c 20261010-181358-6e9a315](../verification/records/firmware-i2c/records/20261010-181358-6e9a315.md) |
-| [`i2c_fast_sr_poll`](../firmware/asm/i2c_fast_sr_poll.asm) | as `i2c_fast_sr`, polls SCL (tolerates clock stretching) | 127 per SCL clock unstretched (low 65 + high 62) | 192 | 1889 | [`test_firmware_i2c_sr.py`](../verification/test_firmware_i2c_sr.py) | [firmware-i2c 20261010-181358-6e9a315](../verification/records/firmware-i2c/records/20261010-181358-6e9a315.md) |
-| [`i2c_std_sr`](../firmware/asm/i2c_std_sr.asm) | I2C controller, Standard-mode budget, write + repeated START + read, no pin-dependent branch | 435 per SCL clock (low 235 + high 200) | 152 | 5319 | [`test_firmware_i2c_sr.py`](../verification/test_firmware_i2c_sr.py) | [firmware-i2c 20261010-181358-6e9a315](../verification/records/firmware-i2c/records/20261010-181358-6e9a315.md) |
-| [`i2c_std_sr_poll`](../firmware/asm/i2c_std_sr_poll.asm) | as `i2c_std_sr`, polls SCL (tolerates clock stretching) | 437 per SCL clock unstretched (low 235 + high 202) | 192 | 5339 | [`test_firmware_i2c_sr.py`](../verification/test_firmware_i2c_sr.py) | [firmware-i2c 20261010-181358-6e9a315](../verification/records/firmware-i2c/records/20261010-181358-6e9a315.md) |
-| [`demo_roundtrip`](../firmware/asm/demo_roundtrip.asm) | none (assembler and load-phase round-trip coverage program) | n/a | 27 | 30 | [`test_firmware_roundtrip.py`](../verification/test_firmware_roundtrip.py) | [firmware-assembler-roundtrip 20261010-132620-8372c57](../verification/records/firmware-assembler-roundtrip/records/20261010-132620-8372c57.md) |
+| [`uart_tx`](../firmware/asm/uart_tx.asm) | UART TX, 8N1, frames 0x5A then 0xA5 | 50 per bit | 34 | 979 | [`test_firmware_uart.py`](../verification/test_firmware_uart.py) | [firmware-uart 20261010-172353-f8428aa](../verification/records/firmware-uart/records/20261010-172353-f8428aa.md) |
+| [`uart_rx`](../firmware/asm/uart_rx.asm) | UART RX, 8N1 | 50 per bit | 132 | 488 | [`test_firmware_uart_rx.py`](../verification/test_firmware_uart_rx.py) | [firmware-uart-rx 20261010-172355-f8428aa](../verification/records/firmware-uart-rx/records/20261010-172355-f8428aa.md) |
+| [`uart_rx_115200`](../firmware/asm/uart_rx_115200.asm) | UART RX, 8N1, 115200-baud class | 434 per bit | 168 | 3878 | [`test_firmware_uart_rx.py`](../verification/test_firmware_uart_rx.py) | [firmware-uart-rx 20261010-172355-f8428aa](../verification/records/firmware-uart-rx/records/20261010-172355-f8428aa.md) |
+| [`uart_rx_9600`](../firmware/asm/uart_rx_9600.asm) | UART RX, 8N1, 9600-baud class (nested `WAIT`) | 5208 per bit | 168 | 2791 | [`test_firmware_uart_rx.py`](../verification/test_firmware_uart_rx.py) | [firmware-uart-rx 20261010-172355-f8428aa](../verification/records/firmware-uart-rx/records/20261010-172355-f8428aa.md) |
+| [`uart_tx_9600`](../firmware/asm/uart_tx_9600.asm) | UART TX, 8N1, 9600-baud class (nested `WAIT`), frames 0x5A then 0xA5 | 5208 per bit | 177 | 6578 | [`test_firmware_uart_rx.py`](../verification/test_firmware_uart_rx.py) | [firmware-uart-rx 20261010-172355-f8428aa](../verification/records/firmware-uart-rx/records/20261010-172355-f8428aa.md) |
+| [`spi_mode0`](../firmware/asm/spi_mode0.asm) | SPI controller, CPOL 0 / CPHA 0 | 4 per SCLK period (ceiling burst), 10 per bit (functional burst) | 137 | 197 | [`test_firmware_spi.py`](../verification/test_firmware_spi.py) | [firmware-spi 20261010-172351-f8428aa](../verification/records/firmware-spi/records/20261010-172351-f8428aa.md) |
+| [`spi_mode1`](../firmware/asm/spi_mode1.asm) | SPI controller, CPOL 0 / CPHA 1 | 4 per SCLK period (ceiling burst), 10 per bit (functional burst) | 138 | 198 | [`test_firmware_spi.py`](../verification/test_firmware_spi.py) | [firmware-spi 20261010-172351-f8428aa](../verification/records/firmware-spi/records/20261010-172351-f8428aa.md) |
+| [`spi_mode2`](../firmware/asm/spi_mode2.asm) | SPI controller, CPOL 1 / CPHA 0 | 4 per SCLK period (ceiling burst), 10 per bit (functional burst) | 137 | 197 | [`test_firmware_spi.py`](../verification/test_firmware_spi.py) | [firmware-spi 20261010-172351-f8428aa](../verification/records/firmware-spi/records/20261010-172351-f8428aa.md) |
+| [`spi_mode3`](../firmware/asm/spi_mode3.asm) | SPI controller, CPOL 1 / CPHA 1 | 4 per SCLK period (ceiling burst), 10 per bit (functional burst) | 138 | 198 | [`test_firmware_spi.py`](../verification/test_firmware_spi.py) | [firmware-spi 20261010-172351-f8428aa](../verification/records/firmware-spi/records/20261010-172351-f8428aa.md) |
+| [`i2c_fast`](../firmware/asm/i2c_fast.asm) | I2C controller, Fast-mode budget, write only | 125 per SCL clock (low 65 + high 60) | 246 | 3350 | [`test_firmware_i2c.py`](../verification/test_firmware_i2c.py) | [firmware-i2c 20261010-172342-f8428aa](../verification/records/firmware-i2c/records/20261010-172342-f8428aa.md) |
+| [`i2c_std`](../firmware/asm/i2c_std.asm) | I2C controller, Standard-mode budget, write only | 435 per SCL clock (low 235 + high 200) | 246 | 9700 | [`test_firmware_i2c.py`](../verification/test_firmware_i2c.py) | [firmware-i2c 20261010-172342-f8428aa](../verification/records/firmware-i2c/records/20261010-172342-f8428aa.md) |
+| [`i2c_fast_sr`](../firmware/asm/i2c_fast_sr.asm) | I2C controller, Fast-mode budget, write + repeated START + read, no pin-dependent branch | 125 per SCL clock (low 65 + high 60) | 152 | 1869 | [`test_firmware_i2c_sr.py`](../verification/test_firmware_i2c_sr.py) | [firmware-i2c 20261010-172343-f8428aa](../verification/records/firmware-i2c/records/20261010-172343-f8428aa.md) |
+| [`i2c_fast_sr_poll`](../firmware/asm/i2c_fast_sr_poll.asm) | as `i2c_fast_sr`, polls SCL (tolerates clock stretching) | 127 per SCL clock unstretched (low 65 + high 62) | 192 | 1889 | [`test_firmware_i2c_sr.py`](../verification/test_firmware_i2c_sr.py) | [firmware-i2c 20261010-172343-f8428aa](../verification/records/firmware-i2c/records/20261010-172343-f8428aa.md) |
+| [`i2c_std_sr`](../firmware/asm/i2c_std_sr.asm) | I2C controller, Standard-mode budget, write + repeated START + read, no pin-dependent branch | 435 per SCL clock (low 235 + high 200) | 152 | 5319 | [`test_firmware_i2c_sr.py`](../verification/test_firmware_i2c_sr.py) | [firmware-i2c 20261010-172343-f8428aa](../verification/records/firmware-i2c/records/20261010-172343-f8428aa.md) |
+| [`i2c_std_sr_poll`](../firmware/asm/i2c_std_sr_poll.asm) | as `i2c_std_sr`, polls SCL (tolerates clock stretching) | 437 per SCL clock unstretched (low 235 + high 202) | 192 | 5339 | [`test_firmware_i2c_sr.py`](../verification/test_firmware_i2c_sr.py) | [firmware-i2c 20261010-172343-f8428aa](../verification/records/firmware-i2c/records/20261010-172343-f8428aa.md) |
+| [`demo_roundtrip`](../firmware/asm/demo_roundtrip.asm) | none (assembler and load-phase round-trip coverage program) | n/a | 27 | 30 | [`test_firmware_roundtrip.py`](../verification/test_firmware_roundtrip.py) | [firmware-assembler-roundtrip 20261010-172335-f8428aa](../verification/records/firmware-assembler-roundtrip/records/20261010-172335-f8428aa.md) |
 <!-- firmware-images:end -->
 
 Notes, all from the cited records:
@@ -248,7 +268,7 @@ Notes, all from the cited records:
   `0x0C` (SCL and SDA open-drain) right after releasing both lines. The
   SPI and I2C benches run on a pad model
   ([`uio_pads.py`](../verification/uio_pads.py),
-  [record](../verification/records/uio-pad-model/records/20261010-190322-b7b2b35.md))
+  [record](../verification/records/uio-pad-model/records/20261010-172408-f8428aa.md))
   that resolves each line from the design's `uio_oe` and `uio_out`, a
   pull-up and the peripheral, and reads it back on `uio_in`; the lines the
   reference model grades are those. With `UIO_OD` left at reset the I2C
@@ -437,8 +457,8 @@ No pin claim here is backed by silicon or by the LibreLane flow.
 ## Evidence not yet in hand
 
 - **Tiny Tapeout LibreLane flow.** The routed-netlist SDF regression of the
-  submitted core ([record](../verification/records/post-layout-sdf-regression/records/20261010-190334-b7b2b35.md),
-  LibreLane run 38074873225) passes at all three corners: 12 of the core
+  submitted core ([record](../verification/records/post-layout-sdf-regression/records/20261010-174900-f8428aa.md),
+  LibreLane run 38071502150, with DR 0015's P1 and P2 and the UART-load boot ROM) passes at all three corners: 12 of the core
   bench's 13 tests pass and the white-box flag test is skipped (it reads
   core internals a flattened netlist does not have), so the C flag has no
   post-layout evidence. One of the 12 grades the load check's readout every
@@ -452,20 +472,22 @@ No pin claim here is backed by silicon or by the LibreLane flow.
   and only the core bench ran, not the firmware above. The sign-off grader
   still renders T1 item 7 unmet, on provenance binding (see
   `manifests/README.md`). LibreLane timing and area evidence is in
-  [`librelane-corner-timing`](../verification/records/librelane-corner-timing/records/20261010-190500-b7b2b35.md):
-  zero setup and hold violations at the three corners the flow emits, at a
-  20 ns clock. The load check's `ui_in[1]`-to-`uo_out` path is 0.63 to
-  1.53 ns pin to pin in that flow's post-route analysis, under the flow's
-  assumed 4 ns input and output delays; no pad has been measured.
-  Firmware, the control-space, boot-ROM, SPI-flash-boot, UART-load and load-integrity benches on that netlist at zero delay:
-  [`firmware-gate-level`](../verification/records/firmware-gate-level/records/20261010-200120-7499732.md).
+  [`librelane-corner-timing`](../verification/records/librelane-corner-timing/records/20261010-175100-f8428aa.md):
+  zero setup and hold violations at all three corners at 20 ns, and the placed standard-cell area
+  with P1, P2 and the UART-load ROM is 44,295 µm² (LibreLane flow), 57.2 % of the core with the
+  macro against the 60 % target (P1 and P2 alone, before the merge with the UART load: 41,827 µm²,
+  55.2 %; 28,256 µm² without them). On the klt/Yosys flow P1 and P2 cost +10,848 µm²
+  (synthesis only). DR 0015 estimated about 4,600 µm² for the two primitives; the measured cost is
+  2.4 to 2.9 times that, which DR 0015's dated notes record.
+  Firmware, the control-space, boot-ROM, SPI-flash-boot, UART-load and primitive benches on that netlist at zero delay:
+  [`firmware-gate-level`](../verification/records/firmware-gate-level/records/20261010-191600-f8428aa.md).
   Firmware with back-annotated delays: none.
 - **klt synthesis and timing.** `klt sta` does not yet support the SRAM
   macro, so the two flows do not agree on timing; per the project rule that
   mismatch is a finding, not a number to pick from.
 - **Silicon:** none.
 - **Pads.** The I2C results are on a logical, zero-delay pad model
-  ([record](../verification/records/uio-pad-model/records/20261010-190322-b7b2b35.md)):
+  ([record](../verification/records/uio-pad-model/records/20261010-172408-f8428aa.md)):
   they show which lines the design drives, and when, through `uio_oe`.
   They are not electrical evidence: no pad cell, pull-up rise time, pad
   delay or drive strength has been simulated or measured.

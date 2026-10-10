@@ -1,5 +1,0 @@
-FAIL: STALE justification `u_core.no_such_register`: it names no non-reset state element of this netlist
-netlist <repo>/verification/records/post-layout-sdf-regression/artifacts/20261010-190334-b7b2b35/tt_um_2amlogic_protocol_emulator.v (top tt_um_2amlogic_protocol_emulator): 179 state element(s): 178 flop(s), 1 macro(s); 178 reset from rst_n alone, 1 not
-  not reset: u_prog_mem.u_sram (macro, RM_IHPSG13_1P_256x16_c2_bm_bist): macro: not a standard cell, no reset pin in this flow
-  justified by `u_prog_mem.u_sram`: 1 element(s)
-  justified by `u_core.no_such_register`: 0 element(s)

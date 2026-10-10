@@ -1,4 +1,0 @@
-15496c15496
-<  sg13cmos5l_dlygate4sd3_1 hold520 (.A(\u_core.ctl_stall ),
----
->  sg13cmos5l_dlygate4sd3_1 hold520 (.A(1'b0),

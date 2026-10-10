@@ -3,17 +3,17 @@
   "kind": "generic",
   "status": "pass",
   "t1_item": 2,
-  "summary": "Layout (Digital): the committed routed GDS of the LibreLane flow (gds workflow run 38074873225 at 6e9a315: TinyTapeout/tt-gds-action@ihp-cmos5l, LibreLane 3.1.0.dev3, IHP-Open-PDK 2bbec755), placed and routed from the LibreLane gate-level netlist reference-asrouted.v by the committed flow (.github/workflows/gds.yaml, src/config.json, src/pdn_cfg.tcl, info.yaml). The boot ROM holds the UART load (issue #139, 223 words) and uo_out carries the load-phase CRC readout (issue #137). DRC/LVS of these bytes: librelane-gds-signoff-check 20261010-191500-b7b2b35. Refreshed for issues #139 and #137; first written by issue #83.",
-  "source": "verification/records/librelane-gds-signoff-check/records/20261010-191500-b7b2b35.md",
+  "summary": "Layout (Digital): the committed routed GDS of the LibreLane flow (gds workflow run 38071502150 at f8428aa: TinyTapeout/tt-gds-action@ihp-cmos5l, LibreLane 3.1.0.dev3, IHP-Open-PDK 2bbec755), placed and routed from the LibreLane gate-level netlist reference-asrouted.v by the committed flow (.github/workflows/gds.yaml, src/config.json, src/pdn_cfg.tcl, info.yaml). The design is the merge of issue #208 (DR 0015's P1 and P2, the LibreLane-only drive buffers on every SRAM macro input) with main's issue #139 (the 223-word UART-load boot ROM); src/ and rtl/ at the branch head are byte-identical to f8428aa's. DRC/LVS of these bytes: librelane-gds-signoff-check 20261010-175000-f8428aa. PR #212.",
+  "source": "verification/records/librelane-gds-signoff-check/records/20261010-175000-f8428aa.md",
   "provenance": {
     "klt_version": "0.7.0",
     "klayout_version": "0.30.12",
     "pdk": null,
     "deck": null,
     "input": {
-      "content_hash": "sha256:be7824b9c9876c0d6308a4e784b9fdb8f7a208aecb38eab3e703e1faee52bd60",
+      "content_hash": "sha256:7cc0242538e66f13d5e213fcf657da5e0200bad4858592b1213bc09d7d0768a9",
       "path": {
-        "path": "verification/records/librelane-gds-signoff-check/artifacts/20261010-191500-b7b2b35/tt_um_2amlogic_protocol_emulator.gds",
+        "path": "verification/records/librelane-gds-signoff-check/artifacts/20261010-175000-f8428aa/tt_um_2amlogic_protocol_emulator.gds",
         "scope": "repo"
       }
     }

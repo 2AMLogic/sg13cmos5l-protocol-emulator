@@ -20,11 +20,13 @@
 # Which netlist: the `tt_submission` artifact's `<top>.v` of a `gds` workflow
 # run -- the final netlist that the template's own `gl_test` job compiles.
 # Default: the byte-identical copy frozen under verification/records/
-# post-layout-sdf-regression/ from run 38074873225 (the first netlist with
-# both DR 0013 layer 1's load-phase CRC readout, issue #137, and the boot
-# ROM's UART load, issue #139, on top of the SPI-flash boot, issue #140, the
-# warm start's zero-signature refusal, issue #168, and the A_REN drive
-# buffer, issue #173). Override with
+# post-layout-sdf-regression/ from run 38071502150 (the first netlist with
+# both DR 0015's P1/P2 plus the drive buffers on every SRAM macro input, issue
+# #208, and the UART load in the boot ROM, issue #139; before it, run
+# 38055685598's (#208 alone) and run 38054423540's (#139 alone), and before
+# those run 38032061275's, the first with the A_REN drive buffer, issue #173,
+# and run 38013383254's, the first with the SPI-flash boot program, issue
+# #140). Override with
 # --netlist <file> (e.g. one from `gh run download <id> -n tt_submission`).
 #
 # Negative control (a suite that cannot fail cannot cite its passes): the
@@ -76,6 +78,12 @@
 # SCK/MISO pads. Its negative control is the same `\u_core.rom_exit` stuck-
 # at-0 netlist: a good image never runs, so the bench's boot tests must fail.
 #
+# DR 0015 primitives (issue #208): --primitives adds
+# verification/test_primitives.py (P1 CRC/LFSR and P2 NRZI/stuffing against
+# independent oracles), pin-only under GATES=yes. Its negative control is the
+# WAIT-counter fault above: WCTL CRC_BYTE shares that counter, so its 8 steps
+# and its 9-cycle latency both break, and the bench must fail.
+#
 # UART boot (issue #139, DR 0013 layer 2 strap 00): --boot-uart adds
 # verification/test_boot_uart.py, pin-only under GATES=yes (its white-box
 # reads and its two long runs -- the host-rate sweep and the 256-word image --
@@ -88,7 +96,7 @@
 # net `\pm_crc[0]` (bit 0 of PM_CRC, which feeds both the CRC's own feedback
 # and the uo_out readout mux) stuck at 0 the same way, on a fifth mutated copy.
 #
-# Usage:  ./flow/run-firmware-gate-level.sh [--netlist FILE] [--full] [--control-space] [--boot-rom] [--boot-spi] [--boot-uart] [--load-integrity]
+# Usage:  ./flow/run-firmware-gate-level.sh [--netlist FILE] [--full] [--control-space] [--boot-rom] [--boot-spi] [--primitives] [--boot-uart] [--load-integrity]
 #   --full  also runs verification/test_firmware_i2c_sr.py (the Sr/stretch
 #           sibling bench); default is the UART TX, UART RX, SPI and I2C
 #           protocol benches (the three issue-#108 benches plus the UART RX
@@ -96,6 +104,7 @@
 #   --control-space  also runs verification/test_control_space.py.
 #   --boot-rom       also runs verification/test_boot_rom.py.
 #   --boot-spi       also runs verification/test_boot_spi.py.
+#   --primitives     also runs verification/test_primitives.py.
 #   --boot-uart      also runs verification/test_boot_uart.py.
 #   --load-integrity also runs verification/test_load_integrity.py.
 # Env:    PDK_ROOT must contain ihp-sg13cmos5l/ (default ~/share/pdk).
@@ -106,7 +115,7 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SCRATCH="${REPO_ROOT}/flow/firmware-gate-level"
-NETLIST="${REPO_ROOT}/verification/records/post-layout-sdf-regression/artifacts/20261010-190334-b7b2b35/tt_um_2amlogic_protocol_emulator.v"
+NETLIST="${REPO_ROOT}/verification/records/post-layout-sdf-regression/artifacts/20261010-174900-f8428aa/tt_um_2amlogic_protocol_emulator.v"
 MODULES=(test_firmware_uart test_firmware_uart_rx test_firmware_spi test_firmware_i2c)
 export PDK_ROOT="${PDK_ROOT:-$HOME/share/pdk}"
 
@@ -117,9 +126,10 @@ while [ $# -gt 0 ]; do
     --control-space) MODULES+=(test_control_space); shift ;;
     --boot-rom) MODULES+=(test_boot_rom); shift ;;
     --boot-spi) MODULES+=(test_boot_spi); shift ;;
+    --primitives) MODULES+=(test_primitives); shift ;;
     --boot-uart) MODULES+=(test_boot_uart); shift ;;
     --load-integrity) MODULES+=(test_load_integrity); shift ;;
-    -h|--help) sed -n '2,103p' "${BASH_SOURCE[0]}"; exit 0 ;;
+    -h|--help) sed -n '2,112p' "${BASH_SOURCE[0]}"; exit 0 ;;
     *) echo "FATAL: unknown argument $1" >&2; exit 1 ;;
   esac
 done

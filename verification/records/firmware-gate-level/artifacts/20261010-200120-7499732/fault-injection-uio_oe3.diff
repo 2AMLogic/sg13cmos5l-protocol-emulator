@@ -1,7 +1,0 @@
-14a15,16
->  wire pad_fault_uio_oe3_unconnected;
->  assign uio_oe[3] = 1'b0;
-11081c11083
-<     .Y(uio_oe[3]),
----
->     .Y(pad_fault_uio_oe3_unconnected),
