@@ -26,7 +26,10 @@ Checks, per record `verification/records/<experiment>/records/<record-id>.md`:
    and must match. A live record whose cited source has since changed is a
    stale record -- exactly the case this check exists to catch. Superseded
    records are exempt (they are frozen history, not a claim about current
-   sources).
+   sources). "Superseded" means superseded by a record in the SAME
+   experiment directory: record IDs are not unique across experiments (a
+   batch mint stamps one ID on many), so the exemption is keyed on
+   `(experiment, record_id)`, never on the ID alone (#157).
 5. **Append-only** -- every path under `verification/records/` must be
    either untracked-before (a pure addition) or unchanged, relative to the
    merge-base with `origin/main` (or `--base-ref`). Any modification,
@@ -201,7 +204,11 @@ def lint_record(path: Path, all_record_ids_by_experiment: dict) -> list[str]:
     return errors
 
 
-def check_hash_freshness(path: Path, superseded_ids: set) -> list[str]:
+def check_hash_freshness(path: Path, superseded: set) -> list[str]:
+    """`superseded` holds `(experiment, record_id)` pairs. Record IDs are not
+    unique across experiments (a batch mint stamps one ID on many), so the
+    exemption must be keyed on the pair: superseding one experiment's copy of
+    an ID must not exempt another experiment's live copy (#157)."""
     errors = []
     text = path.read_text(encoding="utf-8")
     try:
@@ -209,8 +216,8 @@ def check_hash_freshness(path: Path, superseded_ids: set) -> list[str]:
     except LintError:
         return errors  # already reported by lint_record
 
-    record_id = meta.get("record_id")
-    if record_id in superseded_ids:
+    experiment = path.parent.parent.name
+    if (experiment, path.stem) in superseded:
         return errors  # frozen history, exempt from freshness
 
     for item in meta.get("provenance", {}).get("inputs", []) or []:
@@ -321,15 +328,15 @@ def main() -> int:
         except LintError:
             metas_by_path[path] = {}
 
-    superseded_ids = {
-        meta["supersedes"]
-        for meta in metas_by_path.values()
+    superseded = {
+        (path.parent.parent.name, meta["supersedes"])
+        for path, meta in metas_by_path.items()
         if meta.get("supersedes") not in (None, "none")
     }
 
     for path in record_files:
         errors = lint_record(path, all_ids_by_experiment)
-        errors += check_hash_freshness(path, superseded_ids)
+        errors += check_hash_freshness(path, superseded)
         if errors:
             print(f"FAIL: {path.relative_to(REPO_ROOT)}")
             for e in errors:

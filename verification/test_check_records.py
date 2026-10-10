@@ -259,6 +259,24 @@ def case_superseded_record_exempt_from_freshness(repo: Path) -> None:
     _git(repo, "commit", "--quiet", "-m", "fixture: supersede the first record")
 
 
+def case_shared_id_superseded_elsewhere_still_checked(repo: Path) -> None:
+    """Record IDs are `<timestamp>-<sha>` and are NOT unique across
+    experiments: a batch mint gives every experiment the same ID. The
+    freshness exemption must be keyed on (experiment, record_id), so that
+    superseding experiment A's copy of an ID does not also exempt experiment
+    B's still-live copy of that ID (#157)."""
+    shared_id = "20260101-000000-abc1234"
+    (repo / "verification" / "records" / "other" / "records").mkdir(parents=True)
+    record_path(repo, "other", shared_id).write_text(
+        make_record(shared_id, "other", inputs=[("rtl/dut.v", _sha256_text(DUMMY_RTL))]),
+        encoding="utf-8",
+    )
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "--quiet", "-m", "fixture: second experiment, same id")
+    # Supersede only `demo`'s copy, then change the cited source.
+    case_superseded_record_exempt_from_freshness(repo)
+
+
 def case_bad_record_id_grammar(repo: Path) -> None:
     bad = record_path(repo, "demo", "not-a-record-id")
     bad.write_text(
@@ -340,6 +358,12 @@ CASES = [
         case_superseded_record_exempt_from_freshness,
         0,
         "PASS: all records valid",
+    ),
+    (
+        "same id superseded in another experiment does not exempt a live record",
+        case_shared_id_superseded_elsewhere_still_checked,
+        1,
+        "other/records/20260101-000000-abc1234.md: provenance hash for `rtl/dut.v` is stale",
     ),
     (
         "malformed record id fails",

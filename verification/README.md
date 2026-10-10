@@ -466,7 +466,9 @@ on:
 - a `supersedes` value naming a record that does not exist in the same
   experiment directory;
 - a live record whose `provenance.inputs[].content_hash` no longer matches
-  the current working tree;
+  the current working tree (a record is "live" unless a record in its own
+  experiment directory supersedes it; the same record ID superseded in a
+  different experiment does not count, #157);
 - **append-only violations**: any file under `verification/records/`
   modified, renamed, or deleted relative to the merge base with
   `origin/main`.
