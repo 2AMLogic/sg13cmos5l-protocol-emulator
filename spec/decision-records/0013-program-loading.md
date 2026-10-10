@@ -874,3 +874,37 @@ fall-through from a failed warm start. The host's frame bytes equal
 `loadseq.py`'s for every committed image, and both equal `binascii.crc_hqx`'s
 CRC. `verification/boot_uart_mutants.py` injects seven ROM defects, each
 caught by a test meant to catch it.
+
+## Implementation notes and findings (issue #201, 2026-10-10)
+
+> Added when the larger-ROM layout was re-measured for issue #201. The
+> Decision above is left as written, and this note changes nothing in it. It
+> supersedes the max-slew finding in the issue #139 notes above, the
+> `A_WEN` slew of run 38054423540.
+
+**The `A_WEN` max-slew violation is gone. Each figure below is from the
+LibreLane flow** (`TinyTapeout/tt-gds-action@ihp-cmos5l`, LibreLane
+3.1.0.dev3, post-route OpenSTA, 20 ns). Issue #208 (PR #212) gave every
+functional SRAM input an explicit LibreLane-only `sg13cmos5l_buf_4` (`A_ADDR`,
+`A_DIN`, `A_WEN`, `A_MEN`), and #173's `A_REN` buffer stays. Simulation and
+the klt/Yosys flow take plain wires. With those buffers, `gds` run 38082820606
+on PR #232's head measured the 223-word UART-load ROM (with #208's P1/P2).
+The results:
+
+| | #139 notes above (run 38054423540, `A_REN` buffer only) | Now (run 38082820606, all 27 inputs buffered) |
+|---|---|---|
+| Max-slew violations (slow / typ / fast) | 1 / 1 / 1 (`A_WEN`, 0.909 ns slow) | **0 / 0 / 0** (`A_WEN` 0.057 ns slow; worst input `A_DIN[2]` 0.275 ns) |
+| Max-cap violations, SRAM `A_DOUT` | 3 / 3 / 4 (`A_DOUT[12..15]`) | 1 / 1 / 1 (`A_DOUT[7]`) |
+| Worst setup slack (slow / typ / fast) | +3.631 / +9.863 / +13.454 ns | +4.807 / +10.561 / +13.865 ns |
+| Worst hold slack (slow / typ / fast) | +0.6076 / +0.2940 / +0.1043 ns | +0.6495 / +0.3143 / +0.1232 ns |
+| Placed standard cells / utilization with macro | 30,745.0 µm² / 46.47 % | 44,294.9 µm² / 57.17 % |
+| Hand-instantiated `buffer` cells | 1 | 27 (+26, +377.4 µm²) |
+
+Setup and hold violations are 0 at all three corners in both runs. The area
+and slack changes between the two columns include #208's P1/P2 logic and the
+placement re-roll, so they are not attributed to the buffers. Only the
+`buffer` row is the buffers' own. On the klt/Yosys flow (cell area only, no
+timing) the netlist has no `buf` cell, at 2,392 instances and 34,670.58 µm².
+This run reproduces gds run 38071502150 byte for byte: same `metrics.json`,
+same LibreLane netlist, and same GDS apart from its timestamps. Record:
+`verification/records/librelane-corner-timing/records/20261010-204000-8a73b84.md`.
