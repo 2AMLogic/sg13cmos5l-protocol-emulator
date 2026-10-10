@@ -1,18 +1,22 @@
-; i2c_fast.asm -- bit-banged I2C controller, Fast-mode 400 kHz phase budget
-; (issue #73, part of #23).
+; i2c_std.asm -- bit-banged I2C controller, Standard-mode 100 kHz period
+; (issue #73, part of #23; 500-cycle clock per issue #125).
 ;
 ; Implements `spec/decision-records/0001-isa.md` section "Per-protocol
-; cycle-budget sketch -> I2C" on the Standard-mode side of the sketch's
-; arithmetic: t_LOW = 235 cycles (the UM10204 Table 10 Standard-mode
-; minimum of 4.7 us, to the cycle) and t_HIGH = 200 cycles (the 4.0 us
-; minimum, to the cycle) at the target 50 MHz core clock. DR 0001 also
-; names 500 cycles as the 100 kHz nominal period; the sketch's own phase
-; allocation IS the two minimums (235 + 200 = 435 cycles ~ 114.9 kHz at
-; the unconfirmed nominal clock -- a floor-paced Standard-mode bus, which
-; meets every Table 10 minimum; the extra 65 cycles to a full 500-cycle
-; period are inter-phase margin the standard does not require). Fast-mode
-; is the sibling program `i2c_fast.asm` -- same instruction stream,
-; smaller phase literals.
+; cycle-budget sketch -> I2C" on the Standard-mode side, paced to the
+; 100 kHz CEILING (issue #125, operator ruling `enforce_500`): every
+; ordinary data and ACK clock is at least 500 core cycles, i.e. no faster
+; than UM10204 Table 10's f_SCL maximum of 100 kHz at the target 50 MHz
+; core clock (nominal, unconfirmed -- the cycle counts are the claim, the
+; kHz figure is arithmetic at that clock). The allocation is t_LOW = 258
+; cycles + t_HIGH = 242 cycles = 500; both clear their UM10204 Table 10
+; minimums (235 / 200 cycles, 4.7 / 4.0 us). The earlier allocation was the
+; two minimums, 235 + 200 = 435 cycles (~114.9 kHz at 50 MHz), which met
+; every phase minimum but exceeded the 100 kHz ceiling; this program
+; supersedes it. 258 is the longest low a single WAIT reaches in these
+; phases (OUT + WAIT 255 (=256) + OR), so the extra 65 cycles are split
+; 23 into the low and 42 into the high with NO added instruction words.
+; Fast-mode is the sibling program `i2c_fast.asm` -- same instruction
+; stream, smaller phase literals.
 ;
 ; Pin plan: DR 0010's target plan, the standard Tiny Tapeout I2C Pmod
 ; (upper row), adopted by issue #155:
@@ -65,18 +69,20 @@
 ; opens AT the OUT that starts the phase and closes before the OUT that
 ; ends it, so the section's cycle count IS the phase's measured length:
 ;
-;   data-clock low phase   OUT(fall) + WAIT 232 (=233) + OR      = 235
-;   data-clock high phase  OUT(rise) + SHF + WAIT 195 (=196)
-;                          + MOV + AND                          = 200
-;   last bit's high phase  OUT(rise) + WAIT 197 (=198) + MOV     = 200
+;   data-clock low phase   OUT(fall) + WAIT 255 (=256) + OR     = 258
+;   data-clock high phase  OUT(rise) + SHF + WAIT 233 (=234)
+;                          + MOV + 4x SHF + AND                 = 242
+;   last bit's high phase  OUT(rise) + WAIT 239 (=240) + MOV    = 242
 ;                            (no SHF/AND: the ACK prep is one MOV)
-;   ACK low phase          OUT(fall) + WAIT 30 (=31) + IN + WAIT 199
-;                          (=200) + AND + LDI                    = 235
-;   START hold             OUT(START) + WAIT 200 (=201) + LDI
-;                          + MOV + AND                           = 205
+;   ACK low phase          OUT(fall) + WAIT 30 (=31) + IN + WAIT 222
+;                          (=223) + AND + LDI                   = 258
+;   => every data / ACK clock is 258 + 242 = 500 cycles, fall to fall.
+;   START hold             OUT(START) + WAIT 196 (=197) + LDI
+;                          + MOV + 4x SHF + AND                 = 205
 ;                            (UM10204 t_HD;STA minimum: 200 cycles)
 ;   STOP setup             OUT(SCL rise) + WAIT 202 (=203) + LDI = 205
 ;                            (UM10204 t_SU;STO minimum: 200 cycles)
+;   pre-STOP low           as the data-clock low phase          = 258
 ;
 ; Every timing-critical delay is an assemble-time literal. Nothing that
 ; produces protocol timing branches on pin data -- the single BNZ is the
@@ -95,7 +101,7 @@
         LDI   R3, 0x04        ; SCL high, SDA low
 .cyclesec i2c_start
         OUT   UIO_OUT, R3     ; START: SDA falls while SCL high
-        WAIT  196              ; 61 cycles
+        WAIT  196              ; 197 cycles
         LDI   R0, 0xA0        ; address byte 0x50<<1|W, MSB first
         MOV   R3, R0
         SHF   R3, RIGHT
@@ -103,33 +109,33 @@
         SHF   R3, RIGHT
         SHF   R3, RIGHT       ; R0's MSB -> SDA (bit 3)
         AND   R3, R1          ; R3 = SDA(bit 1 = 1), SCL low
-.endcyclesec                   ; t_HD;STA = 65 cycles
+.endcyclesec                   ; t_HD;STA = 205 cycles
 ; ---------------------------------------------- address byte 0xA0, MSB first
 .cyclesec i2c_abit1_low
         OUT   UIO_OUT, R3     ; SCL falls; SDA rises (bit 1 = 1) in low
-        WAIT  232              ; 233 cycles
+        WAIT  255
         OR    R3, R2          ; raise SCL, SDA unchanged
-.endcyclesec                   ; t_LOW = 65
+.endcyclesec                   ; t_LOW = 258
 .cyclesec i2c_abit1_high
         OUT   UIO_OUT, R3     ; SCL rises: bit 1 sampled on the line
         SHF   R0, LEFT        ; bit 2 into position
-        WAIT  191              ; 56 cycles
+        WAIT  233
         MOV   R3, R0
         SHF   R3, RIGHT
         SHF   R3, RIGHT
         SHF   R3, RIGHT
         SHF   R3, RIGHT       ; R0's MSB -> SDA (bit 3)
         AND   R3, R1          ; R3 = SDA(bit 2), SCL low
-.endcyclesec                   ; t_HIGH = 60
+.endcyclesec                   ; t_HIGH = 242
 .cyclesec i2c_abit2_low
         OUT   UIO_OUT, R3
-        WAIT  232
+        WAIT  255
         OR    R3, R2
 .endcyclesec
 .cyclesec i2c_abit2_high
         OUT   UIO_OUT, R3
         SHF   R0, LEFT
-        WAIT  191
+        WAIT  233
         MOV   R3, R0
         SHF   R3, RIGHT
         SHF   R3, RIGHT
@@ -139,13 +145,13 @@
 .endcyclesec
 .cyclesec i2c_abit3_low
         OUT   UIO_OUT, R3
-        WAIT  232
+        WAIT  255
         OR    R3, R2
 .endcyclesec
 .cyclesec i2c_abit3_high
         OUT   UIO_OUT, R3
         SHF   R0, LEFT
-        WAIT  191
+        WAIT  233
         MOV   R3, R0
         SHF   R3, RIGHT
         SHF   R3, RIGHT
@@ -155,13 +161,13 @@
 .endcyclesec
 .cyclesec i2c_abit4_low
         OUT   UIO_OUT, R3
-        WAIT  232
+        WAIT  255
         OR    R3, R2
 .endcyclesec
 .cyclesec i2c_abit4_high
         OUT   UIO_OUT, R3
         SHF   R0, LEFT
-        WAIT  191
+        WAIT  233
         MOV   R3, R0
         SHF   R3, RIGHT
         SHF   R3, RIGHT
@@ -171,13 +177,13 @@
 .endcyclesec
 .cyclesec i2c_abit5_low
         OUT   UIO_OUT, R3
-        WAIT  232
+        WAIT  255
         OR    R3, R2
 .endcyclesec
 .cyclesec i2c_abit5_high
         OUT   UIO_OUT, R3
         SHF   R0, LEFT
-        WAIT  191
+        WAIT  233
         MOV   R3, R0
         SHF   R3, RIGHT
         SHF   R3, RIGHT
@@ -187,13 +193,13 @@
 .endcyclesec
 .cyclesec i2c_abit6_low
         OUT   UIO_OUT, R3
-        WAIT  232
+        WAIT  255
         OR    R3, R2
 .endcyclesec
 .cyclesec i2c_abit6_high
         OUT   UIO_OUT, R3
         SHF   R0, LEFT
-        WAIT  191
+        WAIT  233
         MOV   R3, R0
         SHF   R3, RIGHT
         SHF   R3, RIGHT
@@ -203,13 +209,13 @@
 .endcyclesec
 .cyclesec i2c_abit7_low
         OUT   UIO_OUT, R3
-        WAIT  232
+        WAIT  255
         OR    R3, R2
 .endcyclesec
 .cyclesec i2c_abit7_high
         OUT   UIO_OUT, R3
         SHF   R0, LEFT
-        WAIT  191
+        WAIT  233
         MOV   R3, R0
         SHF   R3, RIGHT
         SHF   R3, RIGHT
@@ -219,32 +225,32 @@
 .endcyclesec
 .cyclesec i2c_abit8_low
         OUT   UIO_OUT, R3
-        WAIT  232
+        WAIT  255
         OR    R3, R2
 .endcyclesec
 .cyclesec i2c_abit8_high
         OUT   UIO_OUT, R3     ; last address clock rises
-        WAIT  197              ; 58 cycles (the ACK prep is one MOV)
+        WAIT  239              ; (the ACK prep is one MOV)
         MOV   R3, R1          ; 0x08: SDA released for the ACK slot
-.endcyclesec                   ; t_HIGH = 60
+.endcyclesec                   ; t_HIGH = 242
 ; ------------------------------------- address ACK slot (the branch point)
 .cyclesec i2c_ack1_low
         OUT   UIO_OUT, R3     ; SCL falls; SDA released
-        WAIT  30              ; 21 cycles: the bench's peripheral pulls
+        WAIT  30              ; 31 cycles: the bench's peripheral pulls
                                ; SDA low two cycles after seeing this
                                ; fall, well before the sample below
         IN    R3, UIO_IN      ; sample the bus (taints R3)
-        WAIT  199              ; 39 cycles
+        WAIT  222
         AND   R3, R1          ; isolate SDA (bit 3); sets Z -- and the
                                ; flags must survive to the BNZ, so the rise
                                ; pins are built with LDI (not flag-setting),
                                ; never MOV/OR which would clobber Z
         LDI   R3, 0x0C        ; SCL high, SDA released
-.endcyclesec                   ; t_LOW = 65
+.endcyclesec                   ; t_LOW = 258
 .cyclesec i2c_ack1_high
         OUT   UIO_OUT, R3     ; SCL rises: ACK/NACK is the line level AT
                                ; this edge; sampled above at IN
-        WAIT  190              ; 55 cycles
+        WAIT  232
         BNZ   stop_from_addr  ; SDA read 1 = NACK -> STOP. The one
                                ; sanctioned data-dependent branch; the
                                ; assembler warns about exactly this line
@@ -255,17 +261,17 @@
         SHF   R3, RIGHT
         SHF   R3, RIGHT       ; R0's MSB -> SDA (bit 3)
         AND   R3, R1          ; R3 = SDA(bit 1 = 0), SCL low
-.endcyclesec                   ; t_HIGH = 60
+.endcyclesec                   ; t_HIGH = 242
 ; ------------------------------------------------ data byte 0x5A, MSB first
 .cyclesec i2c_dbit1_low
         OUT   UIO_OUT, R3     ; SCL falls; SDA falls (bit 1 = 0) in low
-        WAIT  232
+        WAIT  255
         OR    R3, R2
 .endcyclesec
 .cyclesec i2c_dbit1_high
         OUT   UIO_OUT, R3
         SHF   R0, LEFT
-        WAIT  191
+        WAIT  233
         MOV   R3, R0
         SHF   R3, RIGHT
         SHF   R3, RIGHT
@@ -275,13 +281,13 @@
 .endcyclesec
 .cyclesec i2c_dbit2_low
         OUT   UIO_OUT, R3
-        WAIT  232
+        WAIT  255
         OR    R3, R2
 .endcyclesec
 .cyclesec i2c_dbit2_high
         OUT   UIO_OUT, R3
         SHF   R0, LEFT
-        WAIT  191
+        WAIT  233
         MOV   R3, R0
         SHF   R3, RIGHT
         SHF   R3, RIGHT
@@ -291,13 +297,13 @@
 .endcyclesec
 .cyclesec i2c_dbit3_low
         OUT   UIO_OUT, R3
-        WAIT  232
+        WAIT  255
         OR    R3, R2
 .endcyclesec
 .cyclesec i2c_dbit3_high
         OUT   UIO_OUT, R3
         SHF   R0, LEFT
-        WAIT  191
+        WAIT  233
         MOV   R3, R0
         SHF   R3, RIGHT
         SHF   R3, RIGHT
@@ -307,13 +313,13 @@
 .endcyclesec
 .cyclesec i2c_dbit4_low
         OUT   UIO_OUT, R3
-        WAIT  232
+        WAIT  255
         OR    R3, R2
 .endcyclesec
 .cyclesec i2c_dbit4_high
         OUT   UIO_OUT, R3
         SHF   R0, LEFT
-        WAIT  191
+        WAIT  233
         MOV   R3, R0
         SHF   R3, RIGHT
         SHF   R3, RIGHT
@@ -323,13 +329,13 @@
 .endcyclesec
 .cyclesec i2c_dbit5_low
         OUT   UIO_OUT, R3
-        WAIT  232
+        WAIT  255
         OR    R3, R2
 .endcyclesec
 .cyclesec i2c_dbit5_high
         OUT   UIO_OUT, R3
         SHF   R0, LEFT
-        WAIT  191
+        WAIT  233
         MOV   R3, R0
         SHF   R3, RIGHT
         SHF   R3, RIGHT
@@ -339,13 +345,13 @@
 .endcyclesec
 .cyclesec i2c_dbit6_low
         OUT   UIO_OUT, R3
-        WAIT  232
+        WAIT  255
         OR    R3, R2
 .endcyclesec
 .cyclesec i2c_dbit6_high
         OUT   UIO_OUT, R3
         SHF   R0, LEFT
-        WAIT  191
+        WAIT  233
         MOV   R3, R0
         SHF   R3, RIGHT
         SHF   R3, RIGHT
@@ -355,13 +361,13 @@
 .endcyclesec
 .cyclesec i2c_dbit7_low
         OUT   UIO_OUT, R3
-        WAIT  232
+        WAIT  255
         OR    R3, R2
 .endcyclesec
 .cyclesec i2c_dbit7_high
         OUT   UIO_OUT, R3
         SHF   R0, LEFT
-        WAIT  191
+        WAIT  233
         MOV   R3, R0
         SHF   R3, RIGHT
         SHF   R3, RIGHT
@@ -371,46 +377,46 @@
 .endcyclesec
 .cyclesec i2c_dbit8_low
         OUT   UIO_OUT, R3
-        WAIT  232
+        WAIT  255
         OR    R3, R2
 .endcyclesec
 .cyclesec i2c_dbit8_high
         OUT   UIO_OUT, R3     ; last data clock rises
-        WAIT  197              ; 58 cycles
+        WAIT  239              ; (the ACK prep is one MOV)
         MOV   R3, R1          ; 0x08: SDA released for the ACK slot
-.endcyclesec                   ; t_HIGH = 60
+.endcyclesec                   ; t_HIGH = 242
 ; ------------------------------- data ACK slot (sampled, not branched on:
 ; ------------------------------- the transfer ends after one byte either
 ; ------------------------------- way -- the branch lives on the address
 ; ------------------------------- ACK, where its outcome changes the rest)
 .cyclesec i2c_ack2_low
         OUT   UIO_OUT, R3     ; SCL falls; SDA released
-        WAIT  30              ; 21 cycles
+        WAIT  30              ; 31 cycles
         IN    R3, UIO_IN      ; sample the bus (taints R3)
-        WAIT  199              ; 39 cycles
+        WAIT  222
         AND   R3, R1          ; isolate SDA; sets Z (no branch reads it)
         LDI   R3, 0x0C
-.endcyclesec                   ; t_LOW = 65
+.endcyclesec                   ; t_LOW = 258
 .cyclesec i2c_ack2_high
         OUT   UIO_OUT, R3     ; SCL rises
-        WAIT  196              ; 57 cycles
+        WAIT  238
         LDI   R3, 0x08        ; SDA released, SCL still high
-        WAIT  0               ; 1 cycle: pads the SCL fall to exactly 60
-.endcyclesec                   ; t_HIGH = 60
+        WAIT  0               ; 1 cycle: pads the SCL fall to exactly 242
+.endcyclesec                   ; t_HIGH = 242
 ; ------------------------------------------------- STOP from the data ACK
 .cyclesec i2c_stop_data_low
         OUT   UIO_OUT, R3     ; SCL falls; SDA still released
         LDI   R3, 0x00        ; SDA low during the low period
         OUT   UIO_OUT, R3     ; SDA falls (while SCL low)
-        WAIT  230              ; 61 cycles: pads this low period
+        WAIT  253
         LDI   R3, 0x04        ; SCL high, SDA low
-.endcyclesec                   ; 235: the full pre-STOP low period, SCL
+.endcyclesec                   ; 258: the full pre-STOP low period, SCL
                                ; fall to (exclusive) the SCL rise
 .cyclesec i2c_stop_data
         OUT   UIO_OUT, R3     ; SCL rises: STOP setup begins
-        WAIT  202              ; 58 cycles
+        WAIT  202              ; 203 cycles
         LDI   R3, 0x0C        ; SDA released
-.endcyclesec                   ; t_SU;STO = 60
+.endcyclesec                   ; t_SU;STO = 205
         OUT   UIO_OUT, R3     ; SDA rises while SCL high: STOP
         WAIT  255             ; hold the bus idle
         HALT
@@ -418,23 +424,23 @@
 ; ---------- to from i2c_ack1_high's BNZ: same sequence, own copy, so the
 ; ---------- taken-branch path needs no extra JMP whose cycle would then
 ; ---------- have to be subtracted from a phase budget. LDI + WAIT 5 land
-; ---------- the SCL fall exactly 60 cycles after the ACK clock's rise.)
+; ---------- the SCL fall exactly 242 cycles after the ACK clock's rise.)
 stop_from_addr:
         LDI   R3, 0x08        ; SDA released, SCL still high
-        WAIT  5               ; 6 cycles (the 4 the ACK path spends on SHFs)
+        WAIT  47             ; 48 cycles (the 4 the ACK path spends on SHFs, plus the padding)
 .cyclesec i2c_stop_addr_low
-        OUT   UIO_OUT, R3     ; SCL falls (at ACK-rise + 60 exactly)
+        OUT   UIO_OUT, R3     ; SCL falls (at ACK-rise + 242 exactly)
         LDI   R3, 0x00        ; SDA low during the low period
         OUT   UIO_OUT, R3
-        WAIT  230
+        WAIT  253
         LDI   R3, 0x04
-.endcyclesec                   ; 235: the full pre-STOP low period, SCL
+.endcyclesec                   ; 258: the full pre-STOP low period, SCL
                                ; fall to (exclusive) the SCL rise
 .cyclesec i2c_stop_addr
         OUT   UIO_OUT, R3     ; SCL rises: STOP setup begins
         WAIT  202
         LDI   R3, 0x0C
-.endcyclesec                   ; t_SU;STO = 60
+.endcyclesec                   ; t_SU;STO = 205
         OUT   UIO_OUT, R3     ; SDA rises while SCL high: STOP
-        WAIT  255
+        WAIT  255             ; hold the bus idle
         HALT

@@ -306,9 +306,16 @@ cycle-budget sketch → I2C". `i2c_fast.asm` paces the Fast-mode budget
 (low = 65, high = 60 core cycles per SCL clock — the 125-cycle / 400 kHz
 period of the sketch, with t_LOW exactly at UM10204 Table 10's 1.3 µs
 floor); `i2c_std.asm` is the same instruction stream on the
-Standard-mode budget (low = 235, high = 200 — both Table 10 floors to
-the cycle; the floor-paced bus runs at the Standard-mode maximum, ~114.9
-kHz at the unconfirmed nominal clock). Each program performs one write
+Standard-mode budget (low = 258, high = 242 — a 500-cycle clock, i.e. no
+faster than the 100 kHz Standard-mode ceiling at the unconfirmed nominal
+50 MHz clock; both phases clear UM10204 Table 10's t_LOW / t_HIGH minima of
+235 / 200 cycles). Until issue #125 this was low = 235, high = 200 (both
+floors to the cycle, 435 cycles, ~114.9 kHz at the nominal clock), which met
+every phase minimum but ran *faster* than the 100 kHz Standard-mode maximum;
+that was a non-compliance, not a "maximum" the bus was allowed to reach, and
+the 500-cycle clock supersedes it. The 65 extra cycles cost no instruction
+words: 258 is as long as a single `WAIT 255` reaches in the data-clock low
+phase, and the rest goes to the high phase's existing `WAIT`. Each program performs one write
 transfer: START, address 0xA0 (0x50 << 1 | W), ACK slot, data byte 0x5A,
 ACK slot, STOP.
 
@@ -351,11 +358,16 @@ state each phase's exact length — the bench cross-checks all 41):
 
 | Phase (Fast / Standard) | Instructions | Cycles |
 |---|---|---|
-| data-clock low | `OUT`+`WAIT 62`/`232`+`OR` | **65 / 235** |
-| data-clock high | `OUT`+`SHF`+`WAIT 51`/`191`+`MOV`+4x`SHF`+`AND` | **60 / 200** |
-| ACK low (incl. the `IN` sample) | `OUT`+`WAIT`+`IN`+`WAIT`+`AND`+`LDI` | **65 / 235** |
+| data-clock low | `OUT`+`WAIT 62`/`255`+`OR` | **65 / 258** |
+| data-clock high | `OUT`+`SHF`+`WAIT 51`/`233`+`MOV`+4x`SHF`+`AND` | **60 / 242** |
+| ACK low (incl. the `IN` sample) | `OUT`+`WAIT`+`IN`+`WAIT`+`AND`+`LDI` | **65 / 258** |
 | START hold (t_HD;STA) | `OUT`+`WAIT`+`LDI`+`MOV`+4x`SHF`+`AND` | **65 / 205** |
 | STOP setup (t_SU;STO) | `OUT`+`WAIT`+`LDI` | **60 / 205** |
+
+Every data/ACK clock is low + high = **125 / 500** cycles, fall to fall;
+the reference model bounds each clock's complete period by UM10204 Table
+10's f_SCL maximum (2500 ns Fast, 10000 ns Standard at the nominal 20 ns
+clock), independently of the t_LOW / t_HIGH minima (issue #125).
 
 The measured quantities are those **cycle counts**; the 400 kHz / 100
 kHz names are arithmetic at target-spec row 4's unconfirmed clock (same
@@ -454,7 +466,8 @@ stream; only phase literals and the poll differ), each a complete
 START, `0xA0` + ACK, `0x5A` + ACK, **repeated START**, `0xA1` + ACK, **one
 byte read from the peripheral, controller NACK**, STOP; the received byte
 is published on `UO_OUT`. t_SU;STA is paced exactly at the Table 10
-minimum (30 cycles Fast, 235 Standard). The bit loops keep a counter, so
+minimum (30 cycles Fast, 235 Standard). Standard data/ACK clocks are 500
+cycles (low 258 + high 242; polled rise phases +2), Fast 125 (issue #125). The bit loops keep a counter, so
 the programs are 152 words (`_sr`) and 192 words (`_sr_poll`) of the
 256-word store, against 246 words for the unrolled write-only programs
 (131 / 171 / 181 before issue #155's SDA-alignment shifts; SCL is

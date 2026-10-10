@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "engine": "icarus",
+  "hdl_toplevel": "tt_um_2amlogic_protocol_emulator",
+  "testbench": "test_uio_pads",
+  "status": "pass",
+  "test_count": 5,
+  "passed_count": 5,
+  "failed_count": 0,
+  "skipped_count": 0,
+  "tests": [
+    {
+      "name": "test_reset_and_input_pads_follow_the_board",
+      "status": "passed",
+      "sim_time_ns": 3601.0,
+      "real_time_s": 0.006
+    },
+    {
+      "name": "test_push_pull_pads_drive_the_line",
+      "status": "passed",
+      "sim_time_ns": 3601.0,
+      "real_time_s": 0.005
+    },
+    {
+      "name": "test_open_drain_pads_pull_low_or_release",
+      "status": "passed",
+      "sim_time_ns": 12241.0,
+      "real_time_s": 0.021
+    },
+    {
+      "name": "test_contention_is_detected",
+      "status": "passed",
+      "sim_time_ns": 11201.0,
+      "real_time_s": 0.016
+    },
+    {
+      "name": "test_pad_model_owns_uio_in",
+      "status": "passed",
+      "sim_time_ns": 3203.0,
+      "real_time_s": 0.005
+    }
+  ],
+  "coverage": null,
+  "trace": null,
+  "environment": {
+    "engine": "icarus",
+    "engine_version": "13.0",
+    "cocotb_version": "2.1.0",
+    "results_xml": "<repo>/verification/.klt/functional-verification/results_icarus.xml",
+    "random_seed": 1,
+    "sdf": null
+  }
+}

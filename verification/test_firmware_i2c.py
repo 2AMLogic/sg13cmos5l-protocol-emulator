@@ -11,7 +11,8 @@ juded by the **independent** I2C reference model
 (`verification/reference_models/i2c.py`) -- `check_transfer` finding the
 START, sampling each of the 9 clocks per byte on the SCL rising edges,
 re-deriving address/data/ACKs, and *measuring* t_LOW / t_HIGH / t_HD;STA
-/ t_SU;STO against NXP UM10204 Table 10's own minimums, for both
+/ t_SU;STO against NXP UM10204 Table 10's own minimums, and each clock's
+complete period against Table 10's f_SCL maximum, for both
 Standard-mode (100 kHz class) and Fast-mode (400 kHz class) budgets.
 Nothing here asserts the waveform against the bench's own idea of what
 the program meant to send: the expected address and payload byte are the
@@ -21,10 +22,14 @@ come from the model.
 What is measured, and in what units
 -----------------------------------
 **Cycles.** The phase budgets these programs implement are exactly
-**65/60 core cycles** (Fast) and **235/200 core cycles** (Standard) per
+**65/60 core cycles** (Fast) and **258/242 core cycles** (Standard) per
 SCL clock, which is what the model's ns measurements map onto at the
-nominal 20 ns simulation clock: 1300/1200 ns and 4700/4000 ns -- the
-Table 10 minimums, to the cycle. The cycle counts are the claim; any
+nominal 20 ns simulation clock: 1300/1200 ns and 5160/4840 ns. Fast sits
+exactly on Table 10's t_LOW floor; Standard's low and high both clear
+their floors (4700/4000 ns), and each grade's complete clock is exactly the
+f_SCL period -- 125 cycles = 2500 ns (400 kHz) and 500 cycles = 10000 ns
+(100 kHz) at the nominal clock (issue #125; Standard was 235/200 = 435
+cycles, over the 100 kHz ceiling, until then). The cycle counts are the claim; any
 kHz figure is arithmetic at target-spec row 4's **unconfirmed** clock
 (same stance as `test_firmware_uart.py`; see
 `verification/records/sta-corner-sweep/` for why row 4 is unconfirmed).
@@ -77,13 +82,18 @@ Negative controls (a suite that cannot fail cannot cite its passes)
    `check_transfer` while still decoding, with the t_SU;STO violation
    the only one flagged.
 2. The **DUT's own captured waveforms**, time-compressed by 0.9, must
-   also FAIL `check_transfer` in both modes: both programs pace t_LOW
-   exactly at the Table 10 floor (1300 ns Fast / 4700 ns Standard), so
-   a uniform 0.9x compression drives t_LOW under the floor (and t_HIGH
-   with it, in Standard mode) while leaving the transfer's structure --
-   and therefore the model's decode -- intact. This is the stronger
-   control: it proves this bench's capture-and-grade path can fail, not
-   merely that a synthetic waveform can.
+   also FAIL `check_transfer` in both modes: a uniform 0.9x compression
+   drives t_LOW under its floor (Fast paces it exactly at 1300 ns;
+   Standard's 5160 ns becomes 4644 ns < 4700 ns) and the period under
+   f_SCL, while leaving the transfer's structure -- and therefore the
+   model's decode -- intact. This is the stronger control: it proves this
+   bench's capture-and-grade path can fail, not merely that a synthetic
+   waveform can.
+4. **Period-only overspeed** (issue #125): `encode_transfer_overspeed` in
+   both grades -- every clock's low and high exactly at the Table 10
+   minimums (Standard 4700/4000 ns = the former 235/200 cycles), so
+   t_LOW and t_HIGH pass -- must FAIL with the period bound the only
+   violation flagged.
 3. **`UIO_OD` left at reset** (issue #136): each committed image with
    its one `WCTL UIO_OD` word replaced by a reserved 1-cycle no-op, so
    the cycle timing is unchanged and every `OUT` still happens, but the
@@ -117,7 +127,9 @@ from reference_models import stimulus
 from reference_models.i2c import (
     check_transfer,
     encode_transfer,
+    encode_transfer_overspeed,
     minimum_ns,
+    minimum_period_ns,
 )
 from reference_models.waveform import Signal
 
@@ -152,14 +164,20 @@ class _Mode:
     def high_ns(self):
         return self.t_high * CLK_PERIOD_NS
 
+    @property
+    def period_ns(self):
+        return (self.t_low + self.t_high) * CLK_PERIOD_NS
+
 
 #: Fast-mode (400 kHz class): DR 0001's 65/60 allocation. Both floors of
 #: UM10204 Table 10's Fast column are met (t_LOW exactly, t_HIGH 2x).
 FAST = _Mode("i2c_fast", True, t_low=65, t_high=60, t_hd_sta=65, t_su_sto=60)
 
-#: Standard-mode (100 kHz class): the sketch's floor-paced 235/200.
-#: Both floors of Table 10's Standard column are met exactly.
-STD = _Mode("i2c_std", False, t_low=235, t_high=200, t_hd_sta=205, t_su_sto=205)
+#: Standard-mode (100 kHz class): 258/242 (issue #125), so the complete
+#: clock is the 500-cycle f_SCL period; both phases clear the floors of
+#: Table 10's Standard column (235 / 200 cycles) and the former 235/200
+#: allocation (435 cycles) is rejected by the period bound.
+STD = _Mode("i2c_std", False, t_low=258, t_high=242, t_hd_sta=205, t_su_sto=205)
 
 MODES = (FAST, STD)
 
@@ -449,9 +467,21 @@ def assert_measured_budgets(dut, mode: _Mode, report, scl: Signal) -> None:
         f"{mode.name}: t_SU;STO {m['t_SU;STO']} ns != "
         f"{mode.t_su_sto} cycles"
     )
-    assert minimum_ns("t_LOW", mode.fast_mode) == mode.low_ns, (
-        f"{mode.name}: t_LOW budget is not the Table 10 floor -- the "
-        "negative control below depends on that equality"
+    assert m["t_SCL(min)"] == mode.period_ns, (
+        f"{mode.name}: model measured the shortest complete clock "
+        f"{m['t_SCL(min)']} ns, the committed budget is "
+        f"{mode.t_low + mode.t_high} cycles = {mode.period_ns} ns"
+    )
+    assert mode.period_ns >= minimum_period_ns(mode.fast_mode), (
+        f"{mode.name}: the clock is faster than Table 10's f_SCL maximum"
+    )
+    assert mode.low_ns >= minimum_ns("t_LOW", mode.fast_mode)
+    assert mode.high_ns >= minimum_ns("t_HIGH", mode.fast_mode)
+    assert mode.low_ns * NEGATIVE_CONTROL_SCALE < minimum_ns(
+        "t_LOW", mode.fast_mode
+    ), (
+        f"{mode.name}: the 0.9x negative control no longer drives t_LOW "
+        "under its floor"
     )
     dut._log.info(
         f"{mode.name}: measured t_LOW(min) {m['t_LOW(min)']} ns "
@@ -511,8 +541,9 @@ async def test_i2c_both_grades_pass_independent_reference_model(dut):
     load-phase pins and executed by the core, drives a write transfer to
     0x50 that the independent `check_transfer` decodes byte-exactly and
     grades inside every UM10204 Table 10 minimum for its speed grade,
-    with the phase budgets measuring exactly 65/60 (Fast) and 235/200
-    (Standard) core cycles. The address-ACK branch is exercised in both
+    with the phase budgets measuring exactly 65/60 (Fast) and 258/242
+    (Standard) core cycles -- complete clocks of 125 and 500 cycles, the
+    f_SCL periods at the nominal clock. The address-ACK branch is exercised in both
     directions: run A (ACK -> data byte transmitted) and run B (NACK ->
     address-only transfer), same committed program.
 
@@ -576,8 +607,8 @@ async def test_i2c_both_grades_pass_independent_reference_model(dut):
         # ---- negative control on the DUT's OWN captured waveform: a
         # uniform 0.9x time compression keeps the transfer's structure
         # (the model still decodes it) but must break the timing floor
-        # the program paces exactly at -- t_LOW in both grades, t_HIGH
-        # too in Standard. A capture path that could only ever pass
+        # the program paces at -- t_LOW and the full period in both
+        # grades. A capture path that could only ever pass
         # fails here.
         for run, run_scl, run_sda, run_report in (
             ("A", scl, sda, report),
@@ -594,12 +625,19 @@ async def test_i2c_both_grades_pass_independent_reference_model(dut):
                 f"own waveform still passed check_transfer with violations "
                 f"{squeezed.violations!r}"
             )
+            period_violations = [
+                v for v in squeezed.violations if v.startswith("t_SCL period")
+            ]
+            assert period_violations, (
+                f"{mode.name} run {run}: the compressed waveform must "
+                f"violate the f_SCL period bound, got {squeezed.violations!r}"
+            )
             low_violations = [
                 v for v in squeezed.violations if v.startswith("t_LOW")
             ]
             assert low_violations, (
                 f"{mode.name} run {run}: the compressed waveform must "
-                f"violate the exactly-floored t_LOW, got "
+                f"violate t_LOW, got "
                 f"{squeezed.violations!r}"
             )
             assert squeezed.data_bytes == run_report.data_bytes, (
@@ -760,3 +798,29 @@ async def test_reference_model_negative_control_still_fails(dut):
         f"the control must flag exactly the t_SU;STO violation, got "
         f"{report.violations!r}"
     )
+
+    # the period-only overspeed control (issue #125): low/high AT the
+    # Table 10 minimums (Standard: the former 235/200 cycles), so only the
+    # full-period bound may fire -- both grades.
+    for fast_mode in (False, True):
+        scl = Signal(1, name=f"model-overspeed-{fast_mode}")
+        sda = Signal(1, name=f"model-overspeed-{fast_mode}")
+        encode_transfer_overspeed(
+            ADDRESS, READ_BIT, [DATA_BYTE], [True], fast_mode, scl, sda
+        )
+        report = check_transfer(scl, sda, fast_mode=fast_mode)
+        dut._log.info(f"negative control (overspeed, fast={fast_mode}): {report}")
+        assert not report.ok, (
+            f"NEGATIVE CONTROL FAILED TO FAIL: overspeed (fast={fast_mode}) "
+            "passed check_transfer"
+        )
+        assert report.data_bytes == [DATA_BYTE]
+        assert report.violations and all(
+            v.startswith("t_SCL period") for v in report.violations
+        ), (
+            f"the control must flag only the period bound, got "
+            f"{report.violations!r}"
+        )
+        m = report.measurements
+        assert m["t_LOW(min)"] == minimum_ns("t_LOW", fast_mode)
+        assert m["t_HIGH(min)"] == minimum_ns("t_HIGH", fast_mode)
