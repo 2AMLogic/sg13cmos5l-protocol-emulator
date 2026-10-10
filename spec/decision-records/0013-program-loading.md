@@ -527,38 +527,38 @@ listed. The others:
    a longer loader into program memory from a short stub (F3's other option),
    which needs a first stage that is itself a UART receiver.
 
-*Area, each number with its flow.* **klt/Yosys flow** (cell area only;
-`klt synthesize flow/synthesize-protocol-emulator.json`, Yosys 0.67, the same
-liberty as #138's record, which that Yosys reproduces to the instance: 1,189
-instances, 19,451.4264 µm² for the 30-word ROM): the top is now **1,495
-instances, 22,606.1388 µm²** (178 flip-flops), **+306 instances and +3,154.71
-µm² (+16.2 %)**, so the loader costs about 3,150 µm² here on top of #138's
-11.4 %. The ROM alone is **416 instances, 4,555.35 µm²** (16 flip-flops) for
-158 words, against 104 instances and 1,531.20 µm² (14 flip-flops) for 30:
-about 24 µm² per added word, under half the 51 µm² per word the 30-word ROM
-suggested, because the extra words share logic. The two flip-flops that #138
-found constant (output bits 4 and 7) are no longer constant. This flow
-reports no timing for this design. **LibreLane flow** (the `gds` workflow,
-run 38012921517, LibreLane 3.1.0.dev3, post-route, 20 ns): placed standard
-cells **26,123.7 → 29,611.0 µm² (+3,487.3, +13.3 %)**, 1,680 → 2,068 instances,
-utilization 42.82 % → **45.58 %** on the unchanged die (54 % of the core is
-unoccupied), routed wirelength 66,406 → 96,719 µm. Timing still closes with
-**zero setup and zero hold violations at all three corners**: worst setup slack
-7.422 → **5.144 ns** (slow), 12.168 → 10.737 ns (typ), 14.473 → 14.000 ns
-(fast); worst hold slack 0.1195 → 0.1090 ns (fast). Max-cap violations fell
-(2/3/3 → 1/2/2) and max-slew violations are 1/1/1 (were 1/1/0); neither is a
-setup or hold violation. LVS, route DRC and antenna are clean and the Tiny
-Tapeout precheck is green. LibreLane's own synthesis step reports 1,245 →
-1,578 cells and 20,057.5 → 23,033.1 µm² before placement, +2,975.6 µm²: the two
-flows disagree on the totals by about 2 % (22,606.1 against 23,033.1) and agree
-on what the loader costs (+3,154.7 and +2,975.6 µm²). The template's `gl_test`
+*Area and timing, each number with its flow* (against the 93-word ROM of
+the SPI-flash boot, whose figures are in the #140 notes above). **klt/Yosys
+flow** (cell area only; `klt synthesize flow/synthesize-protocol-emulator.json`,
+Yosys 0.67): the top goes from 1,366 instances and 21,263.63 µm² to **1,623
+instances and 23,725.47 µm²** (178 flip-flops, unchanged), **+257 instances and
++2,461.84 µm² (+11.6 %)**. The ROM alone is 274 instances and 3,116.76 µm² at 93
+words and **536 instances and 5,745.30 µm²** at 221: **+2,628.54 µm² for 128
+words, about 21 µm² per word**, the same price as the ~30 µm² per word the #140
+notes measured, a little lower because the receiver and transmitter share
+logic. This flow reports no timing for this design. **LibreLane flow** (the
+`gds` workflow, run 38028344891, LibreLane 3.1.0.dev3, post-route, 20 ns): placed
+standard cells **28,266.5 → 30,759.5 µm² (+2,493.0, +8.8 %)**, 1,946 → 2,222
+instances, utilization 44.51 % → **46.48 %** on the unchanged die (53 % of the
+core unoccupied), routed wirelength 83,453 → 124,955 µm. Timing still closes
+with **zero setup and zero hold violations at all three corners**, with less to
+spare: worst setup slack 6.300 → **3.185 ns** (slow), 11.499 → 9.602 ns (typ),
+14.327 → 13.321 ns (fast); worst hold slack 0.1137 → 0.0944 ns (fast). Max-cap
+violations went 3/3/4 → 4/5/6 (slow/typ/fast) and max-slew 0/0/0 → 1/0/0;
+neither is a setup or hold violation, and the flow does not fail on them. LVS,
+route DRC and antenna are clean and the Tiny Tapeout precheck is green.
+LibreLane's own synthesis step reports 1,470 → 1,720 cells and 21,758.1 →
+24,302.7 µm² before placement, +2,544.7 µm²: the two flows agree on what the
+UART load costs (+2,461.8 and +2,544.7 µm², 3 % apart). The template's `gl_test`
 job passes 3/3 on this netlist, including a 3-word UART frame loaded and run on
-gates. The 2×2 budget (row 7) is not threatened. Gate level (zero delay) for the
-cocotb benches, and the SDF run (still the recorded bench-alignment FAIL,
-issue #106), are in `verification/records/firmware-gate-level/` and
-`verification/records/post-layout-sdf-regression/`; the area and timing records
-are `verification/records/synthesis-baseline/` and
-`verification/records/librelane-corner-timing/`.
+gates. The 2×2 budget (row 7) is not threatened, but **the setup margin at the
+slow corner is now 3.2 ns of a 20 ns period**, so a further ROM growth of this
+size is the thing to watch. Gate level (zero delay) for the cocotb benches
+including both loaders', the reset/power-up bench, and the SDF run (still the
+recorded bench-alignment FAIL, issue #106), are in
+`verification/records/firmware-gate-level/`, `reset-power-up/` and
+`post-layout-sdf-regression/`; the area and timing records are
+`verification/records/synthesis-baseline/` and `librelane-corner-timing/`.
 
 **Finding F5: the loader keeps a byte in `UIO_DIR`, so `uio_out` is `0xFF`
 while it runs.** The receiver has no register to spare for "words left". The

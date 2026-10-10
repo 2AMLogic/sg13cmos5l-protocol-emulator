@@ -1,0 +1,5 @@
+FAIL: UNJUSTIFIED non-reset state element `u_core.uio_dir[0]` (flop, sg13cmos5l_dfrbpq_1 _2985_): RESET_B: const1 (1'b1)
+netlist <repo>/flow/reset-power-up/mutant-uio_dir0-noreset.v (top tt_um_2amlogic_protocol_emulator): 179 state element(s): 178 flop(s), 1 macro(s); 177 reset from rst_n alone, 2 not
+  not reset: u_core.uio_dir[0] (flop, sg13cmos5l_dfrbpq_1): RESET_B: const1 (1'b1)
+  not reset: u_prog_mem.u_sram (macro, RM_IHPSG13_1P_256x16_c2_bm_bist): macro: not a standard cell, no reset pin in this flow
+  justified by `u_prog_mem.u_sram`: 1 element(s)

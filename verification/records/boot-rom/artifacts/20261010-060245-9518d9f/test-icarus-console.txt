@@ -1,0 +1,39 @@
+     -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:242  in gpi_load_users                  Loaded entry library: '<home>/.local/share/uv/python/cpython-3.13.14-linux-x86_64-gnu/lib/libpython3.13.so.1.0'
+     -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:233  in gpi_load_users                  Running entry func 'initialize' from loaded library '<home>/.cache/uv/archive-v0/3TakBHY2ai8ouaKV/lib/python3.13/site-packages/cocotb/simulator.cpython-313-x86_64-linux-gnu.so'
+     -.--ns INFO     pygpi                              ..ib/pygpi/embed.cpp:114  in initialize                      Using Python 3.13.8 interpreter at <home>/.cache/uv/archive-v0/3TakBHY2ai8ouaKV/bin/python
+     -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:74   in gpi_print_registered_impl       GPI: VPI support registered
+     0.00ns INFO     cocotb.initialize                  Seeding Python random module with 1
+     0.00ns INFO     cocotb.initialize                  Initialized cocotb v2.1.0 from <home>/.cache/uv/archive-v0/3TakBHY2ai8ouaKV/lib/python3.13/site-packages/cocotb
+     0.00ns INFO     cocotb.initialize                  Running on Icarus Verilog version 13.0 (stable)
+     0.00ns INFO     cocotb.regression                  Running tests
+     0.00ns INFO     cocotb.regression                  running test_boot_rom.test_boot_image_chain_and_model (1/6)
+                                                            The committed image is what the committed source assembles to, the
+     0.00ns INFO     ..tt_um_2amlogic_protocol_emulator boot image: 221 of 256 words
+    10.00ns INFO     cocotb.regression                  test_boot_rom.test_boot_image_chain_and_model passed
+    10.00ns INFO     cocotb.regression                  running test_boot_rom.test_stub_straps_idle_on_unwritten_memory (2/6)
+                                                            Straps 00, 01 and 11 on a program memory nothing has written (this
+  1871.00ns INFO     cocotb.regression                  test_boot_rom.test_stub_straps_idle_on_unwritten_memory passed
+  1871.00ns INFO     cocotb.regression                  running test_boot_rom.test_mode_low_never_runs_unverified_memory (3/6)
+                                                            Target-spec row 14 (c). Program memory holds the canary image, then
+337272.00ns INFO     cocotb.regression                  test_boot_rom.test_mode_low_never_runs_unverified_memory passed
+337272.00ns INFO     cocotb.regression                  running test_boot_rom.test_warm_start_runs_a_verified_image (4/6)
+                                                            Strap 10 with a signed image: it runs from address 0, its first
+519253.00ns INFO     cocotb.regression                  test_boot_rom.test_warm_start_runs_a_verified_image passed
+519253.00ns INFO     cocotb.regression                  running test_boot_rom.test_warm_start_rejects_corrupted_images (5/6)
+                                                            Strap 10 with an image one defect away from a verified one: it is
+974324.00ns INFO     cocotb.regression                  test_boot_rom.test_warm_start_rejects_corrupted_images passed
+974324.00ns INFO     cocotb.regression                  running test_boot_rom.test_warm_start_all_zero_image_is_the_known_weak_case (6/6)
+                                                            A finding, pinned so it cannot change unnoticed. CRC-16/XMODEM
+1046425.01ns INFO     cocotb.regression                  test_boot_rom.test_warm_start_all_zero_image_is_the_known_weak_case passed
+1046425.01ns INFO     cocotb.regression                  *****************************************************************************************************************************
+                                                        ** TEST                                                                 STATUS  SIM TIME (ns)  REAL TIME (s)  RATIO (ns/s) **
+                                                        *****************************************************************************************************************************
+                                                        ** test_boot_rom.test_boot_image_chain_and_model                         PASS          10.00           0.01       1133.95  **
+                                                        ** test_boot_rom.test_stub_straps_idle_on_unwritten_memory               PASS        1861.00           0.02      88929.45  **
+                                                        ** test_boot_rom.test_mode_low_never_runs_unverified_memory              PASS      335401.00           1.48     226784.55  **
+                                                        ** test_boot_rom.test_warm_start_runs_a_verified_image                   PASS      181981.00           0.95     191733.73  **
+                                                        ** test_boot_rom.test_warm_start_rejects_corrupted_images                PASS      455071.00           2.03     223719.53  **
+                                                        ** test_boot_rom.test_warm_start_all_zero_image_is_the_known_weak_case   PASS       72101.00           0.35     207410.10  **
+                                                        *****************************************************************************************************************************
+                                                        ** TESTS=6 PASS=6 FAIL=0 SKIP=0                                                   1046425.01           4.84     216144.38  **
+                                                        *****************************************************************************************************************************

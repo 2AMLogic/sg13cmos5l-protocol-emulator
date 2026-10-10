@@ -1,0 +1,43 @@
+{
+  "netlist": "<repo>/verification/records/post-layout-sdf-regression/artifacts/20261010-060212-9518d9f/tt_um_2amlogic_protocol_emulator.v",
+  "netlist_sha256": "03e6a7c5990779bd5bb5d1b09cdeb09c3c85cc793b3862853496305994807c52",
+  "flow": "LibreLane (Tiny Tapeout gds workflow) netlist; Icarus+cocotb zero-delay simulation via test/Makefile GATES=yes",
+  "runs": [
+    {
+      "kind": "golden",
+      "name": "reset-coverage",
+      "as_required": true,
+      "detail": "exit 0; netlist <repo>/verification/records/post-layout-sdf-regression/artifacts/20261010-060212-9518d9f/tt_um_2amlogic_protocol_emulator.v (top tt_um_2amlogic_protocol_emulator): 179 state element(s): 178 flop(s), 1 macro(s); 178 reset from rst_n alone, 1 not"
+    },
+    {
+      "kind": "negative-control",
+      "name": "reset-coverage (ii) unlisted non-reset flop",
+      "as_required": true,
+      "detail": "exit 1"
+    },
+    {
+      "kind": "negative-control",
+      "name": "reset-coverage (ii) stale justification",
+      "as_required": true,
+      "detail": "exit 1"
+    },
+    {
+      "kind": "golden",
+      "name": "test_reset_power_up",
+      "as_required": true,
+      "detail": "tests=5 failed=0 unparsed=0 rc=0 failing="
+    },
+    {
+      "kind": "negative-control",
+      "name": "test_reset_power_up (i) non-reset flop leaking to uio_oe",
+      "as_required": true,
+      "detail": "tests=5 failed=4 unparsed=0 rc=2 failing=test_power_up_all_x,test_power_up_random_seeds,test_uninitialised_program_memory,test_reselect"
+    },
+    {
+      "kind": "negative-control",
+      "name": "test_reset_power_up (iii) boot ROM bypassed at reset",
+      "as_required": true,
+      "detail": "tests=5 failed=4 unparsed=0 rc=2 failing=test_power_up_all_x,test_power_up_random_seeds,test_uninitialised_program_memory,test_reselect"
+    }
+  ]
+}
