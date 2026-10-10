@@ -52,11 +52,15 @@
 ; 2,323 cycles after this program's first instruction, whatever the image
 ; holds (verification/test_boot_rom.py checks that number at the pins).
 ;
-; The assembler's data-dependent-latency lint reports three warnings, all
-; intended: the two strap branches (which boot program runs is the straps'
-; whole purpose) and the verdict branch on PM_CRC (whether the image runs
-; is the check's whole purpose). No branch here paces a pin: this program
-; drives none.
+; The assembler's data-dependent-latency lint reports eight warnings, all
+; intended. Three are in the warm start and the dispatch: the two strap
+; branches (which boot program runs is the straps' whole purpose) and the
+; verdict branch on PM_CRC (whether the image runs is the check's whole
+; purpose). Five are in the UART load: the start-edge poll, the phase
+; dispatch, the handlers and the verdicts, which all act on received bytes.
+; None paces a pin. The warm start drives none; in the UART load the samples
+; and the transmitted bits are paced by WAIT literals and a counter that never
+; holds pin data, and no branch on a received byte sits between two samples.
 
         IN    R0, UI_IN             ; straps ride ui_in[6:5]
         LDI   R1, 0x60
