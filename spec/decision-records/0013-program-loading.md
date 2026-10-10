@@ -377,20 +377,6 @@ to re-pad. An all-`0xFF` flash (blank, or no Pmod with MISO pulled high)
 needs no extra rule: its CRC is `0x7FA1`. This does not close F1 for the
 warm start, which is still issue #168.
 
-**Finding F4 (2026-10-09, issue #196): the flash Pmod owns the `uio`
-header.** The QSPI Pmod uses `uio[0..7]` (CS0 `uio[0]`, SD0 `uio[1]`, SD1
-`uio[2]`, SCK `uio[3]`, SD2 `uio[4]`, SD3 `uio[5]`, CS1 `uio[6]`, CS2
-`uio[7]`; Tiny Tapeout pinouts), and DR 0010's SPI profile (CS `uio[0]`,
-MOSI `uio[1]`, MISO `uio[2]`, SCK `uio[3]`) and I2C profile (SCL `uio[2]`,
-SDA `uio[3]`) use the same pins. Decided: one device on the `uio` header at
-a time. After a strap `01` hand-over a user SPI program talks to the flash,
-no I2C peripheral can share the header, UART is unaffected, and a user SPI
-program can erase or overwrite the boot image (WREN then erase/program). The
-shipped `spi_mode0` sends `0xA5` and `0x3C` and cannot arm a write. No pin,
-RTL or hardware change; the bottom-row Pmod variants (`uio[4..7]`) remain a
-possible future option. See DR 0010, "Target pin plan", and
-[`docs/info.md`](../../docs/info.md).
-
 **Finding F3: the two boot programs use 93 of the 128 ROM words, leaving 35
 for the UART load.** Open item 3 said the first image sets the size and
 that anything over the cap returns to this record. Before this issue the ROM
@@ -413,6 +399,24 @@ firmware issue's); cut the SPI program (the 6-word signature
 check is the cheapest to lose, and costs the dead-MISO rule above); or let the UART load be a short stub that loads a
 longer loader into program memory. The first two change numbers this record
 states; the third changes the DR 0013 UART design.
+
+**Finding F4 (2026-10-09, issue #196): the flash Pmod owns the `uio`
+header.** The QSPI Pmod uses `uio[0..7]` (CS0 `uio[0]`, SD0 `uio[1]`, SD1
+`uio[2]`, SCK `uio[3]`, SD2 `uio[4]`, SD3 `uio[5]`, CS1 `uio[6]`, CS2
+`uio[7]`; Tiny Tapeout pinouts), and DR 0010's SPI profile (CS `uio[0]`,
+MOSI `uio[1]`, MISO `uio[2]`, SCK `uio[3]`) and I2C profile (SCL `uio[2]`,
+SDA `uio[3]`) use the same pins. Decided: one device on the `uio` header at
+a time. After a strap `01` hand-over a user SPI program talks to the flash,
+no I2C peripheral can share the header, UART is unaffected, and a user SPI
+program can erase or overwrite the boot image (WREN `0x06`, then erase/program;
+opcodes recalled, not re-read from the flash datasheet). The shipped
+`spi_mode0` sends `0xA5` and `0x3C` and cannot arm a write. To use another
+SPI device, remove the Pmod after boot (or boot with strap `00`/`10`): the SPI
+CS is `uio[0]`, the flash's CS0, so holding CS0 high does not isolate it; it
+only isolates the flash from a program that leaves `uio[0]` alone, such as I2C. No pin,
+RTL or hardware change; the bottom-row Pmod variants (`uio[4..7]`) remain a
+possible future option. See DR 0010, "Target pin plan", and
+[`docs/info.md`](../../docs/info.md).
 
 **What the flash model is, and is not.** `verification/reference_models/
 spi_flash.py` answers `0x03` from a byte image and checks SPI mode 0:

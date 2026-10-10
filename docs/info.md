@@ -418,6 +418,20 @@ flash ([spi-flash-boot.md](spi-flash-boot.md)). The boot drives only
 selects (`uio[6]`, `uio[7]`) deselected. Without it, strap `01` reads zeros or
 ones, rejects them and halts.
 
+**Not required:** UART and SPI at 3.3 V with 3.3 V peers need no extra parts
+beyond that wiring.
+
+**Levels and other buses.** A 5 V peer needs level shifting on a Pmod. A
+differential bus (USB D+/D-, 10BASE-T) needs a transceiver on a Pmod; neither
+is in the submitted design (not built; DR 0015 holds the proposed verdict and
+DR 0011 the current-ISA baseline).
+
+**Pad speed is unverified.** CMOS5L has no silicon yet and no pad
+characterization; Tiny Tapeout is checking whether SG13G2-derived numbers
+exist. Any claim of a maximum toggle rate at the pins, including the SPI SCLK
+ceiling of f_clk/4 (12.5 MHz at 50 MHz), holds for the core's cycle timing
+only, not at the pad.
+
 ### One device on the `uio` header at a time (decided in #196, 2026-10-09)
 
 The QSPI flash/PSRAM Pmod uses the whole `uio` header: `uio[0]` CS0 (flash),
@@ -440,21 +454,12 @@ after the boot hands over:
   the shipped images cannot arm a write (opcodes recalled, not re-read from
   the flash datasheet).
 
-When a different `uio` peripheral is used, remove the flash Pmod after boot,
-or keep its CS0 high. The SPI and I2C Pmods also come in a bottom-row variant
+To use a different SPI device, **remove the flash Pmod after boot** (or boot
+with strap `00`/`10` instead): the SPI profile's CS is `uio[0]`, the same pin
+as the flash's CS0, so driving it low also selects the flash, and holding CS0
+high does not help. Holding CS0 high (or leaving it on the Pmod pull-up)
+isolates the flash only from a program that does not drive `uio[0]`, such as
+I2C on `uio[2..3]`; the flash's MISO and SCK lines are still on those pins,
+so the bus is loaded by the Pmod and is not verified as usable. The SPI and I2C Pmods also come in a bottom-row variant
 on `uio[4..7]`; moving a profile there is a possible future option and is
 not done here. See [spi-flash-boot.md](spi-flash-boot.md).
-
-**Not required:** UART and SPI at 3.3 V with 3.3 V peers need no extra parts
-beyond that wiring.
-
-**Levels and other buses.** A 5 V peer needs level shifting on a Pmod. A
-differential bus (USB D+/D-, 10BASE-T) needs a transceiver on a Pmod; neither
-is in the submitted design (not built; DR 0015 holds the proposed verdict and
-DR 0011 the current-ISA baseline).
-
-**Pad speed is unverified.** CMOS5L has no silicon yet and no pad
-characterization; Tiny Tapeout is checking whether SG13G2-derived numbers
-exist. Any claim of a maximum toggle rate at the pins, including the SPI SCLK
-ceiling of f_clk/4 (12.5 MHz at 50 MHz), holds for the core's cycle timing
-only, not at the pad.
