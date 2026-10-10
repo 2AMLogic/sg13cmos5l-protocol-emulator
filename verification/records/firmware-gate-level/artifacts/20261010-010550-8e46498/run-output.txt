@@ -1,0 +1,23 @@
+started 2026-10-10T01:05:50Z
+fault injected: \u_core.wait_cnt[0] stuck at 0 on 3 input pin(s)
+fault injected: \u_core.ctl_stall stuck at 0 on 1 input pin(s)
+fault injected: \u_core.rom_exit stuck at 0 on 2 input pin(s)
+fault injected: top-level output uio_oe[0] stuck at 0 (driver disconnected)
+== netlist: <repo>/verification/records/post-layout-sdf-regression/artifacts/20261009-220911-1dc1842/tt_um_2amlogic_protocol_emulator.v (sha256 c1b084c5ca8e3b525aeb40100d46e301fdb3f2dfc70458f312348a7db91654d0)
+PASS-RUN  test_firmware_uart: tests=3 failed=0 unparsed=0 rc=0
+PASS-RUN  test_firmware_spi: tests=3 failed=0 unparsed=0 rc=0
+PASS-RUN  test_firmware_i2c: tests=4 failed=0 unparsed=0 rc=0
+PASS-RUN  test_firmware_i2c_sr: tests=5 failed=0 unparsed=0 rc=0
+PASS-RUN  test_control_space: tests=9 failed=0 unparsed=0 rc=0
+PASS-RUN  test_boot_rom: tests=6 failed=0 unparsed=0 rc=0
+MUTANT-RUN test_firmware_uart: tests=3 failed=1 unparsed=0 rc=2
+MUTANT-RUN test_firmware_spi: tests=3 failed=1 unparsed=0 rc=2
+MUTANT-RUN test_firmware_i2c: tests=4 failed=2 unparsed=0 rc=2
+MUTANT-RUN test_firmware_i2c_sr: tests=5 failed=3 unparsed=0 rc=2
+MUTANT-RUN test_control_space: tests=9 failed=5 unparsed=0 rc=2
+MUTANT-RUN test_boot_rom: tests=6 failed=1 unparsed=0 rc=2
+PAD-FAULT-RUN test_firmware_i2c: tests=4 failed=1 unparsed=0 rc=2
+PAD-FAULT-RUN test_firmware_i2c_sr: tests=5 failed=2 unparsed=0 rc=2
+OK: all golden runs pass and all negative controls fail
+exit status 0
+ended 2026-10-10T01:08:29Z

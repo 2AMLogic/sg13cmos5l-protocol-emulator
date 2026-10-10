@@ -1,0 +1,137 @@
+rm -f results.xml
+mkdir -p <repo>/flow/firmware-gate-level/mutant-pad/test_firmware_i2c/sim_build
+<home>/.local/bin/iverilog -o <repo>/flow/firmware-gate-level/mutant-pad/test_firmware_i2c/sim_build/sim.vvp -s tb -g2012 -DGL_TEST -DFUNCTIONAL -DSIM -I<repo>/test/../src -f <repo>/flow/firmware-gate-level/mutant-pad/test_firmware_i2c/sim_build/cmds.f  <PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_io/verilog/sg13cmos5l_io.v <PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v <PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_udp.v <repo>/test/../rtl/vendor/RM_IHPSG13_1P_256x16_c2_bm_bist.v <repo>/test/../rtl/vendor/RM_IHPSG13_1P_core_behavioral_bm_bist.v <repo>/flow/firmware-gate-level/mutant-uio_oe0-stuck0.v <repo>/test/tb.v
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:42: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:44: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:50: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:52: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:66: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:68: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:103: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:105: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:111: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:113: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:127: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:129: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:177: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:179: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:227: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:229: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:274: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:276: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:290: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:292: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:306: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:308: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:322: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:324: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:346: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:348: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:385: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:387: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:393: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:395: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:405: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:407: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:417: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:419: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:1786: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:1788: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:1830: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:1832: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:1881: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:1883: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:1901: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:1903: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:2487: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:2489: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:2733: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:2735: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:2743: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:2745: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:2802: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:2804: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:2811: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:2813: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:2866: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:2868: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:2875: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:2877: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:2932: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:2934: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:2990: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:2992: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:3199: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:3201: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:3211: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:3213: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:3250: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:3252: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:3262: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:3264: sorry: ifnone with an edge-sensitive path is not supported.
+rm -f results.xml
+COCOTB_TEST_MODULES=test_firmware_i2c COCOTB_TESTCASE=  COCOTB_TOPLEVEL=tb TOPLEVEL_LANG=verilog       \
+	 <home>/.local/bin/vvp -m <venv>/lib/python3.13/site-packages/cocotb/libs/libcocotbvpi_icarus.so   <repo>/flow/firmware-gate-level/mutant-pad/test_firmware_i2c/sim_build/sim.vvp -fst   
+     -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:242  in gpi_load_users                  Loaded entry library: '<home>/.local/share/uv/python/cpython-3.13.14-linux-x86_64-gnu/lib/libpython3.13.so.1.0'
+     -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:233  in gpi_load_users                  Running entry func 'initialize' from loaded library '<venv>/lib/python3.13/site-packages/cocotb/simulator.cpython-313-x86_64-linux-gnu.so'
+     -.--ns INFO     pygpi                              ..ib/pygpi/embed.cpp:114  in initialize                      Using Python 3.13.8 interpreter at <venv>/bin/python
+     -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:74   in gpi_print_registered_impl       GPI: VPI support registered
+     0.00ns INFO     cocotb.initialize                  Seeding Python random module with 1791594632
+     0.00ns INFO     cocotb.initialize                  Initialized cocotb v2.1.0 from <venv>/lib/python3.13/site-packages/cocotb
+     0.00ns INFO     cocotb.initialize                  Running on Icarus Verilog version 13.0 (stable)
+     0.00ns INFO     cocotb.regression                  Running tests
+     0.00ns INFO     cocotb.regression                  running test_firmware_i2c.test_committed_images_are_fresh (1/4)
+                                                            Both committed build artifacts match their committed `.asm`
+     0.00ns INFO     cocotb.tb                          i2c_fast: 182 words, 3346 fall-through cycles, 41 cycle sections at budget, 1 sanctioned warning
+     0.00ns INFO     cocotb.tb                          i2c_std: 182 words, 9696 fall-through cycles, 41 cycle sections at budget, 1 sanctioned warning
+     0.00ns INFO     cocotb.regression                  test_firmware_i2c.test_committed_images_are_fresh passed
+     0.00ns INFO     cocotb.regression                  running test_firmware_i2c.test_i2c_both_grades_pass_independent_reference_model (2/4)
+                                                            The claim: each committed program, loaded over the real
+     0.00ns INFO     cocotb.tb                          i2c_fast: capturing 3646 cycles, peripheral ACKs SCL falls [9]
+131381.00ns WARNING  py.warnings                        <repo>/verification/test_firmware_i2c.py:399: DeprecationWarning: `task.kill()` is deprecated in favor of `task.cancel()`
+                                                          driver.kill()
+131381.00ns WARNING  py.warnings                        <repo>/verification/uio_pads.py:319: DeprecationWarning: `task.kill()` is deprecated in favor of `task.cancel()`
+                                                          task.kill()
+131381.00ns WARNING  cocotb.regression                  test_firmware_i2c.test_i2c_both_grades_pass_independent_reference_model failed
+                                                        Traceback (most recent call last):
+                                                          File "<repo>/verification/test_firmware_i2c.py", line 531, in test_i2c_both_grades_pass_independent_reference_model
+                                                            caps = await run_program(dut, mode, ack_falls={9})
+                                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                                          File "<repo>/verification/test_firmware_i2c.py", line 417, in run_program
+                                                            caps, _pads = await run_words(dut, mode.name, words, run_cycles, ack_falls)
+                                                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                                          File "<repo>/verification/test_firmware_i2c.py", line 402, in run_words
+                                                            assert_i2c_open_drain(pads, tag)
+                                                            ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^
+                                                          File "<repo>/verification/uio_pads.py", line 422, in assert_i2c_open_drain
+                                                            assert pads.oe_seen == mask, (
+                                                            ...<3 lines>...
+                                                            )
+                                                        AssertionError: i2c_fast: the design drove uio pins 0x80; an I2C controller must drive exactly SCL|SDA = 0x81 (0x00 means UIO_OD was never written: the chip cannot pull a line low)
+                                                        assert 128 == 129
+                                                         +  where 128 = <uio_pads.UioPads object at 0x75988df8e3c0>.oe_seen
+131381.00ns INFO     cocotb.regression                  running test_firmware_i2c.test_uio_od_left_at_reset_cannot_drive_the_bus (3/4)
+                                                            Negative control for the pad path (issue #136): the committed
+262782.00ns INFO     cocotb.tb                          negative control (i2c_fast with UIO_OD at reset), lines: model rejected the lines: no START in window
+262782.00ns INFO     cocotb.tb                          negative control (i2c_fast with UIO_OD at reset), bench-composed from uio_out intent (pads ignored, NOT evidence): I2cReport(addr=0x50W, data=[], acks=[False], stretched=0, violations=[])
+521182.00ns INFO     cocotb.tb                          negative control (i2c_std with UIO_OD at reset), lines: model rejected the lines: no START in window
+521182.00ns INFO     cocotb.tb                          negative control (i2c_std with UIO_OD at reset), bench-composed from uio_out intent (pads ignored, NOT evidence): I2cReport(addr=0x50W, data=[], acks=[False], stretched=0, violations=[])
+521182.00ns INFO     cocotb.regression                  test_firmware_i2c.test_uio_od_left_at_reset_cannot_drive_the_bus passed
+521182.00ns INFO     cocotb.regression                  running test_firmware_i2c.test_reference_model_negative_control_still_fails (4/4)
+                                                            The reference model's own deterministic negative control, re-run
+521182.00ns INFO     cocotb.tb                          model nominal (i2c_fast): I2cReport(addr=0x50W, data=['0x5a'], acks=[True, False], stretched=0, violations=[])
+521182.00ns INFO     cocotb.tb                          model nominal (i2c_std): I2cReport(addr=0x50W, data=['0x5a'], acks=[True, False], stretched=0, violations=[])
+521182.00ns INFO     cocotb.tb                          negative control (short stop setup): I2cReport(addr=0x50W, data=['0x00'], acks=[True, True], stretched=0, violations=['t_SU;STO 2000.000ns < 4000.000ns minimum'])
+521182.00ns INFO     cocotb.regression                  test_firmware_i2c.test_reference_model_negative_control_still_fails passed
+521182.00ns INFO     cocotb.regression                  *********************************************************************************************************************************
+                                                        ** TEST                                                                     STATUS  SIM TIME (ns)  REAL TIME (s)  RATIO (ns/s) **
+                                                        *********************************************************************************************************************************
+                                                        ** test_firmware_i2c.test_committed_images_are_fresh                         PASS           0.00           0.00          0.00  **
+                                                        ** test_firmware_i2c.test_i2c_both_grades_pass_independent_reference_model   FAIL      131381.00           0.66     197994.77  **
+                                                        ** test_firmware_i2c.test_uio_od_left_at_reset_cannot_drive_the_bus          PASS      389801.00           1.80     216159.17  **
+                                                        ** test_firmware_i2c.test_reference_model_negative_control_still_fails       PASS           0.00           0.00          0.00  **
+                                                        *********************************************************************************************************************************
+                                                        ** TESTS=4 PASS=3 FAIL=1 SKIP=0                                                        521182.00           2.50     208134.81  **
+                                                        *********************************************************************************************************************************
+FST info: dumpfile tb.fst opened for output.
+make: *** [<venv>/lib/python3.13/site-packages/cocotb_tools/makefiles/simulators/Makefile.icarus:69: results.xml] Error 1
