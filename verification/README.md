@@ -325,14 +325,15 @@ gates. The host-side loader is issue #118.
   the bench's constants. Scope: programs run from program memory after a
   serial load; boot-ROM / warm-start / SPI-boot fetch is owned by
   `test_boot_rom.py` / `test_boot_spi.py`; the compare is RTL-only
-  (gate-level lockstep is deferred). The SUB `C` polarity is an open detail
-  of DR 0001 that the model carries as a labelled RTL pin
-  (`isa.OPEN_DETAILS`), and `test_sub_carry_polarity_pin` checks it on its
-  own. `test_isa_model.py` is the simulator-free unit-test suite (hand-
+  (gate-level lockstep is deferred). The four details DR 0001 leaves open
+  (SUB `C` polarity, `SHF` and `Z`, logic ops and `C`, the `SHF` fill bit)
+  are labelled in `isa.OPEN_DETAILS` and ruled, as the RTL behaves, by DR
+  0016 (Proposed, issue #203); `test_sub_carry_polarity_pin` checks the SUB
+  `C` polarity on its own. `test_isa_model.py` is the simulator-free unit-test suite (hand-
   computed expectations; also the generator, the coverage gate and the
   ISS-vs-assembler cycle cross-check), run by `npm run lint`:
   `python3 verification/test_isa_model.py`. `isa_lockstep_mutants.py` is the
-  negative-control runner (8 single-defect copies of the core, each caught by
+  negative-control runner (10 single-defect copies of the core, each caught by
   the lockstep). Driven by `klt functional-verification` (see
   `request-isa-lockstep.json`); evidence in `records/isa-lockstep/`.
 - `test_firmware_uart_rx.py` — the DUT-facing UART **receive-path and

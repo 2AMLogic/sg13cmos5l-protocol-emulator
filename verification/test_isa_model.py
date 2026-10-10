@@ -103,7 +103,7 @@ def test_add_no_carry():
 
 def test_sub_values_and_borrow_pin():
     # 3 - 5 = 0xFE (borrow); 5 - 5 = 0 (no borrow, Z); 7 - 5 = 2 (no borrow).
-    # The C POLARITY is an open detail (DR 0001 is silent); the model's pin is borrow.
+    # The C POLARITY is left open by DR 0001; DR 0016 Ruling 1 (Proposed) rules it a borrow.
     assert isa.SUB_C_POLARITY == "borrow"
     prog = [enc("LDI", rd=0, imm=3), enc("LDI", rd=1, imm=5), enc("SUB", rd=0, rs=1),
             enc("LDI", rd=0, imm=5), enc("SUB", rd=0, rs=1),
@@ -112,7 +112,7 @@ def test_sub_values_and_borrow_pin():
     assert (rows[4].regs[0], rows[4].z, rows[4].c) == (0xFE, 0, 1)
     assert (rows[6].regs[0], rows[6].z, rows[6].c) == (0x00, 1, 0)
     assert (rows[8].regs[0], rows[8].z, rows[8].c) == (0x02, 0, 0)
-    assert m.c_src == "sub"        # the bench labels C mismatches from SUB as the open detail
+    assert m.c_src == "sub"        # the bench labels C mismatches from SUB with DR 0016 Ruling 1
 
 
 def test_logic_ops_set_z_leave_c():
@@ -136,7 +136,7 @@ def test_shf_directions_and_carry():
     assert (rows[3].regs[0], rows[3].c) == (0x02, 1)
     assert (rows[4].regs[0], rows[4].c) == (0x01, 0)
     assert (rows[5].regs[0], rows[5].c) == (0x00, 1)
-    assert rows[5].z == 0            # SHF does not write Z (DR 0001 table; open detail 'shf-z')
+    assert rows[5].z == 0            # SHF does not write Z (DR 0001 table; DR 0016 Ruling 2, 'shf-z')
 
 
 def test_mov():

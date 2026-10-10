@@ -48,6 +48,11 @@ Proposed specification and decision records.
   protocol-neutral ISA primitives in DR 0012's control space; admits CRC/LFSR and NRZI/bit-stuff, proposes
   low-speed USB TX-only, defers 10BASE-T (its Manchester stage fails the
   record's admission test) and all receive.
+- `decision-records/0016-isa-flag-and-shift-details.md` — **Proposed
+  2026-10-10** (not ratified), issue #203. Rules the four ISA details DR 0001
+  leaves open, each as the RTL already behaves: `SUB` sets `C` as a borrow,
+  `SHF` leaves `Z` unchanged, `AND`/`OR`/`XOR` leave `C` unchanged, and `SHF`
+  fills with 0. No RTL change.
 - `verification-plan.md` — what is verified and how, including the formal
   properties, constrained-random suites, and reference models.
 - `gap-to-submission.md` — every spec row and template checklist item
