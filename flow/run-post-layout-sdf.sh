@@ -252,6 +252,17 @@ echo "== sdf corners: ${CORNERS[*]}" >&2
 # renamed netlist is netlist/<top>.sim.v and the per-corner
 # normalization report records the rename and the occurrence counts. The
 # bench never references this hierarchy name (checked below).
+#
+# Issue #173 extends the same rename to STANDARD-CELL instances that carry
+# a user-given name inside a flattened submodule (the first is the A_REN
+# drive buffer `\u_prog_mem.u_ren_drv `, which rtl/protocol_program_memory.v
+# instantiates by name for the LibreLane flow): the INTERCONNECT limitation
+# is the same, so is the fix. Those entries carry "kind": "stdcell" and are
+# never treated as macros (their SDF CELL blocks stay and are annotated).
+# The flow's own tie cells on the macro's constant inputs
+# (`\u_prog_mem.u_sram_<n> `) match too and are renamed the same way; they
+# have no SDF entry left after the all-zero drop below, which is allowed
+# for a standard cell (recorded as sdf_occurrences 0), never for a macro.
 SIM_NETLIST="${SCRATCH_DIR}/netlist/${HDL_TOPLEVEL}.sim.v"
 MACRO_RENAME_JSON="${SCRATCH_DIR}/netlist/macro-rename.json"
 python3 - "$NETLIST_FOR_FV" "$SIM_NETLIST" "$MACRO_RENAME_JSON" "$REPO_ROOT/verification" <<'PYEOF'
@@ -263,14 +274,16 @@ import sys
 src, dst, report, bench_dir = sys.argv[1:5]
 text = open(src, encoding="utf-8").read()
 inst_re = re.compile(r"^[ \t]*(RM_[A-Za-z0-9_]+)[ \t]+\\([^ \t]+)[ \t]", re.M)
+stdcell_re = re.compile(r"^[ \t]*(sg13cmos5l_[A-Za-z0-9_]+)[ \t]+\\([^ \t]+)[ \t]", re.M)
 renames = []
-for m in inst_re.finditer(text):
-    mtype, name = m.group(1), m.group(2)
-    if "." in name:
-        safe = name.replace(".", "_")
-        if safe in text:
-            sys.exit(f"FATAL: sanitized macro instance name {safe!r} already occurs in the netlist")
-        renames.append({"cell_type": mtype, "instance": name, "sim_instance": safe})
+for kind, regex in (("macro", inst_re), ("stdcell", stdcell_re)):
+    for m in regex.finditer(text):
+        mtype, name = m.group(1), m.group(2)
+        if "." in name:
+            safe = name.replace(".", "_")
+            if safe in text:
+                sys.exit(f"FATAL: sanitized {kind} instance name {safe!r} already occurs in the netlist")
+            renames.append({"kind": kind, "cell_type": mtype, "instance": name, "sim_instance": safe})
 for r in renames:
     for path in glob.glob(bench_dir + "/*.py"):
         if r["instance"] in open(path, encoding="utf-8").read():
@@ -281,7 +294,7 @@ for r in renames:
         sys.exit(f"FATAL: macro instance {r['instance']!r} not rewritten in netlist")
 open(dst, "w", encoding="utf-8").write(text)
 json.dump({"renames": renames}, open(report, "w"), indent=2)
-print(f"   macro instance renames: {[(r['instance'], r['sim_instance']) for r in renames]}", file=sys.stderr)
+print(f"   instance renames: {[(r['kind'], r['instance'], r['sim_instance']) for r in renames]}", file=sys.stderr)
 PYEOF
 NETLIST_FOR_FV="$SIM_NETLIST"
 
@@ -351,7 +364,7 @@ with open(src_path, encoding="utf-8") as handle:
 # recorded, and the macro therefore runs with its OWN model's specify delay
 # (a flat 1.0 ns clock-to-DOUT, no SDF value). That is a macro timing-model
 # LIMITATION to be recorded as a finding, never as annotated macro timing.
-macro_cell_types = {r["cell_type"] for r in renames}
+macro_cell_types = {r["cell_type"] for r in renames if r.get("kind", "macro") == "macro"}
 macro_blocks = []
 lines = "".join(kept_lines).split("\n")
 out_lines = []
@@ -385,7 +398,11 @@ for r in renames:
     sdf_name = r["instance"].replace(".", "\\.")
     out_text, n = re.subn(re.escape(sdf_name) + r"(?![A-Za-z0-9_$])", r["sim_instance"], out_text)
     r["sdf_occurrences"] = n
-    if n == 0:
+    # A standard cell may have no surviving SDF entry at all (the flow's
+    # tie cells on the macro's constant inputs, `\u_prog_mem.u_sram_<n> `,
+    # whose only INTERCONNECTs are the all-zero ones dropped above); the
+    # rename then has nothing to do there and the count is recorded as 0.
+    if n == 0 and r.get("kind", "macro") == "macro":
         sys.exit(f"FATAL: macro instance {sdf_name!r} not found in {src_path}: SDF does not annotate the macro")
 with open(dst_path, "w", encoding="utf-8") as handle:
     handle.write(out_text)
