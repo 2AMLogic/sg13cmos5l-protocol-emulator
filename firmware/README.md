@@ -216,17 +216,21 @@ kHz at the unconfirmed nominal clock). Each program performs one write
 transfer: START, address 0xA0 (0x50 << 1 | W), ACK slot, data byte 0x5A,
 ACK slot, STOP.
 
-**Pin plan** (these programs' own; the ratified pin-role decision record
-is still open per target-spec row 5): SCL = `UIO_OUT` bit 0, SDA =
-`UIO_OUT` bit 7, open-drain convention (1 = released, 0 = asserted).
+**Pin plan** (DR 0010's target plan, the standard Tiny Tapeout I2C Pmod,
+upper row; issue #155): SCL = `UIO_OUT` bit 2, SDA = `UIO_OUT` bit 3,
+open-drain convention (1 = released, 0 = asserted).
 Each I2C program makes that convention real on the pins with one
-instruction in its setup, `WCTL UIO_OD, R3` with `R3 = 0x81` (DR 0012:
+instruction in its setup, `WCTL UIO_OD, R3` with `R3 = 0x0C` (DR 0012:
 SCL and SDA become open-drain, `uio_oe[n] = ~uio_out[n]`). It comes
-**after** the `OUT UIO_OUT` of `0x81`, because `uio_out` resets to 0 and
+**after** the `OUT UIO_OUT` of `0x0C`, because `uio_out` resets to 0 and
 enabling open-drain first would pull both lines low for a cycle. It sits in
 the idle setup, outside every `.cyclesec`, so no phase length changed.
-The 0x80 mask register does double duty — bit extraction and the
-ACK-slot "SDA released" pin value — because SDA sits on bit 7.
+The 0x08 mask register does double duty — bit extraction and the
+ACK-slot "SDA released" pin value — because SDA sits on bit 3. The data
+bit is R0's MSB, so each extraction first shifts a copy right four times
+(`SHF R3, RIGHT` x 4, paid for out of the same high phase's `WAIT`, so
+no phase length changed). Until issue #155 SDA was bit 7 and needed no
+shift; the move costs 64 words (182 -> 246 of 256) and nothing in timing.
 
 **The ACK handshake is the one sanctioned data-dependent branch.** The
 address ACK slot samples SDA with `IN` + `AND` and branches `BNZ` on it:
@@ -240,8 +244,8 @@ with assemble-time `WAIT` literals.
 **The eight clocks per byte are unrolled, not looped.** DR 0001's
 blessed constant-trip-count loop needs five live values (byte, mask,
 SCL constant, temp, loop counter) and the ISA has four registers — so
-each byte is 65 instructions of straight-line phases, and a whole
-program is 181 words. That fits DR 0001's 256-word memory for one
+each byte is 65 instructions of straight-line phases (97 since issue
+#155's SDA-alignment shifts), and a whole program is 246 words. That fits DR 0001's 256-word memory for one
 protocol with headroom, but it challenges the sketch's "all three core
 protocols coexist with room for a dispatch table" sizing narrative —
 recorded as an ISA finding in the evidence record, not a spec change.
@@ -252,9 +256,9 @@ state each phase's exact length — the bench cross-checks all 41):
 | Phase (Fast / Standard) | Instructions | Cycles |
 |---|---|---|
 | data-clock low | `OUT`+`WAIT 62`/`232`+`OR` | **65 / 235** |
-| data-clock high | `OUT`+`SHF`+`WAIT 55`/`195`+`MOV`+`AND` | **60 / 200** |
+| data-clock high | `OUT`+`SHF`+`WAIT 51`/`191`+`MOV`+4x`SHF`+`AND` | **60 / 200** |
 | ACK low (incl. the `IN` sample) | `OUT`+`WAIT`+`IN`+`WAIT`+`AND`+`LDI` | **65 / 235** |
-| START hold (t_HD;STA) | `OUT`+`WAIT`+`LDI`+`MOV`+`AND` | **65 / 205** |
+| START hold (t_HD;STA) | `OUT`+`WAIT`+`LDI`+`MOV`+4x`SHF`+`AND` | **65 / 205** |
 | STOP setup (t_SU;STO) | `OUT`+`WAIT`+`LDI` | **60 / 205** |
 
 The measured quantities are those **cycle counts**; the 400 kHz / 100
@@ -262,9 +266,9 @@ kHz names are arithmetic at target-spec row 4's unconfirmed clock (same
 stance as `uart_tx.asm`).
 
 **Open-drain, and what the bench does about it.** The programs' first
-instructions release both lines (`OUT` of `0x81`) and then write `0x81`
-to DR 0012's `UIO_OD` control register, so SCL (`uio[0]`) and SDA
-(`uio[7]`) are open-drain pads: `uio_oe[n] = ~uio_out[n]`. The
+instructions release both lines (`OUT` of `0x0C`) and then write `0x0C`
+to DR 0012's `UIO_OD` control register, so SCL (`uio[2]`) and SDA
+(`uio[3]`) are open-drain pads: `uio_oe[n] = ~uio_out[n]`. The
 DUT-facing benches run on a pad model (`verification/uio_pads.py`, issue
 #136) that resolves each line from the design's `uio_oe` / `uio_out`, a
 pull-up, and the peripheral as an external open-drain driver, and feeds
@@ -287,16 +291,18 @@ itself covers mode 0 only; the mode variants are this issue's own design
 work, with `verification/reference_models/spi.py`'s `SpiMode` semantics —
 not the sketch — as the authority on which edge samples per mode).
 
-**Pin map** (the fixed pin-port table, no new port codes; `uio_oe` stays 0
-so all bidirectional pins remain inputs and MISO is simply read on the
-input side):
+**Pin map** (DR 0010's target plan, the standard Tiny Tapeout SPI Pmod,
+upper row; issue #155). Each program writes its idle image to `UIO_OUT`
+and then `0x0B` to DR 0012's `UIO_DIR`, which makes CS, MOSI and SCLK
+push-pull outputs; MISO stays an input. Until #155 CS/SCLK/MOSI were on
+`uo_out[0..2]` and MISO on `uio_in[0]`.
 
-| Pin | uo_out/uio_in bit | Role |
+| Pin | uio bit | Role |
 |---|---|---|
-| CS | `uo_out[0]` | active low |
-| SCLK | `uo_out[1]` | idles at CPOL |
-| MOSI | `uo_out[2]` | controller-driven |
-| MISO | `uio_in[0]` | peripheral-driven, sampled by `IN` |
+| CS | `uio[0]` | active low, push-pull (`UIO_DIR`) |
+| MOSI | `uio[1]` | controller-driven, push-pull |
+| MISO | `uio[2]` | peripheral-driven, sampled by `IN` |
+| SCLK (Pmod SCK) | `uio[3]` | idles at CPOL, push-pull |
 
 **Two bursts per program, both full-duplex** (an `IN` samples MISO every
 bit in both), both graded by the independent model in
@@ -309,11 +315,13 @@ bit in both), both graded by the independent model in
    bit; the other phase's write is a static register image (MOSI low
    there) — the model samples only on the mode-correct edges, so the
    sampled value is the data bit with a half-period of setup.
-2. **Functional burst** — 8 cycles/bit (under the ceiling;
-   `.cyclesec spi_mode*_func`, 64 cycles), the same full-duplex shape plus
-   MISO extraction and assembly (`IN`+`AND`+`SHF`+`OR` per bit — the
-   extraction cannot fit the 4-cycle budget), after which the assembled
-   byte is echoed on `uo_out[7:0]` once CS releases.
+2. **Functional burst** — 10 cycles/bit (under the ceiling;
+   `.cyclesec spi_mode*_func`, 80 cycles), the same full-duplex shape plus
+   MISO extraction and assembly (`IN`+`AND`+2x`SHF`+`SHF`+`OR` per bit —
+   the extraction cannot fit the 4-cycle budget), after which the
+   assembled byte is echoed on `uo_out[7:0]` once CS releases. MISO on
+   `uio[2]` needs two right shifts per bit to reach bit 0; on `uio[0]`
+   (before issue #155) it needed none and the burst ran at 8 cycles/bit.
 
 **Measured at the pin** (record
 `verification/records/firmware-spi/`): SCLK period exactly 4 cycles
@@ -351,8 +359,10 @@ START, `0xA0` + ACK, `0x5A` + ACK, **repeated START**, `0xA1` + ACK, **one
 byte read from the peripheral, controller NACK**, STOP; the received byte
 is published on `UO_OUT`. t_SU;STA is paced exactly at the Table 10
 minimum (30 cycles Fast, 235 Standard). The bit loops keep a counter, so
-the programs are 131 words (`_sr`) and 171 words (`_sr_poll`) of the
-256-word store, against 181 words for the unrolled write-only programs.
+the programs are 152 words (`_sr`) and 192 words (`_sr_poll`) of the
+256-word store, against 246 words for the unrolled write-only programs
+(131 / 171 / 181 before issue #155's SDA-alignment shifts; SCL is
+`uio[2]`, SDA `uio[3]`, `UIO_OD` = `0x0C`).
 `_sr` has no pin-dependent branch; `_sr_poll` polls the peripheral's SCL
 after every rise (10 `BZ` sites, each a sanctioned handshake warning) and
 loops while it is held low. Determinism claims exclude the interval spent

@@ -75,11 +75,11 @@ MUTANTS = [
      "pull a line low",
      "assign uio_oe = (uio_od & uio_out) | (~uio_od & uio_dir);"),
     ("sda-pad-never-enabled",
-     "uio_oe[7] stuck at 0: SCL toggles, SDA is never driven",
-     "assign uio_oe = ((uio_od & ~uio_out) | (~uio_od & uio_dir)) & 8'h7F;"),
+     "uio_oe[3] stuck at 0: SCL toggles, SDA is never driven",
+     "assign uio_oe = ((uio_od & ~uio_out) | (~uio_od & uio_dir)) & 8'hF7;"),
     ("scl-pad-never-enabled",
-     "uio_oe[0] stuck at 0: SDA moves, SCL is never driven",
-     "assign uio_oe = ((uio_od & ~uio_out) | (~uio_od & uio_dir)) & 8'hFE;"),
+     "uio_oe[2] stuck at 0: SDA moves, SCL is never driven",
+     "assign uio_oe = ((uio_od & ~uio_out) | (~uio_od & uio_dir)) & 8'hFB;"),
 ]
 
 

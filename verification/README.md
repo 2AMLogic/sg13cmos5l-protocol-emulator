@@ -70,7 +70,8 @@ coverage.
   peripheral model) into one line, feeds that line back on `uio_in`, and
   records contention (the design and the external driver driving opposite
   values). `i2c_board()` is the wiring the I2C benches use (pull-ups on
-  SCL = `uio[0]` and SDA = `uio[7]`, the rest tied low) and
+  SCL = `uio[2]` and SDA = `uio[3]`, the rest tied low; `spi_board()` is
+  the SPI benches' wiring, issue #155) and
   `assert_i2c_open_drain()` the check each I2C run ends with: the design
   drove exactly SCL and SDA, only ever low, without contention. It
   replaces the bench-composed bus (`line = uio_out AND uio_in`, `uio_oe`

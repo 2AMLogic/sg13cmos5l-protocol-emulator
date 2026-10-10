@@ -9,10 +9,11 @@
 ; The received byte is published on UO_OUT before HALT so the bench can
 ; check what the core actually shifted in from the bus.
 ;
-; Pin plan (same as i2c_fast.asm / i2c_std.asm): UIO_OUT bit 0 = SCL,
-; bit 7 = SDA, writing 1 RELEASES the line. On silicon that is DR 0012's
-; open-drain pin mode: the setup writes 0x81 to UIO_OD (`WCTL UIO_OD`)
-; right AFTER the OUT of 0x81 (uio_out resets to 0x00; enabling open-drain
+; Pin plan (same as i2c_fast.asm / i2c_std.asm; DR 0010's target plan, the
+; standard Tiny Tapeout I2C Pmod, issue #155): UIO_OUT bit 2 = SCL, bit 3 =
+; SDA, writing 1 RELEASES the line. On silicon that is DR 0012's
+; open-drain pin mode: the setup writes 0x0C to UIO_OD (`WCTL UIO_OD`)
+; right AFTER the OUT of 0x0C (uio_out resets to 0x00; enabling open-drain
 ; first would pull both lines low for a cycle). The bench runs on a pad
 ; model that resolves each line from uio_oe/uio_out (uio_pads.py, #136).
 ;
@@ -25,7 +26,9 @@
 ; transfer is fully deterministic. It does not tolerate clock stretching.
 ; The bit loops need a counter, and the ISA has four registers, so the
 ; loop keeps R0 = ~byte (shifted left; after 8 shifts it is 0, which the
-; AND/XOR pin recipe turns into SDA released for the following ACK slot),
+; AND/XOR pin recipe turns into SDA released for the following ACK slot;
+; the recipe first shifts a copy right four times, because SDA is bit 3
+; and the byte's next bit is R0's MSB),
 ; R1 = counter, R2 = scratch (constants are re-LDI'd where needed), R3 =
 ; the pin value for the next OUT. LDI/MOV/SHF/OUT/BNZ are 1 cycle each
 ; (taken or not), so the loop-back costs no extra cycle in any phase.
@@ -35,36 +38,44 @@
 ; cycle count IS the phase's measured length.
 
 ; ---------------------------------------------------------------- setup
-        LDI   R3, 0x81        ; both lines released: bus idle
+        LDI   R3, 0x0C        ; both lines released: bus idle
         OUT   UIO_OUT, R3
         WCTL  UIO_OD, R3      ; DR 0012: SCL|SDA open-drain (after the OUT)
         WAIT  255             ; idle bus before the START
-        LDI   R3, 0x01        ; SCL high, SDA low
+        LDI   R3, 0x04        ; SCL high, SDA low
 ; --------------------------------------------------------------- START
 .cyclesec i2c_start_hold
         OUT   UIO_OUT, R3   ; START: SDA falls while SCL high
         LDI   R0, 0x5F       ; ~byte (inverted-data trick)
         LDI   R1, 0x08       ; bit counter
         MOV   R3, R0
-        LDI   R2, 0x80
+        SHF   R3, RIGHT
+        SHF   R3, RIGHT
+        SHF   R3, RIGHT
+        SHF   R3, RIGHT      ; MSB -> SDA (bit 3)
+        LDI   R2, 0x08
         AND   R3, R2
         XOR   R3, R2         ; R3 = SDA(bit 1), SCL low
-        WAIT  197      ; 198 cycles
+        WAIT  193      ; 194 cycles
 .endcyclesec
 ; ------------------------------------------ byte 1: address 0xA0 (0x50 W)
 tx1_loop:
 .cyclesec i2c_tx1_low
         OUT   UIO_OUT, R3   ; SCL falls, SDA = data bit
         WAIT  231      ; 232 cycles
-        LDI   R2, 0x01
+        LDI   R2, 0x04
         OR    R3, R2         ; raise SCL, SDA unchanged
 .endcyclesec
 .cyclesec i2c_tx1_high
         OUT   UIO_OUT, R3   ; SCL rises: bit sampled on the line
-        WAIT  190      ; 191 cycles
+        WAIT  186      ; 187 cycles
         SHF   R0, LEFT       ; next bit into position
         MOV   R3, R0
-        LDI   R2, 0x80
+        SHF   R3, RIGHT
+        SHF   R3, RIGHT
+        SHF   R3, RIGHT
+        SHF   R3, RIGHT      ; MSB -> SDA (bit 3)
+        LDI   R2, 0x08
         AND   R3, R2
         XOR   R3, R2         ; R3 = next SDA, SCL low
         LDI   R2, 0x01
@@ -73,7 +84,7 @@ tx1_loop:
 .endcyclesec
 .cyclesec i2c_ack1_low
         OUT   UIO_OUT, R3   ; 9th clock: SCL falls, SDA released
-        LDI   R3, 0x81
+        LDI   R3, 0x0C
         WAIT  232      ; 233 cycles
 .endcyclesec
 .cyclesec i2c_ack1_high
@@ -81,25 +92,33 @@ tx1_loop:
         LDI   R0, 0xA5       ; ~byte (inverted-data trick)
         LDI   R1, 0x08       ; bit counter
         MOV   R3, R0
-        LDI   R2, 0x80
+        SHF   R3, RIGHT
+        SHF   R3, RIGHT
+        SHF   R3, RIGHT
+        SHF   R3, RIGHT      ; MSB -> SDA (bit 3)
+        LDI   R2, 0x08
         AND   R3, R2
         XOR   R3, R2         ; R3 = SDA(bit 1), SCL low
-        WAIT  192      ; 193 cycles
+        WAIT  188      ; 189 cycles
 .endcyclesec
 ; ------------------------------------------ byte 2: payload 0x5A
 tx2_loop:
 .cyclesec i2c_tx2_low
         OUT   UIO_OUT, R3   ; SCL falls, SDA = data bit
         WAIT  231      ; 232 cycles
-        LDI   R2, 0x01
+        LDI   R2, 0x04
         OR    R3, R2         ; raise SCL, SDA unchanged
 .endcyclesec
 .cyclesec i2c_tx2_high
         OUT   UIO_OUT, R3   ; SCL rises: bit sampled on the line
-        WAIT  190      ; 191 cycles
+        WAIT  186      ; 187 cycles
         SHF   R0, LEFT       ; next bit into position
         MOV   R3, R0
-        LDI   R2, 0x80
+        SHF   R3, RIGHT
+        SHF   R3, RIGHT
+        SHF   R3, RIGHT
+        SHF   R3, RIGHT      ; MSB -> SDA (bit 3)
+        LDI   R2, 0x08
         AND   R3, R2
         XOR   R3, R2         ; R3 = next SDA, SCL low
         LDI   R2, 0x01
@@ -108,49 +127,57 @@ tx2_loop:
 .endcyclesec
 .cyclesec i2c_ack2_low
         OUT   UIO_OUT, R3   ; 9th clock: SCL falls, SDA released
-        LDI   R3, 0x81
+        LDI   R3, 0x0C
         WAIT  232      ; 233 cycles
 .endcyclesec
 .cyclesec i2c_ack2_high
         OUT   UIO_OUT, R3   ; ACK clock rises
-        LDI   R3, 0x80       ; SCL low, SDA released (for the Sr)
+        LDI   R3, 0x08       ; SCL low, SDA released (for the Sr)
         WAIT  197      ; 198 cycles
 .endcyclesec
 ; ------------------------------------------------- repeated START
 .cyclesec i2c_sr_low
         OUT   UIO_OUT, R3   ; SCL falls, SDA released (high)
-        LDI   R3, 0x81
+        LDI   R3, 0x0C
         LDI   R0, 0x5E       ; ~0xA1 for the next byte
         LDI   R1, 0x08
         WAIT  230      ; 231 cycles
 .endcyclesec
 .cyclesec i2c_sr_rise
         OUT   UIO_OUT, R3   ; SCL rises with SDA high: Sr setup begins
-        LDI   R3, 0x01       ; SCL high, SDA low
+        LDI   R3, 0x04       ; SCL high, SDA low
         WAIT  232      ; 233 cycles NEGCTL-SUSTA
 .endcyclesec
 .cyclesec i2c_sr_hold
         OUT   UIO_OUT, R3   ; repeated START: SDA falls while SCL high
         MOV   R3, R0
-        LDI   R2, 0x80
+        SHF   R3, RIGHT
+        SHF   R3, RIGHT
+        SHF   R3, RIGHT
+        SHF   R3, RIGHT      ; MSB -> SDA (bit 3)
+        LDI   R2, 0x08
         AND   R3, R2
         XOR   R3, R2         ; R3 = SDA(bit 1), SCL low
-        WAIT  199      ; 200 cycles
+        WAIT  195      ; 196 cycles
 .endcyclesec
 ; ------------------------------------------ byte 3: address 0xA1 (0x50 R)
 tx3_loop:
 .cyclesec i2c_tx3_low
         OUT   UIO_OUT, R3   ; SCL falls, SDA = data bit
         WAIT  231      ; 232 cycles
-        LDI   R2, 0x01
+        LDI   R2, 0x04
         OR    R3, R2         ; raise SCL, SDA unchanged
 .endcyclesec
 .cyclesec i2c_tx3_high
         OUT   UIO_OUT, R3   ; SCL rises: bit sampled on the line
-        WAIT  190      ; 191 cycles
+        WAIT  186      ; 187 cycles
         SHF   R0, LEFT       ; next bit into position
         MOV   R3, R0
-        LDI   R2, 0x80
+        SHF   R3, RIGHT
+        SHF   R3, RIGHT
+        SHF   R3, RIGHT
+        SHF   R3, RIGHT      ; MSB -> SDA (bit 3)
+        LDI   R2, 0x08
         AND   R3, R2
         XOR   R3, R2         ; R3 = next SDA, SCL low
         LDI   R2, 0x01
@@ -159,50 +186,46 @@ tx3_loop:
 .endcyclesec
 .cyclesec i2c_ack3_low
         OUT   UIO_OUT, R3   ; 9th clock: SCL falls, SDA released
-        LDI   R3, 0x81
+        LDI   R3, 0x0C
         WAIT  232      ; 233 cycles
 .endcyclesec
 .cyclesec i2c_ack3_high
         OUT   UIO_OUT, R3   ; ACK clock rises
         LDI   R0, 0x00       ; receive accumulator
         LDI   R1, 0x08
-        LDI   R3, 0x80       ; SCL low, SDA released
+        LDI   R3, 0x08       ; SCL low, SDA released
         WAIT  195      ; 196 cycles
 .endcyclesec
 ; ----------------------------------- read byte (peripheral drives SDA)
 rd_loop:
 .cyclesec i2c_rd_low
         OUT   UIO_OUT, R3   ; SCL falls, SDA released to the peripheral
-        LDI   R3, 0x81
+        LDI   R3, 0x0C
         WAIT  232      ; 233 cycles
 .endcyclesec
 .cyclesec i2c_rd_high
         OUT   UIO_OUT, R3   ; SCL rises: peripheral's bit is on the line
         IN    R2, UIO_IN     ; sample the bus
-        LDI   R3, 0x80       ; mask AND next SCL-low pins
-        AND   R2, R3         ; isolate SDA (bit 7)
+        LDI   R3, 0x08       ; mask AND next SCL-low pins
+        AND   R2, R3         ; isolate SDA (bit 3)
         SHF   R2, RIGHT
         SHF   R2, RIGHT
-        SHF   R2, RIGHT
-        SHF   R2, RIGHT
-        SHF   R2, RIGHT
-        SHF   R2, RIGHT
-        SHF   R2, RIGHT      ; bit 7 -> bit 0
+        SHF   R2, RIGHT      ; bit 3 -> bit 0
         SHF   R0, LEFT
         OR    R0, R2         ; MSB first
-        WAIT  183      ; 184 cycles
+        WAIT  187      ; 188 cycles
         LDI   R2, 0x01
         SUB   R1, R2         ; counter--  (sets Z)
         BNZ   rd_loop        ; 8 data clocks
 .endcyclesec
 .cyclesec i2c_nack_low
         OUT   UIO_OUT, R3   ; 9th clock: SCL falls, SDA stays released
-        LDI   R3, 0x81
+        LDI   R3, 0x0C
         WAIT  232      ; 233 cycles
 .endcyclesec
 .cyclesec i2c_nack_high
         OUT   UIO_OUT, R3   ; SCL rises, SDA released: controller NACK
-        LDI   R3, 0x80
+        LDI   R3, 0x08
         WAIT  197      ; 198 cycles
 .endcyclesec
 ; ------------------------------------------------------------- STOP
@@ -211,11 +234,11 @@ rd_loop:
         LDI   R3, 0x00       ; SDA low during the low period
         OUT   UIO_OUT, R3
         WAIT  230      ; 231 cycles
-        LDI   R3, 0x01       ; SCL high, SDA low
+        LDI   R3, 0x04       ; SCL high, SDA low
 .endcyclesec
 .cyclesec i2c_stop_setup
         OUT   UIO_OUT, R3   ; SCL rises: STOP setup begins
-        LDI   R3, 0x81       ; SDA released
+        LDI   R3, 0x0C       ; SDA released
         WAIT  202      ; 203 cycles
 .endcyclesec
         OUT   UIO_OUT, R3     ; SDA rises while SCL high: STOP

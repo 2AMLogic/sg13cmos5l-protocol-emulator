@@ -33,8 +33,8 @@ The bus the model grades is the pad-resolved line (issue #136)
 -------------------------------------------------------------
 Every run goes through the silicon-true pad model
 (`verification/uio_pads.py`, DR 0012 section "Consequences"): per `uio`
-pin the design's `uio_oe` / `uio_out`, a pull-up on SCL (`uio[0]`) and
-on SDA (`uio[7]`), and the peripheral as an external open-drain driver
+pin the design's `uio_oe` / `uio_out`, a pull-up on SCL (`uio[2]`) and
+on SDA (`uio[3]`), and the peripheral as an external open-drain driver
 are resolved into one line, and that line is what `uio_in` reads. The
 reactive peripheral watches the *line's* SCL (never the controller's
 intent on `uio_out`) and pulls SDA low for the ACK slots it chooses to
@@ -170,11 +170,12 @@ ADDRESS = 0x50
 READ_BIT = False
 DATA_BYTE = 0x5A
 
-#: Pin plan of both programs: SCL on uio bit 0, SDA on uio bit 7.
+#: Pin plan of both programs: SCL on uio bit 2, SDA on uio bit 3 -- DR
+#: 0010's target plan, the standard Tiny Tapeout I2C Pmod (issue #155).
 #: `SCL_PIN` / `SDA_PIN` name the controller's *intent* (`uio_out`); the
 #: line the model grades is read on `uio_in` (`LINE_PIN`).
-SCL_PIN, SCL_BIT = "uio_out", 0
-SDA_PIN, SDA_BIT = "uio_out", 7
+SCL_PIN, SCL_BIT = "uio_out", 2
+SDA_PIN, SDA_BIT = "uio_out", 3
 LINE_PIN = "uio_in"
 
 #: What every I2C run captures, per clock edge: the two bus lines as the
@@ -548,7 +549,7 @@ async def test_i2c_both_grades_pass_independent_reference_model(dut):
         # pulls low on a 0 and the pull-up restores the line on a 1.
         # (`uio_out` resets to 0 while the pad is still an input, so the
         # intent starts with one rise the line never sees: the program's
-        # `OUT 0x81` that precedes `WCTL UIO_OD`.)
+        # `OUT 0x0C` that precedes `WCTL UIO_OD`.)
         intent = caps["ctl_scl"].signal
         assert intent.initial == 0 and intent.transitions[0][1] == 1
         assert (
