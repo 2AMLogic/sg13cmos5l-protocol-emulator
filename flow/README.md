@@ -65,10 +65,17 @@ recorded rather than silently resolved.
   `GDS_logs` artifacts (or takes `--from <dir>`), freezes the final
   **post-route gate-level netlist** and the **per-corner SDFs** LibreLane's
   post-route STA stage emits, and re-runs this repo's own committed cocotb
-  bench (`verification/test_protocol_emulator.py`, unmodified, via
+  bench (`verification/test_protocol_emulator.py`, via
   `testbench.search_path`) against that netlist with `options.sdf` set —
   one `klt functional-verification` run per emitted corner, each required
-  to report `environment.sdf.annotated: true` and `status: "pass"`. The
+  to report `environment.sdf.annotated: true` and `status: "pass"`. Since
+  issue #106 the bench file is the same but the testbench module is
+  `verification/sdf_alignment.py`, which runs the bench's tests at the
+  clock period, input delay and output delay of the gds run's own final
+  SDC (read by the runner, frozen as `alignment.json`): stimulus at +input
+  delay after each clock pin edge, pin reads at period minus output delay.
+  The white-box `test_alu_flags_whitebox` is reported skipped there (no
+  `u_core` scope in a flattened netlist). The
   SDF normalization it applies for Icarus 13.0 (header `min::max` triplets
   filled, klayout-tools#1880; all-zero INTERCONNECTs onto assign-aliased
   ports dropped, klayout-tools#2285) is mechanically audited per corner in

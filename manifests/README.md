@@ -190,6 +190,20 @@ capture, PVT corner sweeps, or Monte Carlo.
   reference is `match` with `power_connectivity` `match`, and is not cited.
   **Item 7 stays `unmet`/`check_failed`** (#106). Baseline:
   `signoff-baseline` record `20261010-090628-704a3fb`, 1 of 11.
+- **Item 7, state as of 2026-10-10 (issue #106).** Append-only; the bullet
+  above is the earlier state. Item 7 cites `post-layout-sdf-regression`
+  record `20261010-102552-d43f89c` (gds run 38044212536; routed netlist
+  byte-identical to run 38037477407's, so items 3 and 4 keep their
+  citations). The core bench's tests now run SDC-aligned
+  (`verification/sdf_alignment.py`: the SDC's 20 ns clock, stimulus at
+  +4 ns, pin reads at +16 ns) and give **12 passed, 0 failed, 1 skipped**
+  (`test_alu_flags_whitebox`, no `u_core` in a flattened netlist) at all
+  three corners, annotated. **Item 7 moves from `unmet`/`check_failed` to
+  `unmet`/`unverifiable_provenance`**: the regression no longer fails, and
+  the grader stops at the provenance binding a `functional-verification`
+  envelope cannot satisfy (the reason item 9 renders, described above). It
+  is not met. Baseline: `signoff-baseline` record
+  `20261010-102923-d43f89c`, 1 of 11.
 - **Every citation pins a `content_hash`**, and what it is the hash of
   depends on the cited envelope (clarified 2026-10-10, issue #168; the
   manifests on `main` have always followed this, the sentence here did

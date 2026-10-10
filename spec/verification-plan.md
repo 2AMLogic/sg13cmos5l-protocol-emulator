@@ -217,6 +217,14 @@ correctness signal — not a substitute for the flow-of-record run.
 > the SDF-annotated leg remains failing (#102 record, #106). The netlist is the
 > final routed one, not an intermediate post-synthesis netlist. The original
 > text above is left as written.
+>
+> *Update 2026-10-10 (issue #106).* The SDF-annotated leg now passes: the
+> core bench's tests, run SDC-aligned through `verification/sdf_alignment.py`
+> (`flow/run-post-layout-sdf.sh`), give 12 passed and 1 skipped
+> (`test_alu_flags_whitebox`, white-box) at all three LibreLane corners
+> (record `post-layout-sdf-regression/20261010-102552-d43f89c`). The
+> constrained-random regression and the firmware benches still have no
+> SDF-annotated run, and the SRAM is simulated without its SDF timing.
 
 ## 4. Constrained-random protocol traffic + reference models
 
