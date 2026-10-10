@@ -1,0 +1,7 @@
+{
+  "schema_version": 1,
+  "error": {
+    "command": "lvs",
+    "message": "could not convert gate-level-verilog reference netlist '../verification/records/librelane-gds-signoff-check/artifacts/20261010-110300-5669077/reference-klt-yosys-with-macro-stub.v' to plain-element form: connection 'pm_wdata[7:0]' is a multi-bit range slice -- only a plain net name or a single-index bit-select ('bus[3]') is supported for an instance port connection"
+  }
+}

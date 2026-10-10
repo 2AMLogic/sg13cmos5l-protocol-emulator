@@ -59,7 +59,23 @@
  *     high byte when it is 1. A host reads both bytes before it drops
  *     MODE and runs the image only if they match its own CRC. See the
  *     mux at the bottom of this file. The load protocol itself is
- *     untouched: this reads state and feeds nothing back.
+ *     untouched: this reads state and feeds nothing back. The boot ROM
+ *     (next item) never sees the readout: with MODE low at reset the run
+ *     phase begins on the first edge, so the boot program's `uo_out[0]`
+ *     (UART TX) and its `ui_in[1]` (UART RX, an ordinary `IN`) are the
+ *     core's from that edge on.
+ *   - The boot ROM (`rtl/protocol_boot_rom.v`, generated from the committed
+ *     boot image; `spec/decision-records/0013-program-loading.md` layer 2,
+ *     issue #138) is read at the same fetch-ahead address as the program
+ *     memory and hands the core a second instruction word, `rom_word`. The
+ *     core decodes the ROM from `rst_n` release with MODE low until the boot
+ *     program executes `WCTL RUN`, and program memory otherwise. While the
+ *     core fetches from the ROM its `pm_fetch` is low and the program memory
+ *     does not read the macro for fetch, so program memory that nothing has
+ *     loaded and checked is never decoded. A serial load (MODE high at
+ *     reset) never touches the ROM. The straps the boot program reads are
+ *     `ui_in[6:5]`, through the ordinary `IN` path -- there is no strap
+ *     hardware here.
  *   - `ena` is unused on purpose: the template documents it as "always
  *     1 when the design is powered, so you can ignore it", and DR
  *     0001's load protocol is reset-gated, not power-gated.
@@ -106,6 +122,18 @@ module tt_um_2amlogic_protocol_emulator (
   wire        serial_loaded;
   wire [7:0]  core_uo_out;  // the core's port-10 register (run-phase uo_out)
 
+  // DR 0013 layer 2 boot ROM (issue #138): the second fetch source.
+  wire [15:0] rom_word;
+  wire        fetch_rom;
+  wire        pm_fetch;
+
+  protocol_boot_rom u_boot_rom (
+      .clk  (clk),
+      .rst_n(rst_n),
+      .addr (fetch_addr),
+      .data (rom_word)
+  );
+
   // Program memory + serial load-phase logic (issue #19, DR 0001
   // "Program memory sizing and loading"), backed by the
   // RM_IHPSG13_1P_256x16_c2_bm_bist SRAM macro (DR 0005).
@@ -115,6 +143,7 @@ module tt_um_2amlogic_protocol_emulator (
       .mode_pin  (ui_in[7]),
       .serial_in (ui_in[0]),
       .fetch_addr(fetch_addr),
+      .fetch_en  (pm_fetch),
       .instr_word(instr_word),
       .run_phase (run_phase),
       .pm_we        (pm_we),
@@ -134,6 +163,9 @@ module tt_um_2amlogic_protocol_emulator (
       .run_phase   (run_phase),
       .instr_word  (instr_word),
       .fetch_addr  (fetch_addr),
+      .rom_word    (rom_word),
+      .fetch_rom   (fetch_rom),
+      .pm_fetch    (pm_fetch),
       .port_ui_in  (ui_in),
       .port_uio_in (uio_in),
       .port_uo_out (core_uo_out),
@@ -173,7 +205,9 @@ module tt_um_2amlogic_protocol_emulator (
                               pm_crc[7:0];
 
   // List unused inputs to prevent warnings.
-  wire _unused = &{ena, 1'b0};
+  // `fetch_rom` (BOOT_STATUS[1]) is a core output for the formal harnesses
+  // and for observability; nothing at the top consumes it.
+  wire _unused = &{ena, fetch_rom, 1'b0};
 
 endmodule
 

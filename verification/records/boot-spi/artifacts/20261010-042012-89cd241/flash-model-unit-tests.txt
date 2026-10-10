@@ -1,0 +1,15 @@
+ok  test_address_and_wrap
+ok  test_clock_while_cs_high
+ok  test_cs_high_time
+ok  test_cs_setup_and_hold
+ok  test_miso_not_yet_valid
+ok  test_mode_3_clocking_is_flagged
+ok  test_mosi_setup_and_hold
+ok  test_nothing_driven_outside_data_phase
+ok  test_partial_byte_and_two_transactions
+ok  test_pulse_widths_and_frequency
+ok  test_reads_the_image
+ok  test_sck_high_at_cs_fall_and_rise
+ok  test_unresolved_line
+ok  test_wrong_opcode
+14 tests passed

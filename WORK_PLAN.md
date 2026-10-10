@@ -7,7 +7,8 @@ This roadmap is generated from the current GitHub label state.
 
 Judge-approved PRs stuck under a `loom:operator` merge-risk hold — implementation work is done, only a human merge decision is missing.
 
-- **#127**: formal: pin_write_latency on the real core (verification-plan 2.2)
+- **#167**: feat: show PM_CRC on uo_out during the serial load so the host can verify before running (DR 0013 layer 1)
+- **#172**: feat: fail lint on a new file with an absolute home-directory path
 
 ## Operator Priority
 
@@ -19,13 +20,14 @@ _None._
 
 Human-approved issues ready for implementation (`loom:issue`).
 
-- **#109**: Decision record: admit or defer the stretch protocols (low-speed USB, 10BASE-T) against the ISA cycle budget — row 2's entry condition is unevaluated
+_None._
 
 ## In Progress
 
 Issues currently being built (`loom:building`).
 
-_None._
+- **#83**: signoff: bind T1 items 1, 2, 9 and 10 to audited artifacts (klayout-tools#2718 landed)
+- **#139**: Boot firmware: UART load over the demo board's USB bridge (TT option B pins) with an independent host model
 
 ## PRs Awaiting Review
 
@@ -37,7 +39,8 @@ _None._
 
 PRs that passed review and are queued for Champion auto-merge (`loom:pr`).
 
-- **#127**: formal: pin_write_latency on the real core (verification-plan 2.2)
+- **#167**: feat: show PM_CRC on uo_out during the serial load so the host can verify before running (DR 0013 layer 1)
+- **#172**: feat: fail lint on a new file with an absolute home-directory path
 
 ## Proposed
 
@@ -45,15 +48,15 @@ Issues carrying `loom:curated`.
 
 - **#20**: T1 item 5: no timing evidence exists — both flows reported cell counts only, so >=50 MHz is unconfirmed (need a klt sta corner sweep) *(curated)*
 - **#44**: Two-key ratification has never run: zero RATIFY-KEY reviews exist, so target-spec + DRs 0001-0004 are 'Ratified' by assertion (DR 0004's own invalidation clause fires) *(curated)*
+- **#83**: signoff: bind T1 items 1, 2, 9 and 10 to audited artifacts (klayout-tools#2718 landed) *(curated)*
+- **#85**: spec: fix the eight findings that stopped the two-key ratification of PR #84 (fetch model, SPI sketch, row 10 source and four other citations) *(curated)*
+- **#86**: Two committed LVS error records contain an absolute home-directory path *(curated)*
 - **#100**: Auditor Capability Request: Python interpreter unavailable for tool-light validation *(curated)*
-- **#109**: Decision record: admit or defer the stretch protocols (low-speed USB, 10BASE-T) against the ISA cycle budget — row 2's entry condition is unevaluated *(curated)*
-- **#116**: Formal: complete deferred pin_write_latency checks on the real core outputs *(curated)*
 
 ## Proposed (Architect / Hermit)
 
-- **#118**: Host-side program loader: generate the load-phase pin sequence from firmware images for a physical Tiny Tapeout board (none exists) *(architect)*
 - **#125**: I2C Standard-mode: reconcile the 435-cycle firmware clock with the proposed 100 kHz target *(architect)*
-- **#115**: Dedupe bench bootstrap helpers in verification/ (5x _find_repo_root, 4x parse_cycle_sections) *(hermit)*
+- **#192**: Verification: add UART RX to the constrained-random regression and gate-level firmware run *(architect)*
 
 ## Epics
 
@@ -63,13 +66,13 @@ _None._
 
 | Tier | Count |
 |------|-------|
-| Operator merge-risk holds | 1 |
+| Operator merge-risk holds | 2 |
 | Operator priority | 0 |
-| Ready (`loom:issue`) | 1 |
-| In Progress (`loom:building`) | 0 |
+| Ready (`loom:issue`) | 0 |
+| In Progress (`loom:building`) | 2 |
 | PRs awaiting review | 0 |
-| Approved PRs awaiting merge | 1 |
-| Curated | 5 |
-| Architect / Hermit proposals | 3 |
+| Approved PRs awaiting merge | 2 |
+| Curated | 6 |
+| Architect / Hermit proposals | 2 |
 | Active epics | 0 |
 <!-- guide:plan-body:end -->

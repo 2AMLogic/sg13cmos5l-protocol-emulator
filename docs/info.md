@@ -37,7 +37,7 @@ to port `00`) writes one and `RCTL Rd, k` (`IN` from port `10`) reads one.
 | `0x04` | `PM_DATA_LO` | R/W | W 2, R 1 | W: commit `{high latch, Rs}` at `PM_ADDR`, then `PM_ADDR` + 1. R: return the latched low byte, then `PM_ADDR` + 1 |
 | `0x05` | `RUN` | W | 2 | jump: program counter ← `Rs` |
 | `0x06`, `0x07` | `PM_CRC_LO`, `PM_CRC_HI` | R, W clears | 1 | CRC-16/XMODEM (poly `0x1021`, init 0) over every word committed to program memory, by the serial load or by `PM_DATA_LO`; high byte of each word first |
-| `0x08` | `BOOT_STATUS` | R | 1 | bit 0: a serial load completed since reset. Bit 1 (boot ROM) reads 0: there is no boot ROM yet |
+| `0x08` | `BOOT_STATUS` | R | 1 | bit 0: a serial load completed since reset. Bit 1: the instruction reading it was fetched from the boot ROM (so a loaded program always reads 0 there) |
 | `0x09` | `HW_ID` | R | 1 | design revision byte, `0x01` |
 
 Any other index is reserved: a write does nothing and a read returns 0, in
@@ -78,6 +78,74 @@ ordinary input. The readout changes nothing else about loading: the same
 pins, the same edges, and a host that ignores `uo_out` loads exactly as
 before. The remaining pins (`ui_in[6:2]`, `uio`) are untouched by loading.
 
+**With MODE low at reset the core does not run program memory. It runs a
+boot ROM** (`spec/decision-records/0013-program-loading.md` layer 2,
+Proposed). After a power-up or a reselect the SRAM holds nothing a host put
+there, so the core fetches from a small on-chip ROM instead. The ROM is
+synthesized logic, 223 words (DR 0013 proposed a cap of 128; the UART
+load alone is 129 words and does not fit it, finding F4, so the cap is the
+256-word fetch address space until the record decides), and its contents
+are a program in this same instruction set
+([`firmware/asm/boot/boot_rom.asm`](../firmware/asm/boot/boot_rom.asm));
+`rtl/protocol_boot_rom.v` is generated from the committed image. The boot
+program's first instruction reads two straps on `ui_in[6:5]`:
+
+| `ui_in[6:5]` | Boot program | Today |
+|---|---|---|
+| `00` | UART load | implemented (issue #139) |
+| `01` | SPI-flash boot: read 512 bytes from a QSPI Pmod flash, check, run | implemented |
+| `10` | warm start: run the image already in program memory if it checks | implemented |
+| `11` | reserved, behaves as `00` | implemented, as `00` |
+
+Neither boot program is a stub. The SPI-flash
+boot makes `uio[0]` (CS0), `uio[1]` (MOSI) and `uio[3]` (SCK) outputs and
+reads `uio[2]` (MISO): the Tiny Tapeout QSPI Pmod's pinout. It reads 512
+bytes from flash address 0 with the single-bit `0x03` command (SPI mode 0),
+writes them to program memory, checks word 255 against the CRC of words
+0-254 exactly as the warm start does (and refuses a signature of
+`0x0000`), then releases every pin and runs the image from address 0 after
+58,793 cycles, or halts with every pin an input. How to put an image on the
+flash: [spi-flash-boot.md](spi-flash-boot.md). 
+
+**UART load (strap `00`).** The demo board's USB-UART bridge, Tiny Tapeout
+"option B": RX `ui_in[1]`, TX `uo_out[0]`, 8N1, 434 core cycles per bit (115,200
+baud if the core clock is the 50 MHz of target-spec row 4, which is unconfirmed;
+the cycle count is the claim). Send `0xA5`, `N-1` (N is 1 to 256), `2N` image
+bytes with the high byte of each word first, then the image's CRC-16/XMODEM
+(high byte first). The chip writes the words, checks its CRC against yours, and
+answers `0x06` plus its CRC (high byte first) and runs the image from address
+0, or answers `0x15` plus its CRC and waits for the next `0xA5`. It never
+runs an image that failed. `python3 firmware/tools/loadseq.py IMAGE.hex --uart -o
+FRAME` writes the frame. TX idles high from the first instruction of the
+loader; no `uio` pin is driven, though `uio_out` reads `0xFF` while the loader
+waits (it uses `UIO_DIR` as storage under a guard, DR 0013 finding F5). A
+loader that has lost sync (a wrong length) reads stray bytes as a frame
+whenever one is `0xA5`: pulse `rst_n`, or send non-zero filler until it answers
+`0x15` (zero filler is read as a valid, longer image). The CRC covers the
+words and not the count byte, so a wrong length is rejected unless the
+CRC of the shorter prefix equals the two bytes after it (about 1 in 65,536 for
+an arbitrary image; a constructed image can make it certain, DR 0013 finding
+F8): then the truncated image is accepted and run. The loaded program starts
+in the state a warm start leaves, with `PM_CRC` holding the image's CRC. In RTL
+simulation the loader accepted hosts up to 5 % slow and 4 % fast
+(`verification/records/boot-uart/`). 
+
+The warm
+start is for an `rst_n` pulse while the design stays selected. It runs
+program memory from address 0 only if word 255 equals the CRC-16/XMODEM of
+words 0–254 (high byte of each word first); otherwise it falls through to
+the UART load. A passing warm start executes the image's first
+instruction exactly 2,325 cycles after the boot program's own first
+instruction, with `R0`–`R3`, `Z` and `C` at their reset values and
+`BOOT_STATUS` reading `0x00`. Like the SPI-flash boot, the warm start
+refuses a signature of `0x0000`: 256 zero words are their own valid CRC,
+so an SRAM that powered up all-zero would otherwise pass (DR 0013, Finding
+F1, closed by issue #168). The cost is the image whose real CRC is
+`0x0000`, about 1 in 65,536: change one filler word and re-sign it, as
+`firmware/tools/mkflash.py` already requires. Hold the straps steady for at least three
+clocks after `rst_n` is released; the boot program samples them once.
+Only a `WCTL RUN` leaves the ROM, and nothing re-enters it without a reset.
+
 `HALT` idles the core until the next reset. See the root
 [README](../README.md) for the target specification, and
 `spec/decision-records/0001-isa.md` for the full opcode table and the
@@ -103,10 +171,12 @@ Two committed cocotb benches do exactly this, byte-for-byte:
   MODE-high reprogram attempt does nothing. A second case exercises the
   control space from the pins: register reset values and readback, the
   `uio_oe` pin modes, a program written into memory by firmware and then
-  run, and `PM_CRC` against Python's `binascii.crc_hqx`. A third performs
-  the load check described under "How to run a protocol": it reads the CRC
-  from `uo_out` before dropping MODE, for a good load and for a load one
-  clock edge short.
+  run, and `PM_CRC` against Python's `binascii.crc_hqx`. A third exercises
+  the boot ROM: MODE low with straps `00` leaves no `uio` pin driven and TX idle high, a signed image
+  warm-starts on the predicted edge, and the same image with one flipped
+  bit is never run. A fourth performs the load check described under "How
+  to run a protocol": it reads the CRC from `uo_out` before dropping MODE,
+  for a good load and for a load one clock edge short.
 - `verification/test_protocol_emulator.py` — this program's own klt-driven
   bench (`klt functional-verification`), which exercises all 16 opcodes as
   loaded firmware and asserts each result on a *numbered* clock edge derived
@@ -128,7 +198,7 @@ independent reference model, in **RTL simulation (Icarus 13.0 driven by
 `klt functional-verification` — the klt flow)**. The cycle count is the
 claim; any baud/MHz reading is arithmetic at target-spec row 4's 50 MHz
 clock, which is **unconfirmed on the klt flow** (`klt sta` produced 0 of 6
-corners, [record](../verification/records/sta-corner-sweep/records/20260930-195410-ead870a.md)),
+corners, [record](../verification/records/sta-corner-sweep/records/20261010-133400-a0f91e3.md)),
 so no wall-clock rate is claimed here. Nothing in this table was run on
 the Tiny Tapeout LibreLane flow or on silicon (see the
 "Evidence not yet in hand" section below).
@@ -140,22 +210,22 @@ The table is mechanically checked against `firmware/asm/`,
 <!-- firmware-images:begin -->
 | Image | Protocol and mode | Rate (cycles, klt-flow RTL sim) | Words | Total cycles | Bench | Record |
 |---|---|---|---|---|---|---|
-| [`uart_tx`](../firmware/asm/uart_tx.asm) | UART TX, 8N1, frames 0x5A then 0xA5 | 50 per bit | 34 | 979 | [`test_firmware_uart.py`](../verification/test_firmware_uart.py) | [firmware-uart 20261002-165640-ebecf28](../verification/records/firmware-uart/records/20261002-165640-ebecf28.md) |
-| [`uart_rx`](../firmware/asm/uart_rx.asm) | UART RX, 8N1 | 50 per bit | 132 | 488 | [`test_firmware_uart_rx.py`](../verification/test_firmware_uart_rx.py) | [firmware-uart-rx 20261009-084132-d79b51d](../verification/records/firmware-uart-rx/records/20261009-084132-d79b51d.md) |
-| [`uart_rx_115200`](../firmware/asm/uart_rx_115200.asm) | UART RX, 8N1, 115200-baud class | 434 per bit | 168 | 3878 | [`test_firmware_uart_rx.py`](../verification/test_firmware_uart_rx.py) | [firmware-uart-rx 20261009-084132-d79b51d](../verification/records/firmware-uart-rx/records/20261009-084132-d79b51d.md) |
-| [`uart_rx_9600`](../firmware/asm/uart_rx_9600.asm) | UART RX, 8N1, 9600-baud class (nested `WAIT`) | 5208 per bit | 168 | 2791 | [`test_firmware_uart_rx.py`](../verification/test_firmware_uart_rx.py) | [firmware-uart-rx 20261009-084132-d79b51d](../verification/records/firmware-uart-rx/records/20261009-084132-d79b51d.md) |
-| [`uart_tx_9600`](../firmware/asm/uart_tx_9600.asm) | UART TX, 8N1, 9600-baud class (nested `WAIT`), frames 0x5A then 0xA5 | 5208 per bit | 177 | 6578 | [`test_firmware_uart_rx.py`](../verification/test_firmware_uart_rx.py) | [firmware-uart-rx 20261009-084132-d79b51d](../verification/records/firmware-uart-rx/records/20261009-084132-d79b51d.md) |
-| [`spi_mode0`](../firmware/asm/spi_mode0.asm) | SPI controller, CPOL 0 / CPHA 0 | 4 per SCLK period (ceiling burst), 8 per bit (functional burst) | 119 | 181 | [`test_firmware_spi.py`](../verification/test_firmware_spi.py) | [firmware-spi 20261002-212640-061b65d](../verification/records/firmware-spi/records/20261002-212640-061b65d.md) |
-| [`spi_mode1`](../firmware/asm/spi_mode1.asm) | SPI controller, CPOL 0 / CPHA 1 | 4 per SCLK period (ceiling burst), 8 per bit (functional burst) | 120 | 182 | [`test_firmware_spi.py`](../verification/test_firmware_spi.py) | [firmware-spi 20261002-212640-061b65d](../verification/records/firmware-spi/records/20261002-212640-061b65d.md) |
-| [`spi_mode2`](../firmware/asm/spi_mode2.asm) | SPI controller, CPOL 1 / CPHA 0 | 4 per SCLK period (ceiling burst), 8 per bit (functional burst) | 119 | 181 | [`test_firmware_spi.py`](../verification/test_firmware_spi.py) | [firmware-spi 20261002-212640-061b65d](../verification/records/firmware-spi/records/20261002-212640-061b65d.md) |
-| [`spi_mode3`](../firmware/asm/spi_mode3.asm) | SPI controller, CPOL 1 / CPHA 1 | 4 per SCLK period (ceiling burst), 8 per bit (functional burst) | 120 | 182 | [`test_firmware_spi.py`](../verification/test_firmware_spi.py) | [firmware-spi 20261002-212640-061b65d](../verification/records/firmware-spi/records/20261002-212640-061b65d.md) |
-| [`i2c_fast`](../firmware/asm/i2c_fast.asm) | I2C controller, Fast-mode budget, write only | 125 per SCL clock (low 65 + high 60) | 182 | 3346 | [`test_firmware_i2c.py`](../verification/test_firmware_i2c.py) | [firmware-i2c 20261009-221555-60ecbd2](../verification/records/firmware-i2c/records/20261009-221555-60ecbd2.md) |
-| [`i2c_std`](../firmware/asm/i2c_std.asm) | I2C controller, Standard-mode budget, write only | 435 per SCL clock (low 235 + high 200) | 182 | 9696 | [`test_firmware_i2c.py`](../verification/test_firmware_i2c.py) | [firmware-i2c 20261009-221555-60ecbd2](../verification/records/firmware-i2c/records/20261009-221555-60ecbd2.md) |
-| [`i2c_fast_sr`](../firmware/asm/i2c_fast_sr.asm) | I2C controller, Fast-mode budget, write + repeated START + read, no pin-dependent branch | 125 per SCL clock (low 65 + high 60) | 132 | 1869 | [`test_firmware_i2c_sr.py`](../verification/test_firmware_i2c_sr.py) | [firmware-i2c 20261009-221559-60ecbd2](../verification/records/firmware-i2c/records/20261009-221559-60ecbd2.md) |
-| [`i2c_fast_sr_poll`](../firmware/asm/i2c_fast_sr_poll.asm) | as `i2c_fast_sr`, polls SCL (tolerates clock stretching) | 127 per SCL clock unstretched (low 65 + high 62) | 172 | 1889 | [`test_firmware_i2c_sr.py`](../verification/test_firmware_i2c_sr.py) | [firmware-i2c 20261009-221559-60ecbd2](../verification/records/firmware-i2c/records/20261009-221559-60ecbd2.md) |
-| [`i2c_std_sr`](../firmware/asm/i2c_std_sr.asm) | I2C controller, Standard-mode budget, write + repeated START + read, no pin-dependent branch | 435 per SCL clock (low 235 + high 200) | 132 | 5319 | [`test_firmware_i2c_sr.py`](../verification/test_firmware_i2c_sr.py) | [firmware-i2c 20261009-221559-60ecbd2](../verification/records/firmware-i2c/records/20261009-221559-60ecbd2.md) |
-| [`i2c_std_sr_poll`](../firmware/asm/i2c_std_sr_poll.asm) | as `i2c_std_sr`, polls SCL (tolerates clock stretching) | 437 per SCL clock unstretched (low 235 + high 202) | 172 | 5339 | [`test_firmware_i2c_sr.py`](../verification/test_firmware_i2c_sr.py) | [firmware-i2c 20261009-221559-60ecbd2](../verification/records/firmware-i2c/records/20261009-221559-60ecbd2.md) |
-| [`demo_roundtrip`](../firmware/asm/demo_roundtrip.asm) | none (assembler and load-phase round-trip coverage program) | n/a | 27 | 30 | [`test_firmware_roundtrip.py`](../verification/test_firmware_roundtrip.py) | [firmware-assembler-roundtrip 20260930-195410-ead870a](../verification/records/firmware-assembler-roundtrip/records/20260930-195410-ead870a.md) |
+| [`uart_tx`](../firmware/asm/uart_tx.asm) | UART TX, 8N1, frames 0x5A then 0xA5 | 50 per bit | 34 | 979 | [`test_firmware_uart.py`](../verification/test_firmware_uart.py) | [firmware-uart 20261010-132629-8372c57](../verification/records/firmware-uart/records/20261010-132629-8372c57.md) |
+| [`uart_rx`](../firmware/asm/uart_rx.asm) | UART RX, 8N1 | 50 per bit | 132 | 488 | [`test_firmware_uart_rx.py`](../verification/test_firmware_uart_rx.py) | [firmware-uart-rx 20261010-141633-5bd61ad](../verification/records/firmware-uart-rx/records/20261010-141633-5bd61ad.md) |
+| [`uart_rx_115200`](../firmware/asm/uart_rx_115200.asm) | UART RX, 8N1, 115200-baud class | 434 per bit | 168 | 3878 | [`test_firmware_uart_rx.py`](../verification/test_firmware_uart_rx.py) | [firmware-uart-rx 20261010-141633-5bd61ad](../verification/records/firmware-uart-rx/records/20261010-141633-5bd61ad.md) |
+| [`uart_rx_9600`](../firmware/asm/uart_rx_9600.asm) | UART RX, 8N1, 9600-baud class (nested `WAIT`) | 5208 per bit | 168 | 2791 | [`test_firmware_uart_rx.py`](../verification/test_firmware_uart_rx.py) | [firmware-uart-rx 20261010-141633-5bd61ad](../verification/records/firmware-uart-rx/records/20261010-141633-5bd61ad.md) |
+| [`uart_tx_9600`](../firmware/asm/uart_tx_9600.asm) | UART TX, 8N1, 9600-baud class (nested `WAIT`), frames 0x5A then 0xA5 | 5208 per bit | 177 | 6578 | [`test_firmware_uart_rx.py`](../verification/test_firmware_uart_rx.py) | [firmware-uart-rx 20261010-141633-5bd61ad](../verification/records/firmware-uart-rx/records/20261010-141633-5bd61ad.md) |
+| [`spi_mode0`](../firmware/asm/spi_mode0.asm) | SPI controller, CPOL 0 / CPHA 0 | 4 per SCLK period (ceiling burst), 10 per bit (functional burst) | 137 | 197 | [`test_firmware_spi.py`](../verification/test_firmware_spi.py) | [firmware-spi 20261010-132628-8372c57](../verification/records/firmware-spi/records/20261010-132628-8372c57.md) |
+| [`spi_mode1`](../firmware/asm/spi_mode1.asm) | SPI controller, CPOL 0 / CPHA 1 | 4 per SCLK period (ceiling burst), 10 per bit (functional burst) | 138 | 198 | [`test_firmware_spi.py`](../verification/test_firmware_spi.py) | [firmware-spi 20261010-132628-8372c57](../verification/records/firmware-spi/records/20261010-132628-8372c57.md) |
+| [`spi_mode2`](../firmware/asm/spi_mode2.asm) | SPI controller, CPOL 1 / CPHA 0 | 4 per SCLK period (ceiling burst), 10 per bit (functional burst) | 137 | 197 | [`test_firmware_spi.py`](../verification/test_firmware_spi.py) | [firmware-spi 20261010-132628-8372c57](../verification/records/firmware-spi/records/20261010-132628-8372c57.md) |
+| [`spi_mode3`](../firmware/asm/spi_mode3.asm) | SPI controller, CPOL 1 / CPHA 1 | 4 per SCLK period (ceiling burst), 10 per bit (functional burst) | 138 | 198 | [`test_firmware_spi.py`](../verification/test_firmware_spi.py) | [firmware-spi 20261010-132628-8372c57](../verification/records/firmware-spi/records/20261010-132628-8372c57.md) |
+| [`i2c_fast`](../firmware/asm/i2c_fast.asm) | I2C controller, Fast-mode budget, write only | 125 per SCL clock (low 65 + high 60) | 246 | 3350 | [`test_firmware_i2c.py`](../verification/test_firmware_i2c.py) | [firmware-i2c 20261010-132621-8372c57](../verification/records/firmware-i2c/records/20261010-132621-8372c57.md) |
+| [`i2c_std`](../firmware/asm/i2c_std.asm) | I2C controller, Standard-mode budget, write only | 435 per SCL clock (low 235 + high 200) | 246 | 9700 | [`test_firmware_i2c.py`](../verification/test_firmware_i2c.py) | [firmware-i2c 20261010-132621-8372c57](../verification/records/firmware-i2c/records/20261010-132621-8372c57.md) |
+| [`i2c_fast_sr`](../firmware/asm/i2c_fast_sr.asm) | I2C controller, Fast-mode budget, write + repeated START + read, no pin-dependent branch | 125 per SCL clock (low 65 + high 60) | 152 | 1869 | [`test_firmware_i2c_sr.py`](../verification/test_firmware_i2c_sr.py) | [firmware-i2c 20261010-132622-8372c57](../verification/records/firmware-i2c/records/20261010-132622-8372c57.md) |
+| [`i2c_fast_sr_poll`](../firmware/asm/i2c_fast_sr_poll.asm) | as `i2c_fast_sr`, polls SCL (tolerates clock stretching) | 127 per SCL clock unstretched (low 65 + high 62) | 192 | 1889 | [`test_firmware_i2c_sr.py`](../verification/test_firmware_i2c_sr.py) | [firmware-i2c 20261010-132622-8372c57](../verification/records/firmware-i2c/records/20261010-132622-8372c57.md) |
+| [`i2c_std_sr`](../firmware/asm/i2c_std_sr.asm) | I2C controller, Standard-mode budget, write + repeated START + read, no pin-dependent branch | 435 per SCL clock (low 235 + high 200) | 152 | 5319 | [`test_firmware_i2c_sr.py`](../verification/test_firmware_i2c_sr.py) | [firmware-i2c 20261010-132622-8372c57](../verification/records/firmware-i2c/records/20261010-132622-8372c57.md) |
+| [`i2c_std_sr_poll`](../firmware/asm/i2c_std_sr_poll.asm) | as `i2c_std_sr`, polls SCL (tolerates clock stretching) | 437 per SCL clock unstretched (low 235 + high 202) | 192 | 5339 | [`test_firmware_i2c_sr.py`](../verification/test_firmware_i2c_sr.py) | [firmware-i2c 20261010-132622-8372c57](../verification/records/firmware-i2c/records/20261010-132622-8372c57.md) |
+| [`demo_roundtrip`](../firmware/asm/demo_roundtrip.asm) | none (assembler and load-phase round-trip coverage program) | n/a | 27 | 30 | [`test_firmware_roundtrip.py`](../verification/test_firmware_roundtrip.py) | [firmware-assembler-roundtrip 20261010-132620-8372c57](../verification/records/firmware-assembler-roundtrip/records/20261010-132620-8372c57.md) |
 <!-- firmware-images:end -->
 
 Notes, all from the cited records:
@@ -173,10 +243,17 @@ Notes, all from the cited records:
   data-dependent branches are the sanctioned ACK/poll handshakes, which the
   assembler reports as warnings (1 per write-only image, 10 per `_poll`
   image).
-- The I2C images set `UIO_OD` to `0x81` (SCL and SDA open-drain) right
-  after releasing both lines. The I2C benches still compose the open-drain
-  bus in the testbench (`line = uio_out AND peripheral`) and do not yet
-  consume `uio_oe`; the pad-level model is issue #136. See Pins.
+- The SPI images set `UIO_DIR` to `0x0B` (CS, MOSI and SCLK push-pull)
+  right after writing their idle image; the I2C images set `UIO_OD` to
+  `0x0C` (SCL and SDA open-drain) right after releasing both lines. The
+  SPI and I2C benches run on a pad model
+  ([`uio_pads.py`](../verification/uio_pads.py),
+  [record](../verification/records/uio-pad-model/records/20261010-132636-8372c57.md))
+  that resolves each line from the design's `uio_oe` and `uio_out`, a
+  pull-up and the peripheral, and reads it back on `uio_in`; the lines the
+  reference model grades are those. With `UIO_OD` left at reset the I2C
+  images put no transfer on the bus, and the benches require that. See
+  Pins.
 
 ## How to run a protocol
 
@@ -188,12 +265,15 @@ Icarus, provisioned by `./scripts/setup-env.sh` (see
 1. **Check the images are the ones built from source** (Python only):
    `python3 firmware/tools/check_firmware.py`. To rebuild one:
    `python3 firmware/tools/asm.py firmware/asm/uart_tx.asm`.
-2. **The loader.** The shipped loader is `load_program(dut, words)` in
-   [`verification/_dut.py`](../verification/_dut.py) (the same sequence as
-   the one in `test/test.py`); the benches read an image with the small
-   parser in `verification/test_firmware_uart.py` (`load_committed_image`:
-   one 4-hex-digit word per line of `firmware/build/<image>.hex`). The
-   load-phase protocol it drives, for anyone wiring their own driver:
+2. **The loader.** In simulation the benches load an image with their own
+   cocotb coroutines: `load_program(dut, words)` in
+   [`verification/test_protocol_emulator.py`](../verification/test_protocol_emulator.py)
+   (the top-level reference; `test/test.py` has the same sequence) and
+   `reset_release`/`load_words` in
+   [`verification/test_firmware_roundtrip.py`](../verification/test_firmware_roundtrip.py)
+   (module level); `_dut.py` has only `reset()`. Images are one 4-hex-digit
+   word per line of `firmware/build/<image>.hex`. The load-phase protocol,
+   for anyone wiring their own driver:
    - set `ui_in[7]` (MODE) high, `ui_in[0]` low; pulse `rst_n` low for
      10 clocks and release it;
    - clock one edge with MODE still high (the edge that latches MODE);
@@ -209,9 +289,9 @@ Icarus, provisioned by `./scripts/setup-env.sh` (see
      `binascii.crc_hqx(image_bytes, 0)`). **On a mismatch, do not drop
      MODE:** pulse `rst_n` with MODE high and load again. Reset clears the
      CRC;
-   - drop `ui_in[7]` to enter run phase. The first instruction retires two
-     edges later (fetch-ahead, DR 0005); execution then follows the
-     cycle report exactly.
+   - drop `ui_in[7]` to enter run phase, on its own edge. The first
+     instruction retires two edges later (fetch-ahead, DR 0005); execution
+     then follows the cycle report exactly.
 
    Reading the CRC with the clock stopped is simplest, and this load path
    already needs a host that drives `clk`. A host that cannot stop the
@@ -231,10 +311,52 @@ Icarus, provisioned by `./scripts/setup-env.sh` (see
    bit of the image (or of any bit in a run of equal bits reaching the end
    of the image) leaves every word intact, and the spare bit is discarded.
 
-   While the load is in progress `uo_out` carries CRC bytes, not the reset
-   value 0 it held before this revision. Anything wired to `uo_out` sees
-   those bytes change every 16 clocks until MODE drops, at which point
-   `uo_out` returns to 0 until the program's first `OUT`.
+   While the load is in progress `uo_out` carries CRC bytes, not its reset
+   value 0. Target-spec row 14(b) excepts the serial-load phase for exactly
+   this (amended 2026-10-10 by the operator's ruling on issue #166).
+   Anything wired to `uo_out` sees those bytes change every 16 clocks until
+   MODE drops, at which point `uo_out` returns to 0 until the program's
+   first `OUT`, so a peripheral on `uo_out` (a UART peer on `uo_out[0]`,
+   for one) must tolerate them or be held off during a load. The boot ROM's
+   paths (MODE low at reset) never show the readout.
+
+   **Host-side generator (no simulator).**
+   [`firmware/tools/loadseq.py`](../firmware/tools/loadseq.py) turns an image
+   into exactly that pin sequence, stdlib Python only:
+
+   ```
+   python3 firmware/tools/loadseq.py firmware/build/uart_tx.hex                    # JSON
+   python3 firmware/tools/loadseq.py firmware/build/uart_tx.hex --format python    # VERSION/WORDS/STEPS
+   ```
+
+   Format version 1, one step per clock cycle, `(ui_in, uio_in, rst_n, ena)`
+   held while `clk` is low: 10 steps with MODE high and `rst_n` low, one
+   MODE-latching step (`rst_n` high, no bit), 16 steps per word (MSB first,
+   `ui_in = 0x80 | bit`), one MODE-drop step (`ui_in = 0`); `uio_in = 0`,
+   `ena = 1` throughout, 12 + 16N steps, never padded. The input must hold
+   1..256 words; blank lines are skipped and anything else that is not
+   exactly four hex digits, an empty file, or more than 256 words is
+   rejected (exit status 2, nothing emitted).
+   [`firmware/tools/loadseq_playback.py`](../firmware/tools/loadseq_playback.py)
+   (MicroPython-compatible, imports nothing) plays the steps on a board
+   adapter with `set_ui_in`, `set_uio_in`, `set_rst_n`, `set_ena`,
+   `set_clk` and `wait_us`; each step sets the inputs with `clk` low, waits
+   `setup_us`, raises `clk`, waits `high_us`, lowers it, waits `low_us`
+   (all configurable and positive). The adapter's owner must stop the
+   board's automatic clock before playback and keep manual clock control
+   through the MODE-drop step. After a re-select, replay the whole sequence
+   (SRAM contents are not assumed to survive). `MockAdapter` shows the
+   contract; no board binding ships.
+   Evidence, RTL simulation only (Icarus 13.0 via `klt
+   functional-verification`): `verification/request-loadseq.json` replays
+   the generated operations (independently of the cocotb loaders above) on
+   `protocol_program_memory` and reads every word of all 16 committed
+   application images, a 1-word image, the 256-word boundary and a reload
+   back through the fetch port; `verification/request-loadseq-top.json`
+   checks the MODE/run transition on the submitted top. Also
+   `python3 firmware/tools/test_loadseq.py`; `check_firmware.py` regenerates
+   each application image's sequence in memory and replays it through an
+   independent model of the load protocol.
 3. **Run and grade a protocol in simulation** (klt flow). Each request
    loads the committed image through step 2's sequence and grades the pins
    against the independent reference model:
@@ -246,17 +368,17 @@ Icarus, provisioned by `./scripts/setup-env.sh` (see
 4. **What to expect on the wire** (as graded by the records above):
    - UART: `uo_out[0]` idles high, then a start bit, 8 data bits LSB first
      and a stop bit, 50 cycles each, for 0x5A then 0xA5.
-   - SPI: `uo_out[0]` CS falls, `uo_out[1]` SCLK idles at CPOL and toggles
-     with a 4-cycle period carrying MOSI byte 0xA5 on `uo_out[2]`, then an
-     8-cycle-per-bit burst carrying 0x3C; MISO is read from `uio_in[0]`;
+   - SPI: `uio[0]` CS falls, `uio[3]` SCLK idles at CPOL and toggles
+     with a 4-cycle period carrying MOSI byte 0xA5 on `uio[1]`, then a
+     10-cycle-per-bit burst carrying 0x3C; MISO is read from `uio[2]`;
      after CS releases the assembled received byte is echoed on `uo_out`.
    - I2C: START, address 0xA0 and ACK, data 0x5A and ACK, STOP (write-only
      images); the `_sr` images add repeated START, 0xA1, one read byte and
      a controller NACK, and publish the received byte on `uo_out`.
 
-Not in this recipe: there is no host-side command that streams an image
-into a physical chip (the loader is a cocotb coroutine), and no silicon
-exists to run it on.
+Not in this recipe: playback of the generated sequence on a physical chip
+has not been demonstrated. `loadseq.py` produces and simulation-verifies the
+pin sequence, but no board adapter ships and no silicon exists to run it on.
 
 ## Pins (PROVISIONAL)
 
@@ -272,10 +394,11 @@ Fixed by the RTL (`src/tt_um_2amlogic_protocol_emulator.v`), not provisional:
 
 | Pin | Role |
 |---|---|
-| `ui_in[7]` | MODE: high across `rst_n` release selects load phase |
-| `ui_in[0]` | serial program data in load phase, MSB first |
-| `ui_in[1]` | in load phase only: selects which `PM_CRC` byte `uo_out` shows (0 = low, 1 = high). An ordinary input in run phase |
-| `uo_out[7:0]` | in load phase: the selected `PM_CRC` byte. In run phase: written by `OUT`. 0 in reset |
+| `ui_in[7]` | MODE: high across `rst_n` release selects load phase; low runs the boot ROM |
+| `ui_in[6:5]` | straps, read once by the boot ROM's program when MODE is low at reset (`00`/`11` UART load, `01` SPI-flash boot, `10` warm start). The read is an ordinary `IN`, not strap hardware; a loaded program sees these as plain input bits |
+| `ui_in[0]` | serial program data in load phase, MSB first (no run-phase role; UART RX is `ui_in[1]`) |
+| `ui_in[1]` | serial-load phase (MODE high at reset, until it drops): selects which `PM_CRC` byte `uo_out` shows (0 = low, 1 = high). Otherwise an ordinary input read by `IN`; the boot ROM's UART load (strap `00`) uses it as RX |
+| `uo_out[7:0]` | serial-load phase: the selected `PM_CRC` byte. Run phase (including the boot ROM, whose UART TX is `uo_out[0]`): written by `OUT`. 0 in reset |
 | `uio_oe[7:0]` | set by firmware: `UIO_OD[n]` → open-drain (`uio_oe[n] = ~uio_out[n]`), else `UIO_DIR[n]` → push-pull, else input. **0 after reset**: every bidirectional pin is an input until a program writes `UIO_DIR` or `UIO_OD` |
 | `uio_out[7:0]` | written by `OUT`; reaches a pin only where `uio_oe` enables it |
 
@@ -284,51 +407,62 @@ Observed in committed firmware (provisional, per image family):
 | Family | Signal | Pin | Reaches a pin in the current RTL? |
 |---|---|---|---|
 | UART | TX | `uo_out[0]` | yes (dedicated output) |
-| SPI | CS (active low) | `uo_out[0]` | yes |
-| SPI | SCLK | `uo_out[1]` | yes |
-| SPI | MOSI | `uo_out[2]` | yes |
-| SPI | MISO | `uio_in[0]` | yes (input) |
+| SPI | CS (active low) | `uio[0]` | yes in RTL, push-pull (`UIO_DIR` = `0x0B`); verified through a logical pad model at RTL and on the gate-level netlist, zero delay |
+| SPI | MOSI | `uio[1]` | as CS |
+| SPI | MISO | `uio[2]` (`uio_in[2]`) | yes (input) |
+| SPI | SCLK (Pmod SCK) | `uio[3]` | as CS |
 | SPI, I2C `_sr` | result byte echo | `uo_out[7:0]` after the transfer | yes |
-| I2C | SCL (1 = released) | `uio_out[0]` | yes in RTL, open-drain (`UIO_OD` = `0x81`); not yet verified through a pad model (#136) |
-| I2C | SDA (1 = released) | `uio_out[7]` | yes in RTL, open-drain (`UIO_OD` = `0x81`); not yet verified through a pad model (#136) |
-| I2C | SCL / SDA sampled | `uio_in[0]` / `uio_in[7]` | yes (input) |
+| I2C | SCL (1 = released) | `uio[2]` (`uio_out[2]`) | yes in RTL, open-drain (`UIO_OD` = `0x0C`); verified through a logical pad model at RTL and on the gate-level netlist, zero delay |
+| I2C | SDA (1 = released) | `uio[3]` (`uio_out[3]`) | as SCL |
+| I2C | SCL / SDA sampled | `uio_in[2]` / `uio_in[3]` | yes (input) |
 
-Consequences, stated rather than papered over: the SPI and UART outputs
-are on dedicated outputs and need no `uio_oe`. The I2C outputs are written
-to `uio_out` and reach the pins as open-drain once the image's `WCTL
-UIO_OD` has run; an I2C bus needs external pull-ups, which this design does
-not provide. What is verified today is the `uio_oe` logic
-(`verification/test_control_space.py`), not a pad: the I2C benches still
-model the wired-AND bus in the testbench (records above), and re-running
-them through `uio_oe` is issue #136. `uio_in[0]` is MISO in the SPI
-images and SCL-sense in the I2C images, so the families do not share one
-fixed plan; reconciling that is #94's job. No pin claim here is backed by
-silicon or by the LibreLane flow.
+SPI and I2C are on the upper `uio` row as Tiny Tapeout's standard SPI and
+I2C Pmods wire it (DR 0010's target plan, moved by issue #155). The two
+rows overlap on `uio[2]` and `uio[3]`; one image, so one protocol, is loaded
+per run, and each image sets its own pin modes.
+
+Consequences, stated rather than papered over: the UART output is on a
+dedicated output and needs no `uio_oe`. The SPI outputs are written to
+`uio_out` and reach the pins as push-pull once the image's `WCTL UIO_DIR`
+has run; the I2C outputs reach them as open-drain once the image's `WCTL
+UIO_OD` has run, and an I2C bus needs external pull-ups, which this design
+does not provide. What is verified today is the `uio_oe` logic
+(`verification/test_control_space.py`) and, for the SPI and I2C images,
+the lines that logic produces on a pad model: the benches resolve each
+line from `uio_oe`/`uio_out`, the board's pulls and the peripheral, and
+grade those lines (records above). That model is logical and zero-delay;
+it is not a pad cell, and says nothing about rise time or drive strength.
+No pin claim here is backed by silicon or by the LibreLane flow.
 
 ## Evidence not yet in hand
 
 - **Tiny Tapeout LibreLane flow.** The routed-netlist SDF regression of the
-  submitted core ([record](../verification/records/post-layout-sdf-regression/records/20261009-220508-ce64319.md),
-  LibreLane run 37995950973) is a **recorded FAIL** at all three corners (0
-  of 13 core-bench tests passed; it was 1 of 13 before the load-phase CRC
-  readout, and the record explains why that one pass was not evidence) and
-  ran only the core bench, not the firmware above. LibreLane timing and area
-  evidence is in
-  [`librelane-corner-timing`](../verification/records/librelane-corner-timing/records/20261009-220844-ce64319.md):
-  zero setup and hold violations at the three corners the flow emits, at a
-  20 ns clock. The load check's `ui_in[1]`-to-`uo_out` path is 0.64 to
-  1.54 ns pin to pin in that flow's post-route analysis, under the flow's
-  assumed 4 ns input and output delays; no pad has been measured.
-  Firmware, the control-space bench and the load-integrity bench on that
-  netlist at zero delay:
-  [`firmware-gate-level`](../verification/records/firmware-gate-level/records/20261009-221633-60ecbd2.md).
+  submitted core ([record](../verification/records/post-layout-sdf-regression/records/20261010-133000-a0f91e3.md),
+  LibreLane run 38054423540) passes at all three corners: 12 of the core
+  bench's 13 tests pass and the white-box flag test is skipped (it reads
+  core internals a flattened netlist does not have), so the C flag has no
+  post-layout evidence. The bench runs at the flow's own constraint: a
+  20 ns clock, inputs changed 4 ns after each edge, outputs read 4 ns
+  before the next. The SRAM runs as a zero-delay model there (its read
+  timing is LibreLane STA evidence only), setup/hold is checked only
+  against the cell models' 0 ns placeholder limits, not the SDF's
+  characterised ones,
+  and only the core bench ran, not the firmware above. The sign-off grader
+  still renders T1 item 7 unmet, on provenance binding (see
+  `manifests/README.md`). LibreLane timing and area evidence is in
+  [`librelane-corner-timing`](../verification/records/librelane-corner-timing/records/20261010-133200-a0f91e3.md).
+  Firmware, the control-space, boot-ROM, SPI-flash-boot and UART-load benches on that netlist at zero delay:
+  [`firmware-gate-level`](../verification/records/firmware-gate-level/records/20261010-161300-a0f91e3.md).
   Firmware with back-annotated delays: none.
 - **klt synthesis and timing.** `klt sta` does not yet support the SRAM
   macro, so the two flows do not agree on timing; per the project rule that
   mismatch is a finding, not a number to pick from.
 - **Silicon:** none.
-- **Pads.** `uio_oe` is verified as logic only. No pad model consumes it
-  yet, so no I2C result here is a claim about a driven bus (issue #136).
+- **Pads.** The I2C results are on a logical, zero-delay pad model
+  ([record](../verification/records/uio-pad-model/records/20261010-132636-8372c57.md)):
+  they show which lines the design drives, and when, through `uio_oe`.
+  They are not electrical evidence: no pad cell, pull-up rise time, pad
+  delay or drive strength has been simulated or measured.
 - DR 0001, DR 0005 and DR 0012 are `Proposed`, not ratified.
 
 ## External hardware
@@ -339,12 +473,15 @@ analog pads. Anything else goes on a Pmod
 
 **Required for I2C:**
 
-- A pull-up resistor from each of `uio[0]` (SCL) and `uio[7]` (SDA) to 3.3 V.
-  The design releases an I2C line by tri-stating the pad, so the line reads
-  high only with a pull-up. No pull-up is assumed to exist on the board.
+- A pull-up resistor from each of `uio[2]` (SCL) and `uio[3]` (SDA) to 3.3 V.
+  A standard Tiny Tapeout I2C Pmod carries them. The design releases an I2C
+  line by tri-stating the pad, so the line reads high only with a pull-up.
+  No pull-up is assumed to exist on the demo board itself.
   (The RTL drives these two pads open-drain once an I2C image has written
-  `0x81` to DR 0012's runtime `UIO_OD` register; see Pins above. That is
-  verified as logic, not yet through a pad model: #136.)
+  `0x0C` to DR 0012's runtime `UIO_OD` register; see Pins above. That is
+  verified through a logical pad model with a pull-up on each line, at
+  RTL and on the gate-level netlist; without the pull-ups the model's
+  lines float, as a real bus would.)
 
 **Wiring today.** Tiny Tapeout's
 [recommended pinouts](https://tinytapeout.com/specs/pinouts/) cover two
@@ -354,16 +491,23 @@ Pmods that put UART, SPI or I2C on one four-pin `uio` row. Against those:
 
 - **UART transmit** is on `uo_out[0]`, which is option B's TX. It reaches the
   host over the board's USB bridge with no extra wiring.
-- **UART receive** is on `ui_in[0]`, not option B's `ui_in[1]`. It needs one
-  jumper wire.
-- **SPI** (CS, SCLK, MOSI on `uo_out[0..2]`, MISO on `uio[0]`) and **I2C**
-  (SCL `uio[0]`, SDA `uio[7]`) do not match the Pmod rows (SPI: CS `uio[0]`,
-  MOSI `uio[1]`, MISO `uio[2]`, SCK `uio[3]`; I2C: SCL `uio[2]`, SDA
-  `uio[3]`). An off-the-shelf Pmod needs a wire adapter.
+- **UART receive** is on `ui_in[1]`, option B's RX (moved from `ui_in[0]` in
+  #178). It reaches the host over the same USB bridge with no extra wiring.
+  `ui_in[0]` is the program-load pin only; the receiver never reads it.
+- **SPI** (CS `uio[0]`, MOSI `uio[1]`, MISO `uio[2]`, SCK `uio[3]`) and
+  **I2C** (SCL `uio[2]`, SDA `uio[3]`) are on the upper `uio` row exactly as
+  the standard SPI and I2C Pmods wire it. An unmodified Pmod plugs in; no
+  wire adapter is needed.
 
-The plan is to move to the recommended pins (UART option B, SPI and I2C on
-the upper Pmod row) once the `uio` pins can be driven. See DR 0010, "Target
-pin plan"; the move is tracked in #155.
+All three protocols now follow the recommended pinouts (DR 0010, "Target pin
+plan"): SPI and I2C moved in #155 and UART receive in #178.
+
+**Required for the SPI-flash boot (strap `01`):** a Tiny Tapeout QSPI
+flash/PSRAM Pmod in the bidirectional header, with an image written to its
+flash ([spi-flash-boot.md](spi-flash-boot.md)). The boot drives only
+`uio[0]`, `uio[1]` and `uio[3]`; the Pmod's pull-ups hold the two PSRAM chip
+selects (`uio[6]`, `uio[7]`) deselected. Without it, strap `01` reads zeros or
+ones, rejects them and halts.
 
 **Not required:** UART and SPI at 3.3 V with 3.3 V peers need no extra parts
 beyond that wiring.
@@ -378,3 +522,35 @@ characterization; Tiny Tapeout is checking whether SG13G2-derived numbers
 exist. Any claim of a maximum toggle rate at the pins, including the SPI SCLK
 ceiling of f_clk/4 (12.5 MHz at 50 MHz), holds for the core's cycle timing
 only, not at the pad.
+
+### One device on the `uio` header at a time (decided in #196, 2026-10-09)
+
+The QSPI flash/PSRAM Pmod uses the whole `uio` header: `uio[0]` CS0 (flash),
+`uio[1]` SD0/MOSI, `uio[2]` SD1/MISO, `uio[3]` SCK, `uio[4]` SD2, `uio[5]`
+SD3, `uio[6]` CS1 (RAM A), `uio[7]` CS2 (RAM B). The SPI Pmod (CS `uio[0]`,
+MOSI `uio[1]`, MISO `uio[2]`, SCK `uio[3]`) and the I2C Pmod (SCL `uio[2]`,
+SDA `uio[3]`) sit on the same four pins. The rule is therefore **one device
+on the `uio` header at a time**. With the flash Pmod fitted (strap `01`),
+after the boot hands over:
+
+- A **user SPI program talks to the flash**, not to a separate peripheral.
+- **No I2C peripheral can share the header.** An I2C program toggles the
+  flash's MISO and SCK lines; CS0 is held high by the Pmod pull-up, so the
+  flash should ignore them, but the bus is not usable.
+- **UART** (`ui_in[1]`, `uo_out[0]`) is unaffected.
+- **A user SPI program can ERASE OR OVERWRITE THE BOOT IMAGE.** A write
+  enable (`0x06`) followed by an erase or program opcode in a later CS-low
+  burst rewrites the flash, including address 0. The shipped `spi_mode0`
+  sends `0xA5` and `0x3C`, one byte per burst; neither is a write enable, so
+  the shipped images cannot arm a write (opcodes recalled, not re-read from
+  the flash datasheet).
+
+To use a different SPI device, **remove the flash Pmod after boot** (or boot
+with strap `00`/`10` instead): the SPI profile's CS is `uio[0]`, the same pin
+as the flash's CS0, so driving it low also selects the flash, and holding CS0
+high does not help. Holding CS0 high (or leaving it on the Pmod pull-up)
+isolates the flash only from a program that does not drive `uio[0]`, such as
+I2C on `uio[2..3]`; the flash's MISO and SCK lines are still on those pins,
+so the bus is loaded by the Pmod and is not verified as usable. The SPI and I2C Pmods also come in a bottom-row variant
+on `uio[4..7]`; moving a profile there is a possible future option and is
+not done here. See [spi-flash-boot.md](spi-flash-boot.md).

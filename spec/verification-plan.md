@@ -217,6 +217,24 @@ correctness signal — not a substitute for the flow-of-record run.
 > the SDF-annotated leg remains failing (#102 record, #106). The netlist is the
 > final routed one, not an intermediate post-synthesis netlist. The original
 > text above is left as written.
+>
+> *Update 2026-10-10 (issue #192).* The default module list of
+> `flow/run-firmware-gate-level.sh` now also includes
+> `test_firmware_uart_rx` (UART receive at 50 / 434 / 5,208 cycles/bit), with
+> the same WAIT-counter stuck-at as its negative control; and the seeded
+> RTL regression gains a `uart_rx` family (stimulus on `ui_in[1]`). Both are
+> RTL or zero-delay gate-level evidence only: no SDF-annotated firmware run,
+> no SRAM timing annotation, no electrical pad characterization and no
+> measured wall-clock baud. The seeded regression itself is still not run
+> on gates. Records for these runs are minted separately; none is claimed here.
+>
+> *Update 2026-10-10 (issue #106).* The SDF-annotated leg now passes: the
+> core bench's tests, run SDC-aligned through `verification/sdf_alignment.py`
+> (`flow/run-post-layout-sdf.sh`), give 12 passed and 1 skipped
+> (`test_alu_flags_whitebox`, white-box) at all three LibreLane corners
+> (record `post-layout-sdf-regression/20261010-102552-d43f89c`). The
+> constrained-random regression and the firmware benches still have no
+> SDF-annotated run, and the SRAM is simulated without its SDF timing.
 
 ## 4. Constrained-random protocol traffic + reference models
 
@@ -239,6 +257,37 @@ Each suite's pass/fail record is append-only per `CLAUDE.md`: a later run
 that fails does not retroactively erase an earlier recorded pass; it is
 recorded as a new result explaining why (e.g., a regression, a spec change
 via a new decision record, or a reference-model correction) — see §5.
+
+### 4.1 ISA-level reference simulator and lockstep co-simulation (issue #152)
+
+The suites above grade whole firmware against protocol models; a corner of
+the instruction set that no shipped program happens to exercise (the flag
+after a `SUB` borrow, `SHF` left with `C`, `WAIT 255`, a reserved port
+encoding, a rarely used control index) passes them untouched. The ISA is the
+product and the stretch-protocol firmware (#130, #141) will run new programs
+on a frozen ISA, so the instruction set gets its own golden model.
+
+| Item | What |
+|---|---|
+| Independent reference | `verification/reference_models/isa.py`: a table-driven instruction-set simulator written from DR 0001's opcode table and DR 0012's register map, importing nothing from `rtl/`, the assembler or any bench. It emits one architectural row per clock edge. Its opcode and control tables are data, so a later DR that adds an encoding is a table row plus a record. |
+| Stimulus | `verification/isa_lockstep_gen.py`: seeded programs that terminate by construction (forward-only branches, bounded counter loops, a static edge cap; a generator that exceeds its cap is a bench failure, not a pass), with the directed edge cases (`HALT` first, `WAIT 255` then a branch, back-to-back control accesses, `RUN` into just-written code, a bounded loop). Pin inputs are random per edge. |
+| Comparison | `verification/test_isa_lockstep.py`: on every edge of the run phase, `pc`, `R0`-`R3`, `Z`, `C`, `halted` (RTL hierarchy) and `uo_out` / `uio_out` / `uio_oe` (pins) against the ISS, over the real serial load phase. Seed, program index, edge, field and both values are printed on a mismatch and the seed replays it. |
+| Coverage gate | A counted gate, failing if any bucket is short: every opcode retires at least `min_retire` times; `ADD`/`SUB` each at carry-or-borrow 0 and 1 and result zero and non-zero; `SHF` both directions with shifted-out bit 0 and 1; `BZ`/`BNZ` taken and not; `WAIT` at 0, 1, a middle value and 255; `HALT`; every port for `IN` and `OUT`, reserved no-ops included; every assigned control index read and written; unassigned, read-only and write-only indices; `WCTL RUN`. |
+| Sensitivity | `verification/isa_lockstep_mutants.py`: ten single-defect copies of the core (SUB carry polarity, `SHF` direction, `BZ`/`BNZ`, `WAIT` off by one, `SHF` writing `Z`, `SHF` filling from `C`, and four more), each required to be caught. Each of DR 0016's four rulings has at least one. |
+| Cycle cross-check | The ISS's per-instruction cycle count is compared with the assembler's static count for every retired instruction, and a straight-line program's assembler `total_cycles` with the ISS span; the RTL leg is the per-edge compare. Disagreement is a recorded finding. |
+
+Scope limits, stated so they are not read as coverage: programs run from
+program memory after a serial load (boot-ROM fetch, warm start and the SPI
+boot path are owned by `test_boot_rom.py` / `test_boot_spi.py`); the compare
+reads RTL internals, so a gate-level lockstep is deferred (flop names are
+flattened and `flag_c` is write-only state synthesis may drop); the flow is
+RTL simulation, Icarus + cocotb, and no synthesis or timing number is
+claimed. Where DR 0001 is silent the model names its choice instead of
+copying the RTL (`isa.OPEN_DETAILS`). DR 0016 (Proposed, issue #203) rules all
+four such details as the RTL behaves: `SUB` sets `C` as a borrow, `SHF` leaves
+`Z` unchanged, `AND`/`OR`/`XOR` leave `C` unchanged, `SHF` fills with 0. A
+mismatch on one of them is reported against that ruling, and is never a
+reason to relax the spec.
 
 ## 5. AI-agent evidence process
 
@@ -329,8 +378,27 @@ auditable rather than a bare assertion:
   - a SPI-flash behavioural model that answers `0x03` reads from an image
   - corrupted frames and flash contents, which must never reach `RUN`
 
+  The SPI-flash half is built (issue #140): `verification/test_boot_spi.py`
+  with `verification/reference_models/spi_flash.py`, which checks SPI mode 0
+  as well as answering `0x03`, plus the rule that the boot drives only the
+  Pmod's CS0, MOSI and SCK pins. The UART half is issue #139.
+
   The ROM image is freshness-checked against its `.asm` source like every
   other committed `.hex`.
+
+  *Status 2026-10-10 (issue #139).* The UART half is built:
+  `verification/test_boot_uart.py` with the independent host
+  `verification/uart_boot_host.py`, at nominal rate and at ±2 % (and a sweep
+  past it), with corrupted payloads, bad CRCs, bad lengths and a wrong magic
+  never reaching `RUN`, and a protocol program (`uart_tx`) loaded over the
+  UART and graded by its existing reference model. `firmware/tools/loadseq.py`
+  emits the frame. The SPI-flash half (#140) is not. *Caveat (PR #210 review,
+  DR 0013 finding F8):* the count byte is outside the CRC, so "bad lengths never
+  reaching `RUN`" holds for the cases tested but not unconditionally: a
+  constructed image whose truncated prefix CRC equals the next word is accepted
+  after a single count-bit flip (`verification/test_boot_uart_count_alias.py`).
+  The requirement is not relaxed here; closing it is a protocol change tracked
+  by the follow-up issue named in the DR.
 - **Runtime swap.** A program loads a second program through `PM_*` and runs
   it with `RUN`. The second program's protocol is graded by its own reference
   model.
@@ -338,7 +406,31 @@ auditable rather than a bare assertion:
 
 ## 8. Reset, power-up and reselect (row 14)
 
-*Added 2026-10-09 (issue #131). Proposed.*
+*Added 2026-10-09 (issue #131). Recorded 2026-10-10 on the LibreLane
+netlist (Icarus + cocotb, zero-delay): (a), (b) and the reselect cycle
+pass; (c) is met on the serial-load and boot-ROM paths **except** the
+all-zero warm-start case -- an all-zero program memory is its own valid
+CRC signature and warm-starts unloaded on strap `10` (256 `NOP`s), tracked
+in #168 and pending operator decision #166 (CRC initial value), so (c) is
+not fully met. The negative controls fail as required --
+`verification/records/reset-power-up/records/20261010-012219-02f84e3.md`.
+2026-10-10 (issue #168): the warm start now refuses a zero signature (DR
+0013 Finding F1, option 4), so the all-zero case above no longer runs: RTL
+`verification/records/boot-rom/records/20261010-082233-704a3fb.md`, gate
+level `verification/records/firmware-gate-level/records/20261010-083703-704a3fb.md`;
+this section's bench re-run on that netlist is
+`verification/records/reset-power-up/records/20261010-091001-704a3fb.md`.
+The host's reload obligation after deselect is in `verification/README.md`
+(issue #118).*
+
+*2026-10-10 (issue #140): re-run on the netlist with the SPI-flash boot
+program. Strap `01` is no longer a stub: it runs the SPI-flash boot, which
+drives CS0, MOSI and SCK, so the bench checks those pins against the
+independent boot model edge for edge (row 14's "until a program writes
+them") and the program memory against what the boot wrote; the other
+straps are checked as before. Same outcome: (a), (b) and reselect pass, (c)
+as above, every negative control fails as required --
+`verification/records/reset-power-up/records/20261010-045739-b28ebcc.md`.*
 
 - **Random-initial-state gate-level run.** Every flop of the flow-of-record
   netlist starts at a seeded random value (and, separately, at X). Then

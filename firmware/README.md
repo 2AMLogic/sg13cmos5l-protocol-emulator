@@ -29,13 +29,31 @@ firmware/
     spi_mode{0..3}.asm   bit-banged SPI controller, one program per
                          (CPOL, CPHA) mode (issue #72, the SPI third of
                          #23)
+    boot/boot_rom.asm    the on-chip boot ROM's program (issues #138 and
+                         #139, DR 0013 layer 2: warm start and UART load).
+                         Not loaded into program memory: the ROM in
+                         rtl/protocol_boot_rom.v is generated from its
+                         image. See "The boot ROM" below.
   build/          assembler output (program images + cycle reports) —
                   COMMITTED, not gitignored: a program's image and cycle
                   report are part of the evidence record, byte for byte
+    boot/         the boot ROM image and its cycle report
   tools/          the assembler itself
     asm.py        the assembler (Python 3 stdlib only, no dependencies)
     test_asm.py   its unit tests (all 16 opcodes, the DR 0012 control
                   mnemonics + malformed input)
+    gen_boot_rom.py       writes rtl/protocol_boot_rom.v from
+                          build/boot/boot_rom.hex; `--check` reports drift
+    test_gen_boot_rom.py  its unit tests (the 256-word cap, determinism,
+                          stale and hand-edited ROMs)
+    check_firmware.py     every freshness check in one command
+    loadseq.py            host tooling from a .hex: the layer-1 pin sequence
+                          (issue #118) and, with --uart, the layer-2 UART boot
+                          frame (issue #139)
+    test_loadseq.py       its unit tests
+    mkflash.py            turns a .hex into the 512-byte signed flash image
+                          the SPI-flash boot loads (issue #140);
+                          test_mkflash.py tests it
 ```
 
 ## Cold-start invocation (a third party can run this from a fresh clone)
@@ -59,9 +77,145 @@ python3 firmware/tools/check_firmware.py
 `check_firmware.py` is the single invocation shared by CI and local use. It
 runs `gen_i2c_sr.py --check` (generated I2C sources vs generator), then
 `asm.py <file> --check` on every `firmware/asm/*.asm` it discovers (image
-and cycle report), keeps going after a failure, exits 1 if any check failed,
-and never rewrites an artifact. A newly committed program is covered
-automatically. A single program: `python3 firmware/tools/asm.py <file> --check`.
+and cycle report), then the boot ROM chain below, keeps going after a
+failure, exits 1 if any check failed, and never rewrites an artifact. A
+newly committed program is covered automatically. A single program:
+`python3 firmware/tools/asm.py <file> --check`. `npm run lint` runs it too.
+
+## The boot ROM (issue #138, DR 0013 layer 2)
+
+With `MODE` low at reset the core fetches from an on-chip ROM, not from
+program memory. The ROM's contents are a program in this ISA, and the ROM's
+Verilog is generated from that program's committed image:
+
+```
+firmware/asm/boot/boot_rom.asm
+    asm.py --out-dir firmware/build/boot       (check: asm.py ... --check)
+firmware/build/boot/boot_rom.hex  (+ boot_rom.cycles.txt)
+    gen_boot_rom.py                            (check: gen_boot_rom.py --check)
+rtl/protocol_boot_rom.v
+```
+
+```bash
+# After editing the boot program:
+python3 firmware/tools/asm.py firmware/asm/boot/boot_rom.asm --out-dir firmware/build/boot
+python3 firmware/tools/gen_boot_rom.py
+```
+
+`check_firmware.py` checks both links, so a ROM that no longer matches the
+committed program fails CI at the link that went stale. The generator
+refuses an image over **256 words**, the fetch address space. DR 0013
+proposed a cap of 128; the UART load does not fit it (finding F4 in that
+record), so the cap is the address space until the record decides. The image
+is **223** words (the SPI-flash boot 64, the UART load 129, the strap
+dispatch and warm start the rest, which includes the two-word zero-signature
+refusal of issue #168).
+
+What the program does: its first instruction reads the straps `ui_in[6:5]`.
+Strap `10` is the **warm start**: it reads every word of program memory and
+commits it back unchanged, which runs all 256 words through `PM_CRC` (the
+hardware CRC only sees commits), and executes `WCTL RUN` to address 0 only
+if the result is zero, that is, only if word 255 is the CRC-16/XMODEM of
+words 0–254. It first restores `R0`–`R3`, `Z` and `C` to their reset
+values, so a warm-started program starts in the state a serial-loaded one
+does, except that it reads `BOOT_STATUS = 0x00`. One pass of the loop is 9
+cycles (`.cyclesec warm_word`), and word 0 of a verified image executes
+exactly 2,325 cycles after the boot program's first instruction. Straps
+`00` and `11`, and a warm start that fails its check, run the **UART load**
+below.
+
+Strap `01` is the **SPI-flash boot** (issue #140, `spi_boot` at the end of
+the source, 64 words): it makes CS0, MOSI and SCK (`uio[0]`, `uio[1]`,
+`uio[3]`, the Tiny Tapeout QSPI Pmod pinout) outputs, runs one SPI mode 0
+transaction (`0x03`, address 0, 512 bytes), commits each word through
+`PM_*`, checks `PM_CRC` against the warm start's signature, releases every
+pin, and either takes the warm start's hand-over (`run_image`) or halts.
+`firmware/tools/mkflash.py` makes a flash image from a committed `.hex`;
+[`docs/spi-flash-boot.md`](../docs/spi-flash-boot.md) is the guide to
+putting one on the Pmod. Bench: `verification/test_boot_spi.py`
+(`verification/request-boot-spi.json`), negative controls
+`verification/boot_spi_mutants.py`, evidence in
+`verification/records/boot-spi/`. With the UART load the image is 223 words,
+which is why the ROM's cap is the 256-word address space (DR 0013 finding F4).
+
+### The UART load (issue #139, DR 0013 layer 2)
+
+Tiny Tapeout "option B", the demo board's USB-UART bridge: RX `ui_in[1]`, TX
+`uo_out[0]`. 8N1 at **434 core cycles per bit** (115,200 baud at the 50 MHz
+row-4 clock; the cycle count is the claim, the baud figure is arithmetic at
+that unconfirmed clock). The frame, built by `firmware/tools/loadseq.py`:
+
+```
+0xA5   N-1   2N bytes, high byte of each word first   CRC-16/XMODEM, high byte first
+```
+
+N is 1 to 256. The loader writes each word through `PM_DATA_HI` /
+`PM_DATA_LO`, compares `PM_CRC` with the trailer, and answers `0x06` + `PM_CRC`
+(high byte first) and `RUN 0` on a match, or `0x15` + `PM_CRC` and a wait for
+the next `0xA5` on a mismatch. An image whose payload or trailer is
+corrupted is never run (CRC-16 over the words the loader took). The count
+byte is **not** covered by the CRC: a corrupted count is rejected unless the
+CRC of the shorter prefix happens to equal the two bytes that follow it, in
+which case the truncated image is accepted and run (DR 0013 finding F8; the
+frame `a5 00 f0 00 13 c1 00 00` is the RTL regression). TX idles high from
+the loader's start to the `RUN`, and no `uio` pin is ever driven.
+
+```bash
+python3 firmware/tools/loadseq.py firmware/build/uart_tx.hex --uart -o uart_tx.frame
+# on the PC: stty -F /dev/ttyACM0 115200 cs8 -cstopb -parenb raw; cat uart_tx.frame > /dev/ttyACM0
+```
+
+How it is built, because the ISA has no call and four registers:
+
+- one byte receiver (`rx_next`..`rx_bit`) is followed by a dispatch on a
+  phase number in `R3` (waiting for `0xA5`, count, payload high byte, payload
+  low byte, trailer high, trailer low). The receiver is a loop: the start
+  edge is found by a 3-cycle poll of `ui_in[1]` (the other `ui_in` bits are
+  masked, not assumed constant), the first sample lands 1.5 bit periods after
+  the edge, and the eight samples are exactly 434 cycles apart with no branch
+  between them (`.cyclesec uart_rx_bit`). The loop exits at the middle of the
+  stop bit, so the handlers run inside half a bit;
+- the receiver uses `R0`-`R2`, so the words still to come are kept in
+  `UIO_DIR`. That register is safe as storage because with `UIO_OD = 0xFF`
+  and `uio_out = 0xFF` the pin-mode rule gives `uio_oe = 0` whatever `UIO_DIR`
+  holds. The hand-over writes `UIO_DIR`, then `UIO_OD`, then `uio_out`, back to
+  0 in that order, so no cycle drives a pin;
+- the reply reuses one transmitter (`tx`) per byte, with the byte counter in
+  `PM_ADDR` and the verdict in `UIO_DIR`; the stop bit is padded a few cycles
+  past 434 so the hand-over cannot shorten it;
+- on a match it jumps to the warm start's tail (`handover:`), so a UART-loaded
+  program starts in the same state a warm-started one does (`R0`-`R3` = 0,
+  `Z` = `C` = 0, `PM_ADDR` = 0, `UIO_*` = 0, `uo_out` = 0, `BOOT_STATUS` =
+  0x00), except that `PM_CRC` holds the CRC of the image.
+
+If the host loses sync (a wrong length, a lost byte) the loader reads the
+stray bytes as a new frame whenever one of them is `0xA5`, and waits for the
+rest. There is no timeout. Recover by pulsing `rst_n`, or by sending non-zero
+filler until the loader answers `0x15` (zero filler does not work: a message
+followed by its own CRC and then zeros still has CRC 0, so the loader reads it
+as a valid longer image). Auto-baud was not attempted.
+
+The assembler reports data-dependent-branch warnings for this program (12),
+all intended: the two strap branches, the warm start's zero-signature and CRC
+verdicts, and in
+the UART load the start-edge poll, the phase dispatch, the handlers and the
+verdicts. None paces a pin: the samples and the transmitted bits are paced by
+`WAIT` literals and a counter that never holds pin data.
+
+Zero signatures are refused (DR 0013 Finding F1, closed by issue #168): 256
+zero words carry their own valid signature (the CRC starts at 0), so the
+warm start refuses word 255 = `0x0000` before its CRC verdict, as the
+SPI-flash boot does. Two words: the loop's last pass leaves word 255 in
+`R0`/`R1`. An image whose real CRC is `0x0000` (1 in 65,536) must be
+re-padded; `firmware/tools/mkflash.py` refuses to build one.
+
+Bench: `verification/test_boot_rom.py`
+(`verification/request-boot-rom.json`), negative controls
+`verification/boot_rom_mutants.py`, evidence in
+`verification/records/boot-rom/`. The UART load has its own bench,
+`verification/test_boot_uart.py` (`verification/request-boot-uart.json`),
+driven by the independent host model `verification/uart_boot_host.py`;
+evidence in `verification/records/boot-uart/`.
 
 ## Programs
 
@@ -124,13 +278,16 @@ compile-time-constant outer loop, `LDI n; WAIT 255; SUB; BNZ` = 258 cycles
 per pass plus a remainder `WAIT`; the bit blocks are unrolled because the
 loop needs the fourth register.
 
-**Receiver shape.** RX = `UI_IN` bit 0 (idle high). A 3-cycle poll
+**Receiver shape.** RX = `UI_IN` bit 1 (idle high; DR 0010's option B, issue #178). A 3-cycle poll
 (`IN`/`AND`/`BNZ`) finds the start edge; the first sample lands at the
 centre of data bit 0 (1.5 bit periods after the edge, within the poll's
 3-cycle granularity); later samples are exactly one period apart with no
 branch between them. The byte is assembled by shifting and emitted on
-`UO_OUT`; `UIO_OUT` bit 0 is a sample mark (the bench reads the real
-sample instants off it) and bit 1 a framing-error flag (stop bit read 0).
+`UO_OUT`; `UIO_OUT` bit 1 is a sample mark (the bench reads the real
+sample instants off it) and bit 2 a framing-error flag (stop bit read 0).
+`R1` holds the RX mask (2), so it is also the mark value and the delay-loop
+decrement (outer counts are doubled) and each sample uses six `SHF LEFT` and
+a `NOP`: word and cycle counts are unchanged.
 The assembler's data-dependent-latency lint reports exactly three warnings
 per receiver: the two start-edge handshakes and the post-stop re-arm.
 
@@ -155,17 +312,21 @@ kHz at the unconfirmed nominal clock). Each program performs one write
 transfer: START, address 0xA0 (0x50 << 1 | W), ACK slot, data byte 0x5A,
 ACK slot, STOP.
 
-**Pin plan** (these programs' own; the ratified pin-role decision record
-is still open per target-spec row 5): SCL = `UIO_OUT` bit 0, SDA =
-`UIO_OUT` bit 7, open-drain convention (1 = released, 0 = asserted).
+**Pin plan** (DR 0010's target plan, the standard Tiny Tapeout I2C Pmod,
+upper row; issue #155): SCL = `UIO_OUT` bit 2, SDA = `UIO_OUT` bit 3,
+open-drain convention (1 = released, 0 = asserted).
 Each I2C program makes that convention real on the pins with one
-instruction in its setup, `WCTL UIO_OD, R3` with `R3 = 0x81` (DR 0012:
+instruction in its setup, `WCTL UIO_OD, R3` with `R3 = 0x0C` (DR 0012:
 SCL and SDA become open-drain, `uio_oe[n] = ~uio_out[n]`). It comes
-**after** the `OUT UIO_OUT` of `0x81`, because `uio_out` resets to 0 and
+**after** the `OUT UIO_OUT` of `0x0C`, because `uio_out` resets to 0 and
 enabling open-drain first would pull both lines low for a cycle. It sits in
 the idle setup, outside every `.cyclesec`, so no phase length changed.
-The 0x80 mask register does double duty — bit extraction and the
-ACK-slot "SDA released" pin value — because SDA sits on bit 7.
+The 0x08 mask register does double duty — bit extraction and the
+ACK-slot "SDA released" pin value — because SDA sits on bit 3. The data
+bit is R0's MSB, so each extraction first shifts a copy right four times
+(`SHF R3, RIGHT` x 4, paid for out of the same high phase's `WAIT`, so
+no phase length changed). Until issue #155 SDA was bit 7 and needed no
+shift; the move costs 64 words (182 -> 246 of 256) and nothing in timing.
 
 **The ACK handshake is the one sanctioned data-dependent branch.** The
 address ACK slot samples SDA with `IN` + `AND` and branches `BNZ` on it:
@@ -179,8 +340,8 @@ with assemble-time `WAIT` literals.
 **The eight clocks per byte are unrolled, not looped.** DR 0001's
 blessed constant-trip-count loop needs five live values (byte, mask,
 SCL constant, temp, loop counter) and the ISA has four registers — so
-each byte is 65 instructions of straight-line phases, and a whole
-program is 181 words. That fits DR 0001's 256-word memory for one
+each byte is 65 instructions of straight-line phases (97 since issue
+#155's SDA-alignment shifts), and a whole program is 246 words. That fits DR 0001's 256-word memory for one
 protocol with headroom, but it challenges the sketch's "all three core
 protocols coexist with room for a dispatch table" sizing narrative —
 recorded as an ISA finding in the evidence record, not a spec change.
@@ -191,25 +352,32 @@ state each phase's exact length — the bench cross-checks all 41):
 | Phase (Fast / Standard) | Instructions | Cycles |
 |---|---|---|
 | data-clock low | `OUT`+`WAIT 62`/`232`+`OR` | **65 / 235** |
-| data-clock high | `OUT`+`SHF`+`WAIT 55`/`195`+`MOV`+`AND` | **60 / 200** |
+| data-clock high | `OUT`+`SHF`+`WAIT 51`/`191`+`MOV`+4x`SHF`+`AND` | **60 / 200** |
 | ACK low (incl. the `IN` sample) | `OUT`+`WAIT`+`IN`+`WAIT`+`AND`+`LDI` | **65 / 235** |
-| START hold (t_HD;STA) | `OUT`+`WAIT`+`LDI`+`MOV`+`AND` | **65 / 205** |
+| START hold (t_HD;STA) | `OUT`+`WAIT`+`LDI`+`MOV`+4x`SHF`+`AND` | **65 / 205** |
 | STOP setup (t_SU;STO) | `OUT`+`WAIT`+`LDI` | **60 / 205** |
 
 The measured quantities are those **cycle counts**; the 400 kHz / 100
 kHz names are arithmetic at target-spec row 4's unconfirmed clock (same
 stance as `uart_tx.asm`).
 
-**Open-drain caveat, stated rather than papered over:** `uio_oe` is
-fixed to 0 at the top level, so on silicon no firmware drive reaches a
-physical pin. The DUT-facing bench composes the wired-AND bus
-(line = controller `uio_out` AND peripheral `uio_in`) and grades that
-against the independent reference model — proving the firmware's cycle
-timing and protocol behavior at the point the core drives and samples,
-with the ACK flowing through the core's real `IN` path. A silicon-true
-open-drain SDA/SCL needs a pin-plan decision record (DR 0001's own
-flagged open question); tracked in its own issue, not worked around
-here.
+**Open-drain, and what the bench does about it.** The programs' first
+instructions release both lines (`OUT` of `0x0C`) and then write `0x0C`
+to DR 0012's `UIO_OD` control register, so SCL (`uio[2]`) and SDA
+(`uio[3]`) are open-drain pads: `uio_oe[n] = ~uio_out[n]`. The
+DUT-facing benches run on a pad model (`verification/uio_pads.py`, issue
+#136) that resolves each line from the design's `uio_oe` / `uio_out`, a
+pull-up, and the peripheral as an external open-drain driver, and feeds
+the line back on `uio_in`. The independent reference model grades those
+lines, the ACK flows through the core's real `IN` path, and the benches'
+negative control runs each image with `UIO_OD` left at reset: no pad is
+enabled, the lines never move, and the model finds no transfer. (Before
+#136 the benches composed `uio_out AND uio_in` themselves and never read
+`uio_oe`; before DR 0012 the top had `uio_oe = 8'h00` and could not pull
+a line low at all.) The pad model is zero-delay and logical: it is not
+evidence about pull-up rise time, pad delay or drive strength, and an
+I2C bus still needs external pull-ups, which this design does not
+provide.
 ### `spi_mode{0..3}.asm` — bit-banged SPI controller, all four modes (issue #72)
 
 The SPI third of issue #23's three-protocol batch: four programs, one per
@@ -219,16 +387,18 @@ itself covers mode 0 only; the mode variants are this issue's own design
 work, with `verification/reference_models/spi.py`'s `SpiMode` semantics —
 not the sketch — as the authority on which edge samples per mode).
 
-**Pin map** (the fixed pin-port table, no new port codes; `uio_oe` stays 0
-so all bidirectional pins remain inputs and MISO is simply read on the
-input side):
+**Pin map** (DR 0010's target plan, the standard Tiny Tapeout SPI Pmod,
+upper row; issue #155). Each program writes its idle image to `UIO_OUT`
+and then `0x0B` to DR 0012's `UIO_DIR`, which makes CS, MOSI and SCLK
+push-pull outputs; MISO stays an input. Until #155 CS/SCLK/MOSI were on
+`uo_out[0..2]` and MISO on `uio_in[0]`.
 
-| Pin | uo_out/uio_in bit | Role |
+| Pin | uio bit | Role |
 |---|---|---|
-| CS | `uo_out[0]` | active low |
-| SCLK | `uo_out[1]` | idles at CPOL |
-| MOSI | `uo_out[2]` | controller-driven |
-| MISO | `uio_in[0]` | peripheral-driven, sampled by `IN` |
+| CS | `uio[0]` | active low, push-pull (`UIO_DIR`) |
+| MOSI | `uio[1]` | controller-driven, push-pull |
+| MISO | `uio[2]` | peripheral-driven, sampled by `IN` |
+| SCLK (Pmod SCK) | `uio[3]` | idles at CPOL, push-pull |
 
 **Two bursts per program, both full-duplex** (an `IN` samples MISO every
 bit in both), both graded by the independent model in
@@ -241,11 +411,13 @@ bit in both), both graded by the independent model in
    bit; the other phase's write is a static register image (MOSI low
    there) — the model samples only on the mode-correct edges, so the
    sampled value is the data bit with a half-period of setup.
-2. **Functional burst** — 8 cycles/bit (under the ceiling;
-   `.cyclesec spi_mode*_func`, 64 cycles), the same full-duplex shape plus
-   MISO extraction and assembly (`IN`+`AND`+`SHF`+`OR` per bit — the
-   extraction cannot fit the 4-cycle budget), after which the assembled
-   byte is echoed on `uo_out[7:0]` once CS releases.
+2. **Functional burst** — 10 cycles/bit (under the ceiling;
+   `.cyclesec spi_mode*_func`, 80 cycles), the same full-duplex shape plus
+   MISO extraction and assembly (`IN`+`AND`+2x`SHF`+`SHF`+`OR` per bit —
+   the extraction cannot fit the 4-cycle budget), after which the
+   assembled byte is echoed on `uo_out[7:0]` once CS releases. MISO on
+   `uio[2]` needs two right shifts per bit to reach bit 0; on `uio[0]`
+   (before issue #155) it needed none and the burst ran at 8 cycles/bit.
 
 **Measured at the pin** (record
 `verification/records/firmware-spi/`): SCLK period exactly 4 cycles
@@ -283,8 +455,10 @@ START, `0xA0` + ACK, `0x5A` + ACK, **repeated START**, `0xA1` + ACK, **one
 byte read from the peripheral, controller NACK**, STOP; the received byte
 is published on `UO_OUT`. t_SU;STA is paced exactly at the Table 10
 minimum (30 cycles Fast, 235 Standard). The bit loops keep a counter, so
-the programs are 131 words (`_sr`) and 171 words (`_sr_poll`) of the
-256-word store, against 181 words for the unrolled write-only programs.
+the programs are 152 words (`_sr`) and 192 words (`_sr_poll`) of the
+256-word store, against 246 words for the unrolled write-only programs
+(131 / 171 / 181 before issue #155's SDA-alignment shifts; SCL is
+`uio[2]`, SDA `uio[3]`, `UIO_OD` = `0x0C`).
 `_sr` has no pin-dependent branch; `_sr_poll` polls the peripheral's SCL
 after every rise (10 `BZ` sites, each a sanctioned handshake warning) and
 loops while it is held low. Determinism claims exclude the interval spent

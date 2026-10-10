@@ -1,0 +1,962 @@
+{
+  "what": "Controls for issue #106: the same frozen per-corner klt requests re-run with the PE_ALIGN_* variables set to other values (or unset). Only 'sdc-as-runner' is what flow/run-post-layout-sdf.sh sets; the rest are diagnostics, not evidence of a pass.",
+  "command": "PE_ALIGN_CLK_PERIOD_NS=<p> PE_ALIGN_DRIVE_OFFSET_NS=<d> PE_ALIGN_SAMPLE_OFFSET_NS=<s> klt functional-verification request-<corner>.json --format json (the frozen requests beside this file; 'off' = all three unset)",
+  "runs": [
+    {
+      "config": "off",
+      "env": null,
+      "corner": "nom_fast_1p32V_m40C",
+      "sdf_annotated": true,
+      "status": "fail",
+      "test_count": 13,
+      "passed": 1,
+      "failed": 11,
+      "skipped": 1,
+      "not_passed": [
+        {
+          "name": "test_run_entry_fetch_ahead_costs_exactly_one_cycle",
+          "status": "failed",
+          "error_message": "uo_out after edge 3: got 0x00, want 0xa5"
+        },
+        {
+          "name": "test_ldi_mov_out_write_latency",
+          "status": "failed",
+          "error_message": "uo_out after edge 4: got 0x00, want 0x11"
+        },
+        {
+          "name": "test_alu_results_pin_observable",
+          "status": "failed",
+          "error_message": "uo_out after edge 5: got 0x00, want 0xf9"
+        },
+        {
+          "name": "test_alu_flags_whitebox",
+          "status": "skipped",
+          "error_message": ""
+        },
+        {
+          "name": "test_shf_results_pin_observable",
+          "status": "failed",
+          "error_message": "uo_out after edge 7: got 0x00, want 0x80"
+        },
+        {
+          "name": "test_in_ports_and_direction_noops",
+          "status": "failed",
+          "error_message": "uo_out after edge 4: got 0x00, want 0x77"
+        },
+        {
+          "name": "test_out_port11_drives_uio_out_not_oe",
+          "status": "failed",
+          "error_message": "uio_out after edge 3: got 0x00, want 0x9c"
+        },
+        {
+          "name": "test_wait_cycle_exact",
+          "status": "failed",
+          "error_message": "uo_out after edge 3: got 0x00, want 0x01"
+        },
+        {
+          "name": "test_branches_taken_and_not_taken",
+          "status": "failed",
+          "error_message": "uo_out after edge 7: got 0x00, want 0xbb"
+        },
+        {
+          "name": "test_bnz_taken_countdown_loop",
+          "status": "failed",
+          "error_message": "uo_out after edge 4: got 0x00, want 0x03"
+        },
+        {
+          "name": "test_nop_costs_one_cycle",
+          "status": "failed",
+          "error_message": "uo_out after edge 3: got 0x00, want 0xe1"
+        },
+        {
+          "name": "test_latency_independent_of_data",
+          "status": "failed",
+          "error_message": "uo_out after edge 8: got 0x00, want 0xd1"
+        }
+      ]
+    },
+    {
+      "config": "off",
+      "env": null,
+      "corner": "nom_slow_1p08V_125C",
+      "sdf_annotated": true,
+      "status": "fail",
+      "test_count": 13,
+      "passed": 1,
+      "failed": 11,
+      "skipped": 1,
+      "not_passed": [
+        {
+          "name": "test_run_entry_fetch_ahead_costs_exactly_one_cycle",
+          "status": "failed",
+          "error_message": "uo_out after edge 3: got 0x00, want 0xa5"
+        },
+        {
+          "name": "test_ldi_mov_out_write_latency",
+          "status": "failed",
+          "error_message": "uo_out after edge 4: got 0x00, want 0x11"
+        },
+        {
+          "name": "test_alu_results_pin_observable",
+          "status": "failed",
+          "error_message": "uo_out after edge 5: got 0x00, want 0xf9"
+        },
+        {
+          "name": "test_alu_flags_whitebox",
+          "status": "skipped",
+          "error_message": ""
+        },
+        {
+          "name": "test_shf_results_pin_observable",
+          "status": "failed",
+          "error_message": "uo_out after edge 7: got 0x00, want 0x80"
+        },
+        {
+          "name": "test_in_ports_and_direction_noops",
+          "status": "failed",
+          "error_message": "uo_out after edge 4: got 0x00, want 0x77"
+        },
+        {
+          "name": "test_out_port11_drives_uio_out_not_oe",
+          "status": "failed",
+          "error_message": "uio_out after edge 3: got 0x00, want 0x9c"
+        },
+        {
+          "name": "test_wait_cycle_exact",
+          "status": "failed",
+          "error_message": "uo_out after edge 3: got 0x00, want 0x01"
+        },
+        {
+          "name": "test_branches_taken_and_not_taken",
+          "status": "failed",
+          "error_message": "uo_out after edge 7: got 0x00, want 0xbb"
+        },
+        {
+          "name": "test_bnz_taken_countdown_loop",
+          "status": "failed",
+          "error_message": "uo_out after edge 4: got 0x00, want 0x03"
+        },
+        {
+          "name": "test_nop_costs_one_cycle",
+          "status": "failed",
+          "error_message": "uo_out after edge 3: got 0x00, want 0xe1"
+        },
+        {
+          "name": "test_latency_independent_of_data",
+          "status": "failed",
+          "error_message": "uo_out after edge 8: got 0x00, want 0xd1"
+        }
+      ]
+    },
+    {
+      "config": "off",
+      "env": null,
+      "corner": "nom_typ_1p20V_25C",
+      "sdf_annotated": true,
+      "status": "fail",
+      "test_count": 13,
+      "passed": 1,
+      "failed": 11,
+      "skipped": 1,
+      "not_passed": [
+        {
+          "name": "test_run_entry_fetch_ahead_costs_exactly_one_cycle",
+          "status": "failed",
+          "error_message": "uo_out after edge 3: got 0x00, want 0xa5"
+        },
+        {
+          "name": "test_ldi_mov_out_write_latency",
+          "status": "failed",
+          "error_message": "uo_out after edge 4: got 0x00, want 0x11"
+        },
+        {
+          "name": "test_alu_results_pin_observable",
+          "status": "failed",
+          "error_message": "uo_out after edge 5: got 0x00, want 0xf9"
+        },
+        {
+          "name": "test_alu_flags_whitebox",
+          "status": "skipped",
+          "error_message": ""
+        },
+        {
+          "name": "test_shf_results_pin_observable",
+          "status": "failed",
+          "error_message": "uo_out after edge 7: got 0x00, want 0x80"
+        },
+        {
+          "name": "test_in_ports_and_direction_noops",
+          "status": "failed",
+          "error_message": "uo_out after edge 4: got 0x00, want 0x77"
+        },
+        {
+          "name": "test_out_port11_drives_uio_out_not_oe",
+          "status": "failed",
+          "error_message": "uio_out after edge 3: got 0x00, want 0x9c"
+        },
+        {
+          "name": "test_wait_cycle_exact",
+          "status": "failed",
+          "error_message": "uo_out after edge 3: got 0x00, want 0x01"
+        },
+        {
+          "name": "test_branches_taken_and_not_taken",
+          "status": "failed",
+          "error_message": "uo_out after edge 7: got 0x00, want 0xbb"
+        },
+        {
+          "name": "test_bnz_taken_countdown_loop",
+          "status": "failed",
+          "error_message": "uo_out after edge 4: got 0x00, want 0x03"
+        },
+        {
+          "name": "test_nop_costs_one_cycle",
+          "status": "failed",
+          "error_message": "uo_out after edge 3: got 0x00, want 0xe1"
+        },
+        {
+          "name": "test_latency_independent_of_data",
+          "status": "failed",
+          "error_message": "uo_out after edge 8: got 0x00, want 0xd1"
+        }
+      ]
+    },
+    {
+      "config": "sdc-as-runner",
+      "env": {
+        "PE_ALIGN_CLK_PERIOD_NS": "20",
+        "PE_ALIGN_DRIVE_OFFSET_NS": "4",
+        "PE_ALIGN_SAMPLE_OFFSET_NS": "16"
+      },
+      "corner": "nom_fast_1p32V_m40C",
+      "sdf_annotated": true,
+      "status": "pass",
+      "test_count": 13,
+      "passed": 12,
+      "failed": 0,
+      "skipped": 1,
+      "not_passed": [
+        {
+          "name": "test_alu_flags_whitebox",
+          "status": "skipped",
+          "error_message": ""
+        }
+      ]
+    },
+    {
+      "config": "sdc-as-runner",
+      "env": {
+        "PE_ALIGN_CLK_PERIOD_NS": "20",
+        "PE_ALIGN_DRIVE_OFFSET_NS": "4",
+        "PE_ALIGN_SAMPLE_OFFSET_NS": "16"
+      },
+      "corner": "nom_slow_1p08V_125C",
+      "sdf_annotated": true,
+      "status": "pass",
+      "test_count": 13,
+      "passed": 12,
+      "failed": 0,
+      "skipped": 1,
+      "not_passed": [
+        {
+          "name": "test_alu_flags_whitebox",
+          "status": "skipped",
+          "error_message": ""
+        }
+      ]
+    },
+    {
+      "config": "sdc-as-runner",
+      "env": {
+        "PE_ALIGN_CLK_PERIOD_NS": "20",
+        "PE_ALIGN_DRIVE_OFFSET_NS": "4",
+        "PE_ALIGN_SAMPLE_OFFSET_NS": "16"
+      },
+      "corner": "nom_typ_1p20V_25C",
+      "sdf_annotated": true,
+      "status": "pass",
+      "test_count": 13,
+      "passed": 12,
+      "failed": 0,
+      "skipped": 1,
+      "not_passed": [
+        {
+          "name": "test_alu_flags_whitebox",
+          "status": "skipped",
+          "error_message": ""
+        }
+      ]
+    },
+    {
+      "config": "no-drive-offset",
+      "env": {
+        "PE_ALIGN_CLK_PERIOD_NS": "20",
+        "PE_ALIGN_DRIVE_OFFSET_NS": "0",
+        "PE_ALIGN_SAMPLE_OFFSET_NS": "16"
+      },
+      "corner": "nom_fast_1p32V_m40C",
+      "sdf_annotated": true,
+      "status": "fail",
+      "test_count": 13,
+      "passed": 1,
+      "failed": 11,
+      "skipped": 1,
+      "not_passed": [
+        {
+          "name": "test_run_entry_fetch_ahead_costs_exactly_one_cycle",
+          "status": "failed",
+          "error_message": "uo_out after edge 3: got 0x00, want 0xa5"
+        },
+        {
+          "name": "test_ldi_mov_out_write_latency",
+          "status": "failed",
+          "error_message": "uo_out after edge 4: got 0x00, want 0x11"
+        },
+        {
+          "name": "test_alu_results_pin_observable",
+          "status": "failed",
+          "error_message": "uo_out after edge 5: got 0x00, want 0xf9"
+        },
+        {
+          "name": "test_alu_flags_whitebox",
+          "status": "skipped",
+          "error_message": ""
+        },
+        {
+          "name": "test_shf_results_pin_observable",
+          "status": "failed",
+          "error_message": "uo_out after edge 7: got 0x00, want 0x80"
+        },
+        {
+          "name": "test_in_ports_and_direction_noops",
+          "status": "failed",
+          "error_message": "uo_out after edge 4: got 0x00, want 0x77"
+        },
+        {
+          "name": "test_out_port11_drives_uio_out_not_oe",
+          "status": "failed",
+          "error_message": "uio_out after edge 3: got 0x00, want 0x9c"
+        },
+        {
+          "name": "test_wait_cycle_exact",
+          "status": "failed",
+          "error_message": "uo_out after edge 3: got 0x00, want 0x01"
+        },
+        {
+          "name": "test_branches_taken_and_not_taken",
+          "status": "failed",
+          "error_message": "uo_out after edge 7: got 0x00, want 0xbb"
+        },
+        {
+          "name": "test_bnz_taken_countdown_loop",
+          "status": "failed",
+          "error_message": "uo_out after edge 4: got 0x00, want 0x03"
+        },
+        {
+          "name": "test_nop_costs_one_cycle",
+          "status": "failed",
+          "error_message": "uo_out after edge 3: got 0x00, want 0xe1"
+        },
+        {
+          "name": "test_latency_independent_of_data",
+          "status": "failed",
+          "error_message": "uo_out after edge 8: got 0x00, want 0xd1"
+        }
+      ]
+    },
+    {
+      "config": "no-drive-offset",
+      "env": {
+        "PE_ALIGN_CLK_PERIOD_NS": "20",
+        "PE_ALIGN_DRIVE_OFFSET_NS": "0",
+        "PE_ALIGN_SAMPLE_OFFSET_NS": "16"
+      },
+      "corner": "nom_slow_1p08V_125C",
+      "sdf_annotated": true,
+      "status": "fail",
+      "test_count": 13,
+      "passed": 1,
+      "failed": 11,
+      "skipped": 1,
+      "not_passed": [
+        {
+          "name": "test_run_entry_fetch_ahead_costs_exactly_one_cycle",
+          "status": "failed",
+          "error_message": "uo_out after edge 3: got 0x00, want 0xa5"
+        },
+        {
+          "name": "test_ldi_mov_out_write_latency",
+          "status": "failed",
+          "error_message": "uo_out after edge 4: got 0x00, want 0x11"
+        },
+        {
+          "name": "test_alu_results_pin_observable",
+          "status": "failed",
+          "error_message": "uo_out after edge 5: got 0x00, want 0xf9"
+        },
+        {
+          "name": "test_alu_flags_whitebox",
+          "status": "skipped",
+          "error_message": ""
+        },
+        {
+          "name": "test_shf_results_pin_observable",
+          "status": "failed",
+          "error_message": "uo_out after edge 7: got 0x00, want 0x80"
+        },
+        {
+          "name": "test_in_ports_and_direction_noops",
+          "status": "failed",
+          "error_message": "uo_out after edge 4: got 0x00, want 0x77"
+        },
+        {
+          "name": "test_out_port11_drives_uio_out_not_oe",
+          "status": "failed",
+          "error_message": "uio_out after edge 3: got 0x00, want 0x9c"
+        },
+        {
+          "name": "test_wait_cycle_exact",
+          "status": "failed",
+          "error_message": "uo_out after edge 3: got 0x00, want 0x01"
+        },
+        {
+          "name": "test_branches_taken_and_not_taken",
+          "status": "failed",
+          "error_message": "uo_out after edge 7: got 0x00, want 0xbb"
+        },
+        {
+          "name": "test_bnz_taken_countdown_loop",
+          "status": "failed",
+          "error_message": "uo_out after edge 4: got 0x00, want 0x03"
+        },
+        {
+          "name": "test_nop_costs_one_cycle",
+          "status": "failed",
+          "error_message": "uo_out after edge 3: got 0x00, want 0xe1"
+        },
+        {
+          "name": "test_latency_independent_of_data",
+          "status": "failed",
+          "error_message": "uo_out after edge 8: got 0x00, want 0xd1"
+        }
+      ]
+    },
+    {
+      "config": "no-drive-offset",
+      "env": {
+        "PE_ALIGN_CLK_PERIOD_NS": "20",
+        "PE_ALIGN_DRIVE_OFFSET_NS": "0",
+        "PE_ALIGN_SAMPLE_OFFSET_NS": "16"
+      },
+      "corner": "nom_typ_1p20V_25C",
+      "sdf_annotated": true,
+      "status": "fail",
+      "test_count": 13,
+      "passed": 1,
+      "failed": 11,
+      "skipped": 1,
+      "not_passed": [
+        {
+          "name": "test_run_entry_fetch_ahead_costs_exactly_one_cycle",
+          "status": "failed",
+          "error_message": "uo_out after edge 3: got 0x00, want 0xa5"
+        },
+        {
+          "name": "test_ldi_mov_out_write_latency",
+          "status": "failed",
+          "error_message": "uo_out after edge 4: got 0x00, want 0x11"
+        },
+        {
+          "name": "test_alu_results_pin_observable",
+          "status": "failed",
+          "error_message": "uo_out after edge 5: got 0x00, want 0xf9"
+        },
+        {
+          "name": "test_alu_flags_whitebox",
+          "status": "skipped",
+          "error_message": ""
+        },
+        {
+          "name": "test_shf_results_pin_observable",
+          "status": "failed",
+          "error_message": "uo_out after edge 7: got 0x00, want 0x80"
+        },
+        {
+          "name": "test_in_ports_and_direction_noops",
+          "status": "failed",
+          "error_message": "uo_out after edge 4: got 0x00, want 0x77"
+        },
+        {
+          "name": "test_out_port11_drives_uio_out_not_oe",
+          "status": "failed",
+          "error_message": "uio_out after edge 3: got 0x00, want 0x9c"
+        },
+        {
+          "name": "test_wait_cycle_exact",
+          "status": "failed",
+          "error_message": "uo_out after edge 3: got 0x00, want 0x01"
+        },
+        {
+          "name": "test_branches_taken_and_not_taken",
+          "status": "failed",
+          "error_message": "uo_out after edge 7: got 0x00, want 0xbb"
+        },
+        {
+          "name": "test_bnz_taken_countdown_loop",
+          "status": "failed",
+          "error_message": "uo_out after edge 4: got 0x00, want 0x03"
+        },
+        {
+          "name": "test_nop_costs_one_cycle",
+          "status": "failed",
+          "error_message": "uo_out after edge 3: got 0x00, want 0xe1"
+        },
+        {
+          "name": "test_latency_independent_of_data",
+          "status": "failed",
+          "error_message": "uo_out after edge 8: got 0x00, want 0xd1"
+        }
+      ]
+    },
+    {
+      "config": "drive-0.2-sample-1.6",
+      "env": {
+        "PE_ALIGN_CLK_PERIOD_NS": "20",
+        "PE_ALIGN_DRIVE_OFFSET_NS": "0.2",
+        "PE_ALIGN_SAMPLE_OFFSET_NS": "1.6"
+      },
+      "corner": "nom_fast_1p32V_m40C",
+      "sdf_annotated": true,
+      "status": "pass",
+      "test_count": 13,
+      "passed": 12,
+      "failed": 0,
+      "skipped": 1,
+      "not_passed": [
+        {
+          "name": "test_alu_flags_whitebox",
+          "status": "skipped",
+          "error_message": ""
+        }
+      ]
+    },
+    {
+      "config": "drive-0.2-sample-1.6",
+      "env": {
+        "PE_ALIGN_CLK_PERIOD_NS": "20",
+        "PE_ALIGN_DRIVE_OFFSET_NS": "0.2",
+        "PE_ALIGN_SAMPLE_OFFSET_NS": "1.6"
+      },
+      "corner": "nom_slow_1p08V_125C",
+      "sdf_annotated": true,
+      "status": "pass",
+      "test_count": 13,
+      "passed": 12,
+      "failed": 0,
+      "skipped": 1,
+      "not_passed": [
+        {
+          "name": "test_alu_flags_whitebox",
+          "status": "skipped",
+          "error_message": ""
+        }
+      ]
+    },
+    {
+      "config": "drive-0.2-sample-1.6",
+      "env": {
+        "PE_ALIGN_CLK_PERIOD_NS": "20",
+        "PE_ALIGN_DRIVE_OFFSET_NS": "0.2",
+        "PE_ALIGN_SAMPLE_OFFSET_NS": "1.6"
+      },
+      "corner": "nom_typ_1p20V_25C",
+      "sdf_annotated": true,
+      "status": "pass",
+      "test_count": 13,
+      "passed": 12,
+      "failed": 0,
+      "skipped": 1,
+      "not_passed": [
+        {
+          "name": "test_alu_flags_whitebox",
+          "status": "skipped",
+          "error_message": ""
+        }
+      ]
+    },
+    {
+      "config": "drive-1.0-sample-1.2",
+      "env": {
+        "PE_ALIGN_CLK_PERIOD_NS": "20",
+        "PE_ALIGN_DRIVE_OFFSET_NS": "1.0",
+        "PE_ALIGN_SAMPLE_OFFSET_NS": "1.2"
+      },
+      "corner": "nom_fast_1p32V_m40C",
+      "sdf_annotated": true,
+      "status": "pass",
+      "test_count": 13,
+      "passed": 12,
+      "failed": 0,
+      "skipped": 1,
+      "not_passed": [
+        {
+          "name": "test_alu_flags_whitebox",
+          "status": "skipped",
+          "error_message": ""
+        }
+      ]
+    },
+    {
+      "config": "drive-1.0-sample-1.2",
+      "env": {
+        "PE_ALIGN_CLK_PERIOD_NS": "20",
+        "PE_ALIGN_DRIVE_OFFSET_NS": "1.0",
+        "PE_ALIGN_SAMPLE_OFFSET_NS": "1.2"
+      },
+      "corner": "nom_slow_1p08V_125C",
+      "sdf_annotated": true,
+      "status": "pass",
+      "test_count": 13,
+      "passed": 12,
+      "failed": 0,
+      "skipped": 1,
+      "not_passed": [
+        {
+          "name": "test_alu_flags_whitebox",
+          "status": "skipped",
+          "error_message": ""
+        }
+      ]
+    },
+    {
+      "config": "drive-1.0-sample-1.2",
+      "env": {
+        "PE_ALIGN_CLK_PERIOD_NS": "20",
+        "PE_ALIGN_DRIVE_OFFSET_NS": "1.0",
+        "PE_ALIGN_SAMPLE_OFFSET_NS": "1.2"
+      },
+      "corner": "nom_typ_1p20V_25C",
+      "sdf_annotated": true,
+      "status": "pass",
+      "test_count": 13,
+      "passed": 12,
+      "failed": 0,
+      "skipped": 1,
+      "not_passed": [
+        {
+          "name": "test_alu_flags_whitebox",
+          "status": "skipped",
+          "error_message": ""
+        }
+      ]
+    },
+    {
+      "config": "drive-0.9-sample-1.0",
+      "env": {
+        "PE_ALIGN_CLK_PERIOD_NS": "20",
+        "PE_ALIGN_DRIVE_OFFSET_NS": "0.9",
+        "PE_ALIGN_SAMPLE_OFFSET_NS": "1.0"
+      },
+      "corner": "nom_fast_1p32V_m40C",
+      "sdf_annotated": true,
+      "status": "pass",
+      "test_count": 13,
+      "passed": 12,
+      "failed": 0,
+      "skipped": 1,
+      "not_passed": [
+        {
+          "name": "test_alu_flags_whitebox",
+          "status": "skipped",
+          "error_message": ""
+        }
+      ]
+    },
+    {
+      "config": "drive-0.9-sample-1.0",
+      "env": {
+        "PE_ALIGN_CLK_PERIOD_NS": "20",
+        "PE_ALIGN_DRIVE_OFFSET_NS": "0.9",
+        "PE_ALIGN_SAMPLE_OFFSET_NS": "1.0"
+      },
+      "corner": "nom_slow_1p08V_125C",
+      "sdf_annotated": true,
+      "status": "fail",
+      "test_count": 13,
+      "passed": 1,
+      "failed": 11,
+      "skipped": 1,
+      "not_passed": [
+        {
+          "name": "test_run_entry_fetch_ahead_costs_exactly_one_cycle",
+          "status": "failed",
+          "error_message": "uo_out after edge 3: got 0x00, want 0xa5"
+        },
+        {
+          "name": "test_ldi_mov_out_write_latency",
+          "status": "failed",
+          "error_message": "uo_out after edge 4: got 0x00, want 0x11"
+        },
+        {
+          "name": "test_alu_results_pin_observable",
+          "status": "failed",
+          "error_message": "uo_out after edge 5: got 0x00, want 0xf9"
+        },
+        {
+          "name": "test_alu_flags_whitebox",
+          "status": "skipped",
+          "error_message": ""
+        },
+        {
+          "name": "test_shf_results_pin_observable",
+          "status": "failed",
+          "error_message": "uo_out after edge 7: got 0x00, want 0x80"
+        },
+        {
+          "name": "test_in_ports_and_direction_noops",
+          "status": "failed",
+          "error_message": "uo_out after edge 4: got 0x00, want 0x77"
+        },
+        {
+          "name": "test_out_port11_drives_uio_out_not_oe",
+          "status": "failed",
+          "error_message": "uio_out after edge 3: got 0x00, want 0x9c"
+        },
+        {
+          "name": "test_wait_cycle_exact",
+          "status": "failed",
+          "error_message": "uo_out after edge 3: got 0x00, want 0x01"
+        },
+        {
+          "name": "test_branches_taken_and_not_taken",
+          "status": "failed",
+          "error_message": "uo_out after edge 7: got 0x00, want 0xbb"
+        },
+        {
+          "name": "test_bnz_taken_countdown_loop",
+          "status": "failed",
+          "error_message": "uo_out after edge 4: got 0x00, want 0x03"
+        },
+        {
+          "name": "test_nop_costs_one_cycle",
+          "status": "failed",
+          "error_message": "uo_out after edge 3: got 0x00, want 0xe1"
+        },
+        {
+          "name": "test_latency_independent_of_data",
+          "status": "failed",
+          "error_message": "uo_out after edge 8: got 0x00, want 0xd1"
+        }
+      ]
+    },
+    {
+      "config": "drive-0.9-sample-1.0",
+      "env": {
+        "PE_ALIGN_CLK_PERIOD_NS": "20",
+        "PE_ALIGN_DRIVE_OFFSET_NS": "0.9",
+        "PE_ALIGN_SAMPLE_OFFSET_NS": "1.0"
+      },
+      "corner": "nom_typ_1p20V_25C",
+      "sdf_annotated": true,
+      "status": "pass",
+      "test_count": 13,
+      "passed": 12,
+      "failed": 0,
+      "skipped": 1,
+      "not_passed": [
+        {
+          "name": "test_alu_flags_whitebox",
+          "status": "skipped",
+          "error_message": ""
+        }
+      ]
+    },
+    {
+      "config": "drive-0.7-sample-0.8",
+      "env": {
+        "PE_ALIGN_CLK_PERIOD_NS": "20",
+        "PE_ALIGN_DRIVE_OFFSET_NS": "0.7",
+        "PE_ALIGN_SAMPLE_OFFSET_NS": "0.8"
+      },
+      "corner": "nom_fast_1p32V_m40C",
+      "sdf_annotated": true,
+      "status": "pass",
+      "test_count": 13,
+      "passed": 12,
+      "failed": 0,
+      "skipped": 1,
+      "not_passed": [
+        {
+          "name": "test_alu_flags_whitebox",
+          "status": "skipped",
+          "error_message": ""
+        }
+      ]
+    },
+    {
+      "config": "drive-0.7-sample-0.8",
+      "env": {
+        "PE_ALIGN_CLK_PERIOD_NS": "20",
+        "PE_ALIGN_DRIVE_OFFSET_NS": "0.7",
+        "PE_ALIGN_SAMPLE_OFFSET_NS": "0.8"
+      },
+      "corner": "nom_slow_1p08V_125C",
+      "sdf_annotated": true,
+      "status": "fail",
+      "test_count": 13,
+      "passed": 1,
+      "failed": 11,
+      "skipped": 1,
+      "not_passed": [
+        {
+          "name": "test_run_entry_fetch_ahead_costs_exactly_one_cycle",
+          "status": "failed",
+          "error_message": "uo_out after edge 3: got 0x00, want 0xa5"
+        },
+        {
+          "name": "test_ldi_mov_out_write_latency",
+          "status": "failed",
+          "error_message": "uo_out after edge 4: got 0x00, want 0x11"
+        },
+        {
+          "name": "test_alu_results_pin_observable",
+          "status": "failed",
+          "error_message": "uo_out after edge 5: got 0x00, want 0xf9"
+        },
+        {
+          "name": "test_alu_flags_whitebox",
+          "status": "skipped",
+          "error_message": ""
+        },
+        {
+          "name": "test_shf_results_pin_observable",
+          "status": "failed",
+          "error_message": "uo_out after edge 7: got 0x00, want 0x80"
+        },
+        {
+          "name": "test_in_ports_and_direction_noops",
+          "status": "failed",
+          "error_message": "uo_out after edge 4: got 0x00, want 0x77"
+        },
+        {
+          "name": "test_out_port11_drives_uio_out_not_oe",
+          "status": "failed",
+          "error_message": "uio_out after edge 3: got 0x00, want 0x9c"
+        },
+        {
+          "name": "test_wait_cycle_exact",
+          "status": "failed",
+          "error_message": "uo_out after edge 3: got 0x00, want 0x01"
+        },
+        {
+          "name": "test_branches_taken_and_not_taken",
+          "status": "failed",
+          "error_message": "uo_out after edge 7: got 0x00, want 0xbb"
+        },
+        {
+          "name": "test_bnz_taken_countdown_loop",
+          "status": "failed",
+          "error_message": "uo_out after edge 4: got 0x00, want 0x03"
+        },
+        {
+          "name": "test_nop_costs_one_cycle",
+          "status": "failed",
+          "error_message": "uo_out after edge 3: got 0x00, want 0xe1"
+        },
+        {
+          "name": "test_latency_independent_of_data",
+          "status": "failed",
+          "error_message": "uo_out after edge 8: got 0x00, want 0xd1"
+        }
+      ]
+    },
+    {
+      "config": "drive-0.7-sample-0.8",
+      "env": {
+        "PE_ALIGN_CLK_PERIOD_NS": "20",
+        "PE_ALIGN_DRIVE_OFFSET_NS": "0.7",
+        "PE_ALIGN_SAMPLE_OFFSET_NS": "0.8"
+      },
+      "corner": "nom_typ_1p20V_25C",
+      "sdf_annotated": true,
+      "status": "pass",
+      "test_count": 13,
+      "passed": 12,
+      "failed": 0,
+      "skipped": 1,
+      "not_passed": [
+        {
+          "name": "test_alu_flags_whitebox",
+          "status": "skipped",
+          "error_message": ""
+        }
+      ]
+    },
+    {
+      "config": "bench-period-10",
+      "env": {
+        "PE_ALIGN_CLK_PERIOD_NS": "10",
+        "PE_ALIGN_DRIVE_OFFSET_NS": "4",
+        "PE_ALIGN_SAMPLE_OFFSET_NS": "8"
+      },
+      "corner": "nom_fast_1p32V_m40C",
+      "sdf_annotated": true,
+      "status": "pass",
+      "test_count": 13,
+      "passed": 12,
+      "failed": 0,
+      "skipped": 1,
+      "not_passed": [
+        {
+          "name": "test_alu_flags_whitebox",
+          "status": "skipped",
+          "error_message": ""
+        }
+      ]
+    },
+    {
+      "config": "bench-period-10",
+      "env": {
+        "PE_ALIGN_CLK_PERIOD_NS": "10",
+        "PE_ALIGN_DRIVE_OFFSET_NS": "4",
+        "PE_ALIGN_SAMPLE_OFFSET_NS": "8"
+      },
+      "corner": "nom_slow_1p08V_125C",
+      "sdf_annotated": true,
+      "status": "pass",
+      "test_count": 13,
+      "passed": 12,
+      "failed": 0,
+      "skipped": 1,
+      "not_passed": [
+        {
+          "name": "test_alu_flags_whitebox",
+          "status": "skipped",
+          "error_message": ""
+        }
+      ]
+    },
+    {
+      "config": "bench-period-10",
+      "env": {
+        "PE_ALIGN_CLK_PERIOD_NS": "10",
+        "PE_ALIGN_DRIVE_OFFSET_NS": "4",
+        "PE_ALIGN_SAMPLE_OFFSET_NS": "8"
+      },
+      "corner": "nom_typ_1p20V_25C",
+      "sdf_annotated": true,
+      "status": "pass",
+      "test_count": 13,
+      "passed": 12,
+      "failed": 0,
+      "skipped": 1,
+      "not_passed": [
+        {
+          "name": "test_alu_flags_whitebox",
+          "status": "skipped",
+          "error_message": ""
+        }
+      ]
+    }
+  ]
+}

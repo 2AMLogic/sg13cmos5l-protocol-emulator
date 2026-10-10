@@ -1,0 +1,158 @@
+# T1 item 9 (Testbenches shipped): every claimed measurement's testbench is
+# committed, with a cold-start invocation a third party can run, and the PDK
+# revision is pinned.
+#
+# Refreshed 2026-10-10 for issue #139 (the UART load): a `boot-uart` experiment
+# line is added, the firmware-gate-level line gains `--boot-uart` and its new
+# default netlist, and the PDK revision's source record moves to
+# librelane-gds-signoff-check 20261010-133100-a0f91e3. The audit text below is
+# issue #83's, written against the 95-word design.
+#
+# Audited 2026-10-10 for issue #83 against main @ 5669077 (design last
+# changed by 704a3fb), at the klt v0.7.0 pin. Attested by testbenches.json
+# beside this file; the manifest cites that envelope for item 9.
+#
+# "Claimed measurement" here means every result an evidence record under
+# verification/records/ states, and every row of spec/target-spec.md whose
+# State column cites one. Each experiment directory has exactly one
+# `experiment` line below; scripts/check_evidence_inventories.py (`npm run
+# lint`, CI records job) fails if a directory appears without one, if a line
+# names a directory that does not exist, or if a `file` named here is gone.
+#
+# Directive grammar (column 0; other lines are prose):
+#   experiment  <dir under verification/records/>  <bench and cold start>
+#   file  <path>    present in the tree
+
+## Environment, pinned
+
+# klt + cocotb: the klt pin is layout/toolchain.json (v0.7.0, 0e2362bd);
+# cocotb 2.1.0 and cocotb-tools 0.1.0 are pinned in scripts/setup-env.sh.
+#   ./scripts/setup-env.sh
+# Simulator: Icarus Verilog on PATH (the records name 13.0).
+# PDK, for every leg marked [PDK]: IHP-Open-PDK
+#   2bbec755dc67ca3db0261c3d6163e15735d66710
+# the revision the LibreLane gds runs used (their pdk.json, frozen in
+# librelane-gds-signoff-check record 20261010-133100-a0f91e3) and the one every
+# local PDK leg below ran against. Fetch it the way the template's action does:
+#   git init "$PDK_ROOT"
+#   git -C "$PDK_ROOT" fetch --depth 1 https://github.com/IHP-GmbH/IHP-Open-PDK.git 2bbec755dc67ca3db0261c3d6163e15735d66710
+#   git -C "$PDK_ROOT" checkout FETCH_HEAD
+# Formal legs: yosys, yosys-smtbmc, yosys-abc, z3. The pinned set is the OSS
+# CAD Suite release in .github/workflows/ci.yml's `formal` job (2026-10-09,
+# sha256-verified); that job is the hosted cold start (workflow_dispatch).
+# LibreLane legs [LL]: .github/workflows/gds.yaml (the Tiny Tapeout template's
+# workflow, kept verbatim). Cold start: push to a fork, or `gh workflow run
+# gds.yaml`. The flow and PDK are chosen by TinyTapeout/tt-gds-action at the
+# branch ref `ihp-cmos5l` (head 3412659307918422f3f0727917cf9b499aaca588 since
+# 2026-09-14), whose install_sg13cmos5l.sh pins IHP_PDK_REV to the revision
+# above; this repository does not pin that branch to a SHA, so each run's own
+# pdk.json is the record of what it used (LibreLane 3.1.0.dev3, PDK 2bbec755
+# for every run cited here).
+file  layout/toolchain.json
+file  scripts/setup-env.sh
+file  scripts/run-rtl-benches.sh
+file  .github/workflows/ci.yml
+file  .github/workflows/gds.yaml
+
+## By target-spec row (spec/target-spec.md)
+
+# Row 1, protocols in firmware: UART TX/RX, SPI modes 0-3, I2C write/read on
+#   the RTL, graded by independent reference models; the constrained-random
+#   suite; the directed benches on the LibreLane gate-level netlist.
+#   Benches: experiments firmware-uart, firmware-uart-rx, firmware-spi,
+#   firmware-i2c, uio-pad-model, random-regression, protocol-reference-models,
+#   firmware-gate-level [PDK]. No claim is made for UART RX under constrained
+#   random, or for electrical pad timing; nothing to bench.
+# Row 2, stretch protocols: nothing designed, nothing measured, no bench.
+# Row 3, timing determinism: formal properties no_data_dependent_latency and
+#   pin_write_latency. Benches: experiments no-data-dependent-latency,
+#   pin-write-latency. (The row's State text still reads "the formal property
+#   itself is not yet written"; both properties and their records exist.
+#   Spec wording is #44's to change, not this inventory's.)
+# Row 4, core clock: LibreLane post-route OpenSTA at 20 ns, 3 corners
+#   [LL] (experiment librelane-corner-timing). The klt leg has a bench
+#   (sta-corner-sweep) that cannot run while klayout-tools#2635 is open; it
+#   claims no number.
+# Row 5, pin budget: the top is instantiated as the template defines it.
+#   Benches: experiment core-datapath (verification/test_protocol_emulator.py)
+#   and the template's own harness, `npm run test` (cd test && make), plus the
+#   gds workflow's gl_test job [LL].
+# Row 6, program storage: serial load and readback, the loader pin sequence,
+#   the boot ROM and SPI-flash boot. Benches: experiments program-load-phase,
+#   firmware-loadseq, boot-rom, boot-spi, firmware-assembler-roundtrip,
+#   program-memory-macro-feasibility [PDK]. The program-dump path named in the
+#   row's Checked by is not built and nothing claims it.
+# Row 7, area: no die-area number is claimed by the row. Recorded area figures
+#   and their benches: klt/Yosys cell area, experiment synthesis-baseline
+#   [PDK]; LibreLane die area, experiment librelane-pdn-bridge [LL]; macro
+#   footprint, program-memory-macro-feasibility [PDK]. The klt die-area bench
+#   (die-area-baseline) cannot run while klayout-tools#2635 is open.
+# Row 8, verification: the union of the rows above plus the ISA lockstep
+#   (isa-lockstep) and the control space (control-space).
+# Row 9, submission: a date, not a measurement.
+# Rows 10-12, UART drift, SPI ceiling and modes, I2C timing: as row 1 (the
+#   same benches grade these bounds). The ACK-window formal property named in
+#   row 12's Checked by does not exist and nothing claims it.
+# Row 13, reprogrammability: no firmware yet, nothing measured, no bench.
+# Row 14, reset, power-up, reselect: experiments reset-power-up [PDK] (gate
+#   level, random and X initial state), reset-pin-through, boot-rom,
+#   firmware-gate-level [PDK]. (The row's State text predates the
+#   reset-power-up bench; the bench and its records exist.)
+# T1 item 7, post-layout: experiment post-layout-sdf-regression [PDK][LL].
+
+## By evidence directory (every directory under verification/records/)
+
+experiment  boot-rom  verification/test_boot_rom.py; `klt functional-verification verification/request-boot-rom.json --format json`; controls `python3 verification/boot_rom_mutants.py --out <dir>`
+experiment  boot-spi  verification/test_boot_spi.py; `klt functional-verification verification/request-boot-spi.json --format json`; controls `python3 verification/boot_spi_mutants.py --out <dir>`
+experiment  boot-uart  verification/test_boot_uart.py (independent host model verification/uart_boot_host.py); `klt functional-verification verification/request-boot-uart.json --format json`; controls `python3 verification/boot_uart_mutants.py --out <dir>`
+experiment  control-space  verification/test_control_space.py; `klt functional-verification verification/request-control-space.json --format json`; controls `python3 verification/control_space_mutants.py --out <dir>`
+experiment  core-datapath  verification/test_protocol_emulator.py; `klt functional-verification verification/request-protocol-emulator.json --format json`
+experiment  die-area-baseline  flow/run-die-area-par.sh [PDK]; BLOCKED by klayout-tools#2635, records claim no measurement
+experiment  firmware-assembler-roundtrip  verification/test_firmware_roundtrip.py; `klt functional-verification verification/request-firmware-roundtrip.json --format json`
+experiment  firmware-gate-level  `PDK_ROOT=<pdk> ./flow/run-firmware-gate-level.sh --full --control-space --boot-rom --boot-spi --boot-uart` [PDK]; default netlist frozen in post-layout-sdf-regression/artifacts/20261010-133000-a0f91e3/
+experiment  firmware-i2c  verification/test_firmware_i2c.py, test_firmware_i2c_sr.py; `klt functional-verification verification/request-firmware-i2c.json --format json` and `... request-firmware-i2c-sr.json ...`
+experiment  firmware-loadseq  verification/test_loadseq.py, test_loadseq_top.py; `klt functional-verification verification/request-loadseq.json --format json` and `... request-loadseq-top.json ...`; `python3 firmware/tools/test_loadseq.py` (not in run-rtl-benches.sh; cold-started by hand for this audit, both pass)
+experiment  firmware-spi  verification/test_firmware_spi.py; `klt functional-verification verification/request-firmware-spi.json --format json`
+experiment  firmware-uart  verification/test_firmware_uart.py; `klt functional-verification verification/request-firmware-uart.json --format json`
+experiment  firmware-uart-rx  verification/test_firmware_uart_rx.py; `klt functional-verification verification/request-firmware-uart-rx.json --format json`
+experiment  isa-lockstep  verification/test_isa_lockstep.py + reference_models/isa.py; `klt functional-verification verification/request-isa-lockstep.json --format json`; controls `python3 verification/isa_lockstep_mutants.py --out <dir>`
+experiment  librelane-corner-timing  [LL] gds workflow; `gh run download <run-id>`; the figures are GDS_logs runs/wokwi/final/metrics.json, projected as the records describe
+experiment  librelane-gds-signoff-check  [PDK] from flow/: `klt synthesize synthesize-protocol-emulator.json`, `klt drc drc-librelane-gds.json`, `klt extract extract-librelane-gds.json`, `klt lvs lvs-librelane-gds-asrouted.json`, `klt lvs lvs-librelane-gds-klt-netlist.json` (each `--format json`)
+experiment  librelane-pdn-bridge  [LL] gds workflow (PDN configuration src/pdn_cfg.tcl, src/config.json)
+experiment  no-data-dependent-latency  `./verification/formal/run-no-data-dependent-latency.sh <dir>` (formal toolchain); `verification/formal/test-mutant-gate.sh`
+experiment  pin-write-latency  `./verification/formal/run-pin-write-latency.sh <dir>` (formal toolchain)
+experiment  post-layout-sdf-regression  [PDK][LL] `KLT_BIN=<klt> PDK_ROOT=<pdk> ./flow/run-post-layout-sdf.sh --run-id <gds run>` (or `--from <dir>` on downloaded artifacts); the SDFs and netlist of each cited run are frozen in its record
+experiment  program-load-phase  verification/test_program_memory.py; `klt functional-verification verification/request-program-memory.json --format json`
+experiment  program-memory-macro-feasibility  [PDK] `python3 flow/run-sram-macro-feasibility.py --out <file>`
+experiment  protocol-reference-models  verification/test_protocol_models.py; `klt functional-verification verification/request-protocol-models.json --format json`
+experiment  random-regression  verification/test_random_regression.py; `klt functional-verification verification/request-random-regression.json --format json`
+experiment  reset-pin-through  verification/test_protocol_emulator.py (the same run as core-datapath); `klt functional-verification verification/request-protocol-emulator.json --format json`
+experiment  reset-power-up  `PDK_ROOT=<pdk> ./flow/run-reset-power-up-gate-level.sh` [PDK]; reset coverage `python3 verification/reset_coverage.py` (self-test in `npm run lint`)
+experiment  signoff-baseline  `scripts/signoff-report.sh --check-latest` (grading, not a measurement; CI signoff job)
+experiment  sta-corner-sweep  `./flow/run-sta-corner-sweep.sh [corner]` [PDK]; BLOCKED by klayout-tools#2635, records claim no measurement
+experiment  synthesis-baseline  [PDK] from flow/: `klt synthesize synthesize-protocol-emulator.json --pdk ihp-sg13cmos5l --format json`, same for synthesize-program-memory.json; the boot-ROM-alone figure uses the request frozen in the record's artifacts, run from the repository root
+experiment  uio-pad-model  verification/test_uio_pads.py; `klt functional-verification verification/request-uio-pads.json --format json`; `python3 verification/test_uio_pad_resolution.py`; controls `python3 verification/uio_pad_mutants.py --out <dir>`
+
+## What this audit ran (2026-10-10, not committed as records)
+
+# klt v0.7.0 (clean build of the pin), cocotb 2.1.0, Icarus Verilog 13.0,
+# IHP-Open-PDK 2bbec755; formal on Yosys 0.69+post and Z3 5.1.0 (the versions
+# the formal records name), not the CI suite. Every cold start passed:
+#   scripts/run-rtl-benches.sh                       15 of 15 benches pass
+#   request-loadseq.json, request-loadseq-top.json   6/6 and 3/3 pass
+#   flow/run-firmware-gate-level.sh --full --control-space --boot-rom --boot-spi
+#       7 bench modules pass on the gate-level netlist; every negative
+#       control fails as required (11 min 35 s)
+#   flow/run-reset-power-up-gate-level.sh            5/5 pass; both negative
+#       controls fail as required; coverage listing passes (3 min 4 s)
+#   flow/run-post-layout-sdf.sh --run-id 38043438168 (main @ 5a31595, the
+#       same design sources): 3 corners, annotated, all pass
+#   verification/formal/run-no-data-dependent-latency.sh  all expectations
+#       met (9 min 2 s); run-pin-write-latency.sh  all expectations met
+#       (4 min 43 s); test-mutant-gate.sh  pass
+#   python3 flow/run-sram-macro-feasibility.py       same figures as its record
+#   flow/run-sta-corner-sweep.sh, flow/run-die-area-par.sh  fail as their
+#       records say (macro LEF not found, klayout-tools#2635)
+# The PDK-heavy klt legs were re-run and committed as records at this pin:
+# synthesis-baseline 20261010-110400-5669077 and librelane-gds-signoff-check
+# 20261010-110300-5669077.

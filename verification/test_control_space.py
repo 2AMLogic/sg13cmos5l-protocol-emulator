@@ -783,16 +783,21 @@ async def test_pm_crc_matches_binascii_crc_hqx(dut):
         expect(trace, p, checks)
 
 
+#: SCL | SDA of the committed I2C images (DR 0010: uio[2], uio[3]).
+I2C_OD = 0x0C
+
+
 @cocotb.test()
 async def test_i2c_images_open_drain_preamble(dut):
-    """The six committed I2C images now carry `WCTL UIO_OD` with 0x81 (DR
-    0012; SCL = uio[0], SDA = uio[7] per the images' pin plan). Run each
+    """The six committed I2C images carry `WCTL UIO_OD` with 0x0C (DR
+    0012; SCL = uio[2], SDA = uio[3], DR 0010's target plan since issue
+    #155). Run each
     with no peripheral (the bus reads released) and check, at the logic
     level, what a wired-AND bus needs: no uio pin is enabled before the
-    preamble; after it uio_oe is exactly `~uio_out & 0x81` on every edge,
+    preamble; after it uio_oe is exactly `~uio_out & 0x0C` on every edge,
     so SCL and SDA are only ever pulled low or released, never driven
     high; no other uio pin is ever enabled; and the preamble itself does
-    not pull a line low (the OUT of 0x81 precedes it). This is not a pad
+    not pull a line low (the OUT of 0x0C precedes it). This is not a pad
     model -- that, and the I2C evidence re-run on it, are issue #136."""
     start_clock(dut)
     for name in ("i2c_fast", "i2c_std", "i2c_fast_sr", "i2c_fast_sr_poll",
@@ -808,12 +813,12 @@ async def test_i2c_images_open_drain_preamble(dut):
         trace = await run_trace(dut, words, n, uio_in=0xFF)
         for e in range(0, e_pre):
             assert trace[e]["uio_oe"] == 0, f"{name}: a uio pin enabled before the preamble"
-        assert trace[e_pre - 1]["uio_out"] == 0x81, f"{name}: lines not released before UIO_OD"
+        assert trace[e_pre - 1]["uio_out"] == I2C_OD, f"{name}: lines not released before UIO_OD"
         assert trace[e_pre]["uio_oe"] == 0x00, f"{name}: the preamble pulled a line low"
         pulled = False
         for e in range(e_pre, n + 1):
             s = trace[e]
-            assert s["uio_oe"] == (~s["uio_out"] & 0x81), (
+            assert s["uio_oe"] == (~s["uio_out"] & I2C_OD), (
                 f"{name}: uio_oe {s['uio_oe']:#04x} with uio_out {s['uio_out']:#04x} at edge {e}"
             )
             pulled = pulled or s["uio_oe"] != 0

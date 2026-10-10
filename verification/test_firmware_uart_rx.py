@@ -8,7 +8,7 @@ Issue #71 / `test_firmware_uart.py` measured UART *transmit* at one rate
   (50 cycles/bit), `uart_rx_115200.asm` (434) and `uart_rx_9600.asm` (5,208)
   are loaded over the real load-phase pins onto the real top
   (`tt_um_2amlogic_protocol_emulator`), executed by the ISA core, and fed
-  `ui_in[0]` waveforms built by the **independent** reference model
+  `ui_in[1]` waveforms built by the **independent** reference model
   (`verification/reference_models/uart.py`: `encode_frame` /
   `encode_slow_frame`, `UartDecoder`, `check_frame`, plus
   `waveform.apply_jitter`).  The received byte is read off `uo_out`.
@@ -32,14 +32,16 @@ What is judged, and by whom
   rate-error scale, the jitter amplitude and the idle gap.
 * The expected byte is the byte the model was asked to send; the DUT's
   answer is `uo_out`.
-* The firmware exposes its real sample instants on `uio_out[0]` (a mark that
+* The firmware exposes its real sample instants on `uio_out[1]` (a mark that
   rises right after each `IN` of the line and falls a few cycles later), so
   the bench measures them **at the pin** instead of trusting the program's
   arithmetic: consecutive samples must be exactly P cycles apart (cycle-
   exact, no data dependence), the first sample must land within the
   start-detect poll's granularity of the static window, and every sample
   must sit inside the sender's bit it was meant to read.  A stop bit that
-  reads 0 raises `uio_out[1]`.
+  reads 0 raises `uio_out[2]`.
+  (RX moved to `ui_in[1]` in issue #178, DR 0010's target pin plan; `ui_in[0]`
+  is `PROG_SER` and is held low, or toggled on purpose, never the line.)
 
 Rate error and the model's bound
 --------------------------------
@@ -132,6 +134,23 @@ MARK_VISIBLE_AFTER_IN = 1
 #: Start-detect poll loop length (IN, AND, BNZ): start-edge granularity.
 POLL_PERIOD = 3
 
+#: Pin plan (DR 0010 target, issue #178): RX is `ui_in[1]`; `ui_in[0]` is
+#: PROG_SER and must have no influence on reception.  The debug bits the RX
+#: images write to `UIO_OUT` follow R1 = the RX mask (2): mark = bit 1,
+#: framing-error flag = bit 2.
+RX_BIT = 1
+MARK_BIT = 1
+FERR_BIT = 2
+RX_IDLE = 1 << RX_BIT
+#: Level of `ui_in[0]` (PROG_SER) the bench presents; directed tests toggle it.
+UI0 = {"v": 0}
+
+
+def set_rx(dut, level):
+    """Drive the RX line (`ui_in[1]`), `ui_in[0]` at its current level."""
+    dut.ui_in.value = ((level & 1) << RX_BIT) | (UI0["v"] & 1)
+
+
 PROBE_BYTES = (0xA5, 0x5A, 0x00, 0xFF, 0x80, 0x01, 0x55, 0xAA, 0x40, 0xC3)
 
 
@@ -198,15 +217,26 @@ async def capture_ports(dut, cycles: int):
 
 
 async def drive_line(dut, line: Signal, base_ns: float):
-    """Apply the model's `Signal` to `ui_in` (bit 0 only) at absolute
-    sub-cycle times: `base_ns` + the signal's own times."""
-    dut.ui_in.value = line.initial
+    """Apply the model's `Signal` to `ui_in[1]` (the RX line; `ui_in[0]`
+    stays at `UI0`) at absolute sub-cycle times: `base_ns` + the signal's own
+    times."""
+    set_rx(dut, line.initial)
     for t, v in line.transitions:
         target_ps = round((base_ns + t) * 1000)
         now_ps = round(float(get_sim_time("ps")))
         assert target_ps > now_ps, "stimulus transition scheduled in the past"
         await Timer(target_ps - now_ps, unit="ps")
-        dut.ui_in.value = v
+        set_rx(dut, v)
+
+
+async def toggle_ui0(dut, every_cycles):
+    """Flip `ui_in[0]` (PROG_SER) every `every_cycles` clocks (+3 ns, so it
+    never lands on a clock edge), leaving the RX bit as the drive coroutine
+    last set it."""
+    while True:
+        await Timer(every_cycles * CLK_PERIOD_NS + 3, unit="ns")
+        UI0["v"] ^= 1
+        dut.ui_in.value = (int(dut.ui_in.value) & ~1) | UI0["v"]
 
 
 # =======================================================================
@@ -231,7 +261,7 @@ def build_stimulus(period_cycles: int, frames, rng) -> Signal:
     """Concatenate the frames onto one line using the model's generators."""
     baud = baud_of(period_cycles)
     bit_ns = bit_period_ns(baud)
-    line = Signal(1, name=f"ui_in0@{period_cycles}")
+    line = Signal(1, name=f"ui_in1@{period_cycles}")
     t = max(40, 2 * period_cycles) * CLK_PERIOD_NS + rng.uniform(1.0, 19.0)
     for spec in frames:
         spec.t_start = t
@@ -259,7 +289,7 @@ def build_stimulus(period_cycles: int, frames, rng) -> Signal:
 # =======================================================================
 
 
-def mark_rises(uio, bit=0):
+def mark_rises(uio, bit=MARK_BIT):
     return [
         n for n in range(1, len(uio))
         if (uio[n] >> bit) & 1 and not (uio[n - 1] >> bit) & 1
@@ -303,7 +333,7 @@ def analyze(frames, line, times, uo, uio, period_cycles):
             res["spacing_violations"] = check_cycle_exact_spacing(marks, period_cycles)
             res["before"] = uo[marks[7]]
             res["got"] = uo[marks[7] + 20]
-            res["err_flag"] = (uio[marks[8] + 8] >> 1) & 1
+            res["err_flag"] = (uio[marks[8] + 8] >> FERR_BIT) & 1
             res["fracs"] = [
                 (times[m - MARK_VISIBLE_AFTER_IN] - t_edge) / (bit_ns * spec.scale)
                 - (k + 1)
@@ -351,21 +381,35 @@ def frame_ok(spec, res, period_cycles, strict_center=False):
     return fails
 
 
-async def run_rx(dut, stem, frames, seed):
+async def run_rx(dut, stem, frames, seed, ui0_toggle_cycles=0, start_clock=True,
+                 words=None):
     """Load `stem`, drive `frames`, capture, analyse.  Returns
-    `(results, line)` with `line` on the capture's absolute time base."""
+    `(results, line)` with `line` on the capture's absolute time base.
+    `start_clock=False` lets a caller that runs many programs in one test
+    (the seeded regression, issue #192) own the single clock coroutine;
+    `words` runs that image instead of the committed `stem` one (the
+    regression's own assembly of the case; `stem` still names the bit period)."""
     period = RX_PROGRAMS[stem]
     rng = random.Random(seed)
-    cocotb.start_soon(Clock(dut.clk, CLK_PERIOD_NS, unit="ns").start())
-    words = load_image(stem)
+    if start_clock:
+        cocotb.start_soon(Clock(dut.clk, CLK_PERIOD_NS, unit="ns").start())
+    if words is None:
+        words = load_image(stem)
     assert len(words) <= 256, f"{stem}: {len(words)} words exceeds the 256-word store"
     await load_program(dut, words)
-    dut.ui_in.value = 1  # RX idles high from the MODE drop onward
+    UI0["v"] = 0  # PROG_SER idles low after the MODE drop
+    set_rx(dut, 1)  # RX idles high from the MODE drop onward
     base_ns = float(get_sim_time("ns"))
     line = build_stimulus(period, frames, rng)
     cycles = math.ceil(frames[-1].t_end / CLK_PERIOD_NS) + 3 * period
     cocotb.start_soon(drive_line(dut, line, base_ns))
+    toggler = None
+    if ui0_toggle_cycles:
+        toggler = cocotb.start_soon(toggle_ui0(dut, ui0_toggle_cycles))
     times, uo, uio = await capture_ports(dut, cycles)
+    if toggler is not None:
+        toggler.cancel()
+    UI0["v"] = 0
     for f in frames:
         f.t_start += base_ns
         f.t_end += base_ns
@@ -483,7 +527,7 @@ async def test_pin_timing_calibration(dut):
     """Directed: pin down the port timings the other tests lean on, with a
     three-instruction program (`IN R2,UI_IN; OUT UIO_OUT,R2; HALT`): which
     edge an `IN` samples the line at, and when its `OUT` is visible.
-    `ui_in[0]` is raised just after edge 1 (must be seen by the `IN`
+    `ui_in[1]` (RX) is raised just after edge 1 (must be seen by the `IN`
     retiring at edge 2) or just after edge 2 (must be missed)."""
     cocotb.start_soon(Clock(dut.clk, CLK_PERIOD_NS, unit="ns").start())
     program = asm.assemble_text("IN R2, UI_IN\nOUT UIO_OUT, R2\nHALT\n")
@@ -491,15 +535,16 @@ async def test_pin_timing_calibration(dut):
     seen = {}
     for label, edge_offset in (("after-edge-1", 1), ("after-edge-2", 2)):
         await load_program(dut, words)
-        dut.ui_in.value = 0
+        UI0["v"] = 0
+        set_rx(dut, 0)
         for _ in range(edge_offset):
             await RisingEdge(dut.clk)
         await Timer(5, unit="ns")
-        dut.ui_in.value = 1
+        set_rx(dut, 1)
         _times, _uo, uio = await capture_ports(dut, 8)
-        rises = mark_rises(uio)
+        rises = mark_rises(uio, RX_BIT)
         seen[label] = rises[0] + edge_offset if rises else None
-        dut.ui_in.value = 0
+        set_rx(dut, 0)
     dut._log.info(f"calibration (visible-at edge number, edge 0 = MODE drop): {seen}")
     assert seen["after-edge-1"] == 2 + MARK_VISIBLE_AFTER_IN, seen
     assert seen["after-edge-2"] is None, seen
@@ -567,7 +612,7 @@ async def test_negative_control_rate_error_beyond_tolerance(dut):
 
 @cocotb.test()
 async def test_framing_error_flag_and_recovery(dut):
-    """A stop bit held low raises `uio_out[1]`; the next, good frame is still
+    """A stop bit held low raises `uio_out[2]`; the next, good frame is still
     received (and clears it)."""
     stem = "uart_rx"
     frames = [
@@ -580,6 +625,29 @@ async def test_framing_error_flag_and_recovery(dut):
         failed += [f"{spec.label}: {m}" for m in frame_ok(spec, res, RX_PROGRAMS[stem])]
         dut._log.info(f"{spec.label}: got {res.get('got')} err_flag {res.get('err_flag')}")
     assert not failed, "\n".join(failed)
+
+
+@cocotb.test()
+async def test_ui_in0_prog_ser_has_no_effect(dut):
+    """`ui_in[0]` (PROG_SER) toggled mid-frame, every 7 clocks, must not change
+    the received byte, the sample marks or the framing flag: RX is `ui_in[1]`
+    only.  Compared against the same frames received with `ui_in[0]` held low."""
+    stem = "uart_rx"
+    period = RX_PROGRAMS[stem]
+    probe = (0xA5, 0x5A, 0x00, 0xFF)
+    runs = {}
+    for name, toggle in (("held-low", 0), ("toggling", 7)):
+        frames = [FrameSpec(b, gap_bits=2.0, label=f"{name}-{b:02x}") for b in probe]
+        results, _line = await run_rx(dut, stem, frames, seed=9161,
+                                      ui0_toggle_cycles=toggle)
+        for spec, res in zip(frames, results):
+            bad = frame_ok(spec, res, period)
+            assert not bad, f"{spec.label}: {bad}"
+        runs[name] = [(res.get("got"), res["n_marks"], res.get("err_flag"))
+                      for res in results]
+    assert runs["held-low"] == runs["toggling"], runs
+    assert [g for g, _n, _e in runs["toggling"]] == list(probe), runs
+    dut._log.info(f"ui_in[0] toggling mid-frame left reception unchanged: {runs['toggling']}")
 
 
 @cocotb.test()

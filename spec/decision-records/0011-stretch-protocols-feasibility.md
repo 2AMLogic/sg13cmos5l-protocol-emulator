@@ -23,9 +23,7 @@ whether either protocol can or cannot be built, on this ISA or any other. An
 earlier draft of this record (PR #128 up to commit `0f085b5`) carried a
 "defer both" verdict, reopening conditions and statements that some parts
 were impossible. Review found those statements went further than the
-schedules show, and they are withdrawn. Where DR 0015 says "DR 0011's defer"
-or "DR 0011's reopening condition 1", it means that earlier draft, not this
-text.
+schedules show, and they are withdrawn.
 
 ## Verdict: see DR 0015
 

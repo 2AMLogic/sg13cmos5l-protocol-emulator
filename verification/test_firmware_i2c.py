@@ -29,25 +29,33 @@ kHz figure is arithmetic at target-spec row 4's **unconfirmed** clock
 (same stance as `test_firmware_uart.py`; see
 `verification/records/sta-corner-sweep/` for why row 4 is unconfirmed).
 
-The bus the model grades is a wired-AND the bench composes
-----------------------------------------------------------
-The core drives its open-drain *intent* on `uio_out` (SCL = bit 0,
-SDA = bit 7; writing 1 releases the line, 0 asserts it low), and the
-peripheral's intent is driven onto `uio_in` by this bench's reactive
-driver (a coroutine that watches the controller's SCL and pulls SDA low
-for the ACK slots it chooses to acknowledge -- exactly how a real I2C
-peripheral behaves). The line the reference model grades is
-``controller_output AND peripheral_output`` per bit, composed from the
-per-cycle captures -- the wired-AND an open-drain bus physically is.
-This composition is deliberate and is the honest reading of this RTL:
-`uio_oe` is fixed to 0 at the top level (`src/tt_um_2amlogic_
-emulator.v`), so on silicon no firmware drive would reach a physical
-pin at all -- DR 0001's own flagged open question (its "Consequences"
-section names I2C's SDA direction change explicitly). That gap is
-raised as its own issue rather than worked around here; what this bench
-proves on this RTL is that the firmware's cycle timing and protocol
-behavior are correct at the point the core drives and samples, with the
-ACK handshake flowing through the core's real `IN` path.
+The bus the model grades is the pad-resolved line (issue #136)
+-------------------------------------------------------------
+Every run goes through the silicon-true pad model
+(`verification/uio_pads.py`, DR 0012 section "Consequences"): per `uio`
+pin the design's `uio_oe` / `uio_out`, a pull-up on SCL (`uio[2]`) and
+on SDA (`uio[3]`), and the peripheral as an external open-drain driver
+are resolved into one line, and that line is what `uio_in` reads. The
+reactive peripheral watches the *line's* SCL (never the controller's
+intent on `uio_out`) and pulls SDA low for the ACK slots it chooses to
+acknowledge -- how a real I2C peripheral behaves. The two waveforms the
+reference model grades are the SCL and SDA **lines** as sampled on
+`uio_in`, so the ACK handshake still flows through the core's real `IN`
+path, and now so does every level the controller itself puts on the bus.
+
+Until issue #136 this bench composed the bus itself: `line = uio_out
+AND uio_in`, with `uio_oe` never read. That is what an open-drain bus
+does *if* the pads implement open-drain, so it could not tell a chip
+that drives the line from one that cannot; before DR 0012 the top had
+`uio_oe = 8'h00` and could not (DR 0008 section "Context"). The records
+minted from that composition are superseded for that reason. Here a
+line goes low only because the design enabled its pad and drove 0, or
+the peripheral did. After each run the bench also checks what the pads
+were seen doing: the design drove exactly SCL and SDA, only ever low,
+with no contention.
+
+The pad model is zero-delay and purely logical: it says nothing about
+pull-up rise time, pad delay or drive strength (`uio_pads.py`, "Timing").
 
 The ACK branch is exercised in both directions (two runs, one program)
 ---------------------------------------------------------------------
@@ -74,8 +82,16 @@ Negative controls (a suite that cannot fail cannot cite its passes)
    a uniform 0.9x compression drives t_LOW under the floor (and t_HIGH
    with it, in Standard mode) while leaving the transfer's structure --
    and therefore the model's decode -- intact. This is the stronger
-   control: it proves this bench's compose-and-grade path can fail, not
+   control: it proves this bench's capture-and-grade path can fail, not
    merely that a synthetic waveform can.
+3. **`UIO_OD` left at reset** (issue #136): each committed image with
+   its one `WCTL UIO_OD` word replaced by a reserved 1-cycle no-op, so
+   the cycle timing is unchanged and every `OUT` still happens, but the
+   pads stay inputs (DR 0012's reset state). The lines must never leave
+   the pulled-up level, the peripheral must see no clock, and the model
+   must find no transfer. The same run's `uio_out` *intent*, composed
+   the old way, still decodes as a well-timed transfer -- which is
+   exactly why the old composition was not evidence about the pins.
 
 Driven by `klt functional-verification` (see
 `verification/request-firmware-i2c.json`) against
@@ -154,9 +170,30 @@ ADDRESS = 0x50
 READ_BIT = False
 DATA_BYTE = 0x5A
 
-#: Pin plan of both programs: SCL on uio bit 0, SDA on uio bit 7.
-SCL_PIN, SCL_BIT = "uio_out", 0
-SDA_PIN, SDA_BIT = "uio_out", 7
+#: Pin plan of both programs: SCL on uio bit 2, SDA on uio bit 3 -- DR
+#: 0010's target plan, the standard Tiny Tapeout I2C Pmod (issue #155).
+#: `SCL_PIN` / `SDA_PIN` name the controller's *intent* (`uio_out`); the
+#: line the model grades is read on `uio_in` (`LINE_PIN`).
+SCL_PIN, SCL_BIT = "uio_out", 2
+SDA_PIN, SDA_BIT = "uio_out", 3
+LINE_PIN = "uio_in"
+
+#: What every I2C run captures, per clock edge: the two bus lines as the
+#: pads resolve them (graded), and the controller's intent (kept for the
+#: UIO_OD negative control, never graded as the bus).
+CAPTURE_SPECS = {
+    "scl": (LINE_PIN, SCL_BIT),
+    "sda": (LINE_PIN, SDA_BIT),
+    "ctl_scl": (SCL_PIN, SCL_BIT),
+    "ctl_sda": (SDA_PIN, SDA_BIT),
+}
+
+
+def i2c_pads(dut):
+    """The pad model wired as this pin plan's I2C board: pull-ups on SCL
+    and SDA, every other `uio` line tied low. The one place the I2C
+    benches tell the pad model which pins the bus is on."""
+    return i2c_board(dut, scl=SCL_BIT, sda=SDA_BIT)
 
 #: Trailing capture margin past the program's static end, in cycles.
 CAPTURE_MARGIN_CYCLES = 300
@@ -197,6 +234,10 @@ from test_protocol_emulator import load_program  # noqa: E402
 from test_firmware_uart import (  # noqa: E402
     CapturedPin,
     capture_pin_bits,
+)
+from uio_pads import (  # noqa: E402  (the pad model; no test objects)
+    assert_i2c_open_drain,
+    i2c_board,
 )
 
 
@@ -252,12 +293,18 @@ def expected_section_cycles(mode: _Mode) -> dict:
 
 
 # =======================================================================
-# The wired-AND bus composition and the reactive peripheral
+# The pad-resolved bus and the reactive peripheral
 # =======================================================================
 
 
 def wired_and(a: CapturedPin, b: CapturedPin) -> Signal:
-    """Compose the open-drain bus line `a AND b`.
+    """Compose `a AND b` from two captures -- the bus this bench graded
+    before issue #136, when it assumed open-drain pads instead of
+    modelling them. **No pass in this file is graded on it any more.** It
+    is kept for one purpose: the `UIO_OD` negative control composes the
+    controller's `uio_out` intent this way to show that the old
+    composition still reports a clean transfer on a chip whose pads never
+    drive.
 
     Both captures were sampled on the same clock edges, so their
     transition lists share a time basis exactly; the line's transitions
@@ -288,16 +335,10 @@ def scale_signal(signal: Signal, factor: float) -> Signal:
     return clone
 
 
-#: Released-bus pin value the peripheral drives on `uio_in` (SCL bit 0
-#: and SDA bit 7 both released = 0x81); the ACK pull clears SDA's bit.
-_RELEASED = 0x81
-_ACK_PULL = 0x01
-
-
-async def drive_peripheral(dut, ack_falls: set) -> None:
-    """Reactive I2C peripheral: watch the controller's SCL intent
-    (`uio_out` bit 0), count falling edges, and pull SDA low on the
-    `uio_in` bit-7 side for the ACK slots named in `ack_falls`.
+async def drive_peripheral(dut, pads, ack_falls: set) -> None:
+    """Reactive I2C peripheral on the pad model's external side: watch
+    the SCL **line**, count its falling edges, and pull the SDA line low
+    for the ACK slots named in `ack_falls`.
 
     A real peripheral answers SCL, not a script -- but the *decision* of
     which bytes to acknowledge is the peripheral's own, and that is what
@@ -308,63 +349,81 @@ async def drive_peripheral(dut, ack_falls: set) -> None:
     the release lands on the next fall, i.e. inside the following low
     phase, which is the only place I2C lets SDA change.
 
-    Writes happen 1 ns after the read-only sample of each edge, so they
-    never race this bench's own captures and are stable at the next
-    rising edge the core samples on.
+    The peripheral is open-drain like every I2C device: it pulls SDA low
+    or lets go, and never touches SCL in this bench (no stretching). It
+    changes its drive 1 ns after the read-only sample of each edge, so it
+    never races this bench's own captures and the line is stable at the
+    next rising edge the core samples on.
+
+    The SCL line idles high from reset (pull-up, every pad an input), so
+    the first fall counted is the controller's first real one: a chip
+    that never drives SCL low gives this peripheral nothing to answer.
     """
-    await RisingEdge(dut.clk)
-    await Timer(1, unit="ns")
-    dut.uio_in.value = _RELEASED  # release the bus before the core's
-    # first OUT (load_program leaves uio_in at 0; the idle bus must read
-    # released so the wired-AND line follows the controller alone)
-    previous = 0  # uio_out resets to 0: no phantom fall before the
-    # controller's first release OUT (counting that reset state as a fall
-    # would shift every ACK slot by one)
+    previous = pads.level(SCL_BIT)
     falls = 0
     while True:
         await RisingEdge(dut.clk)
         await ReadOnly()
-        scl = (int(dut.uio_out.value) >> SCL_BIT) & 1
+        scl = pads.level(SCL_BIT)
         await Timer(1, unit="ns")
         if previous == 1 and scl == 0:
             falls += 1
-            dut.uio_in.value = _ACK_PULL if falls in ack_falls else _RELEASED
+            if falls in ack_falls:
+                pads.pull_low(SDA_BIT)
+            else:
+                pads.release(SDA_BIT)
         previous = scl
 
 
-async def run_program(dut, mode: _Mode, ack_falls: set) -> dict:
-    """Load `mode`'s committed image, run it with the reactive peripheral
-    acknowledging exactly the slots in `ack_falls`, capture all four pin
-    bits, and return the captured pins (controller SCL/SDA + peripheral
-    SCL/SDA). The caller composes and grades the wired-AND lines."""
-    words = load_committed_image(mode)
+async def run_words(dut, tag: str, words: list, run_cycles: int,
+                    ack_falls: set, expect_open_drain: bool = True):
+    """Load `words` and run them on the I2C board (`i2c_pads`:
+    pull-ups on SCL/SDA, the reactive peripheral above on the external
+    side), capturing the two lines and the controller's intent on every
+    clock edge. Returns `(captures, pads)`.
+
+    The pad model runs from before reset: no `uio` pad may be enabled
+    from reset release to the end of the load phase (DR 0012: every pin
+    an input until a program configures it). With `expect_open_drain` (every run except
+    the UIO_OD negative control) the run must end having driven exactly
+    SCL and SDA, only ever low, without contention."""
     assert len(words) <= 256, "program exceeds DR 0001's 256-word memory"
+    pads = i2c_pads(dut).start()
     await load_program(dut, words)
+    assert pads.resets == 1 and pads.oe_seen == 0, (
+        f"{tag}: uio pads 0x{pads.oe_seen:02x} were enabled between "
+        "reset release and the end of the load phase (DR 0012: every uio "
+        "pin is an input at reset)"
+    )
+    driver = cocotb.start_soon(drive_peripheral(dut, pads, ack_falls))
+    caps = await capture_pin_bits(dut, CAPTURE_SPECS, run_cycles)
+    driver.kill()
+    pads.stop()
+    if expect_open_drain:
+        assert_i2c_open_drain(pads, tag)
+    return caps, pads
+
+
+async def run_program(dut, mode: _Mode, ack_falls: set) -> dict:
+    """Load `mode`'s committed image, run it on the pads with the
+    reactive peripheral acknowledging exactly the slots in `ack_falls`,
+    and return the captures (the SCL/SDA lines the caller grades, plus
+    the controller's intent)."""
+    words = load_committed_image(mode)
     run_cycles = committed_total_cycles(mode) + CAPTURE_MARGIN_CYCLES
     dut._log.info(
         f"{mode.name}: capturing {run_cycles} cycles, peripheral ACKs "
         f"SCL falls {sorted(ack_falls)}"
     )
-    driver = cocotb.start_soon(drive_peripheral(dut, ack_falls))
-    caps = await capture_pin_bits(
-        dut,
-        {
-            "ctl_scl": (SCL_PIN, SCL_BIT),
-            "ctl_sda": (SDA_PIN, SDA_BIT),
-            "per_scl": ("uio_in", SCL_BIT),
-            "per_sda": ("uio_in", SDA_BIT),
-        },
-        run_cycles,
-    )
-    driver.kill()
+    caps, _pads = await run_words(dut, mode.name, words, run_cycles, ack_falls)
     return caps
 
 
 def grade_transfer(caps: dict, mode: _Mode):
-    """Compose the wired-AND bus and hand BOTH lines to the independent
-    model -- the decode and every timing verdict are the model's."""
-    scl = wired_and(caps["ctl_scl"], caps["per_scl"])
-    sda = wired_and(caps["ctl_sda"], caps["per_sda"])
+    """Hand the two pad-resolved lines to the independent model -- the
+    decode and every timing verdict are the model's."""
+    scl = caps["scl"].signal
+    sda = caps["sda"].signal
     return scl, sda, check_transfer(scl, sda, fast_mode=mode.fast_mode)
 
 
@@ -457,8 +516,12 @@ async def test_i2c_both_grades_pass_independent_reference_model(dut):
     directions: run A (ACK -> data byte transmitted) and run B (NACK ->
     address-only transfer), same committed program.
 
+    Every run is on the pad model: the lines graded are what `uio_in`
+    reads, and each run ends with the check that the design drove exactly
+    SCL and SDA, only ever low, without contention.
+
     The negative controls run on these same captured waveforms at the
-    end, so a compose-and-grade path that could only ever pass fails
+    end, so a capture-and-grade path that could only ever pass fails
     here.
     """
     cocotb.start_soon(Clock(dut.clk, CLK_PERIOD_NS, unit="ns").start())
@@ -480,11 +543,19 @@ async def test_i2c_both_grades_pass_independent_reference_model(dut):
         )
         assert report.stretched_clocks == 0, "no clock stretching was driven"
         assert_measured_budgets(dut, mode, report, scl)
-        # the peripheral never pulled SCL (its side only ever rose to the
-        # released level at run start -- no stretching, no clock pulls)
-        assert all(
-            v == 1 for (_t, v) in caps["per_scl"].signal.transitions
-        ), "the peripheral must not pull SCL in these runs (no stretching)"
+        # nobody but the controller moves SCL in these runs (the
+        # peripheral never stretches), so the SCL line must be the
+        # controller's intent exactly -- which it only can be if the pad
+        # pulls low on a 0 and the pull-up restores the line on a 1.
+        # (`uio_out` resets to 0 while the pad is still an input, so the
+        # intent starts with one rise the line never sees: the program's
+        # `OUT 0x0C` that precedes `WCTL UIO_OD`.)
+        intent = caps["ctl_scl"].signal
+        assert intent.initial == 0 and intent.transitions[0][1] == 1
+        assert (
+            caps["scl"].signal.initial == 1
+            and caps["scl"].signal.transitions == intent.transitions[1:]
+        ), f"{mode.name} run A: the SCL line is not the controller's SCL"
 
         # ---- run B: peripheral NACKs the address -> the branch is taken,
         # the data byte is never transmitted, the transfer is shorter.
@@ -540,6 +611,107 @@ async def test_i2c_both_grades_pass_independent_reference_model(dut):
                 f"{NEGATIVE_CONTROL_SCALE}): {len(squeezed.violations)} "
                 f"violation(s), first {squeezed.violations[0]!r}"
             )
+
+
+#: `WCTL k, Rs` is `OUT` to port 00 with imm8 = k (DR 0012 section 1);
+#: UIO_OD is k = 0x01. The mask ignores the source-register field.
+_WCTL_UIO_OD_MASK, _WCTL_UIO_OD = 0xF3FF, 0xA001
+#: `OUT` to port 01 is DR 0012's reserved encoding: a 1-cycle no-op.
+_RESERVED_NOP_PORT = 0x0100
+
+
+def without_uio_od(words: list) -> list:
+    """The image with its `WCTL UIO_OD` turned into DR 0012's reserved
+    1-cycle no-op (`OUT` to port 01, same source register): the program
+    runs cycle for cycle as before and performs every `OUT`, but `UIO_OD`
+    keeps its reset value of 0, so every pad stays an input."""
+    hits = [i for i, w in enumerate(words)
+            if w & _WCTL_UIO_OD_MASK == _WCTL_UIO_OD]
+    assert len(hits) == 1, (
+        f"expected exactly one WCTL UIO_OD in the image, found {len(hits)}"
+    )
+    mutant = list(words)
+    mutant[hits[0]] |= _RESERVED_NOP_PORT
+    return mutant
+
+
+@cocotb.test()
+async def test_uio_od_left_at_reset_cannot_drive_the_bus(dut):
+    """Negative control for the pad path (issue #136): the committed
+    programs with `UIO_OD` left at its reset value must NOT produce an
+    I2C transfer on the lines.
+
+    Each image runs with its one `WCTL UIO_OD` replaced by a reserved
+    no-op of the same length. Required, per grade: no pad is ever
+    enabled; SCL and SDA never leave the pulled-up level; the peripheral,
+    which answers the SCL line, is never clocked and never pulls SDA; and
+    the independent model finds no transfer on the lines.
+
+    The same run then shows what this bench used to grade. The
+    controller's intent on `uio_out` is unchanged by the mutation, and
+    composed the pre-#136 way (`uio_out AND` a released peripheral) the
+    model decodes it as a well-timed transfer to 0x50. So the old
+    composition passes on a design that cannot pull a line low -- the
+    reason its records are superseded.
+    """
+    cocotb.start_soon(Clock(dut.clk, CLK_PERIOD_NS, unit="ns").start())
+
+    for mode in MODES:
+        words = without_uio_od(load_committed_image(mode))
+        run_cycles = committed_total_cycles(mode) + CAPTURE_MARGIN_CYCLES
+        # the peripheral would ACK both bytes if it ever saw the clocks
+        caps, pads = await run_words(
+            dut, f"{mode.name} without UIO_OD", words, run_cycles,
+            ack_falls={9, 18}, expect_open_drain=False,
+        )
+        tag = f"{mode.name} with UIO_OD at reset"
+        pads.assert_no_contention()
+        assert pads.oe_unknown == 0
+        assert pads.oe_seen == 0, (
+            f"NEGATIVE CONTROL FAILED TO FAIL ({tag}): pads "
+            f"0x{pads.oe_seen:02x} were enabled without a UIO_OD write"
+        )
+        for line in ("scl", "sda"):
+            sig = caps[line].signal
+            assert sig.initial == 1 and not sig.transitions, (
+                f"NEGATIVE CONTROL FAILED TO FAIL ({tag}): the {line} line "
+                f"moved ({sig.transitions[:4]}...) though no pad was enabled"
+            )
+        assert pads.ext[SDA_BIT] is None, (
+            f"{tag}: the peripheral pulled SDA though SCL never fell"
+        )
+        try:
+            _scl, _sda, report = grade_transfer(caps, mode)
+            found = report.ok or report.address is not None
+            detail = repr(report)
+        except ValueError as exc:
+            found, detail = False, f"model rejected the lines: {exc}"
+        assert not found, (
+            f"NEGATIVE CONTROL FAILED TO FAIL ({tag}): the model found a "
+            f"transfer on lines that never moved: {detail}"
+        )
+        dut._log.info(f"negative control ({tag}), lines: {detail}")
+
+        # What the pre-#136 composition concludes from this same run.
+        released = CapturedPin("released-peripheral", 1)
+        old_scl = wired_and(caps["ctl_scl"], released)
+        old_sda = wired_and(caps["ctl_sda"], released)
+        assert caps["ctl_scl"].signal.transitions, (
+            f"{tag}: the program stopped issuing OUTs -- the mutation must "
+            "leave the controller's intent intact"
+        )
+        composed = check_transfer(old_scl, old_sda, fast_mode=mode.fast_mode)
+        assert composed.ok and composed.address == ADDRESS, (
+            f"{tag}: expected the bench-composed bus (uio_out intent, pads "
+            f"ignored) to still decode a clean transfer, got {composed}"
+        )
+        assert composed.acks == [False] and composed.data_bytes == [], (
+            f"{tag}: composed intent decoded {composed}"
+        )
+        dut._log.info(
+            f"negative control ({tag}), bench-composed from uio_out intent "
+            f"(pads ignored, NOT evidence): {composed}"
+        )
 
 
 @cocotb.test()

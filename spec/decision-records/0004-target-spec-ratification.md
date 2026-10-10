@@ -191,6 +191,18 @@ strength of either record. That is the T1 checklist's own freshness rule
 (the signoff baseline's 0/11 verdict already grades this block accordingly)
 and it is inherited here verbatim.
 
+*Dated note 2026-10-10 (issue #85; the register above is a 2026-09-21
+snapshot and is left as written):* the two-key review of PR #84 found that
+some sources this register names do not say what they are cited for. They are
+corrected in `spec/target-spec.md` (§ "Dated notes — 2026-10-10"), not here.
+Row 10: NXP AN10406 is an SD/MMC-over-SPI note and does not mention UART;
+the row's 2 % bound is now derived from Maxim Integrated tutorial 2141 and
+written as "≤ 2 %", the same value.
+Row 9: the competition post asks for open source and names no licence;
+Apache-2.0 is this repo's own choice (`LICENSE`), still required by the row.
+Row 12: the current UM10204 is Rev. 7.0, where the same minimums are in
+Table 11.
+
 *klayout-tools issue citations above: [#1784] and [#1786] are
 `2AMLogic/klayout-tools` issues 1784 and 1786, both closed as of
 2026-09-21.*

@@ -54,6 +54,16 @@ coverage.
   `src/tt_um_2amlogic_protocol_emulator.v` (the harness-bootstrap stub top,
   issue #2). Driven by `klt functional-verification` (see
   `request-protocol-emulator.json`).
+- `sdf_alignment.py` — the post-layout entry point for that bench (issue
+  #106), used only by `flow/run-post-layout-sdf.sh`. It imports the
+  bench's tests unchanged and, when the runner sets `PE_ALIGN_*` from the
+  gds run's final SDC, starts the clock at the SDC period, applies each
+  post-edge stimulus the SDC input delay after the clock pin edge and reads
+  each pin the SDC output delay before the next edge, by rebinding the
+  bench's `RisingEdge`, `ClockCycles`, `settle_read` and `CLK_PERIOD_NS`.
+  `test_alu_flags_whitebox` is registered as skipped (a flattened netlist
+  has no `u_core`). With the variables unset it rebinds nothing; no RTL
+  request names it.
 - `test_control_space.py` — cocotb bench for DR 0012's control space
   (issue #135) on the top: reset values, readback, the `uio_oe` pin-mode
   rule, reserved-index behaviour, the fixed 2-cycle stall and its
@@ -76,6 +86,142 @@ coverage.
   also runs on a gate-level netlist. Driven by
   `klt functional-verification` (see `request-load-integrity.json`);
   `load_integrity_mutants.py` is its negative-control runner.
+- `uio_pads.py` — the **silicon-true `uio` pad model** (issue #136, DR
+  0012): per pin it resolves the design's `uio_oe` / `uio_out`, an
+  optional pull-up or pull-down and an optional external driver (the
+  peripheral model) into one line, feeds that line back on `uio_in`, and
+  records contention (the design and the external driver driving opposite
+  values). `i2c_board()` is the wiring the I2C benches use (pull-ups on
+  SCL = `uio[2]` and SDA = `uio[3]`, the rest tied low; `spi_board()` is
+  the SPI benches' wiring, issue #155) and
+  `assert_i2c_open_drain()` the check each I2C run ends with: the design
+  drove exactly SCL and SDA, only ever low, without contention. It
+  replaces the bench-composed bus (`line = uio_out AND uio_in`, `uio_oe`
+  never read) the I2C evidence was minted on until #136. Zero-delay and
+  logical: not a claim about pull-up rise time, pad delay or drive
+  strength. A helper module, not a bench.
+- `test_uio_pads.py` — cocotb bench for the pad model itself, on the real
+  top with small programs assembled in memory: input, push-pull and
+  open-drain pads at the line and through the core's `IN` path, a
+  peripheral holding a released line (not contention), and three real
+  fights the detector must report. Driven by `klt functional-verification`
+  (see `request-uio-pads.json`).
+- `test_uio_pad_resolution.py` — simulator-free unit tests of the
+  resolution rule (`uio_pads.resolve_pin`) against a hand-written truth
+  table; run by `npm run lint`.
+- `uio_pad_mutants.py` — negative controls for the pad path: five defects
+  injected into a scratch copy of the top's `uio_oe` logic (the first is
+  the pre-DR-0012 `uio_oe = 8'h00`), each of which the I2C benches must
+  fail on. None of them changes `uio_out`, so none could change the
+  verdict of the old bench-composed bus.
+- `test_boot_rom.py` — cocotb bench for DR 0013 layer 2 (issue #138) on
+  the top: the boot ROM, the fetch-source switch and the warm start, and
+  target-spec row 14 (c). With `MODE` low at reset the stub straps move no
+  pin on a never-written memory; a canary image and random images are
+  never run on any strap; a signed image warm-starts on the edge an
+  independent model of the boot program predicts, with the reset register
+  and flag state; seven corrupted images are rejected; a zero signature
+  is refused (the all-zero image and a real image whose CRC is 0x0000,
+  issue #168); and zero-padded images with signatures 0x00nn and 0xnn00
+  still run. Expected numbers come from
+  `BootModel`, an ISA interpreter in the bench that runs the committed
+  boot image and shares no code with the RTL or the assembler.
+  Pin-observable except for labelled white-box reads (the fetch source and
+  the macro's read enable), so it also runs on a gate-level netlist
+  (`flow/run-firmware-gate-level.sh --boot-rom`). Driven by `klt
+  functional-verification` (see `request-boot-rom.json`);
+  `boot_rom_mutants.py` is its negative-control runner (thirteen single defects
+  in the RTL and in the boot program, each caught by a test meant to
+  catch it). Evidence in `records/boot-rom/`.
+- `test_boot_spi.py` — cocotb bench for DR 0013 layer 2, strap `01`, the
+  SPI-flash boot (issue #140). The flash is `reference_models/spi_flash.py`,
+  an independent behavioural model that answers `0x03` reads from a byte
+  image and checks SPI mode 0 on every edge (its own unit tests are
+  `test_spi_flash_model.py`, run by `npm run lint`); it sees only the pins
+  the design drives, resolved through the pad model with the Pmod's CS
+  pull-up. A clean boot is one transaction (`0x03`, address 0, 512 bytes) and
+  no violation, and the design's `uio_out`/`uio_oe` equal, on every edge,
+  those of `BootModel` (the ISA interpreter of `test_boot_rom.py`) running
+  the committed boot image against its own flash model. A blank flash, no
+  Pmod (MISO high or low), a flash of zeros, seven images one defect from
+  a good one, a shifted and a truncated image, and a valid-CRC image with a
+  zero signature are never run and leave every pin an input; the committed
+  `uart_tx` and `spi_mode0` programs boot from the flash and are graded by
+  their reference models; only `uio[0]`, `uio[1]` and `uio[3]` are ever
+  driven, so the PSRAM chip selects stay with the Pmod's pull-ups. Runs on a
+  gate-level netlist with `flow/run-firmware-gate-level.sh --boot-spi`.
+  Driven by `klt functional-verification` (`request-boot-spi.json`);
+  `boot_spi_mutants.py` rebuilds the boot chain from a mutated source per
+  defect, so the bench has to see each one in the flash model's record, the
+  pins or the outcome. Evidence in `records/boot-spi/`.
+- `test_boot_uart.py` — cocotb bench for DR 0013 layer 2's UART load,
+  strap `00` (issue #139): a framed image sent on `ui_in[1]` is accepted
+  (reply `0x06` + CRC, `RUN 0`, the state a reset leaves) and corrupted
+  payloads, bad CRCs, bad lengths and a wrong magic are never run (bad
+  lengths with the caveat of finding F8, below); the
+  host runs at nominal rate and at the row-10 ±2 % edges (with idle bits,
+  edge jitter and the unrelated `ui_in` bits toggling), with a sweep past
+  them recorded and a 12 %-off negative control; the committed `uart_tx`
+  program is loaded over the UART and graded by `reference_models/uart.py`;
+  a 256-word image loads and warm-starts; strap `11` and a failed warm
+  start fall through to the loader. `uart_boot_host.py` is the independent
+  host model (own CRC, own line timing, no import from `firmware/`); the
+  bench asserts that it and `firmware/tools/loadseq.py` frame the same
+  bytes. Pin-observable except labelled white-box reads (the fetch source,
+  program-memory contents), so the pin checks run on a gate-level netlist
+  (`flow/run-firmware-gate-level.sh --boot-uart`); the two long runs are
+  RTL-only. Driven by `klt functional-verification` (see
+  `request-boot-uart.json`); `boot_uart_mutants.py` is its negative-control
+  runner (seven single defects in the boot ROM, each caught by a test meant
+  to catch it). Evidence in `records/boot-uart/`.
+- `test_boot_uart_count_alias.py` — RTL regression for DR 0013 finding F8
+  (PR #210 review): the count byte is not covered by the CRC, so the valid
+  image `[0xF000, 0x13C1]` (`a5 01 f0 00 13 c1 00 00`) with count bit 0
+  flipped (`a5 00 f0 00 13 c1 00 00`) is **accepted and run** as the
+  one-word image `[0xF000]`. The test pins that behaviour (ACK `06 13 c1`,
+  the core leaves the ROM) next to an uncorrupted control; it is a record
+  of a residue, not a pass of an unconditional bad-length guarantee. A
+  separate module so the gate-level records that hash `test_boot_uart.py`
+  stay live. Driven by `request-boot-uart-count-alias.json`; evidence in
+  `records/boot-uart/ (record 20261010-164351-57c5c8c)`.
+- `test_reset_power_up.py` — **gate-level only** cocotb bench for
+  target-spec row 14 / `spec/verification-plan.md` section 8 (issue #131):
+  reset, power-up and reselect on the LibreLane netlist. Every flop of the
+  netlist is forced to X or to a seeded random value (through its own `D`
+  pin and one real clock edge, so the PDK UDP holds it), the SRAM array
+  gets X or random words, the design runs on that state, and only then is
+  `rst_n` pulsed. Per edge: no X on a pin and every pin at its reset value
+  (`[row14-b]`), every flop at its reset value in reset and none X after
+  (`[row14-a]`), the fetch source never leaves the boot ROM and the SRAM is
+  read only as data (`[row14-c]`); across the all-X run and 8 seeds the
+  whole flop trace is bit-identical. Also: a canary SRAM image is never
+  executed, and the reselect cycle (load, run, power-cycle, reset without
+  reload = safe idle, power-cycle, reload, run) repeats the first run edge
+  for edge. Driven by `flow/run-reset-power-up-gate-level.sh`, not by
+  `klt functional-verification` (no request file: klt has no gate-level
+  initial-state control). Evidence in `records/reset-power-up/`.
+- `reset_coverage.py` / `reset_coverage_justifications.json` — the
+  reset-coverage listing of section 8: classifies every state element of a
+  netlist (from the PDK's own cell models, not names) as reset from
+  `rst_n` alone or not, and fails on any non-reset element the
+  justification file does not explain, or on a justification that names
+  nothing. `test_reset_coverage.py` is its stdlib self-test (`npm run
+  lint`).
+
+**Host obligation after deselect (target-spec row 14; organizers'
+2026-10-09 update).** Deselecting the design powers it down: the program
+memory's contents are lost, and nothing on the chip restores them. After
+every select the host must pulse `rst_n` and reload the program (a serial
+load with `MODE` high, DR 0001 layer 1; or, once they exist, a boot
+loader DR 0013 layer 2 names). A reset *without* a reload is safe but
+useless: the core runs the boot ROM, which on strap 00 waits in the UART
+loader (issue #139: TX idles high, no `uio` pin is driven, `uio_out` reads
+its 0xFF guard) and on strap 01 halts in the SPI stub with every pin at its
+reset value (on strap 10 it first checks the memory and runs it
+only if it holds a signed image, which power-up contents are not, short
+of DR 0013's all-zero weak case, which since #168 is refused for its zero
+signature) — `test_reset_power_up.py::test_reselect` shows this on
+gates. The host-side loader is issue #118.
 - `test_program_memory.py` — cocotb testbench for
   `rtl/protocol_program_memory.v`, the program memory and serial
   load-phase logic (target-spec row 6, issue #19): loads known programs
@@ -97,11 +243,29 @@ coverage.
 - `reference_models/` — the §4 independent reference models (pure Python,
   sharing no code with `src/`/`rtl/`): `waveform.py` (piecewise-constant
   signal abstraction), `uart.py` (8N1 + per-frame drift measurement
-  against row 10's ~2% bound), `spi.py` (Motorola-convention modes 0-3 +
+  against row 10's ~2% bound, on two observables: the frame's last
+  in-frame edge, and since issue #97 the start-to-start pitch to a
+  following frame; see the isolated-frame limitation below), `spi.py` (Motorola-convention modes 0-3 +
   row 11's f_clk/4 ceiling), `i2c.py` (NXP UM10204 Table 10 timing checks
   directly, both modes, repeated-START + clock-stretching aware), and
   `stimulus.py` (the constrained-random generators and deterministic
   negative controls).
+- **UART timing: what the model can see (issue #97).** Drift is only
+  measurable where the transmitter puts an edge. The last-edge
+  measurement scales with the last edge's bit index, so for payload 0xFF
+  (no edge after the bit-1 rise) a frame with a nominal start and first
+  data bit reads 0 % drift whatever its later bits do. The frame-pitch
+  measurement sees the whole frame, stop bit included, but needs a
+  following frame: a short pitch always fails; a long pitch fails only on
+  a stream the caller declares back to back
+  (`UartDecoder(baud, back_to_back=True)`), since otherwise it is a legal
+  idle gap. **An isolated frame, or one followed by idle, is graded on its
+  last edge alone**: a caller that needs row 10's bound to mean something
+  must use a payload with a late edge (e.g. 0x5A) or a back-to-back
+  stream. `test_protocol_models.py` asserts this limitation as documented
+  behaviour; the random regression sends half its multi-frame UART
+  programs back to back and fails a 0xFF stream with 3-cycle-long bits on
+  pitch.
 - `_dut.py` — shared `reset(dut)` coroutine, imported as a sibling module by
   `test_protocol_emulator.py` (and any future bench added here) so reset
   sequencing lives in one place.
@@ -124,6 +288,16 @@ coverage.
 - `request-firmware-roundtrip.json` — `klt functional-verification`
   request driving `test_firmware_roundtrip.py` against
   `rtl/protocol_program_memory.v` via Icarus.
+- `test_loadseq.py` / `request-loadseq.json` — issue #118: replays the
+  operations `firmware/tools/loadseq.py` generates (via
+  `loadseq_playback.iter_ops`, clock driven by the operations themselves, no
+  reuse of the other benches' loader helpers) on `protocol_program_memory`
+  and reads every word back through the fetch port: all committed
+  application images, 1 word, the 256-word boundary, reload, plus byte-swap,
+  bit-reversal and missing-latch-edge mutants that must read back as
+  mutated. `test_loadseq_top.py` / `request-loadseq-top.json` checks the
+  MODE-drop/run transition at the pins of the submitted top. Simulation
+  evidence only; nothing here was run on a board.
 - `request-protocol-models.json` — `klt functional-verification` request
   driving `test_protocol_models.py` against the declared fixture
   `duts/model_validation_top.v` via Icarus, carrying the recorded seed.
@@ -162,10 +336,27 @@ coverage.
   and `coverage.json` (this is how the record's artifacts were made). Mutated
   templates run on the DUT as negative controls. Covers UART TX, SPI, I2C
   write, and (issue #104) the I2C write/repeated-START/read family with
-  seeded peripheral clock stretching (UART RX is deferred). Driven by `klt
+  seeded peripheral clock stretching. Issue #192 adds UART RX: the committed
+  50 / 434 / 5,208 cycles-per-bit receive programs run unchanged while the
+  seeded part is the stimulus on `ui_in[1]` (payload class, in-bound
+  +-2 % rate error / jitter, spacing), built and graded with
+  `test_firmware_uart_rx.py`'s helpers and the independent UART model
+  (received byte on `uo_out`, framing flag, cycle-exact sample spacing,
+  sample position in the sender's bit); these legs run last so the long
+  low-baud simulation does not shift the other legs' absolute times. Its
+  negative controls (a receiver with one inter-sample WAIT stretched, and a
+  sender +-10 % off per bit) must be rejected for sample spacing and for a
+  wrong byte / out-of-bit sample respectively. All of this is RTL,
+  zero-delay evidence: not SDF, not pad electrical behaviour, and not a
+  measured wall-clock baud. Both I2C
+  families run on the pad model (`uio_pads.py`, issue #136). Driven by `klt
   functional-verification` (see `request-random-regression.json`, whose
   `random_seed` the bench asserts equal to its `RECORDED_SEED`); evidence in
   `records/random-regression/`.
+- `flow/run-firmware-gate-level.sh` (issue #192) runs `test_firmware_uart_rx`
+  by default alongside the UART TX, SPI and I2C benches on the LibreLane
+  netlist (zero-delay; WAIT-counter stuck-at control). No SDF, no pad
+  electrical behaviour, no measured wall-clock baud.
 - `firmware_templates.py` / `test_firmware_templates.py` — the generator
   (pure Python, no simulator) and its simulator-free unit tests (determinism,
   prefix-stability of larger sweeps, bounds, zero-warning assembly, cover-bin
@@ -173,6 +364,38 @@ coverage.
   run by `npm run lint`:
   `python3 verification/test_firmware_templates.py`. To regenerate a failing
   case: `python3 verification/firmware_templates.py --seed S --out DIR`.
+- `reference_models/isa.py`, `isa_lockstep_gen.py`, `test_isa_lockstep.py`,
+  `test_isa_model.py`, `isa_lockstep_mutants.py`, `request-isa-lockstep.json`
+  — the **ISA reference simulator and lockstep co-simulation** (issue #152;
+  verification-plan §4.1). `reference_models/isa.py` is a table-driven
+  instruction-set simulator written from DR 0001 and DR 0012 alone (it
+  imports nothing from `rtl/`, `firmware/tools/asm.py` or any bench); it
+  emits one trace row per clock edge. `isa_lockstep_gen.py` draws seeded,
+  terminating-by-construction programs (forward-only branches plus bounded
+  loops, a static edge cap, a short `RUN`-into-just-written-code tail) and
+  owns the counted coverage-bucket gate. `test_isa_lockstep.py` loads each
+  program over the real serial load phase and compares, on **every** edge of
+  the run phase, `pc`, `R0..R3`, `Z`, `C`, `halted` (hierarchy into
+  `dut.u_core`) and `uo_out` / `uio_out` / `uio_oe` (pins) against the ISS,
+  including `WAIT` stall edges, two-cycle control accesses and the idle edges
+  after `HALT`; a mismatch prints seed, program index, edge, field and both
+  values, and `ISA_LOCKSTEP_SEED=<s> ISA_LOCKSTEP_ONLY=<i>` replays it. The
+  seed set, program count and coverage thresholds live in the request
+  (`options.random_seed`, `options.isa_lockstep`) and are asserted equal to
+  the bench's constants. Scope: programs run from program memory after a
+  serial load; boot-ROM / warm-start / SPI-boot fetch is owned by
+  `test_boot_rom.py` / `test_boot_spi.py`; the compare is RTL-only
+  (gate-level lockstep is deferred). The four details DR 0001 leaves open
+  (SUB `C` polarity, `SHF` and `Z`, logic ops and `C`, the `SHF` fill bit)
+  are labelled in `isa.OPEN_DETAILS` and ruled, as the RTL behaves, by DR
+  0016 (Proposed, issue #203); `test_sub_carry_polarity_pin` checks the SUB
+  `C` polarity on its own. `test_isa_model.py` is the simulator-free unit-test suite (hand-
+  computed expectations; also the generator, the coverage gate and the
+  ISS-vs-assembler cycle cross-check), run by `npm run lint`:
+  `python3 verification/test_isa_model.py`. `isa_lockstep_mutants.py` is the
+  negative-control runner (10 single-defect copies of the core, each caught by
+  the lockstep). Driven by `klt functional-verification` (see
+  `request-isa-lockstep.json`); evidence in `records/isa-lockstep/`.
 - `test_firmware_uart_rx.py` — the DUT-facing UART **receive-path and
   low-baud** bench (issue #91, rows 1 and 10): committed `uart_rx*.asm`
   receivers (50 / 434 / 5,208 cycles per bit) driven by waveforms from
@@ -214,8 +437,12 @@ coverage.
   ```
   It runs a structural output-register check, an ABC `scorr`+`pdr` proof on
   a once-per-cycle (EDGE) model and on a `clk2fflogic` (FINE) model, z3
-  covers, and seven core mutants. Each mutant must be rejected by ABC and by
+  covers, and fifteen core mutants. Each mutant must be rejected by ABC and by
   z3. Evidence lives in `records/pin-write-latency/`.
+  Both harnesses model the boot ROM of DR 0013 layer 2 (issue #138) as a
+  second free program table next to program memory, so each result holds
+  for every ROM image and across the fetch-source switch at `WCTL RUN`.
+  `pin_write_latency`'s shadow model derives the fetch source itself.
 - `check_records.py` — the evidence-record linter (see "Enforcement").
 - `test_check_records.py` — the linter's own self-test: one executable
   negative case per violation class named below, run against a throwaway
@@ -243,21 +470,54 @@ PDK-free RTL bench, as a **pass/fail gate only**. It writes nothing under
 deliberate local runs. The benches need `klt` (the `request-*.json` files
 carry sources, defines and recorded seeds), provisioned by
 `scripts/setup-env.sh` like the `signoff` job. Run it locally with
-`scripts/run-rtl-benches.sh` (~50 s serial).
+`scripts/run-rtl-benches.sh` (about 7 min serial, most of it `boot-uart`, whose host plays 2.2 million cycles of frames, plus about a minute for `test_boot_spi`).
 
 CI-covered (RTL, Icarus, no PDK): `test_protocol_emulator`,
+`test_control_space`, `test_boot_rom`, `test_boot_spi`, `test_boot_uart`,
 `test_program_memory`, `test_protocol_models`, `test_firmware_uart`,
-`test_firmware_spi`, `test_firmware_i2c`, `test_firmware_i2c_sr`,
-`test_firmware_roundtrip`, `test_random_regression`,
-`test_load_integrity`.
+`test_firmware_spi`, `test_uio_pads`, `test_firmware_i2c`,
+`test_firmware_i2c_sr`, `test_firmware_roundtrip`,
+`test_random_regression`, `test_isa_lockstep`, `test_load_integrity`.
 
-Covered elsewhere in CI: `test_check_records.py` and
-`test_firmware_templates.py` (`npm run lint`).
+Covered elsewhere in CI: `test_check_records.py`,
+`test_firmware_templates.py` and `test_uio_pad_resolution.py` (`npm run
+lint`).
 
-Local-only: the formal leg (`formal/`, needs yosys + yosys-smtbmc + z3;
-CI follow-up), and everything needing the PDK or a synthesized/laid-out
-netlist (`klt synthesize`, gate-level and post-layout SDF regressions,
-STA, DRC/LVS). A green CI run is not an evidence record.
+Local-only (per PR): the formal leg (`formal/`, needs yosys +
+yosys-smtbmc + yosys-abc + z3), and everything needing the PDK or a
+synthesized/laid-out netlist (`klt synthesize`, gate-level and post-layout
+SDF regressions, STA, DRC/LVS). A green CI run is not an evidence record.
+
+### Formal gate on a hosted runner: measured (issue #122)
+
+The `formal` job in `ci.yml` is **manual (`workflow_dispatch`) only**; it is
+not run on pull requests. Provisioning is feasible and the verdicts
+reproduce; the runtime is what keeps it off the per-PR path. Measured on
+`ubuntu-24.04` (image 20261004.327.1) with the pinned OSS CAD Suite
+`2026-10-09` (`oss-cad-suite-linux-x64-20261009.tgz`, sha256
+`20b7bd2d...a477ca0d`, verified in the job; ~750 MB, ~20 s to fetch and
+unpack): Yosys 0.69+272 (git 230fb23f8), ABC 1.01, Z3 4.15.5 (the committed
+records used Z3 5.1.0; the suite ships 4.15.5,
+no PASS/FAIL verdict differed). Ubuntu 24.04's own apt `yosys` was not tried:
+it predates the 0.67/0.69 the records were produced with.
+
+| step (default timeouts) | run 1 | run 2 |
+| --- | --- | --- |
+| `run-no-data-dependent-latency.sh` (DUT=all, BMC depth 30) | 13 m 05 s | 9 m 26 s |
+| `test-mutant-gate.sh` | 1 s | <1 s |
+| `run-pin-write-latency.sh` (294 s in run 1's own log) | 4 m 54 s | 4 m 37 s |
+| job total | ~18 m | ~14 m |
+
+Both runs: green, `RESULT: all expectations met` from both runners, EDGE and
+FINE ABC proofs closed, same PASS verdicts as the committed records, nothing
+written under `records/`. Runs: <https://github.com/2AMLogic/sg13cmos5l-protocol-emulator/actions/runs/38015916676>
+and <https://github.com/2AMLogic/sg13cmos5l-protocol-emulator/actions/runs/38017073021>.
+Findings: (1) total is 14-18 min, over the ~10 min per-PR bar, and the
+two depth-30 real-core/fixture BMC legs vary by ~40% between runs on
+shared hosted CPUs; (2) the verdicts are not flaky, only the time is. So it
+stays local per PR; dispatch the `formal` job to re-check on demand. Lowering
+`BMC_DEPTH` to fit would weaken the property of record and is not done here.
+This is not an evidence record.
 
 ## The `klt functional-verification` cocotb dependency (a local-environment note)
 
@@ -314,7 +574,8 @@ Each record is a markdown file, `records/<record-id>.md`, with two parts:
    with the stdlib `json` module — no YAML dependency). Required keys:
 
    - `record_id` — must equal the filename stem.
-   - `experiment` — the experiment-slug this record belongs to.
+   - `experiment` — the experiment-slug this record belongs to; it must
+     equal the name of the experiment directory the record sits in.
    - `supersedes` — `null`, or the `record_id` of a prior record in the
      same experiment directory this one corrects/replaces.
    - `git_revision` — the full design git revision this record was
@@ -328,7 +589,10 @@ Each record is a markdown file, `records/<record-id>.md`, with two parts:
        `"n/a"` when not applicable.
      - `inputs` — a non-empty list of `{"path": ..., "content_hash": ...}`
        for every source file this record's claim depends on (at minimum,
-       the RTL under test). Hashes use klt's own `"sha256:<hex>"` format.
+       the RTL under test). Hashes use klt's own `"sha256:<hex>"` format
+       (exactly 64 lowercase hex digits; never empty or null). A `path` is a
+       non-empty, repo-relative POSIX path with no `..` component, and for a
+       live record it names a git-tracked regular file in the repo.
 
 2. Human-readable prose bullets, each a **required field**:
 
@@ -353,6 +617,19 @@ Each record is a markdown file, `records/<record-id>.md`, with two parts:
      agent) minted the record.
    - **Supersedes** — `none`, or the prior `<record-id>` this corrects.
 
+## Stale records: report and re-mint
+
+`python3 verification/remint_records.py` lists every live record whose
+hashed input has changed (recorded vs current hash) and the
+`verification/request-*.json` file(s) the record hashes, i.e. the request that
+produced it. `--rerun [--only EXPERIMENT] [--klt CMD]` re-runs just those
+requests with `klt functional-verification` and mints superseding records
+(new ID, `supersedes` = the stale record, artifacts under `artifacts/<new-id>/`).
+Old records are never touched. The new prose is copied from the old record
+with Record ID, Result, Timestamp and Supersedes rewritten; review the Claim
+and Run configuration before committing. Records with no request file are
+reported and must be re-minted by hand. Self-test: `test_remint_records.py`.
+
 ## Append-only rule
 
 `records/*.md` and `artifacts/**` are never edited or deleted after
@@ -371,10 +648,35 @@ on:
   a placeholder/empty value;
 - a filename or metadata `record_id` that is not a well-formed
   `<record-id>`, or the two disagreeing;
+- a record that is not at exactly
+  `verification/records/<experiment>/records/<record-id>.md` (nested
+  experiment directories are rejected, so a nested copy can never alias a
+  real experiment by sharing its leaf name, #157), or whose experiment
+  directory name does not match `[a-z0-9][a-z0-9._-]*` (so a Unicode
+  look-alike cannot pose as a real experiment, #183);
+- any symlink under `verification/records/`, file or directory: git versions
+  only the link text, so a symlink's target could be edited after merge with
+  no append-only violation (#183);
+- any tracked entry under `verification/records/` whose git mode is not
+  `100644` (e.g. a `160000` gitlink/submodule), reported as a validation
+  error naming the path and mode rather than read (#187);
+- a record whose `record-meta.experiment` differs from its directory name
+  (#187);
+- a `provenance.inputs[]` entry whose `content_hash` is not
+  `sha256:<64 hex>`, or whose `path` is empty, absolute (e.g. `/dev/null`) or
+  contains `..`; for a live record, also an input that is not a git-tracked
+  regular file inside the repo. A superseded record's input file may since
+  have been deleted, but its entry must still be well-formed (#183);
+- a `supersedes` value that is neither a record-id string nor null;
 - a `supersedes` value naming a record that does not exist in the same
-  experiment directory;
+  experiment directory, naming the record's own ID, or naming an ID that
+  does not sort strictly earlier than the record's own (this rules out
+  supersession cycles); an invalid supersession exempts nothing;
 - a live record whose `provenance.inputs[].content_hash` no longer matches
-  the current working tree;
+  the current working tree (a record is "live" unless a valid supersession
+  in its own experiment directory names it; the same record ID superseded in
+  a different experiment, or in a directory that merely shares the
+  experiment's leaf name, does not count, #157);
 - **append-only violations**: any file under `verification/records/`
   modified, renamed, or deleted relative to the merge base with
   `origin/main`.

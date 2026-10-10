@@ -119,7 +119,15 @@ board, and it is the state target-spec row 14 asks for. DR 0008's
 synthesis-time mask is **not built**. This record proposes to supersede that
 mechanism, while DR 0008's open-drain *semantics* and DR 0010's pin roles
 survive as firmware conventions. The I2C programs gain a one-instruction
-preamble (`WCTL UIO_OD, R` with `0x81`, SCL|SDA per DR 0010).
+preamble (`WCTL UIO_OD, R` with `0x81`, SCL|SDA per DR 0010). **The preamble
+goes after the `OUT UIO_OUT` that releases the lines, not before it.**
+`uio_out` resets to `0x00`, so a `WCTL UIO_OD` that runs first pulls SCL and
+SDA low for a cycle. The committed images follow this order, and
+`scripts/check_protocol_pin_roles.py` reports an image that has it the other
+way round. Changing the reset value of `uio_out` instead is not proposed: it
+would alter the reset state of every pin. Any program that writes `UIO_OUT`
+for bench-debug reasons is harmless only while it executes no `WCTL` (issue
+#154, option 3).
 
 **Program-memory timing.** `RM_IHPSG13_1P_256x16_c2_bm_bist` is single-port,
 and the fetch-ahead stage (DR 0005) drives its address every cycle. A
@@ -129,6 +137,26 @@ the "2" entries in the table mean. A write to the word being fetched next
 takes effect for the fetches after the write retires. Firmware that modifies
 itself must not depend on anything earlier, and the boot ROM (DR 0013) never
 does, because it does not execute from program memory while it loads it.
+
+**Points the first RTL build had to choose.** The record left these open.
+Issue #159 collects them; the RTL (`rtl/protocol_core.v`) and
+`verification/test_control_space.py` implement them, and they are proposed
+here as the behaviour, to be ratified with the rest of the record. Changing
+any of them is a new issue with the RTL and the bench following.
+
+| Point | Proposed behaviour |
+|---|---|
+| Value of `HW_ID` | `0x01`, a module parameter |
+| Byte order of the CRC within a word | high byte first, to match DR 0013's big-endian UART frame |
+| What a write to `PM_CRC_LO` or `PM_CRC_HI` clears | all 16 bits, from either register |
+| Write to a read-only register (`BOOT_STATUS`, `HW_ID`) | 1-cycle no-op; the assembler treats it as reserved |
+| Read of write-only `RUN` | `0x00` in 1 cycle; the assembler treats it as reserved |
+| When `BOOT_STATUS[0]` is set | when a load phase ends, whatever it loaded, including zero words. Until DR 0013's boot ROM (#138) lands |
+| Whether a `PM_DATA_LO` write disturbs the low-byte read latch | it does not |
+| Where `RUN`'s second cycle comes from | `RUN` always pays one fetch cycle, as the table says, although no fetch-source switch existed in the first build. Until DR 0013's boot ROM (#138) lands the extra cycle is a bubble, not a source switch |
+
+Two of these interact with the boot ROM: the `BOOT_STATUS[0]` rule and the
+`RUN` second cycle. #138 owns any change to them.
 
 ### 3. What this does *not* do
 
@@ -179,8 +207,26 @@ does, because it does not execute from program memory while it loads it.
   `scripts/check_protocol_pin_roles.py`'s `top_uio_oe` pattern changes from a
   constant to "driven by the core's pin-mode logic". `info.yaml`'s `uio` pins
   become "firmware-configured", and the datasheet documents the reset state.
-- **Area.** About 5 registers and a mux, small next to the macro. Both flows
-  report it, named per `CLAUDE.md`.
+- **Area.** The first estimate, "about 5 registers and a mux", was low: the
+  registers listed above come to 62 flip-flops, and the 16-bit-per-word CRC,
+  the read mux and the port arbitration account for most of the new logic.
+  Measured on commit `4ff0e14` (2026-10-09), the control space alone, each
+  flow named per `CLAUDE.md`:
+  - **klt/Yosys**, standard-cell area: 568 instances, 10,323.26 um^2 ->
+    1,087 instances, 17,460.42 um^2 (+69.1 %)
+    (`verification/records/synthesis-baseline/records/20261009-202909-4ff0e14.md`).
+  - **LibreLane**, placed standard-cell area: 14,818.2 -> 24,133.3 um^2;
+    utilization of the unchanged die 33.90 % -> 41.25 %; worst setup slack
+    9.62 -> 8.53 ns at the 20 ns constraint
+    (`verification/records/librelane-corner-timing/records/20261009-203554-4ff0e14.md`).
+  - Flip-flops, both flows agree: 99 -> 161.
+
+  The two flows' synthesis figures differ, as the records explain; neither is
+  picked over the other. DR 0013's boot ROM adds to this: the newest records
+  (`20261009-222403-1dc1842` and `20261009-221236-1dc1842` in the same
+  directories) give 1,189 instances / 19,451.43 um^2 (klt/Yosys) and
+  26,123.7 um^2 at 42.82 % utilization (LibreLane). The 2x2 budget is DR 0014
+  / #129's question, not this record's.
 
 ## Open items
 

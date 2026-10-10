@@ -114,6 +114,11 @@ project:
   # files at ./src, and this repo keeps exactly one copy of each module, so the
   # two flows can never disagree about WHAT they built.
   #
+  # protocol_boot_rom.v (issue #138, DR 0013 layer 2) is a symlink to
+  # rtl/protocol_boot_rom.v too. That file is GENERATED from the committed boot
+  # image firmware/build/boot/boot_rom.hex by firmware/tools/gen_boot_rom.py;
+  # firmware/tools/check_firmware.py fails if it is stale.
+  #
   # The SRAM macro's behavioural model (rtl/vendor/) is deliberately NOT listed:
   # the macro is a hard block, blackboxed against its LEF/liberty by
   # src/config.json's MACROS entry. Listing it here would make LibreLane
@@ -122,6 +127,7 @@ project:
     - "tt_um_2amlogic_protocol_emulator.v"
     - "protocol_core.v"
     - "protocol_program_memory.v"
+    - "protocol_boot_rom.v"
 
 # The pinout of your project. Leave unused pins blank. DO NOT delete or add any pins.
 # This section is for the datasheet/website. Use descriptive names (e.g., RX, TX, MOSI, SCL, SEG_A, etc.).
@@ -145,6 +151,13 @@ project:
 # in imm8), choose each bidirectional pin's mode: UIO_OD[n] = open-drain
 # (drives low on uio_out[n] = 0, releases on 1), else UIO_DIR[n] = push-pull,
 # else input. Both reset to 0, so every uio pin is an input after reset.
+#
+# 2026-10-09 (issue #138, DR 0013 layer 2): PROG_MODE low at reset release no
+# longer runs program memory. It runs an on-chip boot ROM, whose program reads
+# ui[6:5] as straps with an ordinary IN (00 UART load and 01 SPI-flash boot
+# are stubs that idle; 10 warm-starts a CRC-checked image; 11 behaves as 00).
+# The strap reading is firmware, not hardware: ui[5] and ui[6] are still plain
+# ISA input bits to any loaded program.
 pinout:
   # Inputs
   ui[0]: "PROG_SER: serial program-load data bit (load phase); ISA input port 00 bit 0 in run phase"
@@ -152,9 +165,9 @@ pinout:
   ui[2]: "ISA input port 00 bit 2 (read by IN Rd, 00)"
   ui[3]: "ISA input port 00 bit 3 (read by IN Rd, 00)"
   ui[4]: "ISA input port 00 bit 4 (read by IN Rd, 00)"
-  ui[5]: "ISA input port 00 bit 5 (read by IN Rd, 00)"
-  ui[6]: "ISA input port 00 bit 6 (read by IN Rd, 00)"
-  ui[7]: "PROG_MODE: high at reset release = serial program load phase; ISA input port 00 bit 7 in run phase"
+  ui[5]: "ISA input port 00 bit 5 (read by IN Rd, 00); the boot ROM's program reads it as strap bit 0 when ui[7] is low at reset"
+  ui[6]: "ISA input port 00 bit 6 (read by IN Rd, 00); the boot ROM's program reads it as strap bit 1 when ui[7] is low at reset"
+  ui[7]: "PROG_MODE: high at reset release = serial program load phase, low = run the on-chip boot ROM; ISA input port 00 bit 7 in run phase"
 
   # Outputs
   uo[0]: "ISA output port 10 bit 0 (driven by OUT 10, Rs; registered, one cycle after the OUT)"
@@ -170,10 +183,12 @@ pinout:
   # Inputs after reset (uio_oe = 0). IN Rd, 01 always reads them. OUT 11, Rs
   # writes the uio_out register, which reaches the pad only on pins that
   # firmware has enabled through UIO_DIR (push-pull) or UIO_OD (open-drain).
-  uio[0]: "ISA input port 01 bit 0 (read by IN Rd, 01); input at reset, firmware-configured output (OUT 11, Rs via UIO_DIR / UIO_OD)"
-  uio[1]: "ISA input port 01 bit 1 (read by IN Rd, 01); input at reset, firmware-configured output (OUT 11, Rs via UIO_DIR / UIO_OD)"
-  uio[2]: "ISA input port 01 bit 2 (read by IN Rd, 01); input at reset, firmware-configured output (OUT 11, Rs via UIO_DIR / UIO_OD)"
-  uio[3]: "ISA input port 01 bit 3 (read by IN Rd, 01); input at reset, firmware-configured output (OUT 11, Rs via UIO_DIR / UIO_OD)"
+  # The shipped SPI and I2C profiles use the upper Pmod row (DR 0010's target
+  # plan, issue #155); one firmware image, so one protocol, per run.
+  uio[0]: "ISA input port 01 bit 0 (read by IN Rd, 01); input at reset, firmware-configured output (OUT 11, Rs via UIO_DIR / UIO_OD); shipped SPI firmware: CS (Tiny Tapeout SPI Pmod)"
+  uio[1]: "ISA input port 01 bit 1 (read by IN Rd, 01); input at reset, firmware-configured output (OUT 11, Rs via UIO_DIR / UIO_OD); shipped SPI firmware: MOSI (SPI Pmod)"
+  uio[2]: "ISA input port 01 bit 2 (read by IN Rd, 01); input at reset, firmware-configured output (OUT 11, Rs via UIO_DIR / UIO_OD); shipped SPI firmware: MISO (SPI Pmod); shipped I2C firmware: SCL (Tiny Tapeout I2C Pmod)"
+  uio[3]: "ISA input port 01 bit 3 (read by IN Rd, 01); input at reset, firmware-configured output (OUT 11, Rs via UIO_DIR / UIO_OD); shipped SPI firmware: SCLK, the Pmod's SCK (SPI Pmod); shipped I2C firmware: SDA (I2C Pmod)"
   uio[4]: "ISA input port 01 bit 4 (read by IN Rd, 01); input at reset, firmware-configured output (OUT 11, Rs via UIO_DIR / UIO_OD)"
   uio[5]: "ISA input port 01 bit 5 (read by IN Rd, 01); input at reset, firmware-configured output (OUT 11, Rs via UIO_DIR / UIO_OD)"
   uio[6]: "ISA input port 01 bit 6 (read by IN Rd, 01); input at reset, firmware-configured output (OUT 11, Rs via UIO_DIR / UIO_OD)"

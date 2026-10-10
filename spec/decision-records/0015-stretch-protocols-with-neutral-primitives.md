@@ -8,7 +8,8 @@ value, relaxes nothing ratified or proposed, and makes no row met.
 Date: 2026-10-09
 Issues: #130 (this decision); #129 (area, DR 0014); #133 (pads); #44
 (ratification). Depends on DR [`0012`](0012-control-space-and-runtime-pin-direction.md)
-(the control space the primitives live in). Rescopes DR 0011 (PR #128).
+(the control space the primitives live in). Starts from the current-ISA
+baseline in DR [`0011`](0011-stretch-protocols-feasibility.md).
 
 **Revision (2026-10-09, review of PR #153).** The first draft admitted P3
 (Manchester transmit) and 10BASE-T TX, although P3 failed this record's own
@@ -16,19 +17,37 @@ test 3 (three unrelated protocols). P3 is now **not admitted** and
 10BASE-T TX is **deferred**, conditionally; test 3 is worded more precisely
 and is not relaxed (Admission test, P3, Verdicts, reopening condition 2).
 
-**Numbering note.** Checked 2026-10-09: `origin/main` has DRs 0001–0008, 0010,
-0012, 0013. PR #128 holds 0011 (parked), PR #84 reserves 0009, PR #147 holds
-0014. This record is 0015.
+**Revision (2026-10-09, issue #156).** This record was written against an
+earlier draft of DR 0011 (PR #128 up to commit `0f085b5`), which carried a
+"defer both" verdict and reopening conditions. DR 0011 merged as a
+**baseline-only** record with no verdict. Every statement here about DR 0011
+is reworded to match the merged text: the Relationship paragraph, Context,
+Method, the baseline table, the `WAIT`/`Z` assumption, the 10BASE-T paragraphs that
+describe the baseline, "Result against the baseline", reopening condition 3,
+Consequences and Alternatives 1 and 3. Where this record fell back on
+"DR 0011's defer", it now states the fallback itself. **No verdict, primitive,
+admission test, count or area figure changes**, and every figure quoted from
+DR 0011 still matches it. The title's "Rescoping DR 0011" is kept as the
+record's name; it means this record re-asks row 2's question with primitives
+added, not that it edits DR 0011.
 
-**Relationship to DR 0011.** DR 0011 (branch `feature/issue-109`, not on main
-and not modified here) evaluates row 2's entry condition against the ISA as it
-is and defers both protocols. This record **keeps DR 0011's hand-counted
-current-ISA schedules as the baseline** (quoted, not recomputed) and asks the
-question the organizers' 2026-10-09 update changed: what if the ISA gains a
-few protocol-neutral primitives? The two records do not conflict. If PR #128
-merges, its verdict stays true "against today's ISA"; this record's verdict
-applies "against today's ISA plus the primitives admitted below". A reader of
-DR 0011 should be pointed here.
+**Numbering note.** When this record was numbered (2026-10-09), `origin/main`
+had DRs 0001–0008, 0010, 0012 and 0013; PR #128 held 0011, PR #84 reserved
+0009 and PR #147 held 0014. This record is 0015. DRs 0011 and 0014 have since
+merged to main.
+
+**Relationship to DR 0011.** DR 0011 is on main (merged by PR #128). It is a
+**baseline only**: hand-counted, pure-firmware schedules for both protocols on
+the ISA as built, with a list of what those schedules leave out. It gives no
+verdict, defers nothing and rules nothing out. This record **keeps DR 0011's
+hand-counted current-ISA schedules as the baseline** (quoted, not recomputed)
+and asks the question the organizers' 2026-10-09 update changed: what if the
+ISA gains a few protocol-neutral primitives? The two records do not conflict.
+DR 0011 supplies the counts "against today's ISA"; this record's verdict
+applies "against today's ISA plus the primitives admitted below". DR 0011
+points here for the verdict. Where this record needs a fallback (reopening
+condition 3, Consequences), it is row 2 as it reads today, not a DR 0011
+verdict.
 
 ## Context
 
@@ -42,10 +61,13 @@ The organizers' update, quoted verbatim in issue #130:
 
 A plain defer leaves the stretch credit on the table. `CLAUDE.md` bars a
 fixed-function USB or Ethernet block; it does not bar primitives the firmware
-composes. DR 0011 found that cycles are not the blocker for low-speed USB
-(33 cycles per bit) but state is: 4 registers, no carry-readable flag, no data
-memory. A CRC engine, a stuffing unit and a Manchester stage hold that state
-in hardware, which is exactly what DR 0011's reopening condition 1 asked for.
+composes. DR 0011's baseline shows that cycles are not what its low-speed
+USB transmit schedule runs short of (33 cycles per bit, about 10 used). The
+open part it names is state: 4 registers, no instruction that reads `C`, no
+data memory, 256 words. It did not demonstrate a complete schedule with CRC16
+on the current ISA and did not rule one out. A CRC engine, a stuffing unit and
+a Manchester stage hold that state in hardware, so the firmware does not have
+to find a register allocation for it.
 
 ### Admission test for a primitive
 
@@ -94,7 +116,7 @@ keeps the ISA the product and keeps out a peripheral.
 - **Standards figures from memory** (polynomials, residuals, jitter limits)
   are marked "confirm". The 802.3 text is paywalled and was not retrievable;
   USB 2.0 figures follow DR 0011's reading.
-- **Out of scope for the digital budget, as in DR 0011:** USB signalling
+- **Not counted in the digital budget, as in DR 0011:** USB signalling
   levels, the low-speed pull-up and transceiver; 10BASE-T differential drive,
   magnetics, link-test pulses. An external part turns pin-level streams into
   line signals.
@@ -264,16 +286,20 @@ Baseline is DR 0011's, quoted:
 
 | | DR 0011 baseline (current ISA, 50 MHz) |
 |---|---|
-| USB-LS TX | 33-cycle uniform bit; stuffing + NRZI uses ~10 cycles; 21 words per bit copy × 8 copies = 168 of 256 words, no CRC (state-limited) |
+| USB-LS TX | 33-cycle uniform bit; stuffing + NRZI uses ~10 cycles; 21 words per bit copy × 8 copies = 168 of 256 words; CRC16 not included in the baseline schedule |
 | USB-LS RX | poll loop 3 cycles = 60 ns vs ±8.33 cycle window; no CRC, no storage |
 | 10BASE-T TX | 5-cycle bit, 2/3-cycle half-bit (40/60 ns, ±10 ns skew); serializer only, 5 spare slots per 40-cycle octet, no FCS; pin sharing |
-| 10BASE-T RX | 60 ns poll vs 50 ns half-bit: cannot see every half-bit |
+| 10BASE-T RX | 60 ns poll vs 50 ns half-bit: that poll loop does not observe every half-bit level; a fixed-cycle sampling receiver is described but not scheduled |
 
 Assumptions for the counts below: every instruction 1 cycle, `WAIT n` = n+1
 cycles, branches cost 1 cycle taken or not (DR 0005), `WCTL`/`RCTL` 1 cycle
-except `CRC_BYTE` (1 + 8 stall). `WAIT` is assumed to leave `Z` untouched
-(DR 0011's listing relied on the same; to be checked when a core exists). A
-"word" is one instruction.
+except `CRC_BYTE` (1 + 8 stall). `WAIT` leaves `Z` untouched. That is read
+from `rtl/protocol_core.v`, not assumed: `flag_z` is written only by the
+`ADD`/`SUB`/`AND`/`OR`/`XOR` cases, and neither the `OP_WAIT` case nor the
+`waiting` stall branch writes it. Neither record depends on it today: in
+DR 0011's listing and in the listings below, every `BZ`/`BNZ` directly
+follows the ALU op that sets `Z`, with at most one `SHF` between in
+DR 0011's (`SHF` writes `C` only). A "word" is one instruction.
 
 ### Low-speed USB, transmit, 50 MHz, 33-cycle bit
 
@@ -384,7 +410,8 @@ of loops plus about 30 of prologue (CRC-32 configuration and seed are 8
 `WCTL` + 8 `LDI`, done in the 9.6 µs inter-frame gap, 480 cycles) and octet
 counting: **about 130–150 words, estimate**. Every 5-cycle bit has 3 busy
 slots and 2 free; the octet loop is 40 cycles exactly, so the baseline's
-"5 spare slots" becomes 16, and the FCS that was impossible is now free.
+"5 spare slots" becomes 16, and the FCS, which the baseline schedule leaves
+out, is computed by P1 in one slot per bit.
 Preamble and SFD need no CRC (the copy omits `t1`).
 
 What this does not fix, and must not be claimed to:
@@ -410,8 +437,10 @@ What this does not fix, and must not be claimed to:
 ### 10BASE-T, receive, 50 MHz, with P4
 
 P4 in Manchester mode on the receiver's single-ended output, period 5, the
-mid-bit edge restarts the phase counter and its direction is the bit. A
-polling firmware (DR 0011) cannot do this; hardware resolves the edge to one
+mid-bit edge restarts the phase counter and its direction is the bit.
+DR 0011's 3-cycle poll loop (60 ns) does not observe every half-bit, and the
+fixed-cycle sampling receiver it describes was not scheduled; hardware
+resolves the edge to one
 clock (20 ns, ±0.5 cycle from the synchronizer) against a 100 ns bit cell, and
 re-locks every bit so oscillator error between sender and receiver (DR 0011's
 2.44 bit drift over a maximal frame) is irrelevant. Firmware per octet is the
@@ -424,12 +453,12 @@ receiver front end (comparator, squelch, link detect) is external.
 
 ### Result against the baseline
 
-| | Baseline blocker | With primitives |
+| | Not in the baseline schedule (DR 0011) | With primitives |
 |---|---|---|
-| USB TX | no registers for CRC16, stuff counter or byte position (168 words, no CRC) | fits: 11 of 33 cycles, ~80–100 words; CRC in P1, stuffing/NRZI in P2 |
-| USB RX | no CRC, no state, 60 ns poll | fits with P4: edge to 20 ns, ~18 of 264 cycles per byte; no packet storage |
-| 10BASE-T TX | no FCS, pin sharing, no state | fits **only with P3** (not admitted): 3 of 5 slots per bit, CRC-32 and FCS from P1; skew ±10 ns unverified |
-| 10BASE-T RX | 60 ns poll > 50 ns half-bit | fits with P4: ~18 of 40 cycles per octet; no frame storage |
+| USB TX | CRC16 not included; all four registers in use, so byte position is 8 slot copies (168 words, no CRC); a complete schedule with CRC16 not demonstrated, not ruled out | fits: 11 of 33 cycles, ~80–100 words; CRC in P1, stuffing/NRZI in P2 |
+| USB RX | CRC check and packet storage not included; per-bit decode is an estimate; 60 ns poll | fits with P4: edge to 20 ns, ~18 of 264 cycles per byte; no packet storage |
+| 10BASE-T TX | FCS not included (supplied precomputed); pin sharing; all four registers and all but 5 of 40 slots per octet in use | fits **only with P3** (not admitted): 3 of 5 slots per bit, CRC-32 and FCS from P1; skew ±10 ns unverified |
+| 10BASE-T RX | 60 ns poll > 50 ns half-bit; sampling receiver not scheduled; no CRC-32 check or frame storage | fits with P4: ~18 of 40 cycles per octet; no frame storage |
 
 ## Verdicts
 
@@ -501,8 +530,10 @@ primitive).
    needing row 4 evidence at that clock), an external retimer, or a
    negative-edge output flop.
 3. **Ratification.** None of this exists until DR 0012 and DR 0001 are
-   ratified (#44) and the control indices are frozen. If they are not, every
-   verdict above reverts to DR 0011's defer.
+   ratified (#44) and the control indices are frozen. If they are not, no
+   verdict above takes effect and both protocols stay as row 2 reads today:
+   stretch targets with nothing numeric bound and the entry condition unmet.
+   DR 0011 gives no verdict to fall back on.
 4. **Area / runtime.** If a LibreLane run of the design with P1 and P2 shows
    the 6-hour Actions limit (#134) or the density target is at risk, drop
    P1's byte op first. A reopened P3 (condition 2) is then the first
@@ -559,16 +590,20 @@ primitive).
   discipline, USB-TX firmware is scheduled only after DR 0012 and P1/P2
   exist; 10BASE-T-TX firmware is not scheduled until reopening condition 2
   is met.
-- If no primitive is ever built, DR 0011's defer is the standing verdict.
+- If no primitive is ever built, both protocols stay as row 2 reads today
+  (stretch targets, nothing numeric bound, entry condition unmet). DR 0011's
+  baseline stands either way; it carries no verdict.
 
 ## Alternatives considered
 
-1. **Keep DR 0011's plain defer.** Rejected as the only outcome: it forgoes
+1. **A plain defer, with DR 0011's baseline as the only record.** Rejected
+   as the only outcome: it forgoes
    credit the organizers' wording names, and the area exists (DR 0014).
 2. **A USB or Ethernet MAC/PHY block.** Rejected by `CLAUDE.md`; this record
    shows the ISA route.
-3. **More registers or a scratch data memory instead of primitives.** That is
-   DR 0011's reopening condition 1. It would fix state capacity but not the
+3. **More registers or a scratch data memory instead of primitives.** It
+   would fix state capacity (the open part DR 0011's USB baseline names) but
+   not the
    per-bit instruction cost of CRC-32 at 5 cycles per bit, and it does nothing
    for clock recovery. DR 0012's `PM_DATA` access is a partial scratch memory
    (2-cycle reads, program words) and may be used for payload; it is not

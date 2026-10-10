@@ -1,0 +1,13 @@
+ok   golden request-firmware-i2c: 4/4 passed
+ok   golden request-firmware-i2c-sr: 5/5 passed
+ok   oe-fixed-at-zero / request-firmware-i2c: 1/4 tests failed
+ok   oe-fixed-at-zero / request-firmware-i2c-sr: 2/5 tests failed
+ok   open-drain-drives-high / request-firmware-i2c: 1/4 tests failed
+ok   open-drain-drives-high / request-firmware-i2c-sr: 2/5 tests failed
+ok   open-drain-polarity-inverted / request-firmware-i2c: 1/4 tests failed
+ok   open-drain-polarity-inverted / request-firmware-i2c-sr: 2/5 tests failed
+ok   sda-pad-never-enabled / request-firmware-i2c: 1/4 tests failed
+ok   sda-pad-never-enabled / request-firmware-i2c-sr: 2/5 tests failed
+ok   scl-pad-never-enabled / request-firmware-i2c: 1/4 tests failed
+ok   scl-pad-never-enabled / request-firmware-i2c-sr: 2/5 tests failed
+RESULT: golden passes and every pad-path mutant is caught by both benches

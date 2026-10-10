@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "kind": "generic",
+  "status": "pass",
+  "t1_item": 2,
+  "summary": "Layout (Digital): the committed routed GDS of the LibreLane flow (gds workflow run 38054423540 at a0f91e3: TinyTapeout/tt-gds-action@ihp-cmos5l, LibreLane 3.1.0.dev3, IHP-Open-PDK 2bbec755), placed and routed from the LibreLane gate-level netlist reference-asrouted.v by the committed flow (.github/workflows/gds.yaml, src/config.json, src/pdn_cfg.tcl, info.yaml). The boot ROM holds the UART load (issue #139, 223 words). DRC/LVS of these bytes: librelane-gds-signoff-check 20261010-133100-a0f91e3. Refreshed for issue #139; first written by issue #83.",
+  "source": "verification/records/librelane-gds-signoff-check/records/20261010-133100-a0f91e3.md",
+  "provenance": {
+    "klt_version": "0.7.0",
+    "klayout_version": "0.30.12",
+    "pdk": null,
+    "deck": null,
+    "input": {
+      "content_hash": "sha256:b71ece884c14ca1940efaec472b12724f286ee6e3ea9d5c95c7d25178c1f14c6",
+      "path": {
+        "path": "verification/records/librelane-gds-signoff-check/artifacts/20261010-133100-a0f91e3/tt_um_2amlogic_protocol_emulator.gds",
+        "scope": "repo"
+      }
+    }
+  }
+}

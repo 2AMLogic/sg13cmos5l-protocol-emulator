@@ -134,7 +134,9 @@
  *   A_ADDR <- wr_addr (load) / pm_addr (pm_we | pm_re) / fetch_addr
  *   A_DIN  <- load_word (load) / pm_wdata (run)
  *   A_WEN  <- a serial-load commit, or pm_we
- *   A_REN  <- run phase and not a write cycle
+ *   A_REN  <- not load phase, not a write cycle, and either a fetch the
+ *             core will consume from program memory (`fetch_en`, DR 0013)
+ *             or a `pm_re` data read
  *
  * `pm_crc` is DR 0012's PM_CRC: CRC-16/XMODEM (poly 0x1021, init 0x0000,
  * no reflection, no final XOR) over every word committed to the macro
@@ -159,6 +161,7 @@ module protocol_program_memory (
     input  wire        mode_pin,    // ui_in[7] - MODE: high at reset release enters load phase; during load, high = shifting, low = enter run phase
     input  wire        serial_in,   // ui_in[0] - serial program bit, sampled MSB-first during load phase
     input  wire [7:0]  fetch_addr,  // address of the instruction to execute NEXT cycle (fetch-ahead, DR 0005)
+    input  wire        fetch_en,    // this cycle's fetch_addr is a program-memory fetch (0 while the core fetches from the boot ROM, DR 0013)
     output wire [15:0] instr_word,  // the word read at the address presented one cycle earlier
     output wire        run_phase,   // high once the load phase has ended (or was never entered)
     // DR 0012 run-phase data access (from protocol_core's control space).
@@ -225,7 +228,35 @@ module protocol_program_memory (
   // core holds address 0 and executes nothing until run_phase rises). A
   // run-phase write cycle reads nothing (the core ignores instr_word in
   // the stall cycle that follows); a PM read (pm_re) reads pm_addr.
-  wire        mem_ren   = !load_active && !run_wen;
+  //
+  // DR 0013 layer 2 (issue #138): while the core fetches from the boot ROM
+  // (`fetch_en` low) the macro is not read for fetch at all -- only a
+  // `pm_re` data access reads it. With `MODE` low at reset the array's
+  // unloaded contents therefore never reach `instr_word` until the boot
+  // program's `WCTL RUN`, and the macro idles (A_MEN low) meanwhile.
+  wire        mem_ren_l = !load_active && !run_wen && (fetch_en || pm_re);
+
+  // Issue #173: in the LibreLane flow (which defines __librelane__ for
+  // synthesis), A_REN is driven through an explicit x4 standard-cell
+  // buffer. The macro liberty measures input slew at 30/70 %
+  // with slew_derate_from_library 0.5 and the standard cells at 20/80 %
+  // with 1.0, so STA reads a standard-cell driver's slew 4/3 larger at
+  // this pin than the resizer budgets for, and the LibreLane flow's
+  // design repair never sees it: the weak gate synthesis leaves on this
+  // net (a sg13cmos5l_nor3_1) reached 0.7462 ns against the 0.5952 ns
+  // slow-corner limit on gds run 37996177546, and 0.549 ns on run
+  // 38027439469. No LibreLane design-repair setting reaches the net
+  // without rebuffering the whole design (measured in the
+  // librelane-corner-timing record of #173). Simulation and the klt/Yosys
+  // flow (neither defines __librelane__) take the plain assign: the
+  // buffer is logically a wire, so behaviour is unchanged, and the two
+  // flows' netlists differ by exactly this one cell.
+  wire        mem_ren;
+`ifdef __librelane__
+  sg13cmos5l_buf_4 u_ren_drv (.A(mem_ren_l), .X(mem_ren));
+`else
+  assign mem_ren = mem_ren_l;
+`endif
 
   wire        mem_men   = mem_wen || mem_ren;
   wire [7:0]  mem_addr  = load_active          ? wr_addr :

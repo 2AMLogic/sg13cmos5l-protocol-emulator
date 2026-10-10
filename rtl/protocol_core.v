@@ -149,8 +149,8 @@
  *   0x06  PM_CRC_LO    clears the CRC             CRC[7:0]               1
  *   0x07  PM_CRC_HI    clears the CRC             CRC[15:8]              1
  *   0x08  BOOT_STATUS  (no-op)                    bit0 serial-loaded,    1
- *                                                 bit1 boot ROM (0: no
- *                                                 ROM yet, DR 0013/#138)
+ *                                                 bit1 fetching from the
+ *                                                 boot ROM (DR 0013)
  *   0x09  HW_ID        (no-op)                    the HW_ID parameter    1
  *   other              1-cycle no-op              0x00 in 1 cycle        1
  *
@@ -180,6 +180,43 @@
  * clear. `uio_dir` / `uio_od` leave the core for the top level's pin-mode
  * logic (open-drain wins, then push-pull, else input).
  *
+ * ---------------------------------------------------------------------
+ * BOOT ROM FETCH SOURCE (DR 0013 layer 2, issue #138)
+ * ---------------------------------------------------------------------
+ *
+ * `spec/decision-records/0013-program-loading.md`: "At `rst_n` release with
+ * `MODE` low, fetch comes from a small boot ROM instead of program memory."
+ * The core has two instruction sources and decodes exactly one per cycle:
+ *
+ *   `rom_word`    the boot ROM's registered output (`protocol_boot_rom`,
+ *                 generated from the committed boot image), read at the
+ *                 same `fetch_addr`, with the same one-cycle delay as the
+ *                 macro -- so the fetch stage's cycle timing is the same
+ *                 from either source;
+ *   `instr_word`  program memory, as before.
+ *
+ * `fetch_rom` selects the ROM. It is 1 from reset until one of two things
+ * has happened, and then 0 until the next reset:
+ *
+ *   - a serial load completed (`serial_loaded`, which rises on the very
+ *     edge that starts the run phase): the DR 0001 `MODE`-high path is
+ *     unchanged and never executes a ROM word;
+ *   - a `WCTL RUN` retired (`rom_exit`): DR 0012's computed jump is how the
+ *     boot program hands over. RUN's own word and its stall cycle still
+ *     decode from the ROM (the jump target is read from the held RUN word);
+ *     the word executed after the stall is PM[Rs].
+ *
+ * So with `MODE` low at reset nothing in program memory is decoded until a
+ * boot program executes `WCTL RUN` -- which it does only after its image
+ * check passed. `fetch_rom` is also `BOOT_STATUS[1]`.
+ *
+ * `pm_fetch` tells the program memory whether this cycle's `fetch_addr` is
+ * a program-memory fetch at all (PM is the source, or this is the stall
+ * cycle of the RUN that leaves the ROM). When it is 0 the macro is not
+ * read for fetch: unverified program memory is not even presented to the
+ * decoder's unselected input. `RCTL PM_DATA_HI` data still arrives on
+ * `instr_word` in its stall cycle, whichever source is selected.
+ *
  * Reset behavior: `rst_n` low clears the PC, all four registers, both
  * flags, the WAIT counter, the halt flag, the fetch-valid flag and both
  * pin-output registers, so a freshly reset core drives 0 on `uo_out` and
@@ -205,6 +242,10 @@ module protocol_core #(
     input  wire [15:0] instr_word,   // program word fetched one cycle ago: the instruction executing NOW
                                      // (in a PM_DATA_HI stall cycle: the program-memory read data)
     output wire [7:0]  fetch_addr,   // fetch-ahead: address of the instruction to execute NEXT cycle
+    // DR 0013 layer 2 (issue #138): the boot ROM as a second fetch source.
+    input  wire [15:0] rom_word,     // boot ROM word fetched one cycle ago (same timing as instr_word)
+    output wire        fetch_rom,    // 1: this cycle decodes rom_word (== BOOT_STATUS[1]); 0: instr_word
+    output wire        pm_fetch,     // 1: this cycle's fetch_addr is a program-memory fetch
     input  wire [7:0]  port_ui_in,   // port 00: ui_in, read-only
     input  wire [7:0]  port_uio_in,  // port 01: uio_in, read-only
     output reg  [7:0]  port_uo_out,  // port 10: uo_out, write-only, registered ("Drive on edge")
@@ -287,11 +328,18 @@ module protocol_core #(
   reg       stall_run;    // ...and it completes a WCTL RUN (next fetch from run_target)
   reg [1:0] stall_rd;     // RCTL PM_DATA_HI destination register
 
+  // DR 0013 layer 2 fetch source (see BOOT ROM FETCH SOURCE in the header).
+  // `rom_exit` is the only state: both terms of `fetch_rom` are monotonic
+  // within a reset, so the source switches at most once, ROM -> PM.
+  reg         rom_exit;   // a WCTL RUN has retired since reset
+  assign      fetch_rom = !serial_loaded && !rom_exit;
+  wire [15:0] exec_word = fetch_rom ? rom_word : instr_word;
+
   // Decode (combinational, fixed width -- part of the determinism argument).
-  wire [3:0] opcode = instr_word[15:12];
-  wire [1:0] rd     = instr_word[11:10];
-  wire [1:0] rs     = instr_word[9:8];
-  wire [7:0] imm8   = instr_word[7:0];
+  wire [3:0] opcode = exec_word[15:12];
+  wire [1:0] rd     = exec_word[11:10];
+  wire [1:0] rs     = exec_word[9:8];
+  wire [7:0] imm8   = exec_word[7:0];
 
   // Register-file read ports (two, both combinational).
   wire [7:0] rd_val = regs[rd];
@@ -336,6 +384,10 @@ module protocol_core #(
   assign pm_wdata   = {pm_hi, rd_val};  // OUT/WCTL source register rides [11:10]
   assign pm_crc_clr = executing && is_wctl &&
                       ((imm8 == CTL_PM_CRC_LO) || (imm8 == CTL_PM_CRC_HI));
+  // The fetch presented this cycle is consumed from program memory when PM
+  // is already the source, or when this is the stall cycle of a RUN (the
+  // word after it is PM[Rs], whichever source RUN itself came from).
+  assign pm_fetch   = !fetch_rom || (ctl_stall && stall_run);
 
   // RCTL read mux for every 1-cycle readable index (PM_DATA_HI is read in
   // its stall cycle, from instr_word, below).
@@ -348,9 +400,8 @@ module protocol_core #(
       CTL_PM_DATA_LO:  rctl_val = pm_lo;
       CTL_PM_CRC_LO:   rctl_val = pm_crc[7:0];
       CTL_PM_CRC_HI:   rctl_val = pm_crc[15:8];
-      // bit 1 (running from the boot ROM) reads 0: there is no boot ROM
-      // in this revision (DR 0013 layer 2 is issue #138).
-      CTL_BOOT_STATUS: rctl_val = {6'b000000, 1'b0, serial_loaded};
+      // bit 1: this RCTL was fetched from the boot ROM (DR 0013 layer 2).
+      CTL_BOOT_STATUS: rctl_val = {6'b000000, fetch_rom, serial_loaded};
       CTL_HW_ID:       rctl_val = HW_ID;
       default:         rctl_val = 8'h00;  // unassigned (and write-only RUN)
     endcase
@@ -431,6 +482,7 @@ module protocol_core #(
       stall_pmrd   <= 1'b0;
       stall_run    <= 1'b0;
       stall_rd     <= 2'd0;
+      rom_exit     <= 1'b0;  // DR 0013: fetch from the boot ROM after reset
     end else if (!run_phase) begin
       // Load phase (or the pre-sampling cycle): hold the PC at 0 and keep
       // the fetched word marked invalid. No architectural state changes --
@@ -452,6 +504,11 @@ module protocol_core #(
           ctl_stall  <= 1'b0;
           stall_pmrd <= 1'b0;
           stall_run  <= 1'b0;
+          if (stall_run) begin
+            // DR 0013: RUN leaves the boot ROM for good. The fetch this
+            // cycle presents (Rs) is read from program memory (pm_fetch).
+            rom_exit <= 1'b1;
+          end
           if (stall_pmrd) begin
             // RCTL PM_DATA_HI: instr_word is PM[PM_ADDR] (read in cycle N).
             regs[stall_rd] <= instr_word[15:8];

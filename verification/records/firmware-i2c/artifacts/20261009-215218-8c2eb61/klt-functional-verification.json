@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "engine": "icarus",
+  "hdl_toplevel": "tt_um_2amlogic_protocol_emulator",
+  "testbench": "test_firmware_i2c_sr",
+  "status": "pass",
+  "test_count": 5,
+  "passed_count": 5,
+  "failed_count": 0,
+  "skipped_count": 0,
+  "tests": [
+    {
+      "name": "test_sr_images_fresh",
+      "status": "passed",
+      "sim_time_ns": 0.0,
+      "real_time_s": 0.003
+    },
+    {
+      "name": "test_sr_exact_programs_pass_model_with_negative_controls",
+      "status": "passed",
+      "sim_time_ns": 1853261.0,
+      "real_time_s": 2.674
+    },
+    {
+      "name": "test_sr_poll_programs_stretch",
+      "status": "passed",
+      "sim_time_ns": 1976000.9999999998,
+      "real_time_s": 2.754
+    },
+    {
+      "name": "test_sr_uio_od_left_at_reset_cannot_drive_the_bus",
+      "status": "passed",
+      "sim_time_ns": 1264320.9999999995,
+      "real_time_s": 1.74
+    },
+    {
+      "name": "test_sr_model_nominal_repeated_start_passes",
+      "status": "passed",
+      "sim_time_ns": 0.0,
+      "real_time_s": 0.0
+    }
+  ],
+  "coverage": null,
+  "trace": null,
+  "environment": {
+    "engine": "icarus",
+    "engine_version": "13.0",
+    "cocotb_version": "2.1.0",
+    "results_xml": "<repo>/verification/.klt/functional-verification/results_icarus.xml",
+    "random_seed": 1,
+    "sdf": null
+  }
+}

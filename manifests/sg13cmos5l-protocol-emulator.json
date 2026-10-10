@@ -2,21 +2,33 @@
   "block": "sg13cmos5l-protocol-emulator",
   "kind": "digital",
   "evidence": {
+    "1": {
+      "file": "manifests/evidence/design-sources.json",
+      "content_hash": "sha256:d2f9a47cbc0dacc8c6627feabc54caa992cfbe764a3a80555f51e75928318401"
+    },
+    "2": {
+      "file": "manifests/evidence/layout-gds.json",
+      "content_hash": "sha256:b71ece884c14ca1940efaec472b12724f286ee6e3ea9d5c95c7d25178c1f14c6"
+    },
     "3": {
-      "file": "verification/records/librelane-gds-signoff-check/artifacts/20261009-054750-676f8b2/klt-drc.json",
-      "content_hash": "sha256:9a5eb00efe30c6f2063db2927549fe953ed26df87211073d88b7ba94cb828a2c"
+      "file": "verification/records/librelane-gds-signoff-check/artifacts/20261010-133100-a0f91e3/klt-drc.json",
+      "content_hash": "sha256:b71ece884c14ca1940efaec472b12724f286ee6e3ea9d5c95c7d25178c1f14c6"
     },
     "4": {
-      "file": "verification/records/librelane-gds-signoff-check/artifacts/20261009-054750-676f8b2/klt-lvs-klt-netlist.json",
-      "content_hash": "sha256:8468537376af0fb576eaf8273d56589b02fd205755064f99fe05d9d4cd1d037f"
+      "file": "verification/records/librelane-gds-signoff-check/artifacts/20261010-133100-a0f91e3/klt-lvs-klt-netlist.json",
+      "content_hash": "sha256:e9a15abe561edc1a48d8fb18799e5ebaf06ce711bc4f5bd9acded74397fc82c1"
     },
     "7": {
-      "file": "verification/records/post-layout-sdf-regression/artifacts/20261009-103407-9716a9e/klt-functional-verification-nom_typ_1p20V_25C.json",
-      "content_hash": "sha256:6880df099df2c8fbddfd33dd1b927651db10e4147ac8c78a144d709e3a0e58eb"
+      "file": "verification/records/post-layout-sdf-regression/artifacts/20261010-133000-a0f91e3/klt-functional-verification-nom_typ_1p20V_25C.json",
+      "content_hash": "sha256:e59238caff17e5f49798d845b90f1fdf78831726c93a1700ce249209e231229a"
     },
     "9": {
-      "file": "verification/records/reset-pin-through/artifacts/20260914-031931-7e4a21a/klt-functional-verification.json",
-      "content_hash": "sha256:c92c5811612a43971d72898a319e36b076b0c3900452bd162cb3da4409453d27"
+      "file": "manifests/evidence/testbenches.json",
+      "content_hash": "sha256:718256503dd5d1e9c7bed67b4dbed310ac916b8be0aa0eceeb9ce56f6464ebf9"
+    },
+    "10": {
+      "file": "manifests/evidence/hygiene.json",
+      "content_hash": "sha256:df6f2b9221feeda4f5577acfa9714289429b0d0e562ac43579faf75f8756b229"
     }
   }
 }

@@ -24,10 +24,22 @@ first commit because the competition asks for exactly that.
 
 **Implementation and verification are underway; the specification remains
 proposed pending two-key ratification.** The repository contains the ISA core,
-SRAM-backed 256×16 program memory, a Python assembler, and UART TX, four-mode
+SRAM-backed 256×16 program memory, a Python assembler, and UART TX/RX, four-mode
 SPI controller, and Standard/Fast-mode I2C controller firmware with DUT-facing
 benches. See [`rtl/README.md`](rtl/README.md) and
 [`firmware/README.md`](firmware/README.md) for the implemented design.
+
+DR 0012's control space is implemented: `WCTL`/`RCTL` provide runtime pin
+direction and open-drain control, program-memory access, CRC-16/XMODEM over
+committed words, and a fixed-latency `RUN` jump. The
+[control-space evidence](verification/records/control-space/records/20261009-210912-a46a399.md)
+records the RTL bench and mutant checks. The
+[logical, zero-delay I2C pad model](verification/records/uio-pad-model/records/20261010-025453-865cf4a.md)
+now resolves the bus through the design's own `uio_oe` and `uio_out`; it does
+not characterize electrical pad timing. The
+[DR 0013 boot ROM](verification/records/boot-rom/records/20261010-004726-197191d.md)
+is implemented. UART and SPI-flash boot firmware remain in progress (#139
+and #140); the serial-load CRC readout awaits an operator decision (#167).
 
 The competition's LibreLane flow has routed the macro-backed core in a 2×2
 Tiny Tapeout die. Its [committed PDN/area record](verification/records/librelane-pdn-bridge/records/20261001-085017-21a2a63.md)
@@ -94,6 +106,30 @@ The `flow/` directory description below names Yosys and OpenROAD because that
 is this program's klt iteration flow. The competition's submitted GDS uses the
 Tiny Tapeout template's LibreLane flow, as described in the proposed
 [`flow-of-record decision`](spec/decision-records/0002-flow-of-record.md).
+
+## Reproducing the results
+
+Every recorded result lives under
+[`verification/records/`](verification/records/), one directory per kind of
+measurement, and each record's *Run configuration* names the exact command
+that produced it. The index of all of them, with the bench, the cold-start
+command and the pinned tool and PDK revisions, is
+[`manifests/evidence/testbenches.txt`](manifests/evidence/testbenches.txt);
+CI fails if a new kind of record appears without a line there. In short:
+
+```bash
+./scripts/setup-env.sh          # klt at the layout/toolchain.json pin + pinned cocotb
+scripts/run-rtl-benches.sh      # every PDK-free RTL bench (Icarus + cocotb)
+npm run lint                    # evidence-record, firmware and inventory checks
+scripts/signoff-report.sh --check-latest   # re-grade the T1 checklist
+```
+
+Legs that need the PDK (synthesis, DRC/LVS, gate-level and post-layout
+simulation) take `PDK_ROOT` pointing at IHP-Open-PDK `2bbec755dc67`; the
+formal legs need the OSS CAD Suite release pinned in
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml); the GDS and its
+timing come from the `gds` workflow. The environment record is
+[`docs/environment.md`](docs/environment.md).
 
 ## Repo layout
 

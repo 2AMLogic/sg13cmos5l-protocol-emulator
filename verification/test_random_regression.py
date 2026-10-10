@@ -40,7 +40,10 @@ number is produced or implied.
 
 Negative controls (a regression that cannot fail cannot cite its passes):
 mutated templates run on the DUT and graded by the same models -- a UART
-program whose bit period is 3 cycles short, an SPI program driving the
+program whose bit period is 3 cycles short, back-to-back streams of three
+0xFF frames whose data-bit periods are 3 cycles long and 3 cycles short
+(issue #97: 0xFF has no in-frame edge after bit 1, so only the model's
+frame-pitch check can see the slow one), an SPI program driving the
 wrong CPOL idle level, and I2C programs whose data-clock low phase is 10
 cycles under the Table 10 floor -- must each be FAILED by the model; and
 every SPI burst with a non-zero MOSI byte is re-graded under the three
@@ -60,14 +63,53 @@ every SCL interval except the stretched low and the high that follows it
 is compared byte-identical against an unstretched run on the same grade;
 the poll/handshake interval is bounded, not asserted exact. Controls: the
 non-polling sibling under a selected schedule must fail, and a truncated
-capture must fail. This is a bench-composed wired-AND bus (`uio_oe` is
-fixed to 0): it says nothing about silicon open-drain pad behaviour and
-decides nothing about the pin plan (#94).
+capture must fail.
 
-Directions not covered: UART RX (no firmware exists for it yet; deferred,
-not implied).
+SPI runs on the same pad model wired as an SPI board (issue #155): the
+generated programs drive CS / MOSI / SCLK on `uio[0]` / `uio[1]` /
+`uio[3]` through `WCTL UIO_DIR` and sample MISO on `uio[2]` (DR 0010's
+target plan), and every run must end with the design having driven
+exactly those three pins, without contention.
+
+Both I2C families run on the silicon-true pad model (issue #136, DR 0012;
+`verification/uio_pads.py`, through the directed benches' own
+`run_words` / `run_on_pads`): the lines graded are SCL and SDA as
+resolved per pin from the design's `uio_oe` / `uio_out`, a pull-up and
+the open-drain peripheral, and read on `uio_in`; and every generated
+program must end its run having driven exactly SCL and SDA, only ever
+low, with no contention. Until #136 this was a bench-composed wired-AND
+bus that never read `uio_oe`; the records minted that way are superseded.
+A further control per grade and family: the generated program with its
+`WCTL UIO_OD` turned into a reserved no-op must fail. The pad model is
+zero-delay and logical -- nothing here is a claim about pull-up rise
+time or pad drive strength -- and it decides nothing about the pin plan
+(#94).
+
+UART spacing (issue #97). Odd-indexed multi-frame UART programs send
+their frames back to back (next START one bit after the STOP) and are
+graded with the model's back-to-back frame-pitch check plus an exact
+10-bit start-to-start cycle count; the others idle 256 cycles between
+frames, where a single frame's timing is graded on its last in-frame edge
+only (the model's documented isolated-frame limitation).
+
+UART RX (issue #192). The committed receive programs (`uart_rx` 50,
+`uart_rx_115200` 434, `uart_rx_9600` 5,208 core cycles per bit) are run
+unchanged; what is seeded is the stimulus on `ui_in[1]` (payload class,
+in-bound rate error / jitter, spacing), built and graded with the directed
+bench's own helpers (`test_firmware_uart_rx.py`: the independent
+`reference_models.uart` encoder / decoder, `frame_ok`): the received byte on
+`uo_out`, the framing flag, cycle-exact sample spacing and sample position
+inside the sender's bit. `ui_in[0]` (PROG_SER) is held low. Controls: the
+receiver with one inter-sample WAIT stretched by 2 cycles must be rejected
+for sample spacing, and a +-10 % per-bit sender must be rejected for a wrong
+byte or an out-of-bit sample.
+
+Limits: RTL, zero-delay Icarus simulation only. No SDF, no electrical pad
+behaviour and no measured wall-clock baud is implied; baud figures are
+arithmetic at row 4's unconfirmed clock.
 """
 
+import copy
 import hashlib
 import json
 import os
@@ -97,22 +139,26 @@ from test_firmware_uart import (  # noqa: E402
     cycle_at_time,
     expected_edge_offsets,
 )
-from test_firmware_spi import burst_windows, cycles_between, drive_miso  # noqa: E402
+from test_firmware_spi import burst_windows, cycles_between  # noqa: E402
+from test_firmware_spi import run_on_pads as run_spi_on_pads  # noqa: E402
 from test_firmware_i2c import (  # noqa: E402
     FAST,
     STD,
-    SCL_BIT,
-    SCL_PIN,
-    SDA_BIT,
-    SDA_PIN,
-    drive_peripheral,
     grade_transfer,
+    without_uio_od,
 )
-from test_firmware_i2c_sr import drive_peripheral_sr  # noqa: E402
-from test_firmware_i2c import wired_and  # noqa: E402
+from test_firmware_i2c import run_words as run_i2c_on_pads  # noqa: E402
+from test_firmware_i2c_sr import run_on_pads as run_i2c_rd_on_pads  # noqa: E402
+from test_firmware_uart_rx import (  # noqa: E402
+    FrameSpec,
+    frame_ok,
+    model_check_verdicts,
+    run_rx,
+)
 from reference_models.i2c import check_transfer  # noqa: E402
 from reference_models.spi import MODES, check_burst  # noqa: E402
-from reference_models.uart import UartDecoder  # noqa: E402
+from reference_models.uart import MAX_FRAME_DRIFT_PCT, UartDecoder  # noqa: E402
+from reference_models.waveform import Signal  # noqa: E402
 
 #: The one recorded seed; mirrored into the request's `random_seed`.
 RECORDED_SEED = 20261009
@@ -205,7 +251,10 @@ def grade_uart(case, tx):
     bound; cycle gaps are then measured at the pin."""
     period = case.params["period"]
     baud = 1e9 / (period * CLK_PERIOD_NS)
-    decoder = UartDecoder(baud)
+    back_to_back = case.params.get("back_to_back", False)
+    # A back-to-back case declares its stream to the model, so a late
+    # following start is graded as pitch drift rather than idle (#97).
+    decoder = UartDecoder(baud, back_to_back=back_to_back)
     try:
         reports = decoder.decode(tx.signal)
     except ValueError as exc:  # UartFrameError: the model rejects the frame
@@ -219,18 +268,35 @@ def grade_uart(case, tx):
         if not report.stop_ok:
             return False, f"frame {n}: framing error"
         if not decoder.check_frame(report):
-            return False, f"frame {n}: row-10 drift {report.drift_pct:.3f}%"
+            pitch = (
+                "n/a" if report.pitch_drift_pct is None
+                else f"{report.pitch_drift_pct:.3f}%"
+            )
+            return False, (
+                f"frame {n}: row-10 drift {report.drift_pct:.3f}% "
+                f"(last edge), pitch {pitch}"
+            )
         start = cycle_at_time(tx, report.t_start)
+        # Half-open window: on a back-to-back stream the next frame's start
+        # edge sits exactly at start + 10 * period and is not this frame's.
         edges = [
             c
             for c in tx.transition_cycles
-            if start <= c <= start + 10 * period
+            if start <= c < start + 10 * period
         ]
         offsets = [c - start for c in edges]
         wanted = [k * period for k in expected_edge_offsets(payload)]
         if offsets != wanted:
             return False, f"frame {n}: edge offsets {offsets} != {wanted} cycles"
-    return True, f"{len(want)} frame(s) @ {period} cycles/bit"
+        if back_to_back and n + 1 < len(reports):
+            gap = cycle_at_time(tx, reports[n + 1].t_start) - start
+            if gap != 10 * period:
+                return False, (
+                    f"frame {n}: start-to-start {gap} cycles != "
+                    f"{10 * period} on a back-to-back stream"
+                )
+    spacing = " back to back" if back_to_back else ""
+    return True, f"{len(want)} frame(s){spacing} @ {period} cycles/bit"
 
 
 @cocotb.test()
@@ -267,21 +333,82 @@ async def test_uart_random_programs(dut):
 
 
 # =======================================================================
+# UART RX (issue #192)
+# =======================================================================
+
+
+def rx_frames(case):
+    """Fresh `FrameSpec`s for a case (run_rx mutates them)."""
+    p = case.params
+    return [
+        FrameSpec(f["data"], scale=p["scale"], jitter_frac=p["jitter_frac"],
+                  gap_bits=f["gap_bits"], label=p["variation"])
+        for f in p["frames"]
+    ]
+
+
+async def run_uart_rx(dut, case):
+    """Load the case's receive program over the load-phase pins and play its
+    seeded frames on `ui_in[1]`. Returns `(frames, results, line)`."""
+    program = _assemble(case)  # the case's own assembly is what runs
+    frames = rx_frames(case)
+    results, line = await run_rx(
+        dut, case.params["program"], frames, seed=case.params["stim_seed"],
+        start_clock=False, words=program.words,
+    )
+    return frames, results, line
+
+
+def grade_uart_rx(case, frames, results, line):
+    """Returns (ok, detail, failures). Every verdict is the directed bench's:
+    byte on `uo_out`, framing flag, cycle-exact sample spacing, sample
+    position in the sender's bit; plus the independent model's opinion of
+    the nominal (in-bound) stimulus."""
+    period = case.params["period"]
+    fails = []
+    for n, (spec, res) in enumerate(zip(frames, results)):
+        strict = spec.scale == 1.0 and not spec.jitter_frac
+        fails += [f"frame {n} 0x{spec.data:02x}: {m}"
+                  for m in frame_ok(spec, res, period, strict)]
+    if case.params["variation"] == "nominal":
+        # The model looks for a start edge with a 1e-9 ns look-back, which a
+        # float64 absolute time past ~1e7 ns (late in a long run) cannot
+        # resolve; hand it the same waveform rebased close to zero.
+        off = frames[0].t_start - 1000.0
+        near = Signal(line.initial, name=line.name)
+        near.transitions = [(t - off, v) for t, v in line.transitions]
+        rebased = []
+        for f in frames:
+            g = copy.copy(f)
+            g.t_start, g.t_end = f.t_start - off, f.t_end - off
+            rebased.append(g)
+        for n, ok in enumerate(model_check_verdicts(near, period, rebased)):
+            if not ok:
+                fails.append(f"frame {n}: model rejects its own in-bound stimulus")
+    if fails:
+        return False, "; ".join(fails), fails
+    got = [f"0x{r['got']:02x}" for r in results]
+    return True, (
+        f"{case.params['program']} @ {period} cycles/bit, {case.params['variation']}, "
+        f"rx on {case.params['rx_pin']}, received {got}"
+    ), []
+
+
+# =======================================================================
 # SPI
 # =======================================================================
 
-SPI_PINS = {"cs": ("uo_out", 0), "sclk": ("uo_out", 1), "mosi": ("uo_out", 2),
-            "miso": ("uio_in", 0)}
-
-
 async def run_spi(dut, case):
+    """Run a generated SPI program on the pad model's SPI board (the
+    directed bench's `run_on_pads`, issue #155): the lines graded are CS,
+    SCLK, MOSI and MISO as the pads resolve them, and the run must end
+    with the design having driven exactly CS, SCLK and MOSI."""
     program = _assemble(case)
     mode = MODES[case.params["mode"]]
-    await load_program(dut, program.words)
     run_cycles = program.total_cycles + SPI_CAPTURE_MARGIN
-    driver = cocotb.start_soon(drive_miso(dut, mode, case.params["miso"], run_cycles))
-    caps = await capture_pin_bits(dut, SPI_PINS, run_cycles)
-    await driver
+    caps, _pads = await run_spi_on_pads(
+        dut, ident(case), program.words, mode, case.params["miso"], run_cycles,
+    )
     return caps
 
 
@@ -359,24 +486,21 @@ async def test_spi_random_programs(dut):
 # =======================================================================
 
 
-async def run_i2c(dut, case):
+async def run_i2c(dut, case, uio_od=True):
+    """Run a generated I2C write on the pad model. `uio_od=False` is the
+    negative control: the same words with `WCTL UIO_OD` turned into a
+    reserved no-op, so no pad is ever enabled."""
     program = _assemble(case)
     mode = _GRADE[case.params["grade"]]
-    await load_program(dut, program.words)
     run_cycles = program.total_cycles + I2C_CAPTURE_MARGIN
     ack_falls = {9} if case.params["ack_address"] else set()
-    driver = cocotb.start_soon(drive_peripheral(dut, ack_falls))
-    caps = await capture_pin_bits(
-        dut,
-        {
-            "ctl_scl": (SCL_PIN, SCL_BIT),
-            "ctl_sda": (SDA_PIN, SDA_BIT),
-            "per_scl": ("uio_in", SCL_BIT),
-            "per_sda": ("uio_in", 7),
-        },
-        run_cycles,
+    words = program.words if uio_od else without_uio_od(program.words)
+    caps, pads = await run_i2c_on_pads(
+        dut, ident(case), words, run_cycles, ack_falls,
+        expect_open_drain=uio_od,
     )
-    driver.kill()
+    if not uio_od:
+        assert pads.oe_seen == 0, f"{ident(case)}: pads enabled without UIO_OD"
     return mode, caps
 
 
@@ -474,25 +598,20 @@ def rd_driver_args(case, unstretched=False):
     )
 
 
-async def run_i2c_rd(dut, case, unstretched=False, cycles=None):
+async def run_i2c_rd(dut, case, unstretched=False, cycles=None, uio_od=True):
+    """Run a generated write/Sr/read program on the pad model, with the
+    case's own peripheral schedule. `uio_od=False`: see `run_i2c`."""
     program = _assemble(case)
-    await load_program(dut, program.words)
     ack, bits, stretches = rd_driver_args(case, unstretched)
     cycles = rd_run_cycles(case) if cycles is None else cycles
-    driver = cocotb.start_soon(drive_peripheral_sr(dut, ack, bits, stretches))
-    caps = await capture_pin_bits(
-        dut,
-        {
-            "ctl_scl": (SCL_PIN, SCL_BIT),
-            "ctl_sda": (SDA_PIN, SDA_BIT),
-            "per_scl": ("uio_in", SCL_BIT),
-            "per_sda": ("uio_in", 7),
-        },
-        cycles,
+    words = program.words if uio_od else without_uio_od(program.words)
+    caps, uo, pads = await run_i2c_rd_on_pads(
+        dut, ident(case), words, cycles, ack, bits, stretches,
+        expect_open_drain=uio_od,
     )
-    uo = int(dut.uo_out.value)  # the DUT's observable result
-    driver.kill()
-    return caps, uo
+    if not uio_od:
+        assert pads.oe_seen == 0, f"{ident(case)}: pads enabled without UIO_OD"
+    return caps, uo  # uo: the DUT's observable result
 
 
 def _scl_intervals(scl):
@@ -526,8 +645,7 @@ async def rd_reference(dut, case):
     grade = case.params["grade"]
     if grade not in _REF_INTERVALS:
         caps, uo = await run_i2c_rd(dut, case, unstretched=True)
-        scl = wired_and(caps["ctl_scl"], caps["per_scl"])
-        sda = wired_and(caps["ctl_sda"], caps["per_sda"])
+        scl, sda = caps["scl"].signal, caps["sda"].signal
         mode = _GRADE[grade]
         rep = check_transfer(scl, sda, fast_mode=mode.fast_mode)
         err = _rd_decode_ok(case, rep, uo)
@@ -554,8 +672,7 @@ def grade_i2c_rd(case, caps, uo, ref):
     exempt: how long a polling firmware takes to notice the release is a
     handshake interval, not a determinism claim."""
     mode = _GRADE[case.params["grade"]]
-    scl = wired_and(caps["ctl_scl"], caps["per_scl"])
-    sda = wired_and(caps["ctl_sda"], caps["per_sda"])
+    scl, sda = caps["scl"].signal, caps["sda"].signal
     try:
         report = check_transfer(scl, sda, fast_mode=mode.fast_mode)
     except ValueError as exc:
@@ -650,6 +767,45 @@ async def test_negative_controls_mutated_templates_fail(dut):
     dut._log.info(f"negative control UART mistimed: ok={ok} ({detail})")
     assert not ok, "NEGATIVE CONTROL FAILED TO FAIL: mistimed UART passed"
 
+    # UART, issue #97: a back-to-back stream of 0xFF frames whose data-bit
+    # periods are 3 cycles long / short. 0xFF has no in-frame edge after
+    # bit 1 and the start and first data bit are nominal, so the last-edge
+    # drift and the cycle edge offsets are blind to the slow stream; only
+    # the frame-pitch check can fail it.
+    for delta in (3, -3):
+        case = ft.gen_uart(
+            RECORDED_SEED, 1, mistime_delta=delta,
+            force_payloads=[0xFF, 0xFF, 0xFF], back_to_back=True,
+        )
+        tx = await run_uart(dut, case)
+        ok, detail = grade_uart(case, tx)
+        baud = 1e9 / (case.params["period"] * CLK_PERIOD_NS)
+        reports = UartDecoder(baud, back_to_back=True).decode(tx.signal)
+        last_edge = [round(r.drift_pct, 3) for r in reports]
+        pitch = [
+            None if r.pitch_drift_pct is None else round(r.pitch_drift_pct, 3)
+            for r in reports
+        ]
+        name = f"uart_0xff_stream_bit_period_{'plus' if delta > 0 else 'minus'}_3"
+        NEGATIVE_CONTROLS.append(
+            {"name": name, "params": case.params,
+             "model_verdict": "FAIL" if not ok else "PASS", "detail": detail,
+             "last_edge_drift_pct": last_edge, "pitch_drift_pct": pitch}
+        )
+        dut._log.info(
+            f"negative control {name}: ok={ok} ({detail}); last-edge drift "
+            f"{last_edge} %, pitch {pitch} %"
+        )
+        assert not ok and "pitch" in detail, (
+            f"NEGATIVE CONTROL FAILED TO FAIL: {name} passed ({detail})"
+        )
+        assert [r.data for r in reports] == [0xFF, 0xFF, 0xFF], reports
+        if delta > 0:
+            # The pre-#97 measurement alone passes this stream.
+            assert all(r.drift_pct <= MAX_FRAME_DRIFT_PCT for r in reports), (
+                f"expected the last-edge drift to be blind: {last_edge}"
+            )
+
     # SPI: drive the wrong CPOL idle level for the declared mode.
     case = ft.gen_spi(RECORDED_SEED, 0, flip_idle=1)
     caps = await run_spi(dut, case)
@@ -682,6 +838,24 @@ async def test_negative_controls_mutated_templates_fail(dut):
         assert failed, (
             f"NEGATIVE CONTROL FAILED TO FAIL: {mode.name} program with "
             "short t_LOW passed the model"
+        )
+
+    # I2C on the pads (issue #136): a generated program whose UIO_OD is
+    # left at reset enables no pad, so the lines never move and the model
+    # must find no transfer. Both grades; the peripheral would ACK.
+    for index in (0, 1):
+        case = ft.gen_i2c(RECORDED_SEED, index)
+        case.params["ack_address"] = True
+        mode, caps = await run_i2c(dut, case, uio_od=False)
+        ok, detail = grade_i2c(dut, case, mode, caps)
+        NEGATIVE_CONTROLS.append(
+            {"name": f"{mode.name}_uio_od_left_at_reset", "params": case.params,
+             "model_verdict": "FAIL" if not ok else "PASS", "detail": detail}
+        )
+        dut._log.info(f"negative control {mode.name} UIO_OD at reset: {detail}")
+        assert not ok, (
+            f"NEGATIVE CONTROL FAILED TO FAIL: {mode.name} program passed "
+            "with UIO_OD left at reset (no pad enabled)"
         )
 
 
@@ -736,6 +910,87 @@ async def test_i2c_rd_negative_controls(dut):
         assert not ok_cut, (
             f"NEGATIVE CONTROL FAILED TO FAIL: {ident(pick)} truncated capture "
             "was graded complete"
+        )
+
+        # UIO_OD left at reset (issue #136): the polling program enables
+        # no pad, reads the pulled-up SCL back as "released", and runs to
+        # the end without having moved a line -> must fail.
+        caps, uo = await run_i2c_rd(dut, pick, uio_od=False)
+        ok_od, detail_od = grade_i2c_rd(pick, caps, uo, ref)
+        NEGATIVE_CONTROLS.append(
+            {"name": f"{grade}_rd_uio_od_left_at_reset", "params": pick.params,
+             "model_verdict": "FAIL" if not ok_od else "PASS", "detail": detail_od}
+        )
+        dut._log.info(
+            f"negative control {ident(pick)} UIO_OD at reset: {ok_od} ({detail_od})"
+        )
+        assert not ok_od, (
+            f"NEGATIVE CONTROL FAILED TO FAIL: {ident(pick)} passed with "
+            "UIO_OD left at reset (no pad enabled)"
+        )
+
+
+# =======================================================================
+# UART RX legs (issue #192). They run LAST (before the report): the
+# 5,208-cycle/bit profile advances simulated time by tens of milliseconds, and
+# the SPI / UART models look for edges with a 1e-9 ns look-back that float64
+# absolute times past ~1e7 ns cannot resolve. Ordering them after the
+# existing legs leaves those legs' absolute times, and so their records,
+# unchanged.
+# =======================================================================
+
+
+@cocotb.test()
+async def test_uart_rx_random_programs(dut):
+    cocotb.start_soon(Clock(dut.clk, CLK_PERIOD_NS, unit="ns").start())
+    failures = []
+    for case in ft.generate(RECORDED_SEED, "uart_rx", case_count()):
+        _emit(case)
+        CASES_RUN.append(case)
+        frames, results, line = await run_uart_rx(dut, case)
+        ok, detail, _fails = grade_uart_rx(case, frames, results, line)
+        dut._log.info(f"{ident(case)} params={case.params} -> {ok} ({detail})")
+        _record(case, ok, detail)
+        if not ok:
+            failures.append(f"{ident(case)}: {detail}")
+    assert not failures, "UART RX random regression FAILED:\n" + "\n".join(failures)
+
+
+@cocotb.test()
+async def test_uart_rx_negative_controls(dut):
+    cocotb.start_soon(Clock(dut.clk, CLK_PERIOD_NS, unit="ns").start())
+    # UART RX (issue #192): (1) the committed 50-cycle receiver with its first
+    # inter-sample WAIT stretched by 2 cycles must be rejected for sample
+    # spacing; (2) a sender 10 % off per bit, both directions, must be
+    # rejected for a wrong byte / out-of-bit sample (the receiver tolerates
+    # +-2 %, not +-10 %).
+    probes = [0x80, 0x40, 0x01, 0xA5]
+    rx_controls = [
+        ("uart_rx_wait_plus_2", ft.gen_uart_rx(RECORDED_SEED, 0, mistime_wait_delta=2),
+         ("sample spacing",)),
+        ("uart_rx_sender_rate_plus_10pct",
+         ft.gen_uart_rx(RECORDED_SEED, 0, force_frames=probes, force_scale=1.10),
+         ("received 0x", "of its bit")),
+        ("uart_rx_sender_rate_minus_10pct",
+         ft.gen_uart_rx(RECORDED_SEED, 0, force_frames=probes, force_scale=0.90),
+         ("received 0x", "of its bit")),
+    ]
+    for name, case, reasons in rx_controls:
+        assert case.params["rx_pin"] == "ui_in[1]"
+        frames, results, line = await run_uart_rx(dut, case)
+        ok, detail, fails = grade_uart_rx(case, frames, results, line)
+        intended = [m for m in fails if any(r in m for r in reasons)]
+        NEGATIVE_CONTROLS.append(
+            {"name": name, "protocol": "uart_rx", "params": case.params,
+             "model_verdict": "FAIL" if not ok else "PASS",
+             "intended_reason": list(reasons),
+             "intended_reason_seen": bool(intended), "detail": detail}
+        )
+        dut._log.info(f"negative control {name}: ok={ok} intended={bool(intended)} ({detail})")
+        assert not ok, f"NEGATIVE CONTROL FAILED TO FAIL: {name} passed ({detail})"
+        assert intended, (
+            f"NEGATIVE CONTROL {name} was rejected, but not for the intended "
+            f"reason {reasons}: {detail}"
         )
 
 

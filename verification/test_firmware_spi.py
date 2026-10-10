@@ -6,7 +6,7 @@ protocol ("firmware is evidence"): **committed** programs
 (`firmware/asm/spi_mode{0..3}.asm`, images `firmware/build/spi_mode*.hex`)
 loaded over the real serial load-phase pins onto the real top
 (`tt_um_2amlogic_protocol_emulator`), executed by the ISA core, with the
-SCLK/MOSI/CS pins they drive -- and the MISO pin an independent
+SCLK/MOSI/CS lines they drive -- and the MISO line an independent
 peripheral-emulator coroutine drives back -- captured off the simulation
 and judged by the **independent** SPI reference model
 (`verification/reference_models/spi.py`): `check_burst` re-derives both
@@ -22,18 +22,35 @@ full-duplex bursts (an `IN` samples MISO every bit in both):
 
 1. a **ceiling burst** at exactly 4 core cycles per SCLK period
    (SCLK = f_clk/4, DR 0001's ceiling), MOSI byte `0xA5`;
-2. a **functional burst** at 8 cycles/bit (under the ceiling), MOSI byte
-   `0x3C`, whose loop also extracts and assembles the received MISO bits
-   and echoes the assembled byte on `uo_out[7:0]` after CS releases --
-   DUT-side receive evidence the bench checks against the byte its
-   peripheral coroutine drove (`0x5A`).
+2. a **functional burst** at 10 cycles/bit (under the ceiling), MOSI
+   byte `0x3C`, whose loop also extracts and assembles the received MISO
+   bits and echoes the assembled byte on `uo_out[7:0]` after CS releases
+   -- DUT-side receive evidence the bench checks against the byte its
+   peripheral coroutine drove (`0x5A`). It was 8 cycles/bit while MISO
+   was `uio[0]`; on `uio[2]` the sampled bit needs two right shifts per
+   bit, which do not fit in 8 cycles (issue #155).
+
+Pins and pads (issue #155)
+--------------------------
+The programs use DR 0010's target pin plan, the standard Tiny Tapeout
+SPI Pmod (upper row): CS `uio[0]`, MOSI `uio[1]`, MISO `uio[2]`, SCLK
+(the Pmod's SCK) `uio[3]`. Each program makes CS, MOSI and SCLK
+push-pull outputs with DR 0012's `WCTL UIO_DIR` (after writing their idle
+image), and leaves MISO an input. The bench runs every program on the
+silicon-true pad model (`verification/uio_pads.py`, issue #136) wired as
+an SPI board (`spi_board`): what the model grades is each **line** as the
+pads resolve it from `uio_oe` / `uio_out`, the board's pulls and the
+peripheral, read back on `uio_in` -- so a line only moves where the
+program's pad is enabled. The peripheral drives MISO through the same
+model. Each run must end with the design having driven exactly CS, MOSI
+and SCLK, without contention (`assert_spi_push_pull`).
 
 What is measured, and in what units
 -----------------------------------
 **Cycles.** The SCLK period is measured at the pin as the spacing between
 captured SCLK transitions, in rising edges of the core clock. The ceiling
 burst measures exactly **4 cycles** (2-cycle half-periods); the
-functional burst exactly 8. Those numbers are independent of any clock
+functional burst exactly 10. Those numbers are independent of any clock
 frequency.
 
 **Any MHz figure is arithmetic at an unconfirmed clock.** The bench runs
@@ -98,9 +115,22 @@ CLK_PERIOD_NS = 20
 #: measurement.
 F_CLK_HZ = 1e9 / CLK_PERIOD_NS
 
-# --- the pin map (fixed pin-port table; see each program's header) ------
-CS_BIT, SCLK_BIT, MOSI_BIT = 0, 1, 2  # uo_out bits
-MISO_PIN, MISO_BIT = "uio_in", 0      # peripheral-driven input pin
+# --- the pin map (DR 0010's target plan, the SPI Pmod; issue #155) -------
+CS_BIT, SCLK_BIT, MOSI_BIT = 0, 3, 1  # uio bits the program drives (UIO_DIR)
+MISO_PIN, MISO_BIT = "uio_in", 2      # peripheral-driven input pin
+#: Where the graded lines are read: the pad-resolved uio lines.
+LINE_PIN = "uio_in"
+
+#: What every SPI run captures, per clock edge: the four lines as the pads
+#: resolve them, and uo_out (the functional burst's echoed RX byte).
+CAPTURE_SPECS = {
+    "cs": (LINE_PIN, CS_BIT),
+    "sclk": (LINE_PIN, SCLK_BIT),
+    "mosi": (LINE_PIN, MOSI_BIT),
+    "miso": (MISO_PIN, MISO_BIT),
+}
+for _i in range(8):
+    CAPTURE_SPECS[f"uo{_i}"] = ("uo_out", _i)
 
 #: What each committed program transmits, what the bench's peripheral
 #: coroutine drives back on MISO, and the `.cyclesec` names guarding the
@@ -108,7 +138,7 @@ MISO_PIN, MISO_BIT = "uio_in", 0      # peripheral-driven input pin
 #: program echoes what it assembled.
 CEIL_TX, FUNC_TX = 0xA5, 0x3C
 CEIL_MISO, FUNC_MISO = 0xC3, 0x5A
-CEIL_CYCLES_PER_BIT, FUNC_CYCLES_PER_BIT = 4, 8
+CEIL_CYCLES_PER_BIT, FUNC_CYCLES_PER_BIT = 4, 10
 
 #: Trailing capture margin, in cycles, past the program's HALT -- enough
 #: for the echo to be observed held on uo_out.
@@ -142,6 +172,7 @@ import asm  # noqa: E402  (path-shimmed import of the committed assembler)
 # the *named* module's own namespace only.
 from test_protocol_emulator import load_program  # noqa: E402
 from test_firmware_uart import CapturedPin, capture_pin_bits  # noqa: E402
+from uio_pads import assert_spi_push_pull, spi_board  # noqa: E402
 
 ASM_DIR = REPO_ROOT / "firmware" / "asm"
 BUILD_DIR = REPO_ROOT / "firmware" / "build"
@@ -178,15 +209,22 @@ def _bit(byte: int, k: int) -> int:
     return (byte >> (7 - k)) & 1
 
 
-async def drive_miso(dut, mode, miso_bytes, cycles: int):
+def spi_pads(dut):
+    """The pad model wired as this pin plan's SPI board. The one place
+    the SPI benches tell the pad model which pins the bus is on."""
+    return spi_board(dut, cs=CS_BIT, sclk=SCLK_BIT, mosi=MOSI_BIT, miso=MISO_BIT)
+
+
+async def drive_miso(dut, pads, mode, miso_bytes, cycles: int):
     """Reactive peripheral-side MISO driver, one pass per core clock.
 
     Presents each burst's MISO byte the way the reference model's own
     `encode_burst` would (the model is the convention's authority): CPHA=0
     peripherals present bit 0 at CS fall and bit k at the previous
     trailing edge; CPHA=1 peripherals present bit k at each leading edge.
-    The coroutine reads CS/SCLK in the read-only region after each edge
-    (post-settle, same discipline as the capture) and writes MISO 1 ns
+    The coroutine reads the CS/SCLK lines (as the pad model resolves
+    them) in the read-only region after each edge (post-settle, same
+    discipline as the capture) and drives MISO through the pad model 1 ns
     later, so its changes land strictly after the capture's sample for
     that edge and strictly before the next one -- deterministic against
     the capture, and never at a sampling instant.
@@ -194,25 +232,22 @@ async def drive_miso(dut, mode, miso_bytes, cycles: int):
     idle = mode.cpol
     burst = -1
     bit_k = 0
-    # prev_cs starts as None (not 1): at run-phase entry uo_out still
-    # reads its reset value (all low) until the program's setup OUT
-    # drives the released/idle image, so a first-read CS of 0 must not be
-    # mistaken for a CS fall -- only a 1 -> 0 edge is.
+    # prev_cs starts as None (not 1): only a 1 -> 0 edge seen by this
+    # coroutine is a CS fall, never whatever level the line has on the
+    # first read.
     prev_sclk, prev_cs = idle, None
     for _ in range(cycles):
         await RisingEdge(dut.clk)
         await ReadOnly()
-        uo = int(dut.uo_out.value)
-        cs = (uo >> CS_BIT) & 1
-        sclk = (uo >> SCLK_BIT) & 1
+        cs = pads.level(CS_BIT)
+        sclk = pads.level(SCLK_BIT)
         await Timer(1, unit="ns")
         write = None
         if prev_cs == 1 and cs == 0 and burst < len(miso_bytes) - 1:
             # CS fall: a new burst begins. Once the planned bursts are all
-            # presented the driver goes inert -- the functional burst's
-            # echoed byte reuses uo_out[0] as a data bit, which is not a
-            # CS assertion (the capture-side burst-count assert is the
-            # authority on how many bursts really happened).
+            # presented the driver goes inert (the capture-side
+            # burst-count assert is the authority on how many bursts
+            # really happened).
             burst += 1
             bit_k = 0
             if mode.cpha == 0:
@@ -226,7 +261,7 @@ async def drive_miso(dut, mode, miso_bytes, cycles: int):
                 write = _bit(miso_bytes[burst], bit_k)  # after a leading edge
                 bit_k += 1
         if write is not None:
-            dut.uio_in.value = write
+            pads.drive(MISO_BIT, write)
         prev_sclk, prev_cs = sclk, cs
 
 
@@ -275,6 +310,33 @@ def uo_byte_at(caps: dict, cycle: int) -> int:
 
 def load_hex(mode_number: int) -> list:
     return parse_hex_image(program_paths(mode_number)[1])
+
+
+async def run_on_pads(dut, tag: str, words: list, mode, miso_bytes,
+                      run_cycles: int, expect_push_pull: bool = True):
+    """Load `words` and run them on the SPI board (`spi_pads`), with the
+    reactive peripheral driving `miso_bytes` on MISO, capturing
+    `CAPTURE_SPECS` on every clock edge. Returns `(captures, pads)`.
+
+    The pad model runs from before reset: no `uio` pad may be enabled
+    from reset release to the end of the load phase (DR 0012). With
+    `expect_push_pull` the run must end having driven exactly CS, SCLK and
+    MOSI, without contention."""
+    assert len(words) <= 256, "program exceeds DR 0001's 256-word memory"
+    pads = spi_pads(dut).start()
+    await load_program(dut, words)
+    assert pads.resets == 1 and pads.oe_seen == 0, (
+        f"{tag}: uio pads 0x{pads.oe_seen:02x} were enabled between reset "
+        "release and the end of the load phase (DR 0012: every uio pin is "
+        "an input at reset)"
+    )
+    driver = cocotb.start_soon(drive_miso(dut, pads, mode, miso_bytes, run_cycles))
+    caps = await capture_pin_bits(dut, CAPTURE_SPECS, run_cycles)
+    await driver
+    pads.stop()
+    if expect_push_pull:
+        assert_spi_push_pull(pads, tag)
+    return caps, pads
 
 
 # =======================================================================
@@ -328,7 +390,7 @@ async def test_all_four_modes_pass_independent_reference_model(dut):
     matching the program's committed payload, MISO matching the byte this
     bench's peripheral coroutine drove -- the ceiling burst's SCLK period
     measuring exactly 4 core cycles at the pin, the functional burst's
-    exactly 8, and the echoed assembled RX byte matching the functional
+    exactly 10, and the echoed assembled RX byte matching the functional
     MISO byte.
 
     The wrong-mode negative control runs on the same captured ceiling
@@ -339,22 +401,11 @@ async def test_all_four_modes_pass_independent_reference_model(dut):
     for mode_number in range(4):
         mode = MODES[mode_number]
         words = load_hex(mode_number)
-        await load_program(dut, words)
-
         run_cycles = committed_total_cycles(mode_number) + CAPTURE_MARGIN_CYCLES
-        driver = cocotb.start_soon(
-            drive_miso(dut, mode, [CEIL_MISO, FUNC_MISO], run_cycles)
+        caps, _pads = await run_on_pads(
+            dut, f"mode {mode_number}", words, mode, [CEIL_MISO, FUNC_MISO],
+            run_cycles,
         )
-        specs = {
-            "cs": ("uo_out", CS_BIT),
-            "sclk": ("uo_out", SCLK_BIT),
-            "mosi": ("uo_out", MOSI_BIT),
-            "miso": (MISO_PIN, MISO_BIT),
-        }
-        for i in range(8):
-            specs[f"uo{i}"] = ("uo_out", i)
-        caps = await capture_pin_bits(dut, specs, run_cycles)
-        await driver
         cs, sclk, mosi, miso = caps["cs"], caps["sclk"], caps["mosi"], caps["miso"]
 
         windows = burst_windows(cs)
