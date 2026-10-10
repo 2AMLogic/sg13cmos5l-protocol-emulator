@@ -388,15 +388,24 @@ here, in `firmware/tools/gen_boot_rom.py` and in
    or the count byte, which the issue's frame keeps;
 4. drop the ROM for one of the two media.
 
-*Area, with its flow.* The ROM is a `case` of one 16-bit word per entry. #138
-measured the 30-word ROM at 1,531.20 µm² on the klt/Yosys flow (cell area
-only), about 51 µm² per word, so +128 words is about +6,500 µm² by arithmetic
-on that figure. **That is an estimate and not a measurement; neither flow was
-run on this ROM in the PR that adds it.** The LibreLane `gds` run on the PR is
-the measurement, and #138 found 57 % of the 2×2 core unoccupied. Gate level:
-`test_boot_rom.py` and `test_boot_uart.py` run on the netlist of a revision
-that has this ROM, which does not exist yet; `flow/run-firmware-gate-level.sh
---boot-rom --boot-uart --netlist <that netlist>` is the command.
+*Area, each number with its flow.* **klt/Yosys flow** (cell area only;
+`klt synthesize flow/synthesize-protocol-emulator.json`, Yosys 0.67, the same
+liberty as #138's record, which that Yosys reproduces to the instance: 1,189
+instances, 19,451.4264 µm² for the 30-word ROM): the top is now **1,495
+instances, 22,606.1388 µm²** (178 flip-flops), **+306 instances and +3,154.71
+µm² (+16.2 %)**, so the loader costs about 3,150 µm² here on top of #138's
+11.4 %. The ROM alone is **416 instances, 4,555.35 µm²** (16 flip-flops) for
+158 words, against 104 instances and 1,531.20 µm² (14 flip-flops) for 30:
+about 26 µm² per added word, half the 51 µm² per word the 30-word ROM
+suggested, because the extra words share logic. The two flip-flops that #138
+found constant (output bits 4 and 7) are no longer constant. This flow
+reports no timing for this design. **LibreLane flow:** not measured in this
+change; the `gds` workflow on the PR is the measurement, and #138 found 57 %
+of the 2×2 core unoccupied (die utilization 42.82 % with the 30-word ROM).
+Gate level: `test_boot_rom.py` and `test_boot_uart.py` run on the netlist of a
+revision that has this ROM, which does not exist until that workflow runs;
+`flow/run-firmware-gate-level.sh --boot-rom --boot-uart --netlist <that
+netlist>` is the command. Records: `verification/records/synthesis-baseline/`.
 
 **Finding F3: the loader keeps a byte in `UIO_DIR`, so `uio_out` is `0xFF`
 while it runs.** The receiver has no register to spare for "words left". The
