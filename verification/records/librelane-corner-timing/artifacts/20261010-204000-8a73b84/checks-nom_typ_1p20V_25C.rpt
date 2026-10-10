@@ -1,0 +1,275 @@
+
+===========================================================================
+report_checks -unconstrained
+===========================================================================
+======================= nom_typ_1p20V_25C Corner ===================================
+
+Startpoint: rst_n (input port clocked by clk)
+Endpoint: _4507_ (recovery check against rising-edge clock clk)
+Path Group: asynchronous
+Path Type: max
+
+Fanout         Cap        Slew       Delay        Time   Description
+---------------------------------------------------------------------------------------------
+                                  0.000000    0.000000   clock clk (rise edge)
+                                  0.000000    0.000000   clock network delay (propagated)
+                                  4.000000    4.000000 ^ input external delay
+     1    0.002981    0.020200    0.002708    4.002707 ^ rst_n (in)
+                                                         rst_n (net)
+                      0.020200    0.000000    4.002707 ^ input1/A (sg13cmos5l_buf_1)
+     1    0.020965    0.092840    0.112867    4.115575 ^ input1/X (sg13cmos5l_buf_1)
+                                                         net1 (net)
+                      0.092931    0.002504    4.118078 ^ fanout345/A (sg13cmos5l_buf_1)
+     4    0.070501    0.291921    0.283150    4.401228 ^ fanout345/X (sg13cmos5l_buf_1)
+                                                         net345 (net)
+                      0.293298    0.017165    4.418393 ^ fanout319/A (sg13cmos5l_buf_1)
+     4    0.044832    0.188501    0.266053    4.684447 ^ fanout319/X (sg13cmos5l_buf_1)
+                                                         net319 (net)
+                      0.188516    0.001515    4.685962 ^ fanout310/A (sg13cmos5l_buf_1)
+     4    0.060107    0.249895    0.283468    4.969430 ^ fanout310/X (sg13cmos5l_buf_1)
+                                                         net310 (net)
+                      0.250346    0.009197    4.978627 ^ fanout303/A (sg13cmos5l_buf_1)
+     8    0.075790    0.312873    0.342664    5.321291 ^ fanout303/X (sg13cmos5l_buf_1)
+                                                         net303 (net)
+                      0.313536    0.012406    5.333697 ^ fanout302/A (sg13cmos5l_buf_1)
+     8    0.061926    0.256089    0.319241    5.652938 ^ fanout302/X (sg13cmos5l_buf_1)
+                                                         net302 (net)
+                      0.256204    0.004738    5.657676 ^ fanout301/A (sg13cmos5l_buf_1)
+     8    0.059999    0.249207    0.300815    5.958491 ^ fanout301/X (sg13cmos5l_buf_1)
+                                                         net301 (net)
+                      0.249332    0.004869    5.963360 ^ _4507_/RESET_B (sg13cmos5l_dfrbpq_1)
+                                              5.963360   data arrival time
+
+                                 20.000000   20.000000   clock clk (rise edge)
+                                  0.000000   20.000000   clock source latency
+     2    0.093731    0.104616    0.088134   20.088135 ^ clk (in)
+                                                         clk (net)
+                      0.121451    0.000000   20.088135 ^ clkbuf_regs_0_clk/A (sg13cmos5l_buf_8)
+     1    0.008918    0.023183    0.099440   20.187574 ^ clkbuf_regs_0_clk/X (sg13cmos5l_buf_8)
+                                                         clk_regs (net)
+                      0.023189    0.000691   20.188267 ^ clkbuf_0_clk_regs/A (sg13cmos5l_buf_8)
+     4    0.112112    0.067724    0.085349   20.273615 ^ clkbuf_0_clk_regs/X (sg13cmos5l_buf_8)
+                                                         clknet_0_clk_regs (net)
+                      0.083462    0.023704   20.297318 ^ clkbuf_2_0__f_clk_regs/A (sg13cmos5l_buf_8)
+     5    0.075488    0.051611    0.107326   20.404644 ^ clkbuf_2_0__f_clk_regs/X (sg13cmos5l_buf_8)
+                                                         clknet_2_0__leaf_clk_regs (net)
+                      0.054924    0.009663   20.414307 ^ clkbuf_leaf_19_clk_regs/A (sg13cmos5l_buf_8)
+    10    0.060139    0.042909    0.091012   20.505320 ^ clkbuf_leaf_19_clk_regs/X (sg13cmos5l_buf_8)
+                                                         clknet_leaf_19_clk_regs (net)
+                      0.042916    0.000421   20.505739 ^ _4507_/CLK (sg13cmos5l_dfrbpq_1)
+                                 -0.250000   20.255741   clock uncertainty
+                                  0.000000   20.255741   clock reconvergence pessimism
+                                 -0.187710   20.068031   library recovery time
+                                             20.068031   data required time
+---------------------------------------------------------------------------------------------
+                                             20.068031   data required time
+                                             -5.963360   data arrival time
+---------------------------------------------------------------------------------------------
+                                             14.104671   slack (MET)
+
+
+Startpoint: u_prog_mem.u_sram (rising edge-triggered flip-flop clocked by clk)
+Endpoint: _4660_ (rising edge-triggered flip-flop clocked by clk)
+Path Group: clk
+Path Type: max
+
+Fanout         Cap        Slew       Delay        Time   Description
+---------------------------------------------------------------------------------------------
+                                  0.000000    0.000000   clock clk (rise edge)
+                                  0.000000    0.000000   clock source latency
+     2    0.096293    0.107053    0.068135    0.068135 ^ clk (in)
+                                                         clk (net)
+                      0.107129    0.000000    0.068135 ^ delaybuf_0_clk/A (sg13cmos5l_buf_8)
+     1    0.009440    0.022673    0.105365    0.173500 ^ delaybuf_0_clk/X (sg13cmos5l_buf_8)
+                                                         delaynet_0_clk (net)
+                      0.022675    0.000402    0.173902 ^ delaybuf_1_clk/A (sg13cmos5l_buf_8)
+     1    0.068611    0.045314    0.080024    0.253926 ^ delaybuf_1_clk/X (sg13cmos5l_buf_8)
+                                                         delaynet_1_clk (net)
+                      0.058090    0.019230    0.273156 ^ delaybuf_2_clk/A (sg13cmos5l_buf_8)
+     1    0.009448    0.020240    0.082209    0.355365 ^ delaybuf_2_clk/X (sg13cmos5l_buf_8)
+                                                         delaynet_2_clk (net)
+                      0.020242    0.000402    0.355767 ^ clkbuf_0_clk/A (sg13cmos5l_buf_8)
+     1    0.011210    0.019193    0.063547    0.419314 ^ clkbuf_0_clk/X (sg13cmos5l_buf_8)
+                                                         clknet_0_clk (net)
+                      0.019204    0.000952    0.420266 ^ clkbuf_1_0__f_clk/A (sg13cmos5l_buf_8)
+     1    0.008788    0.018028    0.062110    0.482375 ^ clkbuf_1_0__f_clk/X (sg13cmos5l_buf_8)
+                                                         clknet_1_0__leaf_clk (net)
+                      0.024042    0.000531    0.482907 ^ u_prog_mem.u_sram/A_CLK (RM_IHPSG13_1P_256x16_c2_bm_bist)
+     2    0.047962    0.109958    3.196917    3.679824 ^ u_prog_mem.u_sram/A_DOUT[9] (RM_IHPSG13_1P_256x16_c2_bm_bist)
+                                                         instr_word[9] (net)
+                      0.082468    0.010185    3.690009 ^ _2401_/A1 (sg13cmos5l_mux2_1)
+     3    0.042836    0.181716    0.236784    3.926793 ^ _2401_/X (sg13cmos5l_mux2_1)
+                                                         _1951_ (net)
+                      0.182038    0.006592    3.933385 ^ fanout218/A (sg13cmos5l_buf_1)
+     8    0.130825    0.535130    0.478587    4.411972 ^ fanout218/X (sg13cmos5l_buf_1)
+                                                         net218 (net)
+                      0.537862    0.032716    4.444689 ^ fanout217/A (sg13cmos5l_buf_1)
+     5    0.021492    0.102687    0.237628    4.682317 ^ fanout217/X (sg13cmos5l_buf_1)
+                                                         net217 (net)
+                      0.102688    0.000524    4.682841 ^ _2441_/B_N (sg13cmos5l_nor2b_1)
+     5    0.063573    0.536438    0.489885    5.172727 ^ _2441_/Y (sg13cmos5l_nor2b_1)
+                                                         _1990_ (net)
+                      0.536465    0.003399    5.176125 ^ _2443_/D (sg13cmos5l_and4_1)
+     7    0.040677    0.187015    0.409610    5.585735 ^ _2443_/X (sg13cmos5l_and4_1)
+                                                         _1992_ (net)
+                      0.187177    0.005229    5.590964 ^ _2464_/B (sg13cmos5l_or4_1)
+     1    0.004586    0.043627    0.158662    5.749625 ^ _2464_/X (sg13cmos5l_or4_1)
+                                                         _2011_ (net)
+                      0.043627    0.000195    5.749821 ^ _2480_/A1 (sg13cmos5l_o21ai_1)
+     8    0.052719    0.319880    0.283889    6.033710 v _2480_/Y (sg13cmos5l_o21ai_1)
+                                                         _2027_ (net)
+                      0.320061    0.006690    6.040401 v _2519_/B1 (sg13cmos5l_a221oi_1)
+     1    0.004312    0.141072    0.212427    6.252827 ^ _2519_/Y (sg13cmos5l_a221oi_1)
+                                                         _2062_ (net)
+                      0.141075    0.000352    6.253179 ^ _2523_/A1 (sg13cmos5l_o21ai_1)
+     2    0.008165    0.082301    0.124028    6.377207 v _2523_/Y (sg13cmos5l_o21ai_1)
+                                                         _2066_ (net)
+                      0.082301    0.000266    6.377472 v _2525_/A (sg13cmos5l_nand2_1)
+     1    0.005767    0.049378    0.060028    6.437500 ^ _2525_/Y (sg13cmos5l_nand2_1)
+                                                         _2068_ (net)
+                      0.049379    0.000369    6.437870 ^ fanout115/A (sg13cmos5l_buf_1)
+     5    0.062660    0.260038    0.243143    6.681012 ^ fanout115/X (sg13cmos5l_buf_1)
+                                                         net115 (net)
+                      0.260075    0.002787    6.683799 ^ fanout111/A (sg13cmos5l_buf_1)
+     8    0.068134    0.282414    0.320139    7.003938 ^ fanout111/X (sg13cmos5l_buf_1)
+                                                         net111 (net)
+                      0.283370    0.014122    7.018060 ^ _2526_/A (sg13cmos5l_inv_1)
+     1    0.005937    0.064629    0.092424    7.110484 v _2526_/Y (sg13cmos5l_inv_1)
+                                                         _0018_ (net)
+                      0.064630    0.000326    7.110810 v fanout80/A (sg13cmos5l_buf_1)
+     4    0.040690    0.130699    0.172405    7.283215 v fanout80/X (sg13cmos5l_buf_1)
+                                                         net80 (net)
+                      0.130902    0.004490    7.287705 v fanout79/A (sg13cmos5l_buf_1)
+     8    0.055481    0.177255    0.229397    7.517102 v fanout79/X (sg13cmos5l_buf_1)
+                                                         net79 (net)
+                      0.177540    0.006234    7.523336 v fanout78/A (sg13cmos5l_buf_1)
+     6    0.031381    0.103887    0.189985    7.713321 v fanout78/X (sg13cmos5l_buf_1)
+                                                         net78 (net)
+                      0.103939    0.002243    7.715563 v fanout77/A (sg13cmos5l_buf_1)
+     8    0.041837    0.134303    0.192999    7.908563 v fanout77/X (sg13cmos5l_buf_1)
+                                                         net77 (net)
+                      0.134418    0.002734    7.911297 v _2697_/B (sg13cmos5l_xnor2_1)
+     8    0.073194    0.615504    0.538824    8.450121 ^ _2697_/Y (sg13cmos5l_xnor2_1)
+                                                         _0334_ (net)
+                      0.615929    0.014126    8.464247 ^ _2803_/A (sg13cmos5l_nand2_1)
+     4    0.052974    0.408693    0.533319    8.997565 v _2803_/Y (sg13cmos5l_nand2_1)
+                                                         _0438_ (net)
+                      0.408724    0.003946    9.001512 v _2804_/B1 (sg13cmos5l_o21ai_1)
+     1    0.006580    0.142864    0.136690    9.138202 ^ _2804_/Y (sg13cmos5l_o21ai_1)
+                                                         _0439_ (net)
+                      0.142865    0.000711    9.138912 ^ _2806_/A2 (sg13cmos5l_a221oi_1)
+     1    0.003672    0.131607    0.121437    9.260349 v _2806_/Y (sg13cmos5l_a221oi_1)
+                                                         _0441_ (net)
+                      0.131607    0.000153    9.260502 v _2807_/A2 (sg13cmos5l_a21o_1)
+     1    0.007530    0.043585    0.168744    9.429246 v _2807_/X (sg13cmos5l_a21o_1)
+                                                         _0442_ (net)
+                      0.043586    0.000285    9.429531 v _2815_/B1 (sg13cmos5l_a22oi_1)
+     1    0.009470    0.116365    0.123216    9.552748 ^ _2815_/Y (sg13cmos5l_a22oi_1)
+                                                         _0008_ (net)
+                      0.116366    0.000465    9.553213 ^ _4660_/D (sg13cmos5l_dfrbpq_1)
+                                              9.553213   data arrival time
+
+                                 20.000000   20.000000   clock clk (rise edge)
+                                  0.000000   20.000000   clock source latency
+     2    0.093731    0.104616    0.088134   20.088135 ^ clk (in)
+                                                         clk (net)
+                      0.121451    0.000000   20.088135 ^ clkbuf_regs_0_clk/A (sg13cmos5l_buf_8)
+     1    0.008918    0.023183    0.099440   20.187574 ^ clkbuf_regs_0_clk/X (sg13cmos5l_buf_8)
+                                                         clk_regs (net)
+                      0.023189    0.000691   20.188267 ^ clkbuf_0_clk_regs/A (sg13cmos5l_buf_8)
+     4    0.112112    0.067724    0.085349   20.273615 ^ clkbuf_0_clk_regs/X (sg13cmos5l_buf_8)
+                                                         clknet_0_clk_regs (net)
+                      0.069170    0.007375   20.280991 ^ clkbuf_2_3__f_clk_regs/A (sg13cmos5l_buf_8)
+     5    0.100801    0.063179    0.111605   20.392595 ^ clkbuf_2_3__f_clk_regs/X (sg13cmos5l_buf_8)
+                                                         clknet_2_3__leaf_clk_regs (net)
+                      0.063582    0.003853   20.396448 ^ clkbuf_leaf_14_clk_regs/A (sg13cmos5l_buf_8)
+    15    0.087560    0.057130    0.102650   20.499098 ^ clkbuf_leaf_14_clk_regs/X (sg13cmos5l_buf_8)
+                                                         clknet_leaf_14_clk_regs (net)
+                      0.057531    0.003656   20.502754 ^ _4660_/CLK (sg13cmos5l_dfrbpq_1)
+                                 -0.250000   20.252754   clock uncertainty
+                                  0.000000   20.252754   clock reconvergence pessimism
+                                 -0.138359   20.114395   library setup time
+                                             20.114395   data required time
+---------------------------------------------------------------------------------------------
+                                             20.114395   data required time
+                                             -9.553213   data arrival time
+---------------------------------------------------------------------------------------------
+                                             10.561183   slack (MET)
+
+
+
+
+===========================================================================
+report_checks --slack_max -0.01
+============================================================================
+======================= nom_typ_1p20V_25C Corner ===================================
+
+No paths found.
+
+
+===========================================================================
+ report_check_types -max_slew -max_cap -max_fanout -violators
+============================================================================
+======================= nom_typ_1p20V_25C Corner ===================================
+
+max fanout
+
+Pin                                   Limit Fanout  Slack
+---------------------------------------------------------
+clkbuf_leaf_1_clk_regs/X                  8     17     -9 (VIOLATED)
+clkbuf_leaf_10_clk_regs/X                 8     16     -8 (VIOLATED)
+clkbuf_leaf_12_clk_regs/X                 8     16     -8 (VIOLATED)
+clkbuf_leaf_13_clk_regs/X                 8     16     -8 (VIOLATED)
+clkbuf_leaf_6_clk_regs/X                  8     16     -8 (VIOLATED)
+clkbuf_leaf_7_clk_regs/X                  8     16     -8 (VIOLATED)
+clkbuf_leaf_14_clk_regs/X                 8     15     -7 (VIOLATED)
+clkbuf_leaf_16_clk_regs/X                 8     15     -7 (VIOLATED)
+clkbuf_leaf_17_clk_regs/X                 8     15     -7 (VIOLATED)
+clkbuf_leaf_3_clk_regs/X                  8     15     -7 (VIOLATED)
+clkbuf_leaf_5_clk_regs/X                  8     15     -7 (VIOLATED)
+clkbuf_leaf_8_clk_regs/X                  8     15     -7 (VIOLATED)
+clkbuf_leaf_4_clk_regs/X                  8     14     -6 (VIOLATED)
+clkbuf_leaf_18_clk_regs/X                 8     13     -5 (VIOLATED)
+clkbuf_leaf_2_clk_regs/X                  8     13     -5 (VIOLATED)
+clkbuf_leaf_11_clk_regs/X                 8     12     -4 (VIOLATED)
+clkbuf_leaf_15_clk_regs/X                 8     12     -4 (VIOLATED)
+clkbuf_leaf_0_clk_regs/X                  8     10     -2 (VIOLATED)
+clkbuf_leaf_19_clk_regs/X                 8     10     -2 (VIOLATED)
+
+max capacitance
+
+Pin                                        Limit         Cap       Slack
+------------------------------------------------------------------------
+u_prog_mem.u_sram/A_DOUT[7]             0.064000    0.071484   -0.007484 (VIOLATED)
+
+
+
+===========================================================================
+report_parasitic_annotation -report_unannotated
+============================================================================
+Found 14 unannotated drivers.
+ ena
+ clkload0/Y
+ clkload1/Y
+ clkload10/Y
+ clkload11/Y
+ clkload12/Y
+ clkload2/Y
+ clkload3/Y
+ clkload4/Y
+ clkload5/Y
+ clkload6/Y
+ clkload7/Y
+ clkload8/Y
+ clkload9/X
+Found 0 partially unannotated drivers.
+
+===========================================================================
+max slew violation count 0
+max fanout violation count 19
+max cap violation count 1
+============================================================================
+
+===========================================================================
+check_setup -verbose -unconstrained_endpoints -multiple_clock -no_clock -no_input_delay -loops -generated_clocks
+===========================================================================

@@ -1,0 +1,50 @@
+158. Printing statistics.
+
+=== tt_um_2amlogic_protocol_emulator ===
+
+        +----------Local Count, excluding submodules.
+        |        +-Local Area, excluding submodules.
+        |        | 
+     2545        - wires
+     2580        - wire bits
+      326        - public wires
+      361        - public wire bits
+        8        - ports
+       43        - port bits
+     2546 3.53E+04 cells
+        1        -   RM_IHPSG13_1P_256x16_c2_bm_bist
+       46  584.237   sg13cmos5l_a21o_1
+      343 3.11E+03   sg13cmos5l_a21oi_1
+       67  972.518   sg13cmos5l_a221oi_1
+      118 1.28E+03   sg13cmos5l_a22oi_1
+       38  344.736   sg13cmos5l_and2_1
+        3   38.102   sg13cmos5l_and3_1
+        5   72.576   sg13cmos5l_and4_1
+       27   391.91   sg13cmos5l_buf_4
+      264 1.29E+04   sg13cmos5l_dfrbpq_1
+      108  587.866   sg13cmos5l_inv_1
+       74 1.34E+03   sg13cmos5l_mux2_1
+       23  876.355   sg13cmos5l_mux4_1
+      281 2.04E+03   sg13cmos5l_nand2_1
+       34  308.448   sg13cmos5l_nand2b_1
+       81  734.832   sg13cmos5l_nand3_1
+        4   50.803   sg13cmos5l_nand3b_1
+       23  250.387   sg13cmos5l_nand4_1
+      307 2.23E+03   sg13cmos5l_nor2_1
+       27  244.944   sg13cmos5l_nor2b_1
+       59  535.248   sg13cmos5l_nor3_1
+       42  457.229   sg13cmos5l_nor4_1
+      319 2.89E+03   sg13cmos5l_o21ai_1
+       26  235.872   sg13cmos5l_or2_1
+       18  228.614   sg13cmos5l_or3_1
+        6   87.091   sg13cmos5l_or4_1
+       18  130.637   sg13cmos5l_tiehi
+       45  326.592   sg13cmos5l_tielo
+       89 1.29E+03   sg13cmos5l_xnor2_1
+       50   725.76   sg13cmos5l_xor2_1
+
+   Area for cell type \RM_IHPSG13_1P_256x16_c2_bm_bist is unknown!
+
+   Chip area for module '\tt_um_2amlogic_protocol_emulator': 35305.578000
+     of which used for sequential elements: 12933.043200 (36.63%)
+
