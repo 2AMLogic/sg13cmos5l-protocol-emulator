@@ -314,11 +314,27 @@ gates. The host-side loader is issue #118.
   and `coverage.json` (this is how the record's artifacts were made). Mutated
   templates run on the DUT as negative controls. Covers UART TX, SPI, I2C
   write, and (issue #104) the I2C write/repeated-START/read family with
-  seeded peripheral clock stretching (UART RX is deferred). Both I2C
+  seeded peripheral clock stretching. Issue #192 adds UART RX: the committed
+  50 / 434 / 5,208 cycles-per-bit receive programs run unchanged while the
+  seeded part is the stimulus on `ui_in[1]` (payload class, in-bound
+  +-2 % rate error / jitter, spacing), built and graded with
+  `test_firmware_uart_rx.py`'s helpers and the independent UART model
+  (received byte on `uo_out`, framing flag, cycle-exact sample spacing,
+  sample position in the sender's bit); these legs run last so the long
+  low-baud simulation does not shift the other legs' absolute times. Its
+  negative controls (a receiver with one inter-sample WAIT stretched, and a
+  sender +-10 % off per bit) must be rejected for sample spacing and for a
+  wrong byte / out-of-bit sample respectively. All of this is RTL,
+  zero-delay evidence: not SDF, not pad electrical behaviour, and not a
+  measured wall-clock baud. Both I2C
   families run on the pad model (`uio_pads.py`, issue #136). Driven by `klt
   functional-verification` (see `request-random-regression.json`, whose
   `random_seed` the bench asserts equal to its `RECORDED_SEED`); evidence in
   `records/random-regression/`.
+- `flow/run-firmware-gate-level.sh` (issue #192) runs `test_firmware_uart_rx`
+  by default alongside the UART TX, SPI and I2C benches on the LibreLane
+  netlist (zero-delay; WAIT-counter stuck-at control). No SDF, no pad
+  electrical behaviour, no measured wall-clock baud.
 - `firmware_templates.py` / `test_firmware_templates.py` — the generator
   (pure Python, no simulator) and its simulator-free unit tests (determinism,
   prefix-stability of larger sweeps, bounds, zero-warning assembly, cover-bin

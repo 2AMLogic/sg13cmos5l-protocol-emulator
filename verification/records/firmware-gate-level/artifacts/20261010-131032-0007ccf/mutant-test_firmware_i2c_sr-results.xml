@@ -1,0 +1,38 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuites name="cocotb tests"><testsuite name="test_firmware_i2c_sr" errors="0" failures="3" skipped="0" tests="5" time="2.518" timestamp="2026-10-10T13:24:19.140999+00:00" hostname="loom-worker-1"><testcase classname="test_firmware_i2c_sr" name="test_sr_images_fresh" time="0.008"><properties><property name="cocotb" value="True" /><property name="random_seed" value="1791638659" /><property name="file" value="<repo>/verification/test_firmware_i2c_sr.py" /><property name="line" value="320" /><property name="sim_time_unit" value="ns" /><property name="sim_time_start" value="0.0" /><property name="sim_time_stop" value="0.0" /><property name="sim_time_duration" value="0.0" /><property name="sim_time_ratio" value="0.0" /></properties></testcase><testcase classname="test_firmware_i2c_sr" name="test_sr_exact_programs_pass_model_with_negative_controls" time="0.818"><failure message="i2c_fast_sr: the design drove uio pins 0x00; an I2C controller must drive exactly SCL|SDA = 0x0c (0x00 means UIO_OD was never written: the chip cannot pull a line low)&#10;assert 0 == 12&#10; +  where 0 = &lt;uio_pads.UioPads object at 0x7be81ccd3290&gt;.oe_seen" type="AssertionError">Traceback (most recent call last):
+  File "<repo>/verification/test_firmware_i2c_sr.py", line 357, in test_sr_exact_programs_pass_model_with_negative_controls
+    caps, uo = await run_words(dut, committed_words(v), v.run_cycles(),
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<repo>/verification/test_firmware_i2c_sr.py", line 267, in run_words
+    caps, uo, _pads = await run_on_pads(
+                      ^^^^^^^^^^^^^^^^^^
+  File "<repo>/verification/test_firmware_i2c_sr.py", line 262, in run_on_pads
+    assert_i2c_open_drain(pads, tag)
+  File "<repo>/verification/uio_pads.py", line 422, in assert_i2c_open_drain
+    assert pads.oe_seen == mask, (
+AssertionError: i2c_fast_sr: the design drove uio pins 0x00; an I2C controller must drive exactly SCL|SDA = 0x0c (0x00 means UIO_OD was never written: the chip cannot pull a line low)
+assert 0 == 12
+ +  where 0 = &lt;uio_pads.UioPads object at 0x7be81ccd3290&gt;.oe_seen
+</failure><properties><property name="cocotb" value="True" /><property name="random_seed" value="1791638659" /><property name="file" value="<repo>/verification/test_firmware_i2c_sr.py" /><property name="line" value="350" /><property name="sim_time_unit" value="ns" /><property name="sim_time_start" value="0.001" /><property name="sim_time_stop" value="181461.001" /><property name="sim_time_duration" value="181461.0" /><property name="sim_time_ratio" value="221714.00830446565" /></properties><system-err>Test failed with COCOTB_RANDOM_SEED=1791638659
+</system-err></testcase><testcase classname="test_firmware_i2c_sr" name="test_sr_poll_programs_stretch" time="0.876"><failure message="i2c_sr: the design drove uio pins 0x00; an I2C controller must drive exactly SCL|SDA = 0x0c (0x00 means UIO_OD was never written: the chip cannot pull a line low)&#10;assert 0 == 12&#10; +  where 0 = &lt;uio_pads.UioPads object at 0x7be81ccf6a80&gt;.oe_seen" type="AssertionError">Traceback (most recent call last):
+  File "<repo>/verification/test_firmware_i2c_sr.py", line 417, in test_sr_poll_programs_stretch
+    caps_u, uo_u = await run_words(dut, committed_words(v), v.run_cycles())
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<repo>/verification/test_firmware_i2c_sr.py", line 267, in run_words
+    caps, uo, _pads = await run_on_pads(
+                      ^^^^^^^^^^^^^^^^^^
+  File "<repo>/verification/test_firmware_i2c_sr.py", line 262, in run_on_pads
+    assert_i2c_open_drain(pads, tag)
+  File "<repo>/verification/uio_pads.py", line 422, in assert_i2c_open_drain
+    assert pads.oe_seen == mask, (
+AssertionError: i2c_sr: the design drove uio pins 0x00; an I2C controller must drive exactly SCL|SDA = 0x0c (0x00 means UIO_OD was never written: the chip cannot pull a line low)
+assert 0 == 12
+ +  where 0 = &lt;uio_pads.UioPads object at 0x7be81ccf6a80&gt;.oe_seen
+</failure><properties><property name="cocotb" value="True" /><property name="random_seed" value="1791638659" /><property name="file" value="<repo>/verification/test_firmware_i2c_sr.py" /><property name="line" value="407" /><property name="sim_time_unit" value="ns" /><property name="sim_time_start" value="181461.002" /><property name="sim_time_stop" value="377342.002" /><property name="sim_time_duration" value="195880.99999999997" /><property name="sim_time_ratio" value="223494.38855509588" /></properties><system-err>Test failed with COCOTB_RANDOM_SEED=1791638659
+</system-err></testcase><testcase classname="test_firmware_i2c_sr" name="test_sr_uio_od_left_at_reset_cannot_drive_the_bus" time="0.815"><failure message="i2c_fast_sr with UIO_OD at reset: uo_out 0x00; a controller that cannot clock the bus must read the released line (0xFF), not the peripheral&#10;assert (0 != 180 and 0 == 255)" type="AssertionError">Traceback (most recent call last):
+  File "<repo>/verification/test_firmware_i2c_sr.py", line 539, in test_sr_uio_od_left_at_reset_cannot_drive_the_bus
+    assert uo != READ_BYTE and uo == 0xFF, (
+AssertionError: i2c_fast_sr with UIO_OD at reset: uo_out 0x00; a controller that cannot clock the bus must read the released line (0xFF), not the peripheral
+assert (0 != 180 and 0 == 255)
+</failure><properties><property name="cocotb" value="True" /><property name="random_seed" value="1791638659" /><property name="file" value="<repo>/verification/test_firmware_i2c_sr.py" /><property name="line" value="498" /><property name="sim_time_unit" value="ns" /><property name="sim_time_start" value="377342.003" /><property name="sim_time_stop" value="558823.003" /><property name="sim_time_duration" value="181481.0" /><property name="sim_time_ratio" value="222784.0213599256" /></properties><system-err>Test failed with COCOTB_RANDOM_SEED=1791638659
+</system-err></testcase><testcase classname="test_firmware_i2c_sr" name="test_sr_model_nominal_repeated_start_passes" time="0.001"><properties><property name="cocotb" value="True" /><property name="random_seed" value="1791638659" /><property name="file" value="<repo>/verification/test_firmware_i2c_sr.py" /><property name="line" value="546" /><property name="sim_time_unit" value="ns" /><property name="sim_time_start" value="558823.004" /><property name="sim_time_stop" value="558823.004" /><property name="sim_time_duration" value="0.0" /><property name="sim_time_ratio" value="0.0" /></properties></testcase></testsuite></testsuites>
