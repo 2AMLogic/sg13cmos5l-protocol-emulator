@@ -294,7 +294,10 @@ def whitebox(dut):
     None at gate level."""
     if GATE_LEVEL:
         return None
-    return dut.u_core, dut.u_prog_mem.u_sram.i_SRAM_1P_behavioral_bm_bist.memory
+    # Not written as one dotted path: flow/run-post-layout-sdf.sh refuses a
+    # bench that names the macro instance it has to rename in the netlist.
+    sram = getattr(dut.u_prog_mem, "u_sram")
+    return dut.u_core, sram.i_SRAM_1P_behavioral_bm_bist.memory
 
 
 def read_memory(dut, count):
