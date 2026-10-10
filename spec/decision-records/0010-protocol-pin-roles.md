@@ -236,6 +236,15 @@ to 5. When #155 lands, this section's "today" table and the "Run phase" table
 are rewritten to the target plan, and the `uio[0]` sharing below goes away
 (MISO moves to `uio[2]`, SCL to `uio[2]` in a different image).
 
+**Note (2026-10-09, issue #196): the target plan collides with the DR 0013
+flash boot.** The QSPI flash/PSRAM Pmod used by strap `01` takes `uio[0..7]`,
+so the SPI profile's `uio[0..3]` and the I2C profile's `uio[2]`/`uio[3]` are
+the flash's own CS0, MOSI, MISO and SCK. Decided: one device on the `uio`
+header at a time, with no pin change. A booted SPI program talks to the
+flash and can overwrite the boot image; no I2C peripheral can share the
+header. The SPI and I2C Pmods' bottom-row variants (`uio[4..7]`) are a
+possible future option only. See DR 0013 finding F4 and `docs/info.md`.
+
 ### Shared pads on the upper row: `uio[2]` and `uio[3]` (since #155)
 
 The standard SPI and I2C Pmods overlap: `uio[2]` is SPI `MISO` and I2C `SCL`,
