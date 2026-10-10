@@ -184,7 +184,7 @@ poll:
         OUT   UIO_OUT, R1      ; sample mark high
         AND   R2, R1
         XOR   R2, R1           ; 1 when the stop bit read 0 (framing error)
-        SHF   R2, LEFT         ; -> UIO_OUT bit 1 (SHF leaves Z alone)
+        SHF   R2, LEFT         ; -> UIO_OUT bit 2 (SHF leaves Z alone)
         OUT   UIO_OUT, R2      ; also clears the mark
         BZ    poll             ; clean stop bit: re-arm start detect at once
         JMP   sync             ; stop bit read 0: wait for the line to go high first
