@@ -1,0 +1,16 @@
+8492c8492
+<     .B(\u_core.wait_cnt[0] ),
+---
+>     .B(1'b0),
+12469c12469
+<  sg13cmos5l_nor3_1 _2592_ (.A(\u_core.wait_cnt[0] ),
+---
+>  sg13cmos5l_nor3_1 _2592_ (.A(1'b0),
+12475c12475
+<     .A1(\u_core.wait_cnt[0] ),
+---
+>     .A1(1'b0),
+14460c14460
+<  sg13cmos5l_dlygate4sd3_1 hold455 (.A(\u_core.wait_cnt[0] ),
+---
+>  sg13cmos5l_dlygate4sd3_1 hold455 (.A(1'b0),

@@ -1,0 +1,8 @@
+ok   verdict-always-accepts: 1/1 tests failed -- the trailer comparison's branch is a NOP: every frame is answered 0x06 and run
+ok   trailer-high-byte-unchecked: 1/1 tests failed -- the trailer comparison ORs R0 with itself, so only the low CRC byte is compared
+ok   crc-not-cleared-at-the-count: 1/1 tests failed -- the count handler no longer clears PM_CRC, so a retry after a rejected frame carries the old frame's residue
+ok   rx-bit-period-wrong: 1/1 tests failed -- the receiver's bit period is 466 cycles, not 434
+ok   rx-reads-ui-in-bit-0: 1/1 tests failed -- the receiver masks ui_in[0] instead of ui_in[1]
+ok   tx-stop-bit-too-short: 1/1 tests failed -- the reply's stop bit is padded for 82 cycles, not 171
+ok   handover-drops-the-guard-last: 1/1 tests failed -- the hand-over clears uio_out before UIO_OD and UIO_DIR: for two cycles every uio pin drives low
+RESULT: golden passes and every mutant is caught by a test meant to catch it

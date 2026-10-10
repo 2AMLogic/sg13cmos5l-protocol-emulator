@@ -1,0 +1,140 @@
+rm -f results.xml
+mkdir -p <repo>/flow/firmware-gate-level/pass/test_boot_uart/sim_build
+<home>/.local/bin/iverilog -o <repo>/flow/firmware-gate-level/pass/test_boot_uart/sim_build/sim.vvp -s tb -g2012 -DGL_TEST -DFUNCTIONAL -DSIM -I<repo>/test/../src -f <repo>/flow/firmware-gate-level/pass/test_boot_uart/sim_build/cmds.f  <home>/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_io/verilog/sg13cmos5l_io.v <home>/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v <home>/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_udp.v <repo>/test/../rtl/vendor/RM_IHPSG13_1P_256x16_c2_bm_bist.v <repo>/test/../rtl/vendor/RM_IHPSG13_1P_core_behavioral_bm_bist.v <repo>/verification/records/post-layout-sdf-regression/artifacts/20261010-014153-661c4bf/tt_um_2amlogic_protocol_emulator.v <repo>/test/tb.v
+<home>/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:42: sorry: ifnone with an edge-sensitive path is not supported.
+<home>/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:44: sorry: ifnone with an edge-sensitive path is not supported.
+<home>/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:50: sorry: ifnone with an edge-sensitive path is not supported.
+<home>/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:52: sorry: ifnone with an edge-sensitive path is not supported.
+<home>/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:66: sorry: ifnone with an edge-sensitive path is not supported.
+<home>/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:68: sorry: ifnone with an edge-sensitive path is not supported.
+<home>/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:103: sorry: ifnone with an edge-sensitive path is not supported.
+<home>/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:105: sorry: ifnone with an edge-sensitive path is not supported.
+<home>/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:111: sorry: ifnone with an edge-sensitive path is not supported.
+<home>/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:113: sorry: ifnone with an edge-sensitive path is not supported.
+<home>/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:127: sorry: ifnone with an edge-sensitive path is not supported.
+<home>/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:129: sorry: ifnone with an edge-sensitive path is not supported.
+<home>/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:177: sorry: ifnone with an edge-sensitive path is not supported.
+<home>/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:179: sorry: ifnone with an edge-sensitive path is not supported.
+<home>/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:227: sorry: ifnone with an edge-sensitive path is not supported.
+<home>/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:229: sorry: ifnone with an edge-sensitive path is not supported.
+<home>/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:274: sorry: ifnone with an edge-sensitive path is not supported.
+<home>/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:276: sorry: ifnone with an edge-sensitive path is not supported.
+<home>/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:290: sorry: ifnone with an edge-sensitive path is not supported.
+<home>/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:292: sorry: ifnone with an edge-sensitive path is not supported.
+<home>/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:306: sorry: ifnone with an edge-sensitive path is not supported.
+<home>/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:308: sorry: ifnone with an edge-sensitive path is not supported.
+<home>/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:322: sorry: ifnone with an edge-sensitive path is not supported.
+<home>/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:324: sorry: ifnone with an edge-sensitive path is not supported.
+<home>/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:346: sorry: ifnone with an edge-sensitive path is not supported.
+<home>/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:348: sorry: ifnone with an edge-sensitive path is not supported.
+<home>/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:385: sorry: ifnone with an edge-sensitive path is not supported.
+<home>/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:387: sorry: ifnone with an edge-sensitive path is not supported.
+<home>/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:393: sorry: ifnone with an edge-sensitive path is not supported.
+<home>/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:395: sorry: ifnone with an edge-sensitive path is not supported.
+<home>/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:405: sorry: ifnone with an edge-sensitive path is not supported.
+<home>/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:407: sorry: ifnone with an edge-sensitive path is not supported.
+<home>/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:417: sorry: ifnone with an edge-sensitive path is not supported.
+<home>/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:419: sorry: ifnone with an edge-sensitive path is not supported.
+<home>/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:1786: sorry: ifnone with an edge-sensitive path is not supported.
+<home>/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:1788: sorry: ifnone with an edge-sensitive path is not supported.
+<home>/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:1830: sorry: ifnone with an edge-sensitive path is not supported.
+<home>/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:1832: sorry: ifnone with an edge-sensitive path is not supported.
+<home>/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:1881: sorry: ifnone with an edge-sensitive path is not supported.
+<home>/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:1883: sorry: ifnone with an edge-sensitive path is not supported.
+<home>/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:1901: sorry: ifnone with an edge-sensitive path is not supported.
+<home>/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:1903: sorry: ifnone with an edge-sensitive path is not supported.
+<home>/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:2487: sorry: ifnone with an edge-sensitive path is not supported.
+<home>/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:2489: sorry: ifnone with an edge-sensitive path is not supported.
+<home>/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:2733: sorry: ifnone with an edge-sensitive path is not supported.
+<home>/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:2735: sorry: ifnone with an edge-sensitive path is not supported.
+<home>/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:2743: sorry: ifnone with an edge-sensitive path is not supported.
+<home>/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:2745: sorry: ifnone with an edge-sensitive path is not supported.
+<home>/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:2802: sorry: ifnone with an edge-sensitive path is not supported.
+<home>/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:2804: sorry: ifnone with an edge-sensitive path is not supported.
+<home>/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:2811: sorry: ifnone with an edge-sensitive path is not supported.
+<home>/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:2813: sorry: ifnone with an edge-sensitive path is not supported.
+<home>/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:2866: sorry: ifnone with an edge-sensitive path is not supported.
+<home>/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:2868: sorry: ifnone with an edge-sensitive path is not supported.
+<home>/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:2875: sorry: ifnone with an edge-sensitive path is not supported.
+<home>/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:2877: sorry: ifnone with an edge-sensitive path is not supported.
+<home>/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:2932: sorry: ifnone with an edge-sensitive path is not supported.
+<home>/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:2934: sorry: ifnone with an edge-sensitive path is not supported.
+<home>/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:2990: sorry: ifnone with an edge-sensitive path is not supported.
+<home>/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:2992: sorry: ifnone with an edge-sensitive path is not supported.
+<home>/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:3199: sorry: ifnone with an edge-sensitive path is not supported.
+<home>/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:3201: sorry: ifnone with an edge-sensitive path is not supported.
+<home>/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:3211: sorry: ifnone with an edge-sensitive path is not supported.
+<home>/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:3213: sorry: ifnone with an edge-sensitive path is not supported.
+<home>/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:3250: sorry: ifnone with an edge-sensitive path is not supported.
+<home>/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:3252: sorry: ifnone with an edge-sensitive path is not supported.
+<home>/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:3262: sorry: ifnone with an edge-sensitive path is not supported.
+<home>/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:3264: sorry: ifnone with an edge-sensitive path is not supported.
+rm -f results.xml
+COCOTB_TEST_MODULES=test_boot_uart COCOTB_TESTCASE=  COCOTB_TOPLEVEL=tb TOPLEVEL_LANG=verilog       \
+	 <home>/.local/bin/vvp -m <home>/.local/lib/python3.12/site-packages/cocotb/libs/libcocotbvpi_icarus.so   <repo>/flow/firmware-gate-level/pass/test_boot_uart/sim_build/sim.vvp -fst   
+     -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:242  in gpi_load_users                  Loaded entry library: '/usr/lib/x86_64-linux-gnu/libpython3.12.so.1.0'
+     -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:233  in gpi_load_users                  Running entry func 'initialize' from loaded library '<home>/.local/lib/python3.12/site-packages/cocotb/simulator.cpython-312-x86_64-linux-gnu.so'
+     -.--ns INFO     pygpi                              ..ib/pygpi/embed.cpp:114  in initialize                      Using Python 3.12.12 interpreter at /usr/bin/python3
+     -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:74   in gpi_print_registered_impl       GPI: VPI support registered
+     0.00ns INFO     cocotb.initialize                  Seeding Python random module with 1791597590
+     0.00ns INFO     cocotb.initialize                  Initialized cocotb v2.1.0 from <home>/.local/lib/python3.12/site-packages/cocotb
+     0.00ns INFO     cocotb.initialize                  Running on Icarus Verilog version 13.0 (stable)
+     0.00ns INFO     cocotb.regression                  Running tests
+     0.00ns INFO     cocotb.regression                  running test_boot_uart.test_boot_image_chain_and_host_agreement (1/8)
+                                                            The committed boot image is what its source assembles to, the ROM is
+     0.00ns INFO     cocotb.tb                          boot image: 158 of 256 words
+    20.00ns INFO     cocotb.regression                  test_boot_uart.test_boot_image_chain_and_host_agreement passed
+    20.00ns INFO     cocotb.regression                  running test_boot_uart.test_nominal_load_runs_the_image (2/8)
+                                                            A framed image at the nominal rate: accepted, replied `0x06` + CRC,
+   220.00ns WARNING  py.warnings                        <repo>/verification/test_boot_uart.py:173: DeprecationWarning: Use `signal.value_change` instead.
+                                                          await Edge(sig)
+9014640.00ns INFO     cocotb.tb                          nominal: reply 067f37 byte pitch [4343, 4346] cycles
+9014640.00ns INFO     cocotb.regression                  test_boot_uart.test_nominal_load_runs_the_image passed
+9014640.00ns INFO     cocotb.regression                  running test_boot_uart.test_row10_tolerance_edges (3/8)
+                                                            Host bit-rate errors of -2 % and +2 % (target-spec row 10's bound),
+76103600.00ns INFO     cocotb.tb                          gate level: the rate-error sweep and the negative control run at RTL only
+76103600.00ns INFO     cocotb.regression                  test_boot_uart.test_row10_tolerance_edges passed
+76103600.00ns INFO     cocotb.regression                  running test_boot_uart.test_bad_images_never_run (4/8)
+                                                            Corrupted payloads, bad CRCs, bad lengths and a wrong magic: none
+88912640.00ns INFO     cocotb.tb                          flipped bit, payload first byte: not run, retry ran
+101721680.00ns INFO     cocotb.tb                          flipped bit, payload middle: not run, retry ran
+114530720.00ns INFO     cocotb.tb                          flipped bit, payload last byte: not run, retry ran
+127339760.00ns INFO     cocotb.tb                          bad CRC, high byte: not run, retry ran
+140148800.00ns INFO     cocotb.tb                          bad CRC, low byte: not run, retry ran
+152957840.00ns INFO     cocotb.tb                          bad CRC, both bytes: not run, retry ran
+165769080.00ns INFO     cocotb.tb                          length too small by one word: not run, retry ran
+178580320.00ns INFO     cocotb.tb                          length too small by half the image: not run, retry ran
+191391560.00ns INFO     cocotb.tb                          length 1 word: not run, retry ran
+210601020.00ns INFO     cocotb.tb                          length too large (stalls): not run, retry ran
+223412260.00ns INFO     cocotb.tb                          wrong magic: not run, retry ran
+230234300.00ns INFO     cocotb.tb                          magic only, then silence: not run, retry ran
+230234300.00ns INFO     cocotb.regression                  test_boot_uart.test_bad_images_never_run passed
+230234300.00ns INFO     cocotb.regression                  running test_boot_uart.test_garbage_before_the_magic_is_ignored (5/8)
+                                                            Bytes other than 0xA5 ahead of a frame are skipped (the loader's
+237860120.00ns INFO     cocotb.regression                  test_boot_uart.test_garbage_before_the_magic_is_ignored passed
+237860120.00ns INFO     cocotb.regression                  running test_boot_uart.test_end_to_end_protocol_program_over_uart (6/8)
+                                                            Load the committed `uart_tx` program (a protocol program, not a boot
+244796340.00ns INFO     cocotb.tb                          uart_tx loaded over UART (34 words) and graded: [UartFrameReport(data=0x5a, t_start=5640.000ns, stop_ok=True, drift=0.000ns (0.000% of bit), pitch=14200.000ns (0.000% of bit)), UartFrameReport(data=0xa5, t_start=19840.000ns, stop_ok=True, drift=0.000ns (0.000% of bit), pitch=n/a)]
+244796340.00ns INFO     cocotb.regression                  test_boot_uart.test_end_to_end_protocol_program_over_uart passed
+244796340.00ns INFO     cocotb.regression                  running test_boot_uart.test_full_image_and_warm_start (7/8)
+                                                            256 words: the largest frame (count byte 0xFF, 516 bytes). The image
+244796340.01ns INFO     cocotb.tb                          gate level: the 256-word image (about 2.2 million cycles) runs at RTL only
+244796340.01ns INFO     cocotb.regression                  test_boot_uart.test_full_image_and_warm_start passed
+244796340.01ns INFO     cocotb.regression                  running test_boot_uart.test_fallthroughs_into_the_uart_load (8/8)
+                                                            Strap `11` (reserved) behaves as `00`, and a warm start whose image
+257743740.01ns INFO     cocotb.regression                  test_boot_uart.test_fallthroughs_into_the_uart_load passed
+257743740.01ns INFO     cocotb.regression                  *******************************************************************************************************************
+                                                        ** TEST                                                       STATUS  SIM TIME (ns)  REAL TIME (s)  RATIO (ns/s) **
+                                                        *******************************************************************************************************************
+                                                        ** test_boot_uart.test_boot_image_chain_and_host_agreement     PASS          20.00           0.02        819.12  **
+                                                        ** test_boot_uart.test_nominal_load_runs_the_image             PASS     9014620.00          46.65     193239.65  **
+                                                        ** test_boot_uart.test_row10_tolerance_edges                   PASS    67088960.00         357.58     187618.13  **
+                                                        ** test_boot_uart.test_bad_images_never_run                    PASS   154130700.00         812.24     189759.34  **
+                                                        ** test_boot_uart.test_garbage_before_the_magic_is_ignored     PASS     7625820.00          36.30     210073.57  **
+                                                        ** test_boot_uart.test_end_to_end_protocol_program_over_uart   PASS     6936220.00          30.30     228906.38  **
+                                                        ** test_boot_uart.test_full_image_and_warm_start               PASS           0.00           0.00          0.00  **
+                                                        ** test_boot_uart.test_fallthroughs_into_the_uart_load         PASS    12947400.00          60.75     213111.48  **
+                                                        *******************************************************************************************************************
+                                                        ** TESTS=8 PASS=8 FAIL=0 SKIP=0                                       257743740.01        1343.86     191793.76  **
+                                                        *******************************************************************************************************************
+FST info: dumpfile tb.fst opened for output.

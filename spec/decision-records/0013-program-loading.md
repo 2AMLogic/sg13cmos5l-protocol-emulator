@@ -396,16 +396,30 @@ instances, 22,606.1388 µm²** (178 flip-flops), **+306 instances and +3,154.71
 µm² (+16.2 %)**, so the loader costs about 3,150 µm² here on top of #138's
 11.4 %. The ROM alone is **416 instances, 4,555.35 µm²** (16 flip-flops) for
 158 words, against 104 instances and 1,531.20 µm² (14 flip-flops) for 30:
-about 26 µm² per added word, half the 51 µm² per word the 30-word ROM
+about 24 µm² per added word, under half the 51 µm² per word the 30-word ROM
 suggested, because the extra words share logic. The two flip-flops that #138
 found constant (output bits 4 and 7) are no longer constant. This flow
-reports no timing for this design. **LibreLane flow:** not measured in this
-change; the `gds` workflow on the PR is the measurement, and #138 found 57 %
-of the 2×2 core unoccupied (die utilization 42.82 % with the 30-word ROM).
-Gate level: `test_boot_rom.py` and `test_boot_uart.py` run on the netlist of a
-revision that has this ROM, which does not exist until that workflow runs;
-`flow/run-firmware-gate-level.sh --boot-rom --boot-uart --netlist <that
-netlist>` is the command. Records: `verification/records/synthesis-baseline/`.
+reports no timing for this design. **LibreLane flow** (the `gds` workflow,
+run 38012921517, LibreLane 3.1.0.dev3, post-route, 20 ns): placed standard
+cells **26,123.7 → 29,611.0 µm² (+3,487.3, +13.3 %)**, 1,680 → 2,068 instances,
+utilization 42.82 % → **45.58 %** on the unchanged die (54 % of the core is
+unoccupied), routed wirelength 66,406 → 96,719 µm. Timing still closes with
+**zero setup and zero hold violations at all three corners**: worst setup slack
+7.422 → **5.144 ns** (slow), 12.168 → 10.737 ns (typ), 14.473 → 14.000 ns
+(fast); worst hold slack 0.1195 → 0.1090 ns (fast). Max-cap violations fell
+(2/3/3 → 1/2/2) and max-slew violations are 1/1/1 (were 1/1/0); neither is a
+setup or hold violation. LVS, route DRC and antenna are clean and the Tiny
+Tapeout precheck is green. LibreLane's own synthesis step reports 1,245 →
+1,578 cells and 20,057.5 → 23,033.1 µm² before placement, +2,975.6 µm²: the two
+flows disagree on the totals by about 2 % (22,606.1 against 23,033.1) and agree
+on what the loader costs (+3,154.7 and +2,975.6 µm²). The template's `gl_test`
+job passes 3/3 on this netlist, including a 3-word UART frame loaded and run on
+gates. The 2×2 budget (row 7) is not threatened. Gate level (zero delay) for the
+cocotb benches, and the SDF run (still the recorded bench-alignment FAIL,
+issue #106), are in `verification/records/firmware-gate-level/` and
+`verification/records/post-layout-sdf-regression/`; the area and timing records
+are `verification/records/synthesis-baseline/` and
+`verification/records/librelane-corner-timing/`.
 
 **Finding F3: the loader keeps a byte in `UIO_DIR`, so `uio_out` is `0xFF`
 while it runs.** The receiver has no register to spare for "words left". The
