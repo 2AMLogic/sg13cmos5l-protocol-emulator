@@ -341,6 +341,34 @@ def _(fx):
     expect_fail(fx, "OUT to port UIO_OUT", "concrete-firmware-bench")
 
 
+@case("WS2812 DIN pin image LDI mutated")
+def _(fx):
+    fx.mutate("firmware/asm/ws2812.asm", "LDI   R2, 0x80 ", "LDI   R2, 0x40 ")
+    expect_fail(fx, "DIN pin image LDI R2, 0x40", "concrete-firmware-bench")
+
+
+@case("WS2812 program drives uo_out from another register")
+def _(fx):
+    fx.mutate("firmware/asm/ws2812.asm", "OUT   UO_OUT, R1       ; s20", "OUT   UO_OUT, R0       ; s20")
+    expect_fail(fx, "OUT UO_OUT from R0", "concrete-firmware-bench")
+
+
+@case("WS2812 bench DIN bit moved")
+def _(fx):
+    fx.mutate("verification/test_firmware_ws2812.py", 'DIN_PIN, DIN_BIT = "uo_out", 7',
+              'DIN_PIN, DIN_BIT = "uo_out", 6')
+    expect_fail(fx, "DIN_PIN/DIN_BIT is uo_out[6]", "concrete-firmware-bench")
+
+
+@case("WS2812 DIN moved in the table alone")
+def _(fx):
+    def mv(t):
+        pin(t, "uo_out[7]")["protocol_roles"]["ws2812"] = "unused"
+        pin(t, "uo_out[6]")["protocol_roles"]["ws2812"] = "DIN"
+    fx.mutate_table(mv)
+    expect_fail(fx, "firmware/asm/ws2812.asm", "concrete-firmware-bench")
+
+
 @case("UART RX mask LDI mutated in each RX program")
 def _(fx):
     for stem in ("uart_rx", "uart_rx_115200", "uart_rx_9600"):
