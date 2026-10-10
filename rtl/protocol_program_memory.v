@@ -249,28 +249,59 @@ module protocol_program_memory (
   // without rebuffering the whole design (measured in the
   // librelane-corner-timing record of #173). Simulation and the klt/Yosys
   // flow (neither defines __librelane__) take the plain assign: the
-  // buffer is logically a wire, so behaviour is unchanged, and the two
-  // flows' netlists differ by exactly this one cell.
-  wire        mem_ren;
-`ifdef __librelane__
-  sg13cmos5l_buf_4 u_ren_drv (.A(mem_ren_l), .X(mem_ren));
-`else
-  assign mem_ren = mem_ren_l;
-`endif
-
-  wire        mem_men   = mem_wen || mem_ren;
+  // buffer is logically a wire, so behaviour is unchanged. (Since #208 the
+  // two flows' netlists differ by the 27 drive cells below, not one.)
+  wire        mem_men   = mem_wen || mem_ren_l;
   wire [7:0]  mem_addr  = load_active          ? wr_addr :
                           (run_wen || pm_re)   ? pm_addr :
                                                  fetch_addr;
   wire [15:0] mem_din   = load_active ? load_word : pm_wdata;
 
+  // Issue #208 (and #201) extends the same treatment to every other macro
+  // input the design drives: A_MEN, A_WEN, A_ADDR[7:0] and A_DIN[15:0]
+  // each get one x4 drive buffer in the LibreLane flow. The P1/P2 logic of
+  // issue #208 re-rolled placement and left the weak gates synthesis puts
+  // on A_DIN[7:1] and A_WEN over the same 0.5952 ns slow-corner limit
+  // (gds run 38052120672, 8 / 7 / 6 violations at slow / typ / fast), and
+  // #201 had already seen A_DIN[0] cross it on an earlier re-roll. The
+  // cause is the one described above for A_REN, so the fix is the same,
+  // applied to all 26 pins at once rather than one pin per re-roll. The
+  // logic names (`mem_wen`, `mem_din`, ...) stay unbuffered: the CRC below
+  // and the benches read those; only the macro's pins see the `_pin`
+  // copies.
+  wire        mem_ren;
+  wire        mem_men_pin;
+  wire        mem_wen_pin;
+  wire [7:0]  mem_addr_pin;
+  wire [15:0] mem_din_pin;
+`ifdef __librelane__
+  sg13cmos5l_buf_4 u_ren_drv (.A(mem_ren_l), .X(mem_ren));
+  sg13cmos5l_buf_4 u_men_drv (.A(mem_men),   .X(mem_men_pin));
+  sg13cmos5l_buf_4 u_wen_drv (.A(mem_wen),   .X(mem_wen_pin));
+  genvar gb;
+  generate
+    for (gb = 0; gb < 8; gb = gb + 1) begin : g_addr_drv
+      sg13cmos5l_buf_4 u_drv (.A(mem_addr[gb]), .X(mem_addr_pin[gb]));
+    end
+    for (gb = 0; gb < 16; gb = gb + 1) begin : g_din_drv
+      sg13cmos5l_buf_4 u_drv (.A(mem_din[gb]), .X(mem_din_pin[gb]));
+    end
+  endgenerate
+`else
+  assign mem_ren      = mem_ren_l;
+  assign mem_men_pin  = mem_men;
+  assign mem_wen_pin  = mem_wen;
+  assign mem_addr_pin = mem_addr;
+  assign mem_din_pin  = mem_din;
+`endif
+
   RM_IHPSG13_1P_256x16_c2_bm_bist u_sram (
       .A_CLK      (clk),
-      .A_MEN      (mem_men),
-      .A_WEN      (mem_wen),
+      .A_MEN      (mem_men_pin),
+      .A_WEN      (mem_wen_pin),
       .A_REN      (mem_ren),
-      .A_ADDR     (mem_addr),
-      .A_DIN      (mem_din),
+      .A_ADDR     (mem_addr_pin),
+      .A_DIN      (mem_din_pin),
       .A_DLY      (1'b1),          // datasheet's mandatory setting (DR 0005)
       .A_DOUT     (instr_word),
       .A_BM       (16'hFFFF),      // whole-word writes only
