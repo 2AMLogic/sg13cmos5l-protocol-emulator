@@ -91,7 +91,9 @@ untouched by loading.
 boot ROM** (`spec/decision-records/0013-program-loading.md` layer 2,
 Proposed). After a power-up or a reselect the SRAM holds nothing a host put
 there, so the core fetches from a small on-chip ROM instead. The ROM is
-synthesized logic, 95 words of the 128 the record allows, and its contents
+synthesized logic, 223 words (DR 0013 proposed a cap of 128; the UART
+load alone is 129 words and does not fit it, finding F4, so the cap is the
+256-word fetch address space until the record decides), and its contents
 are a program in this same instruction set
 ([`firmware/asm/boot/boot_rom.asm`](../firmware/asm/boot/boot_rom.asm));
 `rtl/protocol_boot_rom.v` is generated from the committed image. The boot
@@ -99,12 +101,12 @@ program's first instruction reads two straps on `ui_in[6:5]`:
 
 | `ui_in[6:5]` | Boot program | Today |
 |---|---|---|
-| `00` | UART load | stub: idles |
+| `00` | UART load | implemented (issue #139) |
 | `01` | SPI-flash boot: read 512 bytes from a QSPI Pmod flash, check, run | implemented |
 | `10` | warm start: run the image already in program memory if it checks | implemented |
-| `11` | reserved, behaves as `00` | stub: idles |
+| `11` | reserved, behaves as `00` | implemented, as `00` |
 
-A stub halts with every `uio` pin an input and `uo_out` at 0. The SPI-flash
+Neither boot program is a stub. The SPI-flash
 boot makes `uio[0]` (CS0), `uio[1]` (MOSI) and `uio[3]` (SCK) outputs and
 reads `uio[2]` (MISO): the Tiny Tapeout QSPI Pmod's pinout. It reads 512
 bytes from flash address 0 with the single-bit `0x03` command (SPI mode 0),
@@ -112,11 +114,36 @@ writes them to program memory, checks word 255 against the CRC of words
 0-254 exactly as the warm start does (and refuses a signature of
 `0x0000`), then releases every pin and runs the image from address 0 after
 58,793 cycles, or halts with every pin an input. How to put an image on the
-flash: [spi-flash-boot.md](spi-flash-boot.md). The warm
+flash: [spi-flash-boot.md](spi-flash-boot.md). 
+
+**UART load (strap `00`).** The demo board's USB-UART bridge, Tiny Tapeout
+"option B": RX `ui_in[1]`, TX `uo_out[0]`, 8N1, 434 core cycles per bit (115,200
+baud if the core clock is the 50 MHz of target-spec row 4, which is unconfirmed;
+the cycle count is the claim). Send `0xA5`, `N-1` (N is 1 to 256), `2N` image
+bytes with the high byte of each word first, then the image's CRC-16/XMODEM
+(high byte first). The chip writes the words, checks its CRC against yours, and
+answers `0x06` plus its CRC (high byte first) and runs the image from address
+0, or answers `0x15` plus its CRC and waits for the next `0xA5`. It never
+runs an image that failed. `python3 firmware/tools/loadseq.py IMAGE.hex --uart -o
+FRAME` writes the frame. TX idles high from the first instruction of the
+loader; no `uio` pin is driven, though `uio_out` reads `0xFF` while the loader
+waits (it uses `UIO_DIR` as storage under a guard, DR 0013 finding F5). A
+loader that has lost sync (a wrong length) reads stray bytes as a frame
+whenever one is `0xA5`: pulse `rst_n`, or send non-zero filler until it answers
+`0x15` (zero filler is read as a valid, longer image). The CRC covers the
+words and not the count byte, so a wrong length is rejected unless the
+CRC of the shorter prefix equals the two bytes after it (about 1 in 65,536 for
+an arbitrary image; a constructed image can make it certain, DR 0013 finding
+F8): then the truncated image is accepted and run. The loaded program starts
+in the state a warm start leaves, with `PM_CRC` holding the image's CRC. In RTL
+simulation the loader accepted hosts up to 5 % slow and 4 % fast
+(`verification/records/boot-uart/`). 
+
+The warm
 start is for an `rst_n` pulse while the design stays selected. It runs
 program memory from address 0 only if word 255 equals the CRC-16/XMODEM of
 words 0–254 (high byte of each word first); otherwise it falls through to
-the UART-load stub. A passing warm start executes the image's first
+the UART load. A passing warm start executes the image's first
 instruction exactly 2,325 cycles after the boot program's own first
 instruction, with `R0`–`R3`, `Z` and `C` at their reset values and
 `BOOT_STATUS` reading `0x00`. Like the SPI-flash boot, the warm start
@@ -154,7 +181,7 @@ Two committed cocotb benches do exactly this, byte-for-byte:
   control space from the pins: register reset values and readback, the
   `uio_oe` pin modes, a program written into memory by firmware and then
   run, and `PM_CRC` against Python's `binascii.crc_hqx`. A third exercises
-  the boot ROM: MODE low with straps `00` moves no pin, a signed image
+  the boot ROM: MODE low with straps `00` leaves no `uio` pin driven and TX idle high, a signed image
   warm-starts on the predicted edge, and the same image with one flipped
   bit is never run.
 - `verification/test_protocol_emulator.py` — this program's own klt-driven
@@ -338,7 +365,7 @@ Fixed by the RTL (`src/tt_um_2amlogic_protocol_emulator.v`), not provisional:
 | Pin | Role |
 |---|---|
 | `ui_in[7]` | MODE: high across `rst_n` release selects load phase; low runs the boot ROM |
-| `ui_in[6:5]` | straps, read once by the boot ROM's program when MODE is low at reset (`00`/`11` UART-load stub, `01` SPI-flash boot, `10` warm start). The read is an ordinary `IN`, not strap hardware; a loaded program sees these as plain input bits |
+| `ui_in[6:5]` | straps, read once by the boot ROM's program when MODE is low at reset (`00`/`11` UART load, `01` SPI-flash boot, `10` warm start). The read is an ordinary `IN`, not strap hardware; a loaded program sees these as plain input bits |
 | `ui_in[0]` | serial program data in load phase, MSB first (no run-phase role; UART RX is `ui_in[1]`) |
 | `uio_oe[7:0]` | set by firmware: `UIO_OD[n]` → open-drain (`uio_oe[n] = ~uio_out[n]`), else `UIO_DIR[n]` → push-pull, else input. **0 after reset**: every bidirectional pin is an input until a program writes `UIO_DIR` or `UIO_OD` |
 | `uio_out[7:0]` | written by `OUT`; reaches a pin only where `uio_oe` enables it |

@@ -1,13 +1,20 @@
 # T1 item 1 (Design sources), Digital column: the committed RTL sources and
 # the synthesized gate-level netlists derived from them.
 #
-# Audited 2026-10-10 for issue #83 against main @ 5669077, and refreshed the
-# same day for issue #208, which builds DR 0015's P1 and P2 into
-# rtl/protocol_core.v and adds LibreLane-only drive buffers on every SRAM
-# macro input to rtl/protocol_program_memory.v: the two hashes and the two
-# derived netlists below are the issue-208 design's (gds run 38055685598 at
-# cb4b7aa). Attested by design-sources.json beside this file; the manifest
-# cites that envelope for item 1.
+# Refreshed 2026-10-10 for the merge of issue #208 with main (issue #139):
+# the design now carries both DR 0015's P1 and P2 in rtl/protocol_core.v with
+# the LibreLane-only drive buffers on every SRAM macro input in
+# rtl/protocol_program_memory.v (issue #208), and the 223-word boot ROM with
+# the UART load (issue #139). The RTL hashes, the boot-ROM chain and the two
+# netlists of record below describe the merged design (gds run @@RUN@@ at
+# @@SHA@@). Before the merge, #208 alone was gds run 38055685598 at cb4b7aa
+# and #139 alone gds run 38054423540 at a0f91e3.
+#
+# Audited 2026-10-10 for issue #83 against main @ 5669077. The design these
+# lines describe was last changed by 704a3fb (issue #168, the warm start
+# refuses a zero signature); every hashed source below is byte-identical at
+# 704a3fb and at 5669077. Attested by design-sources.json beside this file;
+# the manifest cites that envelope for item 1.
 #
 # How this stays true: `klt signoff` re-hashes only this file. The bytes it
 # lists are checked by scripts/check_evidence_inventories.py (`npm run lint`,
@@ -26,7 +33,7 @@
 sha256:03b53d290605df6589c76a7212474b894735cbc84215e959a1cb90b2fb1fee72  src/tt_um_2amlogic_protocol_emulator.v
 sha256:d4bab243a80af56a41b8ef730bc0ecbee889f2c02f4587311d6f9f694636437a  rtl/protocol_core.v
 sha256:2b08865ab24d6bac84b390dfa76bab6686b572ba8f19124130bfc34e93dff637  rtl/protocol_program_memory.v
-sha256:020c5dea05d90aed4713553b38d240f30b058539c9744a4c96c7b3eda16e5b51  rtl/protocol_boot_rom.v
+sha256:8aa3044e6671f85d6f9154e808f0392e9e55da41a5c69d7159243d1193abd32b  rtl/protocol_boot_rom.v
 
 # The template's "sources live in src/" rule is met by symlinks, so there is
 # one copy of each module (rtl/README.md).
@@ -38,8 +45,8 @@ link  src/protocol_boot_rom.v -> ../rtl/protocol_boot_rom.v
 # boot program, firmware/tools/gen_boot_rom.py writes the ROM module from the
 # hex. firmware/tools/check_firmware.py (CI records job) fails on any stale
 # link in that chain. Its source and intermediate:
-sha256:94d5c6916b73471088343e5dadd17e7e7a4dfa352f9a2b9a0a1451f81f90b28b  firmware/asm/boot/boot_rom.asm
-sha256:5e81260496cbe4cc8bbb3ea11d78e76e9de0b5fd88463bbececbba1949146261  firmware/build/boot/boot_rom.hex
+sha256:f985f0d26b35bb0502c724b166ba3dc19faae18e1e94f8c0141d837cf8590ff1  firmware/asm/boot/boot_rom.asm
+sha256:b3a58d4f56f7d6590030486b42ddea54dbacdbd1657deb36d1c69a976b614729  firmware/build/boot/boot_rom.hex
 
 ## The program-memory hard macro (RM_IHPSG13_1P_256x16_c2_bm_bist, PDK SRAM)
 

@@ -18,7 +18,9 @@
 # spaced by whole clock cycles.
 #
 # Issue #138 (DR 0013 layer 2) added `test_boot_rom` at the end: MODE low at
-# reset no longer runs program memory, it runs the boot ROM.
+# reset no longer runs program memory, it runs the boot ROM. Issue #139 made
+# strap 00 the UART load: TX (uo_out[0]) idles high and `test_boot_rom` loads
+# a program over RX (ui_in[1]).
 #
 # The deep, cycle-exact per-opcode coverage lives in this program's own
 # bench, verification/test_protocol_emulator.py (13 directed cases driven
@@ -338,11 +340,59 @@ async def boot_reset(dut, straps):
     the mode-sampling edge, which starts the run phase (edge 0)."""
     dut.ena.value = 1
     dut.uio_in.value = 0
-    dut.ui_in.value = straps << 5
+    dut.ui_in.value = (straps << 5) | UART_RX  # the UART line idles high
     dut.rst_n.value = 0
     await ClockCycles(dut.clk, 10)
     dut.rst_n.value = 1
     await RisingEdge(dut.clk)
+
+
+# DR 0013 UART load (issue #139): RX ui_in[1], TX uo_out[0], 434 cycles per
+# bit, 8N1; the frame is 0xA5, N-1, 2N bytes high first, CRC-16/XMODEM.
+UART_RX = 0x02
+UART_BIT = 434
+
+
+async def uart_send(dut, data):
+    """Play `data` as 8N1 frames on ui_in[1], back to back, leaving the
+    other ui_in bits as they are."""
+    base = int(dut.ui_in.value) & ~UART_RX
+    for byte in data:
+        for level in [0] + [(byte >> bit) & 1 for bit in range(8)] + [1]:
+            dut.ui_in.value = base | (UART_RX if level else 0)
+            await ClockCycles(dut.clk, UART_BIT)
+
+
+async def uart_recv(dut, count, what):
+    """Read `count` 8N1 bytes from uo_out[0]: wait for each start edge, then
+    sample at the middle of every bit."""
+    out = []
+    for _ in range(count):
+        for _ in range(60 * 10 * UART_BIT):
+            await step(dut, 1)
+            if int(dut.uo_out.value) & 1 == 0:
+                break
+        else:
+            raise AssertionError(f"{what}: no start bit")
+        await step(dut, UART_BIT // 2)
+        value = 0
+        for bit in range(8):
+            await step(dut, UART_BIT)
+            value |= (int(dut.uo_out.value) & 1) << bit
+        await step(dut, UART_BIT)
+        assert int(dut.uo_out.value) & 1 == 1, f"{what}: framing error"
+        out.append(value)
+    return bytes(out)
+
+
+async def expect_uart_idle(dut, edges, what):
+    """The UART loader is waiting: TX high, no uio pin driven, and nothing
+    but TX on uo_out. (uio_out is its 0xFF guard, not a driven value.)"""
+    for _ in range(edges):
+        await step(dut, 1)
+        assert dut.uo_out.value in (0, 1), f"{what}: uo_out moved off TX"
+        assert dut.uio_oe.value == 0, f"{what}: a uio pin is driven"
+    assert dut.uo_out.value == 1, f"{what}: TX is not idling high"
 
 
 async def expect_quiet(dut, edges, what):
@@ -380,9 +430,9 @@ async def test_boot_rom(dut):
     await step(dut, 2)  # edge 6: the marker
     assert dut.uo_out.value == 0xA5
 
-    dut._log.info("MODE low, straps 00: the UART-load stub idles, the image is not run")
+    dut._log.info("MODE low, straps 00: the UART loader idles with TX high, the image is not run")
     await boot_reset(dut, STRAP_UART)
-    await expect_quiet(dut, 64, "straps 00")
+    await expect_uart_idle(dut, 64, "straps 00")
 
     dut._log.info("MODE low, straps 10: the verified image is warm-started")
     await boot_reset(dut, STRAP_WARM)
@@ -402,4 +452,17 @@ async def test_boot_rom(dut):
     corrupted[100] ^= 0x0010
     await load_program(dut, corrupted)
     await boot_reset(dut, STRAP_WARM)
-    await expect_quiet(dut, marker_edge + 64, "corrupted image")
+    await expect_uart_idle(dut, marker_edge + 64, "corrupted image")
+
+    dut._log.info("...the failed warm start fell through to the UART loader: it loads a program sent over RX, answering 0x06 + its CRC, then runs it")
+    uart_image = [enc(OP_LDI, rd=R0, imm=0x3C), enc(OP_OUT, rd=R0, rs=PORT_UO_OUT), enc(OP_HALT)]
+    body = b"".join(bytes((w >> 8, w & 0xFF)) for w in uart_image)
+    crc = binascii.crc_hqx(body, 0)
+    frame = bytes((0xA5, len(uart_image) - 1)) + body + bytes((crc >> 8, crc & 0xFF))
+    reply = cocotb.start_soon(uart_recv(dut, 3, "UART reply"))
+    await uart_send(dut, frame)
+    got = await reply
+    assert got == bytes((0x06, crc >> 8, crc & 0xFF)), f"UART reply {got.hex()}"
+    await step(dut, UART_BIT)  # the rest of the stop bit, then the hand-over and two instructions
+    assert dut.uo_out.value == 0x3C, f"the UART-loaded image did not run: {int(dut.uo_out.value):#04x}"
+    assert dut.uio_oe.value == 0

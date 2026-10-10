@@ -29,10 +29,11 @@ firmware/
     spi_mode{0..3}.asm   bit-banged SPI controller, one program per
                          (CPOL, CPHA) mode (issue #72, the SPI third of
                          #23)
-    boot/boot_rom.asm    the on-chip boot ROM's program (issue #138, DR
-                         0013 layer 2). Not loaded into program memory:
-                         the ROM in rtl/protocol_boot_rom.v is generated
-                         from its image. See "The boot ROM" below.
+    boot/boot_rom.asm    the on-chip boot ROM's program (issues #138 and
+                         #139, DR 0013 layer 2: warm start and UART load).
+                         Not loaded into program memory: the ROM in
+                         rtl/protocol_boot_rom.v is generated from its
+                         image. See "The boot ROM" below.
   build/          assembler output (program images + cycle reports) —
                   COMMITTED, not gitignored: a program's image and cycle
                   report are part of the evidence record, byte for byte
@@ -43,9 +44,13 @@ firmware/
                   mnemonics + malformed input)
     gen_boot_rom.py       writes rtl/protocol_boot_rom.v from
                           build/boot/boot_rom.hex; `--check` reports drift
-    test_gen_boot_rom.py  its unit tests (the 128-word cap, determinism,
+    test_gen_boot_rom.py  its unit tests (the 256-word cap, determinism,
                           stale and hand-edited ROMs)
     check_firmware.py     every freshness check in one command
+    loadseq.py            host tooling from a .hex: the layer-1 pin sequence
+                          (issue #118) and, with --uart, the layer-2 UART boot
+                          frame (issue #139)
+    test_loadseq.py       its unit tests
     mkflash.py            turns a .hex into the 512-byte signed flash image
                           the SPI-flash boot loads (issue #140);
                           test_mkflash.py tests it
@@ -99,7 +104,12 @@ python3 firmware/tools/gen_boot_rom.py
 
 `check_firmware.py` checks both links, so a ROM that no longer matches the
 committed program fails CI at the link that went stale. The generator
-refuses an image over **128 words** (DR 0013's cap); the image is **93**.
+refuses an image over **256 words**, the fetch address space. DR 0013
+proposed a cap of 128; the UART load does not fit it (finding F4 in that
+record), so the cap is the address space until the record decides. The image
+is **223** words (the SPI-flash boot 64, the UART load 129, the strap
+dispatch and warm start the rest, which includes the two-word zero-signature
+refusal of issue #168).
 
 What the program does: its first instruction reads the straps `ui_in[6:5]`.
 Strap `10` is the **warm start**: it reads every word of program memory and
@@ -111,8 +121,8 @@ values, so a warm-started program starts in the state a serial-loaded one
 does, except that it reads `BOOT_STATUS = 0x00`. One pass of the loop is 9
 cycles (`.cyclesec warm_word`), and word 0 of a verified image executes
 exactly 2,325 cycles after the boot program's first instruction. Straps
-`00` and `11` are a **stub** (one `HALT`) until the UART load (#139) lands;
-a failed warm start falls through to it. A stub drives nothing.
+`00` and `11`, and a warm start that fails its check, run the **UART load**
+below.
 
 Strap `01` is the **SPI-flash boot** (issue #140, `spi_boot` at the end of
 the source, 64 words): it makes CS0, MOSI and SCK (`uio[0]`, `uio[1]`,
@@ -125,14 +135,72 @@ pin, and either takes the warm start's hand-over (`run_image`) or halts.
 putting one on the Pmod. Bench: `verification/test_boot_spi.py`
 (`verification/request-boot-spi.json`), negative controls
 `verification/boot_spi_mutants.py`, evidence in
-`verification/records/boot-spi/`. The two boot programs together use 95
-of the 128 words, which leaves 33 for the UART load (DR 0013, implementation
-notes of issues #140 and #168).
+`verification/records/boot-spi/`. With the UART load the image is 223 words,
+which is why the ROM's cap is the 256-word address space (DR 0013 finding F4).
 
-The assembler reports four data-dependent-branch warnings for the
-dispatch and the warm start, all intended: the two strap branches, the
-zero-signature refusal and the CRC verdict (the SPI-flash boot adds three
-more of its own). None paces a pin.
+### The UART load (issue #139, DR 0013 layer 2)
+
+Tiny Tapeout "option B", the demo board's USB-UART bridge: RX `ui_in[1]`, TX
+`uo_out[0]`. 8N1 at **434 core cycles per bit** (115,200 baud at the 50 MHz
+row-4 clock; the cycle count is the claim, the baud figure is arithmetic at
+that unconfirmed clock). The frame, built by `firmware/tools/loadseq.py`:
+
+```
+0xA5   N-1   2N bytes, high byte of each word first   CRC-16/XMODEM, high byte first
+```
+
+N is 1 to 256. The loader writes each word through `PM_DATA_HI` /
+`PM_DATA_LO`, compares `PM_CRC` with the trailer, and answers `0x06` + `PM_CRC`
+(high byte first) and `RUN 0` on a match, or `0x15` + `PM_CRC` and a wait for
+the next `0xA5` on a mismatch. An image whose payload or trailer is
+corrupted is never run (CRC-16 over the words the loader took). The count
+byte is **not** covered by the CRC: a corrupted count is rejected unless the
+CRC of the shorter prefix happens to equal the two bytes that follow it, in
+which case the truncated image is accepted and run (DR 0013 finding F8; the
+frame `a5 00 f0 00 13 c1 00 00` is the RTL regression). TX idles high from
+the loader's start to the `RUN`, and no `uio` pin is ever driven.
+
+```bash
+python3 firmware/tools/loadseq.py firmware/build/uart_tx.hex --uart -o uart_tx.frame
+# on the PC: stty -F /dev/ttyACM0 115200 cs8 -cstopb -parenb raw; cat uart_tx.frame > /dev/ttyACM0
+```
+
+How it is built, because the ISA has no call and four registers:
+
+- one byte receiver (`rx_next`..`rx_bit`) is followed by a dispatch on a
+  phase number in `R3` (waiting for `0xA5`, count, payload high byte, payload
+  low byte, trailer high, trailer low). The receiver is a loop: the start
+  edge is found by a 3-cycle poll of `ui_in[1]` (the other `ui_in` bits are
+  masked, not assumed constant), the first sample lands 1.5 bit periods after
+  the edge, and the eight samples are exactly 434 cycles apart with no branch
+  between them (`.cyclesec uart_rx_bit`). The loop exits at the middle of the
+  stop bit, so the handlers run inside half a bit;
+- the receiver uses `R0`-`R2`, so the words still to come are kept in
+  `UIO_DIR`. That register is safe as storage because with `UIO_OD = 0xFF`
+  and `uio_out = 0xFF` the pin-mode rule gives `uio_oe = 0` whatever `UIO_DIR`
+  holds. The hand-over writes `UIO_DIR`, then `UIO_OD`, then `uio_out`, back to
+  0 in that order, so no cycle drives a pin;
+- the reply reuses one transmitter (`tx`) per byte, with the byte counter in
+  `PM_ADDR` and the verdict in `UIO_DIR`; the stop bit is padded a few cycles
+  past 434 so the hand-over cannot shorten it;
+- on a match it jumps to the warm start's tail (`handover:`), so a UART-loaded
+  program starts in the same state a warm-started one does (`R0`-`R3` = 0,
+  `Z` = `C` = 0, `PM_ADDR` = 0, `UIO_*` = 0, `uo_out` = 0, `BOOT_STATUS` =
+  0x00), except that `PM_CRC` holds the CRC of the image.
+
+If the host loses sync (a wrong length, a lost byte) the loader reads the
+stray bytes as a new frame whenever one of them is `0xA5`, and waits for the
+rest. There is no timeout. Recover by pulsing `rst_n`, or by sending non-zero
+filler until the loader answers `0x15` (zero filler does not work: a message
+followed by its own CRC and then zeros still has CRC 0, so the loader reads it
+as a valid longer image). Auto-baud was not attempted.
+
+The assembler reports data-dependent-branch warnings for this program (12),
+all intended: the two strap branches, the warm start's zero-signature and CRC
+verdicts, and in
+the UART load the start-edge poll, the phase dispatch, the handlers and the
+verdicts. None paces a pin: the samples and the transmitted bits are paced by
+`WAIT` literals and a counter that never holds pin data.
 
 Zero signatures are refused (DR 0013 Finding F1, closed by issue #168): 256
 zero words carry their own valid signature (the CRC starts at 0), so the
@@ -144,7 +212,10 @@ re-padded; `firmware/tools/mkflash.py` refuses to build one.
 Bench: `verification/test_boot_rom.py`
 (`verification/request-boot-rom.json`), negative controls
 `verification/boot_rom_mutants.py`, evidence in
-`verification/records/boot-rom/`.
+`verification/records/boot-rom/`. The UART load has its own bench,
+`verification/test_boot_uart.py` (`verification/request-boot-uart.json`),
+driven by the independent host model `verification/uart_boot_host.py`;
+evidence in `verification/records/boot-uart/`.
 
 ## Programs
 

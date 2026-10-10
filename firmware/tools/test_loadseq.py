@@ -184,5 +184,62 @@ class Cli(unittest.TestCase):
         self.assertEqual(before, {h: h.read_bytes() for h in hexes})
 
 
+class UartFrame(unittest.TestCase):
+    """Issue #139: the DR 0013 UART boot frame. Checked against
+    binascii.crc_hqx (the standard library's CRC-16/XMODEM), not against
+    loadseq's own arithmetic."""
+
+    def test_crc_matches_the_standard_library(self):
+        import binascii
+        self.assertEqual(loadseq.crc16_xmodem(b"123456789"), 0x31C3)  # the XMODEM check value
+        for data in (b"", b"\x00", b"\xff" * 5, bytes(range(256)), b"\xa5\x00\x12\x34"):
+            self.assertEqual(loadseq.crc16_xmodem(data), binascii.crc_hqx(data, 0), data)
+
+    def test_frame_shape(self):
+        import binascii
+        frame = loadseq.uart_frame([0x1234, 0xABCD, 0x0001])
+        self.assertEqual(frame[:2], bytes((0xA5, 2)))
+        self.assertEqual(frame[2:8], bytes((0x12, 0x34, 0xAB, 0xCD, 0x00, 0x01)))
+        crc = binascii.crc_hqx(frame[2:8], 0)
+        self.assertEqual(frame[8:], bytes((crc >> 8, crc & 0xFF)))
+        self.assertEqual(len(frame), 10)
+
+    def test_one_word_and_256_words(self):
+        self.assertEqual(len(loadseq.uart_frame([0x0000])), 6)
+        self.assertEqual(loadseq.uart_frame([0x0000])[1], 0)
+        full = loadseq.uart_frame([0xF000] * 256)
+        self.assertEqual((full[1], len(full)), (0xFF, 2 + 512 + 2))
+
+    def test_message_plus_its_crc_has_zero_residue(self):
+        import binascii
+        frame = loadseq.uart_frame([0x9000, 0x1460, 0xD00B])
+        self.assertEqual(binascii.crc_hqx(frame[2:], 0), 0)
+
+    def test_bad_sizes(self):
+        for words in ([], [0] * 257, [0x10000], [-1]):
+            with self.assertRaises(loadseq.LoadSeqError, msg=repr(words)[:20]):
+                loadseq.uart_frame(words)
+
+    def test_formats_and_cli(self):
+        frame = loadseq.uart_frame([0x1234])
+        self.assertEqual(loadseq.render_uart(frame, "bin"), frame)
+        self.assertEqual(loadseq.render_uart(frame, "hex").decode().split(),
+                         ["%02x" % b for b in frame])
+        text = loadseq.render_uart(frame, "python").decode()
+        self.assertEqual(bytes.fromhex(text.split('"')[1]), frame)
+        with self.assertRaises(loadseq.LoadSeqError):
+            loadseq.render_uart(frame, "json")
+        with tempfile.TemporaryDirectory() as tmp:
+            src, out = Path(tmp, "p.hex"), Path(tmp, "p.bin")
+            src.write_text("1234\n", encoding="utf-8")
+            with contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(loadseq.main([str(src), "--uart", "-o", str(out)]), 0)
+            self.assertEqual(out.read_bytes(), frame)
+            with contextlib.redirect_stderr(io.StringIO()) as err:
+                self.assertEqual(loadseq.main([str(src), "--format", "bin"]), 2)
+            self.assertIn("add --uart", err.getvalue())
+            self.assertEqual(loadseq.main(["--check", str(src)]), 0)
+
+
 if __name__ == "__main__":
     unittest.main()

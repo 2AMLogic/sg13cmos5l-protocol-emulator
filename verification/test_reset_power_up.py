@@ -50,9 +50,10 @@ clause it breaks:
   (`u_core.rom_exit` and `serial_loaded` stay 0, so `fetch_rom` = 1), and
   the SRAM is read (`A_REN`) only as many times as the independent
   `BootModel` of `test_boot_rom.py` says the boot program reads program
-  memory as data (0 for the stub straps, 256 for the warm-start check);
-  at the end of the window the core is halted at the stub DR 0013's strap
-  table names. That is "decodes nothing from program memory" checked on
+  memory as data (0 for the UART-loader straps, 256 for the warm-start
+  check); at the end of the window the core is waiting in the UART loader's
+  poll (straps 00 and 11, and a failed warm start) or halted at `spi_fail`
+  (strap 01). That is "decodes nothing from program memory" checked on
   the PC and the macro's read strobe, not only on the pins. Program memory
   is unchanged, except on strap 01: the SPI-flash boot writes the 256 words
   it reads into program memory and then refuses them (the bench holds
@@ -64,6 +65,16 @@ And across runs: for the stub straps the **whole flop trace** -- every flop,
 every edge -- is bit-identical across the all-X run and every seed; for the
 warm-start strap, whose registers carry the SRAM's (random) data by design,
 every flop except the data registers is bit-identical and the pins are.
+
+The UART loader (issue #139). Straps 00 and 11, and a warm start whose check
+fails (which is what every random or canary image here gets), end in the UART
+loader's start-edge poll instead of a `HALT`, with RX idling high. The loader
+is a program, so it writes pins: it sets `uio_out` to its 0xFF guard and TX
+(`uo_out[0]`) high. What stays checked for it is the part of [row14-b] that
+is about driving: `uio_oe` is 0 at every sample, `uo_out` carries only TX,
+`uio_out` is 0x00 or 0xFF, and the window ends in exactly (TX high, 0xFF, 0).
+Reset itself is strict: every pin is 0x00 in reset. Strap 01 is the SPI-flash
+boot (issue #140).
 
 X and the warm start. Strap 10 reads all 256 words and branches on their
 CRC. With an X array, Icarus turns that into an X branch and an X PC, which
@@ -258,11 +269,18 @@ def random_state(h, rng):
 # ---------------------------------------------------------------------------
 # Sampling
 # ---------------------------------------------------------------------------
-async def sample(dut, h, label, in_reset, violations_out=None, want=None):
+async def sample(dut, h, label, in_reset, violations_out=None, want=None, uart_loader=False):
     """One sample, after the edge just taken. Returns (pins, state, a_ren).
     Every violation is collected and asserted together, tagged. `want`
     maps a pin to the value the boot program has written to it by this
-    edge (strap 01 only); every other pin must hold its reset value 0."""
+    edge (strap 01 only); every other pin must hold its reset value 0.
+
+    `uart_loader`: the boot program is the UART loader (issue #139), which is
+    a program and so writes pins: after reset it sets `uio_out` to its 0xFF
+    guard and `uo_out[0]` (TX) high. What row 14 (b) keeps for it is that no
+    `uio` pin is ever driven (`uio_oe` is 0 at every sample), that `uo_out`
+    carries nothing but TX, and that `uio_out` is its reset value or the
+    guard. The end state is checked by the caller."""
     await ReadOnly()
     v = []
     pins = {}
@@ -274,10 +292,14 @@ async def sample(dut, h, label, in_reset, violations_out=None, want=None):
             pins[name] = str(value)
         else:
             pins[name] = int(value)
-            if pins[name] != expected:
+            allowed = (expected,)
+            if uart_loader and not in_reset:
+                allowed = {"uo_out": (0, 1), "uio_out": (0, 0xFF), "uio_oe": (0,)}[name]
+            if pins[name] not in allowed:
                 what = ("the boot program has written" if want and name in want
                         else "documented reset state is")
-                v.append(f"[row14-b] {name} = {pins[name]:#04x}, {what} {expected:#04x}")
+                v.append(f"[row14-b] {name} = {pins[name]:#04x}, {what} {expected:#04x}"
+                         + (" (the UART loader may also set TX high and the 0xFF guard)" if uart_loader else ""))
     state = h.state()
     if in_reset:
         bad = [h.names[i] for i, c in enumerate(state) if c != str(DOCUMENTED_RESET_VALUE)]
@@ -308,7 +330,7 @@ async def reset_and_observe(dut, h, straps, label):
     the boot program plus `WINDOW_TAIL`. Returns a dict for the summary."""
     dut.ena.value = 1
     dut.uio_in.value = 0
-    dut.ui_in.value = (straps & 3) << 5
+    dut.ui_in.value = ((straps & 3) << 5) | 0x02  # RX (ui_in[1]) idles high, as a UART line does
     dut.rst_n.value = 0
     await Timer(1, unit="ns")  # rst_n is asynchronous: the reset holds now
     await sample(dut, h, f"{label}, rst_n asserted", in_reset=True)
@@ -325,10 +347,12 @@ async def reset_and_observe(dut, h, straps, label):
         assert result["outcome"] == "halt" and result["pc"] == stub, (
             f"model: straps 01 with uio_in = 0 ended {result}, expected a HALT at spi_fail {stub:#04x}")
         image_after = list(model.pm)
+        uart_loader = False
     else:
         result, model = boot.boot_outcome(straps, image)
         stub = boot.expected_stub(straps, result)
         timeline, image_after = None, image
+        uart_loader = result["outcome"] == "uart_wait"
     dut.rst_n.value = 1
     await RisingEdge(dut.clk)  # edge 0: the mode-sampling edge
     edges = boot.RUN_ENTRY_EDGES + result["cycles"] + WINDOW_TAIL
@@ -340,16 +364,30 @@ async def reset_and_observe(dut, h, straps, label):
         want = None
         if want_pins is not None:
             want = {"uio_out": want_pins[e][0], "uio_oe": want_pins[e][1]}
-        pins, state, a_ren = await sample(dut, h, f"{label}, edge {e}", in_reset=False, want=want)
+        pins, state, a_ren = await sample(dut, h, f"{label}, edge {e}", in_reset=False, want=want,
+                                          uart_loader=uart_loader)
         trace.append(state)
         pins_trace.append(f"{pins['uo_out']:02x}{pins['uio_out']:02x}{pins['uio_oe']:02x}")
         reads += a_ren
     end = trace[-1]
     pc, halted = h.pc(end), end[h.halted]
-    assert halted == "1" and pc == stub, (
-        f"{label}: [row14-c] the boot program did not stop in the stub DR 0013's strap table "
-        f"names: halted={halted} pc={pc} (expected HALT at {stub:#04x})"
-    )
+    if uart_loader:
+        # Waiting in the loader's start-edge poll, not halted, with TX idle
+        # high and the guard set: the one state DR 0013's UART path ends in.
+        final = pins_trace[-1]
+        assert halted == "0" and pc is not None and stub <= pc <= stub + 3, (
+            f"{label}: [row14-c] the boot program is not in the UART loader's poll at "
+            f"{stub:#04x}: halted={halted} pc={pc}"
+        )
+        assert final == "01ff00", (
+            f"{label}: [row14-b] the UART loader is not idling with TX high, the 0xFF guard and "
+            f"no uio pin driven: uo_out/uio_out/uio_oe = {final}"
+        )
+    else:
+        assert halted == "1" and pc == stub, (
+            f"{label}: [row14-c] the boot program did not stop in the stub DR 0013's strap table "
+            f"names: halted={halted} pc={pc} (expected HALT at {stub:#04x})"
+        )
     assert reads == model.pm_reads, (
         f"{label}: [row14-c] the SRAM was read {reads} time(s); the boot program reads program "
         f"memory as data {model.pm_reads} time(s), so {reads - model.pm_reads} read(s) were fetches"

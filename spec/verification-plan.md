@@ -388,6 +388,20 @@ auditable rather than a bare assertion:
 
   The ROM image is freshness-checked against its `.asm` source like every
   other committed `.hex`.
+
+  *Status 2026-10-10 (issue #139).* The UART half is built:
+  `verification/test_boot_uart.py` with the independent host
+  `verification/uart_boot_host.py`, at nominal rate and at ±2 % (and a sweep
+  past it), with corrupted payloads, bad CRCs, bad lengths and a wrong magic
+  never reaching `RUN`, and a protocol program (`uart_tx`) loaded over the
+  UART and graded by its existing reference model. `firmware/tools/loadseq.py`
+  emits the frame. The SPI-flash half (#140) is not. *Caveat (PR #210 review,
+  DR 0013 finding F8):* the count byte is outside the CRC, so "bad lengths never
+  reaching `RUN`" holds for the cases tested but not unconditionally: a
+  constructed image whose truncated prefix CRC equals the next word is accepted
+  after a single count-bit flip (`verification/test_boot_uart_count_alias.py`).
+  The requirement is not relaxed here; closing it is a protocol change tracked
+  by the follow-up issue named in the DR.
 - **Runtime swap.** A program loads a second program through `PM_*` and runs
   it with `RUN`. The second program's protocol is graded by its own reference
   model.

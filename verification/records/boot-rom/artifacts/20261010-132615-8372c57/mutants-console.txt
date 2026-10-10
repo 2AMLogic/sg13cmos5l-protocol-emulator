@@ -1,0 +1,15 @@
+ok   golden (unmodified copy): 7/7 passed
+ok   rom-never-selected: 6/7 tests failed -- the core always decodes program memory: MODE low at reset runs whatever the array holds (the pre-DR-0013 behaviour, target-spec row 14 (c))
+ok   run-does-not-leave-rom: 2/7 tests failed -- WCTL RUN jumps but the fetch source stays the boot ROM
+ok   run-target-not-fetched-from-memory: 2/7 tests failed -- the fetch presented in RUN's stall cycle is not a program-memory fetch: the first word executed after leaving the ROM is whatever the macro last read
+ok   boot-status-bit1-stuck: 2/7 tests failed -- BOOT_STATUS[1] reads 1 whatever the fetch source is
+ok   macro-read-not-gated: 6/7 tests failed -- the macro is read for fetch while the boot ROM is the source (invisible at the pins: caught by the white-box read-enable check)
+ok   warm-start-skips-verdict: 3/7 tests failed -- boot program: the branch on the CRC verdict is a NOP, so every image is run
+ok   verdict-ignores-crc-high-byte: 2/7 tests failed -- boot program: the verdict tests PM_CRC_LO only (OR R1, R1 for OR R0, R1)
+ok   verdict-ignores-crc-low-byte: 2/7 tests failed -- boot program: the verdict tests PM_CRC_HI only (OR R0, R0 for OR R0, R1)
+ok   straps-01-and-10-swapped: 6/7 tests failed -- boot program: strap 01 warm-starts and strap 10 goes to the SPI-flash boot
+ok   handover-leaves-z-set: 3/7 tests failed -- boot program: the handover does not restore Z (OR R3, R3 is a NOP), so the image starts with Z = 1 instead of the reset value
+ok   warm-start-accepts-zero-signature: 2/7 tests failed -- boot program: the branch on the signature word is a NOP, so a zero signature that passes the CRC is run (DR 0013 Finding F1 reopened: the all-zero image warm-starts)
+ok   zero-signature-tests-high-byte-only: 2/7 tests failed -- boot program: the signature test ORs the high byte with itself (OR R0, R0 for OR R0, R1), so every signature 0x00nn is refused
+ok   zero-signature-tests-low-byte-only: 2/7 tests failed -- boot program: the signature test ORs the low byte with itself (OR R1, R1 for OR R0, R1), so every signature 0xnn00 is refused
+RESULT: golden passes and every mutant is caught by a test meant to catch it

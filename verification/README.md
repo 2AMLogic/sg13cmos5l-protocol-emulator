@@ -164,6 +164,36 @@ coverage.
   `boot_spi_mutants.py` rebuilds the boot chain from a mutated source per
   defect, so the bench has to see each one in the flash model's record, the
   pins or the outcome. Evidence in `records/boot-spi/`.
+- `test_boot_uart.py` — cocotb bench for DR 0013 layer 2's UART load,
+  strap `00` (issue #139): a framed image sent on `ui_in[1]` is accepted
+  (reply `0x06` + CRC, `RUN 0`, the state a reset leaves) and corrupted
+  payloads, bad CRCs, bad lengths and a wrong magic are never run (bad
+  lengths with the caveat of finding F8, below); the
+  host runs at nominal rate and at the row-10 ±2 % edges (with idle bits,
+  edge jitter and the unrelated `ui_in` bits toggling), with a sweep past
+  them recorded and a 12 %-off negative control; the committed `uart_tx`
+  program is loaded over the UART and graded by `reference_models/uart.py`;
+  a 256-word image loads and warm-starts; strap `11` and a failed warm
+  start fall through to the loader. `uart_boot_host.py` is the independent
+  host model (own CRC, own line timing, no import from `firmware/`); the
+  bench asserts that it and `firmware/tools/loadseq.py` frame the same
+  bytes. Pin-observable except labelled white-box reads (the fetch source,
+  program-memory contents), so the pin checks run on a gate-level netlist
+  (`flow/run-firmware-gate-level.sh --boot-uart`); the two long runs are
+  RTL-only. Driven by `klt functional-verification` (see
+  `request-boot-uart.json`); `boot_uart_mutants.py` is its negative-control
+  runner (seven single defects in the boot ROM, each caught by a test meant
+  to catch it). Evidence in `records/boot-uart/`.
+- `test_boot_uart_count_alias.py` — RTL regression for DR 0013 finding F8
+  (PR #210 review): the count byte is not covered by the CRC, so the valid
+  image `[0xF000, 0x13C1]` (`a5 01 f0 00 13 c1 00 00`) with count bit 0
+  flipped (`a5 00 f0 00 13 c1 00 00`) is **accepted and run** as the
+  one-word image `[0xF000]`. The test pins that behaviour (ACK `06 13 c1`,
+  the core leaves the ROM) next to an uncorrupted control; it is a record
+  of a residue, not a pass of an unconditional bad-length guarantee. A
+  separate module so the gate-level records that hash `test_boot_uart.py`
+  stay live. Driven by `request-boot-uart-count-alias.json`; evidence in
+  `records/boot-uart/ (record 20261010-164351-57c5c8c)`.
 - `test_reset_power_up.py` — **gate-level only** cocotb bench for
   target-spec row 14 / `spec/verification-plan.md` section 8 (issue #131):
   reset, power-up and reselect on the LibreLane netlist. Every flop of the
@@ -194,11 +224,13 @@ memory's contents are lost, and nothing on the chip restores them. After
 every select the host must pulse `rst_n` and reload the program (a serial
 load with `MODE` high, DR 0001 layer 1; or, once they exist, a boot
 loader DR 0013 layer 2 names). A reset *without* a reload is safe but
-useless: the core runs the boot ROM, which halts in a stub with every pin
-at its reset value (on strap 10 it first checks the memory and runs it
-only if it holds a signed image, which power-up contents are not; since
-#168 that includes an all-zero SRAM, which is its own CRC but is refused
-for its zero signature) — `test_reset_power_up.py::test_reselect` shows this on
+useless: the core runs the boot ROM, which on strap 00 waits in the UART
+loader (issue #139: TX idles high, no `uio` pin is driven, `uio_out` reads
+its 0xFF guard) and on strap 01 halts in the SPI stub with every pin at its
+reset value (on strap 10 it first checks the memory and runs it
+only if it holds a signed image, which power-up contents are not, short
+of DR 0013's all-zero weak case, which since #168 is refused for its zero
+signature) — `test_reset_power_up.py::test_reselect` shows this on
 gates. The host-side loader is issue #118.
 - `test_program_memory.py` — cocotb testbench for
   `rtl/protocol_program_memory.v`, the program memory and serial
@@ -448,11 +480,11 @@ PDK-free RTL bench, as a **pass/fail gate only**. It writes nothing under
 deliberate local runs. The benches need `klt` (the `request-*.json` files
 carry sources, defines and recorded seeds), provisioned by
 `scripts/setup-env.sh` like the `signoff` job. Run it locally with
-`scripts/run-rtl-benches.sh` (~50 s serial, plus about a minute for
-`test_boot_spi`).
+`scripts/run-rtl-benches.sh` (about 7 min serial, most of it `boot-uart`, whose host plays 2.2 million cycles of frames, plus about a minute for `test_boot_spi`).
 
 CI-covered (RTL, Icarus, no PDK): `test_protocol_emulator`,
 `test_control_space`, `test_primitives`, `test_boot_rom`, `test_boot_spi`,
+`test_boot_uart`,
 `test_program_memory`, `test_protocol_models`, `test_firmware_uart`,
 `test_firmware_spi`, `test_uio_pads`, `test_firmware_i2c`,
 `test_firmware_i2c_sr`, `test_firmware_roundtrip`,

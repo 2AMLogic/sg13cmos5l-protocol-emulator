@@ -11,10 +11,12 @@
 # synthesis or timing number is produced or implied.
 #
 # Default netlist: the byte-identical copy frozen under verification/records/
-# post-layout-sdf-regression/ from gds run 38055685598 (the first netlist with
-# DR 0015's P1/P2, issue #208; until #208 it was gds run 38032061275's, the first
-# with the A_REN drive buffer, issue #173; until #173 it was gds run 38013383254's,
-# the first with the SPI-flash boot program, issue #140; until #140 it was gds run
+# post-layout-sdf-regression/ from gds run @@RUN@@ (the first netlist with
+# both DR 0015's P1/P2, issue #208, and the UART load in the boot ROM, issue
+# #139; before the merge it was gds run 38055685598's for #208 and gds run
+# 38054423540's for #139; before those gds run 38032061275's, the first with
+# the A_REN drive buffer, issue #173; until #173 gds run 38013383254's, the
+# first with the SPI-flash boot program, issue #140; until #140 gds run
 # 37996177546's, the first with DR 0013's boot ROM, issue #138). It must carry
 # the same boot ROM as rtl/protocol_boot_rom.v, because the bench predicts the
 # boot from the committed image. Override with --netlist <file>. The netlist
