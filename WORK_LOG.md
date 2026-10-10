@@ -2,6 +2,47 @@
 
 Chronological record of merged pull requests and closed issues, newest first.
 
+### 2026-10-10
+
+- **PR #191**: Host-side direct-load pin-sequence generator and RTL replay (#118)
+- **PR #190**: Move UART RX from ui_in[0] to ui_in[1] (DR 0010 target pin plan)
+- **PR #189**: check_records.py hardening: gitlinks and meta.experiment (#187)
+- **PR #186**: CI: measure formal gate on hosted runner; keep manual-dispatch (#122)
+- **PR #185**: verification: re-run klt DRC/LVS on the current GDS and re-point signoff items 3, 4, 7 (#158)
+- **PR #183**: check_records.py: key the freshness exemption on (experiment, record_id) and re-mint the 3 hidden-stale records
+- **PR #181**: Move SPI and I2C firmware to the Tiny Tapeout Pmod pins (DR 0010 target; part of #155)
+- **PR #180**: spec: target-spec rows 1, 8, 12 cite live I2C records and the pad model (#164)
+- **PR #179**: feat: grade UART frame pitch so 0xFF frames cannot hide drift (#97)
+- **PR #176**: Reset/power-up/reselect: gate-level X and seeded-random init bench, reset-coverage listing (row 14)
+- **PR #175**: spec: DR 0012 area figures, I2C preamble order, and the RTL's choices
+- **PR #174**: fix(asm): WCTL RUN makes every address a control-state merge point (#161)
+- **PR #163**: test: run the I2C evidence through the real uio_oe on a silicon-true pad model
+- **Issue #187** (closed): check_records.py hardening: clean error for gitlinks under records/, check meta.experiment against directory
+- **Issue #184** (closed): Re-mint PR #181's stale evidence records after rebasing onto main
+- **Issue #178** (closed): Move UART RX from ui_in[0] to ui_in[1] (DR 0010 target pin plan; UART half of #155)
+- **Issue #177** (closed): Re-mint the records that hash firmware/tools/asm.py on the post-#163/#175 tree (follow-up to PR #174)
+- **Issue #164** (closed): target-spec rows 1, 8 and 12: State cells still cite superseded I2C records and say uio_oe is fixed to 0
+- **Issue #161** (closed): asm lint: a WCTL RUN landing between a control-register rewrite and its readback is not treated as tainted
+- **Issue #159** (closed): DR 0012: correct the area estimate, state the I2C preamble order, and decide the points the RTL had to choose
+- **Issue #158** (closed): Signoff manifest, klt DRC/LVS and the gap tracker still describe the layout from before the control space
+- **Issue #157** (closed): check_records.py: freshness exemption keyed on record ID alone hides stale live records in other experiments
+- **Issue #155** (closed): Move firmware profiles to the Tiny Tapeout-aligned pin plan after #135 (UART RX ui_in[1], SPI and I2C on the uio Pmod rows)
+- **Issue #136** (closed): Verification: silicon-true uio pad model; re-run I2C evidence through the real uio_oe (today silicon cannot drive an I2C line)
+- **Issue #131** (closed): Verification: prove every flop reaches a known state from rst_n alone (gate-level X/random-init run; post-deselect safe idle)
+- **Issue #123** (closed): Auditor: guard rejects scoped worktree writes through shell variables
+- **Issue #122** (closed): CI: assess provisioning the formal mutant gate
+- **Issue #118** (closed): Host-side program loader: generate the load-phase pin sequence from firmware images for a physical Tiny Tapeout board (none exists)
+- **Issue #97** (closed): UART reference model: drift check is blind to frames with no late edge (e.g. payload 0xFF)
+
+### 2026-10-09
+
+- **PR #171**: spec: reconcile DR 0015 with the baseline-only DR 0011
+- **PR #170**: docs(spec): record in DR 0010 that the UART RX debug writes drive no pad under DR 0012
+- **PR #169**: feat: boot ROM, fetch-source switch and warm start; MODE-low no longer runs uninitialized SRAM (DR 0013 layer 2)
+- **Issue #156** (closed): DR 0015 still describes DR 0011 as a defer verdict; reconcile it with the baseline-only DR 0011
+- **Issue #154** (closed): UART RX bench-debug writes to UIO_OUT would pull uio[0]/uio[7] low under an open-drain mask
+- **Issue #138** (closed): DR 0013 layer 2: boot ROM + fetch-source switch + warm start; MODE-low no longer runs uninitialized SRAM (row 14c)
+
 ### 2026-10-09
 
 - **PR #162**: refactor(verification): share firmware hex and cycle-report parsers
