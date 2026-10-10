@@ -135,19 +135,43 @@ def _sanitize(text: str) -> str:
     return text.replace(str(Path.home()), "<home>")
 
 
-def run_request(klt: list[str], request: str) -> dict:
-    """Run one request; return the parsed klt envelope (raises on no JSON)."""
+def run_request(klt: list[str], request: str) -> tuple[dict, str | None]:
+    """Run one request; return (parsed klt envelope, results-XML text).
+
+    The XML is read immediately: klt reuses one `results_xml` path across
+    requests, so a later request overwrites it. The snapshot travels with the
+    envelope (and into the cache). Raises on no JSON."""
     proc = subprocess.run(
         [*klt, "functional-verification", request, "--format", "json"],
         cwd=REPO_ROOT, capture_output=True, text=True,
     )
     try:
-        return json.loads(proc.stdout)
+        env = json.loads(proc.stdout)
     except json.JSONDecodeError:
         raise RuntimeError(
             f"klt produced no JSON for {request} (exit {proc.returncode}): "
             f"{proc.stderr.strip()[-400:]}"
         )
+    xml_text = None
+    xml = (env.get("environment") or {}).get("results_xml") if isinstance(env, dict) else None
+    if xml and Path(xml).is_file():
+        xml_text = Path(xml).read_text(encoding="utf-8")
+    return env, xml_text
+
+
+def allocate_id(old_id: str, exp_dir: Path, now: dt.datetime, short_rev: str,
+                taken: set[str]) -> tuple[str, dt.datetime]:
+    """A schema-valid record ID, lexically after `old_id`, unused in this
+    experiment (records/, artifacts/) and not in `taken`. Bumps the timestamp
+    one second at a time; returns (id, the timestamp that ID encodes)."""
+    when = now
+    while True:
+        cand = f"{when.strftime('%Y%m%d-%H%M%S')}-{short_rev}"
+        if (cand > old_id and cand not in taken
+                and not (exp_dir / "records" / f"{cand}.md").exists()
+                and not (exp_dir / "artifacts" / cand).exists()):
+            return cand, when
+        when += dt.timedelta(seconds=1)
 
 
 def _split_blocks(body: str) -> list[list[str]]:
@@ -225,8 +249,8 @@ def render_record(old_text: str, old_meta: dict, new_id: str, revision: str,
     return head + "\n".join(out).rstrip("\n") + "\n"
 
 
-def mint(entry: dict, envelopes: dict[str, dict], new_id: str, revision: str,
-         now: dt.datetime, klt_version: str | None) -> Path:
+def mint(entry: dict, envelopes: dict[str, dict], xmls: dict[str, str | None],
+         new_id: str, revision: str, now: dt.datetime, klt_version: str | None) -> Path:
     path: Path = entry["path"]
     exp_dir = path.parent.parent
     new_rec = path.parent / f"{new_id}.md"
@@ -245,11 +269,10 @@ def mint(entry: dict, envelopes: dict[str, dict], new_id: str, revision: str,
         (art_dir / env_name).write_text(
             _sanitize(json.dumps(env, indent=2)) + "\n", encoding="utf-8")
         files.append(env_name)
-        xml = (env.get("environment") or {}).get("results_xml")
-        if xml and Path(xml).is_file():
+        xml_text = xmls.get(req)
+        if xml_text is not None:
             x_name = f"results_{env.get('engine', 'sim')}{suffix}.xml"
-            (art_dir / x_name).write_text(
-                _sanitize(Path(xml).read_text(encoding="utf-8")), encoding="utf-8")
+            (art_dir / x_name).write_text(_sanitize(xml_text), encoding="utf-8")
             files.append(x_name)
         names[req] = files
     old_text = path.read_text(encoding="utf-8")
@@ -285,14 +308,15 @@ def main(argv: list[str] | None = None) -> int:
     klt = shlex.split(args.klt)
     revision = run_git("rev-parse", "HEAD")
     now = dt.datetime.now(dt.timezone.utc).replace(microsecond=0)
-    new_id = f"{now.strftime('%Y%m%d-%H%M%S')}-{run_git('rev-parse', '--short=7', 'HEAD')}"
+    short_rev = run_git("rev-parse", "--short=7", "HEAD")
+    taken: set[str] = set()
     try:
         v = subprocess.run([*klt, "--version"], capture_output=True, text=True, cwd=REPO_ROOT)
         klt_version = v.stdout.strip().split()[-1] if v.returncode == 0 and v.stdout.strip() else None
     except OSError:
         klt_version = None
 
-    cache: dict[str, dict] = {}
+    cache: dict[str, tuple[dict, str | None]] = {}
     failed = 0
     for e in todo:
         try:
@@ -304,14 +328,23 @@ def main(argv: list[str] | None = None) -> int:
             print(f"ERROR: {e['experiment']}: {exc}")
             failed += 1
             continue
-        envs = {req: cache[req] for req in dict.fromkeys(e["requests"])}
+        envs = {req: cache[req][0] for req in dict.fromkeys(e["requests"])}
+        xmls = {req: cache[req][1] for req in envs}
         bad = [r for r, env in envs.items() if env.get("status") != "pass"]
         if bad:
             print(f"FAIL: {e['experiment']}: request(s) did not pass: {', '.join(bad)}; "
                   f"no record minted")
             failed += 1
             continue
-        new = mint(e, envs, new_id, revision, now, klt_version)
+        exp_dir = e["path"].parent.parent
+        new_id, when = allocate_id(e["record_id"], exp_dir, now, short_rev, taken)
+        taken.add(new_id)
+        try:
+            new = mint(e, envs, xmls, new_id, revision, when, klt_version)
+        except (RuntimeError, OSError) as exc:
+            print(f"ERROR: {e['experiment']}: {exc}")
+            failed += 1
+            continue
         print(f"MINTED: {new.relative_to(REPO_ROOT)} (supersedes {e['record_id']})")
     skipped = [e for e in report if not e["requests"]]
     for e in skipped:

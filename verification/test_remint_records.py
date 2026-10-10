@@ -56,6 +56,48 @@ def build(tmp: Path, with_request: bool = True) -> Path:
     return repo
 
 
+STUB_XML = """#!/bin/sh
+case "$1" in --version) echo "klt 9.9.9"; exit 0;; esac
+mkdir -p verification/.klt
+X="$PWD/verification/.klt/results.xml"
+printf 'xml-for-%s' "$(basename "$2" .json)" > "$X"
+echo '{"status":"pass","engine":"icarus","test_count":1,"passed_count":1,"environment":{"results_xml":"'"$X"'"}}'
+"""
+
+
+def build_multi(tmp: Path) -> Path:
+    """Experiment `demo` has TWO live stale records (both hash request-a);
+    experiment `multi` has one record hashing request-a AND request-b. All
+    requests share one results_xml path (as klt does)."""
+    repo = tmp / "fixture"
+    (repo / "rtl").mkdir(parents=True)
+    (repo / "rtl" / "dut.v").write_text(T.DUMMY_RTL, encoding="utf-8")
+    reqs = {}
+    for n in ("a", "b"):
+        rel = f"verification/request-{n}.json"
+        text = f'{{"schema": "{n}"}}\n'
+        (repo / rel).parent.mkdir(parents=True, exist_ok=True)
+        (repo / rel).write_text(text, encoding="utf-8")
+        reqs[n] = (rel, T._sha256_text(text))
+    rtl = ("rtl/dut.v", T._sha256_text(T.DUMMY_RTL))
+    for name in ("check_records.py", "_repo_utils.py", "remint_records.py"):
+        shutil.copyfile(T.SCRIPT_DIR / name, repo / "verification" / name)
+    plan = [("demo", OLD_ID, ["a"]), ("demo", "20260101-000005-abc1234", ["a"]),
+            ("multi", OLD_ID, ["a", "b"])]
+    for exp, rid, ns in plan:
+        T.record_path(repo, exp, rid).parent.mkdir(parents=True, exist_ok=True)
+        T.record_path(repo, exp, rid).write_text(
+            T.make_record(rid, exp, inputs=[rtl, *[reqs[n] for n in ns]]), encoding="utf-8")
+    stub = repo / "klt-stub"
+    stub.write_text(STUB_XML, encoding="utf-8")
+    stub.chmod(0o755)
+    T._git(repo, "init", "--quiet")
+    T._git(repo, "add", "-A")
+    T._git(repo, "commit", "--quiet", "-m", "fixture")
+    T._git(repo, "update-ref", T.BASE_REF, "HEAD")
+    return repo
+
+
 def stale(repo: Path) -> None:
     (repo / "rtl" / "dut.v").write_text(NEW_RTL, encoding="utf-8")
     T._git(repo, "add", "-A")
@@ -137,6 +179,39 @@ def main() -> int:
         code, out = tool(repo, "--rerun", "--klt", str(repo / "klt-stub"))
         check("failing request mints nothing, exit 1",
               code == 1 and records(repo) == [OLD_ID] and "no record minted" in out, out, failures)
+
+    with tempfile.TemporaryDirectory(prefix="remint-selftest-") as d:
+        repo = build_multi(Path(d))
+        stale(repo)
+        code, out = tool(repo, "--rerun", "--klt", str(repo / "klt-stub"))
+        check("multi: rerun succeeds", code == 0, out, failures)
+        recs = repo / "verification/records"
+        demo_new = sorted(p.stem for p in (recs / "demo/records").glob("*.md")
+                          if p.stem not in (OLD_ID, "20260101-000005-abc1234"))
+        check("two stale records in one experiment each get a distinct new record",
+              len(demo_new) == 2 and len(set(demo_new)) == 2
+              and demo_new[0] > "20260101-000005-abc1234", out, failures)
+        for new in demo_new:
+            xml = recs / "demo/artifacts" / new / "results_icarus.xml"
+            check(f"cached reuse keeps request-a XML ({new})",
+                  xml.is_file() and xml.read_text() == "xml-for-request-a", out, failures)
+        multi_new = [p.stem for p in (recs / "multi/records").glob("*.md") if p.stem != OLD_ID]
+        check("multi-request experiment minted one record", len(multi_new) == 1, out, failures)
+        if multi_new:
+            art = recs / "multi/artifacts" / multi_new[0]
+            for n in ("a", "b"):
+                f = art / f"results_icarus-{n}.xml"
+                check(f"multi-request record keeps request-{n} XML",
+                      f.is_file() and f.read_text() == f"xml-for-request-{n}", out, failures)
+        T._git(repo, "add", "-A")
+        T._git(repo, "commit", "--quiet", "-m", "remint")
+        r = subprocess.run([sys.executable, str(repo / "verification/check_records.py"),
+                            "--base-ref", T.BASE_REF, "--require-append-only"],
+                           cwd=repo, capture_output=True, text=True)
+        check("multi: both stale records superseded and tree passes check_records",
+              r.returncode == 0, r.stdout + r.stderr, failures)
+        code, out = tool(repo)
+        check("multi: nothing stale afterwards", code == 0, out, failures)
 
     print()
     if failures:
