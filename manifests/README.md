@@ -228,6 +228,23 @@ capture, PVT corner sweeps, or Monte Carlo.
   previous design** until `design-sources.txt`, the GDS binding and their
   envelopes are refreshed with the new GDS-check record; the inventory check
   below fails the CI records job until they are.
+- **Items 1, 2, 3, 4, 7 and 9, state as of 2026-10-10 (issue #139).** Append-only;
+  the bullets above are the earlier states. The UART load grew the boot ROM
+  to 223 words, so the design and the layout changed, and every citation that
+  names their bytes moved. Item 1 (`evidence/design-sources.txt`, refreshed:
+  the ROM and its assembly and hex, both netlists) and item 2 (the routed GDS
+  of gds run 38054423540 at `a0f91e3`, `sha256:b71ece88…`, via
+  `evidence/layout-gds.json`) are `met` against the new bytes. Items 3 and 4
+  cite record `20261010-133100-a0f91e3` (`librelane-gds-signoff-check/`):
+  **item 3 stays `met`**, **item 4 stays `unmet`/`check_errored`** on the same
+  converter shape (`pm_wdata[7:0]`, klayout-tools#2941); the compare against
+  the post-route reference is `match` with `power_connectivity` `match`, and
+  is not cited. Item 7 cites `post-layout-sdf-regression` record
+  `20261010-133000-a0f91e3` (12 passed, 0 failed, 1 skipped at all three
+  corners, annotated): **`unmet`/`unverifiable_provenance`**, as before.
+  Item 9 (`evidence/testbenches.txt`) gains the `boot-uart` bench and the
+  `--boot-uart` gate-level command. Baseline: `signoff-baseline` record
+  `20261010-133500-a0f91e3`, **5 of 11**, unchanged.
 - **Every citation pins a `content_hash`**, and what it is the hash of
   depends on the cited envelope (clarified 2026-10-10, issue #168; the
   manifests on `main` have always followed this, the sentence here did
