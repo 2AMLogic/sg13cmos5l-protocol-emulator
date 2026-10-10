@@ -9,10 +9,11 @@
 ; The received byte is published on UO_OUT before HALT so the bench can
 ; check what the core actually shifted in from the bus.
 ;
-; Pin plan (same as i2c_fast.asm / i2c_std.asm): UIO_OUT bit 0 = SCL,
-; bit 7 = SDA, writing 1 RELEASES the line. On silicon that is DR 0012's
-; open-drain pin mode: the setup writes 0x81 to UIO_OD (`WCTL UIO_OD`)
-; right AFTER the OUT of 0x81 (uio_out resets to 0x00; enabling open-drain
+; Pin plan (same as i2c_fast.asm / i2c_std.asm; DR 0010's target plan, the
+; standard Tiny Tapeout I2C Pmod, issue #155): UIO_OUT bit 2 = SCL, bit 3 =
+; SDA, writing 1 RELEASES the line. On silicon that is DR 0012's
+; open-drain pin mode: the setup writes 0x0C to UIO_OD (`WCTL UIO_OD`)
+; right AFTER the OUT of 0x0C (uio_out resets to 0x00; enabling open-drain
 ; first would pull both lines low for a cycle). The bench runs on a pad
 ; model that resolves each line from uio_oe/uio_out (uio_pads.py, #136).
 ;
@@ -21,7 +22,7 @@
 ; repeated START to the OUT that pulls SDA low, i.e. the UM10204 Table 10
 ; setup time, here paced AT the Table 10 minimum.
 ; Variant: SCL POLLING. After EVERY SCL rise (data, ACK, repeated START and
-; STOP) the program polls the peripheral's SCL level (IN uio_in bit 0) and
+; STOP) the program polls the peripheral's SCL level (IN uio_in bit 2) and
 ; loops while it reads low -- clock stretching (UM10204 section 3.1.9).
 ; The poll costs 2 extra cycles per rise phase (LDI + IN precede the
 ; hold) so the hold after the IN that sees SCL high is the full budget: an
@@ -36,7 +37,9 @@
 ; polled rise, and the bench asserts that exact count).
 ; The bit loops need a counter, and the ISA has four registers, so the
 ; loop keeps R0 = ~byte (shifted left; after 8 shifts it is 0, which the
-; AND/XOR pin recipe turns into SDA released for the following ACK slot),
+; AND/XOR pin recipe turns into SDA released for the following ACK slot;
+; the recipe first shifts a copy right four times, because SDA is bit 3
+; and the byte's next bit is R0's MSB),
 ; R1 = counter, R2 = scratch (constants are re-LDI'd where needed), R3 =
 ; the pin value for the next OUT. LDI/MOV/SHF/OUT/BNZ are 1 cycle each
 ; (taken or not), so the loop-back costs no extra cycle in any phase.
@@ -46,40 +49,48 @@
 ; cycle count IS the phase's measured length.
 
 ; ---------------------------------------------------------------- setup
-        LDI   R3, 0x81        ; both lines released: bus idle
+        LDI   R3, 0x0C        ; both lines released: bus idle
         OUT   UIO_OUT, R3
         WCTL  UIO_OD, R3      ; DR 0012: SCL|SDA open-drain (after the OUT)
         WAIT  255             ; idle bus before the START
-        LDI   R3, 0x01        ; SCL high, SDA low
+        LDI   R3, 0x04        ; SCL high, SDA low
 ; --------------------------------------------------------------- START
 .cyclesec i2c_start_hold
         OUT   UIO_OUT, R3   ; START: SDA falls while SCL high
         LDI   R0, 0x5F       ; ~byte (inverted-data trick)
         LDI   R1, 0x08       ; bit counter
         MOV   R3, R0
-        LDI   R2, 0x80
+        SHF   R3, RIGHT
+        SHF   R3, RIGHT
+        SHF   R3, RIGHT
+        SHF   R3, RIGHT      ; MSB -> SDA (bit 3)
+        LDI   R2, 0x08
         AND   R3, R2
         XOR   R3, R2         ; R3 = SDA(bit 1), SCL low
-        WAIT  57       ; 58 cycles
+        WAIT  53       ; 54 cycles
 .endcyclesec
 ; ------------------------------------------ byte 1: address 0xA0 (0x50 W)
 tx1_loop:
 .cyclesec i2c_tx1_low
         OUT   UIO_OUT, R3   ; SCL falls, SDA = data bit
         WAIT  61       ; 62 cycles
-        LDI   R2, 0x01
+        LDI   R2, 0x04
         OR    R3, R2         ; raise SCL, SDA unchanged
 .endcyclesec
 .cyclesec i2c_tx1_high
         OUT   UIO_OUT, R3   ; SCL rises: bit sampled on the line
-        LDI   R3, 0x01       ; poll mask
+        LDI   R3, 0x04       ; poll mask
         poll0: IN    R2, UIO_IN   ; peripheral's SCL level
         AND   R2, R3
         BZ    poll0          ; SCL held low -> poll again
-        WAIT  48       ; 49 cycles
+        WAIT  44       ; 45 cycles
         SHF   R0, LEFT       ; next bit into position
         MOV   R3, R0
-        LDI   R2, 0x80
+        SHF   R3, RIGHT
+        SHF   R3, RIGHT
+        SHF   R3, RIGHT
+        SHF   R3, RIGHT      ; MSB -> SDA (bit 3)
+        LDI   R2, 0x08
         AND   R3, R2
         XOR   R3, R2         ; R3 = next SDA, SCL low
         LDI   R2, 0x01
@@ -88,41 +99,49 @@ tx1_loop:
 .endcyclesec
 .cyclesec i2c_ack1_low
         OUT   UIO_OUT, R3   ; 9th clock: SCL falls, SDA released
-        LDI   R3, 0x81
+        LDI   R3, 0x0C
         WAIT  62       ; 63 cycles
 .endcyclesec
 .cyclesec i2c_ack1_high
         OUT   UIO_OUT, R3   ; ACK clock rises (peripheral pulls SDA)
-        LDI   R3, 0x01       ; poll mask
+        LDI   R3, 0x04       ; poll mask
         poll1: IN    R2, UIO_IN   ; peripheral's SCL level
         AND   R2, R3
         BZ    poll1          ; SCL held low -> poll again
         LDI   R0, 0xA5       ; ~byte (inverted-data trick)
         LDI   R1, 0x08       ; bit counter
         MOV   R3, R0
-        LDI   R2, 0x80
+        SHF   R3, RIGHT
+        SHF   R3, RIGHT
+        SHF   R3, RIGHT
+        SHF   R3, RIGHT      ; MSB -> SDA (bit 3)
+        LDI   R2, 0x08
         AND   R3, R2
         XOR   R3, R2         ; R3 = SDA(bit 1), SCL low
-        WAIT  50       ; 51 cycles
+        WAIT  46       ; 47 cycles
 .endcyclesec
 ; ------------------------------------------ byte 2: payload 0x5A
 tx2_loop:
 .cyclesec i2c_tx2_low
         OUT   UIO_OUT, R3   ; SCL falls, SDA = data bit
         WAIT  61       ; 62 cycles
-        LDI   R2, 0x01
+        LDI   R2, 0x04
         OR    R3, R2         ; raise SCL, SDA unchanged
 .endcyclesec
 .cyclesec i2c_tx2_high
         OUT   UIO_OUT, R3   ; SCL rises: bit sampled on the line
-        LDI   R3, 0x01       ; poll mask
+        LDI   R3, 0x04       ; poll mask
         poll2: IN    R2, UIO_IN   ; peripheral's SCL level
         AND   R2, R3
         BZ    poll2          ; SCL held low -> poll again
-        WAIT  48       ; 49 cycles
+        WAIT  44       ; 45 cycles
         SHF   R0, LEFT       ; next bit into position
         MOV   R3, R0
-        LDI   R2, 0x80
+        SHF   R3, RIGHT
+        SHF   R3, RIGHT
+        SHF   R3, RIGHT
+        SHF   R3, RIGHT      ; MSB -> SDA (bit 3)
+        LDI   R2, 0x08
         AND   R3, R2
         XOR   R3, R2         ; R3 = next SDA, SCL low
         LDI   R2, 0x01
@@ -131,61 +150,69 @@ tx2_loop:
 .endcyclesec
 .cyclesec i2c_ack2_low
         OUT   UIO_OUT, R3   ; 9th clock: SCL falls, SDA released
-        LDI   R3, 0x81
+        LDI   R3, 0x0C
         WAIT  62       ; 63 cycles
 .endcyclesec
 .cyclesec i2c_ack2_high
         OUT   UIO_OUT, R3   ; ACK clock rises
-        LDI   R3, 0x01       ; poll mask
+        LDI   R3, 0x04       ; poll mask
         poll3: IN    R2, UIO_IN   ; peripheral's SCL level
         AND   R2, R3
         BZ    poll3          ; SCL held low -> poll again
-        LDI   R3, 0x80       ; SCL low, SDA released (for the Sr)
+        LDI   R3, 0x08       ; SCL low, SDA released (for the Sr)
         WAIT  55       ; 56 cycles
 .endcyclesec
 ; ------------------------------------------------- repeated START
 .cyclesec i2c_sr_low
         OUT   UIO_OUT, R3   ; SCL falls, SDA released (high)
-        LDI   R3, 0x81
+        LDI   R3, 0x0C
         LDI   R0, 0x5E       ; ~0xA1 for the next byte
         LDI   R1, 0x08
         WAIT  60       ; 61 cycles
 .endcyclesec
 .cyclesec i2c_sr_rise
         OUT   UIO_OUT, R3   ; SCL rises with SDA high: Sr setup begins
-        LDI   R3, 0x01       ; poll mask
+        LDI   R3, 0x04       ; poll mask
         poll4: IN    R2, UIO_IN   ; peripheral's SCL level
         AND   R2, R3
         BZ    poll4          ; SCL held low -> poll again
-        LDI   R3, 0x01       ; SCL high, SDA low
+        LDI   R3, 0x04       ; SCL high, SDA low
         WAIT  25       ; 26 cycles NEGCTL-SUSTA
 .endcyclesec
 .cyclesec i2c_sr_hold
         OUT   UIO_OUT, R3   ; repeated START: SDA falls while SCL high
         MOV   R3, R0
-        LDI   R2, 0x80
+        SHF   R3, RIGHT
+        SHF   R3, RIGHT
+        SHF   R3, RIGHT
+        SHF   R3, RIGHT      ; MSB -> SDA (bit 3)
+        LDI   R2, 0x08
         AND   R3, R2
         XOR   R3, R2         ; R3 = SDA(bit 1), SCL low
-        WAIT  59       ; 60 cycles
+        WAIT  55       ; 56 cycles
 .endcyclesec
 ; ------------------------------------------ byte 3: address 0xA1 (0x50 R)
 tx3_loop:
 .cyclesec i2c_tx3_low
         OUT   UIO_OUT, R3   ; SCL falls, SDA = data bit
         WAIT  61       ; 62 cycles
-        LDI   R2, 0x01
+        LDI   R2, 0x04
         OR    R3, R2         ; raise SCL, SDA unchanged
 .endcyclesec
 .cyclesec i2c_tx3_high
         OUT   UIO_OUT, R3   ; SCL rises: bit sampled on the line
-        LDI   R3, 0x01       ; poll mask
+        LDI   R3, 0x04       ; poll mask
         poll5: IN    R2, UIO_IN   ; peripheral's SCL level
         AND   R2, R3
         BZ    poll5          ; SCL held low -> poll again
-        WAIT  48       ; 49 cycles
+        WAIT  44       ; 45 cycles
         SHF   R0, LEFT       ; next bit into position
         MOV   R3, R0
-        LDI   R2, 0x80
+        SHF   R3, RIGHT
+        SHF   R3, RIGHT
+        SHF   R3, RIGHT
+        SHF   R3, RIGHT      ; MSB -> SDA (bit 3)
+        LDI   R2, 0x08
         AND   R3, R2
         XOR   R3, R2         ; R3 = next SDA, SCL low
         LDI   R2, 0x01
@@ -194,62 +221,58 @@ tx3_loop:
 .endcyclesec
 .cyclesec i2c_ack3_low
         OUT   UIO_OUT, R3   ; 9th clock: SCL falls, SDA released
-        LDI   R3, 0x81
+        LDI   R3, 0x0C
         WAIT  62       ; 63 cycles
 .endcyclesec
 .cyclesec i2c_ack3_high
         OUT   UIO_OUT, R3   ; ACK clock rises
-        LDI   R3, 0x01       ; poll mask
+        LDI   R3, 0x04       ; poll mask
         poll6: IN    R2, UIO_IN   ; peripheral's SCL level
         AND   R2, R3
         BZ    poll6          ; SCL held low -> poll again
         LDI   R0, 0x00       ; receive accumulator
         LDI   R1, 0x08
-        LDI   R3, 0x80       ; SCL low, SDA released
+        LDI   R3, 0x08       ; SCL low, SDA released
         WAIT  53       ; 54 cycles
 .endcyclesec
 ; ----------------------------------- read byte (peripheral drives SDA)
 rd_loop:
 .cyclesec i2c_rd_low
         OUT   UIO_OUT, R3   ; SCL falls, SDA released to the peripheral
-        LDI   R3, 0x81
+        LDI   R3, 0x0C
         WAIT  62       ; 63 cycles
 .endcyclesec
 .cyclesec i2c_rd_high
         OUT   UIO_OUT, R3   ; SCL rises: peripheral's bit is on the line
-        LDI   R3, 0x01       ; poll mask
+        LDI   R3, 0x04       ; poll mask
         poll7: IN    R2, UIO_IN   ; peripheral's SCL level
         AND   R2, R3
         BZ    poll7          ; SCL held low -> poll again
         IN    R2, UIO_IN     ; sample the bus
-        LDI   R3, 0x80       ; mask AND next SCL-low pins
-        AND   R2, R3         ; isolate SDA (bit 7)
+        LDI   R3, 0x08       ; mask AND next SCL-low pins
+        AND   R2, R3         ; isolate SDA (bit 3)
         SHF   R2, RIGHT
         SHF   R2, RIGHT
-        SHF   R2, RIGHT
-        SHF   R2, RIGHT
-        SHF   R2, RIGHT
-        SHF   R2, RIGHT
-        SHF   R2, RIGHT      ; bit 7 -> bit 0
+        SHF   R2, RIGHT      ; bit 3 -> bit 0
         SHF   R0, LEFT
         OR    R0, R2         ; MSB first
-        WAIT  41       ; 42 cycles
+        WAIT  45       ; 46 cycles
         LDI   R2, 0x01
         SUB   R1, R2         ; counter--  (sets Z)
         BNZ   rd_loop        ; 8 data clocks
 .endcyclesec
 .cyclesec i2c_nack_low
         OUT   UIO_OUT, R3   ; 9th clock: SCL falls, SDA stays released
-        LDI   R3, 0x81
+        LDI   R3, 0x0C
         WAIT  62       ; 63 cycles
 .endcyclesec
 .cyclesec i2c_nack_high
         OUT   UIO_OUT, R3   ; SCL rises, SDA released: controller NACK
-        LDI   R3, 0x01       ; poll mask
+        LDI   R3, 0x04       ; poll mask
         poll8: IN    R2, UIO_IN   ; peripheral's SCL level
         AND   R2, R3
         BZ    poll8          ; SCL held low -> poll again
-        LDI   R3, 0x80
+        LDI   R3, 0x08
         WAIT  55       ; 56 cycles
 .endcyclesec
 ; ------------------------------------------------------------- STOP
@@ -258,15 +281,15 @@ rd_loop:
         LDI   R3, 0x00       ; SDA low during the low period
         OUT   UIO_OUT, R3
         WAIT  60       ; 61 cycles
-        LDI   R3, 0x01       ; SCL high, SDA low
+        LDI   R3, 0x04       ; SCL high, SDA low
 .endcyclesec
 .cyclesec i2c_stop_setup
         OUT   UIO_OUT, R3   ; SCL rises: STOP setup begins
-        LDI   R3, 0x01       ; poll mask
+        LDI   R3, 0x04       ; poll mask
         poll9: IN    R2, UIO_IN   ; peripheral's SCL level
         AND   R2, R3
         BZ    poll9          ; SCL held low -> poll again
-        LDI   R3, 0x81       ; SDA released
+        LDI   R3, 0x0C       ; SDA released
         WAIT  55       ; 56 cycles
 .endcyclesec
         OUT   UIO_OUT, R3     ; SDA rises while SCL high: STOP

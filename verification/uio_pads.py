@@ -432,3 +432,66 @@ def assert_i2c_open_drain(pads: UioPads, tag: str) -> None:
         f"{tag}: the design pulled pins 0x{pads.drove_low:02x} low, expected "
         f"both SCL and SDA (0x{mask:02x})"
     )
+
+
+# ---------------------------------------------------------------------------
+# The SPI board: what the SPI benches hang on the pads (issue #155)
+# ---------------------------------------------------------------------------
+
+
+def spi_board(dut, cs: int, sclk: int, mosi: int, miso: int) -> UioPads:
+    """Pads as an SPI peripheral board wires them: the controller's CS,
+    SCLK and MOSI lines are the design's to drive (push-pull, DR 0012's
+    `UIO_DIR`), MISO is driven by the peripheral (the caller's coroutine,
+    through `drive()`), and the other four `uio` lines are tied low. CS
+    carries a pull-up and SCLK / MOSI pull-downs, so each line has a level
+    before the program enables its drivers: an undriven CS reads
+    deasserted, which is how a chip-select line is normally biased. The
+    tie-off is a strong driver, so firmware that drove any other pin high
+    is reported as contention. MISO starts driven low. Not started.
+
+    Which pins are which is the caller's to say, and this module holds no
+    copy: the pin plan lives in DR 0010's table and in
+    `test_firmware_spi.py`'s `CS_BIT` / `SCLK_BIT` / `MOSI_BIT` /
+    `MISO_BIT`, which `scripts/check_protocol_pin_roles.py` checks."""
+    pins = (cs, sclk, mosi, miso)
+    for pin in pins:
+        UioPads._check_pin(pin)
+    if len(set(pins)) != 4:
+        raise ValueError("CS, SCLK, MOSI and MISO must be four different pins")
+    tie = {pin: 0 for pin in range(PINS) if pin not in (cs, sclk, mosi)}
+    pads = UioPads(
+        dut,
+        pulls={cs: "up", sclk: "down", mosi: "down"},
+        tie=tie,  # includes MISO: the peripheral's output, low until it drives
+        name="spi-board",
+    )
+    #: `UIO_DIR` value an SPI controller program must have written.
+    pads.spi_mask = (1 << cs) | (1 << sclk) | (1 << mosi)
+    #: Pins every transfer drives both high and low.
+    pads.spi_toggled = (1 << cs) | (1 << sclk)
+    return pads
+
+
+def assert_spi_push_pull(pads: UioPads, tag: str) -> None:
+    """After an SPI run on `spi_board()`: the design drove exactly CS,
+    SCLK and MOSI (push-pull: CS and SCLK seen driven both high and low),
+    never MISO or a tied pin, with no unknown `uio_oe` and no
+    contention."""
+    mask = pads.spi_mask
+    pads.assert_no_contention()
+    assert pads.oe_unknown == 0, (
+        f"{tag}: uio_oe was unknown on pins 0x{pads.oe_unknown:02x} during the run"
+    )
+    assert pads.oe_seen == mask, (
+        f"{tag}: the design drove uio pins 0x{pads.oe_seen:02x}; an SPI "
+        f"controller must drive exactly CS|SCLK|MOSI = 0x{mask:02x} "
+        "(0x00 means UIO_DIR was never written: no line reaches the peripheral)"
+    )
+    both = pads.spi_toggled
+    assert pads.drove_high & both == both and pads.drove_low & both == both, (
+        f"{tag}: the design drove pins 0x{pads.drove_high:02x} high and "
+        f"0x{pads.drove_low:02x} low; CS and SCLK (0x{both:02x}) must each be "
+        "driven both ways in any transfer (MOSI only if the payload has both "
+        "bit values)"
+    )

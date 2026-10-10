@@ -53,7 +53,10 @@ DEFAULT_CASES = 20
 PROTOCOLS = ("uart", "spi", "i2c", "i2c_rd")
 
 # --- pin plans, as used by the committed programs -------------------------
-SPI_CS, SPI_SCLK, SPI_MOSI = 0, 1, 2  # uo_out bits
+#: SPI on the standard Tiny Tapeout SPI Pmod (DR 0010's target plan, issue
+#: #155): uio bits, made push-pull with `WCTL UIO_DIR`; MISO is uio[2].
+SPI_CS, SPI_SCLK, SPI_MOSI = 0, 3, 1
+SPI_DIR = (1 << SPI_CS) | (1 << SPI_SCLK) | (1 << SPI_MOSI)
 
 # --- UART --------------------------------------------------------------
 #: Bit periods in core cycles. 50 is the committed program's; the others
@@ -234,8 +237,10 @@ def render_spi(name, seed, index, params) -> str:
     out = [_header(name, seed, "spi", index, params)]
     out.append(
         f"        LDI   R2, 0x{img(idle) | cs_hi:02X}      ; CS released, SCLK idle\n"
-        "        OUT   UO_OUT, R2\n"
-        "        WAIT  15\n"
+        "        OUT   UIO_OUT, R2      ; idle image before the drivers are on\n"
+        f"        LDI   R3, 0x{SPI_DIR:02X}      ; CS|MOSI|SCLK\n"
+        "        WCTL  UIO_DIR, R3      ; DR 0012: push-pull\n"
+        "        WAIT  13\n"
     )
     pad = f"        WAIT  {g - 3}\n" if g >= 3 else ""
     for b, mosi_byte in enumerate(params["mosi"]):
@@ -253,7 +258,7 @@ def render_spi(name, seed, index, params) -> str:
         out.append(
             f"; ---- burst {b}: MOSI 0x{mosi_byte:02X}\n"
             f"        LDI   R2, 0x{img(idle):02X}      ; CS asserted\n"
-            "        OUT   UO_OUT, R2\n"
+            "        OUT   UIO_OUT, R2\n"
             "        WAIT  3\n"
             f"        LDI   R1, 0x{r1:02X}\n"
             f"        LDI   R2, 0x{data_img[0]:02X}\n"
@@ -262,10 +267,10 @@ def render_spi(name, seed, index, params) -> str:
         for k in range(8):
             nxt = data_img[k + 1] if k < 7 else 0
             out.append(
-                f"        OUT   UO_OUT, {lead}\n"
+                f"        OUT   UIO_OUT, {lead}\n"
                 "        IN    R3, UIO_IN\n"
                 f"{pad}"
-                f"        OUT   UO_OUT, {trail}\n"
+                f"        OUT   UIO_OUT, {trail}\n"
                 f"        LDI   R2, 0x{nxt:02X}\n"
                 f"{pad}"
             )
@@ -273,7 +278,7 @@ def render_spi(name, seed, index, params) -> str:
             ".endcyclesec\n"
             "        WAIT  3\n"
             f"        LDI   R2, 0x{img(idle) | cs_hi:02X}      ; CS released\n"
-            "        OUT   UO_OUT, R2\n"
+            "        OUT   UIO_OUT, R2\n"
             "        WAIT  31\n"
         )
     out.append("        HALT\n")

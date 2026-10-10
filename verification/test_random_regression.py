@@ -62,6 +62,12 @@ the poll/handshake interval is bounded, not asserted exact. Controls: the
 non-polling sibling under a selected schedule must fail, and a truncated
 capture must fail.
 
+SPI runs on the same pad model wired as an SPI board (issue #155): the
+generated programs drive CS / MOSI / SCLK on `uio[0]` / `uio[1]` /
+`uio[3]` through `WCTL UIO_DIR` and sample MISO on `uio[2]` (DR 0010's
+target plan), and every run must end with the design having driven
+exactly those three pins, without contention.
+
 Both I2C families run on the silicon-true pad model (issue #136, DR 0012;
 `verification/uio_pads.py`, through the directed benches' own
 `run_words` / `run_on_pads`): the lines graded are SCL and SDA as
@@ -109,7 +115,8 @@ from test_firmware_uart import (  # noqa: E402
     cycle_at_time,
     expected_edge_offsets,
 )
-from test_firmware_spi import burst_windows, cycles_between, drive_miso  # noqa: E402
+from test_firmware_spi import burst_windows, cycles_between  # noqa: E402
+from test_firmware_spi import run_on_pads as run_spi_on_pads  # noqa: E402
 from test_firmware_i2c import (  # noqa: E402
     FAST,
     STD,
@@ -278,18 +285,17 @@ async def test_uart_random_programs(dut):
 # SPI
 # =======================================================================
 
-SPI_PINS = {"cs": ("uo_out", 0), "sclk": ("uo_out", 1), "mosi": ("uo_out", 2),
-            "miso": ("uio_in", 0)}
-
-
 async def run_spi(dut, case):
+    """Run a generated SPI program on the pad model's SPI board (the
+    directed bench's `run_on_pads`, issue #155): the lines graded are CS,
+    SCLK, MOSI and MISO as the pads resolve them, and the run must end
+    with the design having driven exactly CS, SCLK and MOSI."""
     program = _assemble(case)
     mode = MODES[case.params["mode"]]
-    await load_program(dut, program.words)
     run_cycles = program.total_cycles + SPI_CAPTURE_MARGIN
-    driver = cocotb.start_soon(drive_miso(dut, mode, case.params["miso"], run_cycles))
-    caps = await capture_pin_bits(dut, SPI_PINS, run_cycles)
-    await driver
+    caps, _pads = await run_spi_on_pads(
+        dut, ident(case), program.words, mode, case.params["miso"], run_cycles,
+    )
     return caps
 
 
