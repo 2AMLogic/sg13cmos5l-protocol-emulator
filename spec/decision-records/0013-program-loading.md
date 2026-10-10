@@ -619,11 +619,12 @@ instead of the stub's continuous break. `uo_out[7:1]` stay 0.
 
 **Finding F4: the UART load does not fit the proposed 128-word cap, and F3's
 35 free words were short by 94.** The loader is **129 words**. The boot image
-is **221**: 9 for the strap dispatch, 19 for the warm start, 64 for the
+is **223**: 9 for the strap dispatch, 21 for the warm start, 64 for the
 SPI-flash boot (#140) and 129 for the UART load. This record proposed 128
 words for the whole ROM and noted "98 for the UART load and the SPI-flash
 boot together"; F3 above counted 35 words free for the UART load once the
-SPI-flash boot had taken its 64. The reasons the loader is four times that are
+SPI-flash boot had taken its 64 (33 once #168's two words are counted, short
+by 96). The reasons the loader is four times that are
 the ISA's, not the loader's care:
 
 | Part | Words |
@@ -653,7 +654,7 @@ recorded here, in `firmware/tools/gen_boot_rom.py` and in
 `firmware/tools/test_gen_boot_rom.py`, and it is the first of the options F3
 listed. The others:
 
-1. keep 256 as the ROM's size (what the code does now; 35 words of address
+1. keep 256 as the ROM's size (what the code does now; 33 words of address
    space are left);
 2. raise the PC for the ROM only, which is an architecture change;
 3. cut the loader, for example by dropping the reply's CRC, the `0xA5` resync
@@ -662,43 +663,40 @@ listed. The others:
    a longer loader into program memory from a short stub (F3's other option),
    which needs a first stage that is itself a UART receiver.
 
-*Area and timing, each number with its flow* (against the 93-word ROM of
-the SPI-flash boot, whose figures are in the #140 notes above). **klt/Yosys
-flow** (cell area only; `klt synthesize flow/synthesize-protocol-emulator.json`,
-Yosys 0.67): the top goes from 1,366 instances and 21,263.63 µm² to **1,623
-instances and 23,725.47 µm²** (178 flip-flops, unchanged), **+257 instances and
-+2,461.84 µm² (+11.6 %)**. The ROM alone is 274 instances and 3,116.76 µm² at 93
-words and **536 instances and 5,745.30 µm²** at 221: **+2,628.54 µm² for 128
-words, about 21 µm² per word**, the same price as the ~30 µm² per word the #140
-notes measured, a little lower because the receiver and transmitter share
-logic. This flow reports no timing for this design. **LibreLane flow** (the
-`gds` workflow, run 38043277930 at `6c9583b`, which also carries issue #173's
-LibreLane-only A_REN drive buffer; LibreLane 3.1.0.dev3, post-route, 20 ns):
-placed standard cells **27,910.9 → 30,872.0 µm² (+2,961.1, +10.6 %)** against
-the buffered 93-word-ROM run (38032061275), 1,894 → 2,258 instances,
-utilization 44.23 % → **46.57 %** on the unchanged die (about 53 % of the
-core unoccupied), routed wirelength 81,629 → 113,944 µm. (The run before the
-buffer, 38028344891, had 30,759.5 µm²; the buffer and the re-roll cost
-+112.5 µm² against it.) Timing still closes with **zero setup and zero hold
-violations at all three corners**, with less to spare: worst setup slack
-6.100 → **3.709 ns** (slow), 11.371 → 9.910 ns (typ), 14.318 → 13.448 ns
-(fast); worst hold slack 0.1117 → 0.1112 ns (fast). Max-cap violations went
-1/2/3 → 4/4/4 (slow/typ/fast, SRAM `A_DOUT`) and max-slew 0/0/0 → 1/0/0 (the
-slow corner's SRAM `A_DIN[0]`, 0.670 ns against 0.595 ns; a different pin from
-the A_REN pin #173 repaired, filed as issue #201); none is a setup or hold
-violation, and the flow does not fail on them. LVS, route DRC and antenna are
-clean and the Tiny Tapeout precheck is green.
-LibreLane's own synthesis step reports 1,431 → 1,751 cells and 21,603.5 →
-24,235.3 µm² before placement, +2,631.8 µm² (against 21,758.1 → 24,302.7 µm²,
-+2,544.7, in the run before the buffer): the two flows agree on what the
-UART load costs (+2,461.8 and +2,631.8 µm², 7 % apart). The template's `gl_test`
+*Area and timing, each number with its flow* (against the 95-word ROM of the
+two boot programs the #168 notes above measure). **klt/Yosys flow** (cell area
+only; `klt synthesize flow/synthesize-protocol-emulator.json`, klt v0.7.0,
+Yosys 0.67): the top goes from 1,377 instances and 21,331.03 µm² to **1,614
+instances and 23,729.03 µm²** (178 flip-flops, unchanged), **+237 instances and
++2,397.99 µm² (+11.2 %)**. The ROM alone is 286 instances and 3,256.51 µm² at 95
+words and **545 instances and 5,837.45 µm²** at 223: **+2,580.95 µm² for 128
+words, about 20 µm² per word**, a little under the ~30 µm² per word the #140
+notes measured, because the receiver and transmitter share logic. This flow
+reports no timing for this design. **LibreLane flow** (the `gds` workflow, run
+38054423540 at `a0f91e3`, LibreLane 3.1.0.dev3, post-route, 20 ns): placed
+standard cells **28,255.7 → 30,745.0 µm² (+2,489.3, +8.8 %)**, 1,890 → 2,210
+instances, utilization 44.51 % → **46.47 %** on the unchanged die (about 53 % of
+the core unoccupied), routed wirelength 85,380 → 119,187 µm. Timing still closes
+with **zero setup and zero hold violations at all three corners**, with less to
+spare: worst setup slack 5.621 → **3.631 ns** (slow), 11.049 → 9.863 ns (typ),
+14.100 → 13.454 ns (fast); worst hold slack 0.1108 → 0.1043 ns (fast). Max-cap
+violations (SRAM `A_DOUT`) went 3/3/3 → 3/3/4 (slow/typ/fast) and **max-slew
+0/0/0 → 1/1/1, on the SRAM's `A_WEN`** (0.909 ns against a 0.595 ns limit at the
+slow corner): a different macro pin from the A_REN pin #173 repaired, which stays
+clean (0.104 ns); the violating pin moves with the placement re-roll (an
+earlier layout of this branch had it on `A_DIN[0]`), tracked as issue #201. None
+is a setup or hold violation, and the flow does not fail on them. LVS, route DRC
+and antenna are clean and the Tiny Tapeout precheck is green. LibreLane's own
+synthesis step reports 1,422 → 1,704 cells and 21,859.63 → 24,237.28 µm² before
+placement, +2,377.7 µm²: the two flows agree on what the UART load costs
+(+2,398.0 and +2,377.7 µm² at synthesis, 1 % apart). The template's `gl_test`
 job passes 3/3 on this netlist, including a 3-word UART frame loaded and run on
 gates. The 2×2 budget (row 7) is not threatened, but **the setup margin at the
-slow corner is now 3.7 ns of a 20 ns period**, so a further ROM growth of this
+slow corner is now 3.6 ns of a 20 ns period**, so a further ROM growth of this
 size is the thing to watch. Gate level (zero delay) for the cocotb benches
-including both loaders', the reset/power-up bench, and the SDF run (still the
-recorded bench-alignment FAIL, issue #106), are in
-`verification/records/firmware-gate-level/`, `reset-power-up/` and
+including both loaders', the reset/power-up bench, and the SDC-aligned SDF run
+(12 passed, 0 failed, 1 skipped at all three corners, as for the 95-word ROM)
+are in `verification/records/firmware-gate-level/`, `reset-power-up/` and
 `post-layout-sdf-regression/`; the area and timing records are
 `verification/records/synthesis-baseline/` and `librelane-corner-timing/`.
 
