@@ -34,8 +34,26 @@ jobs:
         with:
           submodules: recursive
 
+      # The action runs `GATES=yes make` in `test/` (default test-dir) on the
+      # runner workspace (no container) and leaves the JUnit summary at
+      # test/results.xml. Its own verdict is a grep for "failure", which misses
+      # cocotb <error> elements (docs/submission/README.md R2(b)). The
+      # repository-owned check below is the authoritative results verdict.
+      - name: Remove any pre-existing GL results
+        run: rm -f test/results.xml
+
       - name: GL test
+        id: gl_sim
         uses: TinyTapeout/tt-gds-action/gl_test@ihp-cmos5l
+
+      # Runs after a successful OR failed simulation (so a failed simulation
+      # that produced XML is still checked), but not when the simulation step
+      # was skipped or the run was cancelled. The simulation step is never allowed to fail softly:
+      # a failed gl_sim step keeps the job red whatever this step reports, and
+      # a missing results.xml fails here explicitly.
+      - name: Validate GL results (repository-owned)
+        if: ${{ !cancelled() && (steps.gl_sim.outcome == 'success' || steps.gl_sim.outcome == 'failure') }}
+        run: python3 scripts/check_test_results.py test/results.xml
 
   viewer:
     needs: gds
