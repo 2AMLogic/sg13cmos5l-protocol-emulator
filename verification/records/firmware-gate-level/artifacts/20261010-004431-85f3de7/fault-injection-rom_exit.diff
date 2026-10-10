@@ -1,0 +1,20 @@
+--- verification/records/post-layout-sdf-regression/artifacts/20261009-220911-1dc1842/tt_um_2amlogic_protocol_emulator.v	2026-10-09 17:06:51
++++ <scratch>/gl-copy/mutant-rom_exit-stuck0.v	2026-10-09 17:47:46
+@@ -12095,7 +12095,7 @@
+     .X(delaynet_2_clk));
+  sg13cmos5l_buf_8 delaybuf_3_clk (.A(delaynet_2_clk),
+     .X(delaynet_3_clk));
+- sg13cmos5l_buf_1 fanout100 (.A(\u_core.rom_exit ),
++ sg13cmos5l_buf_1 fanout100 (.A(1'b0),
+     .X(net100));
+  sg13cmos5l_buf_1 fanout101 (.A(net102),
+     .X(net101));
+@@ -12709,7 +12709,7 @@
+     .X(net385));
+  sg13cmos5l_dlygate4sd3_1 hold387 (.A(uio_out[7]),
+     .X(net386));
+- sg13cmos5l_dlygate4sd3_1 hold388 (.A(\u_core.rom_exit ),
++ sg13cmos5l_dlygate4sd3_1 hold388 (.A(1'b0),
+     .X(net387));
+  sg13cmos5l_dlygate4sd3_1 hold389 (.A(uio_out[2]),
+     .X(net388));
