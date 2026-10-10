@@ -218,6 +218,16 @@ correctness signal — not a substitute for the flow-of-record run.
 > final routed one, not an intermediate post-synthesis netlist. The original
 > text above is left as written.
 >
+> *Update 2026-10-10 (issue #192).* The default module list of
+> `flow/run-firmware-gate-level.sh` now also includes
+> `test_firmware_uart_rx` (UART receive at 50 / 434 / 5,208 cycles/bit), with
+> the same WAIT-counter stuck-at as its negative control; and the seeded
+> RTL regression gains a `uart_rx` family (stimulus on `ui_in[1]`). Both are
+> RTL or zero-delay gate-level evidence only: no SDF-annotated firmware run,
+> no SRAM timing annotation, no electrical pad characterization and no
+> measured wall-clock baud. The seeded regression itself is still not run
+> on gates. Records for these runs are minted separately; none is claimed here.
+>
 > *Update 2026-10-10 (issue #106).* The SDF-annotated leg now passes: the
 > core bench's tests, run SDC-aligned through `verification/sdf_alignment.py`
 > (`flow/run-post-layout-sdf.sh`), give 12 passed and 1 skipped

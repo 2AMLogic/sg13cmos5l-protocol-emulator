@@ -1,0 +1,87 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuites name="cocotb tests"><testsuite name="test_firmware_uart_rx" errors="0" failures="8" skipped="0" tests="10" time="69.333" timestamp="2026-10-10T12:36:44.583912+00:00" hostname="loom-worker-1"><testcase classname="test_firmware_uart_rx" name="test_committed_images_are_fresh" time="0.005"><properties><property name="cocotb" value="True" /><property name="random_seed" value="1791635804" /><property name="file" value="&lt;repo&gt;/verification/test_firmware_uart_rx.py" /><property name="line" value="502" /><property name="sim_time_unit" value="ns" /><property name="sim_time_start" value="0.0" /><property name="sim_time_stop" value="0.0" /><property name="sim_time_duration" value="0.0" /><property name="sim_time_ratio" value="0.0" /></properties></testcase><testcase classname="test_firmware_uart_rx" name="test_pin_timing_calibration" time="0.014"><properties><property name="cocotb" value="True" /><property name="random_seed" value="1791635804" /><property name="file" value="&lt;repo&gt;/verification/test_firmware_uart_rx.py" /><property name="line" value="525" /><property name="sim_time_unit" value="ns" /><property name="sim_time_start" value="0.001" /><property name="sim_time_stop" value="2761.001" /><property name="sim_time_duration" value="2761.0" /><property name="sim_time_ratio" value="200087.13679239413" /></properties></testcase><testcase classname="test_firmware_uart_rx" name="test_uart_rx_1mbaud_class" time="0.747"><failure message="nominal 0xa5: 0 sample marks, expected 9&#10;  nominal 0x5a: 0 sample marks, expected 9&#10;  nominal 0x00: 0 sample marks, expected 9&#10;  jitter10% 0xff: 0 sample marks, expected 9&#10;  jitter10% 0x80: 0 sample marks, expected 9&#10;  +2% 0x01: 0 sample marks, expected 9&#10;  +2% 0x55: 0 sample marks, expected 9&#10;  -2% 0xaa: 0 sample marks, expected 9&#10;  -2% 0x40: 0 sample marks, expected 9&#10;  +2%+jit10% 0xc3: 0 sample marks, expected 9&#10;  -2%+jit10% 0xa5: 0 sample marks, expected 9&#10;  +0.2% 0x5a: 0 sample marks, expected 9&#10;  -0.2% 0x00: 0 sample marks, expected 9&#10;assert not ['nominal 0xa5: 0 sample marks, expected 9', 'nominal 0x5a: 0 sample marks, expected 9', 'nominal 0x00: 0 sample marks...0 sample marks, expected 9', 'jitter10% 0x80: 0 sample marks, expected 9', '+2% 0x01: 0 sample marks, expected 9', ...]" type="AssertionError">Traceback (most recent call last):
+  File "&lt;repo&gt;/verification/test_firmware_uart_rx.py", line 556, in test_uart_rx_1mbaud_class
+    await run_standard(dut, "uart_rx", seed=9100, reduced=False)
+  File "&lt;repo&gt;/verification/test_firmware_uart_rx.py", line 491, in run_standard
+    assert not failed, "\n".join(failed)
+AssertionError: nominal 0xa5: 0 sample marks, expected 9
+  nominal 0x5a: 0 sample marks, expected 9
+  nominal 0x00: 0 sample marks, expected 9
+  jitter10% 0xff: 0 sample marks, expected 9
+  jitter10% 0x80: 0 sample marks, expected 9
+  +2% 0x01: 0 sample marks, expected 9
+  +2% 0x55: 0 sample marks, expected 9
+  -2% 0xaa: 0 sample marks, expected 9
+  -2% 0x40: 0 sample marks, expected 9
+  +2%+jit10% 0xc3: 0 sample marks, expected 9
+  -2%+jit10% 0xa5: 0 sample marks, expected 9
+  +0.2% 0x5a: 0 sample marks, expected 9
+  -0.2% 0x00: 0 sample marks, expected 9
+assert not ['nominal 0xa5: 0 sample marks, expected 9', 'nominal 0x5a: 0 sample marks, expected 9', 'nominal 0x00: 0 sample marks...0 sample marks, expected 9', 'jitter10% 0x80: 0 sample marks, expected 9', '+2% 0x01: 0 sample marks, expected 9', ...]
+</failure><properties><property name="cocotb" value="True" /><property name="random_seed" value="1791635804" /><property name="file" value="&lt;repo&gt;/verification/test_firmware_uart_rx.py" /><property name="line" value="553" /><property name="sim_time_unit" value="ns" /><property name="sim_time_start" value="2761.002" /><property name="sim_time_stop" value="198262.002" /><property name="sim_time_duration" value="195501.0" /><property name="sim_time_ratio" value="261670.81747266627" /></properties><system-err>Test failed with COCOTB_RANDOM_SEED=1791635804
+</system-err></testcase><testcase classname="test_firmware_uart_rx" name="test_uart_rx_115200_class" time="5.294"><failure message="nominal 0xa5: 0 sample marks, expected 9&#10;  nominal 0x5a: 0 sample marks, expected 9&#10;  nominal 0x00: 0 sample marks, expected 9&#10;  jitter10% 0xff: 0 sample marks, expected 9&#10;  jitter10% 0x80: 0 sample marks, expected 9&#10;  +2% 0x01: 0 sample marks, expected 9&#10;  +2% 0x55: 0 sample marks, expected 9&#10;  -2% 0xaa: 0 sample marks, expected 9&#10;  -2% 0x40: 0 sample marks, expected 9&#10;  +2%+jit10% 0xc3: 0 sample marks, expected 9&#10;  -2%+jit10% 0xa5: 0 sample marks, expected 9&#10;  +0.2% 0x5a: 0 sample marks, expected 9&#10;  -0.2% 0x00: 0 sample marks, expected 9&#10;assert not ['nominal 0xa5: 0 sample marks, expected 9', 'nominal 0x5a: 0 sample marks, expected 9', 'nominal 0x00: 0 sample marks...0 sample marks, expected 9', 'jitter10% 0x80: 0 sample marks, expected 9', '+2% 0x01: 0 sample marks, expected 9', ...]" type="AssertionError">Traceback (most recent call last):
+  File "&lt;repo&gt;/verification/test_firmware_uart_rx.py", line 562, in test_uart_rx_115200_class
+    await run_standard(dut, "uart_rx_115200", seed=9110, reduced=False)
+  File "&lt;repo&gt;/verification/test_firmware_uart_rx.py", line 491, in run_standard
+    assert not failed, "\n".join(failed)
+AssertionError: nominal 0xa5: 0 sample marks, expected 9
+  nominal 0x5a: 0 sample marks, expected 9
+  nominal 0x00: 0 sample marks, expected 9
+  jitter10% 0xff: 0 sample marks, expected 9
+  jitter10% 0x80: 0 sample marks, expected 9
+  +2% 0x01: 0 sample marks, expected 9
+  +2% 0x55: 0 sample marks, expected 9
+  -2% 0xaa: 0 sample marks, expected 9
+  -2% 0x40: 0 sample marks, expected 9
+  +2%+jit10% 0xc3: 0 sample marks, expected 9
+  -2%+jit10% 0xa5: 0 sample marks, expected 9
+  +0.2% 0x5a: 0 sample marks, expected 9
+  -0.2% 0x00: 0 sample marks, expected 9
+assert not ['nominal 0xa5: 0 sample marks, expected 9', 'nominal 0x5a: 0 sample marks, expected 9', 'nominal 0x00: 0 sample marks...0 sample marks, expected 9', 'jitter10% 0x80: 0 sample marks, expected 9', '+2% 0x01: 0 sample marks, expected 9', ...]
+</failure><properties><property name="cocotb" value="True" /><property name="random_seed" value="1791635804" /><property name="file" value="&lt;repo&gt;/verification/test_firmware_uart_rx.py" /><property name="line" value="559" /><property name="sim_time_unit" value="ns" /><property name="sim_time_start" value="198262.003" /><property name="sim_time_stop" value="1580323.003" /><property name="sim_time_duration" value="1382061.0" /><property name="sim_time_ratio" value="261046.82909952183" /></properties><system-err>Test failed with COCOTB_RANDOM_SEED=1791635804
+</system-err></testcase><testcase classname="test_firmware_uart_rx" name="test_uart_rx_9600_class" time="40.802"><failure message="nominal 0xa5: 0 sample marks, expected 9&#10;  nominal 0x5a: 0 sample marks, expected 9&#10;  jitter10% 0x00: 0 sample marks, expected 9&#10;  +2% 0xff: 0 sample marks, expected 9&#10;  -2% 0x80: 0 sample marks, expected 9&#10;  +2%+jit10% 0x01: 0 sample marks, expected 9&#10;assert not ['nominal 0xa5: 0 sample marks, expected 9', 'nominal 0x5a: 0 sample marks, expected 9', 'jitter10% 0x00: 0 sample mar...ff: 0 sample marks, expected 9', '-2% 0x80: 0 sample marks, expected 9', '+2%+jit10% 0x01: 0 sample marks, expected 9']" type="AssertionError">Traceback (most recent call last):
+  File "&lt;repo&gt;/verification/test_firmware_uart_rx.py", line 568, in test_uart_rx_9600_class
+    await run_standard(dut, "uart_rx_9600", seed=9120, reduced=True)
+  File "&lt;repo&gt;/verification/test_firmware_uart_rx.py", line 491, in run_standard
+    assert not failed, "\n".join(failed)
+AssertionError: nominal 0xa5: 0 sample marks, expected 9
+  nominal 0x5a: 0 sample marks, expected 9
+  jitter10% 0x00: 0 sample marks, expected 9
+  +2% 0xff: 0 sample marks, expected 9
+  -2% 0x80: 0 sample marks, expected 9
+  +2%+jit10% 0x01: 0 sample marks, expected 9
+assert not ['nominal 0xa5: 0 sample marks, expected 9', 'nominal 0x5a: 0 sample marks, expected 9', 'jitter10% 0x00: 0 sample mar...ff: 0 sample marks, expected 9', '-2% 0x80: 0 sample marks, expected 9', '+2%+jit10% 0x01: 0 sample marks, expected 9']
+</failure><properties><property name="cocotb" value="True" /><property name="random_seed" value="1791635804" /><property name="file" value="&lt;repo&gt;/verification/test_firmware_uart_rx.py" /><property name="line" value="565" /><property name="sim_time_unit" value="ns" /><property name="sim_time_start" value="1580323.004" /><property name="sim_time_stop" value="8998444.004" /><property name="sim_time_duration" value="7418121.000000001" /><property name="sim_time_ratio" value="181809.76202764985" /></properties><system-err>Test failed with COCOTB_RANDOM_SEED=1791635804
+</system-err></testcase><testcase classname="test_firmware_uart_rx" name="test_negative_control_rate_error_beyond_tolerance" time="6.519"><failure message="receiver must tolerate +-2 % (x1.02): [False, False, False, False]&#10;assert False&#10; +  where False = all([False, False, False, False])" type="AssertionError">Traceback (most recent call last):
+  File "&lt;repo&gt;/verification/test_firmware_uart_rx.py", line 593, in test_negative_control_rate_error_beyond_tolerance
+    assert all(by_scale[s]), f"receiver must tolerate +-2 % (x{s:g}): {by_scale[s]}"
+AssertionError: receiver must tolerate +-2 % (x1.02): [False, False, False, False]
+assert False
+ +  where False = all([False, False, False, False])
+</failure><properties><property name="cocotb" value="True" /><property name="random_seed" value="1791635804" /><property name="file" value="&lt;repo&gt;/verification/test_firmware_uart_rx.py" /><property name="line" value="571" /><property name="sim_time_unit" value="ns" /><property name="sim_time_start" value="8998444.005" /><property name="sim_time_stop" value="9913945.005" /><property name="sim_time_duration" value="915501.0" /><property name="sim_time_ratio" value="140425.4123106026" /></properties><system-err>Test failed with COCOTB_RANDOM_SEED=1791635804
+</system-err></testcase><testcase classname="test_firmware_uart_rx" name="test_framing_error_flag_and_recovery" time="0.319"><failure message="stop-low: 0 sample marks, expected 9&#10;  good-after: 0 sample marks, expected 9&#10;assert not ['stop-low: 0 sample marks, expected 9', 'good-after: 0 sample marks, expected 9']" type="AssertionError">Traceback (most recent call last):
+  File "&lt;repo&gt;/verification/test_firmware_uart_rx.py", line 627, in test_framing_error_flag_and_recovery
+    assert not failed, "\n".join(failed)
+AssertionError: stop-low: 0 sample marks, expected 9
+  good-after: 0 sample marks, expected 9
+assert not ['stop-low: 0 sample marks, expected 9', 'good-after: 0 sample marks, expected 9']
+</failure><properties><property name="cocotb" value="True" /><property name="random_seed" value="1791635804" /><property name="file" value="&lt;repo&gt;/verification/test_firmware_uart_rx.py" /><property name="line" value="613" /><property name="sim_time_unit" value="ns" /><property name="sim_time_start" value="9913945.006" /><property name="sim_time_stop" value="9986446.006" /><property name="sim_time_duration" value="72501.0" /><property name="sim_time_ratio" value="227285.36387802797" /></properties><system-err>Test failed with COCOTB_RANDOM_SEED=1791635804
+</system-err></testcase><testcase classname="test_firmware_uart_rx" name="test_ui_in0_prog_ser_has_no_effect" time="0.404"><failure message="held-low-a5: ['0 sample marks, expected 9']&#10;assert not ['0 sample marks, expected 9']" type="AssertionError">Traceback (most recent call last):
+  File "&lt;repo&gt;/verification/test_firmware_uart_rx.py", line 645, in test_ui_in0_prog_ser_has_no_effect
+    assert not bad, f"{spec.label}: {bad}"
+AssertionError: held-low-a5: ['0 sample marks, expected 9']
+assert not ['0 sample marks, expected 9']
+</failure><properties><property name="cocotb" value="True" /><property name="random_seed" value="1791635804" /><property name="file" value="&lt;repo&gt;/verification/test_firmware_uart_rx.py" /><property name="line" value="630" /><property name="sim_time_unit" value="ns" /><property name="sim_time_start" value="9986446.007" /><property name="sim_time_stop" value="10079947.007" /><property name="sim_time_duration" value="93501.0" /><property name="sim_time_ratio" value="231459.215970102" /></properties><system-err>Test failed with COCOTB_RANDOM_SEED=1791635804
+</system-err></testcase><testcase classname="test_firmware_uart_rx" name="test_negative_control_spacing_checker_can_fail" time="0.262"><failure message="assert 0 == (10 - 1)&#10; +  where 0 = len([])" type="AssertionError">Traceback (most recent call last):
+  File "&lt;repo&gt;/verification/test_firmware_uart_rx.py", line 662, in test_negative_control_spacing_checker_can_fail
+    assert len(marks) == UART_FRAME_BITS - 1
+AssertionError: assert 0 == (10 - 1)
+ +  where 0 = len([])
+</failure><properties><property name="cocotb" value="True" /><property name="random_seed" value="1791635804" /><property name="file" value="&lt;repo&gt;/verification/test_firmware_uart_rx.py" /><property name="line" value="653" /><property name="sim_time_unit" value="ns" /><property name="sim_time_start" value="10079947.008" /><property name="sim_time_stop" value="10137448.008" /><property name="sim_time_duration" value="57501.0" /><property name="sim_time_ratio" value="219619.36928133064" /></properties><system-err>Test failed with COCOTB_RANDOM_SEED=1791635804
+</system-err></testcase><testcase classname="test_firmware_uart_rx" name="test_uart_tx_9600_low_baud" time="14.967"><failure message="[]&#10;assert [] == [90, 165]" type="AssertionError">Traceback (most recent call last):
+  File "&lt;repo&gt;/verification/test_firmware_uart_rx.py", line 692, in test_uart_tx_9600_low_baud
+    assert [r.data for r in reports] == [0x5A, 0xA5], reports
+AssertionError: []
+assert [] == [90, 165]
+</failure><properties><property name="cocotb" value="True" /><property name="random_seed" value="1791635804" /><property name="file" value="&lt;repo&gt;/verification/test_firmware_uart_rx.py" /><property name="line" value="671" /><property name="sim_time_unit" value="ns" /><property name="sim_time_start" value="10137448.009" /><property name="sim_time_stop" value="13214969.009" /><property name="sim_time_duration" value="3077521.0" /><property name="sim_time_ratio" value="205625.21699458215" /></properties><system-err>Test failed with COCOTB_RANDOM_SEED=1791635804
+</system-err></testcase></testsuite></testsuites>

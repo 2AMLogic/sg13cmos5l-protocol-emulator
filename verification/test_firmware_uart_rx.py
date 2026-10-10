@@ -381,13 +381,20 @@ def frame_ok(spec, res, period_cycles, strict_center=False):
     return fails
 
 
-async def run_rx(dut, stem, frames, seed, ui0_toggle_cycles=0):
+async def run_rx(dut, stem, frames, seed, ui0_toggle_cycles=0, start_clock=True,
+                 words=None):
     """Load `stem`, drive `frames`, capture, analyse.  Returns
-    `(results, line)` with `line` on the capture's absolute time base."""
+    `(results, line)` with `line` on the capture's absolute time base.
+    `start_clock=False` lets a caller that runs many programs in one test
+    (the seeded regression, issue #192) own the single clock coroutine;
+    `words` runs that image instead of the committed `stem` one (the
+    regression's own assembly of the case; `stem` still names the bit period)."""
     period = RX_PROGRAMS[stem]
     rng = random.Random(seed)
-    cocotb.start_soon(Clock(dut.clk, CLK_PERIOD_NS, unit="ns").start())
-    words = load_image(stem)
+    if start_clock:
+        cocotb.start_soon(Clock(dut.clk, CLK_PERIOD_NS, unit="ns").start())
+    if words is None:
+        words = load_image(stem)
     assert len(words) <= 256, f"{stem}: {len(words)} words exceeds the 256-word store"
     await load_program(dut, words)
     UI0["v"] = 0  # PROG_SER idles low after the MODE drop

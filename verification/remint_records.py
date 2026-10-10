@@ -24,7 +24,8 @@ With `--rerun`, for every stale record that names request file(s):
    distinct request (single-threaded, one at a time);
 2. if every request passes, writes a NEW record
    `<experiment>/records/<new-id>.md` plus `artifacts/<new-id>/` (the klt
-   envelope and its results XML, absolute paths replaced by `<repo>`/`<home>`),
+   envelope and its results XML, absolute paths replaced by `<repo>`/`<home>`; in the XML as
+   `&lt;repo&gt;`/`&lt;home&gt;` so it stays well-formed),
    with `supersedes` = the stale record's ID, `git_revision` = HEAD, and every
    input hash recomputed from the tree. The old record is never edited or
    deleted. The new record's prose is the old record's, with Record ID,
@@ -133,6 +134,27 @@ def print_report(report: list[dict]) -> None:
 def _sanitize(text: str) -> str:
     text = text.replace(str(REPO_ROOT), "<repo>")
     return text.replace(str(Path.home()), "<home>")
+
+
+# Placeholder tokens the evidence workflow substitutes for host paths.
+PLACEHOLDERS = ("repo", "home", "scratch", "PDK_ROOT")
+
+
+def escape_placeholders(text: str) -> str:
+    """Rewrite literal `<repo>`-style placeholders as `&lt;repo&gt;`.
+
+    A literal `<` is forbidden in an XML attribute value, and a bare
+    `<repo>` in text content is parsed as a (never closed) element, so a
+    placeholder dropped into a results XML makes the file unparseable
+    (#192 review). The escaped form parses back to exactly `<repo>`."""
+    for name in PLACEHOLDERS:
+        text = text.replace(f"<{name}>", f"&lt;{name}&gt;")
+    return text
+
+
+def _sanitize_xml(text: str) -> str:
+    """`_sanitize` for XML: same substitutions, XML-escaped placeholders."""
+    return escape_placeholders(_sanitize(text))
 
 
 def run_request(klt: list[str], request: str) -> tuple[dict, str | None]:
@@ -272,7 +294,7 @@ def mint(entry: dict, envelopes: dict[str, dict], xmls: dict[str, str | None],
         xml_text = xmls.get(req)
         if xml_text is not None:
             x_name = f"results_{env.get('engine', 'sim')}{suffix}.xml"
-            (art_dir / x_name).write_text(_sanitize(xml_text), encoding="utf-8")
+            (art_dir / x_name).write_text(_sanitize_xml(xml_text), encoding="utf-8")
             files.append(x_name)
         names[req] = files
     old_text = path.read_text(encoding="utf-8")

@@ -10,6 +10,13 @@
 # vendored SRAM macro behavioural model, -DFUNCTIONAL). No klt synthesis or
 # timing number is produced or implied.
 #
+# UART RX (issue #192): test_firmware_uart_rx drives the reference-model
+# receive frames on ui_in[1] into the netlist and reads the byte on uo_out and
+# the sample marks on uio_out. It is pin-only, so the WAIT-counter fault is
+# the right negative control (the receiver's inter-sample delays are WAITs).
+# Zero-delay: no SDF, no SRAM timing annotation, no pad electrical behaviour,
+# no measured wall-clock baud.
+#
 # Which netlist: the `tt_submission` artifact's `<top>.v` of a `gds` workflow
 # run -- the final netlist that the template's own `gl_test` job compiles.
 # Default: the byte-identical copy frozen under verification/records/
@@ -76,7 +83,9 @@
 #
 # Usage:  ./flow/run-firmware-gate-level.sh [--netlist FILE] [--full] [--control-space] [--boot-rom] [--boot-spi] [--boot-uart]
 #   --full  also runs verification/test_firmware_i2c_sr.py (the Sr/stretch
-#           sibling bench); default is the three issue-#108 protocol benches.
+#           sibling bench); default is the UART TX, UART RX, SPI and I2C
+#           protocol benches (the three issue-#108 benches plus the UART RX
+#           bench, issue #192).
 #   --control-space  also runs verification/test_control_space.py.
 #   --boot-rom       also runs verification/test_boot_rom.py.
 #   --boot-spi       also runs verification/test_boot_spi.py.
@@ -90,7 +99,7 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SCRATCH="${REPO_ROOT}/flow/firmware-gate-level"
 NETLIST="${REPO_ROOT}/verification/records/post-layout-sdf-regression/artifacts/20261010-133000-a0f91e3/tt_um_2amlogic_protocol_emulator.v"
-MODULES=(test_firmware_uart test_firmware_spi test_firmware_i2c)
+MODULES=(test_firmware_uart test_firmware_uart_rx test_firmware_spi test_firmware_i2c)
 export PDK_ROOT="${PDK_ROOT:-$HOME/share/pdk}"
 
 while [ $# -gt 0 ]; do
@@ -101,7 +110,7 @@ while [ $# -gt 0 ]; do
     --boot-rom) MODULES+=(test_boot_rom); shift ;;
     --boot-spi) MODULES+=(test_boot_spi); shift ;;
     --boot-uart) MODULES+=(test_boot_uart); shift ;;
-    -h|--help) sed -n '2,84p' "${BASH_SOURCE[0]}"; exit 0 ;;
+    -h|--help) sed -n '2,95p' "${BASH_SOURCE[0]}"; exit 0 ;;
     *) echo "FATAL: unknown argument $1" >&2; exit 1 ;;
   esac
 done
