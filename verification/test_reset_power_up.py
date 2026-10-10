@@ -38,7 +38,11 @@ clause it breaks:
 
 - **[row14-b] pins**: `uo_out`, `uio_out`, `uio_oe` are free of X/Z and
   equal the documented reset state (all 0x00: every `uio` pin an input,
-  DR 0012) -- from the first edge in reset to the end of the window;
+  DR 0012) -- from the first edge in reset to the end of the window, except
+  where the boot ROM's own program writes them: strap 01's SPI-flash boot
+  (issue #140) drives the flash's CS0/MOSI/SCK, so for strap 01 the pins
+  after reset must equal, edge for edge, what the independent `BootModel`
+  says that program writes (`test_boot_spi.predict`), and `uo_out` stays 0;
 - **[row14-a] state**: in reset, every flop holds its documented reset
   value (0: every register in `rtl/` resets to 0, and every
   `sg13cmos5l_dfrbpq_1` resets to 0); after reset, no flop is X;
@@ -49,7 +53,12 @@ clause it breaks:
   memory as data (0 for the stub straps, 256 for the warm-start check);
   at the end of the window the core is halted at the stub DR 0013's strap
   table names. That is "decodes nothing from program memory" checked on
-  the PC and the macro's read strobe, not only on the pins.
+  the PC and the macro's read strobe, not only on the pins. Program memory
+  is unchanged, except on strap 01: the SPI-flash boot writes the 256 words
+  it reads into program memory and then refuses them (the bench holds
+  `uio_in` at 0, test_boot_spi.py's "no Pmod, MISO low" case: an all-zero
+  image, whose zero signature is refused), so there the memory must equal
+  what the model wrote, and the core halts at `spi_fail`, never running it.
 
 And across runs: for the stub straps the **whole flop trace** -- every flop,
 every edge -- is bit-identical across the all-X run and every seed; for the
@@ -87,6 +96,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import reset_coverage  # noqa: E402  (the netlist parser the listing uses)
 import test_boot_rom as boot  # noqa: E402  (BootModel, the canary, the loaders)
+import test_boot_spi as spi  # noqa: E402  (strap 01: the SPI-flash boot's model, issue #140)
 from firmware_artifacts import parse_hex_image, total_cycles  # noqa: E402
 
 GATE_LEVEL = os.environ.get("GATES") == "yes"
@@ -248,21 +258,26 @@ def random_state(h, rng):
 # ---------------------------------------------------------------------------
 # Sampling
 # ---------------------------------------------------------------------------
-async def sample(dut, h, label, in_reset, violations_out=None):
+async def sample(dut, h, label, in_reset, violations_out=None, want=None):
     """One sample, after the edge just taken. Returns (pins, state, a_ren).
-    Every violation is collected and asserted together, tagged."""
+    Every violation is collected and asserted together, tagged. `want`
+    maps a pin to the value the boot program has written to it by this
+    edge (strap 01 only); every other pin must hold its reset value 0."""
     await ReadOnly()
     v = []
     pins = {}
     for name in PINS:
         value = getattr(dut, name).value
+        expected = (want or {}).get(name, 0)
         if not value.is_resolvable:
             v.append(f"[row14-b] {name} = {value} (X/Z on a pin)")
             pins[name] = str(value)
         else:
             pins[name] = int(value)
-            if pins[name] != 0:
-                v.append(f"[row14-b] {name} = {pins[name]:#04x}, documented reset state is 0x00")
+            if pins[name] != expected:
+                what = ("the boot program has written" if want and name in want
+                        else "documented reset state is")
+                v.append(f"[row14-b] {name} = {pins[name]:#04x}, {what} {expected:#04x}")
     state = h.state()
     if in_reset:
         bad = [h.names[i] for i, c in enumerate(state) if c != str(DOCUMENTED_RESET_VALUE)]
@@ -301,16 +316,31 @@ async def reset_and_observe(dut, h, straps, label):
         await RisingEdge(dut.clk)
         await sample(dut, h, f"{label}, reset edge {e + 1}", in_reset=True)
     image = h.read_memory()
-    result, model = boot.boot_outcome(straps, image)
-    stub = boot.expected_stub(straps, result)
+    if straps == boot.STRAP_SPI:
+        # Strap 01 runs the SPI-flash boot (issue #140). uio_in is held at 0
+        # here, test_boot_spi.py's "no Pmod, MISO low": the model reads an
+        # all-zero image, refuses its zero signature and halts at spi_fail.
+        result, model, _flash, timeline = spi.predict(None, "down", spi.board_pulls("down"))
+        stub = boot.stub_addresses()["spi_fail"]
+        assert result["outcome"] == "halt" and result["pc"] == stub, (
+            f"model: straps 01 with uio_in = 0 ended {result}, expected a HALT at spi_fail {stub:#04x}")
+        image_after = list(model.pm)
+    else:
+        result, model = boot.boot_outcome(straps, image)
+        stub = boot.expected_stub(straps, result)
+        timeline, image_after = None, image
     dut.rst_n.value = 1
     await RisingEdge(dut.clk)  # edge 0: the mode-sampling edge
     edges = boot.RUN_ENTRY_EDGES + result["cycles"] + WINDOW_TAIL
+    want_pins = spi.timeline_at(timeline, edges) if timeline is not None else None
     trace, pins_trace, reads = [], [], 0
     for e in range(edges + 1):
         if e:
             await RisingEdge(dut.clk)
-        pins, state, a_ren = await sample(dut, h, f"{label}, edge {e}", in_reset=False)
+        want = None
+        if want_pins is not None:
+            want = {"uio_out": want_pins[e][0], "uio_oe": want_pins[e][1]}
+        pins, state, a_ren = await sample(dut, h, f"{label}, edge {e}", in_reset=False, want=want)
         trace.append(state)
         pins_trace.append(f"{pins['uo_out']:02x}{pins['uio_out']:02x}{pins['uio_oe']:02x}")
         reads += a_ren
@@ -325,7 +355,12 @@ async def reset_and_observe(dut, h, straps, label):
         f"memory as data {model.pm_reads} time(s), so {reads - model.pm_reads} read(s) were fetches"
     )
     after = h.read_memory()
-    assert after == image, f"{label}: [row14-c] program memory changed while the boot ROM ran"
+    if straps == boot.STRAP_SPI:
+        assert after == image_after, (
+            f"{label}: [row14-c] program memory is not what the SPI-flash boot wrote "
+            f"({sum(a != b for a, b in zip(after, image_after))} word(s) differ)")
+    else:
+        assert after == image, f"{label}: [row14-c] program memory changed while the boot ROM ran"
     return {
         "straps": f"{straps:02b}", "edges_after_reset": edges, "stub_pc": stub,
         "sram_reads": reads, "sram_x_words": sum(w is None for w in image),
