@@ -71,7 +71,7 @@ untouched by loading.
 boot ROM** (`spec/decision-records/0013-program-loading.md` layer 2,
 Proposed). After a power-up or a reselect the SRAM holds nothing a host put
 there, so the core fetches from a small on-chip ROM instead. The ROM is
-synthesized logic, 30 words of the 128 the record allows, and its contents
+synthesized logic, 93 words of the 128 the record allows, and its contents
 are a program in this same instruction set
 ([`firmware/asm/boot/boot_rom.asm`](../firmware/asm/boot/boot_rom.asm));
 `rtl/protocol_boot_rom.v` is generated from the committed image. The boot
@@ -80,11 +80,19 @@ program's first instruction reads two straps on `ui_in[6:5]`:
 | `ui_in[6:5]` | Boot program | Today |
 |---|---|---|
 | `00` | UART load | stub: idles |
-| `01` | SPI-flash boot | stub: idles |
+| `01` | SPI-flash boot: read 512 bytes from a QSPI Pmod flash, check, run | implemented |
 | `10` | warm start: run the image already in program memory if it checks | implemented |
 | `11` | reserved, behaves as `00` | stub: idles |
 
-A stub halts with every `uio` pin an input and `uo_out` at 0. The warm
+A stub halts with every `uio` pin an input and `uo_out` at 0. The SPI-flash
+boot makes `uio[0]` (CS0), `uio[1]` (MOSI) and `uio[3]` (SCK) outputs and
+reads `uio[2]` (MISO): the Tiny Tapeout QSPI Pmod's pinout. It reads 512
+bytes from flash address 0 with the single-bit `0x03` command (SPI mode 0),
+writes them to program memory, checks word 255 against the CRC of words
+0-254 exactly as the warm start does (and refuses a signature of
+`0x0000`), then releases every pin and runs the image from address 0 after
+58,793 cycles, or halts with every pin an input. How to put an image on the
+flash: [spi-flash-boot.md](spi-flash-boot.md). The warm
 start is for an `rst_n` pulse while the design stays selected. It runs
 program memory from address 0 only if word 255 equals the CRC-16/XMODEM of
 words 0–254 (high byte of each word first); otherwise it falls through to
@@ -264,7 +272,7 @@ Fixed by the RTL (`src/tt_um_2amlogic_protocol_emulator.v`), not provisional:
 | Pin | Role |
 |---|---|
 | `ui_in[7]` | MODE: high across `rst_n` release selects load phase; low runs the boot ROM |
-| `ui_in[6:5]` | straps, read once by the boot ROM's program when MODE is low at reset (`00`/`11` UART-load stub, `01` SPI-flash stub, `10` warm start). The read is an ordinary `IN`, not strap hardware; a loaded program sees these as plain input bits |
+| `ui_in[6:5]` | straps, read once by the boot ROM's program when MODE is low at reset (`00`/`11` UART-load stub, `01` SPI-flash boot, `10` warm start). The read is an ordinary `IN`, not strap hardware; a loaded program sees these as plain input bits |
 | `ui_in[0]` | serial program data in load phase, MSB first |
 | `uio_oe[7:0]` | set by firmware: `UIO_OD[n]` → open-drain (`uio_oe[n] = ~uio_out[n]`), else `UIO_DIR[n]` → push-pull, else input. **0 after reset**: every bidirectional pin is an input until a program writes `UIO_DIR` or `UIO_OD` |
 | `uio_out[7:0]` | written by `OUT`; reaches a pin only where `uio_oe` enables it |
@@ -354,6 +362,13 @@ Pmods that put UART, SPI or I2C on one four-pin `uio` row. Against those:
 The plan is to move to the recommended pins (UART option B, SPI and I2C on
 the upper Pmod row) once the `uio` pins can be driven. See DR 0010, "Target
 pin plan"; the move is tracked in #155.
+
+**Required for the SPI-flash boot (strap `01`):** a Tiny Tapeout QSPI
+flash/PSRAM Pmod in the bidirectional header, with an image written to its
+flash ([spi-flash-boot.md](spi-flash-boot.md)). The boot drives only
+`uio[0]`, `uio[1]` and `uio[3]`; the Pmod's pull-ups hold the two PSRAM chip
+selects (`uio[6]`, `uio[7]`) deselected. Without it, strap `01` reads zeros or
+ones, rejects them and halts.
 
 **Not required:** UART and SPI at 3.3 V with 3.3 V peers need no extra parts
 beyond that wiring.

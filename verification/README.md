@@ -108,6 +108,27 @@ coverage.
   `boot_rom_mutants.py` is its negative-control runner (ten single defects
   in the RTL and in the boot program, each caught by a test meant to
   catch it). Evidence in `records/boot-rom/`.
+- `test_boot_spi.py` — cocotb bench for DR 0013 layer 2, strap `01`, the
+  SPI-flash boot (issue #140). The flash is `reference_models/spi_flash.py`,
+  an independent behavioural model that answers `0x03` reads from a byte
+  image and checks SPI mode 0 on every edge (its own unit tests are
+  `test_spi_flash_model.py`, run by `npm run lint`); it sees only the pins
+  the design drives, resolved through the pad model with the Pmod's CS
+  pull-up. A clean boot is one transaction (`0x03`, address 0, 512 bytes) and
+  no violation, and the design's `uio_out`/`uio_oe` equal, on every edge,
+  those of `BootModel` (the ISA interpreter of `test_boot_rom.py`) running
+  the committed boot image against its own flash model. A blank flash, no
+  Pmod (MISO high or low), a flash of zeros, fourteen images one defect from
+  a good one, a shifted and a truncated image, and a valid-CRC image with a
+  zero signature are never run and leave every pin an input; the committed
+  `uart_tx` and `spi_mode0` programs boot from the flash and are graded by
+  their reference models; only `uio[0]`, `uio[1]` and `uio[3]` are ever
+  driven, so the PSRAM chip selects stay with the Pmod's pull-ups. Runs on a
+  gate-level netlist with `flow/run-firmware-gate-level.sh --boot-spi`.
+  Driven by `klt functional-verification` (`request-boot-spi.json`);
+  `boot_spi_mutants.py` rebuilds the boot chain from a mutated source per
+  defect, so the bench has to see each one in the flash model's record, the
+  pins or the outcome. Evidence in `records/boot-spi/`.
 - `test_program_memory.py` — cocotb testbench for
   `rtl/protocol_program_memory.v`, the program memory and serial
   load-phase logic (target-spec row 6, issue #19): loads known programs

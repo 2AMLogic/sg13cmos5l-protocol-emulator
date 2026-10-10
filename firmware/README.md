@@ -46,6 +46,9 @@ firmware/
     test_gen_boot_rom.py  its unit tests (the 128-word cap, determinism,
                           stale and hand-edited ROMs)
     check_firmware.py     every freshness check in one command
+    mkflash.py            turns a .hex into the 512-byte signed flash image
+                          the SPI-flash boot loads (issue #140);
+                          test_mkflash.py tests it
 ```
 
 ## Cold-start invocation (a third party can run this from a fresh clone)
@@ -96,7 +99,7 @@ python3 firmware/tools/gen_boot_rom.py
 
 `check_firmware.py` checks both links, so a ROM that no longer matches the
 committed program fails CI at the link that went stale. The generator
-refuses an image over **128 words** (DR 0013's cap); the image is **30**.
+refuses an image over **128 words** (DR 0013's cap); the image is **93**.
 
 What the program does: its first instruction reads the straps `ui_in[6:5]`.
 Strap `10` is the **warm start**: it reads every word of program memory and
@@ -108,9 +111,23 @@ values, so a warm-started program starts in the state a serial-loaded one
 does, except that it reads `BOOT_STATUS = 0x00`. One pass of the loop is 9
 cycles (`.cyclesec warm_word`), and word 0 of a verified image executes
 exactly 2,323 cycles after the boot program's first instruction. Straps
-`00`, `01` and `11` are **stubs** (one `HALT` each) until the UART load
-(#139) and the SPI-flash boot (#140) land; a failed warm start falls
-through to the UART stub. A stub drives nothing.
+`00` and `11` are a **stub** (one `HALT`) until the UART load (#139) lands;
+a failed warm start falls through to it. A stub drives nothing.
+
+Strap `01` is the **SPI-flash boot** (issue #140, `spi_boot` at the end of
+the source, 63 words): it makes CS0, MOSI and SCK (`uio[0]`, `uio[1]`,
+`uio[3]`, the Tiny Tapeout QSPI Pmod pinout) outputs, runs one SPI mode 0
+transaction (`0x03`, address 0, 512 bytes), commits each word through
+`PM_*`, checks `PM_CRC` against the warm start's signature, releases every
+pin, and either takes the warm start's hand-over (`run_image`) or halts.
+`firmware/tools/mkflash.py` makes a flash image from a committed `.hex`;
+[`docs/spi-flash-boot.md`](../docs/spi-flash-boot.md) is the guide to
+putting one on the Pmod. Bench: `verification/test_boot_spi.py`
+(`verification/request-boot-spi.json`), negative controls
+`verification/boot_spi_mutants.py`, evidence in
+`verification/records/boot-spi/`. The two boot programs together use 93
+of the 128 words, which leaves 35 for the UART load (DR 0013, implementation
+notes of issue #140).
 
 The assembler reports three data-dependent-branch warnings for this
 program, all intended: the two strap branches and the CRC verdict. None

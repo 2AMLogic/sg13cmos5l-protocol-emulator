@@ -329,6 +329,11 @@ auditable rather than a bare assertion:
   - a SPI-flash behavioural model that answers `0x03` reads from an image
   - corrupted frames and flash contents, which must never reach `RUN`
 
+  The SPI-flash half is built (issue #140): `verification/test_boot_spi.py`
+  with `verification/reference_models/spi_flash.py`, which checks SPI mode 0
+  as well as answering `0x03`, plus the rule that the boot drives only the
+  Pmod's CS0, MOSI and SCK pins. The UART half is issue #139.
+
   The ROM image is freshness-checked against its `.asm` source like every
   other committed `.hex`.
 - **Runtime swap.** A program loads a second program through `PM_*` and runs
