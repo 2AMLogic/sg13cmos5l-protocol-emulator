@@ -234,7 +234,29 @@ module protocol_program_memory (
   // `pm_re` data access reads it. With `MODE` low at reset the array's
   // unloaded contents therefore never reach `instr_word` until the boot
   // program's `WCTL RUN`, and the macro idles (A_MEN low) meanwhile.
-  wire        mem_ren   = !load_active && !run_wen && (fetch_en || pm_re);
+  wire        mem_ren_l = !load_active && !run_wen && (fetch_en || pm_re);
+
+  // Issue #173: in the LibreLane flow (which defines __librelane__ for
+  // synthesis), A_REN is driven through an explicit x4 standard-cell
+  // buffer. The macro liberty measures input slew at 30/70 %
+  // with slew_derate_from_library 0.5 and the standard cells at 20/80 %
+  // with 1.0, so STA reads a standard-cell driver's slew 4/3 larger at
+  // this pin than the resizer budgets for, and the LibreLane flow's
+  // design repair never sees it: the weak gate synthesis leaves on this
+  // net (a sg13cmos5l_nor3_1) reached 0.7462 ns against the 0.5952 ns
+  // slow-corner limit on gds run 37996177546, and 0.549 ns on run
+  // 38027439469. No LibreLane design-repair setting reaches the net
+  // without rebuffering the whole design (measured in the
+  // librelane-corner-timing record of #173). Simulation and the klt/Yosys
+  // flow (neither defines __librelane__) take the plain assign: the
+  // buffer is logically a wire, so behaviour is unchanged, and the two
+  // flows' netlists differ by exactly this one cell.
+  wire        mem_ren;
+`ifdef __librelane__
+  sg13cmos5l_buf_4 u_ren_drv (.A(mem_ren_l), .X(mem_ren));
+`else
+  assign mem_ren = mem_ren_l;
+`endif
 
   wire        mem_men   = mem_wen || mem_ren;
   wire [7:0]  mem_addr  = load_active          ? wr_addr :
