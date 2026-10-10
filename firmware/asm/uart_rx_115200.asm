@@ -10,21 +10,23 @@
 ; nominal. Needs one outer-loop pass (nested WAIT): a bit period above 256.
 ;
 ; Pins:
-;   RX          UI_IN bit 0 (idle HIGH). Held high by the bench from the MODE
-;               drop onward; the program also waits for a high line (`sync`)
+;   RX          UI_IN bit 1 (idle HIGH; DR 0010 target pin plan, USB-bridge
+;               option B). UI_IN bit 0 is PROG_SER and plays no part here.
+;               Held high by the bench from the MODE drop onward; the program also waits for a high line (`sync`)
 ;               before arming start detect, so a low line at boot is not a
 ;               start bit.
 ;   result      UO_OUT, all 8 bits: the received byte, written as soon as the
 ;               8th data bit has been sampled; holds until the next frame.
-;   sample mark UIO_OUT bit 0: high for the cycles between each `IN` of the
+;   sample mark UIO_OUT bit 1: high for the cycles between each `IN` of the
 ;               line and the following clear. Observability aid so the bench
 ;               can read the firmware's real sample instants off the pins.
-;   frame error UIO_OUT bit 1: set after the stop-bit sample when the stop bit
+;   frame error UIO_OUT bit 2: set after the stop-bit sample when the stop bit
 ;               read 0; cleared by the next frame's first sample mark.
 ;
 ; Registers: R0 = shift accumulator (bits enter at bit 7, shift right, so
 ;            the first (LSB) bit lands in bit 0 after 8 shifts)
-;            R1 = constant 1 (bit mask, XOR mask, and loop decrement)
+;            R1 = constant 2 (RX bit mask, XOR mask, sample-mark value and loop
+;                 decrement; delay-loop counts below are doubled to match)
 ;            R2 = pin sample / scratch
 ;            R3 = constant 0 outside delay loops (strobe clear); the outer
 ;                 delay counter inside them, back to 0 on exit
@@ -43,7 +45,7 @@
 ; all are start-edge/framing handshakes taken AFTER the last sample of a
 ; frame or BEFORE the first, never between samples (DR 0001 'Timing model').
 
-        LDI   R1, 1
+        LDI   R1, 2
         LDI   R3, 0
         OUT   UO_OUT, R3       ; result register cleared
         OUT   UIO_OUT, R3      ; marks and error flag cleared
@@ -55,7 +57,7 @@ poll:
         IN    R2, UI_IN        ; start-edge detect: loop while the line is high
         AND   R2, R1
         BNZ   poll
-        LDI   R3, 2            ; outer count (assemble-time literal)
+        LDI   R3, 4            ; outer count (assemble-time literal)
 dly_start:
         WAIT  255              ; 256 cycles + SUB + BNZ = 258 per outer pass
         SUB   R3, R1           ; count down (never pin data)
@@ -65,7 +67,7 @@ dly_start:
         IN    R2, UI_IN        ; SAMPLE (bit centre)
         OUT   UIO_OUT, R1      ; sample mark high
         AND   R2, R1
-        SHF   R2, LEFT         ; move the sampled bit up to bit 7
+        NOP                    ; RX is bit 1: six shifts reach bit 7; the NOP keeps the 7-cycle slot
         SHF   R2, LEFT         ; move the sampled bit up to bit 7
         SHF   R2, LEFT         ; move the sampled bit up to bit 7
         SHF   R2, LEFT         ; move the sampled bit up to bit 7
@@ -75,7 +77,7 @@ dly_start:
         SHF   R0, RIGHT        ; make room at bit 7
         OR    R0, R2           ; insert
         OUT   UIO_OUT, R3      ; sample mark low
-        LDI   R3, 1            ; outer count (assemble-time literal)
+        LDI   R3, 2            ; outer count (assemble-time literal)
 dly_b0:
         WAIT  255              ; 256 cycles + SUB + BNZ = 258 per outer pass
         SUB   R3, R1           ; count down (never pin data)
@@ -85,7 +87,7 @@ dly_b0:
         IN    R2, UI_IN        ; SAMPLE (bit centre)
         OUT   UIO_OUT, R1      ; sample mark high
         AND   R2, R1
-        SHF   R2, LEFT         ; move the sampled bit up to bit 7
+        NOP                    ; RX is bit 1: six shifts reach bit 7; the NOP keeps the 7-cycle slot
         SHF   R2, LEFT         ; move the sampled bit up to bit 7
         SHF   R2, LEFT         ; move the sampled bit up to bit 7
         SHF   R2, LEFT         ; move the sampled bit up to bit 7
@@ -95,7 +97,7 @@ dly_b0:
         SHF   R0, RIGHT        ; make room at bit 7
         OR    R0, R2           ; insert
         OUT   UIO_OUT, R3      ; sample mark low
-        LDI   R3, 1            ; outer count (assemble-time literal)
+        LDI   R3, 2            ; outer count (assemble-time literal)
 dly_b1:
         WAIT  255              ; 256 cycles + SUB + BNZ = 258 per outer pass
         SUB   R3, R1           ; count down (never pin data)
@@ -105,7 +107,7 @@ dly_b1:
         IN    R2, UI_IN        ; SAMPLE (bit centre)
         OUT   UIO_OUT, R1      ; sample mark high
         AND   R2, R1
-        SHF   R2, LEFT         ; move the sampled bit up to bit 7
+        NOP                    ; RX is bit 1: six shifts reach bit 7; the NOP keeps the 7-cycle slot
         SHF   R2, LEFT         ; move the sampled bit up to bit 7
         SHF   R2, LEFT         ; move the sampled bit up to bit 7
         SHF   R2, LEFT         ; move the sampled bit up to bit 7
@@ -115,7 +117,7 @@ dly_b1:
         SHF   R0, RIGHT        ; make room at bit 7
         OR    R0, R2           ; insert
         OUT   UIO_OUT, R3      ; sample mark low
-        LDI   R3, 1            ; outer count (assemble-time literal)
+        LDI   R3, 2            ; outer count (assemble-time literal)
 dly_b2:
         WAIT  255              ; 256 cycles + SUB + BNZ = 258 per outer pass
         SUB   R3, R1           ; count down (never pin data)
@@ -125,7 +127,7 @@ dly_b2:
         IN    R2, UI_IN        ; SAMPLE (bit centre)
         OUT   UIO_OUT, R1      ; sample mark high
         AND   R2, R1
-        SHF   R2, LEFT         ; move the sampled bit up to bit 7
+        NOP                    ; RX is bit 1: six shifts reach bit 7; the NOP keeps the 7-cycle slot
         SHF   R2, LEFT         ; move the sampled bit up to bit 7
         SHF   R2, LEFT         ; move the sampled bit up to bit 7
         SHF   R2, LEFT         ; move the sampled bit up to bit 7
@@ -135,7 +137,7 @@ dly_b2:
         SHF   R0, RIGHT        ; make room at bit 7
         OR    R0, R2           ; insert
         OUT   UIO_OUT, R3      ; sample mark low
-        LDI   R3, 1            ; outer count (assemble-time literal)
+        LDI   R3, 2            ; outer count (assemble-time literal)
 dly_b3:
         WAIT  255              ; 256 cycles + SUB + BNZ = 258 per outer pass
         SUB   R3, R1           ; count down (never pin data)
@@ -145,7 +147,7 @@ dly_b3:
         IN    R2, UI_IN        ; SAMPLE (bit centre)
         OUT   UIO_OUT, R1      ; sample mark high
         AND   R2, R1
-        SHF   R2, LEFT         ; move the sampled bit up to bit 7
+        NOP                    ; RX is bit 1: six shifts reach bit 7; the NOP keeps the 7-cycle slot
         SHF   R2, LEFT         ; move the sampled bit up to bit 7
         SHF   R2, LEFT         ; move the sampled bit up to bit 7
         SHF   R2, LEFT         ; move the sampled bit up to bit 7
@@ -155,7 +157,7 @@ dly_b3:
         SHF   R0, RIGHT        ; make room at bit 7
         OR    R0, R2           ; insert
         OUT   UIO_OUT, R3      ; sample mark low
-        LDI   R3, 1            ; outer count (assemble-time literal)
+        LDI   R3, 2            ; outer count (assemble-time literal)
 dly_b4:
         WAIT  255              ; 256 cycles + SUB + BNZ = 258 per outer pass
         SUB   R3, R1           ; count down (never pin data)
@@ -165,7 +167,7 @@ dly_b4:
         IN    R2, UI_IN        ; SAMPLE (bit centre)
         OUT   UIO_OUT, R1      ; sample mark high
         AND   R2, R1
-        SHF   R2, LEFT         ; move the sampled bit up to bit 7
+        NOP                    ; RX is bit 1: six shifts reach bit 7; the NOP keeps the 7-cycle slot
         SHF   R2, LEFT         ; move the sampled bit up to bit 7
         SHF   R2, LEFT         ; move the sampled bit up to bit 7
         SHF   R2, LEFT         ; move the sampled bit up to bit 7
@@ -175,7 +177,7 @@ dly_b4:
         SHF   R0, RIGHT        ; make room at bit 7
         OR    R0, R2           ; insert
         OUT   UIO_OUT, R3      ; sample mark low
-        LDI   R3, 1            ; outer count (assemble-time literal)
+        LDI   R3, 2            ; outer count (assemble-time literal)
 dly_b5:
         WAIT  255              ; 256 cycles + SUB + BNZ = 258 per outer pass
         SUB   R3, R1           ; count down (never pin data)
@@ -185,7 +187,7 @@ dly_b5:
         IN    R2, UI_IN        ; SAMPLE (bit centre)
         OUT   UIO_OUT, R1      ; sample mark high
         AND   R2, R1
-        SHF   R2, LEFT         ; move the sampled bit up to bit 7
+        NOP                    ; RX is bit 1: six shifts reach bit 7; the NOP keeps the 7-cycle slot
         SHF   R2, LEFT         ; move the sampled bit up to bit 7
         SHF   R2, LEFT         ; move the sampled bit up to bit 7
         SHF   R2, LEFT         ; move the sampled bit up to bit 7
@@ -195,7 +197,7 @@ dly_b5:
         SHF   R0, RIGHT        ; make room at bit 7
         OR    R0, R2           ; insert
         OUT   UIO_OUT, R3      ; sample mark low
-        LDI   R3, 1            ; outer count (assemble-time literal)
+        LDI   R3, 2            ; outer count (assemble-time literal)
 dly_b6:
         WAIT  255              ; 256 cycles + SUB + BNZ = 258 per outer pass
         SUB   R3, R1           ; count down (never pin data)
@@ -205,7 +207,7 @@ dly_b6:
         IN    R2, UI_IN        ; SAMPLE (bit centre)
         OUT   UIO_OUT, R1      ; sample mark high
         AND   R2, R1
-        SHF   R2, LEFT         ; move the sampled bit up to bit 7
+        NOP                    ; RX is bit 1: six shifts reach bit 7; the NOP keeps the 7-cycle slot
         SHF   R2, LEFT         ; move the sampled bit up to bit 7
         SHF   R2, LEFT         ; move the sampled bit up to bit 7
         SHF   R2, LEFT         ; move the sampled bit up to bit 7
@@ -216,7 +218,7 @@ dly_b6:
         OR    R0, R2           ; insert
         OUT   UIO_OUT, R3      ; sample mark low
         OUT   UO_OUT, R0       ; emit the received byte
-        LDI   R3, 1            ; outer count (assemble-time literal)
+        LDI   R3, 2            ; outer count (assemble-time literal)
 dly_stop:
         WAIT  255              ; 256 cycles + SUB + BNZ = 258 per outer pass
         SUB   R3, R1           ; count down (never pin data)

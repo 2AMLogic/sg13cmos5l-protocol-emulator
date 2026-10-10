@@ -267,7 +267,7 @@ Fixed by the RTL (`src/tt_um_2amlogic_protocol_emulator.v`), not provisional:
 |---|---|
 | `ui_in[7]` | MODE: high across `rst_n` release selects load phase; low runs the boot ROM |
 | `ui_in[6:5]` | straps, read once by the boot ROM's program when MODE is low at reset (`00`/`11` UART-load stub, `01` SPI-flash stub, `10` warm start). The read is an ordinary `IN`, not strap hardware; a loaded program sees these as plain input bits |
-| `ui_in[0]` | serial program data in load phase, MSB first |
+| `ui_in[0]` | serial program data in load phase, MSB first (no run-phase role; UART RX is `ui_in[1]`) |
 | `uio_oe[7:0]` | set by firmware: `UIO_OD[n]` → open-drain (`uio_oe[n] = ~uio_out[n]`), else `UIO_DIR[n]` → push-pull, else input. **0 after reset**: every bidirectional pin is an input until a program writes `UIO_DIR` or `UIO_OD` |
 | `uio_out[7:0]` | written by `OUT`; reaches a pin only where `uio_oe` enables it |
 
@@ -351,16 +351,16 @@ Pmods that put UART, SPI or I2C on one four-pin `uio` row. Against those:
 
 - **UART transmit** is on `uo_out[0]`, which is option B's TX. It reaches the
   host over the board's USB bridge with no extra wiring.
-- **UART receive** is on `ui_in[0]`, not option B's `ui_in[1]`. It needs one
-  jumper wire.
+- **UART receive** is on `ui_in[1]`, option B's RX (moved from `ui_in[0]` in
+  #178). It reaches the host over the same USB bridge with no extra wiring.
+  `ui_in[0]` is the program-load pin only; the receiver never reads it.
 - **SPI** (CS `uio[0]`, MOSI `uio[1]`, MISO `uio[2]`, SCK `uio[3]`) and
   **I2C** (SCL `uio[2]`, SDA `uio[3]`) are on the upper `uio` row exactly as
   the standard SPI and I2C Pmods wire it. An unmodified Pmod plugs in; no
   wire adapter is needed.
 
-The plan is to move UART receive to option B's `ui_in[1]` as well (DR 0010,
-"Target pin plan"). SPI and I2C moved in #155; the UART move is its
-follow-up.
+All three protocols now follow the recommended pinouts (DR 0010, "Target pin
+plan"): SPI and I2C moved in #155 and UART receive in #178.
 
 **Not required:** UART and SPI at 3.3 V with 3.3 V peers need no extra parts
 beyond that wiring.
