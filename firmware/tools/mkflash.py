@@ -15,8 +15,9 @@ at address 0; see docs/spi-flash-boot.md.
 
 Refused, because the boot program would refuse the image:
   * a program longer than 255 words (word 255 is the signature);
-  * a signature of 0x0000 (the SPI boot treats that as a dead MISO line --
-    see the boot source); change the filler (`--filler 0x1234`) or the
+  * a signature of 0x0000 (the SPI boot treats that as a dead MISO line,
+    and the warm start refuses it too since issue #168 -- see the boot
+    source); change the filler (`--filler 0x1234`) or the
     program and try again. Prints how likely that is: about 1 in 65,536.
 
 Needs only the Python 3 standard library. The CRC comes from

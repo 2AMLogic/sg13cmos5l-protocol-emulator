@@ -51,6 +51,8 @@ T_STUB = "test_stub_straps_idle_on_unwritten_memory"
 T_UNVERIFIED = "test_mode_low_never_runs_unverified_memory"
 T_WARM = "test_warm_start_runs_a_verified_image"
 T_CORRUPT = "test_warm_start_rejects_corrupted_images"
+T_ZERO_SIG = "test_warm_start_refuses_a_zero_signature"
+T_ZERO_PAD = "test_warm_start_runs_zero_padded_images"
 
 # (name, what the defect is, file, [(old, new, count)], tests that must catch it)
 MUTANTS = [
@@ -83,23 +85,23 @@ MUTANTS = [
      "the macro is read for fetch while the boot ROM is the source (invisible at the pins: "
      "caught by the white-box read-enable check)",
      PMEM,
-     [("  wire        mem_ren   = !load_active && !run_wen && (fetch_en || pm_re);",
-       "  wire        mem_ren   = !load_active && !run_wen;", 1)],
+     [("  wire        mem_ren_l = !load_active && !run_wen && (fetch_en || pm_re);",
+       "  wire        mem_ren_l = !load_active && !run_wen;", 1)],
      {T_STUB, T_UNVERIFIED}),
     ("warm-start-skips-verdict",
      "boot program: the branch on the CRC verdict is a NOP, so every image is run",
      ROM,
-     [("      8'h18: word = 16'hE009;", "      8'h18: word = 16'h0000;", 1)],
+     [("      8'h1A: word = 16'hE009;", "      8'h1A: word = 16'h0000;", 1)],
      {T_UNVERIFIED, T_CORRUPT}),
     ("verdict-ignores-crc-high-byte",
      "boot program: the verdict tests PM_CRC_LO only (OR R1, R1 for OR R0, R1)",
      ROM,
-     [("      8'h17: word = 16'h6100;", "      8'h17: word = 16'h6500;", 1)],
+     [("      8'h19: word = 16'h6100;", "      8'h19: word = 16'h6500;", 1)],
      {T_CORRUPT}),
     ("verdict-ignores-crc-low-byte",
      "boot program: the verdict tests PM_CRC_HI only (OR R0, R0 for OR R0, R1)",
      ROM,
-     [("      8'h17: word = 16'h6100;", "      8'h17: word = 16'h6000;", 1)],
+     [("      8'h19: word = 16'h6100;", "      8'h19: word = 16'h6000;", 1)],
      {T_CORRUPT}),
     ("straps-01-and-10-swapped",
      "boot program: strap 01 warm-starts and strap 10 goes to the SPI-flash boot",
@@ -111,8 +113,26 @@ MUTANTS = [
      "boot program: the handover does not restore Z (OR R3, R3 is a NOP), so the image starts "
      "with Z = 1 instead of the reset value",
      ROM,
-     [("      8'h19: word = 16'h6F00;", "      8'h19: word = 16'h0000;", 1)],
+     [("      8'h1B: word = 16'h6F00;", "      8'h1B: word = 16'h0000;", 1)],
      {T_WARM}),
+    ("warm-start-accepts-zero-signature",
+     "boot program: the branch on the signature word is a NOP, so a zero signature that passes "
+     "the CRC is run (DR 0013 Finding F1 reopened: the all-zero image warm-starts)",
+     ROM,
+     [("      8'h16: word = 16'hD009;", "      8'h16: word = 16'h0000;", 1)],
+     {T_ZERO_SIG}),
+    ("zero-signature-tests-high-byte-only",
+     "boot program: the signature test ORs the high byte with itself (OR R0, R0 for OR R0, R1), "
+     "so every signature 0x00nn is refused",
+     ROM,
+     [("      8'h15: word = 16'h6100;", "      8'h15: word = 16'h6000;", 1)],
+     {T_ZERO_PAD}),
+    ("zero-signature-tests-low-byte-only",
+     "boot program: the signature test ORs the low byte with itself (OR R1, R1 for OR R0, R1), "
+     "so every signature 0xnn00 is refused",
+     ROM,
+     [("      8'h15: word = 16'h6100;", "      8'h15: word = 16'h6500;", 1)],
+     {T_ZERO_PAD}),
 ]
 
 

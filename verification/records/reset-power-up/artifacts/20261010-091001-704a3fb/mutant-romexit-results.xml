@@ -1,0 +1,54 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuites name="cocotb tests"><testsuite name="test_reset_power_up" errors="0" failures="4" skipped="0" tests="5" time="0.547" timestamp="2026-10-10T09:12:48.804211+00:00" hostname="robb-studio"><testcase classname="test_reset_power_up" name="test_netlist_state_elements" time="0.201"><properties><property name="cocotb" value="True" /><property name="random_seed" value="1791623568" /><property name="file" value="<repo>/verification/test_reset_power_up.py" /><property name="line" value="143" /><property name="sim_time_unit" value="ns" /><property name="sim_time_start" value="0.0" /><property name="sim_time_stop" value="10.0" /><property name="sim_time_duration" value="10.0" /><property name="sim_time_ratio" value="49.63695727998165" /></properties></testcase><testcase classname="test_reset_power_up" name="test_power_up_all_x" time="0.003"><failure message="all-X power-up, straps 00, rst_n asserted: [row14-c] SRAM read enabled during reset&#10;assert not ['[row14-c] SRAM read enabled during reset']" type="AssertionError">Traceback (most recent call last):
+  File "<repo>/verification/test_reset_power_up.py", line 146, in wrapper
+    await test(dut)
+  File "<repo>/verification/test_reset_power_up.py", line 419, in test_power_up_all_x
+    run = await reset_and_observe(dut, h, straps, label)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<repo>/verification/test_reset_power_up.py", line 314, in reset_and_observe
+    await sample(dut, h, f"{label}, rst_n asserted", in_reset=True)
+  File "<repo>/verification/test_reset_power_up.py", line 300, in sample
+    assert not v, f"{label}: " + "; ".join(v)
+AssertionError: all-X power-up, straps 00, rst_n asserted: [row14-c] SRAM read enabled during reset
+assert not ['[row14-c] SRAM read enabled during reset']
+</failure><properties><property name="cocotb" value="True" /><property name="random_seed" value="1791623568" /><property name="file" value="<repo>/verification/test_reset_power_up.py" /><property name="line" value="143" /><property name="sim_time_unit" value="ns" /><property name="sim_time_start" value="10.001" /><property name="sim_time_stop" value="101.001" /><property name="sim_time_duration" value="91.0" /><property name="sim_time_ratio" value="30746.276329616387" /></properties><system-err>Test failed with COCOTB_RANDOM_SEED=1791623568
+</system-err></testcase><testcase classname="test_reset_power_up" name="test_power_up_random_seeds" time="0.002"><failure message="seed 0x131, straps 00, rst_n asserted: [row14-c] SRAM read enabled during reset&#10;assert not ['[row14-c] SRAM read enabled during reset']" type="AssertionError">Traceback (most recent call last):
+  File "<repo>/verification/test_reset_power_up.py", line 146, in wrapper
+    await test(dut)
+  File "<repo>/verification/test_reset_power_up.py", line 445, in test_power_up_random_seeds
+    run = await reset_and_observe(dut, h, straps, label)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<repo>/verification/test_reset_power_up.py", line 314, in reset_and_observe
+    await sample(dut, h, f"{label}, rst_n asserted", in_reset=True)
+  File "<repo>/verification/test_reset_power_up.py", line 300, in sample
+    assert not v, f"{label}: " + "; ".join(v)
+AssertionError: seed 0x131, straps 00, rst_n asserted: [row14-c] SRAM read enabled during reset
+assert not ['[row14-c] SRAM read enabled during reset']
+</failure><properties><property name="cocotb" value="True" /><property name="random_seed" value="1791623568" /><property name="file" value="<repo>/verification/test_reset_power_up.py" /><property name="line" value="143" /><property name="sim_time_unit" value="ns" /><property name="sim_time_start" value="101.002" /><property name="sim_time_stop" value="192.002" /><property name="sim_time_duration" value="91.00000000000001" /><property name="sim_time_ratio" value="38972.847104420754" /></properties><system-err>Test failed with COCOTB_RANDOM_SEED=1791623568
+</system-err></testcase><testcase classname="test_reset_power_up" name="test_uninitialised_program_memory" time="0.193"><failure message="canary SRAM, random flops, straps 00, rst_n asserted: [row14-c] SRAM read enabled during reset&#10;assert not ['[row14-c] SRAM read enabled during reset']" type="AssertionError">Traceback (most recent call last):
+  File "<repo>/verification/test_reset_power_up.py", line 146, in wrapper
+    await test(dut)
+  File "<repo>/verification/test_reset_power_up.py", line 493, in test_uninitialised_program_memory
+    run = await reset_and_observe(dut, h, straps, label)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<repo>/verification/test_reset_power_up.py", line 314, in reset_and_observe
+    await sample(dut, h, f"{label}, rst_n asserted", in_reset=True)
+  File "<repo>/verification/test_reset_power_up.py", line 300, in sample
+    assert not v, f"{label}: " + "; ".join(v)
+AssertionError: canary SRAM, random flops, straps 00, rst_n asserted: [row14-c] SRAM read enabled during reset
+assert not ['[row14-c] SRAM read enabled during reset']
+</failure><properties><property name="cocotb" value="True" /><property name="random_seed" value="1791623568" /><property name="file" value="<repo>/verification/test_reset_power_up.py" /><property name="line" value="143" /><property name="sim_time_unit" value="ns" /><property name="sim_time_start" value="192.003" /><property name="sim_time_stop" value="41483.003" /><property name="sim_time_duration" value="41291.0" /><property name="sim_time_ratio" value="213903.24466528543" /></properties><system-err>Test failed with COCOTB_RANDOM_SEED=1791623568
+</system-err></testcase><testcase classname="test_reset_power_up" name="test_reselect" time="0.148"><failure message="reselect 0x131: reset without reload, rst_n asserted: [row14-c] SRAM read enabled during reset&#10;assert not ['[row14-c] SRAM read enabled during reset']" type="AssertionError">Traceback (most recent call last):
+  File "<repo>/verification/test_reset_power_up.py", line 146, in wrapper
+    await test(dut)
+  File "<repo>/verification/test_reset_power_up.py", line 541, in test_reselect
+    idle = await reset_and_observe(dut, h, boot.STRAP_UART, label)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<repo>/verification/test_reset_power_up.py", line 314, in reset_and_observe
+    await sample(dut, h, f"{label}, rst_n asserted", in_reset=True)
+  File "<repo>/verification/test_reset_power_up.py", line 300, in sample
+    assert not v, f"{label}: " + "; ".join(v)
+AssertionError: reselect 0x131: reset without reload, rst_n asserted: [row14-c] SRAM read enabled during reset
+assert not ['[row14-c] SRAM read enabled during reset']
+</failure><properties><property name="cocotb" value="True" /><property name="random_seed" value="1791623568" /><property name="file" value="<repo>/verification/test_reset_power_up.py" /><property name="line" value="143" /><property name="sim_time_unit" value="ns" /><property name="sim_time_start" value="41483.004" /><property name="sim_time_stop" value="57194.004" /><property name="sim_time_duration" value="15711.0" /><property name="sim_time_ratio" value="106473.26623261864" /></properties><system-err>Test failed with COCOTB_RANDOM_SEED=1791623568
+</system-err></testcase></testsuite></testsuites>

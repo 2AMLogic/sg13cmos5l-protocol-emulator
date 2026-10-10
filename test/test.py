@@ -330,7 +330,7 @@ async def test_control_space(dut):
 STRAP_UART, STRAP_WARM = 0b00, 0b10
 # firmware/asm/boot/boot_rom.asm: word 0 of a verified image executes this
 # many cycles after the boot program's first instruction.
-WARM_START_CYCLES = 2323
+WARM_START_CYCLES = 2325
 
 
 async def boot_reset(dut, straps):

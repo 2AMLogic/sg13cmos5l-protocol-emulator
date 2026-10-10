@@ -178,8 +178,32 @@ capture, PVT corner sweeps, or Monte Carlo.
   reference is `match` with `power_connectivity` `match`, and is not cited.
   **Item 7 stays `unmet`/`check_failed`** (#106). Baseline:
   `signoff-baseline` record `20261010-080000-c914bbc`, 1 of 11.
-- **Every citation pins a `content_hash`** — the sha256 of the cited
-  artifact file, verifiable with `sha256sum`. Two honest caveats, on
+- **Items 3, 4 and 7, state as of 2026-10-10 (issue #168).** Append-only;
+  the bullet above is the earlier state. The warm start's zero-signature
+  refusal (two boot-ROM words) changed the layout. Items 3 and 4 cite record
+  `20261010-083721-704a3fb` (`librelane-gds-signoff-check/`, the GDS of gds
+  run 38037477407, `sha256:c59b4c7a…`). Item 7 cites
+  `post-layout-sdf-regression` record `20261010-083555-704a3fb`, whose routed
+  netlist is byte-identical to that run's. **Item 3 stays `met`.** **Item 4
+  stays `unmet`/`check_errored`** on the same converter shape
+  (`pm_wdata[7:0]`, klayout-tools#2941). The compare against the post-route
+  reference is `match` with `power_connectivity` `match`, and is not cited.
+  **Item 7 stays `unmet`/`check_failed`** (#106). Baseline:
+  `signoff-baseline` record `20261010-090628-704a3fb`, 1 of 11.
+- **Every citation pins a `content_hash`**, and what it is the hash of
+  depends on the cited envelope (clarified 2026-10-10, issue #168; the
+  manifests on `main` have always followed this, the sentence here did
+  not say it). For an envelope that records the layout it checked in
+  `provenance.input.content_hash` (`klt drc`, `klt extract`, a completed
+  `klt lvs`, `klt pex`), the pin is **that layout hash** -- for item 3,
+  the sha256 of the GDS, not of `klt-drc.json`. `klt signoff` gates
+  `manifest.content_hash == envelope.provenance.input.content_hash` and
+  then re-hashes the GDS itself (`input_verified`, klayout-tools#2196);
+  pinning the envelope file's own hash instead grades the item
+  `stale_evidence`. For an envelope with no input hash (`klt
+  functional-verification`, and a `klt` error envelope such as item 4's),
+  the pin is the sha256 of the cited file itself, verifiable with
+  `sha256sum`. Two honest caveats, on
   record here because the issue calls freshness "the point":
   `klt functional-verification` envelopes carry no `provenance` block (by
   design) — there is no recorded

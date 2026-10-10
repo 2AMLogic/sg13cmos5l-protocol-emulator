@@ -98,15 +98,17 @@ coverage.
   pin on a never-written memory; a canary image and random images are
   never run on any strap; a signed image warm-starts on the edge an
   independent model of the boot program predicts, with the reset register
-  and flag state; seven corrupted images are rejected; and the all-zero
-  image is pinned as the known weak case. Expected numbers come from
+  and flag state; seven corrupted images are rejected; a zero signature
+  is refused (the all-zero image and a real image whose CRC is 0x0000,
+  issue #168); and zero-padded images with signatures 0x00nn and 0xnn00
+  still run. Expected numbers come from
   `BootModel`, an ISA interpreter in the bench that runs the committed
   boot image and shares no code with the RTL or the assembler.
   Pin-observable except for labelled white-box reads (the fetch source and
   the macro's read enable), so it also runs on a gate-level netlist
   (`flow/run-firmware-gate-level.sh --boot-rom`). Driven by `klt
   functional-verification` (see `request-boot-rom.json`);
-  `boot_rom_mutants.py` is its negative-control runner (ten single defects
+  `boot_rom_mutants.py` is its negative-control runner (thirteen single defects
   in the RTL and in the boot program, each caught by a test meant to
   catch it). Evidence in `records/boot-rom/`.
 - `test_boot_spi.py` — cocotb bench for DR 0013 layer 2, strap `01`, the
@@ -162,8 +164,9 @@ load with `MODE` high, DR 0001 layer 1; or, once they exist, a boot
 loader DR 0013 layer 2 names). A reset *without* a reload is safe but
 useless: the core runs the boot ROM, which halts in a stub with every pin
 at its reset value (on strap 10 it first checks the memory and runs it
-only if it holds a signed image, which power-up contents are not, short
-of DR 0013's all-zero weak case: 256 NOPs) — `test_reset_power_up.py::test_reselect` shows this on
+only if it holds a signed image, which power-up contents are not; since
+#168 that includes an all-zero SRAM, which is its own CRC but is refused
+for its zero signature) — `test_reset_power_up.py::test_reselect` shows this on
 gates. The host-side loader is issue #118.
 - `test_program_memory.py` — cocotb testbench for
   `rtl/protocol_program_memory.v`, the program memory and serial
