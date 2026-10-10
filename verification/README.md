@@ -81,6 +81,25 @@ coverage.
   `boot_rom_mutants.py` is its negative-control runner (ten single defects
   in the RTL and in the boot program, each caught by a test meant to
   catch it). Evidence in `records/boot-rom/`.
+- `test_boot_uart.py` — cocotb bench for DR 0013 layer 2's UART load,
+  strap `00` (issue #139): a framed image sent on `ui_in[1]` is accepted
+  (reply `0x06` + CRC, `RUN 0`, the state a reset leaves) and corrupted
+  payloads, bad CRCs, bad lengths and a wrong magic are never run; the
+  host runs at nominal rate and at the row-10 ±2 % edges (with idle bits,
+  edge jitter and the unrelated `ui_in` bits toggling), with a sweep past
+  them recorded and a 12 %-off negative control; the committed `uart_tx`
+  program is loaded over the UART and graded by `reference_models/uart.py`;
+  a 256-word image loads and warm-starts; strap `11` and a failed warm
+  start fall through to the loader. `uart_boot_host.py` is the independent
+  host model (own CRC, own line timing, no import from `firmware/`); the
+  bench asserts that it and `firmware/tools/loadseq.py` frame the same
+  bytes. Pin-observable except labelled white-box reads (the fetch source,
+  program-memory contents), so the pin checks run on a gate-level netlist
+  (`flow/run-firmware-gate-level.sh --boot-uart`); the two long runs are
+  RTL-only. Driven by `klt functional-verification` (see
+  `request-boot-uart.json`); `boot_uart_mutants.py` is its negative-control
+  runner (seven single defects in the boot ROM, each caught by a test meant
+  to catch it). Evidence in `records/boot-uart/`.
 - `test_program_memory.py` — cocotb testbench for
   `rtl/protocol_program_memory.v`, the program memory and serial
   load-phase logic (target-spec row 6, issue #19): loads known programs
@@ -252,10 +271,10 @@ PDK-free RTL bench, as a **pass/fail gate only**. It writes nothing under
 deliberate local runs. The benches need `klt` (the `request-*.json` files
 carry sources, defines and recorded seeds), provisioned by
 `scripts/setup-env.sh` like the `signoff` job. Run it locally with
-`scripts/run-rtl-benches.sh` (~50 s serial).
+`scripts/run-rtl-benches.sh` (about 6 min serial, most of it `boot-uart`, whose host plays 2.2 million cycles of frames).
 
 CI-covered (RTL, Icarus, no PDK): `test_protocol_emulator`,
-`test_control_space`, `test_boot_rom`,
+`test_control_space`, `test_boot_rom`, `test_boot_uart`,
 `test_program_memory`, `test_protocol_models`, `test_firmware_uart`,
 `test_firmware_spi`, `test_firmware_i2c`, `test_firmware_i2c_sr`,
 `test_firmware_roundtrip`, `test_random_regression`.

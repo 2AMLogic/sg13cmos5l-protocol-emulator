@@ -314,3 +314,156 @@ later image can bring them back.
 of the core is unoccupied, so nothing is raised on #129 or against DR 0014.
 The slow-corner setup slack fell by 1.1 ns of 20; the remaining boot
 programs add ROM words, not another mux.
+
+## Implementation notes and findings (issue #139, 2026-10-10)
+
+> Added when the UART load (strap `00`) was built. The Decision above is left
+> as written. Nothing here changes it except where a finding below says a
+> constant had to move, and that is flagged as a finding for this record to
+> decide. This record is still **Proposed**. Evidence:
+> `verification/records/boot-uart/`; the loader is
+> `firmware/asm/boot/boot_rom.asm`, block `uart_load`.
+
+**Built as decided.**
+
+- Straps `00` and `11`, and a warm start whose check fails, run the UART load.
+  RX is `ui_in[1]`, TX is `uo_out[0]` (Tiny Tapeout option B), 8N1 at 434 core
+  cycles per bit. The frame is `0xA5`, `N-1`, `2N` bytes high byte first,
+  CRC-16/XMODEM high byte first (`firmware/tools/loadseq.py uart` writes it
+  from a `.hex`). Words go through `PM_DATA_HI`/`PM_DATA_LO`; the loader
+  compares `PM_CRC` with the trailer and replies `0x06` + `PM_CRC` and `RUN 0`,
+  or `0x15` + `PM_CRC` and waits for the next `0xA5`. A failed image is never
+  run. The reply carries the CRC the chip computed, high byte first, so a
+  rejected host sees what arrived.
+- It is firmware. The only hardware in the path is the `PM_*` access and
+  `PM_CRC` that DR 0012 already admitted; there is no UART peripheral.
+- Auto-baud (timing a `0x55` sync byte) was **not attempted**: the divisor is
+  fixed. See F2 for why a loader that is already over its budget is the wrong
+  place to add it.
+
+**What the strap-`00` stub's note left open: what TX does before a frame
+arrives.** The loader drives `uo_out[0]` high from its first instruction and
+leaves it high between frames (an idle UART line), so a host sees an idle line
+instead of the stub's continuous break. `uo_out[7:1]` stay 0. Strap `01` is
+still a stub and still drives nothing.
+
+**Finding F2: the UART load does not fit the proposed 128-word cap.** The
+loader is **129 words**; the boot image is 158 (30 before, 9 for the strap
+dispatch and 19 for the warm start among them, plus the SPI stub's `HALT`).
+This record proposed 128 words for the whole ROM and noted "98 for the UART
+load and the SPI-flash boot together". The reasons are the ISA's, not the
+loader's care:
+
+| Part | Words |
+|---|---|
+| set-up (guard, TX idle, phase 0) | 6 |
+| byte receiver: poll, delay, 8-sample loop | 24 |
+| phase dispatch (6 phases) and trailer-high handler | 16 |
+| trailer-low handler, `0xA5` handler, count handler, payload high/low handlers | 7 + 5 + 6 + 3 + 10 = 31 |
+| transmitter: one byte (start, 8 data bits, stop) | 3 + 19 |
+| reply sequencing (3 bytes) | 14 |
+| verdict, hand-over, reject | 16 |
+
+There is no call or return, so a routine used from six places is one block
+plus a dispatch on a phase number, and the dispatch and the handlers are 47
+words. With four registers the byte receiver needs three, so the state a
+frame needs (phase, words left) lives in `R3` and in a control register. The
+ISA has no immediate form of `AND`, so an unrelated `ui_in` bit cannot be
+masked without a register or eight shifts, and the eight shifts are the single
+largest part of the receiver (8 of its 24 words). The transmitter needs all
+four registers, so its caller's state goes in `PM_ADDR`.
+
+What was done about it: the generator's cap (`ROM_WORDS_MAX`) is **256**, the
+8-bit fetch address space and the most the ROM's `case` can address, instead
+of 128. That is a change to a number this record proposed, made so the loader
+could be built and tested at all, and it is **not decided**. It is recorded
+here, in `firmware/tools/gen_boot_rom.py` and in
+`firmware/tools/test_gen_boot_rom.py`, and the options are:
+
+1. keep 256 as the ROM's size. The SPI-flash boot (#140) then has the **98
+   words** of address space the UART load leaves, which is also the number
+   this record guessed for both programs together;
+2. raise the PC for the ROM only, which is an architecture change;
+3. cut the loader, for example by dropping the reply's CRC, the `0xA5` resync
+   or the count byte, which the issue's frame keeps;
+4. drop the ROM for one of the two media.
+
+*Area, with its flow.* The ROM is a `case` of one 16-bit word per entry. #138
+measured the 30-word ROM at 1,531.20 µm² on the klt/Yosys flow (cell area
+only), about 51 µm² per word, so +128 words is about +6,500 µm² by arithmetic
+on that figure. **That is an estimate and not a measurement; neither flow was
+run on this ROM in the PR that adds it.** The LibreLane `gds` run on the PR is
+the measurement, and #138 found 57 % of the 2×2 core unoccupied. Gate level:
+`test_boot_rom.py` and `test_boot_uart.py` run on the netlist of a revision
+that has this ROM, which does not exist yet; `flow/run-firmware-gate-level.sh
+--boot-rom --boot-uart --netlist <that netlist>` is the command.
+
+**Finding F3: the loader keeps a byte in `UIO_DIR`, so `uio_out` is `0xFF`
+while it runs.** The receiver has no register to spare for "words left". The
+only writable, readable control registers are `UIO_DIR`, `UIO_OD` and
+`PM_ADDR`, and `PM_ADDR` is the write pointer. `UIO_DIR` is safe as storage
+only while no `uio_oe` bit can follow it: with `UIO_OD = 0xFF` and `uio_out =
+0xFF`, DR 0012's rule `uio_oe = (od & ~out) | (~od & dir)` is 0 whatever `dir`
+holds. So the loader sets that guard first and clears it, in the order `UIO_DIR`,
+`UIO_OD`, `uio_out`, before `RUN`, so that no cycle drives a pin (clearing
+`uio_out` first drives every `uio` pin low for two cycles, which a negative
+control checks). Consequences: `uio_oe` is 0 at every edge for as long as the
+boot program runs, which is what target-spec row 14 (b) asks, but `uio_out`
+reads `0xFF`, not its reset value 0, while the UART loader is waiting. Row 14
+(b) as written talks about driven pins, so it holds; a checker that compares
+`uio_out` with its reset value during the load would see a difference, and
+`test_boot_rom.py` now allows exactly this state for the UART paths.
+
+**Finding F4: recovery from a lost byte.** The loader has no timeout, and a
+frame whose length is wrong leaves bytes the loader reads as the start of a
+frame whenever one is `0xA5`. A host that has lost sync recovers by pulsing
+`rst_n`, or by sending non-zero filler until the loader answers `0x15` (about
+2N+2 bytes at most). **Zero filler does not recover:** the CRC of a message
+followed by its own CRC and then zeros is still 0, so the loader reads the
+stream as a valid, longer image and runs it. This is an exact consequence of
+the CRC and not a loader bug; `loadseq.py` and the README say so.
+
+**Finding F5: what a loaded program is entered with.** The UART load hands
+over through the warm start's tail, so a loaded program starts as a warm-started
+one does: `R0`-`R3` = 0, `Z` = `C` = 0, `PM_ADDR` = 0, `UIO_DIR` = `UIO_OD` = 0,
+`uio_out` = 0, `uo_out` = 0, `BOOT_STATUS` = `0x00`. It differs in `PM_CRC`
+(the CRC of the image rather than the residue 0) and in the `PM_DATA`
+latches. `BOOT_STATUS` cannot tell a UART-loaded program from a warm-started
+one: bit 0 means "a serial load completed" (layer 1) and nothing sets it here.
+If a program should know, that is a register-map change and not made.
+
+**Timing, in core cycles (the clock is row 4's unconfirmed one, so no baud
+figure here is a measurement).**
+
+- The receiver finds the start edge with a 3-cycle poll, so the edge is
+  located to within 3 cycles; the first sample is 650 cycles after the poll's
+  `IN` saw it (1.5 bit periods less half the poll), and the next seven are
+  exactly 434 cycles apart (`.cyclesec uart_rx_bit`, 434 cycles). It leaves
+  the loop in the middle of the stop bit. The longest path from there to the
+  next poll is about 30 cycles, so the next start edge, at least half a bit
+  (217 cycles) away, is found with a margin of about 190 cycles even from a
+  host 2 % fast (which pulls it in by 0.19 bit, 82 cycles).
+- The transmitter emits start, data and stop with every edge on a multiple of
+  434 cycles from the start edge, measured at the pin; the stop bit is 437
+  to 440 cycles, padded so the hand-over's `uo_out` write cannot shorten it.
+- *Measured tolerance* (`test_row10_tolerance_edges`, host bit period scaled,
+  back to back, whole-percent steps, a 22-word image): the loader accepts a
+  host up to **+5 %** slow and **-4 %** fast, against the row-10 bound of
+  2 %, and rejects (or ignores) a host 12 % off in either direction, which is
+  the bench's negative control. These are measurements of this loader in RTL
+  simulation at those steps, not specifications.
+
+**Verification.** `verification/test_boot_uart.py` with the independent host
+`verification/uart_boot_host.py` (its own CRC, by table; its own line timing
+with fractional bit periods, edge jitter and idle bits; no import from
+`firmware/`). It checks: the nominal load and the state the program is
+entered with; ±2 % with and without idle bits, jitter, and the unrelated
+`ui_in` bits toggling; flipped payload bits, bad CRC bytes, lengths too small
+and too large, a wrong magic, each never run and each followed by a retry that
+is; garbage ahead of the magic; the committed `uart_tx` program loaded over the
+UART and graded by the existing `UartDecoder`/`check_frame`; a full 256-word
+image (which, being signed, then survives a warm start); strap `11`; and the
+fall-through from a failed warm start. The host's frame bytes equal
+`loadseq.py`'s for every committed image, and both equal `binascii.crc_hqx`'s
+CRC. `verification/boot_uart_mutants.py` injects seven ROM defects, each
+caught by a test meant to catch it.

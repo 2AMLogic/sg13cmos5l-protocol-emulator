@@ -3,7 +3,7 @@
 
 The generator is the hex -> Verilog link of DR 0013 layer 2's chain
 (`spec/decision-records/0013-program-loading.md`: "The ROM netlist is
-generated from that image", "capped at 128 words"). These cases check the
+generated from that image", "capped at 128 words" (see F2)). These cases check the
 link itself: what it accepts, what it refuses, that its output is a pure
 function of the image, and that `--check` reports a stale ROM. Whether the
 generated ROM *behaves* is `verification/test_boot_rom.py`'s subject.
@@ -108,11 +108,13 @@ def test_parse_rejects_an_empty_image():
     expect_rom_error("", "empty")
 
 
-def test_cap_is_128_words():
-    """DR 0013: "capped at 128 words". 128 is in, 129 is out."""
-    assert gen.ROM_WORDS_MAX == 128
-    assert len(gen.parse_hex(hex_of([0x0000] * 128))) == 128
-    expect_rom_error(hex_of([0x0000] * 129), "caps the boot ROM at 128")
+def test_cap_is_the_fetch_address_space():
+    """DR 0013 proposed 128; the UART load does not fit (finding F2, issue
+    #139), so the cap is the 8-bit fetch address space until the record
+    decides. 256 is in, 257 is out."""
+    assert gen.ROM_WORDS_MAX == 256
+    assert len(gen.parse_hex(hex_of([0x0000] * 256))) == 256
+    expect_rom_error(hex_of([0x0000] * 257), "capped at 256")
 
 
 def test_render_carries_every_word_at_its_address():
@@ -152,7 +154,7 @@ def test_render_changes_with_the_image():
 def test_write_then_check_round_trip():
     with scratch_paths([0x9000, 0xF000]):
         rc, out, _ = run_main([])
-        assert rc == 0 and "2 of 128 words" in out, (rc, out)
+        assert rc == 0 and "2 of 256 words" in out, (rc, out)
         assert table_of(gen.OUT_PATH.read_text()) == {0: 0x9000, 1: 0xF000}
         rc, out, _ = run_main(["--check"])
         assert rc == 0 and out.startswith("OK:"), (rc, out)
@@ -186,9 +188,9 @@ def test_check_reports_a_missing_rom_and_a_missing_image():
 
 
 def test_an_oversized_image_writes_nothing():
-    with scratch_paths([0x0000] * 129):
+    with scratch_paths([0x0000] * 257):
         rc, _, err = run_main([])
-        assert rc == 1 and "caps the boot ROM at 128" in err, (rc, err)
+        assert rc == 1 and "capped at 256" in err, (rc, err)
         assert not gen.OUT_PATH.exists(), "an over-cap image still produced a ROM"
 
 
