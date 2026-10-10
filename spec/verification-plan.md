@@ -357,6 +357,19 @@ auditable rather than a bare assertion:
   frozen, and the record states the freeze commit, so the evidence cannot have
   shaped the ISA. Its stretch (a role or pin direction the core protocols
   never use) runs on the silicon-true pad model below.
+
+  *Dated note 2026-10-10 (issue #141, part 1). Nothing above is changed.*
+  The freeze is DR 0017
+  ([`decision-records/0017-submission-isa-freeze.md`](decision-records/0017-submission-isa-freeze.md),
+  Proposed). It takes effect at the merge of its PR, whose base is
+  `e74d2b656de35e492e6f7b3e34cbe2266b4aeff3`, and pins the ISA-defining
+  files by sha256 in `spec/isa-freeze.json`. `scripts/check_isa_freeze.py`
+  (`npm run lint`) fails on any change to them that no record numbered 0018
+  or later accounts for, and each such record says whether it invalidates
+  row-13 evidence. The row-13 record must cite the freeze's merge commit, and
+  its protocol must be outside DR 0017's exclusion list (DR 0015's tables,
+  and the protocols DRs 0012 and 0013 were designed around). No row-13
+  protocol is chosen yet.
 - **Control-register bench (DR 0012).** It checks:
   - reset values, readback, and reserved-index behaviour (no-op write, read
     returns 0)
