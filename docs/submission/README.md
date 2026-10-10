@@ -44,10 +44,46 @@ re-hardening for a newer flow, are allowed after it.
 | D1 | Passing GDS + precheck, Tiny Tapeout flow | `gds` workflow (`.github/workflows/gds.yaml`) green on the **final** top, with the run linked from this file and from `README.md` | All four jobs (`gds`, `precheck`, `gl_test`, `viewer`) green on `main` @ `4193268`: [run 37974043486](https://github.com/2AMLogic/sg13cmos5l-protocol-emulator/actions/runs/37974043486), 2026-10-09. Sign-off evidence: `verification/records/librelane-gds-signoff-check/records/20261009-054750-676f8b2.md`, `verification/records/librelane-pdn-bridge/records/20261001-085017-21a2a63.md`. | **Partial.** It is green, but not on the final top. DR 0012 (control space, #135) and DR 0013 (program loading) still change the RTL, and #129 may change the tile count. Re-run and re-link after the last RTL change. |
 | D2 | Architecture + ISA documentation | A standalone doc, `docs/submission/architecture.md` (to write), distilled from DR 0001. It must not be the decision record itself. | The content is spread across `spec/decision-records/0001-isa.md`, `rtl/README.md`, and the datasheet `docs/info.md` § How it works. DR 0012 and DR 0013 extend the ISA and the load path. | **Partial.** The material exists, but there is no judge-facing doc. The ISA is not frozen until #135 lands. DR 0001's Status is still **Proposed** (DR 0006, #44). |
 | D3 | Assembler / toolchain + example programs | `firmware/` with a quickstart a judge can run from a fresh clone | `firmware/tools/asm.py` (the DR 0003 assembler) and its test `firmware/tools/test_asm.py`. 16 programs in `firmware/asm/` (UART TX/RX at three bauds, SPI modes 0–3, I2C Standard/Fast with repeated START and clock stretch, plus `demo_roundtrip.asm`) with committed images in `firmware/build/`. `firmware/README.md` § Cold-start invocation. | **Partial, close to ready.** The cold-start section is the quickstart, but nothing links it as the judge's entry point. The assembler has to gain the DR 0012 control-space mnemonics (#135). |
-| D4 | Verification write-up | `docs/submission/verification.md` (to write), distilled from `spec/verification-plan.md` and the evidence records, and stating what is **not** covered | `spec/verification-plan.md` (Status DRAFT; its preamble line "None of the artifacts described below exist yet" is now stale). 21 record families under `verification/records/`, for example `firmware-uart`, `firmware-spi`, `firmware-i2c`, `firmware-gate-level`, `random-regression`, `no-data-dependent-latency` (formal), `post-layout-sdf-regression` and `sta-corner-sweep`. | **Partial.** The evidence is strong and append-only, but nothing reads it to a judge. Known holes that the write-up must state: #136 (I2C evidence does not run through the real `uio_oe`, so silicon cannot drive an I2C line today) and row 14 (reset/reselect, unmet). |
+| D4 | Verification write-up | `docs/submission/verification.md` (to write), distilled from `spec/verification-plan.md` and the evidence records, and stating what is **not** covered | `spec/verification-plan.md` (Status DRAFT; its preamble line "None of the artifacts described below exist yet" is now stale). 21 record families under `verification/records/`, for example `firmware-uart`, `firmware-spi`, `firmware-i2c`, `firmware-gate-level`, `random-regression`, `no-data-dependent-latency` (formal), `post-layout-sdf-regression` and `sta-corner-sweep`. | **Partial.** The evidence is strong and append-only, but nothing reads it to a judge. Known holes that the write-up must state: #136 (I2C evidence does not run through the real `uio_oe`, so silicon cannot drive an I2C line today) and row 14 (reset/reselect, unmet). | **Updated 2026-10-10 (issue #214): see the dated update below the table; the text in this row is the 2026-10-09 reading and is kept as written.**
 | D5 | AI-use write-up | `docs/submission/ai-use.md` (to write): how agents produced the spec, RTL, firmware and verification; the Loom Builder/Judge/Curator loop; the append-only evidence rule; the klayout-tools friction issues filed; and the ratification history told honestly | Only fragments exist: `README.md` § Built agent-native (one paragraph) and `spec/verification-plan.md` § 5 (process, not history). | **Not started.** It must say plainly that the two-key ratification never ran: `spec/decision-records/0006-two-key-ratification-never-ran.md`, #44 (open, `loom:operator-only`). This is our most distinctive story, and it is unwritten. |
 | D6 | Demo (optional) | A protocol the ISA was **not** designed for (for example 1-Wire, WS2812, DMX512 or Manchester), written as firmware after the fact with a bench: target-spec row 13. If possible, a video. | Nothing. Row 13 is "Proposed 2026-10-09 ... unmet, no firmware yet" (`spec/target-spec.md`). | **Blocked** on the frozen submission ISA (#135, with #130 deciding which protocol-neutral primitives exist). A physical-board demo also needs the host loader (#118). |
 | D7 | Required external parts | A parts list in the datasheet (`docs/info.md`) and the submission, aligned with TT-recommended Pmods | Nothing beyond DR 0008 item 1 (I2C needs external pull-ups). | **Parts list written** in `docs/info.md` (#133). Pins are not yet on the TT-recommended pinouts: DR 0010 records the target plan, and the moves are #155 (after #135). |
+
+### D4 dated update, 2026-10-10 (issue #214)
+
+Reviewed commit: `main` @ `9fb7815`. The judge-facing narrative now exists:
+[`docs/submission/verification.md`](verification.md), linked from the root
+`README.md`. It maps each claim to its independent oracle, tested design level
+and flow, evidence record, reproduction command and limits, and lists what is
+not shown. The 2026-10-09 row above is left as written; these corrections
+supersede its stale parts:
+
+- **Record families:** 30 directories under `verification/records/` at this
+  commit, not 21.
+- **#136 has landed.** The I2C and SPI evidence runs on the logical, zero-delay
+  `uio` pad model, which resolves the design's own `uio_oe`/`uio_out`
+  (`uio-pad-model` record `20261010-132636-8372c57`). It is not an electrical
+  pad characterization. The "does not run through the real `uio_oe`" hole is
+  closed; the electrical hole is not.
+- **UART RX is covered**, directed (`firmware-uart-rx`) and in the seeded
+  constrained-random regression (`random-regression`, `uart_rx` family,
+  #192), and on the zero-delay gate-level run. The regression itself is RTL
+  only. The line in `manifests/evidence/testbenches.txt` that says no claim is
+  made for UART RX under constrained random predates #192 and is left as
+  written.
+- **Row 14** still reads unmet in `spec/target-spec.md`. The
+  `reset-power-up` record `20261010-133700-a0f91e3` shows (a), (b), (c) and
+  the reselect cycle on the routed netlist at zero delay; no grade is changed
+  here.
+- **Open and visible in the narrative:** DR 0013 finding F8 (#211, the UART
+  load's count byte is outside the CRC), the PM_CRC readout (#167), the
+  Standard-mode I2C allocation (#125), no SDF run for the firmware benches or
+  the random regression (#217), bounded versus unbounded formal scope, SRAM
+  timing omitted from SDF, a Proposed specification (DR 0006), and no
+  silicon.
+- **State:** still **Partial**, not Ready. The report describes the design
+  before the ISA freeze (#135), and its records go stale when the RTL
+  changes. Re-review it after the freeze and after the final `gds` run.
 
 ## Risks
 
@@ -67,7 +103,8 @@ re-hardening for a newer flow, are allowed after it.
 3. Write D5 (AI-use) now. It depends on no RTL change and is the most
    distinctive document.
 4. Write D4 (verification) once #136 lands. List row 14 and anything else
-   still unmet as such.
+   still unmet as such. (First version written 2026-10-10, #214; re-review
+   after the ISA freeze.)
 5. Do D6, the row-13 unplanned-protocol firmware, on the frozen ISA.
 6. Do the final `gds` run on the final top (D1), link it, then update every
    row here to **Ready** with citations.

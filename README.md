@@ -109,6 +109,10 @@ Tiny Tapeout template's LibreLane flow, as described in the proposed
 
 ## Reproducing the results
 
+A judge-facing account of how the design was verified, with the claim-to-record
+matrix, the negative controls, and what is not covered, is
+[`docs/submission/verification.md`](docs/submission/verification.md).
+
 Every recorded result lives under
 [`verification/records/`](verification/records/), one directory per kind of
 measurement, and each record's *Run configuration* names the exact command
