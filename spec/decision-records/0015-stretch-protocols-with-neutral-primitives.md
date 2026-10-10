@@ -594,6 +594,65 @@ primitive).
   (stretch targets, nothing numeric bound, entry condition unmet). DR 0011's
   baseline stands either way; it carries no verdict.
 
+**Dated note, 2026-10-10 (issue #208): index map, and the measured area that
+replaces the estimates.** This note records what was built from this Proposed
+record. It does not ratify, reopen or relax anything: no Status line changes,
+the admission test and the verdicts are as written, and the interface is
+unchanged.
+
+- **Index map** (DR 0012's range, which keeps `0x1A`-`0x1F` unassigned):
+  P1 is `CRC_CFG 0x10`, `CRC_POLY 0x11`, `CRC_STATE 0x12`, `CRC_BIT 0x13`,
+  `CRC_BYTE 0x14` (`WCTL`, 9 cycles: 1 + 8 stall, fixed), `CRC_NEXT 0x15`
+  (`RCTL`). P2 is `LINE_CFG 0x16`, `LINE_PUT 0x17`, `LINE_OUT 0x18`,
+  `LINE_STUF 0x19`. DR 0012 carries the same table, with the field layouts, as
+  a dated note under its register table. Every index but `CRC_BYTE` takes
+  1 cycle. The flags are untouched.
+- **Area, measured, against this record's estimates.** The estimates were
+  P1 about 3,800 um^2 (band 3,000-6,000), P2 about 800 um^2 (band 500-1,200),
+  and about 4,600 um^2 together (band 3,500-7,200). Built, the two together
+  cost, flow by flow and never mixed:
+  - **klt/Yosys** (cell area, no placement): top 1,377 instances, 21,331.03
+    um^2 -> 2,161 instances, 32,178.72 um^2, **+10,847.69 um^2**
+    (sequential +4,213.04 um^2). That is 2.4 times the estimate and 1.5 times
+    the top of its band.
+  - **LibreLane** (placed standard-cell area, gds runs 38051226323 on `main`
+    and 38055685598 on the branch): 28,255.7 -> 41,827.4 um^2, **+13,571.7
+    um^2**. This figure also includes the drive buffers that the SRAM
+    macro's inputs needed in this flow (the branch's build had max-slew
+    violations on them without the buffers; a LibreLane-only fix, as in
+    issues #173, #199 and #201). Placed
+    utilization of the unchanged 126,685 um^2 core rose from 44.5 % to
+    55.2 %. DR 0014's 60 % target is 76,011 um^2 of cells plus macro, and the
+    design is now 69,955 um^2, 6,056 um^2 under it.
+  - The estimate assumed the design-average cell area for a flop. A reset
+    flop in this library is about 49 um^2 and the library has no enable flop,
+    so each byte-written register carries its own hold mux: P1's two 32-bit
+    registers (`CRC_POLY`, `CRC_STATE`) cost about 2,400 um^2 each, and they
+    were the estimate's largest line. Trimming readbacks and masks reaches at
+    best +9,900 um^2 (klt/Yosys), still outside the band.
+  - The two flows disagree on the absolute figures, as they did for DR 0012
+    and DR 0013 (different cells chosen, placement buffers, timing repair). The
+    disagreement is recorded, not resolved; each number above is quoted with
+    its flow.
+- **Reopening condition 4, evaluated.** The drop triggers are a placed density
+  above the 60 % target, or a `gds` run near the 6-hour Actions limit. Neither
+  fired: 55.2 % (below 60 %) and a `gds` job of about 19 minutes. Setup and hold have
+  zero violations at all three corners the flow emits. So the full interface
+  is kept, including `CRC_BYTE`, which condition 4 names first for dropping.
+  The estimate being outside its band is a finding about the estimate, not a
+  trigger. If a smaller P1 is preferred (no readback, a fixed width, or no byte
+  op), that is a follow-up record, and it is reversible.- **Evidence.** `verification/test_primitives.py` (independent oracles: the
+  CRC RevEng catalogue check values for CRC-5/USB, CRC-16/USB, CRC-32,
+  CRC-8/MAXIM, CRC-15/CAN and CRC-16/XMODEM, a carry-less-multiplication LFSR
+  oracle and the PRBS7 period, and an independent NRZI/de-stuffing receiver for
+  USB N = 6, HDLC N = 5 and CAN 5 equal bits), `verification/primitives_mutants.py`
+  (14 single-defect copies, each caught by a named test), the extended
+  `no_data_dependent_latency` and `pin_write_latency` properties, the extended
+  ISA reference model and lockstep bench, and the gate-level run. The records
+  are under `verification/records/` (`primitives`, `no-data-dependent-latency`,
+  `pin-write-latency`, `isa-lockstep`, `firmware-gate-level`,
+  `librelane-corner-timing`, `synthesis-baseline`).
+
 ## Alternatives considered
 
 1. **A plain defer, with DR 0011's baseline as the only record.** Rejected
