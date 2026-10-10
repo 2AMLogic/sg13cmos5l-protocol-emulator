@@ -1,0 +1,42 @@
+     -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:242  in gpi_load_users                  Loaded entry library: '<home>/.local/share/uv/python/cpython-3.13.14-linux-x86_64-gnu/lib/libpython3.13.so.1.0'
+     -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:233  in gpi_load_users                  Running entry func 'initialize' from loaded library '<repo>/.venv/lib/python3.13/site-packages/cocotb/simulator.cpython-313-x86_64-linux-gnu.so'
+     -.--ns INFO     pygpi                              ..ib/pygpi/embed.cpp:114  in initialize                      Using Python 3.13.8 interpreter at <repo>/.venv/bin/python
+     -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:74   in gpi_print_registered_impl       GPI: VPI support registered
+     0.00ns INFO     cocotb.initialize                  Seeding Python random module with 1
+     0.00ns INFO     cocotb.initialize                  Initialized cocotb v2.1.0 from <repo>/.venv/lib/python3.13/site-packages/cocotb
+     0.00ns INFO     cocotb.initialize                  Running on Icarus Verilog version 13.0 (stable)
+     0.00ns INFO     cocotb.regression                  Running tests
+     0.00ns INFO     cocotb.regression                  running test_boot_spi.test_model_chain_and_prediction (1/6)
+                                                            No DUT activity: the committed image fits the cap and has the SPI
+     0.00ns INFO     ..tt_um_2amlogic_protocol_emulator boot image: 93 of 128 words
+     0.00ns INFO     ..tt_um_2amlogic_protocol_emulator model: a good flash reaches RUN 58793 cycles after the first instruction
+    20.00ns INFO     cocotb.regression                  test_boot_spi.test_model_chain_and_prediction passed
+    20.00ns INFO     cocotb.regression                  running test_boot_spi.test_good_flash_boots_a_program_that_starts_in_the_reset_state (2/6)
+                                                            A signed image in the flash is read in one clean transaction and run:
+1176861.00ns WARNING  py.warnings                        <repo>/verification/uio_pads.py:319: DeprecationWarning: `task.kill()` is deprecated in favor of `task.cancel()`
+                                                          task.kill()
+2353701.00ns INFO     cocotb.regression                  test_boot_spi.test_good_flash_boots_a_program_that_starts_in_the_reset_state passed
+2353701.00ns INFO     cocotb.regression                  running test_boot_spi.test_protocol_programs_boot_from_flash_and_pass_reference_models (3/6)
+                                                            End to end. The committed `uart_tx` and `spi_mode0` images, signed
+4745662.00ns INFO     cocotb.regression                  test_boot_spi.test_protocol_programs_boot_from_flash_and_pass_reference_models passed
+4745662.00ns INFO     cocotb.regression                  running test_boot_spi.test_blank_or_absent_flash_never_runs (4/6)
+                                                            Nothing in the flash that is a program: a blank (0xFF) flash, no
+10715543.00ns INFO     cocotb.regression                  test_boot_spi.test_blank_or_absent_flash_never_runs passed
+10715543.00ns INFO     cocotb.regression                  running test_boot_spi.test_corrupt_flash_never_runs (5/6)
+                                                            A good image one defect away, in the flash: a flipped bit in the first
+21312504.00ns INFO     cocotb.regression                  test_boot_spi.test_corrupt_flash_never_runs passed
+21312504.00ns INFO     cocotb.regression                  running test_boot_spi.test_zero_signature_is_refused (6/6)
+                                                            A finding, pinned. The all-zero image is its own valid signature (DR
+23666385.00ns INFO     cocotb.regression                  test_boot_spi.test_zero_signature_is_refused passed
+23666385.00ns INFO     cocotb.regression                  ****************************************************************************************************************************************
+                                                        ** TEST                                                                            STATUS  SIM TIME (ns)  REAL TIME (s)  RATIO (ns/s) **
+                                                        ****************************************************************************************************************************************
+                                                        ** test_boot_spi.test_model_chain_and_prediction                                    PASS          20.00           0.18        109.07  **
+                                                        ** test_boot_spi.test_good_flash_boots_a_program_that_starts_in_the_reset_state     PASS     2353681.00          12.60     186800.48  **
+                                                        ** test_boot_spi.test_protocol_programs_boot_from_flash_and_pass_reference_models   PASS     2391961.00          23.85     100278.43  **
+                                                        ** test_boot_spi.test_blank_or_absent_flash_never_runs                              PASS     5969881.00          67.22      88816.42  **
+                                                        ** test_boot_spi.test_corrupt_flash_never_runs                                      PASS    10596961.00         125.86      84194.77  **
+                                                        ** test_boot_spi.test_zero_signature_is_refused                                     PASS     2353881.00          24.52      95980.45  **
+                                                        ****************************************************************************************************************************************
+                                                        ** TESTS=6 PASS=6 FAIL=0 SKIP=0                                                             23666385.00         254.24      93086.11  **
+                                                        ****************************************************************************************************************************************

@@ -203,7 +203,7 @@ Notes, all from the cited records:
 - The I2C images set `UIO_OD` to `0x81` (SCL and SDA open-drain) right
   after releasing both lines. The I2C benches run on a pad model
   ([`uio_pads.py`](../verification/uio_pads.py),
-  [record](../verification/records/uio-pad-model/records/20261010-005103-197191d.md))
+  [record](../verification/records/uio-pad-model/records/20261010-020448-ed5f2d1.md))
   that resolves each line from the design's `uio_oe` and `uio_out`, a
   pull-up and the peripheral, and reads it back on `uio_in`; the lines the
   reference model grades are those. With `UIO_OD` left at reset the same
@@ -308,20 +308,20 @@ silicon or by the LibreLane flow.
 ## Evidence not yet in hand
 
 - **Tiny Tapeout LibreLane flow.** The routed-netlist SDF regression of the
-  submitted core ([record](../verification/records/post-layout-sdf-regression/records/20261009-220911-1dc1842.md),
-  LibreLane run 37996177546) is a **recorded FAIL** at all three corners (1
+  submitted core ([record](../verification/records/post-layout-sdf-regression/records/20261010-020805-ed5f2d1.md),
+  LibreLane run 38013383254) is a **recorded FAIL** at all three corners (1
   of 13 core-bench tests passed) and ran only the core bench, not the
   firmware above. LibreLane timing and area evidence is in
-  [`librelane-corner-timing`](../verification/records/librelane-corner-timing/records/20261009-221236-1dc1842.md).
-  Firmware, the control-space bench and the boot-ROM bench on that netlist at zero delay:
-  [`firmware-gate-level`](../verification/records/firmware-gate-level/records/20261010-005233-197191d.md).
+  [`librelane-corner-timing`](../verification/records/librelane-corner-timing/records/20261010-020340-ed5f2d1.md).
+  Firmware, the control-space, boot-ROM and SPI-flash-boot benches on that netlist at zero delay:
+  [`firmware-gate-level`](../verification/records/firmware-gate-level/records/20261010-024702-c3e534a.md).
   Firmware with back-annotated delays: none.
 - **klt synthesis and timing.** `klt sta` does not yet support the SRAM
   macro, so the two flows do not agree on timing; per the project rule that
   mismatch is a finding, not a number to pick from.
 - **Silicon:** none.
 - **Pads.** The I2C results are on a logical, zero-delay pad model
-  ([record](../verification/records/uio-pad-model/records/20261010-005103-197191d.md)):
+  ([record](../verification/records/uio-pad-model/records/20261010-020448-ed5f2d1.md)):
   they show which lines the design drives, and when, through `uio_oe`.
   They are not electrical evidence: no pad cell, pull-up rise time, pad
   delay or drive strength has been simulated or measured.
