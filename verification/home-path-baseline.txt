@@ -1,0 +1,103 @@
+# Home-path baseline: files that already contained an absolute
+# home-directory path (/Users/<name> or /home/<name>, other than the generic
+# CI/container accounts) when scripts/check_home_paths.py landed.
+#
+# Recorded exception, issue #86, decided 2026-10-09: these files are LEFT
+# IN PLACE, not edited and not removed.
+#
+#   Count   73 files: 72 under verification/records/ (records and artifacts
+#           from experiments minted 2026-09-21 through 2026-10-02), plus
+#           test/tb.gtkw.
+#   Why     verification/records/ is append-only evidence (see
+#           verification/README.md, "Append-only rule"). Editing a file there
+#           fails the linter and breaks the content hashes that later records
+#           and manifests pin. Removing one would not remove it from git
+#           history, and history is not rewritten in this repo. The content
+#           is a path naming the account that ran the tool: low sensitivity.
+#           test/tb.gtkw is a waveform-viewer save file inherited from the
+#           project template; its path is the template author's, and the
+#           file is left as shipped.
+#   Scope   No record minted after 2026-10-02 contains such a path. The
+#           record that supersedes the two files issue #86 names,
+#           librelane-gds-signoff-check 20261009-054750-676f8b2, is clean.
+#
+# This list is a frozen exception, not a place to park new failures. Any
+# file not listed here that contains such a path fails `npm run lint`.
+# Adding a line is a disclosure decision and is reviewed as one; removing
+# the files or purging history is an operator decision outside issue #86.
+#
+# Format: one repo-relative path per line; `#` starts a comment.
+
+test/tb.gtkw
+verification/records/die-area-baseline/artifacts/20260922-012402-420c370/par-protocol-program-memory-request.json
+verification/records/die-area-baseline/artifacts/20260922-012402-420c370/par-protocol-program-memory-response.json
+verification/records/die-area-baseline/artifacts/20260922-012402-420c370/par-tt-um-2amlogic-protocol-emulator-request.json
+verification/records/die-area-baseline/artifacts/20260922-012402-420c370/par-tt-um-2amlogic-protocol-emulator-response.json
+verification/records/die-area-baseline/artifacts/20260927-094012-fff43624/par-protocol-program-memory-request.json
+verification/records/die-area-baseline/artifacts/20260927-094012-fff43624/par-protocol-program-memory-response.json
+verification/records/die-area-baseline/artifacts/20260927-094012-fff43624/par-tt-um-2amlogic-protocol-emulator-request.json
+verification/records/die-area-baseline/artifacts/20260927-094012-fff43624/par-tt-um-2amlogic-protocol-emulator-response.json
+verification/records/die-area-baseline/records/20260922-012402-420c370.md
+verification/records/firmware-assembler-roundtrip/artifacts/20260922-012146-484478f/klt-functional-verification.json
+verification/records/firmware-assembler-roundtrip/artifacts/20260922-012146-484478f/results_icarus.xml
+verification/records/firmware-i2c/artifacts/20261002-212508-25a0237/klt-functional-verification.json
+verification/records/firmware-i2c/artifacts/20261002-212508-25a0237/negative-control-mistimed-firmware.json
+verification/records/firmware-i2c/artifacts/20261002-212508-25a0237/results_icarus.xml
+verification/records/firmware-spi/artifacts/20261002-212640-061b65d/klt-functional-verification.json
+verification/records/firmware-spi/artifacts/20261002-212640-061b65d/results_icarus.xml
+verification/records/firmware-spi/artifacts/20261002-212640-061b65d/test-icarus-console.txt
+verification/records/librelane-gds-signoff-check/artifacts/20261001-111857-8a94265/klt-extract.json
+verification/records/librelane-gds-signoff-check/artifacts/20261001-111857-8a94265/klt-lvs-asrouted.json
+verification/records/librelane-gds-signoff-check/artifacts/20261001-111857-8a94265/klt-lvs-klt-netlist.json
+verification/records/librelane-gds-signoff-check/records/20261001-111857-8a94265.md
+verification/records/no-data-dependent-latency/artifacts/20260922-025005-c24b314/conformant.smt2
+verification/records/no-data-dependent-latency/artifacts/20260922-025005-c24b314/mutant.smt2
+verification/records/post-layout-sdf-regression/artifacts/20260922-011856-87e8166/klt-functional-verification-nom_fast_1p32V_m40C.json
+verification/records/post-layout-sdf-regression/artifacts/20260922-011856-87e8166/klt-functional-verification-nom_slow_1p08V_125C.json
+verification/records/post-layout-sdf-regression/artifacts/20260922-011856-87e8166/klt-functional-verification-nom_typ_1p20V_25C.json
+verification/records/post-layout-sdf-regression/artifacts/20260922-011856-87e8166/nom_fast_1p32V_m40C.normalization.json
+verification/records/post-layout-sdf-regression/artifacts/20260922-011856-87e8166/nom_slow_1p08V_125C.normalization.json
+verification/records/post-layout-sdf-regression/artifacts/20260922-011856-87e8166/nom_typ_1p20V_25C.normalization.json
+verification/records/post-layout-sdf-regression/artifacts/20260922-011856-87e8166/request-nom_fast_1p32V_m40C.json
+verification/records/post-layout-sdf-regression/artifacts/20260922-011856-87e8166/request-nom_slow_1p08V_125C.json
+verification/records/post-layout-sdf-regression/artifacts/20260922-011856-87e8166/request-nom_typ_1p20V_25C.json
+verification/records/post-layout-sdf-regression/artifacts/20260922-011856-87e8166/results_icarus-nom_fast_1p32V_m40C.xml
+verification/records/post-layout-sdf-regression/artifacts/20260922-011856-87e8166/results_icarus-nom_slow_1p08V_125C.xml
+verification/records/post-layout-sdf-regression/artifacts/20260922-011856-87e8166/results_icarus-nom_typ_1p20V_25C.xml
+verification/records/post-layout-sdf-regression/artifacts/20260922-011856-87e8166/sweep-summary.json
+verification/records/program-load-phase/artifacts/20260921-185910-248bf61/klt-functional-verification.json
+verification/records/program-load-phase/artifacts/20260921-185910-248bf61/klt-synthesize-error.json
+verification/records/program-load-phase/artifacts/20260921-185910-248bf61/protocol_program_memory_stats.json
+verification/records/program-load-phase/artifacts/20260921-185910-248bf61/protocol_program_memory_synth-console.txt
+verification/records/program-load-phase/artifacts/20260921-185910-248bf61/protocol_program_memory_synth.ys
+verification/records/program-load-phase/artifacts/20260921-185910-248bf61/results_icarus.xml
+verification/records/program-load-phase/artifacts/20260921-185910-248bf61/test-icarus-console.txt
+verification/records/program-load-phase/records/20260921-185910-248bf61.md
+verification/records/program-memory-macro-feasibility/artifacts/20261001-091536-8639b95/sram-macro-feasibility-results.json
+verification/records/program-memory-macro-feasibility/records/20261001-091536-8639b95.md
+verification/records/protocol-reference-models/artifacts/20260922-014456-e116924/klt-functional-verification.json
+verification/records/protocol-reference-models/artifacts/20260922-014456-e116924/results_icarus.xml
+verification/records/protocol-reference-models/artifacts/20260922-014456-e116924/test-icarus-console.txt
+verification/records/sta-corner-sweep/artifacts/20260921-194500-7678c06/sta-corner-sweep-results.json
+verification/records/sta-corner-sweep/artifacts/20260921-194500-7678c06/sta-protocol-emulator-fast_1p32V_m40C.json
+verification/records/sta-corner-sweep/artifacts/20260921-194500-7678c06/sta-protocol-emulator-fast_1p65V_m40C.json
+verification/records/sta-corner-sweep/artifacts/20260921-194500-7678c06/sta-protocol-emulator-slow_1p08V_125C.json
+verification/records/sta-corner-sweep/artifacts/20260921-194500-7678c06/sta-protocol-emulator-slow_1p35V_125C.json
+verification/records/sta-corner-sweep/artifacts/20260921-194500-7678c06/sta-protocol-emulator-typ_1p20V_25C.json
+verification/records/sta-corner-sweep/artifacts/20260921-194500-7678c06/sta-protocol-emulator-typ_1p50V_25C.json
+verification/records/sta-corner-sweep/artifacts/20260921-194500-7678c06/toolchain-verification/fv-smoke-response.json
+verification/records/sta-corner-sweep/artifacts/20260922-012909-420c370/sta-corner-sweep-results.json
+verification/records/sta-corner-sweep/artifacts/20260922-012909-420c370/sta-output-fast_1p32V_m40C.json
+verification/records/sta-corner-sweep/artifacts/20260922-012909-420c370/sta-output-fast_1p65V_m40C.json
+verification/records/sta-corner-sweep/artifacts/20260922-012909-420c370/sta-output-slow_1p08V_125C.json
+verification/records/sta-corner-sweep/artifacts/20260922-012909-420c370/sta-output-slow_1p35V_125C.json
+verification/records/sta-corner-sweep/artifacts/20260922-012909-420c370/sta-output-typ_1p20V_25C.json
+verification/records/sta-corner-sweep/artifacts/20260922-012909-420c370/sta-output-typ_1p50V_25C.json
+verification/records/sta-corner-sweep/artifacts/20260927-094012-c3f85694/sta-corner-sweep-results.json
+verification/records/sta-corner-sweep/artifacts/20260927-094012-c3f85694/sta-output-fast_1p32V_m40C.json
+verification/records/sta-corner-sweep/artifacts/20260927-094012-c3f85694/sta-output-fast_1p65V_m40C.json
+verification/records/sta-corner-sweep/artifacts/20260927-094012-c3f85694/sta-output-slow_1p08V_125C.json
+verification/records/sta-corner-sweep/artifacts/20260927-094012-c3f85694/sta-output-slow_1p35V_125C.json
+verification/records/sta-corner-sweep/artifacts/20260927-094012-c3f85694/sta-output-typ_1p20V_25C.json
+verification/records/sta-corner-sweep/artifacts/20260927-094012-c3f85694/sta-output-typ_1p50V_25C.json
+verification/records/synthesis-baseline/records/20261001-091536-8639b95.md
