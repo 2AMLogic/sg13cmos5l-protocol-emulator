@@ -222,20 +222,61 @@ Icarus, provisioned by `./scripts/setup-env.sh` (see
 1. **Check the images are the ones built from source** (Python only):
    `python3 firmware/tools/check_firmware.py`. To rebuild one:
    `python3 firmware/tools/asm.py firmware/asm/uart_tx.asm`.
-2. **The loader.** The shipped loader is `load_program(dut, words)` in
-   [`verification/_dut.py`](../verification/_dut.py) (the same sequence as
-   the one in `test/test.py`); the benches read an image with the small
-   parser in `verification/test_firmware_uart.py` (`load_committed_image`:
-   one 4-hex-digit word per line of `firmware/build/<image>.hex`). The
-   load-phase protocol it drives, for anyone wiring their own driver:
+2. **The loader.** In simulation the benches load an image with their own
+   cocotb coroutines: `load_program(dut, words)` in
+   [`verification/test_protocol_emulator.py`](../verification/test_protocol_emulator.py)
+   (the top-level reference; `test/test.py` has the same sequence) and
+   `reset_release`/`load_words` in
+   [`verification/test_firmware_roundtrip.py`](../verification/test_firmware_roundtrip.py)
+   (module level); `_dut.py` has only `reset()`. Images are one 4-hex-digit
+   word per line of `firmware/build/<image>.hex`. The load-phase protocol,
+   for anyone wiring their own driver:
    - set `ui_in[7]` (MODE) high, `ui_in[0]` low; pulse `rst_n` low for
      10 clocks and release it;
    - clock one edge with MODE still high (the edge that latches MODE);
    - for each word in file order, for bit 15 down to 0, put the bit on
      `ui_in[0]` (keeping `ui_in[7]` high) and clock once;
-   - drop `ui_in[7]` to enter run phase. The first instruction retires two
-     edges later (fetch-ahead, DR 0005); execution then follows the
-     cycle report exactly.
+   - drop `ui_in[7]` to enter run phase, on its own edge. The first
+     instruction retires two edges later (fetch-ahead, DR 0005); execution
+     then follows the cycle report exactly.
+
+   **Host-side generator (no simulator).**
+   [`firmware/tools/loadseq.py`](../firmware/tools/loadseq.py) turns an image
+   into exactly that pin sequence, stdlib Python only:
+
+   ```
+   python3 firmware/tools/loadseq.py firmware/build/uart_tx.hex                    # JSON
+   python3 firmware/tools/loadseq.py firmware/build/uart_tx.hex --format python    # VERSION/WORDS/STEPS
+   ```
+
+   Format version 1, one step per clock cycle, `(ui_in, uio_in, rst_n, ena)`
+   held while `clk` is low: 10 steps with MODE high and `rst_n` low, one
+   MODE-latching step (`rst_n` high, no bit), 16 steps per word (MSB first,
+   `ui_in = 0x80 | bit`), one MODE-drop step (`ui_in = 0`); `uio_in = 0`,
+   `ena = 1` throughout, 12 + 16N steps, never padded. The input must hold
+   1..256 words; blank lines are skipped and anything else that is not
+   exactly four hex digits, an empty file, or more than 256 words is
+   rejected (exit status 2, nothing emitted).
+   [`firmware/tools/loadseq_playback.py`](../firmware/tools/loadseq_playback.py)
+   (MicroPython-compatible, imports nothing) plays the steps on a board
+   adapter with `set_ui_in`, `set_uio_in`, `set_rst_n`, `set_ena`,
+   `set_clk` and `wait_us`; each step sets the inputs with `clk` low, waits
+   `setup_us`, raises `clk`, waits `high_us`, lowers it, waits `low_us`
+   (all configurable and positive). The adapter's owner must stop the
+   board's automatic clock before playback and keep manual clock control
+   through the MODE-drop step. After a re-select, replay the whole sequence
+   (SRAM contents are not assumed to survive). `MockAdapter` shows the
+   contract; no board binding ships.
+   Evidence, RTL simulation only (Icarus 13.0 via `klt
+   functional-verification`): `verification/request-loadseq.json` replays
+   the generated operations (independently of the cocotb loaders above) on
+   `protocol_program_memory` and reads every word of all 16 committed
+   application images, a 1-word image, the 256-word boundary and a reload
+   back through the fetch port; `verification/request-loadseq-top.json`
+   checks the MODE/run transition on the submitted top. Also
+   `python3 firmware/tools/test_loadseq.py`; `check_firmware.py` regenerates
+   each application image's sequence in memory and replays it through an
+   independent model of the load protocol.
 3. **Run and grade a protocol in simulation** (klt flow). Each request
    loads the committed image through step 2's sequence and grades the pins
    against the independent reference model:
@@ -255,9 +296,9 @@ Icarus, provisioned by `./scripts/setup-env.sh` (see
      images); the `_sr` images add repeated START, 0xA1, one read byte and
      a controller NACK, and publish the received byte on `uo_out`.
 
-Not in this recipe: there is no host-side command that streams an image
-into a physical chip (the loader is a cocotb coroutine), and no silicon
-exists to run it on.
+Not in this recipe: playback of the generated sequence on a physical chip
+has not been demonstrated. `loadseq.py` produces and simulation-verifies the
+pin sequence, but no board adapter ships and no silicon exists to run it on.
 
 ## Pins (PROVISIONAL)
 
@@ -275,7 +316,7 @@ Fixed by the RTL (`src/tt_um_2amlogic_protocol_emulator.v`), not provisional:
 |---|---|
 | `ui_in[7]` | MODE: high across `rst_n` release selects load phase; low runs the boot ROM |
 | `ui_in[6:5]` | straps, read once by the boot ROM's program when MODE is low at reset (`00`/`11` UART-load stub, `01` SPI-flash boot, `10` warm start). The read is an ordinary `IN`, not strap hardware; a loaded program sees these as plain input bits |
-| `ui_in[0]` | serial program data in load phase, MSB first |
+| `ui_in[0]` | serial program data in load phase, MSB first (no run-phase role; UART RX is `ui_in[1]`) |
 | `uio_oe[7:0]` | set by firmware: `UIO_OD[n]` → open-drain (`uio_oe[n] = ~uio_out[n]`), else `UIO_DIR[n]` → push-pull, else input. **0 after reset**: every bidirectional pin is an input until a program writes `UIO_DIR` or `UIO_OD` |
 | `uio_out[7:0]` | written by `OUT`; reaches a pin only where `uio_oe` enables it |
 
@@ -359,16 +400,16 @@ Pmods that put UART, SPI or I2C on one four-pin `uio` row. Against those:
 
 - **UART transmit** is on `uo_out[0]`, which is option B's TX. It reaches the
   host over the board's USB bridge with no extra wiring.
-- **UART receive** is on `ui_in[0]`, not option B's `ui_in[1]`. It needs one
-  jumper wire.
+- **UART receive** is on `ui_in[1]`, option B's RX (moved from `ui_in[0]` in
+  #178). It reaches the host over the same USB bridge with no extra wiring.
+  `ui_in[0]` is the program-load pin only; the receiver never reads it.
 - **SPI** (CS `uio[0]`, MOSI `uio[1]`, MISO `uio[2]`, SCK `uio[3]`) and
   **I2C** (SCL `uio[2]`, SDA `uio[3]`) are on the upper `uio` row exactly as
   the standard SPI and I2C Pmods wire it. An unmodified Pmod plugs in; no
   wire adapter is needed.
 
-The plan is to move UART receive to option B's `ui_in[1]` as well (DR 0010,
-"Target pin plan"). SPI and I2C moved in #155; the UART move is its
-follow-up.
+All three protocols now follow the recommended pinouts (DR 0010, "Target pin
+plan"): SPI and I2C moved in #155 and UART receive in #178.
 
 **Required for the SPI-flash boot (strap `01`):** a Tiny Tapeout QSPI
 flash/PSRAM Pmod in the bidirectional header, with an image written to its
