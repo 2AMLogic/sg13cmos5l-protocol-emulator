@@ -1,0 +1,7 @@
+{
+  "schema_version": 1,
+  "error": {
+    "command": "lvs",
+    "message": "could not convert gate-level-verilog reference netlist '../verification/records/librelane-gds-signoff-check/artifacts/20261010-020408-5a5cddc/reference-klt-yosys-with-macro-stub.v' to plain-element form: only a plain 'assign <net> = <net>;' alias or a plain concatenation 'assign <net> = { <net>, ... };' is supported, found: \"assign { word[7], word[4] } = 2'h0\""
+  }
+}
