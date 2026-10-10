@@ -102,7 +102,7 @@ experiment  control-space  verification/test_control_space.py; `klt functional-v
 experiment  core-datapath  verification/test_protocol_emulator.py; `klt functional-verification verification/request-protocol-emulator.json --format json`
 experiment  die-area-baseline  flow/run-die-area-par.sh [PDK]; BLOCKED by klayout-tools#2635, records claim no measurement
 experiment  firmware-assembler-roundtrip  verification/test_firmware_roundtrip.py; `klt functional-verification verification/request-firmware-roundtrip.json --format json`
-experiment  firmware-gate-level  `PDK_ROOT=<pdk> ./flow/run-firmware-gate-level.sh --full --control-space --boot-rom --boot-spi` [PDK]; default netlist frozen in post-layout-sdf-regression/artifacts/20261010-083555-704a3fb/
+experiment  firmware-gate-level  `PDK_ROOT=<pdk> ./flow/run-firmware-gate-level.sh --full --control-space --boot-rom --boot-spi --primitives` [PDK]; default netlist frozen in post-layout-sdf-regression/artifacts/20261010-160000-9d62f29/
 experiment  firmware-i2c  verification/test_firmware_i2c.py, test_firmware_i2c_sr.py; `klt functional-verification verification/request-firmware-i2c.json --format json` and `... request-firmware-i2c-sr.json ...`
 experiment  firmware-loadseq  verification/test_loadseq.py, test_loadseq_top.py; `klt functional-verification verification/request-loadseq.json --format json` and `... request-loadseq-top.json ...`; `python3 firmware/tools/test_loadseq.py` (not in run-rtl-benches.sh; cold-started by hand for this audit, both pass)
 experiment  firmware-spi  verification/test_firmware_spi.py; `klt functional-verification verification/request-firmware-spi.json --format json`
@@ -115,6 +115,7 @@ experiment  librelane-pdn-bridge  [LL] gds workflow (PDN configuration src/pdn_c
 experiment  no-data-dependent-latency  `./verification/formal/run-no-data-dependent-latency.sh <dir>` (formal toolchain); `verification/formal/test-mutant-gate.sh`
 experiment  pin-write-latency  `./verification/formal/run-pin-write-latency.sh <dir>` (formal toolchain)
 experiment  post-layout-sdf-regression  [PDK][LL] `KLT_BIN=<klt> PDK_ROOT=<pdk> ./flow/run-post-layout-sdf.sh --run-id <gds run>` (or `--from <dir>` on downloaded artifacts); the SDFs and netlist of each cited run are frozen in its record
+experiment  primitives  verification/test_primitives.py; `klt functional-verification verification/request-primitives.json --format json`; controls `python3 verification/primitives_mutants.py --out <dir>` (DR 0015 P1/P2; the same bench runs on the gate-level netlist in firmware-gate-level)
 experiment  program-load-phase  verification/test_program_memory.py; `klt functional-verification verification/request-program-memory.json --format json`
 experiment  program-memory-macro-feasibility  [PDK] `python3 flow/run-sram-macro-feasibility.py --out <file>`
 experiment  protocol-reference-models  verification/test_protocol_models.py; `klt functional-verification verification/request-protocol-models.json --format json`
@@ -149,3 +150,17 @@ experiment  uio-pad-model  verification/test_uio_pads.py; `klt functional-verifi
 # The PDK-heavy klt legs were re-run and committed as records at this pin:
 # synthesis-baseline 20261010-110400-5669077 and librelane-gds-signoff-check
 # 20261010-110300-5669077.
+
+## Issue #208 (2026-10-10): DR 0015's P1 and P2
+
+# New evidence directory: primitives (bench against independent CRC and
+# NRZI/stuffing oracles, 14 mutants). Re-run for this change, on the tree of
+# issue #208 and the gds run 38055685598 netlist: scripts/run-rtl-benches.sh
+# (16 of 16 benches pass), the control-space, ISA-lockstep and primitives
+# mutant runners, flow/run-firmware-gate-level.sh with --primitives (9 modules,
+# every negative control fails as required), flow/run-reset-power-up-gate-level.sh,
+# flow/run-post-layout-sdf.sh --from (3 corners), both formal properties, and
+# the klt synthesis, DRC, extraction and LVS legs. Tools differ from the #83
+# audit above and the records say how: Yosys 0.67+post (not 0.69+post) and
+# the host's IHP-Open-PDK checkout 607e18d4 (not 2bbec755) for the local legs;
+# the LibreLane legs are the hosted run's and used 2bbec755.

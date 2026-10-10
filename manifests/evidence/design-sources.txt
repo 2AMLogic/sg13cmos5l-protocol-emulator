@@ -1,11 +1,13 @@
 # T1 item 1 (Design sources), Digital column: the committed RTL sources and
 # the synthesized gate-level netlists derived from them.
 #
-# Audited 2026-10-10 for issue #83 against main @ 5669077. The design these
-# lines describe was last changed by 704a3fb (issue #168, the warm start
-# refuses a zero signature); every hashed source below is byte-identical at
-# 704a3fb and at 5669077. Attested by design-sources.json beside this file;
-# the manifest cites that envelope for item 1.
+# Audited 2026-10-10 for issue #83 against main @ 5669077, and refreshed the
+# same day for issue #208, which builds DR 0015's P1 and P2 into
+# rtl/protocol_core.v and adds LibreLane-only drive buffers on every SRAM
+# macro input to rtl/protocol_program_memory.v: the two hashes and the two
+# derived netlists below are the issue-208 design's (gds run 38055685598 at
+# cb4b7aa). Attested by design-sources.json beside this file; the manifest
+# cites that envelope for item 1.
 #
 # How this stays true: `klt signoff` re-hashes only this file. The bytes it
 # lists are checked by scripts/check_evidence_inventories.py (`npm run lint`,
@@ -22,8 +24,8 @@
 ## RTL, as the klt/Yosys synthesis request and the Tiny Tapeout template read it
 
 sha256:03b53d290605df6589c76a7212474b894735cbc84215e959a1cb90b2fb1fee72  src/tt_um_2amlogic_protocol_emulator.v
-sha256:fa692ae7ead0da374f414d104e2ff679414bd49f58e1cbb9ae7165961af8b791  rtl/protocol_core.v
-sha256:f2440338178b680a1c47ea23a9d09d1edb1125eade000660e732855e6135b98f  rtl/protocol_program_memory.v
+sha256:d4bab243a80af56a41b8ef730bc0ecbee889f2c02f4587311d6f9f694636437a  rtl/protocol_core.v
+sha256:2b08865ab24d6bac84b390dfa76bab6686b572ba8f19124130bfc34e93dff637  rtl/protocol_program_memory.v
 sha256:020c5dea05d90aed4713553b38d240f30b058539c9744a4c96c7b3eda16e5b51  rtl/protocol_boot_rom.v
 
 # The template's "sources live in src/" rule is met by symlinks, so there is
@@ -66,16 +68,15 @@ file  src/pdn_cfg.tcl
 ## The derived gate-level netlists of record
 
 # klt/Yosys flow: `klt synthesize flow/synthesize-protocol-emulator.json`
-# re-run at the klt v0.7.0 pin by librelane-gds-signoff-check record
-# 20261010-110300-5669077 (1,377 instances, 21,331.0314 um^2 on that flow;
-# byte-identical to the netlist record 20261010-083721-704a3fb derived at the
-# previous pin). This is the reference T1 item 4's LVS compares against.
-sha256:2c2d29986c436c7b9b7162b7f6dfa83c4a2355badd9e011929641e4abe944c3a  verification/records/librelane-gds-signoff-check/artifacts/20261010-110300-5669077/reference-klt-yosys.v
+# re-run by librelane-gds-signoff-check record 20261010-160200-9d62f29
+# (2,161 instances, 32,178.7242 um^2 on that flow, Yosys 0.67+post; 1,377 / 21,331.0314 before P1 and P2). This is the
+# reference T1 item 4's LVS compares against.
+sha256:1ef9d4dcc3d9f3864f916b2f81ea23a0b4878c9354e7184eb9572326c42a5b6d  verification/records/librelane-gds-signoff-check/artifacts/20261010-160200-9d62f29/reference-klt-yosys.v
 
-# LibreLane flow: the post-route netlist of gds run 38037477407 at 704a3fb
+# LibreLane flow: the post-route netlist of gds run 38055685598 at cb4b7aa
 # (tt_submission artifact), frozen by librelane-gds-signoff-check record
-# 20261010-083721-704a3fb. The gds run of main at 5a31595 (38043438168, the
-# same design sources) emitted a byte-identical netlist. It is the netlist the
-# committed GDS (T1 item 2) was routed as, and the one the post-layout SDF
+# 20261010-160200-9d62f29 and byte-identical to the one frozen by the
+# post-layout-sdf-regression record 20261010-160000-9d62f29. It is the netlist
+# the committed GDS (T1 item 2) was routed as, and the one the post-layout SDF
 # regression (T1 item 7) simulates.
-sha256:027f17bdf4f38a084d0eb2ac331dbd2b34e20db98446d9a2a8040158c47eb133  verification/records/librelane-gds-signoff-check/artifacts/20261010-083721-704a3fb/reference-asrouted.v
+sha256:ba6b7535be2dc6f7dd1e85e613212952fc917944ced86268863187c73d41578f  verification/records/librelane-gds-signoff-check/artifacts/20261010-160200-9d62f29/reference-asrouted.v

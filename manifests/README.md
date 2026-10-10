@@ -228,6 +228,22 @@ capture, PVT corner sweeps, or Monte Carlo.
   previous design** until `design-sources.txt`, the GDS binding and their
   envelopes are refreshed with the new GDS-check record; the inventory check
   below fails the CI records job until they are.
+- **Items 1, 2, 3, 4, 7 and 9, state as of 2026-10-10 (issue #208).** Append-only;
+  the bullets above are the earlier state. DR 0015's P1 and P2 and the
+  LibreLane-only drive buffers on every SRAM macro input changed the design,
+  so every cited artifact was re-made and re-pointed: items 2, 3 and 4 cite
+  `librelane-gds-signoff-check` record `20261010-160200-9d62f29` (the GDS of
+  gds run 38055685598, `sha256:830eaba1…`); item 7 cites
+  `post-layout-sdf-regression` record `20261010-160000-9d62f29`, whose routed
+  netlist is byte-identical to that run's; item 1's inventory carries the new
+  RTL hashes and the two new derived netlists; item 9's inventory gains the
+  `primitives` experiment line. **Verdicts are unchanged: items 1, 2, 3, 9
+  and 10 `met`; item 4 `unmet`/`check_errored`** (klayout-tools#2941, the
+  converter now stopping at the sized constant `1'h1` on the klt/Yosys
+  reference, a later shape of the same issue; the compare against the
+  post-route reference is `match` and is not cited); **item 7 stays
+  `unmet`/`unverifiable_provenance`**. Baseline: `signoff-baseline` record
+  `20261010-161100-9d62f29`, 5 of 11.
 - **Every citation pins a `content_hash`**, and what it is the hash of
   depends on the cited envelope (clarified 2026-10-10, issue #168; the
   manifests on `main` have always followed this, the sentence here did

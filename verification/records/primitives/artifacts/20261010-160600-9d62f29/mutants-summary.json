@@ -1,0 +1,243 @@
+{
+ "bench": "verification/test_primitives.py",
+ "runs": [
+  {
+   "kind": "golden",
+   "tests": 11,
+   "failed": [],
+   "as_required": true
+  },
+  {
+   "kind": "mutant",
+   "name": "crc-byte-latency-data-dependent",
+   "defect": "WCTL CRC_BYTE stalls 1 cycle instead of 8 when Rs is 0x00 (data-dependent latency)",
+   "file": "rtl/protocol_core.v",
+   "tests": 11,
+   "failed": [
+    "test_fixed_latency_is_data_independent"
+   ],
+   "expected_catchers": [
+    "test_fixed_latency_is_data_independent"
+   ],
+   "as_required": true
+  },
+  {
+   "kind": "mutant",
+   "name": "crc-byte-seven-bits",
+   "defect": "WCTL CRC_BYTE stalls (and steps) 7 cycles instead of 8",
+   "file": "rtl/protocol_core.v",
+   "tests": 11,
+   "failed": [
+    "test_crc_catalogue_check_values",
+    "test_crc_random_messages",
+    "test_fixed_latency_is_data_independent"
+   ],
+   "expected_catchers": [
+    "test_crc_catalogue_check_values",
+    "test_crc_random_messages",
+    "test_fixed_latency_is_data_independent"
+   ],
+   "as_required": true
+  },
+  {
+   "kind": "mutant",
+   "name": "crc-byte-bit-order-fixed",
+   "defect": "CRC_BYTE feeds Rs MSB first in reflected mode too",
+   "file": "rtl/protocol_core.v",
+   "tests": 11,
+   "failed": [
+    "test_crc_catalogue_check_values",
+    "test_crc_random_messages"
+   ],
+   "expected_catchers": [
+    "test_crc_catalogue_check_values",
+    "test_crc_random_messages"
+   ],
+   "as_required": true
+  },
+  {
+   "kind": "mutant",
+   "name": "crc-tap-ignores-width",
+   "defect": "the normal-mode feedback taps bit 31 instead of bit W-1",
+   "file": "rtl/protocol_core.v",
+   "tests": 11,
+   "failed": [
+    "test_crc_bit_steps",
+    "test_crc_catalogue_check_values",
+    "test_crc_random_messages",
+    "test_lfsr_prbs"
+   ],
+   "expected_catchers": [
+    "test_crc_bit_steps",
+    "test_crc_catalogue_check_values",
+    "test_crc_random_messages",
+    "test_lfsr_prbs"
+   ],
+   "as_required": true
+  },
+  {
+   "kind": "mutant",
+   "name": "crc-reflected-shift-unmasked",
+   "defect": "the reflected step shifts state bits from above the width into bit W-1",
+   "file": "rtl/protocol_core.v",
+   "tests": 11,
+   "failed": [
+    "test_crc_registers_pointer_and_masking"
+   ],
+   "expected_catchers": [
+    "test_crc_registers_pointer_and_masking"
+   ],
+   "as_required": true
+  },
+  {
+   "kind": "mutant",
+   "name": "crc-next-not-inverted",
+   "defect": "CRC_NEXT ignores the read-out inversion bit",
+   "file": "rtl/protocol_core.v",
+   "tests": 11,
+   "failed": [
+    "test_crc_bit_steps",
+    "test_crc_catalogue_check_values",
+    "test_crc_random_messages",
+    "test_crc_registers_pointer_and_masking"
+   ],
+   "expected_catchers": [
+    "test_crc_catalogue_check_values",
+    "test_crc_random_messages",
+    "test_crc_registers_pointer_and_masking"
+   ],
+   "as_required": true
+  },
+  {
+   "kind": "mutant",
+   "name": "crc-cfg-keeps-pointer",
+   "defect": "a CRC_CFG write does not rewind the byte pointer",
+   "file": "rtl/protocol_core.v",
+   "tests": 11,
+   "failed": [
+    "test_crc_registers_pointer_and_masking",
+    "test_lfsr_prbs"
+   ],
+   "expected_catchers": [
+    "test_crc_registers_pointer_and_masking",
+    "test_lfsr_prbs"
+   ],
+   "as_required": true
+  },
+  {
+   "kind": "mutant",
+   "name": "crc-bit-reads-bit7",
+   "defect": "CRC_BIT takes its data bit from Rs[7] instead of Rs[0]",
+   "file": "rtl/protocol_core.v",
+   "tests": 11,
+   "failed": [
+    "test_crc_bit_steps",
+    "test_lfsr_prbs"
+   ],
+   "expected_catchers": [
+    "test_crc_bit_steps",
+    "test_lfsr_prbs"
+   ],
+   "as_required": true
+  },
+  {
+   "kind": "mutant",
+   "name": "crc-state-reset-nonzero",
+   "defect": "CRC_STATE resets to 0x00000001 instead of 0",
+   "file": "rtl/protocol_core.v",
+   "tests": 11,
+   "failed": [
+    "test_crc_registers_pointer_and_masking"
+   ],
+   "expected_catchers": [
+    "test_crc_registers_pointer_and_masking"
+   ],
+   "as_required": true
+  },
+  {
+   "kind": "mutant",
+   "name": "line-stuff-one-late",
+   "defect": "P2 stuffs after N+1 bits instead of N",
+   "file": "rtl/protocol_core.v",
+   "tests": 11,
+   "failed": [
+    "test_line_can_stuff5_equal",
+    "test_line_hdlc_stuff5",
+    "test_line_stuff_slot_ignores_rs_and_registers",
+    "test_line_usb_nrzi_stuff6"
+   ],
+   "expected_catchers": [
+    "test_line_can_stuff5_equal",
+    "test_line_hdlc_stuff5",
+    "test_line_stuff_slot_ignores_rs_and_registers",
+    "test_line_usb_nrzi_stuff6"
+   ],
+   "as_required": true
+  },
+  {
+   "kind": "mutant",
+   "name": "line-stuff-slot-emits-data",
+   "defect": "a stuff slot emits Rs[0] (and still flags LINE_STUF) instead of the stuff bit",
+   "file": "rtl/protocol_core.v",
+   "tests": 11,
+   "failed": [
+    "test_line_can_stuff5_equal",
+    "test_line_hdlc_stuff5",
+    "test_line_stuff_slot_ignores_rs_and_registers",
+    "test_line_usb_nrzi_stuff6"
+   ],
+   "expected_catchers": [
+    "test_line_can_stuff5_equal",
+    "test_line_hdlc_stuff5",
+    "test_line_stuff_slot_ignores_rs_and_registers",
+    "test_line_usb_nrzi_stuff6"
+   ],
+   "as_required": true
+  },
+  {
+   "kind": "mutant",
+   "name": "line-nrzi-wrong-polarity",
+   "defect": "NRZI mode 01 toggles on a 1 instead of a 0",
+   "file": "rtl/protocol_core.v",
+   "tests": 11,
+   "failed": [
+    "test_line_stuff_slot_ignores_rs_and_registers",
+    "test_line_usb_nrzi_stuff6"
+   ],
+   "expected_catchers": [
+    "test_line_stuff_slot_ignores_rs_and_registers",
+    "test_line_usb_nrzi_stuff6"
+   ],
+   "as_required": true
+  },
+  {
+   "kind": "mutant",
+   "name": "line-equal-run-restarts-at-zero",
+   "defect": "the equal-bits rule restarts its run at 0 instead of 1 on a change",
+   "file": "rtl/protocol_core.v",
+   "tests": 11,
+   "failed": [
+    "test_line_can_stuff5_equal"
+   ],
+   "expected_catchers": [
+    "test_line_can_stuff5_equal",
+    "test_line_stuff_slot_ignores_rs_and_registers"
+   ],
+   "as_required": true
+  },
+  {
+   "kind": "mutant",
+   "name": "line-put-writes-z",
+   "defect": "WCTL LINE_PUT writes the Z flag from the emitted bit",
+   "file": "rtl/protocol_core.v",
+   "tests": 11,
+   "failed": [
+    "test_no_flag_side_effects_and_unassigned"
+   ],
+   "expected_catchers": [
+    "test_no_flag_side_effects_and_unassigned"
+   ],
+   "as_required": true
+  }
+ ]
+}
