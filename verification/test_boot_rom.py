@@ -7,7 +7,7 @@ This bench is the part of that record's verification list that issue #138
 owns, and target-spec row 14 (c) / `spec/verification-plan.md` section 8's
 "uninitialized program memory" bullet:
 
-- **the stubs idle on memory nobody wrote**: straps 00, 01 and 11 on a
+- **the stubs idle on memory nobody wrote**: straps 00 and 11 (the UART-load stub and the reserved value; strap 01 is the SPI-flash boot since issue #140 and is test_boot_spi.py's) on a
   program memory that has never been written (all X in simulation) leave
   `uo_out`, `uio_out` and `uio_oe` at 0 and free of X;
 - **`MODE` low never runs unverified memory**: with program memory holding
@@ -99,7 +99,12 @@ BOOT_ROM_V = REPO_ROOT / "rtl" / "protocol_boot_rom.v"
 # DR 0013 layer 2 strap table: ui_in[6:5].
 STRAP_UART, STRAP_SPI, STRAP_WARM, STRAP_RESERVED = 0b00, 0b01, 0b10, 0b11
 STRAPS = (STRAP_UART, STRAP_SPI, STRAP_WARM, STRAP_RESERVED)
-STUB_STRAPS = (STRAP_UART, STRAP_SPI, STRAP_RESERVED)
+# Strap 01 is no longer a stub (issue #140): the SPI-flash boot drives the
+# flash pins, so its idle-pins properties live in test_boot_spi.py. These two
+# tuples are the straps whose boot programs move no pin on an unverified
+# or empty program memory.
+STUB_STRAPS = (STRAP_UART, STRAP_RESERVED)
+QUIET_STRAPS = (STRAP_UART, STRAP_WARM, STRAP_RESERVED)
 
 # The number firmware/asm/boot/boot_rom.asm documents: word 0 of a verified
 # image executes this many cycles after the boot program's first instruction.
@@ -173,6 +178,13 @@ class BootModel:
         self.od = 0
         self.pm_reads = 0
         self.pm_writes = 0
+        # Pin hooks for boot programs that talk to a device (issue #140):
+        # `uio_in_at(elapsed)` supplies a `uio_in` read; `on_uio(elapsed,
+        # uio_out, uio_dir)` is told about every write to either, `elapsed`
+        # being the cycle count before the writing instruction. Unset, the
+        # model is the one it always was: uio_in reads 0.
+        self.uio_in_at = None
+        self.on_uio = None
 
     def _rctl(self, k):
         if k == UIO_DIR:
@@ -223,7 +235,7 @@ class BootModel:
                 if rs == 0:
                     self.r[rd] = self.ui_in
                 elif rs == 1:
-                    self.r[rd] = 0x00       # uio_in is held at 0 by this bench
+                    self.r[rd] = self.uio_in_at(elapsed) if self.uio_in_at else 0x00
                 elif rs == 2:
                     if imm == PM_DATA_HI:
                         value = self.pm[self.pm_addr]
@@ -237,9 +249,13 @@ class BootModel:
                     self.uo = a
                 elif rs == 3:
                     self.uio = a
+                    if self.on_uio:
+                        self.on_uio(elapsed, self.uio, self.dir)
                 elif rs == 0:
                     if imm == UIO_DIR:
                         self.dir = a
+                        if self.on_uio:
+                            self.on_uio(elapsed, self.uio, self.dir)
                     elif imm == UIO_OD:
                         self.od = a
                     elif imm == PM_ADDR:
@@ -280,12 +296,13 @@ def boot_outcome(straps, pm):
 
 
 def stub_addresses():
-    """Addresses of the two stub HALTs, from the boot source: the first
-    HALT is `uart_load` and the second `spi_boot` (the source's order)."""
+    """Address of the UART-load stub's HALT, from the boot source: the first
+    HALT is `uart_load`; the second is the SPI boot's `spi_fail` (issue
+    #140), whose properties test_boot_spi.py owns."""
     program = asm.assemble_file(BOOT_ASM)
     halts = [ins.addr for ins in program.instructions if ins.mnemonic == "HALT"]
-    assert len(halts) == 2, f"boot source has {len(halts)} HALTs, expected the two stubs"
-    return {"uart_load": halts[0], "spi_boot": halts[1]}
+    assert len(halts) == 2, f"boot source has {len(halts)} HALTs, expected uart_load and spi_fail"
+    return {"uart_load": halts[0], "spi_fail": halts[1]}
 
 
 # ---------------------------------------------------------------------------
@@ -422,8 +439,8 @@ class RomWatch:
 def expected_stub(straps, result):
     """Which stub DR 0013's strap table sends `straps` to when no image is
     run, checked against the model's verdict."""
-    stubs = stub_addresses()
-    want = stubs["spi_boot"] if straps == STRAP_SPI else stubs["uart_load"]
+    assert straps in STUB_STRAPS or straps == STRAP_WARM, "strap 01 is test_boot_spi.py's"
+    want = stub_addresses()["uart_load"]
     assert result["outcome"] == "halt" and result["pc"] == want, (
         f"model: straps {straps:02b} ended {result}, expected a HALT at {want:#04x}"
     )
@@ -602,7 +619,7 @@ async def test_mode_low_never_runs_unverified_memory(dut):
             assert loaded[-1]["uo_out"] == 0xFF and loaded[-1]["uio_oe"] == 0xFF, (
                 f"premise: the canary does not drive pins when it runs: {loaded[-1]}"
             )
-        for straps in STRAPS:
+        for straps in QUIET_STRAPS:
             label = f"{name}, MODE low, straps {straps:02b}"
             result, model = boot_outcome(straps, image)
             stub = expected_stub(straps, result)

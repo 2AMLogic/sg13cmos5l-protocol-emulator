@@ -11,8 +11,11 @@
 # synthesis or timing number is produced or implied.
 #
 # Default netlist: the byte-identical copy frozen under verification/records/
-# post-layout-sdf-regression/ from gds run 37996177546 (the first netlist with
-# DR 0013's boot ROM, issue #138). Override with --netlist <file>. The netlist
+# post-layout-sdf-regression/ from gds run 38013383254 (the first netlist with
+# the SPI-flash boot program, issue #140; until #140 it was gds run
+# 37996177546's, the first with DR 0013's boot ROM, issue #138). It must carry
+# the same boot ROM as rtl/protocol_boot_rom.v, because the bench predicts the
+# boot from the committed image. Override with --netlist <file>. The netlist
 # is never edited: the bench sets the power-up state from the testbench
 # (verification/test_reset_power_up.py's docstring says how).
 #
@@ -48,7 +51,7 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SCRATCH="${REPO_ROOT}/flow/reset-power-up"
-NETLIST="${REPO_ROOT}/verification/records/post-layout-sdf-regression/artifacts/20261009-220911-1dc1842/tt_um_2amlogic_protocol_emulator.v"
+NETLIST="${REPO_ROOT}/verification/records/post-layout-sdf-regression/artifacts/20261010-020805-ed5f2d1/tt_um_2amlogic_protocol_emulator.v"
 JUSTIFICATIONS="${REPO_ROOT}/verification/reset_coverage_justifications.json"
 MODULE=test_reset_power_up
 export PDK_ROOT="${PDK_ROOT:-$HOME/share/pdk}"
@@ -56,7 +59,7 @@ export PDK_ROOT="${PDK_ROOT:-$HOME/share/pdk}"
 while [ $# -gt 0 ]; do
   case "$1" in
     --netlist) NETLIST="$2"; shift 2 ;;
-    -h|--help) sed -n '2,46p' "${BASH_SOURCE[0]}"; exit 0 ;;
+    -h|--help) sed -n '2,49p' "${BASH_SOURCE[0]}"; exit 0 ;;
     *) echo "FATAL: unknown argument $1" >&2; exit 1 ;;
   esac
 done

@@ -1,0 +1,23 @@
+     -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:242  in gpi_load_users                  Loaded entry library: '/opt/homebrew/Cellar/python@3.13/3.13.16/Frameworks/Python.framework/Versions/3.13/Python'
+     -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:234  in gpi_load_users                  Running entry func 'initialize' from loaded library '<scratch>/venv/lib/python3.13/site-packages/cocotb/simulator.cpython-313-darwin.so'
+     -.--ns INFO     pygpi                              ..ib/pygpi/embed.cpp:115  in initialize                      Using Python 3.13.14 interpreter at <scratch>/venv/bin/python
+     -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:74   in gpi_print_registered_impl       GPI: VPI support registered
+     0.00ns INFO     cocotb.initialize                  Seeding Python random module with 1
+     0.00ns INFO     cocotb.initialize                  Initialized cocotb v2.1.0 from <scratch>/venv/lib/python3.13/site-packages/cocotb
+     0.00ns INFO     cocotb.initialize                  Running on Icarus Verilog version 13.0 (stable)
+     0.00ns INFO     cocotb.regression                  Running tests
+     0.00ns INFO     cocotb.regression                  running test_loadseq_top.test_program_stays_idle_until_mode_drop_then_runs (1/3)
+   650.00ns INFO     cocotb.regression                  test_loadseq_top.test_program_stays_idle_until_mode_drop_then_runs passed
+   650.00ns INFO     cocotb.regression                  running test_loadseq_top.test_without_mode_drop_the_program_never_runs (2/3)
+  1440.00ns INFO     cocotb.regression                  test_loadseq_top.test_without_mode_drop_the_program_never_runs passed
+  1440.00ns INFO     cocotb.regression                  running test_loadseq_top.test_reload_after_run_restarts_from_word_zero (3/3)
+  2720.00ns INFO     cocotb.regression                  test_loadseq_top.test_reload_after_run_restarts_from_word_zero passed
+  2720.00ns INFO     cocotb.regression                  ****************************************************************************************************************************
+                                                        ** TEST                                                                STATUS  SIM TIME (ns)  REAL TIME (s)  RATIO (ns/s) **
+                                                        ****************************************************************************************************************************
+                                                        ** test_loadseq_top.test_program_stays_idle_until_mode_drop_then_runs   PASS         650.00           0.00     422420.80  **
+                                                        ** test_loadseq_top.test_without_mode_drop_the_program_never_runs       PASS         790.00           0.00     543017.65  **
+                                                        ** test_loadseq_top.test_reload_after_run_restarts_from_word_zero       PASS        1280.00           0.00     517668.47  **
+                                                        ****************************************************************************************************************************
+                                                        ** TESTS=3 PASS=3 FAIL=0 SKIP=0                                                     2720.00           0.01     451880.72  **
+                                                        ****************************************************************************************************************************
