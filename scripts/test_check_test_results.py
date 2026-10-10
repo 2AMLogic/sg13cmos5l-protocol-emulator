@@ -7,7 +7,9 @@ from a failing one -- exactly the property the line it replaced
 (`! grep -q failure results.xml`) never had, in either direction (see the
 script's own docstring and the issue it closes). Each fixture case below is
 one required distinction from the issue's minimum test list: a genuine
-failure, a genuine pass, and a missing file.
+failure, a genuine pass, and a missing file -- plus the fail-closed cases
+from issue #215: a zero summary attribute contradicting a nested
+failure/error, a zero-test or fully skipped run, and a negative counter.
 
 Method (the same shape as `verification/test_check_records.py` and
 `scripts/test_check_ratification_gate.py`): write a fixture `results.xml` to
@@ -110,6 +112,62 @@ EMPTY_TESTSUITES = """<testsuites name="results">
 </testsuites>
 """
 
+#: Contradictory summary: errors="0" on the suite, but the testcase carries a
+#: nested <error>. The nested signal must not be hidden by the zero attribute.
+CONTRADICTORY_ERRORS_ATTR = """<testsuite tests="1" failures="0" errors="0"><testcase name="crashed"><error message="crash"/></testcase></testsuite>
+"""
+
+#: Same contradiction on the failures axis.
+CONTRADICTORY_FAILURES_ATTR = """<testsuites name="results">
+  <testsuite name="all" tests="2" failures="0" errors="0" skipped="0">
+    <testcase name="a" classname="test" time="0.01" />
+    <testcase name="b" classname="test" time="0.01">
+      <failure error_type="AssertionError" error_msg="boom" />
+    </testcase>
+  </testsuite>
+</testsuites>
+"""
+
+#: A zero-test suite: all counters zero, no testcases. Nothing ran.
+ZERO_TEST_SUITE = """<testsuite tests="0" failures="0" errors="0"/>
+"""
+
+#: Every testcase skipped: nothing was executed, so nothing was demonstrated.
+ALL_SKIPPED = """<testsuites name="results">
+  <testsuite name="all" tests="2" failures="0" errors="0" skipped="2">
+    <testcase name="a" classname="test" time="0.0"><skipped /></testcase>
+    <testcase name="b" classname="test" time="0.0"><skipped /></testcase>
+  </testsuite>
+</testsuites>
+"""
+
+#: A negative counter is malformed and must fail, not be summed into a total
+#: that could cancel a real failure elsewhere.
+NEGATIVE_FAILURES = """<testsuites name="results">
+  <testsuite name="all" tests="1" failures="-1" errors="0">
+    <testcase name="a" classname="test" time="0.01" />
+  </testsuite>
+</testsuites>
+"""
+
+NEGATIVE_TESTS = """<testsuites name="results">
+  <testsuite name="all" tests="-1" failures="0" errors="0">
+    <testcase name="a" classname="test" time="0.01" />
+  </testsuite>
+</testsuites>
+"""
+
+#: An empty auxiliary suite alongside a suite with an executed, passing case
+#: (and one skipped case) is a legitimate pass.
+MULTI_SUITE_WITH_EMPTY_AUXILIARY = """<testsuites name="results">
+  <testsuite name="aux" tests="0" failures="0" errors="0" />
+  <testsuite name="all" tests="2" failures="0" errors="0" skipped="1">
+    <testcase name="a" classname="test" time="0.01" />
+    <testcase name="b" classname="test" time="0.0"><skipped /></testcase>
+  </testsuite>
+</testsuites>
+"""
+
 
 def _run(results_xml: str | None, *, missing: bool = False, args: tuple[str, ...] = ()):
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -203,6 +261,47 @@ def case_empty_testsuites_root() -> tuple[bool, str]:
     return (code == 1 and "FAIL" in out and "no <testsuite>" in out), out
 
 
+def case_contradictory_errors_attr_fails() -> tuple[bool, str]:
+    """errors="0" cannot hide a nested <error> element (issue #215)."""
+    code, out = _run(CONTRADICTORY_ERRORS_ATTR)
+    return (code == 1 and "FAIL" in out and "total: failures=0 errors=1" in out), out
+
+
+def case_contradictory_failures_attr_fails() -> tuple[bool, str]:
+    """failures="0" cannot hide a nested <failure> element (issue #215)."""
+    code, out = _run(CONTRADICTORY_FAILURES_ATTR)
+    return (code == 1 and "FAIL" in out and "total: failures=1 errors=0" in out), out
+
+
+def case_zero_test_suite_fails() -> tuple[bool, str]:
+    """A suite with zero counters and no testcases ran nothing (issue #215)."""
+    code, out = _run(ZERO_TEST_SUITE)
+    return (code == 1 and "FAIL" in out and "no executed" in out), out
+
+
+def case_all_skipped_fails() -> tuple[bool, str]:
+    """A run whose every testcase was skipped demonstrates nothing."""
+    code, out = _run(ALL_SKIPPED)
+    return (code == 1 and "FAIL" in out and "no executed" in out), out
+
+
+def case_negative_failures_counter_fails() -> tuple[bool, str]:
+    code, out = _run(NEGATIVE_FAILURES)
+    return (code == 1 and "FAIL" in out and "negative" in out), out
+
+
+def case_negative_tests_counter_fails() -> tuple[bool, str]:
+    code, out = _run(NEGATIVE_TESTS)
+    return (code == 1 and "FAIL" in out and "negative" in out), out
+
+
+def case_multi_suite_with_empty_auxiliary_passes() -> tuple[bool, str]:
+    """An empty auxiliary suite is fine when another suite executed a
+    passing testcase; skipped cases do not count as executed."""
+    code, out = _run(MULTI_SUITE_WITH_EMPTY_AUXILIARY)
+    return (code == 0 and "PASS" in out and "executed=1" in out), out
+
+
 def case_too_many_arguments_is_a_usage_error() -> tuple[bool, str]:
     """More than one positional argument is a usage error (exit 2), distinct
     from a check failure (exit 1)."""
@@ -248,6 +347,13 @@ CASES = (
     case_truncated_xml,
     case_no_testsuite_element,
     case_empty_testsuites_root,
+    case_contradictory_errors_attr_fails,
+    case_contradictory_failures_attr_fails,
+    case_zero_test_suite_fails,
+    case_all_skipped_fails,
+    case_negative_failures_counter_fails,
+    case_negative_tests_counter_fails,
+    case_multi_suite_with_empty_auxiliary_passes,
     case_too_many_arguments_is_a_usage_error,
     case_default_path_resolves_to_repo_root,
 )
