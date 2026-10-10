@@ -1,0 +1,116 @@
+{
+ "i2c.address_ack": {
+  "ack": 16,
+  "nack": 4
+ },
+ "i2c.grade_x_addr_x_data": {
+  "i2c_fast/bound/alternating": 1,
+  "i2c_fast/bound/ones": 3,
+  "i2c_fast/bound/random": 1,
+  "i2c_fast/bound/zero": 1,
+  "i2c_fast/power-of-two/alternating": 1,
+  "i2c_fast/power-of-two/ones": 0,
+  "i2c_fast/power-of-two/random": 0,
+  "i2c_fast/power-of-two/zero": 2,
+  "i2c_fast/random/alternating": 0,
+  "i2c_fast/random/ones": 0,
+  "i2c_fast/random/random": 1,
+  "i2c_fast/random/zero": 0,
+  "i2c_std/bound/alternating": 0,
+  "i2c_std/bound/ones": 1,
+  "i2c_std/bound/random": 1,
+  "i2c_std/bound/zero": 0,
+  "i2c_std/power-of-two/alternating": 1,
+  "i2c_std/power-of-two/ones": 2,
+  "i2c_std/power-of-two/random": 1,
+  "i2c_std/power-of-two/zero": 1,
+  "i2c_std/random/alternating": 1,
+  "i2c_std/random/ones": 0,
+  "i2c_std/random/random": 0,
+  "i2c_std/random/zero": 2
+ },
+ "i2c_rd.address_class": {
+  "bound": 9,
+  "power-of-two": 7,
+  "random": 4
+ },
+ "i2c_rd.grade_x_read_class": {
+  "i2c_fast/alternating": 2,
+  "i2c_fast/ones": 3,
+  "i2c_fast/random": 2,
+  "i2c_fast/zero": 3,
+  "i2c_std/alternating": 2,
+  "i2c_std/ones": 3,
+  "i2c_std/random": 2,
+  "i2c_std/zero": 3
+ },
+ "i2c_rd.grade_x_site": {
+  "i2c_fast/pre_sr": 7,
+  "i2c_fast/pre_stop": 6,
+  "i2c_fast/read_clock": 3,
+  "i2c_std/pre_sr": 4,
+  "i2c_std/pre_stop": 5,
+  "i2c_std/read_clock": 7
+ },
+ "i2c_rd.pointer_class": {
+  "alternating": 4,
+  "ones": 2,
+  "random": 7,
+  "zero": 7
+ },
+ "i2c_rd.site_x_duration": {
+  "pre_sr/long": 3,
+  "pre_sr/medium": 4,
+  "pre_sr/short": 4,
+  "pre_stop/long": 4,
+  "pre_stop/medium": 3,
+  "pre_stop/short": 4,
+  "read_clock/long": 3,
+  "read_clock/medium": 3,
+  "read_clock/short": 4
+ },
+ "i2c_rd.stretch_count": {
+  "1": 8,
+  "2": 12,
+  "3": 0
+ },
+ "spi.mode_x_bursts": {
+  "mode0/bursts1": 3,
+  "mode0/bursts2": 2,
+  "mode1/bursts1": 4,
+  "mode1/bursts2": 1,
+  "mode2/bursts1": 4,
+  "mode2/bursts2": 1,
+  "mode3/bursts1": 4,
+  "mode3/bursts2": 1
+ },
+ "spi.mosi_class": {
+  "alternating": 5,
+  "ones": 5,
+  "random": 4,
+  "zero": 11
+ },
+ "spi.sclk_period_cycles": {
+  "12": 3,
+  "4": 6,
+  "6": 4,
+  "8": 7
+ },
+ "uart.bit_period_cycles": {
+  "100": 7,
+  "217": 4,
+  "250": 4,
+  "50": 5
+ },
+ "uart.byte_class": {
+  "alternating": 7,
+  "ones": 10,
+  "random": 8,
+  "zero": 7
+ },
+ "uart.frame_spacing": {
+  "back_to_back": 6,
+  "idle": 6,
+  "single": 8
+ }
+}

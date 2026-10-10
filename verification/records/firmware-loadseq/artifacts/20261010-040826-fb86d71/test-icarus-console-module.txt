@@ -1,0 +1,53 @@
+     -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:242  in gpi_load_users                  Loaded entry library: '/opt/homebrew/Cellar/python@3.13/3.13.16/Frameworks/Python.framework/Versions/3.13/Python'
+     -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:234  in gpi_load_users                  Running entry func 'initialize' from loaded library '<scratch>/venv/lib/python3.13/site-packages/cocotb/simulator.cpython-313-darwin.so'
+     -.--ns INFO     pygpi                              ..ib/pygpi/embed.cpp:115  in initialize                      Using Python 3.13.14 interpreter at <scratch>/venv/bin/python
+     -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:74   in gpi_print_registered_impl       GPI: VPI support registered
+     0.00ns INFO     cocotb.initialize                  Seeding Python random module with 1
+     0.00ns INFO     cocotb.initialize                  Initialized cocotb v2.1.0 from <scratch>/venv/lib/python3.13/site-packages/cocotb
+     0.00ns INFO     cocotb.initialize                  Running on Icarus Verilog version 13.0 (stable)
+     0.00ns INFO     cocotb.regression                  Running tests
+     0.00ns INFO     cocotb.regression                  running test_loadseq.test_committed_images_load_word_for_word (1/6)
+                                                            Every committed application image (UART, SPI, I2C, demo) reads back
+  4710.00ns INFO     cocotb.protocol_program_memory     demo_roundtrip.hex: 27 words read back identically
+ 46650.00ns INFO     cocotb.protocol_program_memory     i2c_fast.hex: 246 words read back identically
+ 72610.00ns INFO     cocotb.protocol_program_memory     i2c_fast_sr.hex: 152 words read back identically
+105370.00ns INFO     cocotb.protocol_program_memory     i2c_fast_sr_poll.hex: 192 words read back identically
+147310.00ns INFO     cocotb.protocol_program_memory     i2c_std.hex: 246 words read back identically
+173270.00ns INFO     cocotb.protocol_program_memory     i2c_std_sr.hex: 152 words read back identically
+206030.00ns INFO     cocotb.protocol_program_memory     i2c_std_sr_poll.hex: 192 words read back identically
+229440.00ns INFO     cocotb.protocol_program_memory     spi_mode0.hex: 137 words read back identically
+253020.00ns INFO     cocotb.protocol_program_memory     spi_mode1.hex: 138 words read back identically
+276430.00ns INFO     cocotb.protocol_program_memory     spi_mode2.hex: 137 words read back identically
+300010.00ns INFO     cocotb.protocol_program_memory     spi_mode3.hex: 138 words read back identically
+322570.00ns INFO     cocotb.protocol_program_memory     uart_rx.hex: 132 words read back identically
+351250.00ns INFO     cocotb.protocol_program_memory     uart_rx_115200.hex: 168 words read back identically
+379930.00ns INFO     cocotb.protocol_program_memory     uart_rx_9600.hex: 168 words read back identically
+385830.00ns INFO     cocotb.protocol_program_memory     uart_tx.hex: 34 words read back identically
+416040.00ns INFO     cocotb.protocol_program_memory     uart_tx_9600.hex: 177 words read back identically
+416040.00ns INFO     cocotb.regression                  test_loadseq.test_committed_images_load_word_for_word passed
+416040.00ns INFO     cocotb.regression                  running test_loadseq.test_asymmetric_one_word_and_full_256 (2/6)
+461280.00ns INFO     cocotb.regression                  test_loadseq.test_asymmetric_one_word_and_full_256 passed
+461280.00ns INFO     cocotb.regression                  running test_loadseq.test_reset_reload_replays_the_same_initial_sequence (3/6)
+                                                            Re-select model: SRAM contents are not assumed to survive, so a
+505840.00ns INFO     cocotb.regression                  test_loadseq.test_reset_reload_replays_the_same_initial_sequence passed
+505840.00ns INFO     cocotb.regression                  running test_loadseq.test_mode_drop_is_its_own_edge (4/6)
+                                                            run_phase stays low through the latch edge and every data edge and
+506280.00ns INFO     cocotb.regression                  test_loadseq.test_mode_drop_is_its_own_edge passed
+506280.00ns INFO     cocotb.regression                  running test_loadseq.test_mutants_read_back_as_mutated_not_as_image (5/6)
+                                                            The readback can tell the failure modes apart, so a pass is evidence.
+509160.00ns INFO     cocotb.regression                  test_loadseq.test_mutants_read_back_as_mutated_not_as_image passed
+509160.00ns INFO     cocotb.regression                  running test_loadseq.test_generated_sequence_matches_existing_helper_shape (6/6)
+                                                            Edge-count cross-check against the two existing loaders: reset pulse
+509160.01ns INFO     cocotb.regression                  test_loadseq.test_generated_sequence_matches_existing_helper_shape passed
+509160.01ns INFO     cocotb.regression                  ****************************************************************************************************************************
+                                                        ** TEST                                                                STATUS  SIM TIME (ns)  REAL TIME (s)  RATIO (ns/s) **
+                                                        ****************************************************************************************************************************
+                                                        ** test_loadseq.test_committed_images_load_word_for_word                PASS      416040.00           0.69     602266.13  **
+                                                        ** test_loadseq.test_asymmetric_one_word_and_full_256                   PASS       45240.00           0.07     619108.68  **
+                                                        ** test_loadseq.test_reset_reload_replays_the_same_initial_sequence     PASS       44560.00           0.07     621428.91  **
+                                                        ** test_loadseq.test_mode_drop_is_its_own_edge                          PASS         440.00           0.00     578313.51  **
+                                                        ** test_loadseq.test_mutants_read_back_as_mutated_not_as_image          PASS        2880.00           0.00     613141.02  **
+                                                        ** test_loadseq.test_generated_sequence_matches_existing_helper_shape   PASS           0.00           0.00          0.00  **
+                                                        ****************************************************************************************************************************
+                                                        ** TESTS=6 PASS=6 FAIL=0 SKIP=0                                                   509160.01           0.84     604193.23  **
+                                                        ****************************************************************************************************************************
