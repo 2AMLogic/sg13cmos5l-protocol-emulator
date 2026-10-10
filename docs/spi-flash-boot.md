@@ -147,6 +147,15 @@ nothing means the image failed its check, so re-make it with `mkflash.py`.
   Pmod, corrupted images, a zero signature, the committed `uart_tx` and
   `spi_mode0` programs graded by their protocol reference models, and the
   rule that only `uio[0]`, `uio[1]` and `uio[3]` are ever driven.
+- **An SPI program booted from this Pmod talks to the flash.** The shipped
+  SPI profile uses the SPI Pmod pins (CS `uio[0]`, MOSI `uio[1]`, MISO
+  `uio[2]`, SCLK `uio[3]`, DR 0010's target plan), and on the QSPI Pmod
+  those are the flash's own CS0, MOSI, MISO and SCK. So once `spi_mode0`
+  starts, its bursts select the flash, not a separate peripheral. The bench
+  stops modelling the flash at the hand-over and grades the program's pins
+  with its own peripheral in the flash's place. What a real flash does with
+  those bursts is not modelled. An SPI application that needs both the
+  flash and a peripheral needs a pin plan that keeps them apart.
 - The flash model's timing limits are the W25Q128JV's as recalled by the
   author, not re-read from the datasheet (see
   `verification/reference_models/spi_flash.py`). Check them before relying

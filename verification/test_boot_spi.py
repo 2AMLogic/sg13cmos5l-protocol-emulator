@@ -38,6 +38,17 @@ The claims, each with the independent party that grades it
   as the loaded-by-serial benches grade them. A probe program checks the
   state the program is entered with (R0-R3, Z, C = 0, `PM_ADDR` and
   `PM_CRC` = 0, `BOOT_STATUS` = 0).
+* **After the hand-over the pins are the image's.** The flash model is
+  stepped, and drives MISO, only up to the image's first instruction: it
+  grades the boot, not the program. Since DR 0010's target plan (issue
+  #155) the shipped SPI profile uses the SPI Pmod pins, CS `uio[0]`, MOSI
+  `uio[1]`, MISO `uio[2]`, SCLK `uio[3]`, which on the QSPI Pmod are the
+  flash's own CS0/MOSI/MISO/SCK. So `spi_mode0`, booted from that flash,
+  addresses the flash with its bursts. This bench grades its pins the way
+  `test_firmware_spi.py` does, with the bench's peripheral (the same
+  `drive_miso` convention) in the flash's place after the hand-over. What a
+  real flash does with bursts that are not a command it knows is not
+  modelled and not claimed.
 * **Pin discipline.** Over every run, the design drives only `uio[0]`,
   `uio[1]` and `uio[3]`; the PSRAM chip selects `uio[6]` and `uio[7]` (and
   SD2/SD3, `uio[4]`/`uio[5]`) are never driven, so the Pmod's pull-ups
@@ -259,11 +270,15 @@ class Boot:
         self.pulls = pulls
         self.pads = UioPads(dut, pulls=pulls, name="qspi-pmod")
         self.flash = SpiFlashModel(flash_image) if flash_image is not None else None
-        self.trace = []  # per edge: dict(uo_out, uio_out, uio_oe, uio0)
+        self.trace = []  # per edge: dict(uo_out, uio_out, uio_oe, lines)
         self.times = []
         self.fetch_rom = []
         self.tasks = []
         self.miso_driver = miso_driver
+        # The image's first instruction (set by passing_boot). From this edge
+        # on the pins are the image's: the flash model is no longer stepped
+        # and no longer drives MISO.
+        self.entry_edge = None
 
     async def reset(self):
         dut = self.dut
@@ -289,13 +304,14 @@ class Boot:
                 value = getattr(dut, name).value
                 assert value.is_resolvable, f"{self.label}: edge {k}: {name} is {value}"
                 sample[name] = int(value)
-            sample["uio0"] = pads.line(0)
+            sample["lines"] = "".join(pads.line(pin) for pin in range(8))
             self.trace.append(sample)
             self.times.append(t)
             if core is not None:
                 self.fetch_rom.append(int(core.fetch_rom.value))
             out, oe = sample["uio_out"], sample["uio_oe"]
-            if self.flash is not None:
+            booting = self.entry_edge is None or k < self.entry_edge
+            if self.flash is not None and booting:
                 self.flash.step(
                     t,
                     line_level(out, oe, CS0, self.pulls),
@@ -305,7 +321,7 @@ class Boot:
                 # what the pin shows when the core samples it, one clock on
                 self._pending = self.flash.miso(t + CLK_PERIOD_NS)
             await Timer(1, unit="ns")
-            if self.flash is not None:
+            if self.flash is not None and booting:
                 value = self._pending
                 if value is None:
                     pads.release(MISO)
@@ -567,7 +583,10 @@ async def test_good_flash_boots_a_program_that_starts_in_the_reset_state(dut):
         image = br.signed_image(p.words, filler_seed=seed)
         boot, entry_cycles, _ = await passing_boot(dut, f"probe image {seed}", image, tail)
         check_probe_after_spi(boot, p, checks, entry_cycles)
-        edge_sets.append([e for e in range(1, len(boot.trace)) if boot.trace[e] != boot.trace[e - 1]])
+        # the design's own pins only: the resolved lines also carry the
+        # flash's MISO data, which is the image and differs by design
+        pins = [(s["uo_out"], s["uio_out"], s["uio_oe"], s["lines"][CS0]) for s in boot.trace]
+        edge_sets.append([e for e in range(1, len(pins)) if pins[e] != pins[e - 1]])
     # two different images: the pin activity of the boot itself is identical
     first = RUN_ENTRY_EDGES + entry_cycles
     assert [e for e in edge_sets[0] if e < first] == [e for e in edge_sets[1] if e < first], (
@@ -581,7 +600,8 @@ async def test_protocol_programs_boot_from_flash_and_pass_reference_models(dut):
     and placed in the flash, boot over SPI and then do what they do when
     serial-loaded: `UartDecoder` recovers both frames and `check_burst`
     grades both SPI bursts, with the same cycle measurements the loaded
-    benches assert (a 50-cycle UART bit, a 4- and 8-cycle SCLK period)."""
+    benches assert (a 50-cycle UART bit, a 4- and 10-cycle SCLK period), on the
+    SPI Pmod pins the SPI profile uses since DR 0010's target plan."""
     start_clock(dut)
 
     # ---- UART ---------------------------------------------------------
@@ -617,14 +637,24 @@ async def test_protocol_programs_boot_from_flash_and_pass_reference_models(dut):
     miso_bytes = [fs.CEIL_MISO, fs.FUNC_MISO]
     state = {"burst": -1, "bit": 0, "cs": None, "sclk": mode.cpol}
 
+    def line(sample, pin):
+        value = sample["lines"][pin]
+        return int(value) if value in ("0", "1") else None
+
     def miso_driver(boot, k, sample):
-        """The peripheral side of the SPI program, per edge, on the Pmod's
-        uio[0] line. Same convention as test_firmware_spi.drive_miso: a
-        1 -> 0 CS fall starts a burst, bit k+1 is presented after each
-        trailing edge. The program's CS/SCLK are on uo_out[0]/[1]."""
+        """The peripheral side of the SPI program, per edge, on the pad-
+        resolved SPI Pmod lines (CS `uio[0]`, SCLK `uio[3]`, MISO `uio[2]`,
+        DR 0010's target plan). Same convention as
+        test_firmware_spi.drive_miso: MISO is held low from the hand-over,
+        a 1 -> 0 CS fall starts a burst, bit k+1 is presented after each
+        trailing edge."""
         if k < boot.entry_edge:
             return
-        cs, sclk = sample["uo_out"] & 1, (sample["uo_out"] >> 1) & 1
+        if k == boot.entry_edge:
+            boot.pads.drive(fs.MISO_BIT, 0)  # the peripheral takes the line
+        cs, sclk = line(sample, fs.CS_BIT), line(sample, fs.SCLK_BIT)
+        if cs is None or sclk is None:
+            return  # before UIO_DIR: the image has not taken CS/SCLK yet
         write = None
         if state["cs"] == 1 and cs == 0 and state["burst"] < len(miso_bytes) - 1:
             state["burst"] += 1
@@ -635,20 +665,30 @@ async def test_protocol_programs_boot_from_flash_and_pass_reference_models(dut):
                 write = fs._bit(miso_bytes[state["burst"]], state["bit"])
                 state["bit"] += 1
         if write is not None:
-            boot.pads.drive(0, write)
+            boot.pads.drive(fs.MISO_BIT, write)
         state["cs"], state["sclk"] = cs, sclk
 
     boot, entry_cycles, _ = await passing_boot(dut, "spi_mode0 from flash", image, run_cycles, miso_driver)
     entry = RUN_ENTRY_EDGES + entry_cycles
-    caps = {name: fu.CapturedPin(name, 0) for name in ("cs", "sclk", "mosi", "miso")}
-    for name, bit in (("cs", 0), ("sclk", 1), ("mosi", 2)):
-        caps[name] = fu.CapturedPin(name, (boot.trace[entry]["uo_out"] >> bit) & 1)
-    caps["miso"] = fu.CapturedPin("miso", 1 if boot.trace[entry]["uio0"] == "1" else 0)
+    # The graded lines are the pad-resolved SPI Pmod lines, as in
+    # test_firmware_spi.py (an undriven line reads as 0 before UIO_DIR).
+    pins = (("cs", fs.CS_BIT), ("sclk", fs.SCLK_BIT), ("mosi", fs.MOSI_BIT), ("miso", fs.MISO_BIT))
+
+    def level(k, pin):
+        return 1 if boot.trace[k]["lines"][pin] == "1" else 0
+
+    caps = {name: fu.CapturedPin(name, level(entry, pin)) for name, pin in pins}
     for k in range(entry + 1, len(boot.trace)):
-        uo = boot.trace[k]["uo_out"]
-        for name, bit in (("cs", 0), ("sclk", 1), ("mosi", 2)):
-            caps[name].observe(k, boot.times[k], (uo >> bit) & 1)
-        caps["miso"].observe(k, boot.times[k], 1 if boot.trace[k]["uio0"] == "1" else 0)
+        for name, pin in pins:
+            caps[name].observe(k, boot.times[k], level(k, pin))
+    # the program drives exactly CS, MOSI and SCLK after the hand-over too
+    oe_after = 0
+    for k in range(entry, len(boot.trace)):
+        oe_after |= boot.trace[k]["uio_oe"]
+    assert oe_after == (1 << fs.CS_BIT) | (1 << fs.MOSI_BIT) | (1 << fs.SCLK_BIT), (
+        f"spi_mode0 from flash: the image drove uio pins {oe_after:#04x}"
+    )
+    boot.pads.assert_no_contention()
     windows = fs.burst_windows(caps["cs"])
     assert len(windows) == 2, f"expected 2 CS bursts, captured {len(windows)}"
     for index, (tx_byte, rx_byte, per_bit) in enumerate(
