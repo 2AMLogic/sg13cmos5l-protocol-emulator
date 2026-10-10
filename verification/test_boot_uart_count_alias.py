@@ -10,7 +10,7 @@ reads `13 c1` as the trailer, and the CRC matches.
 This bench runs both frames on the RTL of the submitted top and PINS what the
 chip does, so the claim "a bad length never reaches RUN" cannot be read
 stronger than it is. The result of the simulation is the evidence: see
-`verification/records/boot-uart/` (record 20261010-163858-080ef15). It is a separate module from
+`verification/records/boot-uart/`. It is a separate module from
 `test_boot_uart.py` so that the gate-level records that hash that file stay
 live; it reuses that bench's session and host plumbing.
 
