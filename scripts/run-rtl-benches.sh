@@ -23,6 +23,8 @@ BENCHES=(
   control-space
   boot-rom
   boot-spi
+  boot-uart
+  boot-uart-count-alias
   program-memory
   protocol-models
   firmware-uart

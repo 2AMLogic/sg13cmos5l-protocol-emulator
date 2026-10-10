@@ -1,6 +1,13 @@
 # T1 item 1 (Design sources), Digital column: the committed RTL sources and
 # the synthesized gate-level netlists derived from them.
 #
+# Refreshed 2026-10-10 for issue #139 (the UART load): the boot ROM is now
+# 223 words, so the ROM, its assembly source and its hex below, the two
+# netlists of record and their artifact paths describe the design of gds run
+# 38054423540 at a0f91e3 (this branch merged with main @ 05fa893). The audit
+# text that follows is issue #83's and describes the 95-word design it was
+# written against.
+#
 # Audited 2026-10-10 for issue #83 against main @ 5669077. The design these
 # lines describe was last changed by 704a3fb (issue #168, the warm start
 # refuses a zero signature); every hashed source below is byte-identical at
@@ -24,7 +31,7 @@
 sha256:03b53d290605df6589c76a7212474b894735cbc84215e959a1cb90b2fb1fee72  src/tt_um_2amlogic_protocol_emulator.v
 sha256:fa692ae7ead0da374f414d104e2ff679414bd49f58e1cbb9ae7165961af8b791  rtl/protocol_core.v
 sha256:f2440338178b680a1c47ea23a9d09d1edb1125eade000660e732855e6135b98f  rtl/protocol_program_memory.v
-sha256:020c5dea05d90aed4713553b38d240f30b058539c9744a4c96c7b3eda16e5b51  rtl/protocol_boot_rom.v
+sha256:8aa3044e6671f85d6f9154e808f0392e9e55da41a5c69d7159243d1193abd32b  rtl/protocol_boot_rom.v
 
 # The template's "sources live in src/" rule is met by symlinks, so there is
 # one copy of each module (rtl/README.md).
@@ -36,8 +43,8 @@ link  src/protocol_boot_rom.v -> ../rtl/protocol_boot_rom.v
 # boot program, firmware/tools/gen_boot_rom.py writes the ROM module from the
 # hex. firmware/tools/check_firmware.py (CI records job) fails on any stale
 # link in that chain. Its source and intermediate:
-sha256:94d5c6916b73471088343e5dadd17e7e7a4dfa352f9a2b9a0a1451f81f90b28b  firmware/asm/boot/boot_rom.asm
-sha256:5e81260496cbe4cc8bbb3ea11d78e76e9de0b5fd88463bbececbba1949146261  firmware/build/boot/boot_rom.hex
+sha256:f985f0d26b35bb0502c724b166ba3dc19faae18e1e94f8c0141d837cf8590ff1  firmware/asm/boot/boot_rom.asm
+sha256:b3a58d4f56f7d6590030486b42ddea54dbacdbd1657deb36d1c69a976b614729  firmware/build/boot/boot_rom.hex
 
 ## The program-memory hard macro (RM_IHPSG13_1P_256x16_c2_bm_bist, PDK SRAM)
 
@@ -66,16 +73,14 @@ file  src/pdn_cfg.tcl
 ## The derived gate-level netlists of record
 
 # klt/Yosys flow: `klt synthesize flow/synthesize-protocol-emulator.json`
-# re-run at the klt v0.7.0 pin by librelane-gds-signoff-check record
-# 20261010-110300-5669077 (1,377 instances, 21,331.0314 um^2 on that flow;
-# byte-identical to the netlist record 20261010-083721-704a3fb derived at the
-# previous pin). This is the reference T1 item 4's LVS compares against.
-sha256:2c2d29986c436c7b9b7162b7f6dfa83c4a2355badd9e011929641e4abe944c3a  verification/records/librelane-gds-signoff-check/artifacts/20261010-110300-5669077/reference-klt-yosys.v
+# run at the klt v0.7.0 pin by librelane-gds-signoff-check record
+# 20261010-133100-a0f91e3 (1,614 instances, 23,729.0256 um^2 on that flow, see
+# synthesis-baseline 20261010-133300-a0f91e3). This is the reference T1 item
+# 4's LVS compares against.
+sha256:75d9cf854511160c491d46484bd04d1377e4f1e8758310c4f5addf855ad9cf52  verification/records/librelane-gds-signoff-check/artifacts/20261010-133100-a0f91e3/reference-klt-yosys.v
 
-# LibreLane flow: the post-route netlist of gds run 38037477407 at 704a3fb
+# LibreLane flow: the post-route netlist of gds run 38054423540 at a0f91e3
 # (tt_submission artifact), frozen by librelane-gds-signoff-check record
-# 20261010-083721-704a3fb. The gds run of main at 5a31595 (38043438168, the
-# same design sources) emitted a byte-identical netlist. It is the netlist the
-# committed GDS (T1 item 2) was routed as, and the one the post-layout SDF
-# regression (T1 item 7) simulates.
-sha256:027f17bdf4f38a084d0eb2ac331dbd2b34e20db98446d9a2a8040158c47eb133  verification/records/librelane-gds-signoff-check/artifacts/20261010-083721-704a3fb/reference-asrouted.v
+# 20261010-133100-a0f91e3. It is the netlist the committed GDS (T1 item 2) was
+# routed as, and the one the post-layout SDF regression (T1 item 7) simulates.
+sha256:244eefee73d3e488954e50e44d4b35dd547decd1a31e775823bb289596cca9c1  verification/records/librelane-gds-signoff-check/artifacts/20261010-133100-a0f91e3/reference-asrouted.v

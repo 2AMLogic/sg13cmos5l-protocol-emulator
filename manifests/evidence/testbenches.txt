@@ -2,6 +2,12 @@
 # committed, with a cold-start invocation a third party can run, and the PDK
 # revision is pinned.
 #
+# Refreshed 2026-10-10 for issue #139 (the UART load): a `boot-uart` experiment
+# line is added, the firmware-gate-level line gains `--boot-uart` and its new
+# default netlist, and the PDK revision's source record moves to
+# librelane-gds-signoff-check 20261010-133100-a0f91e3. The audit text below is
+# issue #83's, written against the 95-word design.
+#
 # Audited 2026-10-10 for issue #83 against main @ 5669077 (design last
 # changed by 704a3fb), at the klt v0.7.0 pin. Attested by testbenches.json
 # beside this file; the manifest cites that envelope for item 9.
@@ -26,7 +32,7 @@
 # PDK, for every leg marked [PDK]: IHP-Open-PDK
 #   2bbec755dc67ca3db0261c3d6163e15735d66710
 # the revision the LibreLane gds runs used (their pdk.json, frozen in
-# librelane-gds-signoff-check record 20261010-083721-704a3fb) and the one every
+# librelane-gds-signoff-check record 20261010-133100-a0f91e3) and the one every
 # local PDK leg below ran against. Fetch it the way the template's action does:
 #   git init "$PDK_ROOT"
 #   git -C "$PDK_ROOT" fetch --depth 1 https://github.com/IHP-GmbH/IHP-Open-PDK.git 2bbec755dc67ca3db0261c3d6163e15735d66710
@@ -98,11 +104,12 @@ file  .github/workflows/gds.yaml
 
 experiment  boot-rom  verification/test_boot_rom.py; `klt functional-verification verification/request-boot-rom.json --format json`; controls `python3 verification/boot_rom_mutants.py --out <dir>`
 experiment  boot-spi  verification/test_boot_spi.py; `klt functional-verification verification/request-boot-spi.json --format json`; controls `python3 verification/boot_spi_mutants.py --out <dir>`
+experiment  boot-uart  verification/test_boot_uart.py (independent host model verification/uart_boot_host.py); `klt functional-verification verification/request-boot-uart.json --format json`; controls `python3 verification/boot_uart_mutants.py --out <dir>`
 experiment  control-space  verification/test_control_space.py; `klt functional-verification verification/request-control-space.json --format json`; controls `python3 verification/control_space_mutants.py --out <dir>`
 experiment  core-datapath  verification/test_protocol_emulator.py; `klt functional-verification verification/request-protocol-emulator.json --format json`
 experiment  die-area-baseline  flow/run-die-area-par.sh [PDK]; BLOCKED by klayout-tools#2635, records claim no measurement
 experiment  firmware-assembler-roundtrip  verification/test_firmware_roundtrip.py; `klt functional-verification verification/request-firmware-roundtrip.json --format json`
-experiment  firmware-gate-level  `PDK_ROOT=<pdk> ./flow/run-firmware-gate-level.sh --full --control-space --boot-rom --boot-spi` [PDK]; default netlist frozen in post-layout-sdf-regression/artifacts/20261010-083555-704a3fb/
+experiment  firmware-gate-level  `PDK_ROOT=<pdk> ./flow/run-firmware-gate-level.sh --full --control-space --boot-rom --boot-spi --boot-uart` [PDK]; default netlist frozen in post-layout-sdf-regression/artifacts/20261010-133000-a0f91e3/
 experiment  firmware-i2c  verification/test_firmware_i2c.py, test_firmware_i2c_sr.py; `klt functional-verification verification/request-firmware-i2c.json --format json` and `... request-firmware-i2c-sr.json ...`
 experiment  firmware-loadseq  verification/test_loadseq.py, test_loadseq_top.py; `klt functional-verification verification/request-loadseq.json --format json` and `... request-loadseq-top.json ...`; `python3 firmware/tools/test_loadseq.py` (not in run-rtl-benches.sh; cold-started by hand for this audit, both pass)
 experiment  firmware-spi  verification/test_firmware_spi.py; `klt functional-verification verification/request-firmware-spi.json --format json`

@@ -7,9 +7,12 @@ This bench is the part of that record's verification list that issue #138
 owns, and target-spec row 14 (c) / `spec/verification-plan.md` section 8's
 "uninitialized program memory" bullet:
 
-- **the stubs idle on memory nobody wrote**: straps 00 and 11 (the UART-load stub and the reserved value; strap 01 is the SPI-flash boot since issue #140 and is test_boot_spi.py's) on a
-  program memory that has never been written (all X in simulation) leave
-  `uo_out`, `uio_out` and `uio_oe` at 0 and free of X;
+- **the UART loader idles on memory nobody wrote**: straps 00 and 11 (the
+  UART load and the reserved value; strap 01 is the SPI-flash boot since
+  issue #140 and is test_boot_spi.py's) on a program memory that has never
+  been written (all X in simulation) never read it. They reach the UART
+  loader (issue #139), which idles with TX (`uo_out[0]`) high, `uio_out` at
+  its 0xFF guard and `uio_oe` 0, all free of X;
 - **`MODE` low never runs unverified memory**: with program memory holding
   a canary image -- one that visibly drives `uo_out` and every `uio` pin
   within five instructions from *any* entry address, and is shown doing so
@@ -94,7 +97,7 @@ import gen_boot_rom  # noqa: E402  (the ROM generator)
 CLK_PERIOD_NS = 10
 RUN_ENTRY_EDGES = 2  # DR 0005: edge 1 primes the fetch, edge 2 retires pc=0
 PM_WORDS = 256
-ROM_WORDS_MAX = 128  # DR 0013 layer 2
+ROM_WORDS_MAX = gen_boot_rom.ROM_WORDS_MAX  # 256: DR 0013 finding F4 (the UART load does not fit 128)
 
 GATE_LEVEL = os.environ.get("GATES") == "yes"
 
@@ -167,9 +170,10 @@ class BootModel:
     past the image read as HALT, as the generated ROM does.
     """
 
-    def __init__(self, rom, straps, pm):
+    def __init__(self, rom, straps, pm, poll_pc=None):
         self.rom = list(rom)
-        self.ui_in = (straps & 3) << 5     # MODE (bit 7) low, the rest 0
+        self.poll_pc = poll_pc             # the UART loader's start-edge poll
+        self.ui_in = ((straps & 3) << 5) | 0x02   # MODE (bit 7) low, RX (bit 1) idle high
         self.pm = list(pm)                 # None entries = never written
         self.r = [0, 0, 0, 0]
         self.z = 0
@@ -216,6 +220,8 @@ class BootModel:
     def run(self, limit=100_000):
         pc, elapsed = 0, 0
         for _ in range(limit):
+            if pc == self.poll_pc:
+                return {"outcome": "uart_wait", "pc": pc, "cycles": elapsed}
             word = self.rom[pc] if pc < len(self.rom) else 0xF000
             op, rd, rs, imm = word >> 12, (word >> 10) & 3, (word >> 8) & 3, word & 0xFF
             a, b = self.r[rd], self.r[rs]
@@ -293,22 +299,32 @@ class BootModel:
 
 def boot_outcome(straps, pm):
     """(result, model) of the committed boot image on `straps` and `pm`."""
-    model = BootModel(rom_words(), straps, pm)
+    model = BootModel(rom_words(), straps, pm, stub_addresses()["uart_load"])
     result = model.run()
-    assert (model.uo, model.uio, model.dir, model.od) == (0, 0, 0, 0), (
-        "the boot program wrote a pin or a pin-mode register"
-    )
+    state = (model.uo, model.uio, model.dir, model.od)
+    if result["outcome"] == "uart_wait":
+        # The UART loader: TX idle high, and the guard that lets UIO_DIR be
+        # scratch without driving a pin (uio_out and UIO_OD all ones).
+        assert state == (0x01, 0xFF, 0, 0xFF), f"the UART loader's idle state is {state}"
+    else:
+        assert state == (0, 0, 0, 0), "the boot program wrote a pin or a pin-mode register"
     return result, model
 
 
 def stub_addresses():
-    """Address of the UART-load stub's HALT, from the boot source: the first
-    HALT is `uart_load`; the second is the SPI boot's `spi_fail` (issue
-    #140), whose properties test_boot_spi.py owns."""
+    """Where the boot program waits, from the boot source: `uart_load` is
+    the UART loader's start-edge poll (its `IN` after the `rx_poll:` label)
+    and `spi_fail` the SPI-flash boot's HALT (issue #140), the only HALT in
+    the source, whose properties test_boot_spi.py owns."""
     program = asm.assemble_file(BOOT_ASM)
+    lines = BOOT_ASM.read_text(encoding="utf-8").splitlines()
+    poll_line = 1 + next(i for i, text in enumerate(lines) if text.startswith("rx_poll:"))
+    poll = min((ins for ins in program.instructions if ins.line_no > poll_line),
+               key=lambda ins: ins.line_no)
+    assert poll.mnemonic == "IN", f"the instruction after rx_poll: is {poll.mnemonic}"
     halts = [ins.addr for ins in program.instructions if ins.mnemonic == "HALT"]
-    assert len(halts) == 2, f"boot source has {len(halts)} HALTs, expected uart_load and spi_fail"
-    return {"uart_load": halts[0], "spi_fail": halts[1]}
+    assert len(halts) == 1, f"boot source has {len(halts)} HALTs, expected the SPI boot's"
+    return {"uart_load": poll.addr, "spi_fail": halts[0]}
 
 
 # ---------------------------------------------------------------------------
@@ -363,7 +379,7 @@ async def boot_reset(dut, straps):
     (edge 0, the same numbering as the MODE-drop edge of a serial load)."""
     dut.ena.value = 1
     dut.uio_in.value = 0
-    dut.ui_in.value = (straps & 3) << 5
+    dut.ui_in.value = ((straps & 3) << 5) | 0x02    # RX (ui_in[1]) idles high
     dut.rst_n.value = 0
     await ClockCycles(dut.clk, 10)
     await settle(dut, "in reset")
@@ -384,8 +400,22 @@ async def trace_edges(dut, edges, label, per_edge=None):
     return trace
 
 
-def assert_quiet(trace, label):
-    """No pin left its reset value: uo_out 0, uio_out 0, every uio an input."""
+def assert_quiet(trace, label, waiting_at=None):
+    """No pin left its reset value: uo_out 0, uio_out 0, every uio an input.
+
+    `waiting_at` is the address the boot program ends in. When it is the UART
+    loader's poll, the loader's own state is allowed and checked instead: TX
+    (uo_out[0]) idles high, `uio_out` is 0 until the loader's guard sets it
+    to 0xFF, and `uio_oe` is 0 at every edge -- no uio pin ever drives."""
+    if waiting_at is not None and waiting_at == stub_addresses()["uart_load"]:
+        for e, s in enumerate(trace):
+            assert s["uio_oe"] == 0, f"{label}: a uio pin drove at edge {e}: {s['uio_oe']:#04x}"
+            assert s["uo_out"] in (0x00, 0x01), f"{label}: uo_out={s['uo_out']:#04x} at edge {e}"
+            assert s["uio_out"] in (0x00, 0xFF), f"{label}: uio_out={s['uio_out']:#04x} at edge {e}"
+        assert trace[-1] == {"uo_out": 0x01, "uio_out": 0xFF, "uio_oe": 0}, (
+            f"{label}: the loader is not idling with TX high: {trace[-1]}"
+        )
+        return
     for e, s in enumerate(trace):
         assert s == {"uo_out": 0, "uio_out": 0, "uio_oe": 0}, (
             f"{label}: a pin moved at edge {e}: uo_out={s['uo_out']:#04x} "
@@ -433,8 +463,16 @@ class RomWatch:
             assert all(self.fetch_rom), f"{self.label}: the core left the boot ROM"
 
     def assert_stopped_at(self, addr):
+        """The boot program ended where the model says: halted in a stub, or
+        spinning in the UART loader's three-instruction start-edge poll."""
         if self.handles is not None:
             core = self.handles[0]
+            if addr == stub_addresses()["uart_load"]:
+                pc = int(core.pc.value)
+                assert int(core.halted.value) == 0 and addr <= pc <= addr + 3, (
+                    f"{self.label}: pc={pc:#04x}, expected the UART poll at {addr:#04x}"
+                )
+                return
             assert int(core.halted.value) == 1, f"{self.label}: the boot program did not halt"
             assert int(core.pc.value) == addr, (
                 f"{self.label}: halted at ROM address {int(core.pc.value):#04x}, "
@@ -447,8 +485,8 @@ def expected_stub(straps, result):
     run, checked against the model's verdict."""
     assert straps in STUB_STRAPS or straps == STRAP_WARM, "strap 01 is test_boot_spi.py's"
     want = stub_addresses()["uart_load"]
-    assert result["outcome"] == "halt" and result["pc"] == want, (
-        f"model: straps {straps:02b} ended {result}, expected a HALT at {want:#04x}"
+    assert result["outcome"] == "uart_wait" and result["pc"] == want, (
+        f"model: straps {straps:02b} ended {result}, expected the UART loader's poll at {want:#04x}"
     )
     return want
 
@@ -542,7 +580,7 @@ def check_probe(trace, p, checks, entry_cycles, boot_status, label):
 async def test_boot_image_chain_and_model(dut):
     """The committed image is what the committed source assembles to, the
     committed ROM Verilog is what the generator makes of that image, the
-    image fits DR 0013's 128-word cap, and the independent model agrees
+    image fits the generator's cap (DR 0013 finding F4), and the independent model agrees
     with DR 0013's strap table and with the cycle count the source
     documents. No DUT activity: this pins the inputs the other tests use."""
     start_clock(dut)
@@ -562,7 +600,7 @@ async def test_boot_image_chain_and_model(dut):
     for straps in STUB_STRAPS:
         result, model = boot_outcome(straps, valid)
         expected_stub(straps, result)
-        assert model.pm_reads == 0 and model.pm_writes == 0, "a stub touched program memory"
+        assert model.pm_reads == 0 and model.pm_writes == 0, "the UART loader touched program memory"
     result, model = boot_outcome(STRAP_WARM, valid)
     assert result["outcome"] == "run" and result["target"] == 0, result
     assert result["cycles"] + 2 == WARM_START_CYCLES, (
@@ -595,7 +633,7 @@ async def test_stub_straps_idle_on_unwritten_memory(dut):
         watch = RomWatch(dut, label)
         await boot_reset(dut, straps)
         trace = await trace_edges(dut, RUN_ENTRY_EDGES + result["cycles"] + 64, label, watch)
-        assert_quiet(trace, label)
+        assert_quiet(trace, label, stub)
         watch.assert_never_left()
         watch.assert_stopped_at(stub)
         if watch.handles is not None:
@@ -633,7 +671,7 @@ async def test_mode_low_never_runs_unverified_memory(dut):
             watch = RomWatch(dut, label)
             await boot_reset(dut, straps)
             trace = await trace_edges(dut, RUN_ENTRY_EDGES + result["cycles"] + 64, label, watch)
-            assert_quiet(trace, label)
+            assert_quiet(trace, label, stub)
             watch.assert_never_left()
             watch.assert_stopped_at(stub)
             if straps == STRAP_WARM and watch.handles is not None:
@@ -694,7 +732,7 @@ async def test_warm_start_runs_a_verified_image(dut):
             watch = RomWatch(dut, label)
             await boot_reset(dut, straps)
             trace = await trace_edges(dut, RUN_ENTRY_EDGES + 96, label, watch)
-            assert_quiet(trace, label)
+            assert_quiet(trace, label, stub)
             watch.assert_never_left()
             watch.assert_stopped_at(stub)
     assert all(edges == warm_edges[0] for edges in warm_edges), (
@@ -751,13 +789,13 @@ async def test_warm_start_rejects_corrupted_images(dut):
     for name, image in corrupted_images(valid):
         assert crc_of_words(image) != 0, f"premise: '{name}' must fail the check"
         result, model = boot_outcome(STRAP_WARM, image)
-        assert result["outcome"] == "halt" and result["pc"] == uart_stub, (name, result)
+        assert result["outcome"] == "uart_wait" and result["pc"] == uart_stub, (name, result)
         label = f"corrupted image ({name})"
         await serial_load(dut, image)
         watch = RomWatch(dut, label)
         await boot_reset(dut, STRAP_WARM)
         trace = await trace_edges(dut, WARM_START_CYCLES + p.edge(len(p.lines)) + 32, label, watch)
-        assert_quiet(trace, label)
+        assert_quiet(trace, label, uart_stub)
         watch.assert_never_left()
         watch.assert_stopped_at(uart_stub)
 
@@ -796,9 +834,10 @@ async def test_warm_start_refuses_a_zero_signature(dut):
     signature of 0x0000 before it looks at the CRC, as the SPI-flash boot
     does, and falls through to the UART load. The same rule refuses a real
     image whose CRC happens to be 0x0000; here that is the probe program,
-    which drives pins within a few instructions if it runs. No pin moves.
-    White-box (RTL): the core never leaves the ROM and halts in the
-    UART-load stub."""
+    which drives pins within a few instructions if it runs. No pin moves
+    beyond the loader's own (TX idle high, the 0xFF guard on uio_out, no uio
+    driven). White-box (RTL): the core never leaves the ROM and waits in the
+    UART loader's start-edge poll."""
     start_clock(dut)
     p, _ = probe_program()
     uart_stub = stub_addresses()["uart_load"]
@@ -807,14 +846,14 @@ async def test_warm_start_refuses_a_zero_signature(dut):
             f"premise: '{name}' must pass the CRC and carry a zero signature"
         )
         result, model = boot_outcome(STRAP_WARM, image)
-        assert result["outcome"] == "halt" and result["pc"] == uart_stub, (name, result)
+        assert result["outcome"] == "uart_wait" and result["pc"] == uart_stub, (name, result)
         assert model.pm == image, f"model: the warm start changed program memory ({name})"
         label = f"{name}, warm start"
         await serial_load(dut, image)
         watch = RomWatch(dut, label)
         await boot_reset(dut, STRAP_WARM)
         trace = await trace_edges(dut, WARM_START_CYCLES + p.edge(len(p.lines)) + 32, label, watch)
-        assert_quiet(trace, label)
+        assert_quiet(trace, label, uart_stub)
         watch.assert_never_left()
         watch.assert_stopped_at(uart_stub)
 

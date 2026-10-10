@@ -56,7 +56,8 @@ VERDICT = ("        OR    R0, R1                ; Z <=> PM_CRC == 0 <=> word 255
 MUTANTS = [
     ("command-is-0x00",
      "the command's two 1 bits are sent as 0: the flash is sent opcode 0x00, not READ",
-     [("        LDI   R0, 0x06\n", "        LDI   R0, 0x04\n", 1)],
+     [("        LDI   R0, 0x06\n        OUT   UIO_OUT, R3           ; CS0 falls",
+       "        LDI   R0, 0x04\n        OUT   UIO_OUT, R3           ; CS0 falls", 1)],
      {T_GOOD, T_PROTO}),
     ("address-is-25-bits",
      "one extra address clock: the flash's data is a bit late",

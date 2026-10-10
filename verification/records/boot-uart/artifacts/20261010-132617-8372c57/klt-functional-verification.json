@@ -1,0 +1,71 @@
+{
+  "schema_version": 1,
+  "engine": "icarus",
+  "hdl_toplevel": "tt_um_2amlogic_protocol_emulator",
+  "testbench": "test_boot_uart",
+  "status": "pass",
+  "test_count": 8,
+  "passed_count": 8,
+  "failed_count": 0,
+  "skipped_count": 0,
+  "tests": [
+    {
+      "name": "test_boot_image_chain_and_host_agreement",
+      "status": "passed",
+      "sim_time_ns": 20.0,
+      "real_time_s": 0.007
+    },
+    {
+      "name": "test_nominal_load_runs_the_image",
+      "status": "passed",
+      "sim_time_ns": 9014620.0,
+      "real_time_s": 66.192
+    },
+    {
+      "name": "test_row10_tolerance_edges",
+      "status": "passed",
+      "sim_time_ns": 125149100.0,
+      "real_time_s": 667.817
+    },
+    {
+      "name": "test_bad_images_never_run",
+      "status": "passed",
+      "sim_time_ns": 154130700.0,
+      "real_time_s": 491.189
+    },
+    {
+      "name": "test_garbage_before_the_magic_is_ignored",
+      "status": "passed",
+      "sim_time_ns": 7625820.0,
+      "real_time_s": 20.397
+    },
+    {
+      "name": "test_end_to_end_protocol_program_over_uart",
+      "status": "passed",
+      "sim_time_ns": 6936220.0,
+      "real_time_s": 19.618
+    },
+    {
+      "name": "test_full_image_and_warm_start",
+      "status": "passed",
+      "sim_time_ns": 45179620.0,
+      "real_time_s": 128.196
+    },
+    {
+      "name": "test_fallthroughs_into_the_uart_load",
+      "status": "passed",
+      "sim_time_ns": 12947400.0,
+      "real_time_s": 34.682
+    }
+  ],
+  "coverage": null,
+  "trace": null,
+  "environment": {
+    "engine": "icarus",
+    "engine_version": "13.0",
+    "cocotb_version": "2.1.0",
+    "results_xml": "<repo>/verification/.klt/functional-verification/results_icarus.xml",
+    "random_seed": 1,
+    "sdf": null
+  }
+}
