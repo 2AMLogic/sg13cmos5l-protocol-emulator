@@ -178,6 +178,19 @@ capture, PVT corner sweeps, or Monte Carlo.
   reference is `match` with `power_connectivity` `match`, and is not cited.
   **Item 7 stays `unmet`/`check_failed`** (#106). Baseline:
   `signoff-baseline` record `20261010-080000-c914bbc`, 1 of 11.
+- **Items 3, 4 and 7, state as of 2026-10-10 (issue #139).** Append-only;
+  the bullets above are the earlier states. The boot ROM now holds both
+  loaders (221 words) on top of the A_REN buffer, which re-rolled the layout.
+  Items 3 and 4 cite record `20261010-102000-6c9583b`
+  (`librelane-gds-signoff-check/`, the GDS of gds run 38043277930,
+  `sha256:51ffdd66…` as klt hashes the input). Item 7 cites
+  `post-layout-sdf-regression` record `20261010-102100-6c9583b`, whose routed
+  netlist is byte-identical to that run's. **Item 3 stays `met`.** **Item 4
+  stays `unmet`/`check_errored`** on the same converter shape
+  (`pm_wdata[7:0]`, klayout-tools#2941). The compare against the post-route
+  reference is `match` with `power_connectivity` `match`, and is not cited.
+  **Item 7 stays `unmet`/`check_failed`** (#106). Baseline:
+  `signoff-baseline` record `20261010-120100-6c9583b`, 1 of 11.
 - **Every citation pins a `content_hash`** — the sha256 of the cited
   artifact file, verifiable with `sha256sum`. Two honest caveats, on
   record here because the issue calls freshness "the point":

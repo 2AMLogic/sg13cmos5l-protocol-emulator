@@ -1,0 +1,12 @@
+14693c14693
+<  sg13cmos5l_buf_1 fanout173 (.A(\u_core.ctl_stall ),
+---
+>  sg13cmos5l_buf_1 fanout173 (.A(1'b0),
+14697c14697
+<  sg13cmos5l_buf_1 fanout175 (.A(\u_core.ctl_stall ),
+---
+>  sg13cmos5l_buf_1 fanout175 (.A(1'b0),
+15089c15089
+<  sg13cmos5l_dlygate4sd3_1 hold352 (.A(\u_core.ctl_stall ),
+---
+>  sg13cmos5l_dlygate4sd3_1 hold352 (.A(1'b0),

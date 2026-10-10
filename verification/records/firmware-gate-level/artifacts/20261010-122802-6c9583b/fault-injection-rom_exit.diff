@@ -1,0 +1,32 @@
+8130c8130
+<     .B(\u_core.rom_exit ),
+---
+>     .B(1'b0),
+8419c8419
+<     .C(\u_core.rom_exit ),
+---
+>     .C(1'b0),
+8478c8478
+<     .C(\u_core.rom_exit ),
+---
+>     .C(1'b0),
+8490c8490
+<     .C(\u_core.rom_exit ),
+---
+>     .C(1'b0),
+8508c8508
+<     .C(\u_core.rom_exit ),
+---
+>     .C(1'b0),
+8527c8527
+<     .C(\u_core.rom_exit ),
+---
+>     .C(1'b0),
+8539c8539
+<     .C(\u_core.rom_exit ),
+---
+>     .C(1'b0),
+15303c15303
+<  sg13cmos5l_dlygate4sd3_1 hold459 (.A(\u_core.rom_exit ),
+---
+>  sg13cmos5l_dlygate4sd3_1 hold459 (.A(1'b0),
