@@ -248,6 +248,10 @@ each word first.
   behaviour is pinned by a test
   (`test_warm_start_all_zero_image_is_the_known_weak_case`) so it cannot
   change unnoticed, and the question is issue #168.
+  *Superseded 2026-10-10 (issue #168): the warm start now refuses a
+  signature of `0x0000` (option 4). The text above is kept as the finding
+  was made; the decision and its reasons are in "Implementation notes and
+  findings (issue #168, 2026-10-10)" below.*
 - *What the image is entered with.* The boot program restores `R0`–`R3`, `Z`
   and `C` to their reset values before `RUN 0`, so a warm-started program
   starts in the state a serial-loaded one does, with three differences it
@@ -375,7 +379,9 @@ its bytes). The cost is one valid image in 65,536 (one whose real CRC is
 zero), which `firmware/tools/mkflash.py` refuses to build and tells the user
 to re-pad. An all-`0xFF` flash (blank, or no Pmod with MISO pulled high)
 needs no extra rule: its CRC is `0x7FA1`. This does not close F1 for the
-warm start, which is still issue #168.
+warm start, which is still issue #168. *(2026-10-10: it now does; issue
+#168 applies the same refusal to the warm start. See the notes of issue
+#168 below.)*
 
 **Finding F3: the two boot programs use 93 of the 128 ROM words, leaving 35
 for the UART load.** Open item 3 said the first image sets the size and
@@ -389,7 +395,10 @@ this record, written when 98 were free, expected the two programs to share
 them. The 168-word `uart_rx_115200` receiver is far over it, and a
 looped receiver plus the `0xA5`/count/CRC framing, the CRC check and the
 `0x06`/`0x15` reply does not obviously fit in 35. This issue does not raise
-the cap, shrink the SPI program, or move work into hardware. Options for
+the cap, shrink the SPI program, or move work into hardware. *(2026-10-10,
+issue #168: the warm start's zero-signature refusal adds 2 words; the ROM
+is now 95 words and 33 are left. See the notes of issue #168 below.)*
+Options for
 #139 and for ratification, none taken here: raise the cap (the ROM is
 logic, and the measurement below gives its price: 29-34 um^2 per word on
 either flow, so the 35 words that the UART load would want beyond today's
@@ -468,3 +477,111 @@ DR 0014 or on #129.
 
 **Not claimed.** No real flash, Pmod, demo board or silicon was involved.
 No timing against a part's datasheet. The DR 0013 UART load is #139.
+
+## Implementation notes and findings (issue #168, 2026-10-10)
+
+> Added when Finding F1 was closed for the warm start. The Decision above
+> is left as written, and so is the text of every earlier finding; where
+> this section changes a number or a conclusion, the earlier text carries a
+> dated pointer here. This record is still **Proposed**. Evidence:
+> `verification/records/boot-rom/` and the gate-level and LibreLane records
+> named below.
+
+**Finding F1, superseded 2026-10-10: a warm start refuses a signature of
+`0x0000`.** Issue #168 listed four ways to settle F1; the fourth was found
+by its curator on `main`. Chosen: **option 4.**
+
+1. *A nonzero `PM_CRC` seed* (for example `0xFFFF`). Changes DR 0012's
+   register definition, the host-side CRC of `loadseq` (#118) and the
+   layer-1 readout (#137). **Not chosen here, and not rejected:** whether
+   to change the seed is an open operator question (#166), and nothing in
+   this change depends on the answer. The seed stays `0x0000`; DR 0012,
+   `firmware/tools/loadseq.py` and the #137 readout are untouched. If a
+   nonzero seed is adopted later, the all-zero image fails the CRC on its
+   own and the refusal below becomes redundant for it but stays correct
+   (it then refuses only images whose real CRC is `0x0000`, still 1 in
+   65,536); whether to keep its two words is a question for that change.
+2. *A magic word* in word 254. Changes open item 1's signature format and
+   every tool that builds an image, and costs about four ROM words. Not
+   chosen: option 4 closes the same hole for fewer words with no format
+   change.
+3. *Accept it.* Not chosen: it leaves target-spec row 14 (c) holding for
+   this one image only because executing it is harmless.
+4. *Refuse a zero signature, as the SPI-flash boot already does.*
+   **Chosen.** It closes the warm-start hole without touching the register
+   definition, the signature format or the host-side CRC, and both layer-2
+   boot programs now agree on what a signed image is.
+
+*How it is built.* The warm-start loop's last pass reads word 255 into `R0`
+(high byte) and `R1` (low byte), so the check needs no read-back: `OR R0,
+R1` / `BZ uart_load`, placed after the loop and before the CRC verdict.
+**Two words**, against the SPI path's six. Sharing the SPI path's code was
+considered and costs more: it reads word 255 back because its own loop
+does not leave the word in registers, and a shared check would need a jump
+in and a second fail target, since a failed warm start falls through to the
+UART load (§ Decision, layer 2) while a failed flash boot halts. A refused
+image falls through to the UART load like any other failed check, with
+`PM_CRC` left at `0x0000`.
+
+*Cost.* (a) The one valid image in 65,536 whose real CRC is `0x0000` must
+be re-padded, by changing a filler word, exactly as for flash.
+`firmware/tools/mkflash.py` already refuses to build such an image, and it
+is the only tool in this repository that produces a signed image, in the
+format both strap `01` and strap `10` read; its messages now say the warm
+start refuses it too. `firmware/tools/loadseq.py` loads the words it is
+given and appends no signature, so it needs no rule of its own: a host that
+serial-loads a `mkflash.py` image gets the rule for free, and a host that
+signs images by other means must apply it. (b) A passing warm start takes
+two more cycles: word 0 now executes **2,325** cycles after the boot
+program's first instruction (open item 1's bullet above says 2,323; that
+was the design before this change), the same for every image. (c) Two ROM
+words: see F3 below.
+
+*What it does not change.* Any other image still passes the check exactly
+when word 255 is its CRC, so random power-up contents escape with the
+CRC's own odds (about 1 in 65,536), as before; F1 was the one image that
+passed with certainty. Straps `00`, `01` and `11` are unchanged, and the
+SPI-flash boot's cycle count (58,793) is unchanged.
+
+*Evidence.* `verification/test_boot_rom.py`:
+`test_warm_start_all_zero_image_is_the_known_weak_case` is replaced by
+`test_warm_start_refuses_a_zero_signature` (the all-zero image, and the
+probe program padded so that its real CRC is `0x0000`, which would drive
+pins if it ran: neither runs) and `test_warm_start_runs_zero_padded_images`
+(zero-padded images with nonzero signatures, including `0x00nn` and
+`0xnn00`, still run on the predicted edge). `verification/boot_rom_mutants.py`
+adds three controls (the refusal branch made a `NOP`, and the test reading
+only one byte of the signature), each caught. The old pinning record stays
+in `verification/records/boot-rom/`; the new one supersedes it.
+
+**Finding F3, superseded 2026-10-10: the boot programs use 95 of the 128
+ROM words, leaving 33 for the UART load** (was 93 and 35). Everything else
+F3 says about #139 stands, with two fewer words.
+
+**Area and timing of the 95-word ROM, each number with its flow** (§
+Consequences: "Both flows measure it"). Before -> after is the 93-word ROM
+of issue #140 (as re-measured with issue #173's A_REN buffer) -> this
+change.
+
+| | klt/Yosys flow (synthesis, cell area only) | LibreLane flow (placed and routed, 20 ns) |
+|---|---|---|
+| Standard-cell area | 21,263.63 -> 21,331.03 um^2 (+67.40) | 27,910.9 -> 28,255.7 um^2 placed (+344.8); its synthesis step 21,603.49 -> 21,859.63 um^2 |
+| Instances | 1,366 -> 1,377 | 1,894 -> 1,890 placed; synthesis step 1,431 -> 1,422 cells |
+| Flip-flops | 178 -> 178 | 178 -> 178 |
+| ROM alone | 274 -> 286 instances, 3,116.76 -> 3,256.51 um^2 | not separable |
+| Utilization of the 2x2 die | not measured by this flow | 44.23 % -> 44.51 % |
+| Worst setup slack (slow / typ / fast) | **no timing**: this flow cannot time the design | +6.100 / +11.371 / +14.318 -> +5.621 / +11.049 / +14.100 ns |
+| Worst hold slack (slow / typ / fast) | n/a | +0.557 / +0.278 / +0.112 -> +0.563 / +0.280 / +0.111 ns |
+| Setup and hold violations | n/a | 0 at all three corners, before and after |
+
+Records: `verification/records/synthesis-baseline/records/20261010-082700-704a3fb.md`
+and `verification/records/librelane-corner-timing/records/20261010-084500-704a3fb.md`
+(`gds` run 38037477407, all four jobs green). The flows agree that the area
+grew and disagree on the sign of the synthesis cell-count change (+11 on
+klt/Yosys, -9 on LibreLane's synthesis step); that is recorded in the
+LibreLane record as a finding, not resolved by picking one. Max-slew
+violations stay at 0 (issue #173's A_REN repair holds: 0.064 ns at the slow
+corner); max-cap violations on the macro's `A_DOUT` are 3 / 3 / 3 (1 / 2 / 3
+before), not setup or hold violations. The 2x2 budget is not threatened.
+Gate level: the boot-ROM bench, including the zero-signature refusal, passes
+on the LibreLane netlist of that run (`verification/records/firmware-gate-level/`).

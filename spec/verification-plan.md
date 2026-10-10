@@ -352,8 +352,11 @@ in #168 and pending operator decision #166 (CRC initial value), so (c) is
 not fully met. The negative controls fail as required --
 `verification/records/reset-power-up/records/20261010-012219-02f84e3.md`.
 2026-10-10 (issue #168): the warm start now refuses a zero signature (DR
-0013 Finding F1, option 4), so the all-zero case above no longer runs; the
-superseding reset-power-up record carries the gate-level evidence.
+0013 Finding F1, option 4), so the all-zero case above no longer runs: RTL
+`verification/records/boot-rom/records/20261010-082233-704a3fb.md`, gate
+level `verification/records/firmware-gate-level/records/20261010-083703-704a3fb.md`;
+this section's bench re-run on that netlist is
+`verification/records/reset-power-up/records/20261010-091001-704a3fb.md`.
 The host's reload obligation after deselect is in `verification/README.md`
 (issue #118).*
 
