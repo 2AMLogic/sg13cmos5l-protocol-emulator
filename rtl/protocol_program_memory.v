@@ -278,15 +278,35 @@ module protocol_program_memory (
   sg13cmos5l_buf_4 u_ren_drv (.A(mem_ren_l), .X(mem_ren));
   sg13cmos5l_buf_4 u_men_drv (.A(mem_men),   .X(mem_men_pin));
   sg13cmos5l_buf_4 u_wen_drv (.A(mem_wen),   .X(mem_wen_pin));
-  genvar gb;
-  generate
-    for (gb = 0; gb < 8; gb = gb + 1) begin : g_addr_drv
-      sg13cmos5l_buf_4 u_drv (.A(mem_addr[gb]), .X(mem_addr_pin[gb]));
-    end
-    for (gb = 0; gb < 16; gb = gb + 1) begin : g_din_drv
-      sg13cmos5l_buf_4 u_drv (.A(mem_din[gb]), .X(mem_din_pin[gb]));
-    end
-  endgenerate
+  // One named instance per bit, not a `generate` loop: a generate array
+  // flattens to an escaped name with a '.' inside (`\u_prog_mem.g_din_drv[0].u_drv`),
+  // which Icarus's SDF INTERCONNECT splitter cannot resolve, so the
+  // post-layout SDF regression (flow/run-post-layout-sdf.sh) could not
+  // annotate the netlist. Plain names flatten like `u_ren_drv` does.
+  sg13cmos5l_buf_4 u_addr_drv_0 (.A(mem_addr[0]), .X(mem_addr_pin[0]));
+  sg13cmos5l_buf_4 u_addr_drv_1 (.A(mem_addr[1]), .X(mem_addr_pin[1]));
+  sg13cmos5l_buf_4 u_addr_drv_2 (.A(mem_addr[2]), .X(mem_addr_pin[2]));
+  sg13cmos5l_buf_4 u_addr_drv_3 (.A(mem_addr[3]), .X(mem_addr_pin[3]));
+  sg13cmos5l_buf_4 u_addr_drv_4 (.A(mem_addr[4]), .X(mem_addr_pin[4]));
+  sg13cmos5l_buf_4 u_addr_drv_5 (.A(mem_addr[5]), .X(mem_addr_pin[5]));
+  sg13cmos5l_buf_4 u_addr_drv_6 (.A(mem_addr[6]), .X(mem_addr_pin[6]));
+  sg13cmos5l_buf_4 u_addr_drv_7 (.A(mem_addr[7]), .X(mem_addr_pin[7]));
+  sg13cmos5l_buf_4 u_din_drv_0 (.A(mem_din[0]), .X(mem_din_pin[0]));
+  sg13cmos5l_buf_4 u_din_drv_1 (.A(mem_din[1]), .X(mem_din_pin[1]));
+  sg13cmos5l_buf_4 u_din_drv_2 (.A(mem_din[2]), .X(mem_din_pin[2]));
+  sg13cmos5l_buf_4 u_din_drv_3 (.A(mem_din[3]), .X(mem_din_pin[3]));
+  sg13cmos5l_buf_4 u_din_drv_4 (.A(mem_din[4]), .X(mem_din_pin[4]));
+  sg13cmos5l_buf_4 u_din_drv_5 (.A(mem_din[5]), .X(mem_din_pin[5]));
+  sg13cmos5l_buf_4 u_din_drv_6 (.A(mem_din[6]), .X(mem_din_pin[6]));
+  sg13cmos5l_buf_4 u_din_drv_7 (.A(mem_din[7]), .X(mem_din_pin[7]));
+  sg13cmos5l_buf_4 u_din_drv_8 (.A(mem_din[8]), .X(mem_din_pin[8]));
+  sg13cmos5l_buf_4 u_din_drv_9 (.A(mem_din[9]), .X(mem_din_pin[9]));
+  sg13cmos5l_buf_4 u_din_drv_10(.A(mem_din[10]), .X(mem_din_pin[10]));
+  sg13cmos5l_buf_4 u_din_drv_11(.A(mem_din[11]), .X(mem_din_pin[11]));
+  sg13cmos5l_buf_4 u_din_drv_12(.A(mem_din[12]), .X(mem_din_pin[12]));
+  sg13cmos5l_buf_4 u_din_drv_13(.A(mem_din[13]), .X(mem_din_pin[13]));
+  sg13cmos5l_buf_4 u_din_drv_14(.A(mem_din[14]), .X(mem_din_pin[14]));
+  sg13cmos5l_buf_4 u_din_drv_15(.A(mem_din[15]), .X(mem_din_pin[15]));
 `else
   assign mem_ren      = mem_ren_l;
   assign mem_men_pin  = mem_men;
