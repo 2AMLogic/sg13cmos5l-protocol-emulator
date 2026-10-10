@@ -210,6 +210,16 @@ gates. The host-side loader is issue #118.
 - `request-firmware-roundtrip.json` — `klt functional-verification`
   request driving `test_firmware_roundtrip.py` against
   `rtl/protocol_program_memory.v` via Icarus.
+- `test_loadseq.py` / `request-loadseq.json` — issue #118: replays the
+  operations `firmware/tools/loadseq.py` generates (via
+  `loadseq_playback.iter_ops`, clock driven by the operations themselves, no
+  reuse of the other benches' loader helpers) on `protocol_program_memory`
+  and reads every word back through the fetch port: all committed
+  application images, 1 word, the 256-word boundary, reload, plus byte-swap,
+  bit-reversal and missing-latch-edge mutants that must read back as
+  mutated. `test_loadseq_top.py` / `request-loadseq-top.json` checks the
+  MODE-drop/run transition at the pins of the submitted top. Simulation
+  evidence only; nothing here was run on a board.
 - `request-protocol-models.json` — `klt functional-verification` request
   driving `test_protocol_models.py` against the declared fixture
   `duts/model_validation_top.v` via Icarus, carrying the recorded seed.

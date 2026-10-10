@@ -62,6 +62,7 @@ jobs:
         run: |
           python3 firmware/tools/test_asm.py
           python3 firmware/tools/test_gen_boot_rom.py
+          python3 firmware/tools/test_loadseq.py
           python3 firmware/tools/check_firmware.py
 
       # Datasheet drift (issue #110): docs/info.md's image table must agree
