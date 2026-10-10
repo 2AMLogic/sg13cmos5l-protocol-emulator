@@ -1,0 +1,29 @@
+# RTL bench inventory (issue #225). Read by scripts/run-rtl-benches.sh (the
+# per-PR `rtl-benches` gate) and checked by scripts/check_rtl_bench_inventory.py
+# against verification/request-*.json.
+#
+# One directive per line:
+#   include <name>             run verification/request-<name>.json in the gate
+#   exclude <name> :: <why>    deliberately not in the per-PR gate, with a reason
+# Every request-*.json must be classified exactly once, and every entry must
+# name an existing request file. Order of `include` lines is run order.
+
+include protocol-emulator
+include control-space
+include boot-rom
+include boot-spi
+include boot-uart
+include boot-uart-count-alias
+include program-memory
+include protocol-models
+include firmware-uart
+include firmware-uart-rx
+include firmware-spi
+include uio-pads
+include firmware-i2c
+include firmware-i2c-sr
+include firmware-roundtrip
+include random-regression
+include isa-lockstep
+include loadseq
+include loadseq-top
