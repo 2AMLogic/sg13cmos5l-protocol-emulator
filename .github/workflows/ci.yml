@@ -117,7 +117,8 @@ jobs:
   # deliberate local runs. Benches need `klt functional-verification` (the
   # requests carry the sources, defines and recorded seeds), so klt +
   # cocotb are provisioned with the same setup-env.sh as the signoff job.
-  # The formal gate runs in the separate `formal` job below (issue #122).
+  # The formal gate is NOT part of the per-PR run: see the `formal` job
+  # below (manual workflow_dispatch only, issue #122).
   rtl-benches:
     name: RTL cocotb benches (no PDK)
     runs-on: ubuntu-24.04
@@ -143,8 +144,17 @@ jobs:
   # artifacts go to $RUNNER_TEMP, nothing is written under
   # verification/records/ (evidence records stay deliberate local runs, and a
   # green run is not one). Scripts run with their default timeouts.
+  #
+  # Manual (workflow_dispatch) only, by measurement (issue #122): two
+  # consecutive hosted-runner runs were green with identical PASS verdicts but
+  # took ~18 min and ~14 min of job time (the no-data-dependent-latency
+  # real-core BMC dominates and varies 9.4-13.1 min), over the ~10 min
+  # per-PR bar. See verification/README.md "What CI runs vs. what stays
+  # local" for the numbers. Dispatch it to re-measure or to re-check a
+  # toolchain bump.
   formal:
     name: formal gate (yosys/ABC/z3)
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     env:
