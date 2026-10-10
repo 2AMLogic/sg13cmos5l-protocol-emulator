@@ -20,10 +20,11 @@
 # Which netlist: the `tt_submission` artifact's `<top>.v` of a `gds` workflow
 # run -- the final netlist that the template's own `gl_test` job compiles.
 # Default: the byte-identical copy frozen under verification/records/
-# post-layout-sdf-regression/ from run 38071502150 (the first netlist with
+# post-layout-sdf-regression/ from run 38083802720 (the first netlist with
+# DR 0013 layer 1's load-phase CRC readout, issue #137, together with
 # both DR 0015's P1/P2 plus the drive buffers on every SRAM macro input, issue
 # #208, and the UART load in the boot ROM, issue #139; before it, run
-# 38055685598's (#208 alone) and run 38054423540's (#139 alone), and before
+# 38071502150's (#208 and #139 without the readout), run 38055685598's (#208 alone) and run 38054423540's (#139 alone), and before
 # those run 38032061275's, the first with the A_REN drive buffer, issue #173,
 # and run 38013383254's, the first with the SPI-flash boot program, issue
 # #140). Override with
@@ -90,7 +91,13 @@
 # are skipped there). It shares the boot-rom negative control (`rom_exit`
 # stuck at 0: a verified UART load then never leaves the ROM).
 #
-# Usage:  ./flow/run-firmware-gate-level.sh [--netlist FILE] [--full] [--control-space] [--boot-rom] [--boot-spi] [--primitives] [--boot-uart]
+# Load integrity (issue #137, DR 0013 layer 1): --load-integrity adds
+# verification/test_load_integrity.py, which is pin-only. Neither fault above
+# is aimed at it (the load phase executes nothing), so it gets its own: the
+# net `\pm_crc[0]` (bit 0 of PM_CRC, which feeds both the CRC's own feedback
+# and the uo_out readout mux) stuck at 0 the same way, on a fifth mutated copy.
+#
+# Usage:  ./flow/run-firmware-gate-level.sh [--netlist FILE] [--full] [--control-space] [--boot-rom] [--boot-spi] [--primitives] [--boot-uart] [--load-integrity]
 #   --full  also runs verification/test_firmware_i2c_sr.py (the Sr/stretch
 #           sibling bench); default is the UART TX, UART RX, SPI and I2C
 #           protocol benches (the three issue-#108 benches plus the UART RX
@@ -100,6 +107,7 @@
 #   --boot-spi       also runs verification/test_boot_spi.py.
 #   --primitives     also runs verification/test_primitives.py.
 #   --boot-uart      also runs verification/test_boot_uart.py.
+#   --load-integrity also runs verification/test_load_integrity.py.
 # Env:    PDK_ROOT must contain ihp-sg13cmos5l/ (default ~/share/pdk).
 # Runs sims strictly one at a time. Writes flow/firmware-gate-level/
 # (gitignored): per-run results.xml, logs, mutated netlist, summary.json.
@@ -108,7 +116,7 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SCRATCH="${REPO_ROOT}/flow/firmware-gate-level"
-NETLIST="${REPO_ROOT}/verification/records/post-layout-sdf-regression/artifacts/20261010-174900-f8428aa/tt_um_2amlogic_protocol_emulator.v"
+NETLIST="${REPO_ROOT}/verification/records/post-layout-sdf-regression/artifacts/20261010-205119-af36071/tt_um_2amlogic_protocol_emulator.v"
 MODULES=(test_firmware_uart test_firmware_uart_rx test_firmware_spi test_firmware_i2c)
 export PDK_ROOT="${PDK_ROOT:-$HOME/share/pdk}"
 
@@ -121,7 +129,8 @@ while [ $# -gt 0 ]; do
     --boot-spi) MODULES+=(test_boot_spi); shift ;;
     --primitives) MODULES+=(test_primitives); shift ;;
     --boot-uart) MODULES+=(test_boot_uart); shift ;;
-    -h|--help) sed -n '2,105p' "${BASH_SOURCE[0]}"; exit 0 ;;
+    --load-integrity) MODULES+=(test_load_integrity); shift ;;
+    -h|--help) sed -n '2,113p' "${BASH_SOURCE[0]}"; exit 0 ;;
     *) echo "FATAL: unknown argument $1" >&2; exit 1 ;;
   esac
 done
@@ -136,6 +145,7 @@ rm -rf "$SCRATCH"; mkdir -p "$SCRATCH"
 MUTANT="${SCRATCH}/mutant-wait_cnt0-stuck0.v"
 MUTANT_CTL="${SCRATCH}/mutant-ctl_stall-stuck0.v"
 MUTANT_BOOT="${SCRATCH}/mutant-rom_exit-stuck0.v"
+MUTANT_CRC="${SCRATCH}/mutant-pm_crc0-stuck0.v"
 inject_fault() {  # inject_fault <net-regex> <net-name-for-messages> <out-netlist>
   python3 -I - "$NETLIST" "$3" "$1" "$2" <<'PYEOF'
 import re, sys
@@ -157,6 +167,9 @@ for mod in "${MODULES[@]}"; do
   fi
   if [ "$mod" = test_boot_rom ] || [ "$mod" = test_boot_spi ] || [ "$mod" = test_boot_uart ]; then
     inject_fault '\\u_core\.rom_exit' '\u_core.rom_exit' "$MUTANT_BOOT"
+  fi
+  if [ "$mod" = test_load_integrity ]; then
+    inject_fault '\\pm_crc\[0\]' '\pm_crc[0]' "$MUTANT_CRC"
   fi
 done
 MUTANT_PAD="${SCRATCH}/mutant-uio_oe3-stuck0.v"
@@ -180,6 +193,7 @@ mutant_for() {  # the faulted netlist that must make <module> fail
   case "$1" in
     test_control_space) echo "$MUTANT_CTL" ;;
     test_boot_rom|test_boot_spi|test_boot_uart) echo "$MUTANT_BOOT" ;;
+    test_load_integrity) echo "$MUTANT_CRC" ;;
     *) echo "$MUTANT" ;;
   esac
 }

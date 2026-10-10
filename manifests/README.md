@@ -280,6 +280,25 @@ capture, PVT corner sweeps, or Monte Carlo.
   `unmet`/`unverifiable_provenance`**. Baseline: `signoff-baseline` record
   `20261010-185501-f8428aa` (twin `20261010-185500-f8428aa` closes `main`'s
   fork), 5 of 11.
+- **Items 1, 2, 3, 4, 7 and 9, state as of 2026-10-10 (issue #137, PR #167).** Append-only;
+  the bullets above are the earlier states. DR 0013 layer 1's load-phase CRC
+  readout put a `run_phase` mux on `uo_out` in the top of the merged #208/#139
+  design, so the design and the layout changed (target-spec row 14(b) now
+  excepts the serial-load phase, operator ruling on #166). Item 1
+  (`evidence/design-sources.txt`: the top's hash and both netlists) and item
+  2 (the routed GDS of gds run 38083802720 at `bce5bf4`, `sha256:2eeb61ea…`,
+  via `evidence/layout-gds.json`) are `met` against the new bytes. Items 3 and
+  4 cite record `20261010-205400-af36071` (`librelane-gds-signoff-check/`):
+  **item 3 stays `met`**, **item 4 stays `unmet`/`check_errored`** at the same
+  converter shape (`1'h1`, klayout-tools#2941); the post-route compare is
+  `match` with `power_connectivity` `match`, not cited. Item 7 cites
+  `post-layout-sdf-regression` record `20261010-205119-af36071` (12 passed,
+  0 failed, 1 skipped at all three corners, annotated):
+  **`unmet`/`unverifiable_provenance`**, as before. Item 9
+  (`evidence/testbenches.txt`) gains the `load-integrity` bench and
+  `--load-integrity` on the gate-level command. Baselines: `signoff-baseline`
+  records `20261010-213101-af36071` and `20261010-213102-af36071` (one per
+  live head), **5 of 11**, unchanged.
 - **Every citation pins a `content_hash`**, and what it is the hash of
   depends on the cited envelope (clarified 2026-10-10, issue #168; the
   manifests on `main` have always followed this, the sentence here did

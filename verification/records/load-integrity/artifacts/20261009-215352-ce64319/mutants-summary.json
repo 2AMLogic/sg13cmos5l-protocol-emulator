@@ -1,0 +1,241 @@
+{
+ "bench": "verification/test_load_integrity.py",
+ "runs": [
+  {
+   "kind": "golden",
+   "tests": 9,
+   "failed": [],
+   "as_required": true
+  },
+  {
+   "kind": "mutant",
+   "name": "no-readout",
+   "defect": "uo_out is the core's register in every phase (the design before issue #137)",
+   "file": "src/tt_um_2amlogic_protocol_emulator.v",
+   "tests": 9,
+   "failed": [
+    "test_byte_select_is_ui_in_1_alone_and_needs_no_clock",
+    "test_doubled_clock_edge_mismatches",
+    "test_dropped_clock_edge_mismatches",
+    "test_load_protocol_unchanged_by_the_readout",
+    "test_no_readout_outside_the_load_phase",
+    "test_readout_equals_crc_hqx_for_random_images",
+    "test_readout_holds_at_saturation",
+    "test_readout_is_the_running_crc_and_only_moves_on_a_commit",
+    "test_truncated_load_mismatches"
+   ],
+   "expected_catchers": [
+    "test_readout_equals_crc_hqx_for_random_images"
+   ],
+   "as_required": true
+  },
+  {
+   "kind": "mutant",
+   "name": "bytes-swapped",
+   "defect": "ui_in[1] = 0 selects the high byte and 1 the low byte",
+   "file": "src/tt_um_2amlogic_protocol_emulator.v",
+   "tests": 9,
+   "failed": [
+    "test_byte_select_is_ui_in_1_alone_and_needs_no_clock",
+    "test_doubled_clock_edge_mismatches",
+    "test_dropped_clock_edge_mismatches",
+    "test_load_protocol_unchanged_by_the_readout",
+    "test_no_readout_outside_the_load_phase",
+    "test_readout_equals_crc_hqx_for_random_images",
+    "test_readout_holds_at_saturation",
+    "test_readout_is_the_running_crc_and_only_moves_on_a_commit",
+    "test_truncated_load_mismatches"
+   ],
+   "expected_catchers": [
+    "test_byte_select_is_ui_in_1_alone_and_needs_no_clock",
+    "test_readout_equals_crc_hqx_for_random_images"
+   ],
+   "as_required": true
+  },
+  {
+   "kind": "mutant",
+   "name": "select-on-ui_in-2",
+   "defect": "the byte select is ui_in[2], not ui_in[1]",
+   "file": "src/tt_um_2amlogic_protocol_emulator.v",
+   "tests": 9,
+   "failed": [
+    "test_byte_select_is_ui_in_1_alone_and_needs_no_clock",
+    "test_doubled_clock_edge_mismatches",
+    "test_dropped_clock_edge_mismatches",
+    "test_load_protocol_unchanged_by_the_readout",
+    "test_no_readout_outside_the_load_phase",
+    "test_readout_equals_crc_hqx_for_random_images",
+    "test_readout_holds_at_saturation",
+    "test_readout_is_the_running_crc_and_only_moves_on_a_commit",
+    "test_truncated_load_mismatches"
+   ],
+   "expected_catchers": [
+    "test_byte_select_is_ui_in_1_alone_and_needs_no_clock"
+   ],
+   "as_required": true
+  },
+  {
+   "kind": "mutant",
+   "name": "select-xor-serial-data",
+   "defect": "the serial data pin flips the byte select",
+   "file": "src/tt_um_2amlogic_protocol_emulator.v",
+   "tests": 9,
+   "failed": [
+    "test_byte_select_is_ui_in_1_alone_and_needs_no_clock",
+    "test_load_protocol_unchanged_by_the_readout",
+    "test_readout_holds_at_saturation",
+    "test_readout_is_the_running_crc_and_only_moves_on_a_commit"
+   ],
+   "expected_catchers": [
+    "test_byte_select_is_ui_in_1_alone_and_needs_no_clock"
+   ],
+   "as_required": true
+  },
+  {
+   "kind": "mutant",
+   "name": "readout-leaks-into-run-phase",
+   "defect": "in the run phase ui_in[1] = 1 still puts the CRC high byte on uo_out",
+   "file": "src/tt_um_2amlogic_protocol_emulator.v",
+   "tests": 9,
+   "failed": [
+    "test_load_protocol_unchanged_by_the_readout"
+   ],
+   "expected_catchers": [
+    "test_load_protocol_unchanged_by_the_readout"
+   ],
+   "as_required": true
+  },
+  {
+   "kind": "mutant",
+   "name": "readout-follows-mode-pin",
+   "defect": "the readout is gated on the MODE pin, not the latched phase: raising MODE in the run phase shows the CRC again",
+   "file": "src/tt_um_2amlogic_protocol_emulator.v",
+   "tests": 9,
+   "failed": [
+    "test_load_protocol_unchanged_by_the_readout"
+   ],
+   "expected_catchers": [
+    "test_load_protocol_unchanged_by_the_readout"
+   ],
+   "as_required": true
+  },
+  {
+   "kind": "mutant",
+   "name": "crc-skips-serial-load",
+   "defect": "PM_CRC covers PM_DATA_LO commits but not the serial load's",
+   "file": "rtl/protocol_program_memory.v",
+   "tests": 9,
+   "failed": [
+    "test_byte_select_is_ui_in_1_alone_and_needs_no_clock",
+    "test_doubled_clock_edge_mismatches",
+    "test_dropped_clock_edge_mismatches",
+    "test_load_protocol_unchanged_by_the_readout",
+    "test_no_readout_outside_the_load_phase",
+    "test_readout_equals_crc_hqx_for_random_images",
+    "test_readout_holds_at_saturation",
+    "test_readout_is_the_running_crc_and_only_moves_on_a_commit",
+    "test_truncated_load_mismatches"
+   ],
+   "expected_catchers": [
+    "test_readout_equals_crc_hqx_for_random_images",
+    "test_readout_is_the_running_crc_and_only_moves_on_a_commit"
+   ],
+   "as_required": true
+  },
+  {
+   "kind": "mutant",
+   "name": "crc-byte-order-swapped",
+   "defect": "PM_CRC feeds each word low byte first",
+   "file": "rtl/protocol_program_memory.v",
+   "tests": 9,
+   "failed": [
+    "test_byte_select_is_ui_in_1_alone_and_needs_no_clock",
+    "test_doubled_clock_edge_mismatches",
+    "test_dropped_clock_edge_mismatches",
+    "test_load_protocol_unchanged_by_the_readout",
+    "test_no_readout_outside_the_load_phase",
+    "test_readout_equals_crc_hqx_for_random_images",
+    "test_readout_holds_at_saturation",
+    "test_readout_is_the_running_crc_and_only_moves_on_a_commit",
+    "test_truncated_load_mismatches"
+   ],
+   "expected_catchers": [
+    "test_readout_equals_crc_hqx_for_random_images"
+   ],
+   "as_required": true
+  },
+  {
+   "kind": "mutant",
+   "name": "crc-advances-on-every-bit",
+   "defect": "PM_CRC advances on every load-phase edge, not only on a commit",
+   "file": "rtl/protocol_program_memory.v",
+   "tests": 9,
+   "failed": [
+    "test_byte_select_is_ui_in_1_alone_and_needs_no_clock",
+    "test_doubled_clock_edge_mismatches",
+    "test_dropped_clock_edge_mismatches",
+    "test_load_protocol_unchanged_by_the_readout",
+    "test_no_readout_outside_the_load_phase",
+    "test_readout_equals_crc_hqx_for_random_images",
+    "test_readout_holds_at_saturation",
+    "test_readout_is_the_running_crc_and_only_moves_on_a_commit",
+    "test_truncated_load_mismatches"
+   ],
+   "expected_catchers": [
+    "test_load_protocol_unchanged_by_the_readout",
+    "test_readout_is_the_running_crc_and_only_moves_on_a_commit"
+   ],
+   "as_required": true
+  },
+  {
+   "kind": "mutant",
+   "name": "crc-ignores-saturation",
+   "defect": "PM_CRC keeps advancing on word boundaries after 256 words, when nothing is committed",
+   "file": "rtl/protocol_program_memory.v",
+   "tests": 9,
+   "failed": [
+    "test_readout_holds_at_saturation"
+   ],
+   "expected_catchers": [
+    "test_readout_holds_at_saturation"
+   ],
+   "as_required": true
+  },
+  {
+   "kind": "mutant",
+   "name": "crc-survives-reset",
+   "defect": "reset does not clear PM_CRC",
+   "file": "rtl/protocol_program_memory.v",
+   "tests": 9,
+   "failed": [
+    "test_byte_select_is_ui_in_1_alone_and_needs_no_clock",
+    "test_doubled_clock_edge_mismatches",
+    "test_dropped_clock_edge_mismatches",
+    "test_load_protocol_unchanged_by_the_readout",
+    "test_no_readout_outside_the_load_phase",
+    "test_readout_equals_crc_hqx_for_random_images",
+    "test_readout_holds_at_saturation",
+    "test_readout_is_the_running_crc_and_only_moves_on_a_commit",
+    "test_truncated_load_mismatches"
+   ],
+   "expected_catchers": [
+    "test_no_readout_outside_the_load_phase"
+   ],
+   "as_required": true
+  },
+  {
+   "kind": "mutant",
+   "name": "boot-status-never-set",
+   "defect": "BOOT_STATUS[0] is not set when the load phase ends",
+   "file": "rtl/protocol_program_memory.v",
+   "tests": 9,
+   "failed": [
+    "test_load_protocol_unchanged_by_the_readout"
+   ],
+   "expected_catchers": [
+    "test_load_protocol_unchanged_by_the_readout"
+   ],
+   "as_required": true
+  }
+ ]
+}

@@ -173,6 +173,62 @@ here.
   possible without re-synthesis. That revision is made: DR 0010's "Target pin
   plan" puts the profile RX on `ui_in[1]` too, and the move is #155.
 
+## Findings from building layer 1 (issue #137)
+
+*Added 2026-10-09 by the layer-1 build. These are findings, not decisions.
+The design above was built as written. Evidence:
+`verification/records/load-integrity/`. They are numbered 1–5, as issue #166
+cites them; they are not the F-numbered findings of the layer-2 notes
+below.*
+
+1. **`uo_out` during a serial load conflicts with target-spec row 14(b) as
+   worded.** Row 14(b) says `uo_out` "holds its documented reset value until
+   a program writes" it. Under layer 1 `uo_out` carries `PM_CRC` bytes from
+   the first committed word until `MODE` drops, and no program has written
+   anything. Whatever is wired to `uo_out` sees that: a UART peer on
+   `uo_out[0]` sees the line move, and an SPI peripheral sees its CS, SCLK
+   and MOSI pins (`uo_out[0..2]`) move. In reset, and from the `MODE`-drop
+   edge until the program's first `OUT`, `uo_out` is 0 as before. One of the
+   two texts needs a sentence: either row 14(b) excepts the load-phase
+   readout, or the readout moves off `uo_out`.
+
+   *Ruled 2026-10-10 (operator, issue #166, option 1): row 14(b) excepts the
+   serial-load phase.* From `rst_n` release with `MODE` high until the edge
+   that takes `MODE` low, `uo_out` presents `PM_CRC` as layer 1 above says;
+   everywhere else row 14(b) holds as written. The amendment is a dated note
+   on row 14 of `spec/target-spec.md`; that row's Status is unchanged. The
+   readout stays on `uo_out` and is not gated by a host select. So a
+   peripheral wired to `uo_out` (a UART peer on `uo_out[0]`, an SPI
+   peripheral on `uo_out[0..2]`) must tolerate the bytes or be held off
+   during a serial load. The boot ROM's paths never show the readout: with
+   `MODE` low at reset the run phase begins on the first edge, so the UART
+   load's TX on `uo_out[0]` and its RX on `ui_in[1]` belong to the core from
+   then on. Finding 2 was ruled in the same comment (`PM_CRC` stays
+   `0x0000`); recording that ruling here, and findings 3 and 4, are
+   issue #218.
+2. **A CRC that starts at 0 cannot see an all-zero image.** `PM_CRC` resets
+   to `0x0000` (DR 0012), and zero words leave a zero CRC at zero, so an
+   image of all zero words reads `0x0000` at any length, including no load
+   at all. No truncation or edge fault of such an image is detectable. A
+   non-zero initial value would close this. It would also change DR 0012's
+   `PM_CRC` and the host-side reference, so it is not done here.
+3. **One doubled clock edge is undetectable because it is harmless.** A
+   repeat of the last bit of the image, or of any bit in a run of equal bits
+   that reaches the end of the image, leaves every committed word intact.
+   The spare bit is a partial word, discarded when `MODE` drops. The readout
+   matches, correctly. "A doubled clock edge must mismatch"
+   (verification-plan §7) holds for every doubled edge that changes what
+   memory holds, which is what the bench checks.
+4. **DR 0010's pin table still gives `ui_in[1]` and `uo_out[7:0]`
+   `load_role: none`.** Layer 1 gives both a load-phase role. The table was
+   not edited in this issue; `scripts/check_protocol_pin_roles.py` was taught
+   the readout mux instead, so it still checks that the core's port is the
+   whole of `uo_out` in run phase.
+5. **Area**, each number with its flow, is in
+   `verification/records/synthesis-baseline/` (klt/Yosys) and
+   `verification/records/librelane-corner-timing/` (LibreLane) at the
+   records minted for issue #137.
+
 ## Open items
 
 1. **Image signature format for warm start (strap `10`).** Proposed: the last

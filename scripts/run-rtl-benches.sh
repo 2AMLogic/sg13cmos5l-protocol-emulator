@@ -26,6 +26,7 @@ BENCHES=(
   boot-spi
   boot-uart
   boot-uart-count-alias
+  load-integrity
   program-memory
   protocol-models
   firmware-uart

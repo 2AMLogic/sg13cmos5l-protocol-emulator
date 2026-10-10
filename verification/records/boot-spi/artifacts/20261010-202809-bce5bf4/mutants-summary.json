@@ -1,0 +1,226 @@
+{
+ "bench": "verification/test_boot_spi.py",
+ "runs": [
+  {
+   "kind": "golden",
+   "tests": 6,
+   "failed": [],
+   "as_required": true
+  },
+  {
+   "kind": "mutant",
+   "name": "command-is-0x00",
+   "defect": "the command's two 1 bits are sent as 0: the flash is sent opcode 0x00, not READ",
+   "file": "firmware/asm/boot/boot_rom.asm",
+   "tests": 6,
+   "failed": [
+    "test_blank_or_absent_flash_never_runs",
+    "test_corrupt_flash_never_runs",
+    "test_good_flash_boots_a_program_that_starts_in_the_reset_state",
+    "test_model_chain_and_prediction",
+    "test_protocol_programs_boot_from_flash_and_pass_reference_models",
+    "test_zero_signature_is_refused"
+   ],
+   "expected_catchers": [
+    "test_good_flash_boots_a_program_that_starts_in_the_reset_state",
+    "test_protocol_programs_boot_from_flash_and_pass_reference_models"
+   ],
+   "as_required": true
+  },
+  {
+   "kind": "mutant",
+   "name": "address-is-25-bits",
+   "defect": "one extra address clock: the flash's data is a bit late",
+   "file": "firmware/asm/boot/boot_rom.asm",
+   "tests": 6,
+   "failed": [
+    "test_blank_or_absent_flash_never_runs",
+    "test_corrupt_flash_never_runs",
+    "test_good_flash_boots_a_program_that_starts_in_the_reset_state",
+    "test_model_chain_and_prediction",
+    "test_protocol_programs_boot_from_flash_and_pass_reference_models",
+    "test_zero_signature_is_refused"
+   ],
+   "expected_catchers": [
+    "test_good_flash_boots_a_program_that_starts_in_the_reset_state",
+    "test_protocol_programs_boot_from_flash_and_pass_reference_models"
+   ],
+   "as_required": true
+  },
+  {
+   "kind": "mutant",
+   "name": "cs-left-to-the-pull-up",
+   "defect": "CS0 is never driven high at the end: the flash is deselected only because the pad is released and the Pmod pulls it up",
+   "file": "firmware/asm/boot/boot_rom.asm",
+   "tests": 6,
+   "failed": [
+    "test_blank_or_absent_flash_never_runs",
+    "test_corrupt_flash_never_runs",
+    "test_good_flash_boots_a_program_that_starts_in_the_reset_state",
+    "test_protocol_programs_boot_from_flash_and_pass_reference_models",
+    "test_zero_signature_is_refused"
+   ],
+   "expected_catchers": [
+    "test_good_flash_boots_a_program_that_starts_in_the_reset_state",
+    "test_protocol_programs_boot_from_flash_and_pass_reference_models"
+   ],
+   "as_required": true
+  },
+  {
+   "kind": "mutant",
+   "name": "cs-falls-with-sck-high",
+   "defect": "the first CS0 fall happens with SCK high (the image 0x08), not low: mode 3 idle, off by a clock",
+   "file": "firmware/asm/boot/boot_rom.asm",
+   "tests": 6,
+   "failed": [
+    "test_blank_or_absent_flash_never_runs",
+    "test_corrupt_flash_never_runs",
+    "test_good_flash_boots_a_program_that_starts_in_the_reset_state",
+    "test_model_chain_and_prediction",
+    "test_protocol_programs_boot_from_flash_and_pass_reference_models",
+    "test_zero_signature_is_refused"
+   ],
+   "expected_catchers": [
+    "test_good_flash_boots_a_program_that_starts_in_the_reset_state",
+    "test_protocol_programs_boot_from_flash_and_pass_reference_models"
+   ],
+   "as_required": true
+  },
+  {
+   "kind": "mutant",
+   "name": "high-byte-latched-at-bit-9",
+   "defect": "the high byte is latched after the ninth bit, not the eighth",
+   "file": "firmware/asm/boot/boot_rom.asm",
+   "tests": 6,
+   "failed": [
+    "test_good_flash_boots_a_program_that_starts_in_the_reset_state",
+    "test_model_chain_and_prediction",
+    "test_protocol_programs_boot_from_flash_and_pass_reference_models",
+    "test_zero_signature_is_refused"
+   ],
+   "expected_catchers": [
+    "test_good_flash_boots_a_program_that_starts_in_the_reset_state",
+    "test_protocol_programs_boot_from_flash_and_pass_reference_models"
+   ],
+   "as_required": true
+  },
+  {
+   "kind": "mutant",
+   "name": "verdict-skipped",
+   "defect": "the branch on the CRC verdict is a NOP: every image whose signature word is not zero is run",
+   "file": "firmware/asm/boot/boot_rom.asm",
+   "tests": 6,
+   "failed": [
+    "test_blank_or_absent_flash_never_runs",
+    "test_corrupt_flash_never_runs",
+    "test_model_chain_and_prediction"
+   ],
+   "expected_catchers": [
+    "test_blank_or_absent_flash_never_runs",
+    "test_corrupt_flash_never_runs"
+   ],
+   "as_required": true
+  },
+  {
+   "kind": "mutant",
+   "name": "verdict-ignores-crc-high-byte",
+   "defect": "the verdict tests PM_CRC_LO only",
+   "file": "firmware/asm/boot/boot_rom.asm",
+   "tests": 6,
+   "failed": [
+    "test_corrupt_flash_never_runs"
+   ],
+   "expected_catchers": [
+    "test_corrupt_flash_never_runs"
+   ],
+   "as_required": true
+  },
+  {
+   "kind": "mutant",
+   "name": "verdict-ignores-crc-low-byte",
+   "defect": "the verdict tests PM_CRC_HI only",
+   "file": "firmware/asm/boot/boot_rom.asm",
+   "tests": 6,
+   "failed": [
+    "test_corrupt_flash_never_runs"
+   ],
+   "expected_catchers": [
+    "test_corrupt_flash_never_runs"
+   ],
+   "as_required": true
+  },
+  {
+   "kind": "mutant",
+   "name": "zero-signature-accepted",
+   "defect": "the refusal of signature 0x0000 is a NOP: a dead MISO line (all zeros) is run",
+   "file": "firmware/asm/boot/boot_rom.asm",
+   "tests": 6,
+   "failed": [
+    "test_blank_or_absent_flash_never_runs",
+    "test_model_chain_and_prediction",
+    "test_zero_signature_is_refused"
+   ],
+   "expected_catchers": [
+    "test_blank_or_absent_flash_never_runs",
+    "test_zero_signature_is_refused"
+   ],
+   "as_required": true
+  },
+  {
+   "kind": "mutant",
+   "name": "signature-read-from-word-0",
+   "defect": "the zero-signature check reads word 0 instead of word 255",
+   "file": "firmware/asm/boot/boot_rom.asm",
+   "tests": 6,
+   "failed": [
+    "test_good_flash_boots_a_program_that_starts_in_the_reset_state",
+    "test_protocol_programs_boot_from_flash_and_pass_reference_models",
+    "test_zero_signature_is_refused"
+   ],
+   "expected_catchers": [
+    "test_blank_or_absent_flash_never_runs",
+    "test_zero_signature_is_refused"
+   ],
+   "as_required": true
+  },
+  {
+   "kind": "mutant",
+   "name": "pins-not-released",
+   "defect": "UIO_DIR is not cleared at the end: the flash pins stay outputs, on a failed boot and after RUN",
+   "file": "firmware/asm/boot/boot_rom.asm",
+   "tests": 6,
+   "failed": [
+    "test_blank_or_absent_flash_never_runs",
+    "test_corrupt_flash_never_runs",
+    "test_good_flash_boots_a_program_that_starts_in_the_reset_state",
+    "test_protocol_programs_boot_from_flash_and_pass_reference_models",
+    "test_zero_signature_is_refused"
+   ],
+   "expected_catchers": [
+    "test_blank_or_absent_flash_never_runs",
+    "test_good_flash_boots_a_program_that_starts_in_the_reset_state"
+   ],
+   "as_required": true
+  },
+  {
+   "kind": "mutant",
+   "name": "psram-cs-driven",
+   "defect": "UIO_DIR also enables uio[7], a PSRAM chip select",
+   "file": "firmware/asm/boot/boot_rom.asm",
+   "tests": 6,
+   "failed": [
+    "test_blank_or_absent_flash_never_runs",
+    "test_corrupt_flash_never_runs",
+    "test_good_flash_boots_a_program_that_starts_in_the_reset_state",
+    "test_model_chain_and_prediction",
+    "test_protocol_programs_boot_from_flash_and_pass_reference_models",
+    "test_zero_signature_is_refused"
+   ],
+   "expected_catchers": [
+    "test_blank_or_absent_flash_never_runs",
+    "test_good_flash_boots_a_program_that_starts_in_the_reset_state"
+   ],
+   "as_required": true
+  }
+ ]
+}
