@@ -120,43 +120,55 @@ dated notes are inserted inside sections (DR 0012's index-map note sits under
 its register table), so section boundaries are not stable, and a section hash
 would let a note change the interface while the check stays green. The cost
 is that any edit to a pinned record, including a note that changes nothing a
-program sees, needs an amendment. Section 4 keeps that cheap.
+program sees, needs an amendment. Section 4 keeps that cheap: such an edit
+cites its own issue or PR, not a new record.
 
 ### 4. Change control after the freeze
 
 1. **Every change to a pinned file needs an amendment.** The amendment is an
-   entry appended to `amendments` in `spec/isa-freeze.json` that cites a
-   decision record numbered **0018 or later**. The record must exist, must
-   not itself be pinned, and must name the changed path. One record may cover
-   several amendments. Pins are never edited; the entry carries
-   `sha256_before` and `sha256_after`, and entries for one path form a
-   chain.
+   entry appended to `amendments` in `spec/isa-freeze.json`. Pins are never
+   edited. Each entry carries `sha256_before` and `sha256_after`, and the
+   entries for one path form a chain. What the entry must cite depends on
+   its kind (item 2).
 2. **Each amendment says what kind of change it is** (`kind`):
    - `isa-change`: the ISA-visible behaviour changes (a new or removed
      instruction or control index, a changed latency, flag, reset value or
-     assembler rule). It needs a record that decides the change, as any
-     spec change does.
+     assembler rule). It cites (`dr`) a decision record numbered **0018 or
+     later** that decides the change, as any spec change needs.
    - `conformance-fix`: the RTL, the reference model or the assembler is
-     brought into line with the frozen records. This is allowed, and is not
-     an ISA change, but the record must say it is one and name the frozen
-     text the old behaviour broke. The precedence for "in line with" is the
-     pinned records first, then `isa.py`, then the RTL. DR 0016's
-     Consequences already rule that an RTL change to a ruled detail is a
-     defect.
-   - `no-behaviour-change`: nothing a program can observe changes (a comment,
-     a dated note, a refactor that keeps every cycle and bit, a Status line
-     flipped by ratification). The record says why, and it may be short.
+     brought into line with the frozen records. This is allowed and is not
+     an ISA change, but it also cites a record numbered 0018 or later, which
+     must say it is a conformance fix and name the frozen text the old
+     behaviour broke. The precedence for "in line with" is the pinned
+     records first, then `isa.py`, then the RTL. DR 0016's Consequences
+     already rule that an RTL change to a ruled detail is a defect.
+   - `no-behaviour-change`: nothing a program can observe changes. Examples
+     are a dated note, a Status line, a typo, a cross-reference, or a comment
+     in the RTL or the tools. It may cite a record numbered 0018 or later,
+     **or** the issue or PR that made the change (`ref`, written `#N` or
+     `owner/repo#N`) with a one-line `summary` of what changed. Its
+     `invalidates_row13_evidence` is always `false`: if a change could
+     invalidate row-13 evidence, it is not a no-behaviour change.
+
+   For `isa-change` and `conformance-fix`, the cited record must exist, must
+   not itself be pinned, and must name the changed path. One record may
+   cover several amendments. An issue or PR reference alone is refused for
+   these two kinds. The check reads `ref` only for its form and never calls
+   GitHub. Whether a change labelled `no-behaviour-change` really changes
+   nothing is for the PR's reviewer to judge, and the `sha256_before` and
+   `sha256_after` in the entry give them the exact diff to read.
 3. **Each amendment says whether it invalidates row-13 evidence**
-   (`invalidates_row13_evidence`, true or false, never omitted), and the
-   record gives the reason. An `isa-change` made after row 13's protocol is
-   chosen either invalidates that evidence or says why the protocol's program
-   does not observe it. A `conformance-fix` invalidates it if the row-13
-   program ran on the behaviour being fixed.
-4. **Ratification is a hash change too.** When the two-key act flips a pinned
-   record's Status line (draft PR #84 would do this for DR 0001), the act's
-   PR adds a `no-behaviour-change` amendment citing a record numbered 0018 or
-   later. PR #84 reserves 0009 for its act record; if it lands after this
-   freeze, it needs that amendment as well (Open items).
+   (`invalidates_row13_evidence`, true or false, never omitted), and for the
+   two record-backed kinds the record gives the reason. An `isa-change` made
+   after row 13's protocol is chosen either invalidates that evidence or
+   says why the protocol's program does not observe it. A
+   `conformance-fix` invalidates it if the row-13 program ran on the
+   behaviour being fixed.
+4. **Ratification is a hash change too, and a no-behaviour one.** When the
+   two-key act flips a pinned record's Status line (draft PR #84 would do
+   this for DR 0001), the act's PR adds a `no-behaviour-change` amendment
+   whose `ref` is that PR. A ratifying review that changes a record's
+   content is an `isa-change` instead (Consequences).
 
 ### 5. Enforcement
 
@@ -166,9 +178,14 @@ program sees, needs an amendment. Section 4 keeps that cheap.
 - a pinned file's sha256 differs from its expected hash (the pin, or the last
   amendment's `sha256_after`);
 - a pinned path is untracked, missing, or a symlink;
-- an amendment cites a record below 0018, a record that does not exist or is
-  pinned, or one that does not name the path; breaks its path's chain; or
-  leaves out `kind` or `invalidates_row13_evidence`;
+- an `isa-change` or `conformance-fix` amendment cites no record, or cites a
+  record below 0018, a record that does not exist or is pinned, or one that
+  does not name the path;
+- a `no-behaviour-change` amendment cites neither a record nor a
+  well-formed `ref` (`#N` or `owner/repo#N`), cites only a `ref` with no
+  `summary`, or says it invalidates row-13 evidence;
+- an amendment breaks its path's chain, or leaves out `kind` or
+  `invalidates_row13_evidence`;
 - this record's pin table and the manifest disagree on any path or hash;
 - a pin differs from the file at the freeze base commit. If that commit is
   not in the clone (a shallow checkout), the check prints a NOTE and skips
@@ -264,16 +281,19 @@ never rewrites anything.
   DR 0012's Open items (`RCTL` of `UIO_*` returns the register value; `RUN`
   is allowed outside the boot ROM) and its table of first-build points are
   frozen as the RTL implements them.
-- Every DR or RTL change after the freeze that touches a pinned file costs a
-  short record. That is the point: such changes should be rare and visible.
+- An ISA change or a conformance fix after the freeze costs a record numbered
+  0018 or later. That is the point: such changes should be rare and visible.
+  A change nothing can observe costs one JSON entry that cites its issue or
+  PR.
 
 ## Open items
 
 1. **Draft PR #84 (two-key act, DR 0009).** It edits DR 0001's Status line.
-   If it merges after this record, it needs a `no-behaviour-change`
-   amendment citing a record numbered 0018 or later (section 4, item 4). It
-   is a draft and conflicts with `main` today.
-2. **Issue #211 (DR 0013 finding F8).** Its fix changes the boot ROM's UART
-   frame. The ROM is not pinned, but any note it adds to DR 0013 is a
-   `no-behaviour-change` amendment unless it changes what a loaded program
-   observes.
+   If it merges after this record, it adds a `no-behaviour-change` amendment
+   with `ref` `#84` (section 4, item 4). It is a draft and conflicts with
+   `main` today.
+2. **DR 0013 notes from issue #218, and issue #211 (DR 0013 finding F8).**
+   Dated notes added to DR 0013 are `no-behaviour-change` amendments citing
+   their issue or PR, unless they change what a loaded program observes.
+   #211's fix changes the boot ROM's UART frame. The ROM is not pinned, so
+   only its DR 0013 notes need amendments.

@@ -364,9 +364,10 @@ auditable rather than a bare assertion:
   Proposed). It takes effect at the merge of its PR, whose base is
   `e74d2b656de35e492e6f7b3e34cbe2266b4aeff3`, and pins the ISA-defining
   files by sha256 in `spec/isa-freeze.json`. `scripts/check_isa_freeze.py`
-  (`npm run lint`) fails on any change to them that no record numbered 0018
-  or later accounts for, and each such record says whether it invalidates
-  row-13 evidence. The row-13 record must cite the freeze's merge commit, and
+  (`npm run lint`) fails on any change to them that no amendment accounts
+  for. An ISA change or conformance fix needs a record numbered 0018 or
+  later that says whether it invalidates row-13 evidence; a change nothing
+  can observe cites its issue or PR. The row-13 record must cite the freeze's merge commit, and
   its protocol must be outside DR 0017's exclusion list (DR 0015's tables,
   and the protocols DRs 0012 and 0013 were designed around). No row-13
   protocol is chosen yet.

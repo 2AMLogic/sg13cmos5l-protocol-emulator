@@ -4,6 +4,13 @@
   "freeze_base_commit": "e74d2b656de35e492e6f7b3e34cbe2266b4aeff3",
   "freeze_takes_effect": "at the merge commit of the pull request that adds this file (issue #141, part 1)",
   "first_amending_dr": 18,
+  "amendment_rules": {
+    "fields": "path, kind, invalidates_row13_evidence, sha256_before, sha256_after, and dr and/or ref (+ summary when only ref)",
+    "isa-change": "dr >= first_amending_dr required; ref alone refused",
+    "conformance-fix": "dr >= first_amending_dr required; ref alone refused",
+    "no-behaviour-change": "dr >= first_amending_dr, or ref ('#N' or 'owner/repo#N', form-checked only) with a non-empty summary; invalidates_row13_evidence must be false",
+    "see": "DR 0017, section 4 'Change control after the freeze'"
+  },
   "pins": [
     {
       "path": "spec/decision-records/0001-isa.md",

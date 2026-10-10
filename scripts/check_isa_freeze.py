@@ -17,22 +17,31 @@ What it checks
     3. Each pinned path is a tracked regular file (not a symlink) whose
        sha256 equals its expected hash. The expected hash is the pin, or, if
        amendments name the path, the `sha256_after` of the last of them.
-    4. Every amendment cites a decision record numbered at least
-       `first_amending_dr` (18) that exists under `spec/decision-records/`,
-       is not itself pinned, and names the amended path. Amendments for one
-       path form a chain: each `sha256_before` is the previous expected hash.
-       Each says what kind of change it is and whether it invalidates row 13
-       evidence (a boolean, never omitted).
+    4. Amendments for one path form a chain: each `sha256_before` is the
+       previous expected hash. Each gives its `kind` and whether it
+       invalidates row 13 evidence (a boolean, never omitted). What it must
+       cite depends on the kind:
+       * `isa-change` and `conformance-fix` cite a decision record (`dr`)
+         numbered at least `first_amending_dr` (18) that exists under
+         `spec/decision-records/`, is not itself pinned, and names the
+         amended path. An issue or PR reference alone is refused.
+       * `no-behaviour-change` (a dated note, a Status line, a typo, a
+         cross-reference) cites either such a record or an issue/PR
+         reference (`ref`, `#N` or `owner/repo#N`), says what changed in
+         `summary`, and must have `invalidates_row13_evidence: false`. The
+         reference is checked for form only; the lint never calls GitHub.
     5. If the freeze commit is present in the local clone, every pin equals
        the hash of that path at that commit. A shallow clone without the
        commit prints a NOTE and skips only this step.
 
 Fixing a failure
-    A pinned file changed. If the change is intended, write a decision
-    record numbered 0018 or above that says what changed, whether it alters
-    ISA-visible behaviour (or is a fix that brings the RTL in line with the
-    frozen records), and whether it invalidates row 13 evidence; then append
-    an entry to `amendments` in `spec/isa-freeze.json`. Do not edit a pin.
+    A pinned file changed. If the change is intended, append an entry to
+    `amendments` in `spec/isa-freeze.json`. Do not edit a pin. A change to
+    ISA-visible behaviour, or a fix that brings the RTL in line with the
+    frozen records, needs a decision record numbered 0018 or above that says
+    so and whether it invalidates row 13 evidence. A change nothing can
+    observe (a dated note, a Status line, a typo) may cite its issue or PR
+    instead (DR 0017, "Change control").
 
 Usage
     python3 scripts/check_isa_freeze.py
@@ -60,6 +69,9 @@ SHA_RE = re.compile(r"^[0-9a-f]{64}$")
 COMMIT_RE = re.compile(r"^[0-9a-f]{40}$")
 DR_FILE_RE = re.compile(r"^(\d{4})-[a-z0-9-]+\.md$")
 AMENDMENT_KINDS = ("isa-change", "conformance-fix", "no-behaviour-change")
+DR_REQUIRED_KINDS = ("isa-change", "conformance-fix")
+# `#218` or `2AMLogic/sg13cmos5l-protocol-emulator#218`. Form only: no API call.
+REF_RE = re.compile(r"^(?:[A-Za-z0-9][A-Za-z0-9-]*/[A-Za-z0-9._-]+)?#[1-9][0-9]*$")
 
 
 class ManifestError(Exception):
@@ -194,25 +206,49 @@ def check(repo: Path) -> tuple[list[str], list[str]]:
             errors.append(f"{where}: path {rel!r} is not a pinned file")
             continue
         where = f"{where} ({rel})"
-        dr = a.get("dr")
-        if not isinstance(dr, int) or isinstance(dr, bool):
-            errors.append(f"{where}: dr must be the amending record's number, an integer")
-        elif dr < first_dr:
-            errors.append(f"{where}: dr {dr:04d} is below {first_dr:04d}; only a later record may amend the freeze")
-        else:
-            found = find_dr(repo, dr)
-            if not found:
-                errors.append(f"{where}: no decision record {dr:04d}-*.md under {DR_DIR_REL}/")
-            elif len(found) > 1:
-                errors.append(f"{where}: decision record number {dr:04d} is used by {len(found)} files")
-            elif found[0] in pinned_set:
-                errors.append(f"{where}: the amending record {found[0]} is itself pinned")
-            elif rel not in (repo / found[0]).read_text(encoding="utf-8"):
-                errors.append(f"{where}: {found[0]} does not name the amended path")
-        if a.get("kind") not in AMENDMENT_KINDS:
+        kind = a.get("kind")
+        if kind not in AMENDMENT_KINDS:
             errors.append(f"{where}: kind must be one of {', '.join(AMENDMENT_KINDS)}")
-        if not isinstance(a.get("invalidates_row13_evidence"), bool):
+        inval = a.get("invalidates_row13_evidence")
+        if not isinstance(inval, bool):
             errors.append(f"{where}: invalidates_row13_evidence must be true or false")
+        elif kind == "no-behaviour-change" and inval:
+            errors.append(
+                f"{where}: a no-behaviour-change amendment cannot invalidate row 13 evidence; "
+                "if it does, it changes behaviour and needs kind isa-change or conformance-fix"
+            )
+        has_dr, has_ref = "dr" in a, "ref" in a
+        if has_ref:
+            ref = a.get("ref")
+            if not isinstance(ref, str) or not REF_RE.match(ref):
+                errors.append(f"{where}: ref {ref!r} must be an issue or PR reference, '#N' or 'owner/repo#N'")
+        if kind in DR_REQUIRED_KINDS and not has_dr:
+            errors.append(
+                f"{where}: kind {kind} needs a decision record numbered {first_dr:04d} or later (dr); "
+                "an issue or PR reference is accepted only for no-behaviour-change"
+            )
+        elif kind == "no-behaviour-change" and not (has_dr or has_ref):
+            errors.append(f"{where}: cite a decision record (dr) or an issue/PR reference (ref)")
+        if kind == "no-behaviour-change" and not has_dr:
+            summary = a.get("summary")
+            if not isinstance(summary, str) or not summary.strip():
+                errors.append(f"{where}: an amendment citing only a ref must say what changed in 'summary'")
+        if has_dr:
+            dr = a.get("dr")
+            if not isinstance(dr, int) or isinstance(dr, bool):
+                errors.append(f"{where}: dr must be the amending record's number, an integer")
+            elif dr < first_dr:
+                errors.append(f"{where}: dr {dr:04d} is below {first_dr:04d}; only a later record may amend the freeze")
+            else:
+                found = find_dr(repo, dr)
+                if not found:
+                    errors.append(f"{where}: no decision record {dr:04d}-*.md under {DR_DIR_REL}/")
+                elif len(found) > 1:
+                    errors.append(f"{where}: decision record number {dr:04d} is used by {len(found)} files")
+                elif found[0] in pinned_set:
+                    errors.append(f"{where}: the amending record {found[0]} is itself pinned")
+                elif rel not in (repo / found[0]).read_text(encoding="utf-8"):
+                    errors.append(f"{where}: {found[0]} does not name the amended path")
         before, after = a.get("sha256_before"), a.get("sha256_after")
         if not (isinstance(before, str) and SHA_RE.match(before)
                 and isinstance(after, str) and SHA_RE.match(after)):
@@ -243,7 +279,8 @@ def check(repo: Path) -> tuple[list[str], list[str]]:
             errors.append(
                 f"{rel}: sha256 {actual[:12]}... differs from the frozen {expected[rel][:12]}... "
                 "and no amendment by a decision record numbered "
-                f"{first_dr:04d} or later accounts for it (see DR 0017, 'Change control')"
+                f"{first_dr:04d} or later (or, for a change nothing can observe, an issue/PR "
+                "reference) accounts for it (see DR 0017, 'Change control')"
             )
 
     # 5. The pins describe the freeze commit, when it is available.

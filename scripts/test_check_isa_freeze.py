@@ -90,7 +90,7 @@ class IsaFreezeCheck(unittest.TestCase):
             code = cif.main(["--repo", str(self.repo)])
         return code, out.getvalue() + err.getvalue()
 
-    def amend(self, rel: str, new_text: str, dr: int = 18, **over) -> None:
+    def amend(self, rel: str, new_text: str, dr: int | None = 18, **over) -> None:
         before = None
         for a in reversed(self.manifest["amendments"]):
             if a["path"] == rel:
@@ -102,6 +102,8 @@ class IsaFreezeCheck(unittest.TestCase):
             "dr": dr, "path": rel, "kind": "isa-change", "invalidates_row13_evidence": False,
             "sha256_before": before, "sha256_after": sha(new_text),
         }
+        if dr is None:
+            del entry["dr"]
         entry.update(over)
         self.manifest["amendments"].append(entry)
         self.write(rel, new_text)
@@ -169,6 +171,62 @@ class IsaFreezeCheck(unittest.TestCase):
         self.assertEqual(code, 1)
         self.assertIn("kind must be one of", out)
         self.assertIn("invalidates_row13_evidence must be true or false", out)
+
+    def note(self, ref: str = "#218", **over) -> None:
+        """A dated note on a pinned record, amended by an issue/PR ref only."""
+        fields = {"kind": "no-behaviour-change", "ref": ref, "summary": "dated note"}
+        fields.update(over)
+        self.amend(ISA, "# 0001\nopcodes\n\n> Dated note.\n", dr=None, **fields)
+
+    def test_notes_only_change_with_issue_ref_passes(self) -> None:
+        self.note("#218")
+        code, out = self.run_main()
+        self.assertEqual(code, 0, out)
+
+    def test_notes_only_change_with_cross_repo_ref_passes(self) -> None:
+        self.note("2AMLogic/sg13cmos5l-protocol-emulator#84")
+        code, out = self.run_main()
+        self.assertEqual(code, 0, out)
+
+    def test_isa_change_with_issue_ref_fails(self) -> None:
+        self.amend(CORE, "v2\n", dr=None, kind="isa-change", ref="#218")
+        code, out = self.run_main()
+        self.assertEqual(code, 1)
+        self.assertIn("kind isa-change needs a decision record", out)
+
+    def test_conformance_fix_with_issue_ref_fails(self) -> None:
+        self.amend(CORE, "v2\n", dr=None, kind="conformance-fix", ref="#218")
+        code, out = self.run_main()
+        self.assertEqual(code, 1)
+        self.assertIn("kind conformance-fix needs a decision record", out)
+
+    def test_notes_only_change_cannot_invalidate_row13(self) -> None:
+        self.note(invalidates_row13_evidence=True)
+        code, out = self.run_main()
+        self.assertEqual(code, 1)
+        self.assertIn("cannot invalidate row 13 evidence", out)
+
+    def test_malformed_ref_fails(self) -> None:
+        for bad in ("218", "#0", "https://github.com/o/r/pull/218", "#218 and more", ""):
+            with self.subTest(ref=bad):
+                self.manifest["amendments"] = []
+                self.write(ISA, "# 0001\nopcodes\n")
+                self.note(bad)
+                code, out = self.run_main()
+                self.assertEqual(code, 1)
+                self.assertIn("must be an issue or PR reference", out)
+
+    def test_ref_only_amendment_needs_summary(self) -> None:
+        self.note(summary=" ")
+        code, out = self.run_main()
+        self.assertEqual(code, 1)
+        self.assertIn("'summary'", out)
+
+    def test_notes_only_change_with_no_citation_fails(self) -> None:
+        self.amend(ISA, "# 0001\nopcodes\nfix\n", dr=None, kind="no-behaviour-change", summary="typo")
+        code, out = self.run_main()
+        self.assertEqual(code, 1)
+        self.assertIn("cite a decision record (dr) or an issue/PR reference (ref)", out)
 
     def test_editing_a_pin_instead_of_amending_fails(self) -> None:
         # Re-pinning in the manifest and the record together still fails:

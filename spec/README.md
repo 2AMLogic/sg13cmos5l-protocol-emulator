@@ -59,8 +59,10 @@ Proposed specification and decision records.
   it pins by sha256 the eleven files that define the ISA a programmer sees
   (DRs 0001, 0005, 0012, 0013, 0015, 0016, the core, program-memory and top
   RTL, the assembler and the ISA reference model), says what is left out and
-  why, and requires a later record (0018 or above) for any change to them,
-  stating whether it invalidates row-13 evidence. It also sets which
+  why. An ISA change or conformance fix to them needs a later record (0018
+  or above) stating whether it invalidates row-13 evidence; a change nothing
+  can observe (a dated note, a Status line) cites its issue or PR. It also
+  sets which
   protocols row 13 may not choose. The pins are machine-readable in
   `isa-freeze.json` and checked by `scripts/check_isa_freeze.py`
   (`npm run lint`). Row 13's protocol is chosen in a later commit.
