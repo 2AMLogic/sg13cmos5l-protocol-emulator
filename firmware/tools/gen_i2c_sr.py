@@ -25,7 +25,11 @@ OUT_DIR = ROOT / "firmware" / "asm"
 MODES = {
     "fast": dict(L=65, H=60, HD=65, SUSTA=30, SUSTO=60,
                  table="Fast-mode (400 kHz class)"),
-    "std": dict(L=235, H=200, HD=205, SUSTA=235, SUSTO=205,
+    # L + H = 500: every ordinary data/ACK clock is the 100 kHz period at the
+    # nominal 50 MHz clock (issue #125). L=258 is as long as a single WAIT
+    # reaches in the shortest low phase (OUT + WAIT 255 + LDI/OR...), H=242
+    # carries the rest; both clear the Table 10 minimums (235 / 200).
+    "std": dict(L=258, H=242, HD=205, SUSTA=235, SUSTO=205,
                 table="Standard-mode (100 kHz class)"),
 }
 

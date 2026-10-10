@@ -190,3 +190,17 @@ def i2c_negative_short_stop_case():
         0x50, False, [0x00], [True], False, scl, sda, factor=0.5
     )
     return scl, sda
+
+
+def i2c_negative_overspeed_case(fast_mode):
+    """Period-only negative control (issue #125): every data/ACK clock's low
+    and high are exactly the Table-10 t_LOW / t_HIGH minimums (Standard: the
+    firmware's former 235/200 cycles = 4700/4000 ns at the nominal 20 ns
+    clock), so those two checks pass and only the full-period bound (f_SCL
+    maximum) may flag it."""
+    scl = Signal(1, name="scl")
+    sda = Signal(1, name="sda")
+    i2c.encode_transfer_overspeed(
+        0x50, False, [0x5A], [True], fast_mode, scl, sda
+    )
+    return scl, sda

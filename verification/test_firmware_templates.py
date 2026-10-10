@@ -130,7 +130,7 @@ def test_mutants_differ_from_base():
     assert ft.gen_uart(SEED, 1, mistime_delta=-3).source != ft.gen_uart(SEED, 1).source
     assert ft.gen_spi(SEED, 0, flip_idle=1).source != ft.gen_spi(SEED, 0).source
     for i in (0, 1):
-        m = ft.gen_i2c(SEED, i, mistime_low_delta=-10)
+        m = ft.gen_i2c(SEED, i, mistime_low_delta=-30)
         assert m.source != ft.gen_i2c(SEED, i).source
         m.assemble()
 

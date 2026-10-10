@@ -34,6 +34,13 @@ UM10204_TABLE_10_NS = {
     "t_BUF": (4700.0, 1300.0),
 }
 
+#: UM10204 Table 10 f_SCL (SCL clock frequency) maximum, Hz: (Standard-mode,
+#: Fast-mode).  Independent of the t_LOW / t_HIGH minimums above: those two
+#: floors sum to 8.7 us (Standard) / 1.9 us (Fast), i.e. a legal-by-minimums
+#: clock can still run faster than the mode's frequency ceiling.  The
+#: ceiling therefore needs its own check (issue #125).
+F_SCL_MAX_HZ = (100_000.0, 400_000.0)
+
 #: Margin the encoder uses above each Table-10 minimum so generated legal
 #: traffic is legal by construction, with the headroom a real bus needs.
 ENCODER_MARGIN = 1.2
@@ -52,6 +59,13 @@ STRETCH_DETECT_FACTOR = 2.0
 
 def minimum_ns(parameter, fast_mode):
     return UM10204_TABLE_10_NS[parameter][1 if fast_mode else 0]
+
+
+def minimum_period_ns(fast_mode):
+    """Shortest legal full data/ACK clock period (SCL fall to next SCL
+    fall), ns: the reciprocal of Table 10's f_SCL maximum -- 10000 ns
+    Standard, 2500 ns Fast."""
+    return 1e9 / F_SCL_MAX_HZ[1 if fast_mode else 0]
 
 
 class I2cReport:
@@ -80,12 +94,31 @@ class I2cReport:
 
 
 class _Encoder:
-    def __init__(self, scl, sda, fast_mode, stop_setup_factor=ENCODER_MARGIN):
+    def __init__(self, scl, sda, fast_mode, stop_setup_factor=ENCODER_MARGIN,
+                 clock_low_ns=None, clock_high_ns=None):
         self.scl = scl
         self.sda = sda
         self.fast_mode = fast_mode
         self.stop_setup_factor = stop_setup_factor
         self.t = 0.0
+        self.clock_low_ns = clock_low_ns
+        self.clock_high_ns = clock_high_ns
+
+    def low_ns(self):
+        if self.clock_low_ns is not None:
+            return self.clock_low_ns
+        return ENCODER_MARGIN * self.min_ns("t_LOW")
+
+    def high_ns(self):
+        """A data clock's high time: ENCODER_MARGIN x the t_HIGH minimum,
+        widened where needed so the full period also meets f_SCL (Fast-mode's
+        1.2x floors sum to 2280 ns, under its 2500 ns period)."""
+        if self.clock_high_ns is not None:
+            return self.clock_high_ns
+        return max(
+            ENCODER_MARGIN * self.min_ns("t_HIGH"),
+            minimum_period_ns(self.fast_mode) - self.low_ns(),
+        )
 
     def min_ns(self, parameter):
         return minimum_ns(parameter, self.fast_mode)
@@ -96,9 +129,9 @@ class _Encoder:
         t = self.t
         self.scl.add(t, 0)
         self.sda.add(t + DATA_SHIFT_NS, sda_level)
-        t += ENCODER_MARGIN * self.min_ns("t_LOW")
+        t += self.low_ns()
         self.scl.add(t, 1)
-        t += ENCODER_MARGIN * self.min_ns("t_HIGH")
+        t += self.high_ns()
         self.scl.add(t, 0)
         self.t = t
 
@@ -139,7 +172,8 @@ class _Encoder:
 def encode_transfer(address, read_bit, data_bytes, acks, fast_mode, scl, sda,
                     t0=0.0, stretch_ns=None, stretch_after_byte=None,
                     repeated_start_after_byte=None,
-                    stop_setup_factor=ENCODER_MARGIN):
+                    stop_setup_factor=ENCODER_MARGIN,
+                    clock_low_ns=None, clock_high_ns=None):
     """Append one controller-role transfer; return the time it ends.
 
     ``stretch_ns`` / ``stretch_after_byte`` insert a peripheral
@@ -148,7 +182,9 @@ def encode_transfer(address, read_bit, data_bytes, acks, fast_mode, scl, sda,
     of carrying straight on (the transfer then continues with one more
     address byte before any remaining data).  ``stop_setup_factor`` scales
     the final STOP's t_SU;STO; only the negative controls pass anything
-    other than ``ENCODER_MARGIN``.
+    other than ``ENCODER_MARGIN``.  ``clock_low_ns`` / ``clock_high_ns``
+    override every data/ACK clock's low / high time (the overspeed negative
+    controls only).
     """
     if not 0x08 <= address <= 0x77:
         raise ValueError(
@@ -162,7 +198,8 @@ def encode_transfer(address, read_bit, data_bytes, acks, fast_mode, scl, sda,
     ) - 1:
         raise ValueError("Sr must be followed by at least one more byte")
 
-    enc = _Encoder(scl, sda, fast_mode, stop_setup_factor)
+    enc = _Encoder(scl, sda, fast_mode, stop_setup_factor,
+                   clock_low_ns, clock_high_ns)
     enc.t = float(t0)
     scl.add(enc.t, 1)
     sda.add(enc.t, 1)
@@ -201,6 +238,20 @@ def encode_transfer_with_short_stop_setup(address, read_bit, data_bytes, acks,
     )
 
 
+def encode_transfer_overspeed(address, read_bit, data_bytes, acks, fast_mode,
+                              scl, sda, t0=0.0):
+    """Period-only negative control (issue #125): every data/ACK clock's low
+    and high sit exactly AT their Table-10 minimums (so t_LOW and t_HIGH
+    pass), and everything else is legal -- but the full period (8700 ns
+    Standard, 1900 ns Fast) is under the mode's f_SCL ceiling.  The checker
+    must flag exactly the period violation."""
+    return encode_transfer(
+        address, read_bit, data_bytes, acks, fast_mode, scl, sda, t0=t0,
+        clock_low_ns=minimum_ns("t_LOW", fast_mode),
+        clock_high_ns=minimum_ns("t_HIGH", fast_mode),
+    )
+
+
 def check_transfer(scl, sda, t0=0.0, t1=float("inf"), fast_mode=None):
     """Independently re-derive and judge the transfer in ``[t0, t1]``.
 
@@ -210,7 +261,12 @@ def check_transfer(scl, sda, t0=0.0, t1=float("inf"), fast_mode=None):
     the same statement the DUT-facing suite will one day extract from the
     firmware program under test.
 
-    Returns an ``I2cReport``; ``violations`` names every Table-10 minimum
+    Besides the per-phase minimums it bounds each data/ACK clock's complete
+    period (SCL fall to the next SCL fall, measured clock by clock -- never
+    a whole-transfer average) by Table 10's f_SCL maximum for the stated
+    mode.  A stretched clock is longer, so stretching never trips it.
+
+    Returns an ``I2cReport``; ``violations`` names every Table-10 limit
     the waveform broke (an empty list is conforming traffic).
     """
     if fast_mode is None:
@@ -287,8 +343,10 @@ def check_transfer(scl, sda, t0=0.0, t1=float("inf"), fast_mode=None):
     # t_LOW / t_HIGH across every data clock.
     t_low_min_limit = minimum_ns("t_LOW", fast_mode)
     t_high_min_limit = minimum_ns("t_HIGH", fast_mode)
+    period_limit = minimum_period_ns(fast_mode)
     min_low = None
     min_high = None
+    min_period = None
     stretched = 0
     for r in data_rises:
         prev_fall = next((f for f in reversed(all_fallings) if f < r), None)
@@ -303,6 +361,12 @@ def check_transfer(scl, sda, t0=0.0, t1=float("inf"), fast_mode=None):
             high = next_fall - r
             min_high = high if min_high is None else min(min_high, high)
             below("t_HIGH", high, t_high_min_limit)
+        if prev_fall is not None and next_fall is not None:
+            period = next_fall - prev_fall
+            min_period = period if min_period is None else min(min_period, period)
+            below("t_SCL period (f_SCL max)", period, period_limit)
+    if min_period is not None:
+        measurements["t_SCL(min)"] = min_period
     if min_low is not None:
         measurements["t_LOW(min)"] = min_low
     if min_high is not None:
