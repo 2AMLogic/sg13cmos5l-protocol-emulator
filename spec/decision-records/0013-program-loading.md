@@ -314,3 +314,109 @@ later image can bring them back.
 of the core is unoccupied, so nothing is raised on #129 or against DR 0014.
 The slow-corner setup slack fell by 1.1 ns of 20; the remaining boot
 programs add ROM words, not another mux.
+
+## Implementation notes and findings (issue #140, 2026-10-10)
+
+> Added when strap `01`, the SPI-flash boot, was built. The Decision above is
+> left as written; nothing here changes it. These are what building it
+> showed, recorded per the issue's instruction that a finding goes in the
+> record and the design is not quietly changed. This record is still
+> **Proposed**. Evidence: `verification/records/boot-spi/`. Guide to putting
+> an image on the flash: `docs/spi-flash-boot.md`.
+
+**Built as decided.** Strap `01` makes flash CS0 `uio[0]`, MOSI `uio[1]` and
+SCK `uio[3]` outputs with `WCTL UIO_DIR` (`0x0B`), and leaves MISO `uio[2]`
+and every other `uio` an input. It runs one single-bit SPI mode 0
+transaction, command `0x03`, address `0x000000`, 512 bytes, writes each word
+through `PM_DATA_HI`/`PM_DATA_LO`, verifies with `PM_CRC` against the
+image's signature (word 255 = CRC-16/XMODEM of words 0-254, the warm start's
+format), and then either takes the warm start's hand-over (`R0`-`R3`, `Z`,
+`C` at reset values, `RUN 0`) or halts with every `uio` an input. It is
+64 words (`spi_boot` to `spi_fail`, `firmware/asm/boot/boot_rom.asm`). From
+its first instruction to the image's first instruction: **58,793 cycles**,
+the same for every image (the loops have constant trip counts), 1.18 ms at
+the unconfirmed 50 MHz row-4 clock. SCK is high for 2 cycles and has a
+period of 14, 16 or 17: at most f_clk/14.
+
+**Finding F2: the PSRAM chip selects default to deselected.** The Tiny
+Tapeout QSPI Pmod (`mole99/qspi-pmod`, `main`, read 2026-10-10) carries
+three resistors `R1`-`R3` of 10 k from +3.3 V to the Pmod-side nets of
+`PMOD1` (`uio[0]`, flash CS0), `PMOD7` (`uio[6]`, RAM A CS) and `PMOD8`
+(`uio[7]`, RAM B CS) (`qspi-pmod.kicad_sch`; the schematic's text labels the
+group "CS pull up", and the pull-ups sit on the connector side of the CS
+cut link). The README says "a 1k resistor pulls up the chip's /CS" when a
+trace is cut. **The schematic value (10 k) and the README (1 k) disagree;
+nothing was measured.** Both give the same default: with the design leaving
+`uio[6]` and `uio[7]` inputs, as it does, both PSRAM chip selects float to
+high and both RAMs are deselected, so they cannot drive MISO against the
+flash. The bench models that as a pull-up on `uio[0]`, `uio[6]` and
+`uio[7]` and requires `uio_oe[7:4]` and `uio_oe[2]` to be 0 on every edge of
+every boot (`assert_pin_discipline`). Two corollaries, both from the same
+schematic: the flash's CS0 has the same pull-up, so before the ROM drives it
+(reset, power-up) the flash is deselected, and when the program releases the
+pins at the end CS0 is held high by the pull-up, though the program drives
+it high for two cycles first and the bench fails a boot that leaves that to
+the pull-up (`cs-left-to-the-pull-up`); and `uio[4]`/`uio[5]` (SD2/SD3) have
+no pull-up, so they float. `0x03` does not use them provided the flash's
+Quad Enable bit is set (the Pmod ships that way, per Tiny Tapeout's guide);
+with QE clear the flash's `/WP`/`/HOLD` use those pins and a floating
+`/HOLD` can stall a read. That is a hardware precondition recorded in
+`docs/spi-flash-boot.md`, not something the design can do anything about.
+
+**Built beyond the text: a signature of `0x0000` is refused.** DR 0013's
+Finding F1 (the all-zero image verifies) matters more here than for the
+warm start. A warm start sees zeros only if the SRAM powered up as zeros
+and the result is 256 `NOP`s. The flash boot sees 256 zero words whenever
+MISO reads 0: no Pmod fitted with the line pulled low, a dead flash, a
+wrong strap setting with the part not powered. That would be reported as a
+good image and `RUN` it, so the program also refuses an image whose word
+255 is `0x0000` (6 words: set `PM_ADDR` to 255, read the word back, `OR`
+its bytes). The cost is one valid image in 65,536 (one whose real CRC is
+zero), which `firmware/tools/mkflash.py` refuses to build and tells the user
+to re-pad. An all-`0xFF` flash (blank, or no Pmod with MISO pulled high)
+needs no extra rule: its CRC is `0x7FA1`. This does not close F1 for the
+warm start, which is still issue #168.
+
+**Finding F3: the two boot programs use 93 of the 128 ROM words, leaving 35
+for the UART load.** Open item 3 said the first image sets the size and
+that anything over the cap returns to this record. Before this issue the ROM
+was 30 words (9 dispatch, 2 stubs, 19 warm start). The SPI-flash boot is 64
+and replaces one stub word: 4 to set the pins up, 3 constants, 17 for the
+chip-select fall, command and address clocks, 21 for the data loop and word
+commit, and 19 for the release, the two checks and the hand-over. That
+leaves **35 words for #139**, where
+this record, written when 98 were free, expected the two programs to share
+them. The 168-word `uart_rx_115200` receiver is far over it, and a
+looped receiver plus the `0xA5`/count/CRC framing, the CRC check and the
+`0x06`/`0x15` reply does not obviously fit in 35. This issue does not raise
+the cap, shrink the SPI program, or move work into hardware. Options for
+#139 and for ratification, none taken here: raise the cap (the ROM is
+logic: the 30-word ROM measured 1,531.20 um^2 in the klt/Yosys flow, and
+the die is 57 % unoccupied (notes of issue #138), so a larger cap is likely
+affordable, but that is #129's call, not a firmware issue's); cut the SPI program (the 6-word signature
+check is the cheapest to lose, and costs the dead-MISO rule above); or let the UART load be a short stub that loads a
+longer loader into program memory. The first two change numbers this record
+states; the third changes the DR 0013 UART design.
+
+**What the flash model is, and is not.** `verification/reference_models/
+spi_flash.py` answers `0x03` from a byte image and checks SPI mode 0:
+SCK idle low at CS edges and while CS is high, CS setup/hold and high time,
+MOSI setup and hold, SCK pulse widths and the READ frequency ceiling, and
+that a rising edge comes at least `t_clqv` after the falling edge that
+selected the bit. The numeric limits are the W25Q128JV's **as recalled by
+the author, not re-read from the datasheet**; the bench clock (20 ns)
+satisfies every one with a wide margin. They are constructor parameters.
+This is a model of a conforming slave and says nothing about a real part's
+timing or the Pmod's trace delays; the Pmod has an optional 22 pF "CLOCK
+cap" on SCK that the model does not include.
+
+**Pad assumptions the bench makes.** The design's `uio_oe`/`uio_out` are
+resolved through `verification/uio_pads.py` with pull-ups on `uio[0]`,
+`uio[6]` and `uio[7]`. A floating SCK or MOSI (after the program has
+released the pins) reads as low to the flash model; CS0 is high by then, so
+a real flash ignores them. Zero delay, logical levels.
+
+**Not claimed.** No real flash, Pmod, demo board or silicon was involved.
+No timing against a part's datasheet. No area or timing was re-measured for
+the larger ROM in this issue (the gds workflow on this branch's tree gives
+the LibreLane figures: see the records). The DR 0013 UART load is #139.

@@ -115,7 +115,7 @@ exactly 2,323 cycles after the boot program's first instruction. Straps
 a failed warm start falls through to it. A stub drives nothing.
 
 Strap `01` is the **SPI-flash boot** (issue #140, `spi_boot` at the end of
-the source, 63 words): it makes CS0, MOSI and SCK (`uio[0]`, `uio[1]`,
+the source, 64 words): it makes CS0, MOSI and SCK (`uio[0]`, `uio[1]`,
 `uio[3]`, the Tiny Tapeout QSPI Pmod pinout) outputs, runs one SPI mode 0
 transaction (`0x03`, address 0, 512 bytes), commits each word through
 `PM_*`, checks `PM_CRC` against the warm start's signature, releases every
