@@ -1,0 +1,24 @@
+8841c8841
+<     .C(\u_core.wait_cnt[0] ),
+---
+>     .C(1'b0),
+11404c11404
+<  sg13cmos5l_nor3_1 _2421_ (.A(\u_core.wait_cnt[0] ),
+---
+>  sg13cmos5l_nor3_1 _2421_ (.A(1'b0),
+13697c13697
+<     .A1(\u_core.wait_cnt[0] ),
+---
+>     .A1(1'b0),
+13700c13700
+<     .A1(\u_core.wait_cnt[0] ),
+---
+>     .A1(1'b0),
+13716c13716
+<     .A1(\u_core.wait_cnt[0] ),
+---
+>     .A1(1'b0),
+15456c15456
+<  sg13cmos5l_dlygate4sd3_1 hold500 (.A(\u_core.wait_cnt[0] ),
+---
+>  sg13cmos5l_dlygate4sd3_1 hold500 (.A(1'b0),

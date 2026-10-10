@@ -1,0 +1,67 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuites name="cocotb tests"><testsuite name="test_load_integrity" errors="0" failures="9" skipped="0" tests="9" time="0.322" timestamp="2026-10-10T20:01:07.337769+00:00" hostname="robb-studio"><testcase classname="test_load_integrity" name="test_readout_equals_crc_hqx_for_random_images" time="0.025"><failure message="seed 0x137a, 2 words: uo_out read 0xc116, binascii.crc_hqx says 0xd136&#10;assert 49430 == 53558" type="AssertionError">Traceback (most recent call last):
+  File "&lt;repo&gt;/verification/test_load_integrity.py", line 187, in test_readout_equals_crc_hqx_for_random_images
+    assert got == want, (
+    ...&lt;2 lines&gt;...
+    )
+AssertionError: seed 0x137a, 2 words: uo_out read 0xc116, binascii.crc_hqx says 0xd136
+assert 49430 == 53558
+</failure><properties><property name="cocotb" value="True" /><property name="random_seed" value="1791662467" /><property name="file" value="&lt;repo&gt;/verification/test_load_integrity.py" /><property name="line" value="172" /><property name="sim_time_unit" value="ns" /><property name="sim_time_start" value="0.0" /><property name="sim_time_stop" value="592.0" /><property name="sim_time_duration" value="592.0" /><property name="sim_time_ratio" value="23598.075037941082" /></properties><system-err>Test failed with COCOTB_RANDOM_SEED=1791662467
+</system-err></testcase><testcase classname="test_load_integrity" name="test_readout_is_the_running_crc_and_only_moves_on_a_commit" time="0.002"><failure message="after word 0: readout 0x0f66, CRC of the first 1 words is 0x0f67&#10;assert 3942 == 3943" type="AssertionError">Traceback (most recent call last):
+  File "&lt;repo&gt;/verification/test_load_integrity.py", line 226, in test_readout_is_the_running_crc_and_only_moves_on_a_commit
+    assert got == want, (
+    ...&lt;2 lines&gt;...
+    )
+AssertionError: after word 0: readout 0x0f66, CRC of the first 1 words is 0x0f67
+assert 3942 == 3943
+</failure><properties><property name="cocotb" value="True" /><property name="random_seed" value="1791662467" /><property name="file" value="&lt;repo&gt;/verification/test_load_integrity.py" /><property name="line" value="198" /><property name="sim_time_unit" value="ns" /><property name="sim_time_start" value="592.001" /><property name="sim_time_stop" value="815.001" /><property name="sim_time_duration" value="223.0" /><property name="sim_time_ratio" value="142015.60174861707" /></properties><system-err>Test failed with COCOTB_RANDOM_SEED=1791662467
+</system-err></testcase><testcase classname="test_load_integrity" name="test_byte_select_is_ui_in_1_alone_and_needs_no_clock" time="0.008"><failure message="ui_in 0x80, uio_in 0x00: uo_out 0x0c, want the low byte 0x6d&#10;assert 12 == 109" type="AssertionError">Traceback (most recent call last):
+  File "&lt;repo&gt;/verification/test_load_integrity.py", line 257, in test_byte_select_is_ui_in_1_alone_and_needs_no_clock
+    assert got == want, (
+    ...&lt;2 lines&gt;...
+    )
+AssertionError: ui_in 0x80, uio_in 0x00: uo_out 0x0c, want the low byte 0x6d
+assert 12 == 109
+</failure><properties><property name="cocotb" value="True" /><property name="random_seed" value="1791662467" /><property name="file" value="&lt;repo&gt;/verification/test_load_integrity.py" /><property name="line" value="234" /><property name="sim_time_unit" value="ns" /><property name="sim_time_start" value="815.002" /><property name="sim_time_stop" value="2156.102" /><property name="sim_time_duration" value="1341.1" /><property name="sim_time_ratio" value="174640.3829581036" /></properties><system-err>Test failed with COCOTB_RANDOM_SEED=1791662467
+</system-err></testcase><testcase classname="test_load_integrity" name="test_truncated_load_mismatches" time="0.008"><failure message="16 words cut at bit 16: readout 0x21ca, the committed words' CRC is 0x21cb&#10;assert 8650 == 8651" type="AssertionError">Traceback (most recent call last):
+  File "&lt;repo&gt;/verification/test_load_integrity.py", line 278, in test_truncated_load_mismatches
+    assert got == landed, (
+    ...&lt;2 lines&gt;...
+    )
+AssertionError: 16 words cut at bit 16: readout 0x21ca, the committed words' CRC is 0x21cb
+assert 8650 == 8651
+</failure><properties><property name="cocotb" value="True" /><property name="random_seed" value="1791662467" /><property name="file" value="&lt;repo&gt;/verification/test_load_integrity.py" /><property name="line" value="263" /><property name="sim_time_unit" value="ns" /><property name="sim_time_start" value="2156.103" /><property name="sim_time_stop" value="3618.103" /><property name="sim_time_duration" value="1462.0" /><property name="sim_time_ratio" value="193138.20368280954" /></properties><system-err>Test failed with COCOTB_RANDOM_SEED=1791662467
+</system-err></testcase><testcase classname="test_load_integrity" name="test_dropped_clock_edge_mismatches" time="0.004"><failure message="4 words, edge 0 dropped: readout 0x52a4, the committed words' CRC is 0x4285&#10;assert 21156 == 17029&#10; +  where 17029 = host_crc([47003, 22033, 21856])" type="AssertionError">Traceback (most recent call last):
+  File "&lt;repo&gt;/verification/test_load_integrity.py", line 320, in test_dropped_clock_edge_mismatches
+    assert got == host_crc(landed), (
+    ...&lt;2 lines&gt;...
+    )
+AssertionError: 4 words, edge 0 dropped: readout 0x52a4, the committed words' CRC is 0x4285
+assert 21156 == 17029
+ +  where 17029 = host_crc([47003, 22033, 21856])
+</failure><properties><property name="cocotb" value="True" /><property name="random_seed" value="1791662467" /><property name="file" value="&lt;repo&gt;/verification/test_load_integrity.py" /><property name="line" value="301" /><property name="sim_time_unit" value="ns" /><property name="sim_time_start" value="3618.104" /><property name="sim_time_stop" value="4310.104" /><property name="sim_time_duration" value="692.0000000000005" /><property name="sim_time_ratio" value="171939.73397893624" /></properties><system-err>Test failed with COCOTB_RANDOM_SEED=1791662467
+</system-err></testcase><testcase classname="test_load_integrity" name="test_doubled_clock_edge_mismatches" time="0.004"><failure message="4 words, edge 0 doubled: readout 0x49cc, the committed words' CRC is 0xc48c&#10;assert 18892 == 50316&#10; +  where 50316 = host_crc([14739, 62377, 6018, 3276])" type="AssertionError">Traceback (most recent call last):
+  File "&lt;repo&gt;/verification/test_load_integrity.py", line 356, in test_doubled_clock_edge_mismatches
+    assert got == host_crc(landed), (
+    ...&lt;2 lines&gt;...
+    )
+AssertionError: 4 words, edge 0 doubled: readout 0x49cc, the committed words' CRC is 0xc48c
+assert 18892 == 50316
+ +  where 50316 = host_crc([14739, 62377, 6018, 3276])
+</failure><properties><property name="cocotb" value="True" /><property name="random_seed" value="1791662467" /><property name="file" value="&lt;repo&gt;/verification/test_load_integrity.py" /><property name="line" value="330" /><property name="sim_time_unit" value="ns" /><property name="sim_time_start" value="4310.105" /><property name="sim_time_stop" value="5022.105" /><property name="sim_time_duration" value="712.0" /><property name="sim_time_ratio" value="162401.05378228286" /></properties><system-err>Test failed with COCOTB_RANDOM_SEED=1791662467
+</system-err></testcase><testcase classname="test_load_integrity" name="test_load_protocol_unchanged_by_the_readout" time="0.033"><failure message="assert 7196 == 39650" type="AssertionError">Traceback (most recent call last):
+  File "&lt;repo&gt;/verification/test_load_integrity.py", line 459, in test_load_protocol_unchanged_by_the_readout
+    assert got == crc
+AssertionError: assert 7196 == 39650
+</failure><properties><property name="cocotb" value="True" /><property name="random_seed" value="1791662467" /><property name="file" value="&lt;repo&gt;/verification/test_load_integrity.py" /><property name="line" value="433" /><property name="sim_time_unit" value="ns" /><property name="sim_time_start" value="5022.106" /><property name="sim_time_stop" value="10394.106" /><property name="sim_time_duration" value="5372.0" /><property name="sim_time_ratio" value="165259.4693867687" /></properties><system-err>Test failed with COCOTB_RANDOM_SEED=1791662467
+</system-err></testcase><testcase classname="test_load_integrity" name="test_no_readout_outside_the_load_phase" time="0.006"><failure message="assert 15206 == 24341" type="AssertionError">Traceback (most recent call last):
+  File "&lt;repo&gt;/verification/test_load_integrity.py", line 494, in test_no_readout_outside_the_load_phase
+    assert got == crc
+AssertionError: assert 15206 == 24341
+</failure><properties><property name="cocotb" value="True" /><property name="random_seed" value="1791662467" /><property name="file" value="&lt;repo&gt;/verification/test_load_integrity.py" /><property name="line" value="482" /><property name="sim_time_unit" value="ns" /><property name="sim_time_start" value="10394.107" /><property name="sim_time_stop" value="11416.107" /><property name="sim_time_duration" value="1022.0" /><property name="sim_time_ratio" value="177570.54688611446" /></properties><system-err>Test failed with COCOTB_RANDOM_SEED=1791662467
+</system-err></testcase><testcase classname="test_load_integrity" name="test_readout_holds_at_saturation" time="0.233"><failure message="assert 16100 == 18962" type="AssertionError">Traceback (most recent call last):
+  File "&lt;repo&gt;/verification/test_load_integrity.py", line 540, in test_readout_holds_at_saturation
+    assert got == crc
+AssertionError: assert 16100 == 18962
+</failure><properties><property name="cocotb" value="True" /><property name="random_seed" value="1791662467" /><property name="file" value="&lt;repo&gt;/verification/test_load_integrity.py" /><property name="line" value="530" /><property name="sim_time_unit" value="ns" /><property name="sim_time_start" value="11416.108" /><property name="sim_time_stop" value="52438.108" /><property name="sim_time_duration" value="41022.0" /><property name="sim_time_ratio" value="175740.84843751523" /></properties><system-err>Test failed with COCOTB_RANDOM_SEED=1791662467
+</system-err></testcase></testsuite></testsuites>

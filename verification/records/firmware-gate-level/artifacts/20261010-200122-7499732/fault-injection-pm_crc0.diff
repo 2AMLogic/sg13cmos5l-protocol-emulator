@@ -1,0 +1,16 @@
+8642c8642
+<  sg13cmos5l_mux2_1 _1709_ (.A0(\pm_crc[0] ),
+---
+>  sg13cmos5l_mux2_1 _1709_ (.A0(1'b0),
+11866c11866
+<     .B2(\pm_crc[0] ),
+---
+>     .B2(1'b0),
+13144c13144
+<     .A(\pm_crc[0] ),
+---
+>     .A(1'b0),
+15360c15360
+<  sg13cmos5l_dlygate4sd3_1 hold452 (.A(\pm_crc[0] ),
+---
+>  sg13cmos5l_dlygate4sd3_1 hold452 (.A(1'b0),

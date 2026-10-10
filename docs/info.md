@@ -458,7 +458,7 @@ No pin claim here is backed by silicon or by the LibreLane flow.
   1.53 ns pin to pin in that flow's post-route analysis, under the flow's
   assumed 4 ns input and output delays; no pad has been measured.
   Firmware, the control-space, boot-ROM, SPI-flash-boot, UART-load and load-integrity benches on that netlist at zero delay:
-  [`firmware-gate-level`](../verification/records/firmware-gate-level/records/20261010-161300-a0f91e3.md).
+  [`firmware-gate-level`](../verification/records/firmware-gate-level/records/20261010-200120-7499732.md).
   Firmware with back-annotated delays: none.
 - **klt synthesis and timing.** `klt sta` does not yet support the SRAM
   macro, so the two flows do not agree on timing; per the project rule that
