@@ -152,6 +152,29 @@ def uart_negative_drift_case():
     return line
 
 
+def encode_late_mistimed_frame(data, baud, line, t0=0.0, later_scale=1.03):
+    """One 8N1 frame whose start bit and first data bit are nominal and
+    whose remaining eight bit periods (data bits 1-7 and the stop bit) are
+    ``later_scale`` x nominal; returns the end of the stop bit.
+
+    Issue #97's blind case: for payload 0xFF the only in-frame edge after
+    the start fall is the rise at bit 1, so the in-frame last-edge drift
+    reads 0 whatever ``later_scale`` is.  Only the frame's length -- the
+    pitch to a following start -- carries the error.
+    """
+    period = uart.bit_period_ns(baud)
+    t = float(t0)
+    line.add(t, 0)
+    t += period
+    line.add(t, data & 1)
+    t += period
+    for i in range(1, uart.UART_DATA_BITS):
+        line.add(t, (data >> i) & 1)
+        t += period * later_scale
+    line.add(t, 1)
+    return t + period * later_scale
+
+
 def spi_negative_ceiling_case(f_clk_hz=50e6):
     """SPI burst clocked at f_clk/3 -- over row 11's SCLK <= f_clk/4
     ceiling; everything else about the burst is legal mode-0 traffic."""
