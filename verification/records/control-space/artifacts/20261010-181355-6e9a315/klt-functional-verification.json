@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "engine": "icarus",
+  "hdl_toplevel": "tt_um_2amlogic_protocol_emulator",
+  "testbench": "test_control_space",
+  "status": "pass",
+  "test_count": 9,
+  "passed_count": 9,
+  "failed_count": 0,
+  "skipped_count": 0,
+  "tests": [
+    {
+      "name": "test_reset_values_and_identity",
+      "status": "passed",
+      "sim_time_ns": 4441.0,
+      "real_time_s": 0.007
+    },
+    {
+      "name": "test_readback_and_pin_mode_logic",
+      "status": "passed",
+      "sim_time_ns": 14621.0,
+      "real_time_s": 0.03
+    },
+    {
+      "name": "test_reserved_indices_and_remaining_noops",
+      "status": "passed",
+      "sim_time_ns": 12921.0,
+      "real_time_s": 0.026
+    },
+    {
+      "name": "test_fixed_stall_is_exact_and_data_independent",
+      "status": "passed",
+      "sim_time_ns": 28000.999999999996,
+      "real_time_s": 0.078
+    },
+    {
+      "name": "test_no_flag_side_effects",
+      "status": "passed",
+      "sim_time_ns": 12221.0,
+      "real_time_s": 0.018
+    },
+    {
+      "name": "test_program_memory_write_read_roundtrip",
+      "status": "passed",
+      "sim_time_ns": 42541.0,
+      "real_time_s": 0.119
+    },
+    {
+      "name": "test_written_code_executes_and_run_jumps",
+      "status": "passed",
+      "sim_time_ns": 6231.0,
+      "real_time_s": 0.009
+    },
+    {
+      "name": "test_pm_crc_matches_binascii_crc_hqx",
+      "status": "passed",
+      "sim_time_ns": 45321.000000000015,
+      "real_time_s": 0.138
+    },
+    {
+      "name": "test_i2c_images_open_drain_preamble",
+      "status": "passed",
+      "sim_time_ns": 345801.0,
+      "real_time_s": 0.602
+    }
+  ],
+  "coverage": null,
+  "trace": null,
+  "environment": {
+    "engine": "icarus",
+    "engine_version": "13.0",
+    "cocotb_version": "2.1.0",
+    "results_xml": "<repo>/verification/.klt/functional-verification/results_icarus.xml",
+    "random_seed": 1,
+    "sdf": null
+  }
+}

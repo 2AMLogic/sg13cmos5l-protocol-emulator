@@ -20,10 +20,11 @@
 # Which netlist: the `tt_submission` artifact's `<top>.v` of a `gds` workflow
 # run -- the final netlist that the template's own `gl_test` job compiles.
 # Default: the byte-identical copy frozen under verification/records/
-# post-layout-sdf-regression/ from run 38054423540 (the first netlist with
-# the UART load in the boot ROM, issue #139, on top of the SPI-flash boot,
-# issue #140, the warm start's zero-signature refusal, issue #168, and the
-# A_REN drive buffer, issue #173). Override with
+# post-layout-sdf-regression/ from run 38074873225 (the first netlist with
+# both DR 0013 layer 1's load-phase CRC readout, issue #137, and the boot
+# ROM's UART load, issue #139, on top of the SPI-flash boot, issue #140, the
+# warm start's zero-signature refusal, issue #168, and the A_REN drive
+# buffer, issue #173). Override with
 # --netlist <file> (e.g. one from `gh run download <id> -n tt_submission`).
 #
 # Negative control (a suite that cannot fail cannot cite its passes): the
@@ -105,7 +106,7 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SCRATCH="${REPO_ROOT}/flow/firmware-gate-level"
-NETLIST="${REPO_ROOT}/verification/records/post-layout-sdf-regression/artifacts/20261010-133000-a0f91e3/tt_um_2amlogic_protocol_emulator.v"
+NETLIST="${REPO_ROOT}/verification/records/post-layout-sdf-regression/artifacts/20261010-190334-b7b2b35/tt_um_2amlogic_protocol_emulator.v"
 MODULES=(test_firmware_uart test_firmware_uart_rx test_firmware_spi test_firmware_i2c)
 export PDK_ROOT="${PDK_ROOT:-$HOME/share/pdk}"
 
@@ -118,7 +119,7 @@ while [ $# -gt 0 ]; do
     --boot-spi) MODULES+=(test_boot_spi); shift ;;
     --boot-uart) MODULES+=(test_boot_uart); shift ;;
     --load-integrity) MODULES+=(test_load_integrity); shift ;;
-    -h|--help) sed -n '2,102p' "${BASH_SOURCE[0]}"; exit 0 ;;
+    -h|--help) sed -n '2,103p' "${BASH_SOURCE[0]}"; exit 0 ;;
     *) echo "FATAL: unknown argument $1" >&2; exit 1 ;;
   esac
 done

@@ -1,0 +1,2158 @@
+{
+  "netlist": "<repo>/verification/records/post-layout-sdf-regression/artifacts/20261010-190334-b7b2b35/tt_um_2amlogic_protocol_emulator.v",
+  "top": "tt_um_2amlogic_protocol_emulator",
+  "stdcell_model": "<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v",
+  "elements": [
+    {
+      "element": "run_phase",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3060_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_core.uio_dir[0]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3061_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 3 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_core.uio_dir[1]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3062_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 3 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_core.uio_dir[2]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3063_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_core.uio_dir[3]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3064_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 3 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_core.uio_dir[4]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3065_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 5 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_core.uio_dir[5]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3066_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 3 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_core.uio_dir[6]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3067_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 5 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_core.uio_dir[7]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3068_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 5 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_core.uio_od[0]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3069_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 3 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_core.uio_od[1]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3070_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 3 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_core.uio_od[2]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3071_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_core.uio_od[3]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3072_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 3 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_core.uio_od[4]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3073_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_core.uio_od[5]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3074_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_core.uio_od[6]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3075_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_core.uio_od[7]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3076_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "core_uo_out[0]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3077_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 3 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "core_uo_out[1]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3078_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 3 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "core_uo_out[2]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3079_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 3 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "core_uo_out[3]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3080_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 3 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "core_uo_out[4]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3081_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 3 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "core_uo_out[5]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3082_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 3 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "core_uo_out[6]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3083_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 3 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "core_uo_out[7]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3084_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 3 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "uio_out[0]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3085_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 3 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "uio_out[1]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3086_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 3 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "uio_out[2]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3087_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 3 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "uio_out[3]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3088_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "uio_out[4]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3089_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 3 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "uio_out[5]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3090_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 3 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "uio_out[6]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3091_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "uio_out[7]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3092_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 3 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_core.flag_z",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3093_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_core.waiting",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3094_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_core.wait_cnt[0]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3095_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 5 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_core.wait_cnt[1]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3096_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 5 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_core.wait_cnt[2]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3097_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_core.wait_cnt[3]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3098_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_core.wait_cnt[4]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3099_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_core.wait_cnt[5]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3100_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_core.wait_cnt[6]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3101_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_core.wait_cnt[7]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3102_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_core.halted",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3103_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 3 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "pm_addr[0]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3104_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 3 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "pm_addr[1]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3105_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 3 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "pm_addr[2]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3106_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 3 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "pm_addr[3]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3107_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "pm_addr[4]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3108_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "pm_addr[5]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3109_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "pm_addr[6]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3110_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 5 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "pm_addr[7]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3111_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 5 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "pm_wdata[8]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3112_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 3 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "pm_wdata[9]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3113_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 3 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "pm_wdata[10]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3114_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 3 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "pm_wdata[11]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3115_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 3 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "pm_wdata[12]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3116_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "pm_wdata[13]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3117_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "pm_wdata[14]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3118_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "pm_wdata[15]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3119_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 2 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_core.pm_lo[0]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3120_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_core.pm_lo[1]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3121_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_core.pm_lo[2]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3122_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 3 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_core.pm_lo[3]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3123_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_core.pm_lo[4]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3124_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 6 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_core.pm_lo[5]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3125_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 3 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_core.pm_lo[6]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3126_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 3 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_core.pm_lo[7]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3127_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 3 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_core.ctl_stall",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3128_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_core.stall_pmrd",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3129_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_core.stall_run",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3130_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_core.stall_rd[0]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3131_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_core.stall_rd[1]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3132_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_core.rom_exit",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3133_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_core.regs[0][0]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3134_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_core.regs[0][1]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3135_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_core.regs[0][2]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3136_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_core.regs[0][3]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3137_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 5 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_core.regs[0][4]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3138_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_core.regs[0][5]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3139_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_core.regs[0][6]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3140_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 5 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_core.regs[0][7]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3141_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_core.regs[1][0]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3142_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_core.regs[1][1]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3143_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_core.regs[1][2]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3144_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_core.regs[1][3]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3145_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_core.regs[1][4]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3146_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_core.regs[1][5]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3147_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_core.regs[1][6]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3148_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 5 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_core.regs[1][7]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3149_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_core.regs[2][0]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3150_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_core.regs[2][1]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3151_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_core.regs[2][2]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3152_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_core.regs[2][3]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3153_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_core.regs[2][4]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3154_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 3 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_core.regs[2][5]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3155_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_core.regs[2][6]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3156_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_core.regs[2][7]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3157_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_core.regs[3][0]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3158_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_core.regs[3][1]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3159_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 3 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_core.regs[3][2]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3160_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_core.regs[3][3]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3161_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 3 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_core.regs[3][4]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3162_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_core.regs[3][5]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3163_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_core.regs[3][6]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3164_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 3 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_core.regs[3][7]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3165_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_prog_mem.load_active",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3166_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_prog_mem.load_word[1]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3167_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 6 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_prog_mem.load_word[2]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3168_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 6 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_prog_mem.load_word[3]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3169_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 6 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_prog_mem.load_word[4]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3170_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 6 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_prog_mem.load_word[5]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3171_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_prog_mem.load_word[6]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3172_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 6 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_prog_mem.load_word[7]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3173_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 5 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_prog_mem.load_word[8]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3174_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 5 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_prog_mem.load_word[9]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3175_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 2 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_prog_mem.load_word[10]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3176_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 3 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_prog_mem.load_word[11]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3177_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 3 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_prog_mem.load_word[12]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3178_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 3 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_prog_mem.load_word[13]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3179_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_prog_mem.load_word[14]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3180_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_prog_mem.load_word[15]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3181_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_prog_mem.bit_cnt[0]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3182_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 3 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_prog_mem.bit_cnt[1]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3183_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 3 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_prog_mem.bit_cnt[2]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3184_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 5 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_prog_mem.bit_cnt[3]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3185_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 5 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_prog_mem.wr_addr[0]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3186_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 5 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_prog_mem.wr_addr[1]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3187_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_prog_mem.wr_addr[2]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3188_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_prog_mem.wr_addr[3]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3189_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_prog_mem.wr_addr[4]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3190_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_prog_mem.wr_addr[5]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3191_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 3 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_prog_mem.wr_addr[6]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3192_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 5 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_prog_mem.wr_addr[7]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3193_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 5 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_prog_mem.full",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3194_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "pm_crc[0]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3195_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "pm_crc[1]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3196_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 6 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "pm_crc[2]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3197_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "pm_crc[3]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3198_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 5 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "pm_crc[4]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3199_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "pm_crc[5]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3200_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "pm_crc[6]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3201_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 5 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "pm_crc[7]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3202_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 5 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "pm_crc[8]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3203_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 5 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "pm_crc[9]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3204_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 3 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "pm_crc[10]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3205_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 5 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "pm_crc[11]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3206_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 3 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "pm_crc[12]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3207_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 6 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "pm_crc[13]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3208_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 3 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "pm_crc[14]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3209_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 5 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "pm_crc[15]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3210_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "serial_loaded",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3211_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_prog_mem.started",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3212_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_core.fetch_valid",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3213_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 3 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_core.pc[0]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3214_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_core.pc[1]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3215_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_core.pc[2]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3216_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_core.pc[3]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3217_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_core.pc[4]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3218_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_core.pc[5]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3219_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_core.pc[6]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3220_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_core.pc[7]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3221_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "rom_word[0]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3222_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "rom_word[1]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3223_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "rom_word[2]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3224_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 2 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "rom_word[3]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3225_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "rom_word[4]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3226_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "rom_word[5]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3227_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "rom_word[6]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3228_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "rom_word[7]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3229_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "rom_word[8]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3230_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "rom_word[9]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3231_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "rom_word[10]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3232_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "rom_word[11]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3233_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "rom_word[12]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3234_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 3 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "rom_word[13]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3235_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 3 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "rom_word[14]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3236_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "rom_word[15]",
+      "kind": "flop",
+      "cell": "sg13cmos5l_dfrbpq_1",
+      "instance": "_3237_",
+      "reset": true,
+      "reset_value": 0,
+      "why": "RESET_B <- rst_n through 4 buffer/inverter cell(s)",
+      "reset_pins": {
+        "RESET_B": "rst_n"
+      }
+    },
+    {
+      "element": "u_prog_mem.u_sram",
+      "kind": "macro",
+      "cell": "RM_IHPSG13_1P_256x16_c2_bm_bist",
+      "instance": "u_prog_mem.u_sram",
+      "reset": false,
+      "reset_value": null,
+      "why": "macro: not a standard cell, no reset pin in this flow"
+    }
+  ],
+  "justified": {
+    "u_prog_mem.u_sram": [
+      "u_prog_mem.u_sram"
+    ]
+  },
+  "errors": []
+}
