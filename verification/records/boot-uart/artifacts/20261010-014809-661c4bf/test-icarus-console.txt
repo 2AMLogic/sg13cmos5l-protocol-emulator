@@ -51,14 +51,14 @@
 360983500.01ns INFO     cocotb.regression                  *******************************************************************************************************************
                                                         ** TEST                                                       STATUS  SIM TIME (ns)  REAL TIME (s)  RATIO (ns/s) **
                                                         *******************************************************************************************************************
-                                                        ** test_boot_uart.test_boot_image_chain_and_host_agreement     PASS          20.00           0.00       5520.53  **
-                                                        ** test_boot_uart.test_nominal_load_runs_the_image             PASS     9014620.00           8.61    1046873.50  **
-                                                        ** test_boot_uart.test_row10_tolerance_edges                   PASS   125149100.00         120.95    1034736.66  **
-                                                        ** test_boot_uart.test_bad_images_never_run                    PASS   154130700.00         145.23    1061275.09  **
-                                                        ** test_boot_uart.test_garbage_before_the_magic_is_ignored     PASS     7625820.00           7.21    1058028.04  **
-                                                        ** test_boot_uart.test_end_to_end_protocol_program_over_uart   PASS     6936220.00           6.56    1056793.68  **
-                                                        ** test_boot_uart.test_full_image_and_warm_start               PASS    45179620.00          44.92    1005796.34  **
-                                                        ** test_boot_uart.test_fallthroughs_into_the_uart_load         PASS    12947400.00          12.15    1065972.37  **
+                                                        ** test_boot_uart.test_boot_image_chain_and_host_agreement     PASS          20.00           0.00       5772.14  **
+                                                        ** test_boot_uart.test_nominal_load_runs_the_image             PASS     9014620.00           9.20     980319.78  **
+                                                        ** test_boot_uart.test_row10_tolerance_edges                   PASS   125149100.00         123.02    1017267.32  **
+                                                        ** test_boot_uart.test_bad_images_never_run                    PASS   154130700.00         153.49    1004193.68  **
+                                                        ** test_boot_uart.test_garbage_before_the_magic_is_ignored     PASS     7625820.00           7.58    1005407.40  **
+                                                        ** test_boot_uart.test_end_to_end_protocol_program_over_uart   PASS     6936220.00           7.00     991272.94  **
+                                                        ** test_boot_uart.test_full_image_and_warm_start               PASS    45179620.00          47.09     959480.62  **
+                                                        ** test_boot_uart.test_fallthroughs_into_the_uart_load         PASS    12947400.00          13.06     991695.12  **
                                                         *******************************************************************************************************************
-                                                        ** TESTS=8 PASS=8 FAIL=0 SKIP=0                                       360983500.01         345.63    1044412.78  **
+                                                        ** TESTS=8 PASS=8 FAIL=0 SKIP=0                                       360983500.01         360.44    1001511.01  **
                                                         *******************************************************************************************************************
