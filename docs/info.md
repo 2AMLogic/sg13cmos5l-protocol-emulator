@@ -110,7 +110,11 @@ loader; no `uio` pin is driven, though `uio_out` reads `0xFF` while the loader
 waits (it uses `UIO_DIR` as storage under a guard, DR 0013 finding F5). A
 loader that has lost sync (a wrong length) reads stray bytes as a frame
 whenever one is `0xA5`: pulse `rst_n`, or send non-zero filler until it answers
-`0x15` (zero filler is read as a valid, longer image). The loaded program starts
+`0x15` (zero filler is read as a valid, longer image). The CRC covers the
+words and not the count byte, so a wrong length is rejected unless the
+CRC of the shorter prefix equals the two bytes after it (about 1 in 65,536 for
+an arbitrary image; a constructed image can make it certain, DR 0013 finding
+F8): then the truncated image is accepted and run. The loaded program starts
 in the state a warm start leaves, with `PM_CRC` holding the image's CRC. In RTL
 simulation the loader accepted hosts up to 5 % slow and 4 % fast
 (`verification/records/boot-uart/`). 

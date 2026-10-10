@@ -725,6 +725,55 @@ followed by its own CRC and then zeros is still 0, so the loader reads the
 stream as a valid, longer image and runs it. This is an exact consequence of
 the CRC and not a loader bug; `loadseq.py` and the README say so.
 
+**Finding F8: the count byte is outside the CRC, so "a bad length never reaches
+`RUN`" is conditional (PR #210 review; follow-up issue #211).** The frame is
+`0xA5`, `N-1`, `2N` payload bytes, CRC. The CRC the loader checks is `PM_CRC`,
+which covers the words it committed and nothing else; the count and the magic
+are not in it. A corrupted count is therefore caught only because the shorter
+(or longer) stream then fails the trailer comparison, and that comparison can
+succeed by coincidence. Counterexample, simulated on the RTL of the submitted
+top (`verification/test_boot_uart_count_alias.py`, record
+`verification/records/boot-uart/` (record 20261010-163858-080ef15)): the valid image
+`[0xF000, 0x13C1]` is framed `a5 01 f0 00 13 c1 00 00`, and `0x13C1` is the
+CRC-16/XMODEM of `f0 00`. Flip bit 0 of the count, `a5 00 f0 00 13 c1 00 00`:
+the loader commits `0xF000`, takes `13 c1` as the trailer, the CRC matches,
+and the chip **replies `06 13 c1` and leaves the boot ROM (RUN)**, with
+program memory word 0 = `0xF000`. The bytes after the trailer (`00 00`) arrive
+while the loader is transmitting its reply and are ignored. Observed result:
+ACK and RUN, no recovery frame or padding needed.
+
+Scope of the residue. A count flip *down* to k words is accepted only when the
+CRC of the first k words equals the next two payload bytes: about 1 in 65,536
+for an arbitrary image, certain for a constructed one (this one is
+constructed). A flip *up* makes the loader wait for bytes that do not come
+(F6). The reply does let the host notice afterwards: the chip answers with the
+CRC of what it committed (`13 c1`), which differs from the host's CRC of the
+image it sent (`00 00`, the residue of a message followed by its own CRC), but
+by then the image is already running, so the reply is a report and not a
+guard. (The reply-versus-sent comparison was not simulated as a separate
+check.)
+
+Reconciled claims. Issue #139 asked that corrupted payloads, bad lengths and a
+bad CRC never reach `RUN`. What is built and measured: payload bit flips, CRC
+bytes, and the *tested* bad lengths (too small by one word and by half, 1
+word, too large) are never run, and a retry then is. What is **not**
+guaranteed: every length corruption. The integrity the protocol gives is
+"CRC-16 over the words taken", not "the length is authenticated". The README,
+`docs/info.md`, `spec/verification-plan.md` section 7's status line and the
+bench README now say so. `test_bad_images_never_run` in `test_boot_uart.py`
+is unchanged (its chosen images do not alias, which is why it passes) and the
+new module pins the aliasing case rather than hiding it.
+
+No fix is made here. Rejecting this needs a protocol change (a field that
+covers the length, or the loader committing the count through `PM_*` so that
+`PM_CRC` includes it) and that changes the wire format, `loadseq.py`, the ROM
+(which is already over the proposed cap, F4) and every record that hashes
+them. That is a decision for this record, not an implementation detail of
+#139, so it is deferred to issue #211 with the options listed there. The
+cheapest mitigation needing no ROM change is on the host side: `loadseq.py`
+can refuse to frame an image for which some prefix's CRC equals the next word.
+Nothing in the ratified spec is relaxed.
+
 **Finding F7: what a loaded program is entered with.** The UART load hands
 over through the warm start's tail, so a loaded program starts as a warm-started
 one does: `R0`-`R3` = 0, `Z` = `C` = 0, `PM_ADDR` = 0, `UIO_DIR` = `UIO_OD` = 0,
@@ -761,8 +810,8 @@ with fractional bit periods, edge jitter and idle bits; no import from
 `firmware/`). It checks: the nominal load and the state the program is
 entered with; ±2 % with and without idle bits, jitter, and the unrelated
 `ui_in` bits toggling; flipped payload bits, bad CRC bytes, lengths too small
-and too large, a wrong magic, each never run and each followed by a retry that
-is; garbage ahead of the magic; the committed `uart_tx` program loaded over the
+and too large, a wrong magic, each never run (for the images chosen; F8 is the
+case they do not cover) and each followed by a retry that is; garbage ahead of the magic; the committed `uart_tx` program loaded over the
 UART and graded by the existing `UartDecoder`/`check_frame`; a full 256-word
 image (which, being signed, then survives a warm start); strap `11`; and the
 fall-through from a failed warm start. The host's frame bytes equal

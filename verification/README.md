@@ -145,7 +145,8 @@ coverage.
 - `test_boot_uart.py` — cocotb bench for DR 0013 layer 2's UART load,
   strap `00` (issue #139): a framed image sent on `ui_in[1]` is accepted
   (reply `0x06` + CRC, `RUN 0`, the state a reset leaves) and corrupted
-  payloads, bad CRCs, bad lengths and a wrong magic are never run; the
+  payloads, bad CRCs, bad lengths and a wrong magic are never run (bad
+  lengths with the caveat of finding F8, below); the
   host runs at nominal rate and at the row-10 ±2 % edges (with idle bits,
   edge jitter and the unrelated `ui_in` bits toggling), with a sweep past
   them recorded and a 12 %-off negative control; the committed `uart_tx`
@@ -161,6 +162,16 @@ coverage.
   `request-boot-uart.json`); `boot_uart_mutants.py` is its negative-control
   runner (seven single defects in the boot ROM, each caught by a test meant
   to catch it). Evidence in `records/boot-uart/`.
+- `test_boot_uart_count_alias.py` — RTL regression for DR 0013 finding F8
+  (PR #210 review): the count byte is not covered by the CRC, so the valid
+  image `[0xF000, 0x13C1]` (`a5 01 f0 00 13 c1 00 00`) with count bit 0
+  flipped (`a5 00 f0 00 13 c1 00 00`) is **accepted and run** as the
+  one-word image `[0xF000]`. The test pins that behaviour (ACK `06 13 c1`,
+  the core leaves the ROM) next to an uncorrupted control; it is a record
+  of a residue, not a pass of an unconditional bad-length guarantee. A
+  separate module so the gate-level records that hash `test_boot_uart.py`
+  stay live. Driven by `request-boot-uart-count-alias.json`; evidence in
+  `records/boot-uart/ (record 20261010-163858-080ef15)`.
 - `test_reset_power_up.py` — **gate-level only** cocotb bench for
   target-spec row 14 / `spec/verification-plan.md` section 8 (issue #131):
   reset, power-up and reselect on the LibreLane netlist. Every flop of the

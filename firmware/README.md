@@ -152,7 +152,12 @@ that unconfirmed clock). The frame, built by `firmware/tools/loadseq.py`:
 N is 1 to 256. The loader writes each word through `PM_DATA_HI` /
 `PM_DATA_LO`, compares `PM_CRC` with the trailer, and answers `0x06` + `PM_CRC`
 (high byte first) and `RUN 0` on a match, or `0x15` + `PM_CRC` and a wait for
-the next `0xA5` on a mismatch. A failed image is never run. TX idles high from
+the next `0xA5` on a mismatch. An image whose payload or trailer is
+corrupted is never run (CRC-16 over the words the loader took). The count
+byte is **not** covered by the CRC: a corrupted count is rejected unless the
+CRC of the shorter prefix happens to equal the two bytes that follow it, in
+which case the truncated image is accepted and run (DR 0013 finding F8; the
+frame `a5 00 f0 00 13 c1 00 00` is the RTL regression). TX idles high from
 the loader's start to the `RUN`, and no `uio` pin is ever driven.
 
 ```bash
