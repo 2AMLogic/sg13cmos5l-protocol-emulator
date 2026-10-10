@@ -71,7 +71,7 @@ untouched by loading.
 boot ROM** (`spec/decision-records/0013-program-loading.md` layer 2,
 Proposed). After a power-up or a reselect the SRAM holds nothing a host put
 there, so the core fetches from a small on-chip ROM instead. The ROM is
-synthesized logic, 221 words (DR 0013 proposed a cap of 128; the UART
+synthesized logic, 223 words (DR 0013 proposed a cap of 128; the UART
 load alone is 129 words and does not fit it, finding F4, so the cap is the
 256-word fetch address space until the record decides), and its contents
 are a program in this same instruction set
@@ -120,11 +120,14 @@ start is for an `rst_n` pulse while the design stays selected. It runs
 program memory from address 0 only if word 255 equals the CRC-16/XMODEM of
 words 0–254 (high byte of each word first); otherwise it falls through to
 the UART load. A passing warm start executes the image's first
-instruction exactly 2,323 cycles after the boot program's own first
+instruction exactly 2,325 cycles after the boot program's own first
 instruction, with `R0`–`R3`, `Z` and `C` at their reset values and
-`BOOT_STATUS` reading `0x00`. One image passes that should not: 256 zero
-words are their own valid signature, and they run as 256 `NOP`s that drive
-nothing (recorded in DR 0013). Hold the straps steady for at least three
+`BOOT_STATUS` reading `0x00`. Like the SPI-flash boot, the warm start
+refuses a signature of `0x0000`: 256 zero words are their own valid CRC,
+so an SRAM that powered up all-zero would otherwise pass (DR 0013, Finding
+F1, closed by issue #168). The cost is the image whose real CRC is
+`0x0000`, about 1 in 65,536: change one filler word and re-sign it, as
+`firmware/tools/mkflash.py` already requires. Hold the straps steady for at least three
 clocks after `rst_n` is released; the boot program samples them once.
 Only a `WCTL RUN` leaves the ROM, and nothing re-enters it without a reset.
 
@@ -378,13 +381,22 @@ No pin claim here is backed by silicon or by the LibreLane flow.
 ## Evidence not yet in hand
 
 - **Tiny Tapeout LibreLane flow.** The routed-netlist SDF regression of the
-  submitted core ([record](../verification/records/post-layout-sdf-regression/records/20261010-102100-6c9583b.md),
-  LibreLane run 38043277930) is a **recorded FAIL** at all three corners (1
-  of 13 core-bench tests passed) and ran only the core bench, not the
-  firmware above. LibreLane timing and area evidence is in
-  [`librelane-corner-timing`](../verification/records/librelane-corner-timing/records/20261010-103000-6c9583b.md).
+  submitted core ([record](../verification/records/post-layout-sdf-regression/records/20261010-102552-d43f89c.md),
+  LibreLane run 38044212536) passes at all three corners: 12 of the core
+  bench's 13 tests pass and the white-box flag test is skipped (it reads
+  core internals a flattened netlist does not have), so the C flag has no
+  post-layout evidence. The bench runs at the flow's own constraint: a
+  20 ns clock, inputs changed 4 ns after each edge, outputs read 4 ns
+  before the next. The SRAM runs as a zero-delay model there (its read
+  timing is LibreLane STA evidence only), setup/hold is checked only
+  against the cell models' 0 ns placeholder limits, not the SDF's
+  characterised ones,
+  and only the core bench ran, not the firmware above. The sign-off grader
+  still renders T1 item 7 unmet, on provenance binding (see
+  `manifests/README.md`). LibreLane timing and area evidence is in
+  [`librelane-corner-timing`](../verification/records/librelane-corner-timing/records/20261010-084500-704a3fb.md).
   Firmware, the control-space, boot-ROM, SPI-flash-boot and UART-load benches on that netlist at zero delay:
-  [`firmware-gate-level`](../verification/records/firmware-gate-level/records/20261010-122800-6c9583b.md).
+  [`firmware-gate-level`](../verification/records/firmware-gate-level/records/20261010-083703-704a3fb.md).
   Firmware with back-annotated delays: none.
 - **klt synthesis and timing.** `klt sta` does not yet support the SRAM
   macro, so the two flows do not agree on timing; per the project rule that

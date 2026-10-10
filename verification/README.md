@@ -54,6 +54,16 @@ coverage.
   `src/tt_um_2amlogic_protocol_emulator.v` (the harness-bootstrap stub top,
   issue #2). Driven by `klt functional-verification` (see
   `request-protocol-emulator.json`).
+- `sdf_alignment.py` — the post-layout entry point for that bench (issue
+  #106), used only by `flow/run-post-layout-sdf.sh`. It imports the
+  bench's tests unchanged and, when the runner sets `PE_ALIGN_*` from the
+  gds run's final SDC, starts the clock at the SDC period, applies each
+  post-edge stimulus the SDC input delay after the clock pin edge and reads
+  each pin the SDC output delay before the next edge, by rebinding the
+  bench's `RisingEdge`, `ClockCycles`, `settle_read` and `CLK_PERIOD_NS`.
+  `test_alu_flags_whitebox` is registered as skipped (a flattened netlist
+  has no `u_core`). With the variables unset it rebinds nothing; no RTL
+  request names it.
 - `test_control_space.py` — cocotb bench for DR 0012's control space
   (issue #135) on the top: reset values, readback, the `uio_oe` pin-mode
   rule, reserved-index behaviour, the fixed 2-cycle stall and its
@@ -98,15 +108,17 @@ coverage.
   pin on a never-written memory; a canary image and random images are
   never run on any strap; a signed image warm-starts on the edge an
   independent model of the boot program predicts, with the reset register
-  and flag state; seven corrupted images are rejected; and the all-zero
-  image is pinned as the known weak case. Expected numbers come from
+  and flag state; seven corrupted images are rejected; a zero signature
+  is refused (the all-zero image and a real image whose CRC is 0x0000,
+  issue #168); and zero-padded images with signatures 0x00nn and 0xnn00
+  still run. Expected numbers come from
   `BootModel`, an ISA interpreter in the bench that runs the committed
   boot image and shares no code with the RTL or the assembler.
   Pin-observable except for labelled white-box reads (the fetch source and
   the macro's read enable), so it also runs on a gate-level netlist
   (`flow/run-firmware-gate-level.sh --boot-rom`). Driven by `klt
   functional-verification` (see `request-boot-rom.json`);
-  `boot_rom_mutants.py` is its negative-control runner (ten single defects
+  `boot_rom_mutants.py` is its negative-control runner (thirteen single defects
   in the RTL and in the boot program, each caught by a test meant to
   catch it). Evidence in `records/boot-rom/`.
 - `test_boot_spi.py` — cocotb bench for DR 0013 layer 2, strap `01`, the
@@ -184,7 +196,8 @@ loader (issue #139: TX idles high, no `uio` pin is driven, `uio_out` reads
 its 0xFF guard) and on strap 01 halts in the SPI stub with every pin at its
 reset value (on strap 10 it first checks the memory and runs it
 only if it holds a signed image, which power-up contents are not, short
-of DR 0013's all-zero weak case: 256 NOPs) — `test_reset_power_up.py::test_reselect` shows this on
+of DR 0013's all-zero weak case, which since #168 is refused for its zero
+signature) — `test_reset_power_up.py::test_reselect` shows this on
 gates. The host-side loader is issue #118.
 - `test_program_memory.py` — cocotb testbench for
   `rtl/protocol_program_memory.v`, the program memory and serial
@@ -312,6 +325,38 @@ gates. The host-side loader is issue #118.
   run by `npm run lint`:
   `python3 verification/test_firmware_templates.py`. To regenerate a failing
   case: `python3 verification/firmware_templates.py --seed S --out DIR`.
+- `reference_models/isa.py`, `isa_lockstep_gen.py`, `test_isa_lockstep.py`,
+  `test_isa_model.py`, `isa_lockstep_mutants.py`, `request-isa-lockstep.json`
+  — the **ISA reference simulator and lockstep co-simulation** (issue #152;
+  verification-plan §4.1). `reference_models/isa.py` is a table-driven
+  instruction-set simulator written from DR 0001 and DR 0012 alone (it
+  imports nothing from `rtl/`, `firmware/tools/asm.py` or any bench); it
+  emits one trace row per clock edge. `isa_lockstep_gen.py` draws seeded,
+  terminating-by-construction programs (forward-only branches plus bounded
+  loops, a static edge cap, a short `RUN`-into-just-written-code tail) and
+  owns the counted coverage-bucket gate. `test_isa_lockstep.py` loads each
+  program over the real serial load phase and compares, on **every** edge of
+  the run phase, `pc`, `R0..R3`, `Z`, `C`, `halted` (hierarchy into
+  `dut.u_core`) and `uo_out` / `uio_out` / `uio_oe` (pins) against the ISS,
+  including `WAIT` stall edges, two-cycle control accesses and the idle edges
+  after `HALT`; a mismatch prints seed, program index, edge, field and both
+  values, and `ISA_LOCKSTEP_SEED=<s> ISA_LOCKSTEP_ONLY=<i>` replays it. The
+  seed set, program count and coverage thresholds live in the request
+  (`options.random_seed`, `options.isa_lockstep`) and are asserted equal to
+  the bench's constants. Scope: programs run from program memory after a
+  serial load; boot-ROM / warm-start / SPI-boot fetch is owned by
+  `test_boot_rom.py` / `test_boot_spi.py`; the compare is RTL-only
+  (gate-level lockstep is deferred). The four details DR 0001 leaves open
+  (SUB `C` polarity, `SHF` and `Z`, logic ops and `C`, the `SHF` fill bit)
+  are labelled in `isa.OPEN_DETAILS` and ruled, as the RTL behaves, by DR
+  0016 (Proposed, issue #203); `test_sub_carry_polarity_pin` checks the SUB
+  `C` polarity on its own. `test_isa_model.py` is the simulator-free unit-test suite (hand-
+  computed expectations; also the generator, the coverage gate and the
+  ISS-vs-assembler cycle cross-check), run by `npm run lint`:
+  `python3 verification/test_isa_model.py`. `isa_lockstep_mutants.py` is the
+  negative-control runner (10 single-defect copies of the core, each caught by
+  the lockstep). Driven by `klt functional-verification` (see
+  `request-isa-lockstep.json`); evidence in `records/isa-lockstep/`.
 - `test_firmware_uart_rx.py` — the DUT-facing UART **receive-path and
   low-baud** bench (issue #91, rows 1 and 10): committed `uart_rx*.asm`
   receivers (50 / 434 / 5,208 cycles per bit) driven by waveforms from
@@ -393,7 +438,7 @@ CI-covered (RTL, Icarus, no PDK): `test_protocol_emulator`,
 `test_program_memory`, `test_protocol_models`, `test_firmware_uart`,
 `test_firmware_spi`, `test_uio_pads`, `test_firmware_i2c`,
 `test_firmware_i2c_sr`, `test_firmware_roundtrip`,
-`test_random_regression`.
+`test_random_regression`, `test_isa_lockstep`.
 
 Covered elsewhere in CI: `test_check_records.py`,
 `test_firmware_templates.py` and `test_uio_pad_resolution.py` (`npm run

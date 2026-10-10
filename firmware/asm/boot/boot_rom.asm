@@ -33,12 +33,23 @@
 ; is zero exactly when word255 == s. So "PM_CRC == 0 after all 256 words"
 ; is "word 255 equals the CRC of words 0..254".
 ;
+; A signature of 0x0000 is refused before the CRC verdict (issue #168, DR
+; 0013 Finding F1). PM_CRC starts at 0x0000 (DR 0012), so 256 zero words are
+; their own valid signature; without this check an SRAM that powers up
+; all-zero would pass. The SPI-flash boot below refuses the same word for
+; the same reason. Here it costs two words, not that path's six: the loop's
+; last pass leaves word 255 in R0 (high byte) and R1 (low byte), so it need
+; not be read back. A real image whose CRC happens to be 0x0000 (one in
+; 65,536) must be given a different last word, e.g. by changing a filler
+; word, exactly as firmware/tools/mkflash.py already requires for flash.
+;
 ;   pass    RUN 0, entered with R0-R3 = 0, Z = 0 and C = 0 (the reset
 ;           values, restored below), PM_ADDR = 0 and PM_CRC = 0x0000. A
 ;           warm-started program reads BOOT_STATUS = 0x00; a serial-loaded
 ;           one reads 0x01. The PM_DATA latches hold word 255's bytes.
 ;   fail    falls through to the UART load below. PM_CRC is left holding
-;           the nonzero residue; the loader clears it.
+;           the nonzero residue, or 0x0000 if the image was refused for its
+;           zero signature; the loader clears it.
 ;
 ; Registers in the warm-start loop:
 ;   R0 = high byte of the word      R2 = word index (0..255, wraps to 0)
@@ -47,20 +58,21 @@
 ; Cycle counts (DR 0001 / DR 0012 latency table), from the first executed
 ; instruction: the dispatch reaches a stub's HALT or `warm_start` in a fixed
 ; number of cycles per strap value, and one pass of `warm_loop` is 9 cycles.
-; A warm start that passes spends 6 + 4 + 256 * 9 + 4 + 3 = 2,321 cycles
+; A warm start that passes spends 6 + 4 + 256 * 9 + 2 + 4 + 3 = 2,323 cycles
 ; before its 2-cycle RUN, so word 0 of the verified program executes exactly
-; 2,323 cycles after this program's first instruction, whatever the image
+; 2,325 cycles after this program's first instruction, whatever the image
 ; holds (verification/test_boot_rom.py checks that number at the pins).
 ;
 ; The assembler's data-dependent-latency lint reports warnings for this
 ; program, all intended: the two strap branches (which boot program runs is the
-; straps' whole purpose), the warm start's verdict branch on PM_CRC (whether the
-; image runs is the check's whole purpose), and in the loaders the branches on
-; received data (the UART load's start-edge poll, phase dispatch, handlers and
-; verdicts; the SPI-flash boot's own checks). None paces a pin: the warm start
-; drives none; in the UART load the samples and the transmitted bits are paced
-; by WAIT literals and a counter that never holds pin data, and no branch on a
-; received byte sits between two samples.
+; straps' whole purpose), the warm start's two verdict branches, on the
+; signature word and on PM_CRC (whether the image runs is the check's whole
+; purpose), and in the loaders the branches on received data (the UART load's
+; start-edge poll, phase dispatch, handlers and verdicts; the SPI-flash boot's
+; own checks). None paces a pin: the warm start drives none; in the UART load
+; the samples and the transmitted bits are paced by WAIT literals and a counter
+; that never holds pin data, and no branch on a received byte sits between two
+; samples.
 
         IN    R0, UI_IN             ; straps ride ui_in[6:5]
         LDI   R1, 0x60
@@ -287,6 +299,8 @@ warm_loop:
         ADD   R2, R3
         BNZ   warm_loop             ; 256 passes: R2 wraps to 0
 .endcyclesec
+        OR    R0, R1                ; Z <=> word 255, still in R0/R1, is 0x0000
+        BZ    uart_load             ; a zero signature is refused (issue #168)
         RCTL  R0, PM_CRC_HI
         RCTL  R1, PM_CRC_LO
         OR    R0, R1                ; Z <=> PM_CRC == 0 <=> word 255 is the CRC of words 0..254
@@ -335,12 +349,11 @@ run_image:                          ; also entered by the SPI-flash boot: R0-R2 
 ;
 ; Two failures this catches that the CRC alone does not: a flash (or no
 ; Pmod at all) that answers 0x00 for every byte is 256 zero words, and the
-; all-zero image is its own valid signature (Finding F1 of DR 0013). The
-; warm start accepts it because it is 256 harmless NOPs; here it is a
-; symptom of a dead MISO line, not an image, so signature word 0x0000 is
-; refused (an image whose real CRC is 0x0000 must be given a different
-; last word, e.g. by changing a filler word). An all-0xFF (blank) flash
-; fails the CRC.
+; all-zero image is its own valid signature (Finding F1 of DR 0013). Here
+; it is a symptom of a dead MISO line, not an image, so signature word
+; 0x0000 is refused, as the warm start also refuses it since issue #168
+; (an image whose real CRC is 0x0000 must be given a different last word,
+; e.g. by changing a filler word). An all-0xFF (blank) flash fails the CRC.
 ;
 ; Registers. Setup: R3 = 0x04, R2 = 0x08, R0 = 0x06, R1 = 0x0E. Data loop:
 ;   R0 = byte shift register   R2 = scratch (SCK-high image, MISO, test)

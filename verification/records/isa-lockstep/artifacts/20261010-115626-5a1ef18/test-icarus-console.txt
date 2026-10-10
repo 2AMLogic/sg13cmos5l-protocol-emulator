@@ -1,0 +1,98 @@
+     -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:242  in gpi_load_users                  Loaded entry library: '<home>/.local/share/uv/python/cpython-3.14.5-macos-aarch64-none/lib/libpython3.14.dylib'
+     -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:234  in gpi_load_users                  Running entry func 'initialize' from loaded library '<repo>/.venv/lib/python3.14/site-packages/cocotb/simulator.cpython-314-darwin.so'
+     -.--ns INFO     pygpi                              ..ib/pygpi/embed.cpp:115  in initialize                      Using Python 3.14.6 interpreter at <repo>/.venv/bin/python
+     -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:74   in gpi_print_registered_impl       GPI: VPI support registered
+     0.00ns INFO     cocotb.initialize                  Seeding Python random module with 20261010
+     0.00ns INFO     cocotb.initialize                  Initialized cocotb v2.1.0 from <repo>/.venv/lib/python3.14/site-packages/cocotb
+     0.00ns INFO     cocotb.initialize                  Running on Icarus Verilog version 13.0 (stable)
+     0.00ns INFO     cocotb.regression                  Running tests
+     0.00ns INFO     cocotb.regression                  running test_isa_lockstep.test_recorded_parameters_match_request (1/4)
+                                                            The seed and the gate's thresholds are recorded in the request, not
+     0.00ns INFO     ..tt_um_2amlogic_protocol_emulator seed=20261010 programs=400 min_retire=200 min_bucket=10
+     0.00ns INFO     cocotb.regression                  test_isa_lockstep.test_recorded_parameters_match_request passed
+     0.00ns INFO     cocotb.regression                  running test_isa_lockstep.test_coverage_gate_and_generator (2/4)
+                                                            ISS-side gate over the whole committed seed set: every program
+     0.00ns INFO     ..tt_um_2amlogic_protocol_emulator bucket ADD:c0                       252
+     0.00ns INFO     ..tt_um_2amlogic_protocol_emulator bucket ADD:c1                       25
+     0.00ns INFO     ..tt_um_2amlogic_protocol_emulator bucket ADD:nonzero                  128
+     0.00ns INFO     ..tt_um_2amlogic_protocol_emulator bucket ADD:zero                     149
+     0.00ns INFO     ..tt_um_2amlogic_protocol_emulator bucket BNZ:not-taken                139
+     0.00ns INFO     ..tt_um_2amlogic_protocol_emulator bucket BNZ:taken                    187
+     0.00ns INFO     ..tt_um_2amlogic_protocol_emulator bucket BZ:not-taken                 60
+     0.00ns INFO     ..tt_um_2amlogic_protocol_emulator bucket BZ:taken                     188
+     0.00ns INFO     ..tt_um_2amlogic_protocol_emulator bucket IN:port00                    112
+     0.00ns INFO     ..tt_um_2amlogic_protocol_emulator bucket IN:port01                    111
+     0.00ns INFO     ..tt_um_2amlogic_protocol_emulator bucket IN:port10                    816
+     0.00ns INFO     ..tt_um_2amlogic_protocol_emulator bucket IN:port11                    71
+     0.00ns INFO     ..tt_um_2amlogic_protocol_emulator bucket OUT:port00                   1411
+     0.00ns INFO     ..tt_um_2amlogic_protocol_emulator bucket OUT:port01                   45
+     0.00ns INFO     ..tt_um_2amlogic_protocol_emulator bucket OUT:port10                   131
+     0.00ns INFO     ..tt_um_2amlogic_protocol_emulator bucket OUT:port11                   124
+     0.00ns INFO     ..tt_um_2amlogic_protocol_emulator bucket RCTL:BOOT_STATUS             14
+     0.00ns INFO     ..tt_um_2amlogic_protocol_emulator bucket RCTL:HW_ID                   19
+     0.00ns INFO     ..tt_um_2amlogic_protocol_emulator bucket RCTL:PM_ADDR                 16
+     0.00ns INFO     ..tt_um_2amlogic_protocol_emulator bucket RCTL:PM_CRC_HI               93
+     0.00ns INFO     ..tt_um_2amlogic_protocol_emulator bucket RCTL:PM_CRC_LO               75
+     0.00ns INFO     ..tt_um_2amlogic_protocol_emulator bucket RCTL:PM_DATA_HI              195
+     0.00ns INFO     ..tt_um_2amlogic_protocol_emulator bucket RCTL:PM_DATA_LO              208
+     0.00ns INFO     ..tt_um_2amlogic_protocol_emulator bucket RCTL:UIO_DIR                 18
+     0.00ns INFO     ..tt_um_2amlogic_protocol_emulator bucket RCTL:UIO_OD                  16
+     0.00ns INFO     ..tt_um_2amlogic_protocol_emulator bucket RCTL:unassigned              143
+     0.00ns INFO     ..tt_um_2amlogic_protocol_emulator bucket RCTL:write-only              19
+     0.00ns INFO     ..tt_um_2amlogic_protocol_emulator bucket SHF:left:out0                176
+     0.00ns INFO     ..tt_um_2amlogic_protocol_emulator bucket SHF:left:out1                34
+     0.00ns INFO     ..tt_um_2amlogic_protocol_emulator bucket SHF:right:out0               139
+     0.00ns INFO     ..tt_um_2amlogic_protocol_emulator bucket SHF:right:out1               44
+     0.00ns INFO     ..tt_um_2amlogic_protocol_emulator bucket SUB:c0                       447
+     0.00ns INFO     ..tt_um_2amlogic_protocol_emulator bucket SUB:c1                       37
+     0.00ns INFO     ..tt_um_2amlogic_protocol_emulator bucket SUB:nonzero                  250
+     0.00ns INFO     ..tt_um_2amlogic_protocol_emulator bucket SUB:zero                     234
+     0.00ns INFO     ..tt_um_2amlogic_protocol_emulator bucket WAIT:0                       54
+     0.00ns INFO     ..tt_um_2amlogic_protocol_emulator bucket WAIT:1                       39
+     0.00ns INFO     ..tt_um_2amlogic_protocol_emulator bucket WAIT:255                     46
+     0.00ns INFO     ..tt_um_2amlogic_protocol_emulator bucket WAIT:mid                     126
+     0.00ns INFO     ..tt_um_2amlogic_protocol_emulator bucket WCTL:PM_ADDR                 424
+     0.00ns INFO     ..tt_um_2amlogic_protocol_emulator bucket WCTL:PM_CRC_HI               62
+     0.00ns INFO     ..tt_um_2amlogic_protocol_emulator bucket WCTL:PM_CRC_LO               34
+     0.00ns INFO     ..tt_um_2amlogic_protocol_emulator bucket WCTL:PM_DATA_HI              315
+     0.00ns INFO     ..tt_um_2amlogic_protocol_emulator bucket WCTL:PM_DATA_LO              305
+     0.00ns INFO     ..tt_um_2amlogic_protocol_emulator bucket WCTL:RUN                     62
+     0.00ns INFO     ..tt_um_2amlogic_protocol_emulator bucket WCTL:UIO_DIR                 15
+     0.00ns INFO     ..tt_um_2amlogic_protocol_emulator bucket WCTL:UIO_OD                  17
+     0.00ns INFO     ..tt_um_2amlogic_protocol_emulator bucket WCTL:read-only               27
+     0.00ns INFO     ..tt_um_2amlogic_protocol_emulator bucket WCTL:unassigned              150
+     0.00ns INFO     ..tt_um_2amlogic_protocol_emulator bucket retire:ADD                   277
+     0.00ns INFO     ..tt_um_2amlogic_protocol_emulator bucket retire:AND                   246
+     0.00ns INFO     ..tt_um_2amlogic_protocol_emulator bucket retire:BNZ                   326
+     0.00ns INFO     ..tt_um_2amlogic_protocol_emulator bucket retire:BZ                    248
+     0.00ns INFO     ..tt_um_2amlogic_protocol_emulator bucket retire:HALT                  400
+     0.00ns INFO     ..tt_um_2amlogic_protocol_emulator bucket retire:IN                    1110
+     0.00ns INFO     ..tt_um_2amlogic_protocol_emulator bucket retire:JMP                   280
+     0.00ns INFO     ..tt_um_2amlogic_protocol_emulator bucket retire:LDI                   1710
+     0.00ns INFO     ..tt_um_2amlogic_protocol_emulator bucket retire:MOV                   365
+     0.00ns INFO     ..tt_um_2amlogic_protocol_emulator bucket retire:NOP                   226
+     0.00ns INFO     ..tt_um_2amlogic_protocol_emulator bucket retire:OR                    235
+     0.00ns INFO     ..tt_um_2amlogic_protocol_emulator bucket retire:OUT                   1711
+     0.00ns INFO     ..tt_um_2amlogic_protocol_emulator bucket retire:SHF                   393
+     0.00ns INFO     ..tt_um_2amlogic_protocol_emulator bucket retire:SUB                   484
+     0.00ns INFO     ..tt_um_2amlogic_protocol_emulator bucket retire:WAIT                  265
+     0.00ns INFO     ..tt_um_2amlogic_protocol_emulator bucket retire:XOR                   288
+     0.00ns INFO     ..tt_um_2amlogic_protocol_emulator programs=400 iss_edges=27583
+     0.00ns INFO     cocotb.regression                  test_isa_lockstep.test_coverage_gate_and_generator passed
+     0.00ns INFO     cocotb.regression                  running test_isa_lockstep.test_isa_lockstep_random_programs (3/4)
+                                                            Every program of the seed set, compared edge by edge.  A pass
+2585421.00ns INFO     ..tt_um_2amlogic_protocol_emulator lockstep: seed=20261010 programs=400 edges_compared=27983 trace_sha256=463743298f12b9ed8ef4dff38e43a6de5815ff2067b42a3f76bef70540293110
+2585421.00ns INFO     cocotb.regression                  test_isa_lockstep.test_isa_lockstep_random_programs passed
+2585421.00ns INFO     cocotb.regression                  running test_isa_lockstep.test_sub_carry_polarity_pin (4/4)
+                                                            The SUB `C` polarity is a detail DR 0001 leaves open (it says only
+2588692.00ns INFO     cocotb.regression                  test_isa_lockstep.test_sub_carry_polarity_pin passed
+2588692.00ns INFO     cocotb.regression                  ******************************************************************************************************************
+                                                        ** TEST                                                      STATUS  SIM TIME (ns)  REAL TIME (s)  RATIO (ns/s) **
+                                                        ******************************************************************************************************************
+                                                        ** test_isa_lockstep.test_recorded_parameters_match_request   PASS           0.00           0.00          0.00  **
+                                                        ** test_isa_lockstep.test_coverage_gate_and_generator         PASS           0.00           0.13          0.00  **
+                                                        ** test_isa_lockstep.test_isa_lockstep_random_programs        PASS     2585421.00           3.66     706997.20  **
+                                                        ** test_isa_lockstep.test_sub_carry_polarity_pin              PASS        3271.00           0.04      78328.08  **
+                                                        ******************************************************************************************************************
+                                                        ** TESTS=4 PASS=4 FAIL=0 SKIP=0                                        2588692.00           3.83     676611.48  **
+                                                        ******************************************************************************************************************

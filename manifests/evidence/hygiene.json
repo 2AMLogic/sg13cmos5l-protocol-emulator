@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "kind": "generic",
+  "status": "pass",
+  "t1_item": 10,
+  "summary": "Repo hygiene: README sections (what the block is, the spec table link, how to reproduce every result), the Apache-2.0 LICENSE, and the CI jobs that keep the records, harness and evidence formats valid. Audited 2026-10-10, issue #83.",
+  "source": "manifests/evidence/hygiene.txt",
+  "provenance": {
+    "klt_version": "0.7.0",
+    "klayout_version": "0.30.12",
+    "pdk": null,
+    "deck": null,
+    "input": {
+      "content_hash": "sha256:df6f2b9221feeda4f5577acfa9714289429b0d0e562ac43579faf75f8756b229",
+      "path": "hygiene.txt"
+    }
+  }
+}

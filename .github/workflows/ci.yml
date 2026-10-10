@@ -47,7 +47,13 @@ jobs:
         run: git fetch --no-tags --quiet origin +refs/heads/main:refs/remotes/origin/main
 
       - name: Syntax-check the verification scripts
-        run: python3 -m compileall -q verification firmware flow
+        run: |
+          python3 -m compileall -q verification firmware flow
+          # The ISA reference simulator, its lockstep bench, generator, mutant
+          # runner and unit tests (issue #152), named so a rename cannot drop them.
+          python3 -m py_compile verification/reference_models/isa.py \
+            verification/isa_lockstep_gen.py verification/test_isa_model.py \
+            verification/test_isa_lockstep.py verification/isa_lockstep_mutants.py
 
       # Firmware toolchain (issue #22, DR 0003): the assembler's unit
       # tests (whole instruction set + malformed input) and a freshness

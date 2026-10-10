@@ -1,0 +1,137 @@
+{
+  "source": "LibreLane 55-openroad-stapostpnr/<corner>/{max,min,clock}.rpt of the gds run (report_checks paths; arrival includes clock network latency, measured from the clk pin edge at 0 ns; input arrivals include the SDC input delay)",
+  "corners": {
+    "nom_fast_1p32V_m40C": {
+      "clock_network_latency_rise_ns": {
+        "min": 0.276565,
+        "max": 0.37168
+      },
+      "output_arrival_ns": {
+        "max": {
+          "uio_oe": [
+            0.6063,
+            0.674
+          ],
+          "uo_out": [
+            0.5025,
+            0.5268
+          ],
+          "uio_out": [
+            0.5145,
+            0.5258
+          ]
+        },
+        "min": {
+          "uo_out": [
+            0.4338,
+            0.4533
+          ],
+          "uio_out": [
+            0.4421,
+            0.4515
+          ],
+          "uio_oe": [
+            0.4987,
+            0.5317
+          ]
+        }
+      },
+      "worst_input_path_slack_ns": {
+        "max": 14.0996,
+        "min": 3.9652
+      },
+      "input_path_count": {
+        "max": 260,
+        "min": 178
+      }
+    },
+    "nom_slow_1p08V_125C": {
+      "clock_network_latency_rise_ns": {
+        "min": 0.654044,
+        "max": 0.791641
+      },
+      "output_arrival_ns": {
+        "max": {
+          "uio_oe": [
+            1.3616,
+            1.5316
+          ],
+          "uo_out": [
+            1.1067,
+            1.165
+          ],
+          "uio_out": [
+            1.134,
+            1.1609
+          ]
+        },
+        "min": {
+          "uo_out": [
+            0.9676,
+            1.0144
+          ],
+          "uio_out": [
+            0.9866,
+            1.009
+          ],
+          "uio_oe": [
+            1.1265,
+            1.2089
+          ]
+        }
+      },
+      "worst_input_path_slack_ns": {
+        "max": 11.744,
+        "min": 4.3447
+      },
+      "input_path_count": {
+        "max": 209,
+        "min": 178
+      }
+    },
+    "nom_typ_1p20V_25C": {
+      "clock_network_latency_rise_ns": {
+        "min": 0.414792,
+        "max": 0.524206
+      },
+      "output_arrival_ns": {
+        "max": {
+          "uio_oe": [
+            0.8843,
+            0.992
+          ],
+          "uo_out": [
+            0.7231,
+            0.7606
+          ],
+          "uio_out": [
+            0.7411,
+            0.7584
+          ]
+        },
+        "min": {
+          "uo_out": [
+            0.6253,
+            0.654
+          ],
+          "uio_out": [
+            0.6372,
+            0.651
+          ],
+          "uio_oe": [
+            0.7262,
+            0.7782
+          ]
+        }
+      },
+      "worst_input_path_slack_ns": {
+        "max": 13.2656,
+        "min": 4.1078
+      },
+      "input_path_count": {
+        "max": 209,
+        "min": 178
+      }
+    }
+  }
+}

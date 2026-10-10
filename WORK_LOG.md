@@ -4,6 +4,14 @@ Chronological record of merged pull requests and closed issues, newest first.
 
 ### 2026-10-10
 
+- **PR #202**: Run the post-layout SDF bench at the SDC's IO timing: 12 pass + 1 skip at all corners (#106)
+- **PR #204**: Verification: independent ISA reference simulator with per-edge lockstep co-simulation (#152)
+- **PR #200**: Warm start refuses a zero signature (DR 0013 F1, option 4)
+- **PR #199**: Repair the SRAM A_REN max-slew with a LibreLane-only drive buffer (#173)
+- **PR #198**: spec: fix six of the PR #84 two-key findings (SPI sketch, row 4 State, rows 1/2/7/8/9/10/12 citations)
+- **PR #197**: docs: one device on the uio header at a time (#196)
+- **PR #188**: feat: SPI-flash boot from the Tiny Tapeout QSPI Pmod (DR 0013 strap 01) with an independent flash model (#140)
+- **PR #194**: Add stale-record report and re-mint helper (#193)
 - **PR #191**: Host-side direct-load pin-sequence generator and RTL replay (#118)
 - **PR #190**: Move UART RX from ui_in[0] to ui_in[1] (DR 0010 target pin plan)
 - **PR #189**: check_records.py hardening: gitlinks and meta.experiment (#187)
@@ -17,6 +25,14 @@ Chronological record of merged pull requests and closed issues, newest first.
 - **PR #175**: spec: DR 0012 area figures, I2C preamble order, and the RTL's choices
 - **PR #174**: fix(asm): WCTL RUN makes every address a control-state merge point (#161)
 - **PR #163**: test: run the I2C evidence through the real uio_oe on a silicon-true pad model
+- **Issue #106** (closed): Post-layout SDF: make the core bench drive/sample alignment SDF-aware (annotated run passes 1/13)
+- **Issue #152** (closed): Verification: independent ISA reference simulator with lockstep co-simulation against the core RTL
+- **Issue #168** (closed): DR 0013 warm start: the all-zero image verifies (CRC seed 0x0000); decide seed, magic word, or accept
+- **Issue #173** (closed): LibreLane max-slew violation is on the SRAM macro's A_REN pin (new with the boot ROM read gate, #138)
+- **Issue #196** (closed): Design: the QSPI flash Pmod (strap 01) and the SPI/I2C profiles share uio[0..3]; decide the rule and record it in DR 0010/0013 and info.md
+- **Issue #124** (closed): Auditor: retain detached scratch checkout force-op guard
+- **Issue #140** (closed): Boot firmware: SPI-flash boot from the Tiny Tapeout QSPI Pmod with an independent flash model
+- **Issue #193** (closed): Records: re-mint helper and stale-record report for check_records.py freshness failures
 - **Issue #187** (closed): check_records.py hardening: clean error for gitlinks under records/, check meta.experiment against directory
 - **Issue #184** (closed): Re-mint PR #181's stale evidence records after rebasing onto main
 - **Issue #178** (closed): Move UART RX from ui_in[0] to ui_in[1] (DR 0010 target pin plan; UART half of #155)

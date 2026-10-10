@@ -107,8 +107,9 @@ committed program fails CI at the link that went stale. The generator
 refuses an image over **256 words**, the fetch address space. DR 0013
 proposed a cap of 128; the UART load does not fit it (finding F4 in that
 record), so the cap is the address space until the record decides. The image
-is **221** words (the SPI-flash boot 64, the UART load 129, the strap
-dispatch and warm start the rest).
+is **223** words (the SPI-flash boot 64, the UART load 129, the strap
+dispatch and warm start the rest, which includes the two-word zero-signature
+refusal of issue #168).
 
 What the program does: its first instruction reads the straps `ui_in[6:5]`.
 Strap `10` is the **warm start**: it reads every word of program memory and
@@ -119,7 +120,7 @@ words 0–254. It first restores `R0`–`R3`, `Z` and `C` to their reset
 values, so a warm-started program starts in the state a serial-loaded one
 does, except that it reads `BOOT_STATUS = 0x00`. One pass of the loop is 9
 cycles (`.cyclesec warm_word`), and word 0 of a verified image executes
-exactly 2,323 cycles after the boot program's first instruction. Straps
+exactly 2,325 cycles after the boot program's first instruction. Straps
 `00` and `11`, and a warm start that fails its check, run the **UART load**
 below.
 
@@ -134,7 +135,7 @@ pin, and either takes the warm start's hand-over (`run_image`) or halts.
 putting one on the Pmod. Bench: `verification/test_boot_spi.py`
 (`verification/request-boot-spi.json`), negative controls
 `verification/boot_spi_mutants.py`, evidence in
-`verification/records/boot-spi/`. With the UART load the image is 221 words,
+`verification/records/boot-spi/`. With the UART load the image is 223 words,
 which is why the ROM's cap is the 256-word address space (DR 0013 finding F4).
 
 ### The UART load (issue #139, DR 0013 layer 2)
@@ -189,14 +190,19 @@ filler until the loader answers `0x15` (zero filler does not work: a message
 followed by its own CRC and then zeros still has CRC 0, so the loader reads it
 as a valid longer image). Auto-baud was not attempted.
 
-The assembler reports data-dependent-branch warnings for this program (8),
-all intended: the two strap branches, the warm start's CRC verdict, and in
+The assembler reports data-dependent-branch warnings for this program (12),
+all intended: the two strap branches, the warm start's zero-signature and CRC
+verdicts, and in
 the UART load the start-edge poll, the phase dispatch, the handlers and the
 verdicts. None paces a pin: the samples and the transmitted bits are paced by
 `WAIT` literals and a counter that never holds pin data.
 
-Known weak case, recorded in DR 0013: 256 zero words carry their own valid
-signature (the CRC starts at 0), so a warm start runs them. They are `NOP`s.
+Zero signatures are refused (DR 0013 Finding F1, closed by issue #168): 256
+zero words carry their own valid signature (the CRC starts at 0), so the
+warm start refuses word 255 = `0x0000` before its CRC verdict, as the
+SPI-flash boot does. Two words: the loop's last pass leaves word 255 in
+`R0`/`R1`. An image whose real CRC is `0x0000` (1 in 65,536) must be
+re-padded; `firmware/tools/mkflash.py` refuses to build one.
 
 Bench: `verification/test_boot_rom.py`
 (`verification/request-boot-rom.json`), negative controls

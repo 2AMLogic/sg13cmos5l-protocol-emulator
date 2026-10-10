@@ -1,22 +1,23 @@
 cycle-accounting report (DR 0003 firmware toolchain)
 program: boot_rom
 source: firmware/asm/boot/boot_rom.asm
-WORDS 221
-TOTAL-CYCLES 2567
+WORDS 223
+TOTAL-CYCLES 2569
 CYCLES name=uart_rx_bit start=23 end=38 cycles=434 branches=true
 CYCLES name=uart_tx_frame start=65 end=83 cycles=1298 branches=true
 CYCLES name=warm_word start=142 end=148 cycles=9 branches=true
-WARNING line 70: BZ branches on flags set by SUB over IN-sampled (pin-derived) data -- a data-dependent-latency hazard if this loop produces protocol timing (DR 0001 'Timing model'; legitimate for protocol handshakes, e.g. an I2C ACK wait)
-WARNING line 73: BZ branches on flags set by SUB over IN-sampled (pin-derived) data -- a data-dependent-latency hazard if this loop produces protocol timing (DR 0001 'Timing model'; legitimate for protocol handshakes, e.g. an I2C ACK wait)
-WARNING line 133: BNZ branches on flags set by AND over IN-sampled (pin-derived) data -- a data-dependent-latency hazard if this loop produces protocol timing (DR 0001 'Timing model'; legitimate for protocol handshakes, e.g. an I2C ACK wait)
-WARNING line 181: BNZ branches on flags set by OR over IN-sampled (pin-derived) data -- a data-dependent-latency hazard if this loop produces protocol timing (DR 0001 'Timing model'; legitimate for protocol handshakes, e.g. an I2C ACK wait)
-WARNING line 212: BNZ branches on flags set by OR over IN-sampled (pin-derived) data -- a data-dependent-latency hazard if this loop produces protocol timing (DR 0001 'Timing model'; legitimate for protocol handshakes, e.g. an I2C ACK wait)
-WARNING line 229: BNZ branches on flags set by XOR over IN-sampled (pin-derived) data -- a data-dependent-latency hazard if this loop produces protocol timing (DR 0001 'Timing model'; legitimate for protocol handshakes, e.g. an I2C ACK wait)
-WARNING line 267: BZ branches on flags set by OR over IN-sampled (pin-derived) data -- a data-dependent-latency hazard if this loop produces protocol timing (DR 0001 'Timing model'; legitimate for protocol handshakes, e.g. an I2C ACK wait)
-WARNING line 293: BNZ branches on flags set by OR over IN-sampled (pin-derived) data -- a data-dependent-latency hazard if this loop produces protocol timing (DR 0001 'Timing model'; legitimate for protocol handshakes, e.g. an I2C ACK wait)
-WARNING line 417: BNZ branches on flags set by OR over IN-sampled (pin-derived) data -- a data-dependent-latency hazard if this loop produces protocol timing (DR 0001 'Timing model'; legitimate for protocol handshakes, e.g. an I2C ACK wait)
-WARNING line 426: BNZ branches on flags set by OR over IN-sampled (pin-derived) data -- a data-dependent-latency hazard if this loop produces protocol timing (DR 0001 'Timing model'; legitimate for protocol handshakes, e.g. an I2C ACK wait)
-WARNING line 432: BZ branches on flags set by OR over IN-sampled (pin-derived) data -- a data-dependent-latency hazard if this loop produces protocol timing (DR 0001 'Timing model'; legitimate for protocol handshakes, e.g. an I2C ACK wait)
+WARNING line 82: BZ branches on flags set by SUB over IN-sampled (pin-derived) data -- a data-dependent-latency hazard if this loop produces protocol timing (DR 0001 'Timing model'; legitimate for protocol handshakes, e.g. an I2C ACK wait)
+WARNING line 85: BZ branches on flags set by SUB over IN-sampled (pin-derived) data -- a data-dependent-latency hazard if this loop produces protocol timing (DR 0001 'Timing model'; legitimate for protocol handshakes, e.g. an I2C ACK wait)
+WARNING line 145: BNZ branches on flags set by AND over IN-sampled (pin-derived) data -- a data-dependent-latency hazard if this loop produces protocol timing (DR 0001 'Timing model'; legitimate for protocol handshakes, e.g. an I2C ACK wait)
+WARNING line 193: BNZ branches on flags set by OR over IN-sampled (pin-derived) data -- a data-dependent-latency hazard if this loop produces protocol timing (DR 0001 'Timing model'; legitimate for protocol handshakes, e.g. an I2C ACK wait)
+WARNING line 224: BNZ branches on flags set by OR over IN-sampled (pin-derived) data -- a data-dependent-latency hazard if this loop produces protocol timing (DR 0001 'Timing model'; legitimate for protocol handshakes, e.g. an I2C ACK wait)
+WARNING line 241: BNZ branches on flags set by XOR over IN-sampled (pin-derived) data -- a data-dependent-latency hazard if this loop produces protocol timing (DR 0001 'Timing model'; legitimate for protocol handshakes, e.g. an I2C ACK wait)
+WARNING line 279: BZ branches on flags set by OR over IN-sampled (pin-derived) data -- a data-dependent-latency hazard if this loop produces protocol timing (DR 0001 'Timing model'; legitimate for protocol handshakes, e.g. an I2C ACK wait)
+WARNING line 303: BZ branches on flags set by OR over IN-sampled (pin-derived) data -- a data-dependent-latency hazard if this loop produces protocol timing (DR 0001 'Timing model'; legitimate for protocol handshakes, e.g. an I2C ACK wait)
+WARNING line 307: BNZ branches on flags set by OR over IN-sampled (pin-derived) data -- a data-dependent-latency hazard if this loop produces protocol timing (DR 0001 'Timing model'; legitimate for protocol handshakes, e.g. an I2C ACK wait)
+WARNING line 430: BNZ branches on flags set by OR over IN-sampled (pin-derived) data -- a data-dependent-latency hazard if this loop produces protocol timing (DR 0001 'Timing model'; legitimate for protocol handshakes, e.g. an I2C ACK wait)
+WARNING line 439: BNZ branches on flags set by OR over IN-sampled (pin-derived) data -- a data-dependent-latency hazard if this loop produces protocol timing (DR 0001 'Timing model'; legitimate for protocol handshakes, e.g. an I2C ACK wait)
+WARNING line 445: BZ branches on flags set by OR over IN-sampled (pin-derived) data -- a data-dependent-latency hazard if this loop produces protocol timing (DR 0001 'Timing model'; legitimate for protocol handshakes, e.g. an I2C ACK wait)
 ADDR 0x00 WORD 0x9000 IN R0, UI_IN cycles=1
 ADDR 0x01 WORD 0x1460 LDI R1, 0x60 cycles=1
 ADDR 0x02 WORD 0x5100 AND R0, R1 cycles=1
@@ -25,7 +26,7 @@ ADDR 0x04 WORD 0x4400 SUB R1, R0 cycles=1
 ADDR 0x05 WORD 0xD08A BZ warm_start cycles=1
 ADDR 0x06 WORD 0x1420 LDI R1, 0x20 cycles=1
 ADDR 0x07 WORD 0x4400 SUB R1, R0 cycles=1
-ADDR 0x08 WORD 0xD09D BZ spi_boot cycles=1
+ADDR 0x08 WORD 0xD09F BZ spi_boot cycles=1
 ADDR 0x09 WORD 0x10FF LDI R0, 0xff cycles=1
 ADDR 0x0A WORD 0xA300 OUT UIO_OUT, R0 cycles=1
 ADDR 0x0B WORD 0xA001 WCTL UIO_OD, R0 cycles=1
@@ -128,7 +129,7 @@ ADDR 0x6B WORD 0xA002 WCTL PM_ADDR, R0 cycles=1
 ADDR 0x6C WORD 0x2400 MOV R1, R0 cycles=1
 ADDR 0x6D WORD 0x2800 MOV R2, R0 cycles=1
 ADDR 0x6E WORD 0x1C01 LDI R3, 0x01 cycles=1
-ADDR 0x6F WORD 0xC099 JMP run_image cycles=1
+ADDR 0x6F WORD 0xC09B JMP run_image cycles=1
 ADDR 0x70 WORD 0x1C00 LDI R3, 0x00 cycles=1
 ADDR 0x71 WORD 0xC00F JMP rx_next cycles=1
 ADDR 0x72 WORD 0x14A5 LDI R1, 0xa5 cycles=1
@@ -166,75 +167,77 @@ ADDR 0x91 WORD 0xA003 WCTL PM_DATA_HI, R0 cycles=1
 ADDR 0x92 WORD 0xA404 WCTL PM_DATA_LO, R1 cycles=2
 ADDR 0x93 WORD 0x3B00 ADD R2, R3 cycles=1
 ADDR 0x94 WORD 0xE08E BNZ warm_loop cycles=1
-ADDR 0x95 WORD 0x9207 RCTL R0, PM_CRC_HI cycles=1
-ADDR 0x96 WORD 0x9606 RCTL R1, PM_CRC_LO cycles=1
-ADDR 0x97 WORD 0x6100 OR R0, R1 cycles=1
-ADDR 0x98 WORD 0xE009 BNZ uart_load cycles=1
-ADDR 0x99 WORD 0x6F00 OR R3, R3 cycles=1
-ADDR 0x9A WORD 0x1C00 LDI R3, 0x00 cycles=1
-ADDR 0x9B WORD 0x8C00 SHF R3, RIGHT cycles=1
-ADDR 0x9C WORD 0xA805 WCTL RUN, R2 cycles=2
-ADDR 0x9D WORD 0x1801 LDI R2, 0x01 cycles=1
-ADDR 0x9E WORD 0xAB00 OUT UIO_OUT, R2 cycles=1
-ADDR 0x9F WORD 0x180B LDI R2, 0x0b cycles=1
-ADDR 0xA0 WORD 0xA800 WCTL UIO_DIR, R2 cycles=1
-ADDR 0xA1 WORD 0x1C04 LDI R3, 0x04 cycles=1
-ADDR 0xA2 WORD 0x1808 LDI R2, 0x08 cycles=1
-ADDR 0xA3 WORD 0x1006 LDI R0, 0x06 cycles=1
-ADDR 0xA4 WORD 0xAF00 OUT UIO_OUT, R3 cycles=1
-ADDR 0xA5 WORD 0x1418 LDI R1, 0x18 cycles=1
-ADDR 0xA6 WORD 0xAB00 OUT UIO_OUT, R2 cycles=1
-ADDR 0xA7 WORD 0xAF00 OUT UIO_OUT, R3 cycles=1
-ADDR 0xA8 WORD 0x4700 SUB R1, R3 cycles=1
-ADDR 0xA9 WORD 0xE0A6 BNZ spi_cmd0 cycles=1
-ADDR 0xAA WORD 0x140E LDI R1, 0x0e cycles=1
-ADDR 0xAB WORD 0xA300 OUT UIO_OUT, R0 cycles=1
-ADDR 0xAC WORD 0xA700 OUT UIO_OUT, R1 cycles=1
+ADDR 0x95 WORD 0x6100 OR R0, R1 cycles=1
+ADDR 0x96 WORD 0xD009 BZ uart_load cycles=1
+ADDR 0x97 WORD 0x9207 RCTL R0, PM_CRC_HI cycles=1
+ADDR 0x98 WORD 0x9606 RCTL R1, PM_CRC_LO cycles=1
+ADDR 0x99 WORD 0x6100 OR R0, R1 cycles=1
+ADDR 0x9A WORD 0xE009 BNZ uart_load cycles=1
+ADDR 0x9B WORD 0x6F00 OR R3, R3 cycles=1
+ADDR 0x9C WORD 0x1C00 LDI R3, 0x00 cycles=1
+ADDR 0x9D WORD 0x8C00 SHF R3, RIGHT cycles=1
+ADDR 0x9E WORD 0xA805 WCTL RUN, R2 cycles=2
+ADDR 0x9F WORD 0x1801 LDI R2, 0x01 cycles=1
+ADDR 0xA0 WORD 0xAB00 OUT UIO_OUT, R2 cycles=1
+ADDR 0xA1 WORD 0x180B LDI R2, 0x0b cycles=1
+ADDR 0xA2 WORD 0xA800 WCTL UIO_DIR, R2 cycles=1
+ADDR 0xA3 WORD 0x1C04 LDI R3, 0x04 cycles=1
+ADDR 0xA4 WORD 0x1808 LDI R2, 0x08 cycles=1
+ADDR 0xA5 WORD 0x1006 LDI R0, 0x06 cycles=1
+ADDR 0xA6 WORD 0xAF00 OUT UIO_OUT, R3 cycles=1
+ADDR 0xA7 WORD 0x1418 LDI R1, 0x18 cycles=1
+ADDR 0xA8 WORD 0xAB00 OUT UIO_OUT, R2 cycles=1
+ADDR 0xA9 WORD 0xAF00 OUT UIO_OUT, R3 cycles=1
+ADDR 0xAA WORD 0x4700 SUB R1, R3 cycles=1
+ADDR 0xAB WORD 0xE0A8 BNZ spi_cmd0 cycles=1
+ADDR 0xAC WORD 0x140E LDI R1, 0x0e cycles=1
 ADDR 0xAD WORD 0xA300 OUT UIO_OUT, R0 cycles=1
 ADDR 0xAE WORD 0xA700 OUT UIO_OUT, R1 cycles=1
-ADDR 0xAF WORD 0xAF00 OUT UIO_OUT, R3 cycles=1
-ADDR 0xB0 WORD 0x1460 LDI R1, 0x60 cycles=1
-ADDR 0xB1 WORD 0xAB00 OUT UIO_OUT, R2 cycles=1
-ADDR 0xB2 WORD 0xAF00 OUT UIO_OUT, R3 cycles=1
-ADDR 0xB3 WORD 0x4700 SUB R1, R3 cycles=1
-ADDR 0xB4 WORD 0xE0B1 BNZ spi_addr cycles=1
-ADDR 0xB5 WORD 0x1440 LDI R1, 0x40 cycles=1
-ADDR 0xB6 WORD 0x1808 LDI R2, 0x08 cycles=1
-ADDR 0xB7 WORD 0xAB00 OUT UIO_OUT, R2 cycles=1
-ADDR 0xB8 WORD 0x9900 IN R2, UIO_IN cycles=1
-ADDR 0xB9 WORD 0xAF00 OUT UIO_OUT, R3 cycles=1
-ADDR 0xBA WORD 0x5B00 AND R2, R3 cycles=1
-ADDR 0xBB WORD 0x8800 SHF R2, RIGHT cycles=1
-ADDR 0xBC WORD 0x8800 SHF R2, RIGHT cycles=1
-ADDR 0xBD WORD 0x8100 SHF R0, LEFT cycles=1
-ADDR 0xBE WORD 0x6200 OR R0, R2 cycles=1
-ADDR 0xBF WORD 0x4700 SUB R1, R3 cycles=1
-ADDR 0xC0 WORD 0xD0C6 BZ spi_word_done cycles=1
-ADDR 0xC1 WORD 0x1820 LDI R2, 0x20 cycles=1
-ADDR 0xC2 WORD 0x7900 XOR R2, R1 cycles=1
-ADDR 0xC3 WORD 0xE0B6 BNZ spi_bit cycles=1
-ADDR 0xC4 WORD 0xA003 WCTL PM_DATA_HI, R0 cycles=1
-ADDR 0xC5 WORD 0xC0B6 JMP spi_bit cycles=1
-ADDR 0xC6 WORD 0xA004 WCTL PM_DATA_LO, R0 cycles=2
-ADDR 0xC7 WORD 0x9A02 RCTL R2, PM_ADDR cycles=1
-ADDR 0xC8 WORD 0x6A00 OR R2, R2 cycles=1
-ADDR 0xC9 WORD 0xE0B5 BNZ spi_word cycles=1
-ADDR 0xCA WORD 0x1805 LDI R2, 0x05 cycles=1
-ADDR 0xCB WORD 0xAB00 OUT UIO_OUT, R2 cycles=1
-ADDR 0xCC WORD 0x1000 LDI R0, 0x00 cycles=1
-ADDR 0xCD WORD 0xA000 WCTL UIO_DIR, R0 cycles=1
-ADDR 0xCE WORD 0xA300 OUT UIO_OUT, R0 cycles=1
-ADDR 0xCF WORD 0x9207 RCTL R0, PM_CRC_HI cycles=1
-ADDR 0xD0 WORD 0x9606 RCTL R1, PM_CRC_LO cycles=1
-ADDR 0xD1 WORD 0x6100 OR R0, R1 cycles=1
-ADDR 0xD2 WORD 0xE0DC BNZ spi_fail cycles=1
-ADDR 0xD3 WORD 0x18FF LDI R2, 0xff cycles=1
-ADDR 0xD4 WORD 0xA802 WCTL PM_ADDR, R2 cycles=1
-ADDR 0xD5 WORD 0x9A03 RCTL R2, PM_DATA_HI cycles=2
-ADDR 0xD6 WORD 0x9204 RCTL R0, PM_DATA_LO cycles=1
-ADDR 0xD7 WORD 0x6200 OR R0, R2 cycles=1
-ADDR 0xD8 WORD 0xD0DC BZ spi_fail cycles=1
-ADDR 0xD9 WORD 0x1000 LDI R0, 0x00 cycles=1
-ADDR 0xDA WORD 0x1800 LDI R2, 0x00 cycles=1
-ADDR 0xDB WORD 0xC099 JMP run_image cycles=1
-ADDR 0xDC WORD 0xF000 HALT cycles=1
+ADDR 0xAF WORD 0xA300 OUT UIO_OUT, R0 cycles=1
+ADDR 0xB0 WORD 0xA700 OUT UIO_OUT, R1 cycles=1
+ADDR 0xB1 WORD 0xAF00 OUT UIO_OUT, R3 cycles=1
+ADDR 0xB2 WORD 0x1460 LDI R1, 0x60 cycles=1
+ADDR 0xB3 WORD 0xAB00 OUT UIO_OUT, R2 cycles=1
+ADDR 0xB4 WORD 0xAF00 OUT UIO_OUT, R3 cycles=1
+ADDR 0xB5 WORD 0x4700 SUB R1, R3 cycles=1
+ADDR 0xB6 WORD 0xE0B3 BNZ spi_addr cycles=1
+ADDR 0xB7 WORD 0x1440 LDI R1, 0x40 cycles=1
+ADDR 0xB8 WORD 0x1808 LDI R2, 0x08 cycles=1
+ADDR 0xB9 WORD 0xAB00 OUT UIO_OUT, R2 cycles=1
+ADDR 0xBA WORD 0x9900 IN R2, UIO_IN cycles=1
+ADDR 0xBB WORD 0xAF00 OUT UIO_OUT, R3 cycles=1
+ADDR 0xBC WORD 0x5B00 AND R2, R3 cycles=1
+ADDR 0xBD WORD 0x8800 SHF R2, RIGHT cycles=1
+ADDR 0xBE WORD 0x8800 SHF R2, RIGHT cycles=1
+ADDR 0xBF WORD 0x8100 SHF R0, LEFT cycles=1
+ADDR 0xC0 WORD 0x6200 OR R0, R2 cycles=1
+ADDR 0xC1 WORD 0x4700 SUB R1, R3 cycles=1
+ADDR 0xC2 WORD 0xD0C8 BZ spi_word_done cycles=1
+ADDR 0xC3 WORD 0x1820 LDI R2, 0x20 cycles=1
+ADDR 0xC4 WORD 0x7900 XOR R2, R1 cycles=1
+ADDR 0xC5 WORD 0xE0B8 BNZ spi_bit cycles=1
+ADDR 0xC6 WORD 0xA003 WCTL PM_DATA_HI, R0 cycles=1
+ADDR 0xC7 WORD 0xC0B8 JMP spi_bit cycles=1
+ADDR 0xC8 WORD 0xA004 WCTL PM_DATA_LO, R0 cycles=2
+ADDR 0xC9 WORD 0x9A02 RCTL R2, PM_ADDR cycles=1
+ADDR 0xCA WORD 0x6A00 OR R2, R2 cycles=1
+ADDR 0xCB WORD 0xE0B7 BNZ spi_word cycles=1
+ADDR 0xCC WORD 0x1805 LDI R2, 0x05 cycles=1
+ADDR 0xCD WORD 0xAB00 OUT UIO_OUT, R2 cycles=1
+ADDR 0xCE WORD 0x1000 LDI R0, 0x00 cycles=1
+ADDR 0xCF WORD 0xA000 WCTL UIO_DIR, R0 cycles=1
+ADDR 0xD0 WORD 0xA300 OUT UIO_OUT, R0 cycles=1
+ADDR 0xD1 WORD 0x9207 RCTL R0, PM_CRC_HI cycles=1
+ADDR 0xD2 WORD 0x9606 RCTL R1, PM_CRC_LO cycles=1
+ADDR 0xD3 WORD 0x6100 OR R0, R1 cycles=1
+ADDR 0xD4 WORD 0xE0DE BNZ spi_fail cycles=1
+ADDR 0xD5 WORD 0x18FF LDI R2, 0xff cycles=1
+ADDR 0xD6 WORD 0xA802 WCTL PM_ADDR, R2 cycles=1
+ADDR 0xD7 WORD 0x9A03 RCTL R2, PM_DATA_HI cycles=2
+ADDR 0xD8 WORD 0x9204 RCTL R0, PM_DATA_LO cycles=1
+ADDR 0xD9 WORD 0x6200 OR R0, R2 cycles=1
+ADDR 0xDA WORD 0xD0DE BZ spi_fail cycles=1
+ADDR 0xDB WORD 0x1000 LDI R0, 0x00 cycles=1
+ADDR 0xDC WORD 0x1800 LDI R2, 0x00 cycles=1
+ADDR 0xDD WORD 0xC09B JMP run_image cycles=1
+ADDR 0xDE WORD 0xF000 HALT cycles=1

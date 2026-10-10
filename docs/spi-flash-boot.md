@@ -68,9 +68,10 @@ It refuses a program over 255 words, and a signature of `0x0000` (about 1
 image in 65,536; add `--filler 0x1234` or change the program). The boot
 program refuses a `0x0000` signature on purpose: a flash that answers `0x00`
 to everything, or no Pmod at all with MISO pulled low, reads as 256 zero
-words, which are their own valid CRC (DR 0013, Finding F1). The warm start
-accepts that image because running 256 `NOP`s is harmless; the flash boot
-treats it as a dead line.
+words, which are their own valid CRC (DR 0013, Finding F1); the flash boot
+treats it as a dead line. Since issue #168 the warm start (strap `10`)
+refuses a `0x0000` signature too, so an SRAM that powered up all-zero is
+not run either, and an image `mkflash.py` builds is accepted by both.
 
 The independent check of the format is Python's `binascii.crc_hqx`, used
 by `mkflash.py` and by the cocotb bench alike: `binascii.crc_hqx(image, 0)

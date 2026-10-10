@@ -31,10 +31,16 @@ owns, and target-spec row 14 (c) / `spec/verification-plan.md` section 8's
   an odd-numbered word, in word 254 or in the signature, two swapped
   words, and two images crafted so that only one byte of the CRC residue is
   nonzero -- none ever runs;
-- **the all-zero image is the known weak case**, recorded rather than
-  hidden: CRC-16/XMODEM starts at 0x0000, so 256 zero words are their own
-  valid signature and a warm start runs them. They are 256 NOPs; the pins
-  stay at their reset values (see the DR's open item 1).
+- **warm start refuses a zero signature** (issue #168, DR 0013 Finding
+  F1): CRC-16/XMODEM starts at 0x0000, so 256 zero words are their own
+  valid signature. Until #168 a warm start ran them (256 NOPs); now the
+  boot program refuses word 255 = 0x0000 as the SPI-flash boot does, so
+  neither the all-zero image nor a real image whose CRC happens to be
+  0x0000 (one in 65,536; it must be re-padded) is run;
+- **warm start runs zero-padded images**: a program padded with zero words
+  whose signature is nonzero runs, including signatures with a zero high
+  byte or a zero low byte, so the refusal tests the whole word and nothing
+  else;
 
 How the expected numbers are derived. `BootModel` below is an independent
 interpreter of the ISA, written from DR 0001's opcode table and DR 0012's
@@ -44,7 +50,7 @@ program-memory image. It shares no code with the RTL or the assembler. It
 says where the boot program ends (which stub's `HALT`, or `RUN` and its
 target) and after how many cycles; every edge number this bench asserts
 comes from it, and the one number the boot source documents (a passing
-warm start executes word 0 exactly 2,323 cycles after the boot program's
+warm start executes word 0 exactly 2,325 cycles after the boot program's
 first instruction) is asserted against it too.
 
 Pin-only by default. Under the gate-level Makefile (`GATES=yes`,
@@ -111,7 +117,7 @@ QUIET_STRAPS = (STRAP_UART, STRAP_WARM, STRAP_RESERVED)
 
 # The number firmware/asm/boot/boot_rom.asm documents: word 0 of a verified
 # image executes this many cycles after the boot program's first instruction.
-WARM_START_CYCLES = 2323
+WARM_START_CYCLES = 2325
 
 # DR 0012 section 2, written out here independently of asm.py / the RTL.
 UIO_DIR, UIO_OD, PM_ADDR, PM_DATA_HI, PM_DATA_LO = 0x00, 0x01, 0x02, 0x03, 0x04
@@ -794,24 +800,91 @@ async def test_warm_start_rejects_corrupted_images(dut):
         watch.assert_stopped_at(uart_stub)
 
 
-@cocotb.test()
-async def test_warm_start_all_zero_image_is_the_known_weak_case(dut):
-    """A finding, pinned so it cannot change unnoticed. CRC-16/XMODEM
-    starts at 0x0000 (DR 0012), so 256 zero words carry their own valid
-    signature (DR 0013 open item 1's format) and a warm start runs them.
-    They are 256 NOPs that wrap: no pin moves. White-box (RTL): the core
-    does leave the ROM. Rejecting this image needs a nonzero CRC seed or a
-    magic word, which is a change to DR 0012 / DR 0013 and not made here."""
-    start_clock(dut)
+def zero_padded_image(program, signature_ok=lambda s: s != 0):
+    """`program`, zero words up to word 253, word 254 the first value from
+    0 up that makes the signature (the CRC of words 0..254) satisfy
+    `signature_ok`, and word 255 that signature. Word 254 is the only free
+    word, as in a host re-padding an image by changing one filler word."""
+    assert len(program) <= PM_WORDS - 2
+    head = list(program) + [0x0000] * (PM_WORDS - 2 - len(program))
+    for last in range(0x10000):
+        body = head + [last]
+        signature = crc_of_words(body)
+        if signature_ok(signature):
+            return body + [signature]
+    raise AssertionError("no word 254 gives the wanted signature")
+
+
+def run_zero_signature_cases(p):
+    """(name, image) pairs whose word 255 is 0x0000 and whose CRC check
+    passes: the all-zero image (Finding F1), and the probe program padded
+    so that its real CRC is 0x0000 (the one-in-65,536 image a host must
+    re-pad). The second would visibly drive pins if it ran."""
     zeros = [0x0000] * PM_WORDS
-    assert crc_of_words(zeros) == 0
-    result, _ = boot_outcome(STRAP_WARM, zeros)
-    assert result["outcome"] == "run" and result["target"] == 0, result
-    label = "all-zero image, warm start"
-    await serial_load(dut, zeros)
-    watch = RomWatch(dut, label)
-    await boot_reset(dut, STRAP_WARM)
-    trace = await trace_edges(dut, WARM_START_CYCLES + 3 * PM_WORDS, label, watch)
-    assert_quiet(trace, label)
-    if watch.handles is not None:
-        assert not watch.fetch_rom[-1], f"{label}: expected the (weak) check to pass and RUN"
+    real = zero_padded_image(p.words, lambda s: s == 0)
+    return [("all-zero image", zeros), ("probe image whose real CRC is 0x0000", real)]
+
+
+@cocotb.test()
+async def test_warm_start_refuses_a_zero_signature(dut):
+    """DR 0013 Finding F1, closed by issue #168 (option 4). CRC-16/XMODEM
+    starts at 0x0000 (DR 0012), so 256 zero words carry their own valid
+    signature, and an SRAM that powered up all-zero used to pass the warm
+    start's check and run (256 NOPs). The boot program now refuses a
+    signature of 0x0000 before it looks at the CRC, as the SPI-flash boot
+    does, and falls through to the UART load. The same rule refuses a real
+    image whose CRC happens to be 0x0000; here that is the probe program,
+    which drives pins within a few instructions if it runs. No pin moves.
+    White-box (RTL): the core never leaves the ROM and halts in the
+    UART-load stub."""
+    start_clock(dut)
+    p, _ = probe_program()
+    uart_stub = stub_addresses()["uart_load"]
+    for name, image in run_zero_signature_cases(p):
+        assert image[-1] == 0x0000 and crc_of_words(image) == 0, (
+            f"premise: '{name}' must pass the CRC and carry a zero signature"
+        )
+        result, model = boot_outcome(STRAP_WARM, image)
+        assert result["outcome"] == "halt" and result["pc"] == uart_stub, (name, result)
+        assert model.pm == image, f"model: the warm start changed program memory ({name})"
+        label = f"{name}, warm start"
+        await serial_load(dut, image)
+        watch = RomWatch(dut, label)
+        await boot_reset(dut, STRAP_WARM)
+        trace = await trace_edges(dut, WARM_START_CYCLES + p.edge(len(p.lines)) + 32, label, watch)
+        assert_quiet(trace, label)
+        watch.assert_never_left()
+        watch.assert_stopped_at(uart_stub)
+
+
+@cocotb.test()
+async def test_warm_start_runs_zero_padded_images(dut):
+    """The refusal is of the word 0x0000 and nothing wider. The probe
+    program padded with zero words, signed with a nonzero signature, runs
+    on strap 10 exactly as a randomly padded one does: on the same entry
+    edge, with the reset state. So do two padded images whose signature has
+    a zero high byte (0x00nn) or a zero low byte (0xnn00): a check that
+    tested one byte of the signature would refuse one of them."""
+    start_clock(dut)
+    p, checks = probe_program()
+    tail = p.edge(len(p.lines)) + 8
+    cases = [
+        ("zero padding", zero_padded_image(p.words)),
+        ("signature 0x00nn", zero_padded_image(p.words, lambda s: s >> 8 == 0 and s & 0xFF != 0)),
+        ("signature 0xnn00", zero_padded_image(p.words, lambda s: s & 0xFF == 0 and s >> 8 != 0)),
+    ]
+    for name, image in cases:
+        assert image[-1] != 0x0000 and crc_of_words(image) == 0, f"premise: '{name}'"
+        result, _ = boot_outcome(STRAP_WARM, image)
+        assert result == {"outcome": "run", "target": 0, "pc": result["pc"],
+                          "cycles": WARM_START_CYCLES - 2}, (name, result)
+        label = f"{name} (signature {image[-1]:#06x}), warm start"
+        await serial_load(dut, image)
+        watch = RomWatch(dut, label)
+        await boot_reset(dut, STRAP_WARM)
+        trace = await trace_edges(dut, WARM_START_CYCLES + tail, label, watch)
+        check_probe(trace, p, checks, WARM_START_CYCLES, 0x00, label)
+        if watch.handles is not None:
+            first = RUN_ENTRY_EDGES - 1 + WARM_START_CYCLES
+            assert all(watch.fetch_rom[:first]), f"{label}: left the ROM before RUN retired"
+            assert not any(watch.fetch_rom[first:]), f"{label}: still in the ROM after RUN"
