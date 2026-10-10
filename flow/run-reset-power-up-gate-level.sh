@@ -11,8 +11,10 @@
 # synthesis or timing number is produced or implied.
 #
 # Default netlist: the byte-identical copy frozen under verification/records/
-# post-layout-sdf-regression/ from gds run 38028344891 (the first netlist with
-# both loaders in the boot ROM, issues #140 and #139; until #140 it was gds run
+# post-layout-sdf-regression/ from gds run 38043277930 (the first netlist with
+# both loaders in the boot ROM, issues #140 and #139, and the A_REN drive buffer,
+# issue #173; until #139 it was gds run 38032061275's, the first with the buffer;
+# before that it was gds run 38028344891's, the first with both loaders; until #140 it was gds run
 # 37996177546's, the first with DR 0013's boot ROM, issue #138). It must carry
 # the same boot ROM as rtl/protocol_boot_rom.v, because the bench predicts the
 # boot from the committed image. Override with --netlist <file>. The netlist
@@ -51,7 +53,7 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SCRATCH="${REPO_ROOT}/flow/reset-power-up"
-NETLIST="${REPO_ROOT}/verification/records/post-layout-sdf-regression/artifacts/20261010-060212-9518d9f/tt_um_2amlogic_protocol_emulator.v"
+NETLIST="${REPO_ROOT}/verification/records/post-layout-sdf-regression/artifacts/20261010-102100-6c9583b/tt_um_2amlogic_protocol_emulator.v"
 JUSTIFICATIONS="${REPO_ROOT}/verification/reset_coverage_justifications.json"
 MODULE=test_reset_power_up
 export PDK_ROOT="${PDK_ROOT:-$HOME/share/pdk}"

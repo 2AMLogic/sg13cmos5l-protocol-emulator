@@ -555,22 +555,29 @@ words and **536 instances and 5,745.30 µm²** at 221: **+2,628.54 µm² for 128
 words, about 21 µm² per word**, the same price as the ~30 µm² per word the #140
 notes measured, a little lower because the receiver and transmitter share
 logic. This flow reports no timing for this design. **LibreLane flow** (the
-`gds` workflow, run 38028344891, LibreLane 3.1.0.dev3, post-route, 20 ns): placed
-standard cells **28,266.5 → 30,759.5 µm² (+2,493.0, +8.8 %)**, 1,946 → 2,222
-instances, utilization 44.51 % → **46.48 %** on the unchanged die (53 % of the
-core unoccupied), routed wirelength 83,453 → 124,955 µm. Timing still closes
-with **zero setup and zero hold violations at all three corners**, with less to
-spare: worst setup slack 6.300 → **3.185 ns** (slow), 11.499 → 9.602 ns (typ),
-14.327 → 13.321 ns (fast); worst hold slack 0.1137 → 0.0944 ns (fast). Max-cap
-violations went 3/3/4 → 4/5/6 (slow/typ/fast) and max-slew 0/0/0 → 1/0/0;
-neither is a setup or hold violation, and the flow does not fail on them. LVS,
-route DRC and antenna are clean and the Tiny Tapeout precheck is green.
-LibreLane's own synthesis step reports 1,470 → 1,720 cells and 21,758.1 →
-24,302.7 µm² before placement, +2,544.7 µm²: the two flows agree on what the
-UART load costs (+2,461.8 and +2,544.7 µm², 3 % apart). The template's `gl_test`
+`gds` workflow, run 38043277930 at `6c9583b`, which also carries issue #173's
+LibreLane-only A_REN drive buffer; LibreLane 3.1.0.dev3, post-route, 20 ns):
+placed standard cells **27,910.9 → 30,872.0 µm² (+2,961.1, +10.6 %)** against
+the buffered 93-word-ROM run (38032061275), 1,894 → 2,258 instances,
+utilization 44.23 % → **46.57 %** on the unchanged die (about 53 % of the
+core unoccupied), routed wirelength 81,629 → 113,944 µm. (The run before the
+buffer, 38028344891, had 30,759.5 µm²; the buffer and the re-roll cost
++112.5 µm² against it.) Timing still closes with **zero setup and zero hold
+violations at all three corners**, with less to spare: worst setup slack
+6.100 → **3.709 ns** (slow), 11.371 → 9.910 ns (typ), 14.318 → 13.448 ns
+(fast); worst hold slack 0.1117 → 0.1112 ns (fast). Max-cap violations went
+1/2/3 → 4/4/4 (slow/typ/fast, SRAM `A_DOUT`) and max-slew 0/0/0 → 1/0/0 (the
+slow corner's SRAM `A_DIN[0]`, 0.670 ns against 0.595 ns; a different pin from
+the A_REN pin #173 repaired, filed as issue #201); none is a setup or hold
+violation, and the flow does not fail on them. LVS, route DRC and antenna are
+clean and the Tiny Tapeout precheck is green.
+LibreLane's own synthesis step reports 1,431 → 1,751 cells and 21,603.5 →
+24,235.3 µm² before placement, +2,631.8 µm² (against 21,758.1 → 24,302.7 µm²,
++2,544.7, in the run before the buffer): the two flows agree on what the
+UART load costs (+2,461.8 and +2,631.8 µm², 7 % apart). The template's `gl_test`
 job passes 3/3 on this netlist, including a 3-word UART frame loaded and run on
 gates. The 2×2 budget (row 7) is not threatened, but **the setup margin at the
-slow corner is now 3.2 ns of a 20 ns period**, so a further ROM growth of this
+slow corner is now 3.7 ns of a 20 ns period**, so a further ROM growth of this
 size is the thing to watch. Gate level (zero delay) for the cocotb benches
 including both loaders', the reset/power-up bench, and the SDF run (still the
 recorded bench-alignment FAIL, issue #106), are in

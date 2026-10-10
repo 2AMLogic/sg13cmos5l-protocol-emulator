@@ -9465,6 +9465,7 @@ module protocol_program_memory(clk, rst_n, mode_pin, serial_in, fetch_addr, fetc
   wire [15:0] mem_din;
   wire mem_men;
   wire mem_ren;
+  wire mem_ren_l;
   wire mem_wen;
   wire run_phase_r;
   wire [14:0] shift_reg;
@@ -10826,6 +10827,7 @@ module protocol_program_memory(clk, rst_n, mode_pin, serial_in, fetch_addr, fetc
     .A_REN(mem_ren),
     .A_WEN(mem_wen)
   );
+  assign mem_ren_l = mem_ren;
   assign load_word = { shift_reg, serial_in };
   assign run_phase = run_phase_r;
 endmodule

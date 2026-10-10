@@ -3,7 +3,7 @@
   "engine": "yosys",
   "engine_version": "0.67+post",
   "hdl_toplevel": "tt_um_2amlogic_protocol_emulator",
-  "run_id": "run-d716e03f2d824bd8908e1afe33ebbd50",
+  "run_id": "run-7206aa8cdb0b48ff9199b17f342553de",
   "status": "ok",
   "instance_count": 1623,
   "area_um2": 23725.4724,
@@ -103,16 +103,16 @@
     ]
   },
   "netlist_path": {
-    "path": "flow/.klt/synthesize/run-d716e03f2d824bd8908e1afe33ebbd50/tt_um_2amlogic_protocol_emulator_synth.v",
+    "path": "flow/.klt/synthesize/run-7206aa8cdb0b48ff9199b17f342553de/tt_um_2amlogic_protocol_emulator_synth.v",
     "scope": "repo"
   },
-  "netlist_sha256": "db61289efb6fd07d7ec456a4ebfe5df683c1eb32237ec21208c137482dd0318e",
+  "netlist_sha256": "94d0c3a2c0117b97b271fdd2d03aea1fb1a81b20fc1e07f8547a2000fc070dab",
   "script_path": {
-    "path": "flow/.klt/synthesize/run-d716e03f2d824bd8908e1afe33ebbd50/synth_tt_um_2amlogic_protocol_emulator.ys",
+    "path": "flow/.klt/synthesize/run-7206aa8cdb0b48ff9199b17f342553de/synth_tt_um_2amlogic_protocol_emulator.ys",
     "scope": "repo"
   },
   "run_script_path": {
-    "path": "flow/.klt/synthesize/run-d716e03f2d824bd8908e1afe33ebbd50/synth_tt_um_2amlogic_protocol_emulator.run.ys",
+    "path": "flow/.klt/synthesize/run-7206aa8cdb0b48ff9199b17f342553de/synth_tt_um_2amlogic_protocol_emulator.run.ys",
     "scope": "repo"
   },
   "provenance": {
@@ -129,7 +129,7 @@
       "released": false
     },
     "input": {
-      "content_hash": "sha256:409b828d7bf62ea4e1aa77c584e0d5179141099f66dd2c2a5ffa39ab812c0545",
+      "content_hash": "sha256:003102714b7febbdf0d0d0c4fcc2c17958483c79fd982af03f0afdec7e1e9975",
       "role": "source"
     }
   },
