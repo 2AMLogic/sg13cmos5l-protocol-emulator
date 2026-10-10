@@ -354,6 +354,15 @@ not fully met. The negative controls fail as required --
 The host's reload obligation after deselect is in `verification/README.md`
 (issue #118).*
 
+*2026-10-10 (issue #140): re-run on the netlist with the SPI-flash boot
+program. Strap `01` is no longer a stub: it runs the SPI-flash boot, which
+drives CS0, MOSI and SCK, so the bench checks those pins against the
+independent boot model edge for edge (row 14's "until a program writes
+them") and the program memory against what the boot wrote; the other
+straps are checked as before. Same outcome: (a), (b) and reselect pass, (c)
+as above, every negative control fails as required --
+`verification/records/reset-power-up/records/20261010-045739-b28ebcc.md`.*
+
 - **Random-initial-state gate-level run.** Every flop of the flow-of-record
   netlist starts at a seeded random value (and, separately, at X). Then
   `rst_n` is applied. After reset deasserts, the top-level outputs must be
