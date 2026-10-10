@@ -134,6 +134,9 @@ jobs:
   # deliberate local runs. Benches need `klt functional-verification` (the
   # requests carry the sources, defines and recorded seeds), so klt +
   # cocotb are provisioned with the same setup-env.sh as the signoff job.
+  # The bench list is scripts/rtl-bench-inventory.txt (issue #225): every
+  # request-*.json is included or excluded with a reason, checked by
+  # scripts/check_rtl_bench_inventory.py (also in `npm run lint`).
   # The formal gate is NOT part of the per-PR run: see the `formal` job
   # below (manual workflow_dispatch only, issue #122).
   rtl-benches:

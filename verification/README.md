@@ -458,14 +458,21 @@ PDK-free RTL bench, as a **pass/fail gate only**. It writes nothing under
 deliberate local runs. The benches need `klt` (the `request-*.json` files
 carry sources, defines and recorded seeds), provisioned by
 `scripts/setup-env.sh` like the `signoff` job. Run it locally with
-`scripts/run-rtl-benches.sh` (about 7 min serial, most of it `boot-uart`, whose host plays 2.2 million cycles of frames, plus about a minute for `test_boot_spi`).
+`scripts/run-rtl-benches.sh` (about 7 min serial, plus about 3 s for the two loadseq benches, most of it `boot-uart`, whose host plays 2.2 million cycles of frames, plus about a minute for `test_boot_spi`).
 
 CI-covered (RTL, Icarus, no PDK): `test_protocol_emulator`,
 `test_control_space`, `test_boot_rom`, `test_boot_spi`, `test_boot_uart`,
 `test_program_memory`, `test_protocol_models`, `test_firmware_uart`,
 `test_firmware_spi`, `test_uio_pads`, `test_firmware_i2c`,
 `test_firmware_i2c_sr`, `test_firmware_roundtrip`,
-`test_random_regression`, `test_isa_lockstep`.
+`test_random_regression`, `test_isa_lockstep`, `test_loadseq` and
+`test_loadseq_top` (the independent host-load replay benches, issue #225).
+
+The bench list is `scripts/rtl-bench-inventory.txt`: every
+`verification/request-*.json` is either `include`d or `exclude`d with a
+reason, and `scripts/check_rtl_bench_inventory.py` (run by `npm run lint`
+and at the start of the runner) fails on an unclassified new request or a
+stale entry. Currently nothing is excluded.
 
 Covered elsewhere in CI: `test_check_records.py`,
 `test_firmware_templates.py` and `test_uio_pad_resolution.py` (`npm run

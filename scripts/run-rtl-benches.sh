@@ -18,25 +18,11 @@ set -u
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$REPO_ROOT" || exit 1
 
-BENCHES=(
-  protocol-emulator
-  control-space
-  boot-rom
-  boot-spi
-  boot-uart
-  boot-uart-count-alias
-  program-memory
-  protocol-models
-  firmware-uart
-  firmware-uart-rx
-  firmware-spi
-  uio-pads
-  firmware-i2c
-  firmware-i2c-sr
-  firmware-roundtrip
-  random-regression
-  isa-lockstep
-)
+# The bench list lives in scripts/rtl-bench-inventory.txt (issue #225), which
+# classifies every verification/request-*.json as included here or excluded
+# with a reason; the check below fails on an unclassified or stale entry.
+python3 scripts/check_rtl_bench_inventory.py >&2 || exit 1
+mapfile -t BENCHES < <(python3 scripts/check_rtl_bench_inventory.py --list-includes)
 
 command -v klt >/dev/null || { echo "ERROR: klt not on PATH (run scripts/setup-env.sh)" >&2; exit 1; }
 command -v iverilog >/dev/null || { echo "ERROR: iverilog not on PATH" >&2; exit 1; }
