@@ -441,7 +441,10 @@ Each record is a markdown file, `records/<record-id>.md`, with two parts:
        `"n/a"` when not applicable.
      - `inputs` — a non-empty list of `{"path": ..., "content_hash": ...}`
        for every source file this record's claim depends on (at minimum,
-       the RTL under test). Hashes use klt's own `"sha256:<hex>"` format.
+       the RTL under test). Hashes use klt's own `"sha256:<hex>"` format
+       (exactly 64 lowercase hex digits; never empty or null). A `path` is a
+       non-empty, repo-relative POSIX path with no `..` component, and for a
+       live record it names a git-tracked regular file in the repo.
 
 2. Human-readable prose bullets, each a **required field**:
 
@@ -484,10 +487,30 @@ on:
   a placeholder/empty value;
 - a filename or metadata `record_id` that is not a well-formed
   `<record-id>`, or the two disagreeing;
+- a record that is not at exactly
+  `verification/records/<experiment>/records/<record-id>.md` (nested
+  experiment directories are rejected, so a nested copy can never alias a
+  real experiment by sharing its leaf name, #157), or whose experiment
+  directory name does not match `[a-z0-9][a-z0-9._-]*` (so a Unicode
+  look-alike cannot pose as a real experiment, #183);
+- any symlink under `verification/records/`, file or directory: git versions
+  only the link text, so a symlink's target could be edited after merge with
+  no append-only violation (#183);
+- a `provenance.inputs[]` entry whose `content_hash` is not
+  `sha256:<64 hex>`, or whose `path` is empty, absolute (e.g. `/dev/null`) or
+  contains `..`; for a live record, also an input that is not a git-tracked
+  regular file inside the repo. A superseded record's input file may since
+  have been deleted, but its entry must still be well-formed (#183);
+- a `supersedes` value that is neither a record-id string nor null;
 - a `supersedes` value naming a record that does not exist in the same
-  experiment directory;
+  experiment directory, naming the record's own ID, or naming an ID that
+  does not sort strictly earlier than the record's own (this rules out
+  supersession cycles); an invalid supersession exempts nothing;
 - a live record whose `provenance.inputs[].content_hash` no longer matches
-  the current working tree;
+  the current working tree (a record is "live" unless a valid supersession
+  in its own experiment directory names it; the same record ID superseded in
+  a different experiment, or in a directory that merely shares the
+  experiment's leaf name, does not count, #157);
 - **append-only violations**: any file under `verification/records/`
   modified, renamed, or deleted relative to the merge base with
   `origin/main`.
