@@ -1,0 +1,20 @@
+{
+  "experiment": "die-area-baseline",
+  "flow": "klt synthesize + klt place-and-route (OpenROAD, iteration flow of DR 0002)",
+  "tile_geometry_source": "Tiny Tapeout cmos5l template info.yaml (~167x108 um per tile, order of magnitude)",
+  "floorplan_inputs": {
+    "method": "utilization",
+    "requested_utilization_pct": 40.0,
+    "aspect_ratio": 1.0,
+    "core_margin_um": 2.0,
+    "site": "CoreSite",
+    "io_layers": [
+      "Metal3",
+      "Metal2"
+    ],
+    "clock_period_ns": 20.0,
+    "seed": 1,
+    "target_stage": "place"
+  },
+  "designs": []
+}
