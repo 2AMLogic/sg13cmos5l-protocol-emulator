@@ -11,12 +11,13 @@
 # synthesis or timing number is produced or implied.
 #
 # Default netlist: the byte-identical copy frozen under verification/records/
-# post-layout-sdf-regression/ from gds run 38054423540 (the first netlist with
-# the UART load in the boot ROM, issue #139, on top of the SPI-flash boot,
-# issue #140, the zero-signature refusal, issue #168, and the A_REN drive
-# buffer, issue #173; before the UART load it was gds run 38044212536's, and
-# before the SPI-flash boot (#140) gds run 37996177546's, the first with
-# DR 0013's boot ROM, issue #138). It must carry
+# post-layout-sdf-regression/ from gds run 38071502150 (the first netlist with
+# both DR 0015's P1/P2, issue #208, and the UART load in the boot ROM, issue
+# #139; before the merge it was gds run 38055685598's for #208 and gds run
+# 38054423540's for #139; before those gds run 38032061275's, the first with
+# the A_REN drive buffer, issue #173; until #173 gds run 38013383254's, the
+# first with the SPI-flash boot program, issue #140; until #140 gds run
+# 37996177546's, the first with DR 0013's boot ROM, issue #138). It must carry
 # the same boot ROM as rtl/protocol_boot_rom.v, because the bench predicts the
 # boot from the committed image. Override with --netlist <file>. The netlist
 # is never edited: the bench sets the power-up state from the testbench
@@ -54,7 +55,7 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SCRATCH="${REPO_ROOT}/flow/reset-power-up"
-NETLIST="${REPO_ROOT}/verification/records/post-layout-sdf-regression/artifacts/20261010-133000-a0f91e3/tt_um_2amlogic_protocol_emulator.v"
+NETLIST="${REPO_ROOT}/verification/records/post-layout-sdf-regression/artifacts/20261010-174900-f8428aa/tt_um_2amlogic_protocol_emulator.v"
 JUSTIFICATIONS="${REPO_ROOT}/verification/reset_coverage_justifications.json"
 MODULE=test_reset_power_up
 export PDK_ROOT="${PDK_ROOT:-$HOME/share/pdk}"
@@ -62,7 +63,7 @@ export PDK_ROOT="${PDK_ROOT:-$HOME/share/pdk}"
 while [ $# -gt 0 ]; do
   case "$1" in
     --netlist) NETLIST="$2"; shift 2 ;;
-    -h|--help) sed -n '2,49p' "${BASH_SOURCE[0]}"; exit 0 ;;
+    -h|--help) sed -n '2,50p' "${BASH_SOURCE[0]}"; exit 0 ;;
     *) echo "FATAL: unknown argument $1" >&2; exit 1 ;;
   esac
 done

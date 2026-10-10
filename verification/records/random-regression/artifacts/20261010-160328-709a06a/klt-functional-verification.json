@@ -1,0 +1,83 @@
+{
+  "schema_version": 1,
+  "engine": "icarus",
+  "hdl_toplevel": "tt_um_2amlogic_protocol_emulator",
+  "testbench": "test_random_regression",
+  "status": "pass",
+  "test_count": 10,
+  "passed_count": 10,
+  "failed_count": 0,
+  "skipped_count": 0,
+  "tests": [
+    {
+      "name": "test_recorded_seed_matches_request",
+      "status": "passed",
+      "sim_time_ns": 0.0,
+      "real_time_s": 0.0
+    },
+    {
+      "name": "test_uart_random_programs",
+      "status": "passed",
+      "sim_time_ns": 1313201.0,
+      "real_time_s": 2.448
+    },
+    {
+      "name": "test_spi_random_programs",
+      "status": "passed",
+      "sim_time_ns": 525001.0,
+      "real_time_s": 1.112
+    },
+    {
+      "name": "test_i2c_random_programs",
+      "status": "passed",
+      "sim_time_ns": 4309201.0,
+      "real_time_s": 12.174
+    },
+    {
+      "name": "test_i2c_rd_random_programs",
+      "status": "passed",
+      "sim_time_ns": 7458541.000000001,
+      "real_time_s": 20.404
+    },
+    {
+      "name": "test_negative_controls_mutated_templates_fail",
+      "status": "passed",
+      "sim_time_ns": 1093821.0,
+      "real_time_s": 2.229
+    },
+    {
+      "name": "test_i2c_rd_negative_controls",
+      "status": "passed",
+      "sim_time_ns": 2371341.000000002,
+      "real_time_s": 5.944
+    },
+    {
+      "name": "test_uart_rx_random_programs",
+      "status": "passed",
+      "sim_time_ns": 19110721.0,
+      "real_time_s": 46.114
+    },
+    {
+      "name": "test_uart_rx_negative_controls",
+      "status": "passed",
+      "sim_time_ns": 315501.0,
+      "real_time_s": 0.574
+    },
+    {
+      "name": "test_zz_write_report",
+      "status": "passed",
+      "sim_time_ns": 0.0,
+      "real_time_s": 0.0
+    }
+  ],
+  "coverage": null,
+  "trace": null,
+  "environment": {
+    "engine": "icarus",
+    "engine_version": "13.0",
+    "cocotb_version": "2.1.0",
+    "results_xml": "<repo>/verification/.klt/functional-verification/results_icarus.xml",
+    "random_seed": 20261009,
+    "sdf": null
+  }
+}

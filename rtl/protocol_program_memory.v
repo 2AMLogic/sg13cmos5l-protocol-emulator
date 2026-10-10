@@ -249,59 +249,79 @@ module protocol_program_memory (
   // without rebuffering the whole design (measured in the
   // librelane-corner-timing record of #173). Simulation and the klt/Yosys
   // flow (neither defines __librelane__) take the plain assign: the
-  // buffer is logically a wire, so behaviour is unchanged, and the two
-  // flows' netlists differ by exactly this one cell.
+  // buffer is logically a wire, so behaviour is unchanged. (Since #208 the
+  // two flows' netlists differ by the 27 drive cells below, not one.)
+  wire        mem_men   = mem_wen || mem_ren_l;
+  wire [7:0]  mem_addr  = load_active          ? wr_addr :
+                          (run_wen || pm_re)   ? pm_addr :
+                                                 fetch_addr;
+  wire [15:0] mem_din   = load_active ? load_word : pm_wdata;
+
+  // Issue #208 (and #201) extends the same treatment to every other macro
+  // input the design drives: A_MEN, A_WEN, A_ADDR[7:0] and A_DIN[15:0]
+  // each get one x4 drive buffer in the LibreLane flow. The P1/P2 logic of
+  // issue #208 re-rolled placement and left the weak gates synthesis puts
+  // on A_DIN[7:1] and A_WEN over the same 0.5952 ns slow-corner limit
+  // (gds run 38052120672, 8 / 7 / 6 violations at slow / typ / fast), and
+  // #201 had already seen A_DIN[0] cross it on an earlier re-roll. The
+  // cause is the one described above for A_REN, so the fix is the same,
+  // applied to all 26 pins at once rather than one pin per re-roll. The
+  // logic names (`mem_wen`, `mem_din`, ...) stay unbuffered: the CRC below
+  // and the benches read those; only the macro's pins see the `_pin`
+  // copies.
   wire        mem_ren;
+  wire        mem_men_pin;
+  wire        mem_wen_pin;
+  wire [7:0]  mem_addr_pin;
+  wire [15:0] mem_din_pin;
 `ifdef __librelane__
   sg13cmos5l_buf_4 u_ren_drv (.A(mem_ren_l), .X(mem_ren));
+  sg13cmos5l_buf_4 u_men_drv (.A(mem_men),   .X(mem_men_pin));
+  sg13cmos5l_buf_4 u_wen_drv (.A(mem_wen),   .X(mem_wen_pin));
+  // One named instance per bit, not a `generate` loop: a generate array
+  // flattens to an escaped name with a '.' inside (`\u_prog_mem.g_din_drv[0].u_drv`),
+  // which Icarus's SDF INTERCONNECT splitter cannot resolve, so the
+  // post-layout SDF regression (flow/run-post-layout-sdf.sh) could not
+  // annotate the netlist. Plain names flatten like `u_ren_drv` does.
+  sg13cmos5l_buf_4 u_addr_drv_0 (.A(mem_addr[0]), .X(mem_addr_pin[0]));
+  sg13cmos5l_buf_4 u_addr_drv_1 (.A(mem_addr[1]), .X(mem_addr_pin[1]));
+  sg13cmos5l_buf_4 u_addr_drv_2 (.A(mem_addr[2]), .X(mem_addr_pin[2]));
+  sg13cmos5l_buf_4 u_addr_drv_3 (.A(mem_addr[3]), .X(mem_addr_pin[3]));
+  sg13cmos5l_buf_4 u_addr_drv_4 (.A(mem_addr[4]), .X(mem_addr_pin[4]));
+  sg13cmos5l_buf_4 u_addr_drv_5 (.A(mem_addr[5]), .X(mem_addr_pin[5]));
+  sg13cmos5l_buf_4 u_addr_drv_6 (.A(mem_addr[6]), .X(mem_addr_pin[6]));
+  sg13cmos5l_buf_4 u_addr_drv_7 (.A(mem_addr[7]), .X(mem_addr_pin[7]));
+  sg13cmos5l_buf_4 u_din_drv_0 (.A(mem_din[0]), .X(mem_din_pin[0]));
+  sg13cmos5l_buf_4 u_din_drv_1 (.A(mem_din[1]), .X(mem_din_pin[1]));
+  sg13cmos5l_buf_4 u_din_drv_2 (.A(mem_din[2]), .X(mem_din_pin[2]));
+  sg13cmos5l_buf_4 u_din_drv_3 (.A(mem_din[3]), .X(mem_din_pin[3]));
+  sg13cmos5l_buf_4 u_din_drv_4 (.A(mem_din[4]), .X(mem_din_pin[4]));
+  sg13cmos5l_buf_4 u_din_drv_5 (.A(mem_din[5]), .X(mem_din_pin[5]));
+  sg13cmos5l_buf_4 u_din_drv_6 (.A(mem_din[6]), .X(mem_din_pin[6]));
+  sg13cmos5l_buf_4 u_din_drv_7 (.A(mem_din[7]), .X(mem_din_pin[7]));
+  sg13cmos5l_buf_4 u_din_drv_8 (.A(mem_din[8]), .X(mem_din_pin[8]));
+  sg13cmos5l_buf_4 u_din_drv_9 (.A(mem_din[9]), .X(mem_din_pin[9]));
+  sg13cmos5l_buf_4 u_din_drv_10(.A(mem_din[10]), .X(mem_din_pin[10]));
+  sg13cmos5l_buf_4 u_din_drv_11(.A(mem_din[11]), .X(mem_din_pin[11]));
+  sg13cmos5l_buf_4 u_din_drv_12(.A(mem_din[12]), .X(mem_din_pin[12]));
+  sg13cmos5l_buf_4 u_din_drv_13(.A(mem_din[13]), .X(mem_din_pin[13]));
+  sg13cmos5l_buf_4 u_din_drv_14(.A(mem_din[14]), .X(mem_din_pin[14]));
+  sg13cmos5l_buf_4 u_din_drv_15(.A(mem_din[15]), .X(mem_din_pin[15]));
 `else
-  assign mem_ren = mem_ren_l;
-`endif
-
-  wire        mem_men_l  = mem_wen || mem_ren;
-  wire [7:0]  mem_addr_l = load_active          ? wr_addr :
-                           (run_wen || pm_re)   ? pm_addr :
-                                                  fetch_addr;
-  wire [15:0] mem_din_l  = load_active ? load_word : pm_wdata;
-
-  // Issue #201: the same slew treatment as A_REN, for every other
-  // design-driven functional macro input (A_ADDR, A_DIN, A_WEN, A_MEN).
-  // Which macro input pin violates the max-slew limit follows placement
-  // (A_DIN[0] on one ROM, A_WEN on the next), so the repair covers the
-  // whole input set rather than one pin. LibreLane-only; simulation and
-  // the klt/Yosys flow take plain wires, so behaviour and logic there are
-  // unchanged. `mem_din_l` (not `mem_din`) feeds the CRC below: the
-  // buffers are logically wires and the CRC is not a macro pin.
-  wire [7:0]  mem_addr;
-  wire [15:0] mem_din;
-  wire        mem_wen_b;
-  wire        mem_men;
-`ifdef __librelane__
-  genvar gi;
-  generate
-    for (gi = 0; gi < 8; gi = gi + 1) begin : g_addr_drv
-      sg13cmos5l_buf_4 u_drv (.A(mem_addr_l[gi]), .X(mem_addr[gi]));
-    end
-    for (gi = 0; gi < 16; gi = gi + 1) begin : g_din_drv
-      sg13cmos5l_buf_4 u_drv (.A(mem_din_l[gi]), .X(mem_din[gi]));
-    end
-  endgenerate
-  sg13cmos5l_buf_4 u_wen_drv (.A(mem_wen),   .X(mem_wen_b));
-  sg13cmos5l_buf_4 u_men_drv (.A(mem_men_l), .X(mem_men));
-`else
-  assign mem_addr  = mem_addr_l;
-  assign mem_din   = mem_din_l;
-  assign mem_wen_b = mem_wen;
-  assign mem_men   = mem_men_l;
+  assign mem_ren      = mem_ren_l;
+  assign mem_men_pin  = mem_men;
+  assign mem_wen_pin  = mem_wen;
+  assign mem_addr_pin = mem_addr;
+  assign mem_din_pin  = mem_din;
 `endif
 
   RM_IHPSG13_1P_256x16_c2_bm_bist u_sram (
       .A_CLK      (clk),
-      .A_MEN      (mem_men),
-      .A_WEN      (mem_wen_b),
+      .A_MEN      (mem_men_pin),
+      .A_WEN      (mem_wen_pin),
       .A_REN      (mem_ren),
-      .A_ADDR     (mem_addr),
-      .A_DIN      (mem_din),
+      .A_ADDR     (mem_addr_pin),
+      .A_DIN      (mem_din_pin),
       .A_DLY      (1'b1),          // datasheet's mandatory setting (DR 0005)
       .A_DOUT     (instr_word),
       .A_BM       (16'hFFFF),      // whole-word writes only
@@ -330,7 +350,7 @@ module protocol_program_memory (
       serial_loaded <= 1'b0;
     end else begin
       if (mem_wen) begin
-        pm_crc <= crc16_word(pm_crc, mem_din_l);
+        pm_crc <= crc16_word(pm_crc, mem_din);
       end else if (pm_crc_clr) begin
         pm_crc <= 16'h0000;
       end

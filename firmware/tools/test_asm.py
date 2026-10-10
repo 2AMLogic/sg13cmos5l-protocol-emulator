@@ -327,6 +327,11 @@ DR0012_MAP = {  # name: (k, W cycles or None, R cycles or None) -- DR 0012 secti
     "PM_DATA_HI": (0x03, 1, 2), "PM_DATA_LO": (0x04, 2, 1), "RUN": (0x05, 2, None),
     "PM_CRC_LO": (0x06, 1, 1), "PM_CRC_HI": (0x07, 1, 1),
     "BOOT_STATUS": (0x08, None, 1), "HW_ID": (0x09, None, 1),
+    # DR 0015 P1 / P2 (issue #208)
+    "CRC_CFG": (0x10, 1, 1), "CRC_POLY": (0x11, 1, 1), "CRC_STATE": (0x12, 1, 1),
+    "CRC_BIT": (0x13, 1, None), "CRC_BYTE": (0x14, 9, None), "CRC_NEXT": (0x15, None, 1),
+    "LINE_CFG": (0x16, 1, 1), "LINE_PUT": (0x17, 1, None), "LINE_OUT": (0x18, None, 1),
+    "LINE_STUF": (0x19, None, 1),
 }
 
 def test_wctl_encoding():
@@ -370,7 +375,7 @@ def test_ctl_cycle_costs_follow_dr0012_table():
     assert p.total_cycles == 8
 
 def test_ctl_reserved_indices_are_errors_without_flag():
-    expect_error("WCTL 0x10, R0", "reserved", "w_res")
+    expect_error("WCTL 0x1A, R0", "reserved", "w_res")
     expect_error("RCTL R0, 0x1F", "reserved", "r_res")
     expect_error("WCTL 0x0A, R0", "reserved", "w_res2")
     expect_error("RCTL R0, 255", "reserved", "r_res3")
@@ -387,7 +392,7 @@ def test_ctl_reserved_indices_are_errors_without_flag():
 def test_ctl_allow_reserved_assembles_them_as_one_cycle():
     def w(src):
         return asm.assemble_text(src, allow_reserved=True).instructions[0]
-    assert (w("WCTL 0x10, R1").word, w("WCTL 0x10, R1").cycles) == (0xA410, 1)
+    assert (w("WCTL 0x1A, R1").word, w("WCTL 0x1A, R1").cycles) == (0xA41A, 1)
     assert (w("RCTL R1, 0xFF").word, w("RCTL R1, 0xFF").cycles) == (0x96FF, 1)
     assert (w("WCTL HW_ID, R0").word, w("WCTL HW_ID, R0").cycles) == (0xA009, 1)
     assert (w("RCTL R0, RUN").word, w("RCTL R0, RUN").cycles) == (0x9205, 1)
@@ -508,10 +513,27 @@ def test_ctl_lint_status_and_constant_reads_stay_clean():
         assert warns(dirty + tail) == 0, f"{reg} is not stored program data"
         assert warns(dirty + tail + "WCTL RUN, R2\n") == 0
     # Write-only RUN and unassigned indices read a constant 0x00.
-    for reg in ("RUN", "0x10"):
+    for reg in ("RUN", "0x1A"):
         p = asm.assemble_text(dirty + f"RCTL R1, {reg}\n" + BRANCH_ON_R1,
                               allow_reserved=True)
         assert p.warnings == []
+
+def test_ctl_lint_p1_p2_carry_pin_taint():
+    # DR 0015 P1: pin data stepped into the CRC taints every CRC read.
+    for wr in ("CRC_BYTE", "CRC_BIT", "CRC_STATE", "CRC_POLY"):
+        src = f"IN R0, UI_IN\nWCTL {wr}, R0\nRCTL R1, CRC_NEXT\n" + BRANCH_ON_R1
+        assert warns(src) == 1, wr
+    assert warns("LDI R0, 7\nWCTL CRC_BYTE, R0\nRCTL R1, CRC_NEXT\n" + BRANCH_ON_R1) == 0
+    # P2: a tainted LINE_PUT taints LINE_OUT / LINE_STUF; LINE_CFG resets it.
+    for rd in ("LINE_OUT", "LINE_STUF", "LINE_CFG"):
+        src = f"IN R0, UI_IN\nWCTL LINE_PUT, R0\nRCTL R1, {rd}\n" + BRANCH_ON_R1
+        assert warns(src) == 1, rd
+    assert warns("IN R0, UI_IN\nWCTL LINE_PUT, R0\nLDI R0, 0x15\nWCTL LINE_CFG, R0\n"
+                 "RCTL R1, LINE_STUF\n" + BRANCH_ON_R1) == 0
+
+def test_crc_byte_counts_nine_cycles_in_a_section():
+    p = one(".cyclesec s\nWCTL CRC_BYTE, R0\nWCTL CRC_BIT, R0\nRCTL R1, CRC_NEXT\n.endcyclesec\n")
+    assert p.sections[0].cycles == 9 + 1 + 1 and p.total_cycles == 11
 
 def test_ctl_mnemonics_are_not_new_opcodes():
     # DR 0012 adds no opcode: DR 0001's table stays exactly 16.
@@ -523,11 +545,11 @@ def test_cli_allow_reserved_flag():
     import tempfile
     with tempfile.TemporaryDirectory() as tmp:
         src = Path(tmp) / "r.asm"
-        src.write_text("WCTL 0x10, R0\nHALT\n", encoding="utf-8")
+        src.write_text("WCTL 0x1A, R0\nHALT\n", encoding="utf-8")
         assert asm.main([str(src), "--out-dir", tmp]) == 1
         assert not (Path(tmp) / "r.hex").exists()
         assert asm.main([str(src), "--out-dir", tmp, "--allow-reserved"]) == 0
-        assert (Path(tmp) / "r.hex").read_text() == "A010\nF000\n"
+        assert (Path(tmp) / "r.hex").read_text() == "A01A\nF000\n"
 
 
 def test_label_errors():
@@ -598,6 +620,7 @@ ALL_TESTS = [
     test_ctl_lint_pm_data_reads_are_always_tainted,
     test_ctl_lint_crc_follows_committed_words,
     test_ctl_lint_status_and_constant_reads_stay_clean,
+    test_ctl_lint_p1_p2_carry_pin_taint, test_crc_byte_counts_nine_cycles_in_a_section,
     test_ctl_mnemonics_are_not_new_opcodes,
     test_cli_allow_reserved_flag, test_label_errors,
     test_directive_errors, test_error_carries_line_number,

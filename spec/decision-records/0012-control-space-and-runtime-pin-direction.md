@@ -105,6 +105,35 @@ unassigned index is a 1-cycle no-op. A read of an unassigned index returns
 | `0x09` | `HW_ID` | — | ✓ | 1 | constant design/revision byte, so a host or a program can tell silicon revisions apart |
 | `0x10`–`0x1F` | — | | | | reserved for the protocol-neutral primitives #130 is evaluating (CRC/LFSR step, NRZI/bit-stuff, Manchester, resync). Each needs its own record and must have fixed latency |
 
+**Index map for the protocol-neutral primitives (dated note, 2026-10-10, issue
+#208).** The row above stays as written; it reserved `0x10`-`0x1F`. DR 0015
+(Proposed) admits P1 (CRC / LFSR step) and P2 (NRZI + bit stuffing), and the
+build of issue #208 assigns these indices. This is a note on a Proposed record,
+not a ratification; no Status line changes, and DR 0015's interface is what
+defines the semantics.
+
+| `k` | Name | W | R | Cycles | Meaning (DR 0015) |
+|---|---|---|---|---|---|
+| `0x10` | `CRC_CFG` | ✓ | ✓ | 1 | `[4:0]` width-1, `[5]` reflected, `[6]` read-out inversion; a write rewinds the byte pointer |
+| `0x11` | `CRC_POLY` | ✓ | ✓ | 1 | polynomial byte at the byte pointer, then the pointer advances |
+| `0x12` | `CRC_STATE` | ✓ | ✓ | 1 | state byte at the byte pointer, then the pointer advances; a read is masked to the width |
+| `0x13` | `CRC_BIT` | ✓ | — | 1 | one step with data bit `Rs[0]` |
+| `0x14` | `CRC_BYTE` | ✓ | — | **W 9** (1 + 8 stall, fixed) | eight steps with the bits of `Rs`, LSB first if reflected, else MSB first |
+| `0x15` | `CRC_NEXT` | — | ✓ | 1 | next byte of the read-out (state, inverted if configured, masked to the width); the pointer advances |
+| `0x16` | `LINE_CFG` | ✓ | ✓ | 1 | `[1:0]` NRZI mode, `[3:2]` stuff rule, `[6:4]` N; write bit 7 loads the line level and the write clears the run count |
+| `0x17` | `LINE_PUT` | ✓ | — | 1 | present data bit `Rs[0]`; on a stuff slot the stuff bit is emitted and `Rs` is not consumed |
+| `0x18` | `LINE_OUT` | — | ✓ | 1 | bit 0 the line level, bit 1 its complement |
+| `0x19` | `LINE_STUF` | — | ✓ | 1 | bit 0: the last `LINE_PUT` was a stuff slot |
+| `0x1A`-`0x1F` | — | | | | still unassigned; held for DR 0015's P3/P4 or their replacements |
+
+Every other access to these indices (a read of a write-only one, a write to a
+read-only one) is a 1-cycle no-op returning `0x00`, as for the table above.
+The primitives do not touch the flags (this record, "What this does *not* do").
+Only `WCTL CRC_BYTE` is longer than 1 cycle, and its 9 cycles do not depend on
+`Rs`, the polynomial or the state. `firmware/tools/asm.py` carries the names.
+The byte-pointer indices (`CRC_POLY`, `CRC_STATE`, `CRC_NEXT`) share one 2-bit
+pointer, like `PM_DATA_LO` in this record.
+
 **Pin mode, per `uio[n]`.** If `UIO_OD[n]` is set, the pin is open-drain and
 `uio_oe[n] = ~uio_out[n]`. Otherwise, if `UIO_DIR[n]` is set, it is push-pull
 and `uio_oe[n] = 1`. Otherwise it is an input and `uio_oe[n] = 0`. `uio_in` is

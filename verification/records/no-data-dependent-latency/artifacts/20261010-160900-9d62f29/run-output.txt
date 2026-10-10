@@ -1,0 +1,42 @@
+== toolchain ==
+Yosys 0.67+post (git sha1 b8e7da6f40ae8f552c116bf6c359b07c6533e159, Release, GNU /usr/bin/c++ 13.3.0)
+Z3 version 5.1.0 - 64 bit
+yosys-smtbmc [options] <yosys_smt2_output>
+
+== [1/4] conformant fixture: elaboration ==
+== [2/4] conformant fixture: BMC depth 30 (expect PASS) ==
+BMC: PASS (no counterexample within 30 cycles)
+== [3/4] conformant fixture: covers (non-vacuity) ==
+covers: all reachable (assertions genuinely exercised)
+== [3b/4] conformant fixture: k-induction attempt (informational) ==
+induction: did not close (expected as shipped; bounded result above is the shipped guarantee)
+
+== [4/4] mutant fixture (data-dependent WAIT early-out): BMC depth 30 (expect CEX) ==
+mutant: counterexample found as required; VCD: /tmp/b208-formal/ndl/mutant-cex.vcd
+
+== [4b/4] control-space mutant fixture (data-dependent 2-cycle-access early-out, DR 0012): BMC depth 30 (expect CEX) ==
+control-space mutant: counterexample found as required; VCD: /tmp/b208-formal/ndl/mutant-ctl-cex.vcd
+
+== monitor hash (must equal the fixture-run hash of record) ==
+6e9691ef026ff758e7a0b943bdec3d04aa49e84fb87b73227621b1661a469c18  <repo>/verification/formal/no_data_dependent_latency.sv
+d4bab243a80af56a41b8ef730bc0ecbee889f2c02f4587311d6f9f694636437a  <repo>/rtl/protocol_core.v
+== [5/8] real core rtl/protocol_core.v: elaboration ==
+Warning: Replacing memory \regs with list of registers. See <repo>/rtl/protocol_core.v:620
+== [6/8] real core: BMC depth 30 (expect PASS) ==
+BMC: PASS (no counterexample within 30 cycles)
+== [7/8] real core: covers (non-vacuity) ==
+covers: all reachable
+== [7b/8] real core: k-induction attempt (informational) ==
+induction: did not close (bounded result above is the shipped guarantee)
+== [8/8] real-core mutant (WAIT stall cut to 1 cycle when ui_in == 0xA5): BMC depth 30 (expect CEX) ==
+Warning: Replacing memory \regs with list of registers. See /tmp/b208-formal/ndl/protocol_core_mutant.v:620
+core mutant: counterexample found as required; VCD: /tmp/b208-formal/ndl/core-mutant-cex.vcd
+== [8b/8] real-core control-space mutant (2-cycle control access stalls on while ui_in == 0xA5, DR 0012): BMC depth 30 (expect CEX) ==
+Warning: Replacing memory \regs with list of registers. See /tmp/b208-formal/ndl/protocol_core_mutant_ctl.v:620
+core control-space mutant: counterexample found as required; VCD: /tmp/b208-formal/ndl/core-mutant-ctl-cex.vcd
+== [8c/8] real-core P1 mutant (WCTL CRC_BYTE stall cut to 1 cycle when ui_in == 0xA5, DR 0015): BMC depth 30 (expect CEX) ==
+Warning: Replacing memory \regs with list of registers. See /tmp/b208-formal/ndl/protocol_core_mutant_crcb.v:620
+core P1 mutant: counterexample found as required; VCD: /tmp/b208-formal/ndl/core-mutant-crcb-cex.vcd
+
+RESULT: all expectations met (BMC pass + covers reachable + mutant caught, per selected DUT)
+exit 0

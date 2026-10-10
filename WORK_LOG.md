@@ -4,6 +4,26 @@ Chronological record of merged pull requests and closed issues, newest first.
 
 ### 2026-10-10
 
+- **PR #224**: CI: cancel in-progress only for pull_request events
+- **PR #222**: docs: judge-facing AI-use narrative (submission D5)
+- **PR #220**: Reject contradictory and empty JUnit results in check_test_results.py
+- **PR #210**: Boot firmware: UART load over the demo board's USB bridge (strap 00) with an independent host model (#139)
+- **PR #209**: Add UART RX to the constrained-random regression and gate-level firmware run (#192)
+- **PR #207**: spec: DR 0016 rules the four ISA details DR 0001 leaves open (Proposed)
+- **PR #206**: Bind T1 items 1, 2, 9 and 10 to audited artifacts; klt pin to v0.7.0 (#83)
+- **PR #172**: feat: fail lint on a new file with an absolute home-directory path
+- **Issue #223** (closed): CI: preserve started main verification runs during merge bursts
+- **Issue #215** (closed): Reject contradictory and empty JUnit results in check_test_results.py
+- **Issue #213** (closed): Submission D5: write the judge-facing AI-use narrative
+- **Issue #203** (closed): Spec: DR 0001 leaves SUB's C polarity (an RTL pin) and three SHF/logic flag details open; ratify or mark unspecified
+- **Issue #192** (closed): Verification: add UART RX to the constrained-random regression and gate-level firmware run
+- **Issue #166** (closed): DR 0013 layer 1: rule on the four findings from the #137 build (row 14(b) vs the uo_out readout, CRC init 0, doubled-edge wording, DR 0010 load roles)
+- **Issue #139** (closed): Boot firmware: UART load over the demo board's USB bridge (TT option B pins) with an independent host model
+- **Issue #86** (closed): Two committed LVS error records contain an absolute home-directory path
+- **Issue #83** (closed): signoff: bind T1 items 1, 2, 9 and 10 to audited artifacts (klayout-tools#2718 landed)
+
+### 2026-10-10
+
 - **PR #202**: Run the post-layout SDF bench at the SDC's IO timing: 12 pass + 1 skip at all corners (#106)
 - **PR #204**: Verification: independent ISA reference simulator with per-edge lockstep co-simulation (#152)
 - **PR #200**: Warm start refuses a zero signature (DR 0013 F1, option 4)

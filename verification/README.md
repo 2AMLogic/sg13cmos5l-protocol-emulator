@@ -74,6 +74,28 @@ coverage.
   white-box reads, so it also runs on a gate-level netlist. Driven by
   `klt functional-verification` (see `request-control-space.json`);
   `control_space_mutants.py` is its negative-control runner.
+- `test_primitives.py` — cocotb bench for DR 0015's protocol-neutral
+  primitives (issue #208) on the top: **P1**, the CRC / LFSR step at
+  0x10–0x15, against an independent Rocksoft-model CRC written from the
+  catalogue parameters (cross-checked against `zlib.crc32` and
+  `binascii.crc_hqx`) and graded on the published check values of
+  CRC-5/USB, CRC-16/USB, CRC-32, CRC-8/MAXIM-DOW, CRC-15/CAN and
+  CRC-16/XMODEM, on random messages and on odd bit lengths through
+  `CRC_BIT`; the LFSR use against polynomial arithmetic over GF(2) (PRBS7's
+  full 127-state period, a 16-bit LFSR); and the register file (pointer,
+  rewind, width masking, inversion, reset). **P2**, NRZI + bit stuffing at
+  0x16–0x19, against an independent line decoder for USB (zero-toggles,
+  a 0 after six 1s), HDLC (a 0 after five 1s, NRZ and NRZI) and CAN (the
+  complement after five equal bits): decoded bits equal the data, the
+  decoder's stuff slots equal the slots `LINE_STUF` flagged, no rule
+  violation; plus a stuff slot ignoring `Rs`. Also the fixed latency of every
+  new index (9 for `WCTL CRC_BYTE`, 1 otherwise) over four data sets, no
+  flag side effects, and 0x1A–0x1F unassigned. Pin-observable except for
+  labelled white-box reads, so it also runs on a gate-level netlist. Driven
+  by `klt functional-verification` (`request-primitives.json`);
+  `primitives_mutants.py` is its negative-control runner (fourteen single
+  RTL defects, each caught by a test meant to catch it). Evidence in
+  `records/protocol-primitives/`.
 - `uio_pads.py` — the **silicon-true `uio` pad model** (issue #136, DR
   0012): per pin it resolves the design's `uio_oe` / `uio_out`, an
   optional pull-up or pull-down and an optional external driver (the
@@ -171,7 +193,8 @@ coverage.
   of a residue, not a pass of an unconditional bad-length guarantee. A
   separate module so the gate-level records that hash `test_boot_uart.py`
   stay live. Driven by `request-boot-uart-count-alias.json`; evidence in
-  `records/boot-uart/ (record 20261010-164351-57c5c8c)`.
+  `records/boot-uart/ (record 20261010-164351-57c5c8c)`; re-minted on the
+  tree merged with issue #208 as record `20261010-172329-f8428aa`.
 - `test_reset_power_up.py` — **gate-level only** cocotb bench for
   target-spec row 14 / `spec/verification-plan.md` section 8 (issue #131):
   reset, power-up and reselect on the LibreLane netlist. Every flop of the
@@ -356,7 +379,7 @@ gates. The host-side loader is issue #118.
   `test_isa_model.py`, `isa_lockstep_mutants.py`, `request-isa-lockstep.json`
   — the **ISA reference simulator and lockstep co-simulation** (issue #152;
   verification-plan §4.1). `reference_models/isa.py` is a table-driven
-  instruction-set simulator written from DR 0001 and DR 0012 alone (it
+  instruction-set simulator written from DR 0001, DR 0012 and DR 0015 alone (it
   imports nothing from `rtl/`, `firmware/tools/asm.py` or any bench); it
   emits one trace row per clock edge. `isa_lockstep_gen.py` draws seeded,
   terminating-by-construction programs (forward-only branches plus bounded
@@ -461,7 +484,8 @@ carry sources, defines and recorded seeds), provisioned by
 `scripts/run-rtl-benches.sh` (about 7 min serial, most of it `boot-uart`, whose host plays 2.2 million cycles of frames, plus about a minute for `test_boot_spi`).
 
 CI-covered (RTL, Icarus, no PDK): `test_protocol_emulator`,
-`test_control_space`, `test_boot_rom`, `test_boot_spi`, `test_boot_uart`,
+`test_control_space`, `test_primitives`, `test_boot_rom`, `test_boot_spi`,
+`test_boot_uart`,
 `test_program_memory`, `test_protocol_models`, `test_firmware_uart`,
 `test_firmware_spi`, `test_uio_pads`, `test_firmware_i2c`,
 `test_firmware_i2c_sr`, `test_firmware_roundtrip`,

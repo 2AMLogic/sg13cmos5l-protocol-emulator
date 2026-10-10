@@ -44,10 +44,13 @@ Control space (DR 0012, `spec/decision-records/
 
 `k` is a name from DR 0012's register map (`UIO_DIR`, `UIO_OD`, `PM_ADDR`,
 `PM_DATA_HI`, `PM_DATA_LO`, `RUN`, `PM_CRC_LO`, `PM_CRC_HI`, `BOOT_STATUS`,
-`HW_ID`) or a number. Cycle costs are DR 0012's per-index table: 1, except
-`WCTL PM_DATA_LO`, `WCTL RUN` and `RCTL PM_DATA_HI`, which are a fixed 2.
-An index DR 0012 does not assign in that direction -- an unassigned `k`,
-a write to a read-only register, a read of the write-only `RUN` -- is an
+`HW_ID`), from DR 0015's primitives P1/P2 at 0x10-0x19 (`CRC_CFG`,
+`CRC_POLY`, `CRC_STATE`, `CRC_BIT`, `CRC_BYTE`, `CRC_NEXT`, `LINE_CFG`,
+`LINE_PUT`, `LINE_OUT`, `LINE_STUF`; issue #208), or a number. Cycle costs
+are the per-index table: 1, except `WCTL PM_DATA_LO`, `WCTL RUN` and
+`RCTL PM_DATA_HI`, which are a fixed 2, and `WCTL CRC_BYTE`, a fixed 9
+(1 + 8 stall). An index not assigned in that direction -- an unassigned
+`k`, a write to a read-only register, a read of a write-only one -- is an
 error unless `--allow-reserved` is given (hardware: a 1-cycle no-op / a
 read of 0x00). `OUT` to port 01 and `IN` from port 11 stay reserved no-ops
 and stay errors, with or without the flag; so do `OUT UI_IN` / `IN UO_OUT`
@@ -151,6 +154,18 @@ CTL_REGS = {
     "PM_CRC_HI":   (0x07, True,  True,  1, 1),
     "BOOT_STATUS": (0x08, False, True,  1, 1),
     "HW_ID":       (0x09, False, True,  1, 1),
+    # DR 0015 P1 / P2 (issue #208; index map in the DR 0012 / DR 0015
+    # dated notes of 2026-10-10). 0x1A-0x1F stay unassigned.
+    "CRC_CFG":     (0x10, True,  True,  1, 1),
+    "CRC_POLY":    (0x11, True,  True,  1, 1),
+    "CRC_STATE":   (0x12, True,  True,  1, 1),
+    "CRC_BIT":     (0x13, True,  False, 1, 1),
+    "CRC_BYTE":    (0x14, True,  False, 9, 1),
+    "CRC_NEXT":    (0x15, False, True,  1, 1),
+    "LINE_CFG":    (0x16, True,  True,  1, 1),
+    "LINE_PUT":    (0x17, True,  False, 1, 1),
+    "LINE_OUT":    (0x18, False, True,  1, 1),
+    "LINE_STUF":   (0x19, False, True,  1, 1),
 }
 CTL_BY_INDEX = {entry[0]: (name,) + entry[1:] for name, entry in CTL_REGS.items()}
 
@@ -348,6 +363,16 @@ def _parse_ctl(token: str, line_no: int, *, write: bool, allow_reserved: bool):
 #   BOOT_STATUS, HW_ID         never tainted: a load-time status bit and a
 #       build-time constant; WCTL to them is a no-op.
 #   RUN (write-only) and unassigned indices   read a constant 0x00.
+#   CRC_* (DR 0015 P1)         one piece of state ("p1"): poly, state and
+#       config. A WCTL of a tainted Rs to any CRC_* index taints it, and it
+#       stays tainted (the CRC accumulates; a clean write of one byte does
+#       not clean the other three). RCTL CRC_CFG / CRC_POLY / CRC_STATE /
+#       CRC_NEXT return its taint.
+#   LINE_* (DR 0015 P2)        one piece of state ("p2"): LINE_CFG
+#       overwrites the mode, level, run count and stuffed flag, so it sets
+#       the taint to its Rs's; LINE_PUT of a tainted Rs taints it (an
+#       untainted one leaves it as it was). RCTL LINE_CFG / LINE_OUT /
+#       LINE_STUF return its taint.
 #
 # The scan is linear, so stored state is only known along straight-line
 # code from reset (where every control register and the CRC are cleared;
@@ -365,6 +390,8 @@ def _parse_ctl(token: str, line_no: int, *, write: bool, allow_reserved: bool):
 _CTL_STORED = ("UIO_DIR", "UIO_OD", "PM_ADDR")
 _CTL_PM_READ = ("PM_DATA_HI", "PM_DATA_LO")
 _CTL_CRC = ("PM_CRC_LO", "PM_CRC_HI")
+_CTL_P1 = ("CRC_CFG", "CRC_POLY", "CRC_STATE", "CRC_BIT", "CRC_BYTE", "CRC_NEXT")
+_CTL_P2 = ("LINE_CFG", "LINE_PUT", "LINE_OUT", "LINE_STUF")
 
 
 def _lint_data_dependent_branches(program: Program, label_addrs: set) -> None:
@@ -379,6 +406,8 @@ def _lint_data_dependent_branches(program: Program, label_addrs: set) -> None:
     stored = {idx[n] for n in _CTL_STORED}
     pm_read = {idx[n] for n in _CTL_PM_READ}
     crc = {idx[n] for n in _CTL_CRC}
+    p1 = {idx[n] for n in _CTL_P1}
+    p2 = {idx[n] for n in _CTL_P2}
     run = idx["RUN"]
 
     def is_run(ins: Instruction) -> bool:
@@ -397,7 +426,7 @@ def _lint_data_dependent_branches(program: Program, label_addrs: set) -> None:
     # Stored control state. Keys: the plain register indices, "hi" (the
     # WCTL PM_DATA_HI latch, write-only but half of every committed word)
     # and "crc" (PM_CRC_HI:LO, one accumulator behind two indices).
-    ctl = {k: False for k in (*stored, "hi", "crc")}
+    ctl = {k: False for k in (*stored, "hi", "crc", "p1", "p2")}
 
     def forget_ctl() -> None:
         for key in ctl:
@@ -425,6 +454,10 @@ def _lint_data_dependent_branches(program: Program, label_addrs: set) -> None:
                 tainted[rd] = True
             elif k in crc:
                 tainted[rd] = ctl["crc"]
+            elif k in p1:
+                tainted[rd] = ctl["p1"]
+            elif k in p2:
+                tainted[rd] = ctl["p2"]
             else:  # BOOT_STATUS, HW_ID, and the constant-0x00 reads
                 tainted[rd] = False
         elif mnemonic == "WCTL":
@@ -437,6 +470,12 @@ def _lint_data_dependent_branches(program: Program, label_addrs: set) -> None:
                 ctl["crc"] = ctl["crc"] or ctl["hi"] or tainted[rd]
             elif k in crc:
                 ctl["crc"] = False
+            elif k in p1:
+                ctl["p1"] = ctl["p1"] or tainted[rd]
+            elif k == idx["LINE_CFG"]:
+                ctl["p2"] = tainted[rd]
+            elif k in p2:
+                ctl["p2"] = ctl["p2"] or tainted[rd]
         elif mnemonic == "MOV":
             tainted[rd] = tainted[rs]
         elif mnemonic in FLAG_SETTING_OPS:

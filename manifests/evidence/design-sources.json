@@ -3,7 +3,7 @@
   "kind": "generic",
   "status": "pass",
   "t1_item": 1,
-  "summary": "Design sources (Digital): the committed RTL under src/ and rtl/, the boot-ROM generator chain, the klt/Yosys synthesis request, and the two derived gate-level netlists of record (klt/Yosys: librelane-gds-signoff-check 20261010-133100-a0f91e3; LibreLane post-route: gds run 38054423540 at a0f91e3), each listed with its sha256. Refreshed 2026-10-10 for issue #139 (the boot ROM now holds the UART load, 223 words); first written by issue #83.",
+  "summary": "Design sources (Digital): the committed RTL under src/ and rtl/, the boot-ROM generator chain, the klt/Yosys synthesis request, and the two derived gate-level netlists of record (klt/Yosys: librelane-gds-signoff-check 20261010-175000-f8428aa; LibreLane post-route: gds run 38071502150 at f8428aa), each listed with its sha256. Audited 2026-10-10 against main 5669077 for issue #83; refreshed for issue #139 (the 223-word UART-load boot ROM) and for issue #208 (DR 0015's P1 and P2), and here for the merged design of both (PR #212).",
   "source": "manifests/evidence/design-sources.txt",
   "provenance": {
     "klt_version": "0.7.0",
@@ -11,7 +11,7 @@
     "pdk": null,
     "deck": null,
     "input": {
-      "content_hash": "sha256:d2f9a47cbc0dacc8c6627feabc54caa992cfbe764a3a80555f51e75928318401",
+      "content_hash": "sha256:ddf4aaa1c177092e962fd44ce48ceec36cf73e2e8a9a5472dc3cb513c18cf2e3",
       "path": "design-sources.txt"
     }
   }
