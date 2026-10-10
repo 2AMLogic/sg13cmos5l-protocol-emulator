@@ -325,16 +325,23 @@ The measured quantities are those **cycle counts**; the 400 kHz / 100
 kHz names are arithmetic at target-spec row 4's unconfirmed clock (same
 stance as `uart_tx.asm`).
 
-**Open-drain caveat, stated rather than papered over:** `uio_oe` is
-fixed to 0 at the top level, so on silicon no firmware drive reaches a
-physical pin. The DUT-facing bench composes the wired-AND bus
-(line = controller `uio_out` AND peripheral `uio_in`) and grades that
-against the independent reference model — proving the firmware's cycle
-timing and protocol behavior at the point the core drives and samples,
-with the ACK flowing through the core's real `IN` path. A silicon-true
-open-drain SDA/SCL needs a pin-plan decision record (DR 0001's own
-flagged open question); tracked in its own issue, not worked around
-here.
+**Open-drain, and what the bench does about it.** The programs' first
+instructions release both lines (`OUT` of `0x81`) and then write `0x81`
+to DR 0012's `UIO_OD` control register, so SCL (`uio[0]`) and SDA
+(`uio[7]`) are open-drain pads: `uio_oe[n] = ~uio_out[n]`. The
+DUT-facing benches run on a pad model (`verification/uio_pads.py`, issue
+#136) that resolves each line from the design's `uio_oe` / `uio_out`, a
+pull-up, and the peripheral as an external open-drain driver, and feeds
+the line back on `uio_in`. The independent reference model grades those
+lines, the ACK flows through the core's real `IN` path, and the benches'
+negative control runs each image with `UIO_OD` left at reset: no pad is
+enabled, the lines never move, and the model finds no transfer. (Before
+#136 the benches composed `uio_out AND uio_in` themselves and never read
+`uio_oe`; before DR 0012 the top had `uio_oe = 8'h00` and could not pull
+a line low at all.) The pad model is zero-delay and logical: it is not
+evidence about pull-up rise time, pad delay or drive strength, and an
+I2C bus still needs external pull-ups, which this design does not
+provide.
 ### `spi_mode{0..3}.asm` — bit-banged SPI controller, all four modes (issue #72)
 
 The SPI third of issue #23's three-protocol batch: four programs, one per

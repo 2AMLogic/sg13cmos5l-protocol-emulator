@@ -64,6 +64,33 @@ coverage.
   white-box reads, so it also runs on a gate-level netlist. Driven by
   `klt functional-verification` (see `request-control-space.json`);
   `control_space_mutants.py` is its negative-control runner.
+- `uio_pads.py` — the **silicon-true `uio` pad model** (issue #136, DR
+  0012): per pin it resolves the design's `uio_oe` / `uio_out`, an
+  optional pull-up or pull-down and an optional external driver (the
+  peripheral model) into one line, feeds that line back on `uio_in`, and
+  records contention (the design and the external driver driving opposite
+  values). `i2c_board()` is the wiring the I2C benches use (pull-ups on
+  SCL = `uio[0]` and SDA = `uio[7]`, the rest tied low) and
+  `assert_i2c_open_drain()` the check each I2C run ends with: the design
+  drove exactly SCL and SDA, only ever low, without contention. It
+  replaces the bench-composed bus (`line = uio_out AND uio_in`, `uio_oe`
+  never read) the I2C evidence was minted on until #136. Zero-delay and
+  logical: not a claim about pull-up rise time, pad delay or drive
+  strength. A helper module, not a bench.
+- `test_uio_pads.py` — cocotb bench for the pad model itself, on the real
+  top with small programs assembled in memory: input, push-pull and
+  open-drain pads at the line and through the core's `IN` path, a
+  peripheral holding a released line (not contention), and three real
+  fights the detector must report. Driven by `klt functional-verification`
+  (see `request-uio-pads.json`).
+- `test_uio_pad_resolution.py` — simulator-free unit tests of the
+  resolution rule (`uio_pads.resolve_pin`) against a hand-written truth
+  table; run by `npm run lint`.
+- `uio_pad_mutants.py` — negative controls for the pad path: five defects
+  injected into a scratch copy of the top's `uio_oe` logic (the first is
+  the pre-DR-0012 `uio_oe = 8'h00`), each of which the I2C benches must
+  fail on. None of them changes `uio_out`, so none could change the
+  verdict of the old bench-composed bus.
 - `test_boot_rom.py` — cocotb bench for DR 0013 layer 2 (issue #138) on
   the top: the boot ROM, the fetch-source switch and the warm start, and
   target-spec row 14 (c). With `MODE` low at reset the stub straps move no
@@ -121,11 +148,29 @@ coverage.
 - `reference_models/` — the §4 independent reference models (pure Python,
   sharing no code with `src/`/`rtl/`): `waveform.py` (piecewise-constant
   signal abstraction), `uart.py` (8N1 + per-frame drift measurement
-  against row 10's ~2% bound), `spi.py` (Motorola-convention modes 0-3 +
+  against row 10's ~2% bound, on two observables: the frame's last
+  in-frame edge, and since issue #97 the start-to-start pitch to a
+  following frame; see the isolated-frame limitation below), `spi.py` (Motorola-convention modes 0-3 +
   row 11's f_clk/4 ceiling), `i2c.py` (NXP UM10204 Table 10 timing checks
   directly, both modes, repeated-START + clock-stretching aware), and
   `stimulus.py` (the constrained-random generators and deterministic
   negative controls).
+- **UART timing: what the model can see (issue #97).** Drift is only
+  measurable where the transmitter puts an edge. The last-edge
+  measurement scales with the last edge's bit index, so for payload 0xFF
+  (no edge after the bit-1 rise) a frame with a nominal start and first
+  data bit reads 0 % drift whatever its later bits do. The frame-pitch
+  measurement sees the whole frame, stop bit included, but needs a
+  following frame: a short pitch always fails; a long pitch fails only on
+  a stream the caller declares back to back
+  (`UartDecoder(baud, back_to_back=True)`), since otherwise it is a legal
+  idle gap. **An isolated frame, or one followed by idle, is graded on its
+  last edge alone**: a caller that needs row 10's bound to mean something
+  must use a payload with a late edge (e.g. 0x5A) or a back-to-back
+  stream. `test_protocol_models.py` asserts this limitation as documented
+  behaviour; the random regression sends half its multi-frame UART
+  programs back to back and fails a 0xFF stream with 3-cycle-long bits on
+  pitch.
 - `_dut.py` — shared `reset(dut)` coroutine, imported as a sibling module by
   `test_protocol_emulator.py` (and any future bench added here) so reset
   sequencing lives in one place.
@@ -186,7 +231,8 @@ coverage.
   and `coverage.json` (this is how the record's artifacts were made). Mutated
   templates run on the DUT as negative controls. Covers UART TX, SPI, I2C
   write, and (issue #104) the I2C write/repeated-START/read family with
-  seeded peripheral clock stretching (UART RX is deferred). Driven by `klt
+  seeded peripheral clock stretching (UART RX is deferred). Both I2C
+  families run on the pad model (`uio_pads.py`, issue #136). Driven by `klt
   functional-verification` (see `request-random-regression.json`, whose
   `random_seed` the bench asserts equal to its `RECORDED_SEED`); evidence in
   `records/random-regression/`.
@@ -276,11 +322,13 @@ carry sources, defines and recorded seeds), provisioned by
 CI-covered (RTL, Icarus, no PDK): `test_protocol_emulator`,
 `test_control_space`, `test_boot_rom`, `test_boot_uart`,
 `test_program_memory`, `test_protocol_models`, `test_firmware_uart`,
-`test_firmware_spi`, `test_firmware_i2c`, `test_firmware_i2c_sr`,
-`test_firmware_roundtrip`, `test_random_regression`.
+`test_firmware_spi`, `test_uio_pads`, `test_firmware_i2c`,
+`test_firmware_i2c_sr`, `test_firmware_roundtrip`,
+`test_random_regression`.
 
-Covered elsewhere in CI: `test_check_records.py` and
-`test_firmware_templates.py` (`npm run lint`).
+Covered elsewhere in CI: `test_check_records.py`,
+`test_firmware_templates.py` and `test_uio_pad_resolution.py` (`npm run
+lint`).
 
 Local-only: the formal leg (`formal/`, needs yosys + yosys-smtbmc + z3;
 CI follow-up), and everything needing the PDK or a synthesized/laid-out

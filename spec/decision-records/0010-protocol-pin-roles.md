@@ -335,7 +335,7 @@ inventory is a hard failure.
 | `i2c_in_masks` | as `spi_miso_mask`, SDA mask for ACK/read sampling, SCL mask for `pollN:` sites |
 | `i2c_poll_mask` | the `LDI R3, imm` before each `pollN: IN` equals the SCL mask |
 | `gen_strings` | the instruction string literals of `firmware/tools/gen_i2c_sr.py`, parsed with `ast` and the same line grammar as assembly |
-| `bench_*` | the named module-level constants and capture specs of each bench (`TX_PIN/TX_BIT`, `CS_BIT…`, `MISO_PIN/MISO_BIT`, `SCL_PIN/SDA_PIN`, `_RELEASED`, `_ACK_PULL`, `(sda_drive << N)`, `per_scl`/`per_sda`), and `load_program`'s `ui_in` assignments |
+| `bench_*` | the named module-level constants and capture specs of each bench (`TX_PIN/TX_BIT`, `CS_BIT…`, `MISO_PIN/MISO_BIT`, `SCL_PIN/SDA_PIN`; since issue #136 also `LINE_PIN`, `CAPTURE_SPECS`, the `i2c_board(dut, scl=SCL_BIT, sda=SDA_BIT)` wiring of the pad model, and every `pads.*` call naming a pad as `SCL_BIT`/`SDA_BIT`, in place of the removed `_RELEASED`, `_ACK_PULL`, `(sda_drive << N)` and `per_scl`/`per_sda`), and `load_program`'s `ui_in` assignments |
 | `top_load_wiring` / `top_uio_oe` / `top_port_passthrough` | `.mode_pin(ui_in[n])`, `.serial_in(ui_in[n])`, `assign uio_oe = …;`, whole-bus `.port_*` connections |
 | `core_uio_out_reset` | the `port_uio_out <= 8'hXX;` reset literal |
 | `isa_port_table` | `firmware/tools/asm.py` port codes 00/01/10/11 |
@@ -457,8 +457,10 @@ target-spec row.
    if it embeds the SPI template, and this table.
 4. **When I2C SCL/SDA move** (#155): `firmware/asm/i2c_*.asm`,
    `firmware/tools/gen_i2c_sr.py` (and regenerate the `*_sr` files),
-   `verification/test_firmware_i2c.py` (`SCL_*`/`SDA_*`, `_RELEASED`,
-   `_ACK_PULL`) and `verification/test_firmware_i2c_sr.py`.
+   `verification/test_firmware_i2c.py` (`SCL_*`/`SDA_*`; since issue
+   #136 these are the only place the I2C benches name the pins --
+   `verification/test_firmware_i2c_sr.py` and the pad model
+   `verification/uio_pads.py` take them from there).
 5. **If UART TX moves**: `firmware/asm/uart_tx.asm`,
    `firmware/asm/uart_tx_9600.asm` and `verification/test_firmware_uart.py`.
    **When UART RX moves** to `ui_in[1]` (#155): `firmware/asm/uart_rx*.asm` (the `IN … UI_IN`
