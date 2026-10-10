@@ -37,6 +37,7 @@ import reference_models.spi as spi_model
 import reference_models.stimulus as stimulus
 import reference_models.uart as uart_model
 from reference_models.i2c import check_transfer
+from reference_models.waveform import Signal
 
 #: The recorded seed.  Changing it changes every random case; any evidence
 #: record citing this suite names this value, and the request JSON mirrors
@@ -117,6 +118,131 @@ async def test_uart_negative_control_flags_drift_over_bound(dut):
         f"2.5%-slow frame passed the 2% bound: {report}"
     )
     assert report.drift_pct > uart_model.MAX_FRAME_DRIFT_PCT
+    await _tick()
+
+
+def _encode_late_mistimed_frame(data, baud, line, t0=0.0, later_scale=1.03):
+    """One 8N1 frame whose start bit and first data bit are nominal and
+    whose remaining eight bit periods (data bits 1-7 and the stop bit) are
+    ``later_scale`` x nominal; returns the end of the stop bit.
+
+    Issue #97's blind case: for payload 0xFF the only in-frame edge after
+    the start fall is the rise at bit 1, so the in-frame last-edge drift
+    reads 0 whatever ``later_scale`` is.  Only the frame's length -- the
+    pitch to a following start -- carries the error.  Kept in this bench
+    (not ``stimulus.py``, which the SPI and I2C evidence also hashes).
+    """
+    period = uart_model.bit_period_ns(baud)
+    t = float(t0)
+    line.add(t, 0)
+    t += period
+    line.add(t, data & 1)
+    t += period
+    for i in range(1, uart_model.UART_DATA_BITS):
+        line.add(t, (data >> i) & 1)
+        t += period * later_scale
+    line.add(t, 1)
+    return t + period * later_scale
+
+
+@cocotb.test()
+async def test_uart_frame_pitch_grades_back_to_back_0xff(dut):
+    """Issue #97: 0xFF frames have no in-frame edge past bit 1, so the
+    last-edge drift is blind to their later bit periods.  The frame pitch
+    (start-to-start spacing to the following frame) is what sees them.
+
+    Deterministic waveforms at 115,200 baud; "3 %" is 3 % of a bit period
+    on the second start edge, 1.5x the row-10 bound."""
+    baud = 115200
+    period = uart_model.bit_period_ns(baud)
+    bound = uart_model.MAX_FRAME_DRIFT_PCT
+
+    def pair(second_offset_bits):
+        line = Signal(1, name="uart_pair")
+        end = uart_model.encode_frame(0xFF, baud, line, t0=period)
+        uart_model.encode_frame(
+            0xFF, baud, line, t0=end + second_offset_bits * period
+        )
+        return line
+
+    # Nominal back-to-back pair: decoded as two frames, pitch 0, passes
+    # in both decoder modes.
+    for back_to_back in (False, True):
+        decoder = uart_model.UartDecoder(baud, back_to_back=back_to_back)
+        reports = decoder.decode(pair(0.0))
+        assert [r.data for r in reports] == [0xFF, 0xFF], reports
+        assert reports[0].pitch_drift_pct < 1e-6, reports[0]
+        assert reports[1].pitch_ns is None, reports[1]
+        assert all(decoder.check_frame(r) for r in reports), reports
+
+    # Second start 3 % of a bit EARLY: reported (not skipped as before
+    # #97) and failed on pitch in the default mode -- a short stop bit is
+    # a violation on any line.
+    decoder = uart_model.UartDecoder(baud)
+    reports = decoder.decode(pair(-0.03))
+    assert len(reports) == 2, f"early following start skipped: {reports}"
+    assert abs(reports[0].pitch_drift_pct - 3.0) < 1e-6, reports[0]
+    assert not decoder.check_frame(reports[0]), reports[0]
+
+    # Second start 3 % of a bit LATE: the case the last-edge measurement
+    # never saw (the edge is outside the frame window).  Failed on a
+    # declared back-to-back stream; accepted as idle otherwise.
+    line = pair(0.03)
+    strict = uart_model.UartDecoder(baud, back_to_back=True)
+    reports = strict.decode(line)
+    assert reports[0].drift_pct == 0.0, reports[0]
+    assert abs(reports[0].pitch_drift_pct - 3.0) < 1e-6, reports[0]
+    assert not strict.check_frame(reports[0]), reports[0]
+    lenient = uart_model.UartDecoder(baud)
+    assert lenient.check_frame(lenient.decode(line)[0]), "late start != idle"
+
+    # The realistic blind case: nominal start and bit 1, the other eight
+    # bit periods 3 % slow / fast, followed back to back by a second 0xFF.
+    # Last-edge drift reads 0 on the slow frame; pitch shows 8 x 3 % = 24 %.
+    for scale, back_to_back in ((1.03, True), (0.97, False)):
+        line = Signal(1, name="uart_stream")
+        end = _encode_late_mistimed_frame(
+            0xFF, baud, line, t0=period, later_scale=scale
+        )
+        uart_model.encode_frame(0xFF, baud, line, t0=end)
+        decoder = uart_model.UartDecoder(baud, back_to_back=back_to_back)
+        reports = decoder.decode(line)
+        assert [r.data for r in reports] == [0xFF, 0xFF], reports
+        assert abs(reports[0].pitch_drift_pct - 24.0) < 1e-6, reports[0]
+        assert reports[0].pitch_drift_pct > bound
+        assert not decoder.check_frame(reports[0]), (
+            f"{scale}x later bits passed: {reports[0]}"
+        )
+        if scale > 1:
+            assert reports[0].drift_pct == 0.0, (
+                f"expected the last-edge measurement to be blind: {reports[0]}"
+            )
+    await _tick()
+
+
+@cocotb.test()
+async def test_uart_isolated_0xff_frame_is_documented_unobservable(dut):
+    """The documented limitation (issue #97, model docstring): an isolated
+    0xFF frame with a nominal start and first data bit has no edge after
+    bit 1, so later mistiming is invisible to any measurement of that frame.
+    This asserts the documented behaviour, so a change to it is noticed."""
+    baud = 115200
+    period = uart_model.bit_period_ns(baud)
+    for scale in (0.97, 1.03):
+        for back_to_back in (False, True):
+            line = Signal(1, name="uart_isolated")
+            _encode_late_mistimed_frame(
+                0xFF, baud, line, t0=period, later_scale=scale
+            )
+            decoder = uart_model.UartDecoder(baud, back_to_back=back_to_back)
+            (report,) = decoder.decode(line)
+            assert report.data == 0xFF
+            assert report.drift_pct == 0.0, report
+            assert report.pitch_ns is None and report.pitch_drift_pct is None
+            assert decoder.check_frame(report), (
+                "isolated 0xFF frame changed verdict; update the documented "
+                f"limitation: {report}"
+            )
     await _tick()
 
 
