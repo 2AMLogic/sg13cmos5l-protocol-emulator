@@ -13,8 +13,8 @@
 # Which netlist: the `tt_submission` artifact's `<top>.v` of a `gds` workflow
 # run -- the final netlist that the template's own `gl_test` job compiles.
 # Default: the byte-identical copy frozen under verification/records/
-# post-layout-sdf-regression/ from run 37996177546 (the first netlist with
-# DR 0013's boot ROM, issue #138). Override with
+# post-layout-sdf-regression/ from run 38012921517 (the first netlist with
+# the UART loader in the boot ROM, issue #139). Override with
 # --netlist <file> (e.g. one from `gh run download <id> -n tt_submission`).
 #
 # Negative control (a suite that cannot fail cannot cite its passes): the
@@ -61,9 +61,7 @@
 # verification/test_boot_uart.py, pin-only under GATES=yes (its white-box
 # reads and its two long runs -- the host-rate sweep and the 256-word image --
 # are skipped there). It shares the boot-rom negative control (`rom_exit`
-# stuck at 0: a verified UART load then never leaves the ROM). The default
-# netlist predates the UART loader, so this mode needs a netlist from a
-# `gds` run of a revision that carries it (--netlist).
+# stuck at 0: a verified UART load then never leaves the ROM).
 #
 # Usage:  ./flow/run-firmware-gate-level.sh [--netlist FILE] [--full] [--control-space] [--boot-rom] [--boot-uart]
 #   --full  also runs verification/test_firmware_i2c_sr.py (the Sr/stretch
@@ -79,7 +77,7 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SCRATCH="${REPO_ROOT}/flow/firmware-gate-level"
-NETLIST="${REPO_ROOT}/verification/records/post-layout-sdf-regression/artifacts/20261009-220911-1dc1842/tt_um_2amlogic_protocol_emulator.v"
+NETLIST="${REPO_ROOT}/verification/records/post-layout-sdf-regression/artifacts/20261010-014153-661c4bf/tt_um_2amlogic_protocol_emulator.v"
 MODULES=(test_firmware_uart test_firmware_spi test_firmware_i2c)
 export PDK_ROOT="${PDK_ROOT:-$HOME/share/pdk}"
 
