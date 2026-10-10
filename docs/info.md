@@ -382,7 +382,7 @@ No pin claim here is backed by silicon or by the LibreLane flow.
 
 - **Tiny Tapeout LibreLane flow.** The routed-netlist SDF regression of the
   submitted core ([record](../verification/records/post-layout-sdf-regression/records/20261010-133000-a0f91e3.md),
-  LibreLane run 38044212536) passes at all three corners: 12 of the core
+  LibreLane run 38054423540) passes at all three corners: 12 of the core
   bench's 13 tests pass and the white-box flag test is skipped (it reads
   core internals a flattened netlist does not have), so the C flag has no
   post-layout evidence. The bench runs at the flow's own constraint: a
@@ -396,7 +396,7 @@ No pin claim here is backed by silicon or by the LibreLane flow.
   `manifests/README.md`). LibreLane timing and area evidence is in
   [`librelane-corner-timing`](../verification/records/librelane-corner-timing/records/20261010-133200-a0f91e3.md).
   Firmware, the control-space, boot-ROM, SPI-flash-boot and UART-load benches on that netlist at zero delay:
-  [`firmware-gate-level`](../verification/records/firmware-gate-level/records/20261010-140000-56a5104.md).
+  [`firmware-gate-level`](../verification/records/firmware-gate-level/records/20261010-161300-a0f91e3.md).
   Firmware with back-annotated delays: none.
 - **klt synthesis and timing.** `klt sta` does not yet support the SRAM
   macro, so the two flows do not agree on timing; per the project rule that
