@@ -19,7 +19,7 @@
       "name": "test_uart_frames_pass_independent_reference_model",
       "status": "passed",
       "sim_time_ns": 46681.0,
-      "real_time_s": 0.043
+      "real_time_s": 0.044
     },
     {
       "name": "test_reference_model_negative_control_still_fails",

@@ -13,49 +13,49 @@
       "name": "test_recorded_seed_matches_request",
       "status": "passed",
       "sim_time_ns": 0.0,
-      "real_time_s": 0.001
+      "real_time_s": 0.0
     },
     {
       "name": "test_uart_random_programs",
       "status": "passed",
       "sim_time_ns": 1313201.0,
-      "real_time_s": 2.129
+      "real_time_s": 1.191
     },
     {
       "name": "test_spi_random_programs",
       "status": "passed",
       "sim_time_ns": 512201.0,
-      "real_time_s": 0.937
+      "real_time_s": 0.437
     },
     {
       "name": "test_i2c_random_programs",
       "status": "passed",
       "sim_time_ns": 3898000.9999999995,
-      "real_time_s": 7.501
+      "real_time_s": 4.974
     },
     {
       "name": "test_i2c_rd_random_programs",
       "status": "passed",
       "sim_time_ns": 7317741.000000001,
-      "real_time_s": 15.534
+      "real_time_s": 10.535
     },
     {
       "name": "test_negative_controls_mutated_templates_fail",
       "status": "passed",
       "sim_time_ns": 1010941.0,
-      "real_time_s": 1.548
+      "real_time_s": 1.326
     },
     {
       "name": "test_i2c_rd_negative_controls",
       "status": "passed",
       "sim_time_ns": 2320141.0,
-      "real_time_s": 5.895
+      "real_time_s": 3.234
     },
     {
       "name": "test_zz_write_report",
       "status": "passed",
       "sim_time_ns": 0.0,
-      "real_time_s": 0.011
+      "real_time_s": 0.001
     }
   ],
   "coverage": null,

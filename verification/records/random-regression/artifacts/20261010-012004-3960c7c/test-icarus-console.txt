@@ -1,9 +1,9 @@
-     -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:242  in gpi_load_users                  Loaded entry library: '<uv-python>/cpython-3.12.13-macos-aarch64-none/lib/libpython3.12.dylib'
-     -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:234  in gpi_load_users                  Running entry func 'initialize' from loaded library '<scratch>/venv/lib/python3.12/site-packages/cocotb/simulator.cpython-312-darwin.so'
-     -.--ns INFO     pygpi                              ..ib/pygpi/embed.cpp:115  in initialize                      Using Python 3.12.10 interpreter at <scratch>/venv/bin/python3
+     -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:242  in gpi_load_users                  Loaded entry library: '/opt/homebrew/Cellar/python@3.13/3.13.16/Frameworks/Python.framework/Versions/3.13/Python'
+     -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:234  in gpi_load_users                  Running entry func 'initialize' from loaded library '<repo>/.venv/lib/python3.13/site-packages/cocotb/simulator.cpython-313-darwin.so'
+     -.--ns INFO     pygpi                              ..ib/pygpi/embed.cpp:115  in initialize                      Using Python 3.13.14 interpreter at <repo>/.venv/bin/python
      -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:74   in gpi_print_registered_impl       GPI: VPI support registered
      0.00ns INFO     cocotb.initialize                  Seeding Python random module with 20261009
-     0.00ns INFO     cocotb.initialize                  Initialized cocotb v2.1.0 from <scratch>/venv/lib/python3.12/site-packages/cocotb
+     0.00ns INFO     cocotb.initialize                  Initialized cocotb v2.1.0 from <repo>/.venv/lib/python3.13/site-packages/cocotb
      0.00ns INFO     cocotb.initialize                  Running on Icarus Verilog version 13.0 (stable)
      0.00ns INFO     cocotb.regression                  Running tests
      0.00ns INFO     cocotb.regression                  running test_random_regression.test_recorded_seed_matches_request (1/8)
@@ -142,13 +142,13 @@
                                                         ** TEST                                                                  STATUS  SIM TIME (ns)  REAL TIME (s)  RATIO (ns/s) **
                                                         ******************************************************************************************************************************
                                                         ** test_random_regression.test_recorded_seed_matches_request              PASS           0.00           0.00          0.00  **
-                                                        ** test_random_regression.test_uart_random_programs                       PASS     1313201.00           2.13     616857.49  **
-                                                        ** test_random_regression.test_spi_random_programs                        PASS      512201.00           0.94     546917.94  **
-                                                        ** test_random_regression.test_i2c_random_programs                        PASS     3898001.00           7.50     519645.71  **
-                                                        ** test_random_regression.test_i2c_rd_random_programs                     PASS     7317741.00          15.53     471093.62  **
-                                                        ** test_random_regression.test_negative_controls_mutated_templates_fail   PASS     1010941.00           1.55     653073.28  **
-                                                        ** test_random_regression.test_i2c_rd_negative_controls                   PASS     2320141.00           5.89     393578.98  **
-                                                        ** test_random_regression.test_zz_write_report                            PASS           0.00           0.01          0.00  **
+                                                        ** test_random_regression.test_uart_random_programs                       PASS     1313201.00           1.21    1083369.34  **
+                                                        ** test_random_regression.test_spi_random_programs                        PASS      512201.00           0.44    1154108.94  **
+                                                        ** test_random_regression.test_i2c_random_programs                        PASS     3898001.00           5.01     777759.12  **
+                                                        ** test_random_regression.test_i2c_rd_random_programs                     PASS     7317741.00          10.43     701700.21  **
+                                                        ** test_random_regression.test_negative_controls_mutated_templates_fail   PASS     1010941.00           1.21     836991.47  **
+                                                        ** test_random_regression.test_i2c_rd_negative_controls                   PASS     2320141.00           3.25     714115.71  **
+                                                        ** test_random_regression.test_zz_write_report                            PASS           0.00           0.00          0.00  **
                                                         ******************************************************************************************************************************
-                                                        ** TESTS=8 PASS=8 FAIL=0 SKIP=0                                                   16372226.01          33.56     487839.15  **
+                                                        ** TESTS=8 PASS=8 FAIL=0 SKIP=0                                                   16372226.01          21.56     759511.34  **
                                                         ******************************************************************************************************************************

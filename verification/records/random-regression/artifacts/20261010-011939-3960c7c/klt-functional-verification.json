@@ -19,43 +19,43 @@
       "name": "test_uart_random_programs",
       "status": "passed",
       "sim_time_ns": 1313201.0,
-      "real_time_s": 1.341
+      "real_time_s": 1.169
     },
     {
       "name": "test_spi_random_programs",
       "status": "passed",
       "sim_time_ns": 512201.0,
-      "real_time_s": 0.507
+      "real_time_s": 0.435
     },
     {
       "name": "test_i2c_random_programs",
       "status": "passed",
       "sim_time_ns": 3898000.9999999995,
-      "real_time_s": 5.721
+      "real_time_s": 5.053
     },
     {
       "name": "test_i2c_rd_random_programs",
       "status": "passed",
       "sim_time_ns": 7317741.000000001,
-      "real_time_s": 15.259
+      "real_time_s": 10.695
     },
     {
       "name": "test_negative_controls_mutated_templates_fail",
       "status": "passed",
       "sim_time_ns": 1010941.0,
-      "real_time_s": 2.0
+      "real_time_s": 1.216
     },
     {
       "name": "test_i2c_rd_negative_controls",
       "status": "passed",
       "sim_time_ns": 2320141.0,
-      "real_time_s": 5.09
+      "real_time_s": 3.51
     },
     {
       "name": "test_zz_write_report",
       "status": "passed",
       "sim_time_ns": 0.0,
-      "real_time_s": 0.016
+      "real_time_s": 0.001
     }
   ],
   "coverage": null,
