@@ -13,7 +13,7 @@
       "name": "test_count_corruption_aliasing_residue",
       "status": "passed",
       "sim_time_ns": 2058020.0,
-      "real_time_s": 1.575
+      "real_time_s": 1.581
     }
   ],
   "coverage": null,

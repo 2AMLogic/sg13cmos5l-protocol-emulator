@@ -171,7 +171,7 @@ coverage.
   of a residue, not a pass of an unconditional bad-length guarantee. A
   separate module so the gate-level records that hash `test_boot_uart.py`
   stay live. Driven by `request-boot-uart-count-alias.json`; evidence in
-  `records/boot-uart/ (record 20261010-164332-adfb2d0)`.
+  `records/boot-uart/ (record 20261010-164351-57c5c8c)`.
 - `test_reset_power_up.py` — **gate-level only** cocotb bench for
   target-spec row 14 / `spec/verification-plan.md` section 8 (issue #131):
   reset, power-up and reselect on the LibreLane netlist. Every flop of the

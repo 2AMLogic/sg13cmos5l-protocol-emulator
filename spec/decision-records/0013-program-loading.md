@@ -733,7 +733,7 @@ are not in it. A corrupted count is therefore caught only because the shorter
 (or longer) stream then fails the trailer comparison, and that comparison can
 succeed by coincidence. Counterexample, simulated on the RTL of the submitted
 top (`verification/test_boot_uart_count_alias.py`, record
-`verification/records/boot-uart/` (record 20261010-164332-adfb2d0)): the valid image
+`verification/records/boot-uart/` (record 20261010-164351-57c5c8c)): the valid image
 `[0xF000, 0x13C1]` is framed `a5 01 f0 00 13 c1 00 00`, and `0x13C1` is the
 CRC-16/XMODEM of `f0 00`. Flip bit 0 of the count, `a5 00 f0 00 13 c1 00 00`:
 the loader commits `0xF000`, takes `13 c1` as the trailer, the CRC matches,
