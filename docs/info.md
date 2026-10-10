@@ -365,7 +365,9 @@ No pin claim here is backed by silicon or by the LibreLane flow.
   post-layout evidence. The bench runs at the flow's own constraint: a
   20 ns clock, inputs changed 4 ns after each edge, outputs read 4 ns
   before the next. The SRAM runs as a zero-delay model there (its read
-  timing is LibreLane STA evidence only), timing checks are not performed,
+  timing is LibreLane STA evidence only), setup/hold is checked only
+  against the cell models' 0 ns placeholder limits, not the SDF's
+  characterised ones,
   and only the core bench ran, not the firmware above. The sign-off grader
   still renders T1 item 7 unmet, on provenance binding (see
   `manifests/README.md`). LibreLane timing and area evidence is in
