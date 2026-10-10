@@ -338,7 +338,12 @@ auditable rather than a bare assertion:
 
 ## 8. Reset, power-up and reselect (row 14)
 
-*Added 2026-10-09 (issue #131). Proposed.*
+*Added 2026-10-09 (issue #131). Recorded 2026-10-10: all four items pass
+on the LibreLane netlist (Icarus + cocotb, zero-delay), with their
+negative controls failing as required --
+`verification/records/reset-power-up/records/20261010-001525-f46636d.md`.
+The host's reload obligation after deselect is in `verification/README.md`
+(issue #118).*
 
 - **Random-initial-state gate-level run.** Every flop of the flow-of-record
   netlist starts at a seeded random value (and, separately, at X). Then
