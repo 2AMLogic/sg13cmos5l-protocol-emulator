@@ -1,0 +1,4 @@
+                                                        AssertionError: ISA LOCKSTEP MISMATCH seed=20261010 program=1 (wait255-then-bz) edge=260   [replay: ISA_LOCKSTEP_SEED=20261010 ISA_LOCKSTEP_ONLY=1]
+                                                          ISS was executing (previous row): WAIT 255 @pc=0x03
+                                                          field pc: rtl=0x03 iss=0x04
+  5201.00ns INFO     cocotb.regression                  running test_isa_lockstep.test_sub_carry_polarity_pin (4/4)
