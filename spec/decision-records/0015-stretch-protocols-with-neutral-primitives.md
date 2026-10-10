@@ -634,14 +634,53 @@ unchanged.
     and DR 0013 (different cells chosen, placement buffers, timing repair). The
     disagreement is recorded, not resolved; each number above is quoted with
     its flow.
-- **Reopening condition 4, evaluated.** The drop triggers are a placed density
-  above the 60 % target, or a `gds` run near the 6-hour Actions limit. Neither
-  fired: 55.2 % (below 60 %) and a `gds` job of about 19 minutes. Setup and hold have
-  zero violations at all three corners the flow emits. So the full interface
-  is kept, including `CRC_BYTE`, which condition 4 names first for dropping.
-  The estimate being outside its band is a finding about the estimate, not a
-  trigger. If a smaller P1 is preferred (no readback, a fixed width, or no byte
-  op), that is a follow-up record, and it is reversible.- **Evidence.** `verification/test_primitives.py` (independent oracles: the
+- **Reopening condition 4, evaluated.** The condition reads, verbatim: "If a
+  LibreLane run of the design with P1 and P2 shows the 6-hour Actions limit
+  (#134) or the density target is at risk, drop P1's byte op first. A reopened
+  P3 (condition 2) is then the first candidate to drop, because it has the
+  smallest protocol reach." The test is "at risk", not "exceeded", and it is
+  applied here as written:
+  - **Runtime.** The `gds` job took 19 min 7 s (12 min 38 s on `main`), about
+    5 % of the 6-hour limit. That is not at risk on any reading.
+  - **Density, for the design the condition names (P1 and P2).** Placed cells
+    plus macro are 55.2 % of the core, 6,056 um^2 under DR 0014's 60 % target.
+    This is a measurement of the built design, not an estimate, so the
+    estimate's error (below) does not apply to it. To cross 60 % with no RTL
+    change, placed standard-cell area would have to grow by about 14.5 %
+    (6,056 / 41,827.4 um^2). On that basis this note judges the target not at
+    risk for the P1+P2 design, and the byte op is not dropped.
+  - **Why the margin is still thin, stated plainly.** The 6,056 um^2 left is
+    about 45 % of what P1 and P2 just cost in this flow (+13,571.7 um^2). The
+    estimate this record admitted them on was low by 2.4 times (klt/Yosys) to
+    2.9 times (LibreLane placed). P3 and P4 are not admitted, but they stay
+    admissible later under conditions 1 and 2. If their estimates (P3 about
+    900 um^2, P4 about 3,300 um^2) are wrong by the same factor, a reopened P3
+    alone (about 2,200-2,600 um^2) would fit under the target. P4 alone
+    (about 7,900-9,600 um^2) would not, and neither would P3 and P4 together
+    (about 10,100-12,200 um^2). So the density target is not at risk for the
+    design this condition evaluates, but it is at risk for any further
+    admission. **Finding for the coordinator:** a record that admits a
+    reopened P3 or a P4 must re-evaluate condition 4 against a measured
+    LibreLane run, not against this record's estimates. At the observed
+    estimate error, P4 would trigger condition 4, and the byte op would be the
+    first thing dropped. Whether 4.8 points of margin counts as "at risk" is a
+    judgment, and this record is Proposed. The ratifying act may judge it
+    differently. A drop is reversible either way.
+  - **Wording superseded.** The `librelane-corner-timing` record
+    `20261010-160100-9d62f29` paraphrases this condition as "placed density
+    above the 60 % target, or a `gds` job near the 6-hour limit". That is
+    narrower than the text above. Records are append-only, so that record is
+    not edited. Its measurements stand, and this note replaces its paraphrase
+    of the trigger. (The `synthesis-baseline` record does not state the
+    condition.)
+
+  Setup and hold have zero violations at all three corners the flow emits.
+  So the full interface is kept, including `CRC_BYTE`, which condition 4
+  names first for dropping. The estimate being outside its band is a finding
+  about the estimate, not a trigger. If a smaller P1 is preferred (no
+  readback, a fixed width, or no byte op), that is a follow-up record, and it
+  is reversible.
+- **Evidence.** `verification/test_primitives.py` (independent oracles: the
   CRC RevEng catalogue check values for CRC-5/USB, CRC-16/USB, CRC-32,
   CRC-8/MAXIM, CRC-15/CAN and CRC-16/XMODEM, a carry-less-multiplication LFSR
   oracle and the PRBS7 period, and an independent NRZI/de-stuffing receiver for
