@@ -42,6 +42,8 @@ module timing_contract_mutant (
   wire is_rctl = (op == 4'b1001) && (instr_word[9:8] == 2'b10);
   wire is_run  = is_wctl && (imm == 8'h05);
   wire is_ctl2 = is_run || (is_wctl && (imm == 8'h04)) || (is_rctl && (imm == 8'h03));
+  // DR 0015 (issue #208): WCTL CRC_BYTE (0x14) occupies a fixed 1 + 8 = 9.
+  wire is_crcb = is_wctl && (imm == 8'h14);
 
   // THE INJECTED DEFECT (the only difference from the conformant shell):
   // a WAIT whose data happens to equal the magic value terminates in one
@@ -63,6 +65,9 @@ module timing_contract_mutant (
       wait_rem <= wait_rem - 9'd1;
       if (wait_rem == 9'd2)
         fetch_addr <= is_run ? branch_data : pc_p1;
+    end else if (is_crcb) begin
+      // DR 0015 CRC_BYTE: this cycle + exactly 8 more.
+      wait_rem <= 9'd9;
     end else if (is_ctl2) begin
       wait_rem <= 9'd2;
     end else begin
