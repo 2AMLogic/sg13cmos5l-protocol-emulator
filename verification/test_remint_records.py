@@ -213,6 +213,29 @@ def main() -> int:
         code, out = tool(repo)
         check("multi: nothing stale afterwards", code == 0, out, failures)
 
+    # Sanitized XML must still parse (#192): a literal `<repo>` in an attribute
+    # is not well-formed XML, so the XML path escapes the placeholder.
+    sys.path.insert(0, str(T.SCRIPT_DIR))
+    import xml.etree.ElementTree as ET
+    import remint_records as rr
+    raw = (f'<testsuites>\n<property name="file" value="{rr.REPO_ROOT}/v/t.py"/>'
+           f'<property name="h" value="{Path.home()}/x"/>'
+           '<testcase name="t" classname="<scratch>/c">stdout <PDK_ROOT>/a</testcase>'
+           '</testsuites>').replace('<testcase name="t" classname="<scratch>/c">',
+                                    '<testcase name="t" classname="&lt;scratch&gt;/c">')
+    clean = rr._sanitize_xml(raw)
+    try:
+        root = ET.fromstring(clean)
+        parsed = root.find("property").get("value")
+    except ET.ParseError as exc:
+        root, parsed = None, f"ParseError: {exc}"
+    check("sanitized XML parses and decodes to the <repo> placeholder",
+          root is not None and parsed == "<repo>/v/t.py", str(parsed), failures)
+    check("sanitized XML carries no literal placeholder",
+          not any(f"<{n}>" in clean for n in rr.PLACEHOLDERS), clean, failures)
+    check("plain _sanitize (JSON/text path) still writes the literal <repo>",
+          rr._sanitize(f"{rr.REPO_ROOT}/a") == "<repo>/a", "", failures)
+
     print()
     if failures:
         print(f"FAIL: {len(failures)} case(s)")
