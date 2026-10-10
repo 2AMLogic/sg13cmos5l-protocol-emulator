@@ -156,6 +156,15 @@ nothing means the image failed its check, so re-make it with `mkflash.py`.
   with its own peripheral in the flash's place. What a real flash does with
   those bursts is not modelled. An SPI application that needs both the
   flash and a peripheral needs a pin plan that keeps them apart.
+- **One device on the `uio` header at a time (#196).** The same holds for
+  I2C images (SCL `uio[2]`, SDA `uio[3]`): they toggle the flash's MISO and
+  SCK, so no I2C peripheral can share the header. A booted SPI program can
+  also erase or overwrite the boot image (WREN `0x06`, recalled and not re-read from the flash datasheet, then an erase or
+  program opcode). To use another SPI device, remove the Pmod after boot (or
+  boot with strap `00`/`10`): the SPI CS is `uio[0]`, the flash's CS0, so
+  holding CS0 high cannot isolate it. Holding CS0 high only isolates the
+  flash from a program that leaves `uio[0]` alone, such as I2C. See the datasheet section
+  [One device on the `uio` header at a time](info.md#one-device-on-the-uio-header-at-a-time-decided-in-196-2026-10-09).
 - The flash model's timing limits are the W25Q128JV's as recalled by the
   author, not re-read from the datasheet (see
   `verification/reference_models/spi_flash.py`). Check them before relying
