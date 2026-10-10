@@ -26,15 +26,14 @@ _None._
 
 Issues currently being built (`loom:building`).
 
+- **#83**: signoff: bind T1 items 1, 2, 9 and 10 to audited artifacts (klayout-tools#2718 landed)
 - **#139**: Boot firmware: UART load over the demo board's USB bridge (TT option B pins) with an independent host model
-- **#140**: Boot firmware: SPI-flash boot from the Tiny Tapeout QSPI Pmod with an independent flash model
-- **#193**: Records: re-mint helper and stale-record report for check_records.py freshness failures
 
 ## PRs Awaiting Review
 
 PRs waiting on Judge (`loom:review-requested`).
 
-- **#188**: feat: SPI-flash boot from the Tiny Tapeout QSPI Pmod (DR 0013 strap 01) with an independent flash model (#140)
+_None._
 
 ## Approved (Awaiting Merge)
 
@@ -53,13 +52,10 @@ Issues carrying `loom:curated`.
 - **#85**: spec: fix the eight findings that stopped the two-key ratification of PR #84 (fetch model, SPI sketch, row 10 source and four other citations) *(curated)*
 - **#86**: Two committed LVS error records contain an absolute home-directory path *(curated)*
 - **#100**: Auditor Capability Request: Python interpreter unavailable for tool-light validation *(curated)*
-- **#106**: Post-layout SDF: make the core bench drive/sample alignment SDF-aware (annotated run passes 1/13) *(curated)*
-- **#173**: LibreLane max-slew violation is on the SRAM macro's A_REN pin (new with the boot ROM read gate, #138) *(curated)*
 
 ## Proposed (Architect / Hermit)
 
 - **#125**: I2C Standard-mode: reconcile the 435-cycle firmware clock with the proposed 100 kHz target *(architect)*
-- **#152**: Verification: independent ISA reference simulator with lockstep co-simulation against the core RTL *(architect)*
 - **#192**: Verification: add UART RX to the constrained-random regression and gate-level firmware run *(architect)*
 
 ## Epics
@@ -73,10 +69,10 @@ _None._
 | Operator merge-risk holds | 2 |
 | Operator priority | 0 |
 | Ready (`loom:issue`) | 0 |
-| In Progress (`loom:building`) | 3 |
-| PRs awaiting review | 1 |
+| In Progress (`loom:building`) | 2 |
+| PRs awaiting review | 0 |
 | Approved PRs awaiting merge | 2 |
-| Curated | 8 |
-| Architect / Hermit proposals | 3 |
+| Curated | 6 |
+| Architect / Hermit proposals | 2 |
 | Active epics | 0 |
 <!-- guide:plan-body:end -->
