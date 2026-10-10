@@ -351,6 +351,9 @@ CRC signature and warm-starts unloaded on strap `10` (256 `NOP`s), tracked
 in #168 and pending operator decision #166 (CRC initial value), so (c) is
 not fully met. The negative controls fail as required --
 `verification/records/reset-power-up/records/20261010-012219-02f84e3.md`.
+2026-10-10 (issue #168): the warm start now refuses a zero signature (DR
+0013 Finding F1, option 4), so the all-zero case above no longer runs; the
+superseding reset-power-up record carries the gate-level evidence.
 The host's reload obligation after deselect is in `verification/README.md`
 (issue #118).*
 

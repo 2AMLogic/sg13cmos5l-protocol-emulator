@@ -110,7 +110,7 @@ words 0–254. It first restores `R0`–`R3`, `Z` and `C` to their reset
 values, so a warm-started program starts in the state a serial-loaded one
 does, except that it reads `BOOT_STATUS = 0x00`. One pass of the loop is 9
 cycles (`.cyclesec warm_word`), and word 0 of a verified image executes
-exactly 2,323 cycles after the boot program's first instruction. Straps
+exactly 2,325 cycles after the boot program's first instruction. Straps
 `00` and `11` are a **stub** (one `HALT`) until the UART load (#139) lands;
 a failed warm start falls through to it. A stub drives nothing.
 
@@ -125,16 +125,21 @@ pin, and either takes the warm start's hand-over (`run_image`) or halts.
 putting one on the Pmod. Bench: `verification/test_boot_spi.py`
 (`verification/request-boot-spi.json`), negative controls
 `verification/boot_spi_mutants.py`, evidence in
-`verification/records/boot-spi/`. The two boot programs together use 93
-of the 128 words, which leaves 35 for the UART load (DR 0013, implementation
-notes of issue #140).
+`verification/records/boot-spi/`. The two boot programs together use 95
+of the 128 words, which leaves 33 for the UART load (DR 0013, implementation
+notes of issues #140 and #168).
 
-The assembler reports three data-dependent-branch warnings for this
-program, all intended: the two strap branches and the CRC verdict. None
-paces a pin.
+The assembler reports four data-dependent-branch warnings for the
+dispatch and the warm start, all intended: the two strap branches, the
+zero-signature refusal and the CRC verdict (the SPI-flash boot adds three
+more of its own). None paces a pin.
 
-Known weak case, recorded in DR 0013: 256 zero words carry their own valid
-signature (the CRC starts at 0), so a warm start runs them. They are `NOP`s.
+Zero signatures are refused (DR 0013 Finding F1, closed by issue #168): 256
+zero words carry their own valid signature (the CRC starts at 0), so the
+warm start refuses word 255 = `0x0000` before its CRC verdict, as the
+SPI-flash boot does. Two words: the loop's last pass leaves word 255 in
+`R0`/`R1`. An image whose real CRC is `0x0000` (1 in 65,536) must be
+re-padded; `firmware/tools/mkflash.py` refuses to build one.
 
 Bench: `verification/test_boot_rom.py`
 (`verification/request-boot-rom.json`), negative controls

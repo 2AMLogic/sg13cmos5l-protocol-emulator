@@ -748,8 +748,8 @@ async def test_corrupt_flash_never_runs(dut):
 async def test_zero_signature_is_refused(dut):
     """A finding, pinned. The all-zero image is its own valid signature (DR
     0013, Finding F1), and a flash that answers zeros to everything (no Pmod
-    with MISO pulled low, a dead flash) delivers exactly that image. The warm
-    start runs it; the SPI boot refuses any image whose signature word is
+    with MISO pulled low, a dead flash) delivers exactly that image. The SPI
+    boot (and, since issue #168, the warm start) refuses any image whose signature word is
     0x0000. An image with such a signature and an otherwise valid CRC (found
     by search: it exists for 1 body in 65,536) is therefore refused too, and
     this is the cost: such an image must be given another filler word."""
