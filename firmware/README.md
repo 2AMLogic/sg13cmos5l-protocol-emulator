@@ -185,13 +185,16 @@ compile-time-constant outer loop, `LDI n; WAIT 255; SUB; BNZ` = 258 cycles
 per pass plus a remainder `WAIT`; the bit blocks are unrolled because the
 loop needs the fourth register.
 
-**Receiver shape.** RX = `UI_IN` bit 0 (idle high). A 3-cycle poll
+**Receiver shape.** RX = `UI_IN` bit 1 (idle high; DR 0010's option B, issue #178). A 3-cycle poll
 (`IN`/`AND`/`BNZ`) finds the start edge; the first sample lands at the
 centre of data bit 0 (1.5 bit periods after the edge, within the poll's
 3-cycle granularity); later samples are exactly one period apart with no
 branch between them. The byte is assembled by shifting and emitted on
-`UO_OUT`; `UIO_OUT` bit 0 is a sample mark (the bench reads the real
-sample instants off it) and bit 1 a framing-error flag (stop bit read 0).
+`UO_OUT`; `UIO_OUT` bit 1 is a sample mark (the bench reads the real
+sample instants off it) and bit 2 a framing-error flag (stop bit read 0).
+`R1` holds the RX mask (2), so it is also the mark value and the delay-loop
+decrement (outer counts are doubled) and each sample uses six `SHF LEFT` and
+a `NOP`: word and cycle counts are unchanged.
 The assembler's data-dependent-latency lint reports exactly three warnings
 per receiver: the two start-edge handshakes and the post-stop re-arm.
 

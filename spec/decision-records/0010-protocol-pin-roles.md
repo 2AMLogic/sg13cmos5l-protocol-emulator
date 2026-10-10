@@ -54,9 +54,8 @@ the target plan ("Target pin plan" below): SPI on the standard SPI Pmod, I2C
 on the standard I2C Pmod, both on the upper `uio` row. As that section said
 it would, the "Run phase" table, the open-drain mask, the "today" table and
 the machine-readable table are rewritten to describe the moved profiles;
-what they said before is in this file's history (PRs #148, #149, #170). UART
-does not move in this change: UART RX stays on `ui_in[0]` until a follow-up
-of #155 moves it to `ui_in[1]`. The Status line above is unchanged; this
+what they said before is in this file's history (PRs #148, #149, #170). The UART
+RX move followed in #178 (below). The Status line above is unchanged; this
 record is still Proposed.
 
 ### Load phase (reset released with `ui_in[7]` high)
@@ -67,20 +66,23 @@ record is still Proposed.
 | `ui_in[0]` | `PROG_SER` — serial program bit, MSB-first, one bit per rising clock edge |
 
 All other pins have no load role. In the run phase `ui_in[7:0]` is ISA input
-port 00 and carries no protocol role in any current profile.
+port 00; since #178 the only protocol role on it is UART RX on `ui_in[1]`.
+`ui_in[0]` (`PROG_SER`) carries no protocol role in the run phase.
 
 ### Run phase, per firmware profile
 
-| Pin | Electrical | UART TX | SPI transfer | SPI result | I2C transfer | I2C result |
-|---|---|---|---|---|---|---|
-| `uo_out[0]` | push-pull | `TX` | unused | `RESULT[0]` | unused | `RESULT[0]` |
-| `uo_out[1..7]` | push-pull | unused | unused | `RESULT[n]` | unused | `RESULT[n]` |
-| `uio[0]` | runtime: push-pull in SPI images | unused | `CS` (active low) | unused | unused | unused |
-| `uio[1]` | runtime: push-pull in SPI images | unused | `MOSI` | unused | unused | unused |
-| `uio[2]` | runtime: input in SPI images, **open-drain** in I2C images | unused | `MISO` (sampled) | unused | `SCL` | unused |
-| `uio[3]` | runtime: push-pull in SPI images, **open-drain** in I2C images | unused | `SCLK` (the Pmod's SCK) | unused | `SDA` | unused |
-| `uio[4..7]` | input | unused | unused | unused | unused | unused |
-| `ui_in[1..6]` | input | unused | unused | unused | unused | unused |
+| Pin | Electrical | UART TX | UART RX | UART RX result | SPI transfer | SPI result | I2C transfer | I2C result |
+|---|---|---|---|---|---|---|---|---|
+| `uo_out[0]` | push-pull | `TX` | unused | `RESULT[0]` | unused | `RESULT[0]` | unused | `RESULT[0]` |
+| `uo_out[1..7]` | push-pull | unused | unused | `RESULT[n]` | unused | `RESULT[n]` | unused | `RESULT[n]` |
+| `uio[0]` | runtime: push-pull in SPI images | unused | unused | unused | `CS` (active low) | unused | unused | unused |
+| `uio[1]` | runtime: push-pull in SPI images | unused | unused | unused | `MOSI` | unused | unused | unused |
+| `uio[2]` | runtime: input in SPI images, **open-drain** in I2C images | unused | unused | unused | `MISO` (sampled) | unused | `SCL` | unused |
+| `uio[3]` | runtime: push-pull in SPI images, **open-drain** in I2C images | unused | unused | unused | `SCLK` (the Pmod's SCK) | unused | `SDA` | unused |
+| `uio[4..7]` | input | unused | unused | unused | unused | unused | unused | unused |
+| `ui_in[0]` | input (`PROG_SER` in the load phase only) | unused | unused | unused | unused | unused | unused | unused |
+| `ui_in[1]` | input | unused | `RX` (sampled, idle high) | unused | unused | unused | unused | unused |
+| `ui_in[2..6]` | input | unused | unused | unused | unused | unused | unused | unused |
 
 "Result publication" is the cycle-exact convention the SPI functional burst
 and the I2C read-back programs already use: the received byte is written to
@@ -169,18 +171,18 @@ design's side:
 #### Today's assignments against the recommendations
 
 These are the pins the committed firmware, benches and the machine-readable
-table below use today (rewritten by #155; SPI and I2C moved):
+table below use today (rewritten by #155 for SPI and I2C and by #178 for UART RX):
 
 | Protocol | Today | Recommended | Works unmodified? |
 |---|---|---|---|
-| UART | TX `uo_out[0]`, RX `ui_in[0]` (`uart_rx` phase, added by #143) | USB bridge option B: TX `uo_out[0]`, RX `ui_in[1]` | **TX yes** (it is option B's TX). **RX no**: `ui_in[0]` against option B's `ui_in[1]` |
+| UART | TX `uo_out[0]`, RX `ui_in[1]` (`uart_rx` phase, added by #143; moved from `ui_in[0]` by #178) | USB bridge option B: TX `uo_out[0]`, RX `ui_in[1]` | **Yes**, option B's TX and RX |
 | SPI | CS `uio[0]`, MOSI `uio[1]`, MISO `uio[2]`, SCLK `uio[3]` (#155) | CS `uio[0]`, MOSI `uio[1]`, MISO `uio[2]`, SCK `uio[3]` | **Yes**, the standard SPI Pmod, upper row |
 | I2C | SCL `uio[2]`, SDA `uio[3]` (#155) | SCL `uio[2]`, SDA `uio[3]` (upper row) | **Yes**, the standard I2C Pmod, upper row (with its pull-ups) |
 
-Consequence today: the UART transmit profiles reach the host over the board's
-USB bridge with no extra wiring, and an off-the-shelf SPI or I2C Pmod plugs
-into the upper `uio` row. UART receive still needs a jumper wire from the
-bridge's RX (`ui_in[1]`) to `ui_in[0]`, and `docs/info.md` says so.
+Consequence today: the UART profiles, transmit and receive, reach the host
+over the board's USB bridge with no extra wiring, and an off-the-shelf SPI or
+I2C Pmod plugs into the upper `uio` row. No firmware profile needs a jumper
+wire (#178 moved UART RX).
 
 #### Target pin plan (proposed, issue #133)
 
@@ -207,8 +209,9 @@ Why these:
 **Update 2026-10-09 (issue #155): SPI and I2C have moved.** The paragraph
 below describes the change that recorded this plan, and is left as written.
 #155 made the SPI and I2C moves in one PR, with the firmware, benches,
-generator and this record's tables. The UART RX move is the one still to
-come, as a follow-up of #155.
+generator and this record's tables. **Update 2026-10-10 (issue #178): UART RX
+has moved too** (`ui_in[0]` to `ui_in[1]`), with the RX firmware, its bench,
+its evidence records and this record's tables in one PR.
 
 **No pin moves in the change that records this plan.** The "Run phase" table
 above, the machine-readable table and the open-drain mask all still describe
@@ -315,7 +318,7 @@ inventory is a hard failure.
     "spi": {"uio_dir": "0x0B", "uio_od": "0x00"},
     "i2c": {"uio_dir": "0x00", "uio_od": "0x0C"}
   },
-  "bench_debug": {"uart_rx": {"port": "uio", "bits": {"SAMPLE_MARK": 0, "FRAME_ERROR": 1}}},
+  "bench_debug": {"uart_rx": {"port": "uio", "bits": {"SAMPLE_MARK": 1, "FRAME_ERROR": 2}}},
   "phases": {
     "uart_tx": ["TX"],
     "uart_rx": ["RX"],
@@ -326,8 +329,8 @@ inventory is a hard failure.
     "i2c_result": ["RESULT[0]", "RESULT[1]", "RESULT[2]", "RESULT[3]", "RESULT[4]", "RESULT[5]", "RESULT[6]", "RESULT[7]"]
   },
   "pins": [
-    {"pin": "ui_in[0]", "port": "ui_in", "bit": 0, "electrical_role": "input", "load_role": "PROG_SER", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "uart_rx": "RX", "uart_rx_result": "unused", "spi_transfer": "unused", "spi_result": "unused", "i2c_transfer": "unused", "i2c_result": "unused"}, "shared_pin_rationale": "UART RX shares the PROG_SER load pin: the loader shifts the program in while PROG_MODE is high, and the UART receive programs sample RX only after the MODE drop, so the two uses never overlap in time. DR 0013's boot UART uses ui_in[1] instead; the target plan moves this RX to ui_in[1] too (issue #133); #155 moved SPI and I2C, and the UART RX move is a follow-up of #155."},
-    {"pin": "ui_in[1]", "port": "ui_in", "bit": 1, "electrical_role": "input", "load_role": "none", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "uart_rx": "unused", "uart_rx_result": "unused", "spi_transfer": "unused", "spi_result": "unused", "i2c_transfer": "unused", "i2c_result": "unused"}, "shared_pin_rationale": ""},
+    {"pin": "ui_in[0]", "port": "ui_in", "bit": 0, "electrical_role": "input", "load_role": "PROG_SER", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "uart_rx": "unused", "uart_rx_result": "unused", "spi_transfer": "unused", "spi_result": "unused", "i2c_transfer": "unused", "i2c_result": "unused"}, "shared_pin_rationale": ""},
+    {"pin": "ui_in[1]", "port": "ui_in", "bit": 1, "electrical_role": "input", "load_role": "none", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "uart_rx": "RX", "uart_rx_result": "unused", "spi_transfer": "unused", "spi_result": "unused", "i2c_transfer": "unused", "i2c_result": "unused"}, "shared_pin_rationale": ""},
     {"pin": "ui_in[2]", "port": "ui_in", "bit": 2, "electrical_role": "input", "load_role": "none", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "uart_rx": "unused", "uart_rx_result": "unused", "spi_transfer": "unused", "spi_result": "unused", "i2c_transfer": "unused", "i2c_result": "unused"}, "shared_pin_rationale": ""},
     {"pin": "ui_in[3]", "port": "ui_in", "bit": 3, "electrical_role": "input", "load_role": "none", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "uart_rx": "unused", "uart_rx_result": "unused", "spi_transfer": "unused", "spi_result": "unused", "i2c_transfer": "unused", "i2c_result": "unused"}, "shared_pin_rationale": ""},
     {"pin": "ui_in[4]", "port": "ui_in", "bit": 4, "electrical_role": "input", "load_role": "none", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "uart_rx": "unused", "uart_rx_result": "unused", "spi_transfer": "unused", "spi_result": "unused", "i2c_transfer": "unused", "i2c_result": "unused"}, "shared_pin_rationale": ""},
@@ -414,22 +417,33 @@ afterwards by #143 (see "UART receive" below). The checker runs in
 ### UART receive (added by #143)
 
 `uart_rx.asm`, `uart_rx_115200.asm` and `uart_rx_9600.asm` sample RX on
-`ui_in[0]` and write the received byte to all of `uo_out`. The table records
-that as the `uart_rx` phase (`RX` on `ui_in[0]`, a sampled role) and the
+`ui_in[1]` (since #178; it was `ui_in[0]`) and write the received byte to all of `uo_out`. The table records
+that as the `uart_rx` phase (`RX` on `ui_in[1]`, a sampled role) and the
 `uart_rx_result` phase (`RESULT[n]` on `uo_out[n]`), checked by the `uart_rx`
 profile. `uart_tx_9600.asm` is the low-baud transmitter and uses the existing
 `uart_tx` profile (TX on `uo_out[0]`).
 
-`ui_in[0]` is also the `PROG_SER` load pin. The two never overlap: the loader
-shifts the program in while `PROG_MODE` is high, and the RX programs sample
-only after the MODE drop. No pin moved in this change. The UART boot program
-of DR 0013 uses RX on `ui_in[1]` (Tiny Tapeout option B). #143 left the
-question of whether this profile's RX moves to match to #133. #133 answers it:
-the target plan puts RX on `ui_in[1]` ("Target pin plan" above), and the move
-itself is #155. Until then RX stays on `ui_in[0]`.
+RX shares no pin with the `PROG_SER` load pin any more. #143 recorded RX on
+`ui_in[0]`, shared with `PROG_SER` (the two never overlapped in time: the
+loader shifts the program in while `PROG_MODE` is high, and the RX programs
+sampled only after the MODE drop). The UART boot program of DR 0013 uses RX
+on `ui_in[1]` (Tiny Tapeout option B). #133's target plan put RX on
+`ui_in[1]` too, and #178 made the move. `ui_in[0]` is `PROG_SER` in the load
+phase only; the RX programs never read it, and the bench toggles it
+mid-frame to prove that.
+
+**Register consequence of the move (#178).** `R1` is the RX bit mask and the
+program's constant: it is now 2, not 1. The same register is the sample-mark
+value, the XOR mask and the delay-loop decrement, so those follow it: the
+debug bits are `uio_out[1]` (sample mark) and `uio_out[2]` (frame-error
+flag), the outer delay counts are doubled (decrement 2), and each data-bit
+sample has six `SHF LEFT` plus a `NOP` where it had seven `SHF LEFT` (bit 1
+needs six shifts to reach bit 7). Word count, total cycles and every `WAIT`
+count are unchanged, so the sample instants are the same.
 
 **Bench-debug writes to `uio_out`.** The RX programs also write `UIO_OUT`: a
-sample mark on `uio_out[0]` and a frame-error flag on `uio_out[1]`. These are
+sample mark on `uio_out[1]` and a frame-error flag on `uio_out[2]` (they were
+`uio_out[0]` and `uio_out[1]` until #178 moved RX). These are
 observability aids for the bench, **not** pin roles, and the table assigns no
 `uart_rx` role on `uio`. They are still checked. The table's `bench_debug`
 block declares the two bits, and the `uart_rx_debug` pattern requires every
@@ -439,8 +453,8 @@ only values allowed are `0x00`, the mark bit and the frame-error bit. The
 received byte on `UIO_OUT` fails, and at least one `OUT` to the result port
 must carry a computed value, so the byte cannot be rerouted off `uo_out`.
 
-Since #155 the two debug bits sit on the SPI profile's CS (`uio[0]`) and
-MOSI (`uio[1]`) pins. That changes nothing below: a UART RX image writes no
+Since #178 the two debug bits sit on the SPI profile's MOSI (`uio[1]`) and
+MISO/I2C-SCL (`uio[2]`) pins. That changes nothing below: a UART RX image writes no
 pin-mode register, so neither pin is driven while it runs.
 
 **These writes drive no pad (#154, resolved by DR 0012).** The top level is
@@ -530,9 +544,10 @@ target-spec row.
    `verification/uio_pads.py` take them from there).
 5. **If UART TX moves**: `firmware/asm/uart_tx.asm`,
    `firmware/asm/uart_tx_9600.asm` and `verification/test_firmware_uart.py`.
-   **When UART RX moves** to `ui_in[1]` (a follow-up of #155): `firmware/asm/uart_rx*.asm` (the `IN … UI_IN`
-   port and the `LDI R1` mask) and `verification/test_firmware_uart_rx.py`
-   (its `dut.ui_in` driver).
+   **UART RX has moved** to `ui_in[1]` (#178): `firmware/asm/uart_rx*.asm`
+   (the `LDI R1` mask, which also sets the debug bits and the delay-loop
+   step) and `verification/test_firmware_uart_rx.py` (its `set_rx` driver and
+   mark / flag bits). A further RX move edits those same places.
 6. **If load pins move**: the top-level `.mode_pin`/`.serial_in`,
    `verification/test_protocol_emulator.py::load_program`, `info.yaml`.
 
@@ -544,9 +559,8 @@ target-spec row.
 - The pin moves themselves. #133 proposes the target plan ("Target pin
   plan": UART RX to `ui_in[1]`, SPI and I2C onto the upper `uio` Pmod row),
   so *whether* the pins move is no longer open. *Making* the moves is #155,
-  after #135. #155 moved SPI and I2C; the UART RX move to `ui_in[1]` is its
-  follow-up. This record's tables carry today's assignments, including the
-  `ui_in[0]` RX that #143 recorded.
+  after #135. #155 moved SPI and I2C and #178 moved UART RX to `ui_in[1]`, so
+  this record's tables now carry the target plan for all three protocols.
 
 ## Cross-references
 

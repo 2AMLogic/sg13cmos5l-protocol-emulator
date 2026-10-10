@@ -302,7 +302,7 @@ def _(fx):
     for stem in ("uart_rx", "uart_rx_115200", "uart_rx_9600"):
         f = Fixture()
         try:
-            f.mutate(f"firmware/asm/{stem}.asm", "LDI   R1, 1", "LDI   R1, 2")
+            f.mutate(f"firmware/asm/{stem}.asm", "LDI   R1, 2", "LDI   R1, 1")
             expect_fail(f, f"firmware/asm/{stem}.asm", "concrete-firmware-bench")
         finally:
             f.close()
@@ -315,11 +315,12 @@ def _(fx):
     expect_fail(fx, "IN from port UIO_IN", "concrete-firmware-bench")
 
 
-@case("table moves UART RX to ui_in[1]: RX programs fail by file")
+@case("table moves UART RX back to ui_in[0]: RX programs fail by file")
 def _(fx):
     def mv(t):
-        pin(t, "ui_in[0]")["protocol_roles"]["uart_rx"] = "unused"
-        pin(t, "ui_in[1]")["protocol_roles"]["uart_rx"] = "RX"
+        pin(t, "ui_in[1]")["protocol_roles"]["uart_rx"] = "unused"
+        pin(t, "ui_in[0]")["protocol_roles"]["uart_rx"] = "RX"
+        pin(t, "ui_in[0]")["shared_pin_rationale"] = "UART RX shares PROG_SER (mutation)."
     fx.mutate_table(mv)
     code, out = fx.run()
     assert code == 1 and "[schema] PASS" in out and "[concrete-firmware-bench] FAIL" in out, out
@@ -357,14 +358,14 @@ def _(fx):
 def _(fx):
     fx.mutate("firmware/asm/uart_rx.asm", "LDI   R3, 0\n", "LDI   R3, 0x7E\n")
     expect_fail(fx, "OUT UIO_OUT, R3 writes 0x7E; bench_debug.uart_rx allows only 0, "
-                    "SAMPLE_MARK 0x01 and FRAME_ERROR 0x02", "concrete-firmware-bench")
+                    "SAMPLE_MARK 0x02 and FRAME_ERROR 0x04", "concrete-firmware-bench")
 
 
 @case("UART RX frame-error flag shifted onto an undeclared uio_out bit")
 def _(fx):
     fx.mutate("firmware/asm/uart_rx.asm",
-              "SHF   R2, LEFT         ; -> UIO_OUT bit 1 (SHF leaves Z alone)",
-              "SHF   R2, RIGHT        ; -> UIO_OUT bit 1 (SHF leaves Z alone)")
+              "SHF   R2, LEFT         ; -> UIO_OUT bit 2 (SHF leaves Z alone)",
+              "SHF   R2, RIGHT        ; -> UIO_OUT bit 2 (SHF leaves Z alone)")
     expect_fail(fx, "is not a recognised bench-debug write", "concrete-firmware-bench")
 
 
