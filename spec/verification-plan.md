@@ -341,7 +341,7 @@ auditable rather than a bare assertion:
 *Added 2026-10-09 (issue #131). Recorded 2026-10-10: all four items pass
 on the LibreLane netlist (Icarus + cocotb, zero-delay), with their
 negative controls failing as required --
-`verification/records/reset-power-up/records/20261010-001525-f46636d.md`.
+`verification/records/reset-power-up/records/20261010-012219-02f84e3.md`.
 The host's reload obligation after deselect is in `verification/README.md`
 (issue #118).*
 
