@@ -476,7 +476,54 @@ def case_supersedes_is_a_list(repo: Path) -> None:
     )
 
 
+def case_gitlink_record(repo: Path) -> None:
+    """A tracked mode-160000 entry matching the record pathspec used to
+    crash with FileNotFoundError / IsADirectoryError (#187)."""
+    _git(
+        repo,
+        "update-index",
+        "--add",
+        "--cacheinfo",
+        f"160000,{'1' * 40},verification/records/demo/records/{NEW_ID}.md",
+    )
+    _git(repo, "commit", "--quiet", "-m", "fixture: gitlink record")
+
+
+def case_gitlink_record_empty_dir(repo: Path) -> None:
+    """Uninitialised-submodule shape: an empty directory on disk."""
+    case_gitlink_record(repo)
+    record_path(repo, "demo", NEW_ID).mkdir()
+
+
+def case_experiment_mismatch(repo: Path) -> None:
+    _add_record(
+        repo,
+        "demo",
+        NEW_ID,
+        make_record(NEW_ID, "other", inputs=[("rtl/dut.v", _sha256_text(DUMMY_RTL))]),
+        "fixture: experiment disagrees with directory",
+    )
+
+
 CASES = [
+    (
+        "a gitlink record entry fails cleanly",
+        case_gitlink_record,
+        1,
+        "has git mode 160000",
+    ),
+    (
+        "a gitlink over an empty directory fails cleanly",
+        case_gitlink_record_empty_dir,
+        1,
+        "has git mode 160000",
+    ),
+    (
+        "a record whose experiment disagrees with its directory fails",
+        case_experiment_mismatch,
+        1,
+        "experiment `other` disagrees with its directory `demo`",
+    ),
     # (name, mutation, expected_exit, expected_substring)
     ("valid record passes", case_valid, 0, "PASS: all records valid"),
     (
