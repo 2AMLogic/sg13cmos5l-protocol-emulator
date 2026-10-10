@@ -1,0 +1,18 @@
+2026-10-10T02:06:23Z
+== macro types in netlist: RM_IHPSG13_1P_256x16_c2_bm_bist; models: rtl/vendor/RM_IHPSG13_1P_256x16_c2_bm_bist.v rtl/vendor/RM_IHPSG13_1P_core_behavioral_bm_bist.v (via flow/post-layout-sdf/netlist/macro-models.sim.v)
+== swept netlist: flow/post-layout-sdf/netlist/tt_um_2amlogic_protocol_emulator.v
+== sdf corners: nom_fast_1p32V_m40C nom_slow_1p08V_125C nom_typ_1p20V_25C
+   macro instance renames: [('u_prog_mem.u_sram', 'u_prog_mem_u_sram')]
+   normalized flow/post-layout-sdf/sdf/nom_fast_1p32V_m40C.sdf: header_triplets_filled=3 zero_delay_interconnects_dropped=1161
+   normalized flow/post-layout-sdf/sdf/nom_slow_1p08V_125C.sdf: header_triplets_filled=3 zero_delay_interconnects_dropped=1268
+   normalized flow/post-layout-sdf/sdf/nom_typ_1p20V_25C.sdf: header_triplets_filled=3 zero_delay_interconnects_dropped=1219
+== nom_fast_1p32V_m40C ==
+   rc=3 annotated=true status=fail elapsed_s=9
+== nom_slow_1p08V_125C ==
+   rc=3 annotated=true status=fail elapsed_s=10
+== nom_typ_1p20V_25C ==
+   rc=3 annotated=true status=fail elapsed_s=9
+wrote flow/post-layout-sdf-results.json
+FATAL: at least one annotated regression run failed (rc!=0, environment.sdf.annotated!=true, or status!=pass) -- see flow/post-layout-sdf-results.json and the per-corner fv-console.txt files under flow/post-layout-sdf/.
+exit 1
+2026-10-10T02:06:54Z

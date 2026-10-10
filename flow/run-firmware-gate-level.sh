@@ -13,8 +13,8 @@
 # Which netlist: the `tt_submission` artifact's `<top>.v` of a `gds` workflow
 # run -- the final netlist that the template's own `gl_test` job compiles.
 # Default: the byte-identical copy frozen under verification/records/
-# post-layout-sdf-regression/ from run 38012921517 (the first netlist with
-# the UART loader in the boot ROM, issue #139). Override with
+# post-layout-sdf-regression/ from run 38013383254 (the first netlist with
+# the SPI-flash boot program, issue #140). Override with
 # --netlist <file> (e.g. one from `gh run download <id> -n tt_submission`).
 #
 # Negative control (a suite that cannot fail cannot cite its passes): the
@@ -60,17 +60,24 @@
 # jumps, but the core goes on decoding the ROM, so a verified image never
 # runs and the bench's warm-start test must fail.
 #
+# SPI-flash boot (issue #140, DR 0013 strap 01): --boot-spi adds
+# verification/test_boot_spi.py, pin-only under GATES=yes. It boots signed
+# images from the independent flash model over the netlist's own CS0/MOSI/
+# SCK/MISO pads. Its negative control is the same `\u_core.rom_exit` stuck-
+# at-0 netlist: a good image never runs, so the bench's boot tests must fail.
+#
 # UART boot (issue #139, DR 0013 layer 2 strap 00): --boot-uart adds
 # verification/test_boot_uart.py, pin-only under GATES=yes (its white-box
 # reads and its two long runs -- the host-rate sweep and the 256-word image --
 # are skipped there). It shares the boot-rom negative control (`rom_exit`
 # stuck at 0: a verified UART load then never leaves the ROM).
 #
-# Usage:  ./flow/run-firmware-gate-level.sh [--netlist FILE] [--full] [--control-space] [--boot-rom] [--boot-uart]
+# Usage:  ./flow/run-firmware-gate-level.sh [--netlist FILE] [--full] [--control-space] [--boot-rom] [--boot-spi] [--boot-uart]
 #   --full  also runs verification/test_firmware_i2c_sr.py (the Sr/stretch
 #           sibling bench); default is the three issue-#108 protocol benches.
 #   --control-space  also runs verification/test_control_space.py.
 #   --boot-rom       also runs verification/test_boot_rom.py.
+#   --boot-spi       also runs verification/test_boot_spi.py.
 #   --boot-uart      also runs verification/test_boot_uart.py.
 # Env:    PDK_ROOT must contain ihp-sg13cmos5l/ (default ~/share/pdk).
 # Runs sims strictly one at a time. Writes flow/firmware-gate-level/
@@ -80,7 +87,7 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SCRATCH="${REPO_ROOT}/flow/firmware-gate-level"
-NETLIST="${REPO_ROOT}/verification/records/post-layout-sdf-regression/artifacts/20261010-014153-661c4bf/tt_um_2amlogic_protocol_emulator.v"
+NETLIST="${REPO_ROOT}/verification/records/post-layout-sdf-regression/artifacts/20261010-020805-ed5f2d1/tt_um_2amlogic_protocol_emulator.v"
 MODULES=(test_firmware_uart test_firmware_spi test_firmware_i2c)
 export PDK_ROOT="${PDK_ROOT:-$HOME/share/pdk}"
 
@@ -90,8 +97,9 @@ while [ $# -gt 0 ]; do
     --full) MODULES+=(test_firmware_i2c_sr); shift ;;
     --control-space) MODULES+=(test_control_space); shift ;;
     --boot-rom) MODULES+=(test_boot_rom); shift ;;
+    --boot-spi) MODULES+=(test_boot_spi); shift ;;
     --boot-uart) MODULES+=(test_boot_uart); shift ;;
-    -h|--help) sed -n '2,77p' "${BASH_SOURCE[0]}"; exit 0 ;;
+    -h|--help) sed -n '2,84p' "${BASH_SOURCE[0]}"; exit 0 ;;
     *) echo "FATAL: unknown argument $1" >&2; exit 1 ;;
   esac
 done
@@ -125,7 +133,7 @@ for mod in "${MODULES[@]}"; do
   if [ "$mod" = test_control_space ]; then
     inject_fault '\\u_core\.ctl_stall' '\u_core.ctl_stall' "$MUTANT_CTL"
   fi
-  if [ "$mod" = test_boot_rom ] || [ "$mod" = test_boot_uart ]; then
+  if [ "$mod" = test_boot_rom ] || [ "$mod" = test_boot_spi ] || [ "$mod" = test_boot_uart ]; then
     inject_fault '\\u_core\.rom_exit' '\u_core.rom_exit' "$MUTANT_BOOT"
   fi
 done
@@ -149,7 +157,7 @@ on_pads() { case "$1" in test_firmware_spi|test_firmware_i2c|test_firmware_i2c_s
 mutant_for() {  # the faulted netlist that must make <module> fail
   case "$1" in
     test_control_space) echo "$MUTANT_CTL" ;;
-    test_boot_rom|test_boot_uart) echo "$MUTANT_BOOT" ;;
+    test_boot_rom|test_boot_spi|test_boot_uart) echo "$MUTANT_BOOT" ;;
     *) echo "$MUTANT" ;;
   esac
 }

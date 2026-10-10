@@ -22,6 +22,7 @@ BENCHES=(
   protocol-emulator
   control-space
   boot-rom
+  boot-spi
   boot-uart
   program-memory
   protocol-models

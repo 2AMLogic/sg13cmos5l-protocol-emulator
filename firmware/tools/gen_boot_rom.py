@@ -23,7 +23,7 @@ past the end of the image read as `HALT`, so a boot program that jumps off
 its own end stops with every pin as it was. The image may not exceed
 `ROM_WORDS_MAX` words; a longer one is an error here. DR 0013 proposed a cap
 of 128 and said "anything over the cap returns to this record". The UART
-load (issue #139) did not fit under 128 (finding F2 in that record), so the
+load (issue #139) did not fit under 128 (finding F4 in that record), so the
 constant is the fetch address space, 256, until the record decides; see
 `ROM_WORDS_MAX` below.
 
@@ -50,7 +50,7 @@ ASM_PATH = ROOT / "firmware" / "asm" / "boot" / "boot_rom.asm"
 OUT_PATH = ROOT / "rtl" / "protocol_boot_rom.v"
 
 # DR 0013 layer 2 proposed "capped at 128 words". The UART load alone is over
-# that (DR 0013, finding F2, issue #139), so this is the 8-bit fetch address
+# that (DR 0013, finding F4, issue #139), so this is the 8-bit fetch address
 # space instead, the most the ROM's `case` can address. It is a stopgap, not a
 # decision: the cap returns to the record, as DR 0013 open item 3 says.
 ROM_WORDS_MAX = 256
@@ -75,7 +75,7 @@ def parse_hex(text: str) -> List[int]:
     if len(words) > ROM_WORDS_MAX:
         raise RomError(
             f"the boot image is {len(words)} words; the boot ROM is capped at "
-            f"{ROM_WORDS_MAX} words (DR 0013 finding F2). A larger ROM is a change to that record, not to this tool."
+            f"{ROM_WORDS_MAX} words (DR 0013 finding F4). A larger ROM is a change to that record, not to this tool."
         )
     return words
 
@@ -96,7 +96,7 @@ def render(words: List[int], hex_text: str) -> str:
         " * the .asm, re-assemble, and re-run the generator;",
         " * firmware/tools/check_firmware.py fails on any stale link in that chain.",
         " *",
-        f" *   image words  : {len(words)} (cap {ROM_WORDS_MAX}: the fetch address space, DR 0013 finding F2)",
+        f" *   image words  : {len(words)} (cap {ROM_WORDS_MAX}: the fetch address space, DR 0013 finding F4)",
         f" *   image sha256 : {digest}",
         " *",
         " * The boot ROM of spec/decision-records/0013-program-loading.md layer 2",

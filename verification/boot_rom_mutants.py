@@ -47,7 +47,7 @@ PMEM = "rtl/protocol_program_memory.v"
 ROM = "rtl/protocol_boot_rom.v"
 REQUEST = "verification/request-boot-rom.json"
 
-# The warm-start words moved to 0x8B.. when the UART load (issue #139) was
+# The warm-start words moved to 0x97.. when the UART load (issue #139) was
 # placed ahead of them; the strap dispatch at 0x00..0x08 did not move.
 T_STUB = "test_stub_straps_idle_on_unwritten_memory"
 T_UNVERIFIED = "test_mode_low_never_runs_unverified_memory"
@@ -91,20 +91,20 @@ MUTANTS = [
     ("warm-start-skips-verdict",
      "boot program: the branch on the CRC verdict is a NOP, so every image is run",
      ROM,
-     [("      8'h99: word = 16'hE009;", "      8'h99: word = 16'h0000;", 1)],
+     [("      8'h98: word = 16'hE009;", "      8'h98: word = 16'h0000;", 1)],
      {T_UNVERIFIED, T_CORRUPT}),
     ("verdict-ignores-crc-high-byte",
      "boot program: the verdict tests PM_CRC_LO only (OR R1, R1 for OR R0, R1)",
      ROM,
-     [("      8'h98: word = 16'h6100;", "      8'h98: word = 16'h6500;", 1)],
+     [("      8'h97: word = 16'h6100;", "      8'h97: word = 16'h6500;", 1)],
      {T_CORRUPT}),
     ("verdict-ignores-crc-low-byte",
      "boot program: the verdict tests PM_CRC_HI only (OR R0, R0 for OR R0, R1)",
      ROM,
-     [("      8'h98: word = 16'h6100;", "      8'h98: word = 16'h6000;", 1)],
+     [("      8'h97: word = 16'h6100;", "      8'h97: word = 16'h6000;", 1)],
      {T_CORRUPT}),
     ("straps-01-and-10-swapped",
-     "boot program: strap 01 warm-starts and strap 10 goes to the SPI stub",
+     "boot program: strap 01 warm-starts and strap 10 goes to the SPI-flash boot",
      ROM,
      [("      8'h03: word = 16'h1440;", "      8'h03: word = 16'h1420;", 1),
       ("      8'h06: word = 16'h1420;", "      8'h06: word = 16'h1440;", 1)],
@@ -113,7 +113,7 @@ MUTANTS = [
      "boot program: the handover does not restore Z (OR R3, R3 is a NOP), so the image starts "
      "with Z = 1 instead of the reset value",
      ROM,
-     [("      8'h9A: word = 16'h6F00;", "      8'h9A: word = 16'h0000;", 1)],
+     [("      8'h99: word = 16'h6F00;", "      8'h99: word = 16'h0000;", 1)],
      {T_WARM}),
 ]
 

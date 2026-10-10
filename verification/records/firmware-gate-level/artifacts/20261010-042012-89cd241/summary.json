@@ -1,0 +1,24 @@
+{
+  "netlist": "<repo>/verification/records/post-layout-sdf-regression/artifacts/20261010-020805-ed5f2d1/tt_um_2amlogic_protocol_emulator.v", "netlist_sha256": "6cba6a22b1d95e9caeac1f484ca7413215a9d287506f5afaef96045fde6bdedf",
+  "flow": "LibreLane (Tiny Tapeout gds workflow) netlist; Icarus+cocotb zero-delay simulation",
+  "runs": [
+    {"kind": "golden", "module": "test_firmware_uart", "result": "tests=3 failed=0 unparsed=0 rc=0", "as_required": true}
+,    {"kind": "golden", "module": "test_firmware_spi", "result": "tests=3 failed=0 unparsed=0 rc=0", "as_required": true}
+,    {"kind": "golden", "module": "test_firmware_i2c", "result": "tests=4 failed=0 unparsed=0 rc=0", "as_required": true}
+,    {"kind": "golden", "module": "test_firmware_i2c_sr", "result": "tests=5 failed=0 unparsed=0 rc=0", "as_required": true}
+,    {"kind": "golden", "module": "test_control_space", "result": "tests=9 failed=0 unparsed=0 rc=0", "as_required": true}
+,    {"kind": "golden", "module": "test_boot_rom", "result": "tests=6 failed=0 unparsed=0 rc=0", "as_required": true}
+,    {"kind": "golden", "module": "test_boot_spi", "result": "tests=6 failed=0 unparsed=0 rc=0", "as_required": true}
+,    {"kind": "negative-control", "module": "test_firmware_uart", "result": "tests=3 failed=1 unparsed=0 rc=2", "as_required": true}
+,    {"kind": "negative-control", "module": "test_firmware_spi", "result": "tests=3 failed=1 unparsed=0 rc=2", "as_required": true}
+,    {"kind": "negative-control", "module": "test_firmware_i2c", "result": "tests=4 failed=2 unparsed=0 rc=2", "as_required": true}
+,    {"kind": "negative-control", "module": "test_firmware_i2c_sr", "result": "tests=5 failed=3 unparsed=0 rc=2", "as_required": true}
+,    {"kind": "negative-control", "module": "test_control_space", "result": "tests=9 failed=5 unparsed=0 rc=2", "as_required": true}
+,    {"kind": "negative-control", "module": "test_boot_rom", "result": "tests=6 failed=1 unparsed=0 rc=2", "as_required": true}
+,    {"kind": "negative-control", "module": "test_boot_spi", "result": "tests=6 failed=2 unparsed=0 rc=2", "as_required": true}
+,    {"kind": "negative-control-pad", "fault": "uio_oe[3] stuck at 0", "module": "test_firmware_spi", "result": "tests=3 failed=1 unparsed=0 rc=2", "as_required": true}
+,    {"kind": "negative-control-pad", "fault": "uio_oe[3] stuck at 0", "module": "test_firmware_i2c", "result": "tests=4 failed=1 unparsed=0 rc=2", "as_required": true}
+,    {"kind": "negative-control-pad", "fault": "uio_oe[3] stuck at 0", "module": "test_firmware_i2c_sr", "result": "tests=5 failed=2 unparsed=0 rc=2", "as_required": true}
+
+  ]
+}

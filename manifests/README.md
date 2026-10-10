@@ -153,6 +153,19 @@ capture, PVT corner sweeps, or Monte Carlo.
   not cited; the open question above stands. **Item 7 stays
   `unmet`/`check_failed`** (#106). Baseline: `signoff-baseline` record
   `20261010-020408-5a5cddc`, 1 of 11.
+- **Items 3, 4 and 7, state as of 2026-10-10 (issue #140, PR #188).**
+  Append-only; the bullet above is the earlier state. The SPI-flash boot
+  program changed the boot ROM, so the layout changed. Items 3 and 4 cite
+  record `20261010-041033-fb86d71` (`librelane-gds-signoff-check/`, the GDS
+  of gds run 38018615820, `sha256:60e37b52…`). Item 7 cites
+  `post-layout-sdf-regression` record `20261010-020805-ed5f2d1`, whose routed
+  netlist is byte-identical to that run's. **Item 3 stays `met`.** **Item 4
+  stays `unmet`/`check_errored`**: the converter now stops at a multi-bit
+  range slice in an instance port connection (`pm_wdata[7:0]`), the same
+  grammar gap as klayout-tools#2941. The compare against the post-route
+  reference is `match` with `power_connectivity` `match`, and is not cited.
+  **Item 7 stays `unmet`/`check_failed`** (#106). Baseline:
+  `signoff-baseline` record `20261010-044125-89cd241`, 1 of 11.
 - **Every citation pins a `content_hash`** — the sha256 of the cited
   artifact file, verifiable with `sha256sum`. Two honest caveats, on
   record here because the issue calls freshness "the point":

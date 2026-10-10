@@ -51,6 +51,9 @@ firmware/
                           (issue #118) and, with --uart, the layer-2 UART boot
                           frame (issue #139)
     test_loadseq.py       its unit tests
+    mkflash.py            turns a .hex into the 512-byte signed flash image
+                          the SPI-flash boot loads (issue #140);
+                          test_mkflash.py tests it
 ```
 
 ## Cold-start invocation (a third party can run this from a fresh clone)
@@ -102,9 +105,10 @@ python3 firmware/tools/gen_boot_rom.py
 `check_firmware.py` checks both links, so a ROM that no longer matches the
 committed program fails CI at the link that went stale. The generator
 refuses an image over **256 words**, the fetch address space. DR 0013
-proposed a cap of 128; the UART load does not fit it (finding F2 in that
+proposed a cap of 128; the UART load does not fit it (finding F4 in that
 record), so the cap is the address space until the record decides. The image
-is **158** words.
+is **221** words (the SPI-flash boot 64, the UART load 129, the strap
+dispatch and warm start the rest).
 
 What the program does: its first instruction reads the straps `ui_in[6:5]`.
 Strap `10` is the **warm start**: it reads every word of program memory and
@@ -115,10 +119,23 @@ words 0–254. It first restores `R0`–`R3`, `Z` and `C` to their reset
 values, so a warm-started program starts in the state a serial-loaded one
 does, except that it reads `BOOT_STATUS = 0x00`. One pass of the loop is 9
 cycles (`.cyclesec warm_word`), and word 0 of a verified image executes
-exactly 2,323 cycles after the boot program's first instruction. Strap `01`
-is a **stub** (one `HALT`) until the SPI-flash boot (#140) lands. Straps
+exactly 2,323 cycles after the boot program's first instruction. Straps
 `00` and `11`, and a warm start that fails its check, run the **UART load**
 below.
+
+Strap `01` is the **SPI-flash boot** (issue #140, `spi_boot` at the end of
+the source, 64 words): it makes CS0, MOSI and SCK (`uio[0]`, `uio[1]`,
+`uio[3]`, the Tiny Tapeout QSPI Pmod pinout) outputs, runs one SPI mode 0
+transaction (`0x03`, address 0, 512 bytes), commits each word through
+`PM_*`, checks `PM_CRC` against the warm start's signature, releases every
+pin, and either takes the warm start's hand-over (`run_image`) or halts.
+`firmware/tools/mkflash.py` makes a flash image from a committed `.hex`;
+[`docs/spi-flash-boot.md`](../docs/spi-flash-boot.md) is the guide to
+putting one on the Pmod. Bench: `verification/test_boot_spi.py`
+(`verification/request-boot-spi.json`), negative controls
+`verification/boot_spi_mutants.py`, evidence in
+`verification/records/boot-spi/`. With the UART load the image is 221 words,
+which is why the ROM's cap is the 256-word address space (DR 0013 finding F4).
 
 ### The UART load (issue #139, DR 0013 layer 2)
 

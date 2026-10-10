@@ -109,7 +109,7 @@ def test_parse_rejects_an_empty_image():
 
 
 def test_cap_is_the_fetch_address_space():
-    """DR 0013 proposed 128; the UART load does not fit (finding F2, issue
+    """DR 0013 proposed 128; the UART load does not fit (finding F4, issue
     #139), so the cap is the 8-bit fetch address space until the record
     decides. 256 is in, 257 is out."""
     assert gen.ROM_WORDS_MAX == 256

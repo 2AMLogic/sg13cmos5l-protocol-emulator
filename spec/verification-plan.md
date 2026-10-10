@@ -329,6 +329,11 @@ auditable rather than a bare assertion:
   - a SPI-flash behavioural model that answers `0x03` reads from an image
   - corrupted frames and flash contents, which must never reach `RUN`
 
+  The SPI-flash half is built (issue #140): `verification/test_boot_spi.py`
+  with `verification/reference_models/spi_flash.py`, which checks SPI mode 0
+  as well as answering `0x03`, plus the rule that the boot drives only the
+  Pmod's CS0, MOSI and SCK pins. The UART half is issue #139.
+
   The ROM image is freshness-checked against its `.asm` source like every
   other committed `.hex`.
 
@@ -356,6 +361,15 @@ not fully met. The negative controls fail as required --
 `verification/records/reset-power-up/records/20261010-012219-02f84e3.md`.
 The host's reload obligation after deselect is in `verification/README.md`
 (issue #118).*
+
+*2026-10-10 (issue #140): re-run on the netlist with the SPI-flash boot
+program. Strap `01` is no longer a stub: it runs the SPI-flash boot, which
+drives CS0, MOSI and SCK, so the bench checks those pins against the
+independent boot model edge for edge (row 14's "until a program writes
+them") and the program memory against what the boot wrote; the other
+straps are checked as before. Same outcome: (a), (b) and reselect pass, (c)
+as above, every negative control fails as required --
+`verification/records/reset-power-up/records/20261010-045739-b28ebcc.md`.*
 
 - **Random-initial-state gate-level run.** Every flop of the flow-of-record
   netlist starts at a seeded random value (and, separately, at X). Then
