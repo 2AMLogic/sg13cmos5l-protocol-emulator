@@ -240,6 +240,34 @@ that fails does not retroactively erase an earlier recorded pass; it is
 recorded as a new result explaining why (e.g., a regression, a spec change
 via a new decision record, or a reference-model correction) — see §5.
 
+### 4.1 ISA-level reference simulator and lockstep co-simulation (issue #152)
+
+The suites above grade whole firmware against protocol models; a corner of
+the instruction set that no shipped program happens to exercise (the flag
+after a `SUB` borrow, `SHF` left with `C`, `WAIT 255`, a reserved port
+encoding, a rarely used control index) passes them untouched. The ISA is the
+product and the stretch-protocol firmware (#130, #141) will run new programs
+on a frozen ISA, so the instruction set gets its own golden model.
+
+| Item | What |
+|---|---|
+| Independent reference | `verification/reference_models/isa.py`: a table-driven instruction-set simulator written from DR 0001's opcode table and DR 0012's register map, importing nothing from `rtl/`, the assembler or any bench. It emits one architectural row per clock edge. Its opcode and control tables are data, so a later DR that adds an encoding is a table row plus a record. |
+| Stimulus | `verification/isa_lockstep_gen.py`: seeded programs that terminate by construction (forward-only branches, bounded counter loops, a static edge cap; a generator that exceeds its cap is a bench failure, not a pass), with the directed edge cases (`HALT` first, `WAIT 255` then a branch, back-to-back control accesses, `RUN` into just-written code, a bounded loop). Pin inputs are random per edge. |
+| Comparison | `verification/test_isa_lockstep.py`: on every edge of the run phase, `pc`, `R0`-`R3`, `Z`, `C`, `halted` (RTL hierarchy) and `uo_out` / `uio_out` / `uio_oe` (pins) against the ISS, over the real serial load phase. Seed, program index, edge, field and both values are printed on a mismatch and the seed replays it. |
+| Coverage gate | A counted gate, failing if any bucket is short: every opcode retires at least `min_retire` times; `ADD`/`SUB` each at carry-or-borrow 0 and 1 and result zero and non-zero; `SHF` both directions with shifted-out bit 0 and 1; `BZ`/`BNZ` taken and not; `WAIT` at 0, 1, a middle value and 255; `HALT`; every port for `IN` and `OUT`, reserved no-ops included; every assigned control index read and written; unassigned, read-only and write-only indices; `WCTL RUN`. |
+| Sensitivity | `verification/isa_lockstep_mutants.py`: eight single-defect copies of the core (SUB carry polarity, `SHF` direction, `BZ`/`BNZ`, `WAIT` off by one, and four more), each required to be caught. |
+| Cycle cross-check | The ISS's per-instruction cycle count is compared with the assembler's static count for every retired instruction, and a straight-line program's assembler `total_cycles` with the ISS span; the RTL leg is the per-edge compare. Disagreement is a recorded finding. |
+
+Scope limits, stated so they are not read as coverage: programs run from
+program memory after a serial load (boot-ROM fetch, warm start and the SPI
+boot path are owned by `test_boot_rom.py` / `test_boot_spi.py`); the compare
+reads RTL internals, so a gate-level lockstep is deferred (flop names are
+flattened and `flag_c` is write-only state synthesis may drop); the flow is
+RTL simulation, Icarus + cocotb, and no synthesis or timing number is
+claimed. Where DR 0001 is silent the model names its choice instead of
+copying the RTL (`isa.OPEN_DETAILS`): the SUB `C` polarity is an RTL pin of
+an open detail, reported as such, and never a reason to relax the spec.
+
 ## 5. AI-agent evidence process
 
 Every artifact in this repo — spec, decision records, RTL (once it exists),
