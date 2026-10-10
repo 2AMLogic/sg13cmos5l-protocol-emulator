@@ -1,0 +1,140 @@
+{
+  "schema_version": 2,
+  "engine": "yosys",
+  "engine_version": "0.67+post",
+  "hdl_toplevel": "tt_um_2amlogic_protocol_emulator",
+  "run_id": "run-c875642cd43241cfa8659196d836671c",
+  "status": "ok",
+  "instance_count": 1623,
+  "area_um2": 23725.4724,
+  "sequential_area_um2": 8720.0064,
+  "instance_counts_by_type": {
+    "RM_IHPSG13_1P_256x16_c2_bm_bist": 1,
+    "sg13cmos5l_a21o_1": 35,
+    "sg13cmos5l_a21oi_1": 149,
+    "sg13cmos5l_a221oi_1": 67,
+    "sg13cmos5l_a22oi_1": 86,
+    "sg13cmos5l_and2_1": 33,
+    "sg13cmos5l_and3_1": 11,
+    "sg13cmos5l_dfrbpq_1": 178,
+    "sg13cmos5l_inv_1": 48,
+    "sg13cmos5l_mux2_1": 120,
+    "sg13cmos5l_mux4_1": 9,
+    "sg13cmos5l_nand2_1": 183,
+    "sg13cmos5l_nand2b_1": 41,
+    "sg13cmos5l_nand3_1": 53,
+    "sg13cmos5l_nand3b_1": 13,
+    "sg13cmos5l_nand4_1": 23,
+    "sg13cmos5l_nor2_1": 144,
+    "sg13cmos5l_nor2b_1": 47,
+    "sg13cmos5l_nor3_1": 55,
+    "sg13cmos5l_nor4_1": 18,
+    "sg13cmos5l_o21ai_1": 186,
+    "sg13cmos5l_or2_1": 25,
+    "sg13cmos5l_or3_1": 9,
+    "sg13cmos5l_or4_1": 7,
+    "sg13cmos5l_xnor2_1": 54,
+    "sg13cmos5l_xor2_1": 28
+  },
+  "leakage_power_nw": 276.7066971,
+  "leakage_by_type_nw": {
+    "sg13cmos5l_a21o_1": 0.158296,
+    "sg13cmos5l_a21oi_1": 0.11447700000000001,
+    "sg13cmos5l_a221oi_1": 0.157856,
+    "sg13cmos5l_a22oi_1": 0.13888499999999998,
+    "sg13cmos5l_and2_1": 0.13761,
+    "sg13cmos5l_and3_1": 0.14666200000000001,
+    "sg13cmos5l_dfrbpq_1": 0.510517,
+    "sg13cmos5l_inv_1": 0.0630032,
+    "sg13cmos5l_mux2_1": 0.246339,
+    "sg13cmos5l_mux4_1": 0.464975,
+    "sg13cmos5l_nand2_1": 0.0812456,
+    "sg13cmos5l_nand2b_1": 0.128618,
+    "sg13cmos5l_nand3_1": 0.08718479999999999,
+    "sg13cmos5l_nand3b_1": 0.134524,
+    "sg13cmos5l_nand4_1": 0.0915718,
+    "sg13cmos5l_nor2_1": 0.08292350000000001,
+    "sg13cmos5l_nor2b_1": 0.130258,
+    "sg13cmos5l_nor3_1": 0.0950841,
+    "sg13cmos5l_nor4_1": 0.0997618,
+    "sg13cmos5l_o21ai_1": 0.126648,
+    "sg13cmos5l_or2_1": 0.114895,
+    "sg13cmos5l_or3_1": 0.121923,
+    "sg13cmos5l_or4_1": 0.124109,
+    "sg13cmos5l_xnor2_1": 0.194767,
+    "sg13cmos5l_xor2_1": 0.184817
+  },
+  "timing": null,
+  "sta": null,
+  "sta_unavailable_reason": "the optional klt_statime_native extension is not installed, so no gate-level static timing analysis was attempted -- from a repo checkout, run `uv sync --group statime` (or `maturin develop --release` inside native/statime/) and re-run to populate `sta`",
+  "structural": {
+    "latches": 0,
+    "expected_latches": 0,
+    "unexpected_latches": 0,
+    "comb_loops": 0,
+    "multi_driven": 0,
+    "has_critical": false
+  },
+  "cell_exclusions": {
+    "mode": "additive",
+    "requested": [],
+    "library_defaults": [],
+    "effective": [],
+    "validated": null,
+    "engine_supports_dont_use": null
+  },
+  "warnings": {
+    "total": 2,
+    "by_category": {
+      "other": 1,
+      "unsupported_cell_library": 1
+    },
+    "representatives": [
+      {
+        "category": "other",
+        "count": 1,
+        "text": "Replacing memory \\regs with list of registers. See rtl/protocol_core.v:463"
+      },
+      {
+        "category": "unsupported_cell_library",
+        "count": 1,
+        "text": "cell_library 'sg13cmos5l_stdcell' has no verified mapping for: ABC -constr (driving cell/output load), load-driven sizing/buffering and ABC timing (timing is null); setundef -zero/hilomap (bare 0/1/x constants may remain unroutable in place-and-route). These capabilities were skipped."
+      }
+    ]
+  },
+  "netlist_path": {
+    "path": "flow/.klt/synthesize/run-c875642cd43241cfa8659196d836671c/tt_um_2amlogic_protocol_emulator_synth.v",
+    "scope": "repo"
+  },
+  "netlist_sha256": "94d0c3a2c0117b97b271fdd2d03aea1fb1a81b20fc1e07f8547a2000fc070dab",
+  "script_path": {
+    "path": "flow/.klt/synthesize/run-c875642cd43241cfa8659196d836671c/synth_tt_um_2amlogic_protocol_emulator.ys",
+    "scope": "repo"
+  },
+  "run_script_path": {
+    "path": "flow/.klt/synthesize/run-c875642cd43241cfa8659196d836671c/synth_tt_um_2amlogic_protocol_emulator.run.ys",
+    "scope": "repo"
+  },
+  "provenance": {
+    "klt_version": "0.6.0+g6457a605d73e",
+    "klayout_version": "0.30.12",
+    "pdk": {
+      "name": "ihp-sg13cmos5l",
+      "source": "PDK_ROOT environment variable",
+      "version": null
+    },
+    "deck": {
+      "name": "sg13cmos5l_stdcell__typ_1p20V_25C",
+      "content_hash": "sha256:34163f3e7de9f854afac57332ba06f1739b78e7ac35660a8a5ddd39c570124ad",
+      "released": false
+    },
+    "input": {
+      "content_hash": "sha256:003102714b7febbdf0d0d0c4fcc2c17958483c79fd982af03f0afdec7e1e9975",
+      "role": "source"
+    }
+  },
+  "equivalence": null,
+  "restructuring": null,
+  "arithmetic": null,
+  "baseline": null
+}
