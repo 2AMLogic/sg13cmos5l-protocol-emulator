@@ -258,16 +258,47 @@ module protocol_program_memory (
   assign mem_ren = mem_ren_l;
 `endif
 
-  wire        mem_men   = mem_wen || mem_ren;
-  wire [7:0]  mem_addr  = load_active          ? wr_addr :
-                          (run_wen || pm_re)   ? pm_addr :
-                                                 fetch_addr;
-  wire [15:0] mem_din   = load_active ? load_word : pm_wdata;
+  wire        mem_men_l  = mem_wen || mem_ren;
+  wire [7:0]  mem_addr_l = load_active          ? wr_addr :
+                           (run_wen || pm_re)   ? pm_addr :
+                                                  fetch_addr;
+  wire [15:0] mem_din_l  = load_active ? load_word : pm_wdata;
+
+  // Issue #201: the same slew treatment as A_REN, for every other
+  // design-driven functional macro input (A_ADDR, A_DIN, A_WEN, A_MEN).
+  // Which macro input pin violates the max-slew limit follows placement
+  // (A_DIN[0] on one ROM, A_WEN on the next), so the repair covers the
+  // whole input set rather than one pin. LibreLane-only; simulation and
+  // the klt/Yosys flow take plain wires, so behaviour and logic there are
+  // unchanged. `mem_din_l` (not `mem_din`) feeds the CRC below: the
+  // buffers are logically wires and the CRC is not a macro pin.
+  wire [7:0]  mem_addr;
+  wire [15:0] mem_din;
+  wire        mem_wen_b;
+  wire        mem_men;
+`ifdef __librelane__
+  genvar gi;
+  generate
+    for (gi = 0; gi < 8; gi = gi + 1) begin : g_addr_drv
+      sg13cmos5l_buf_4 u_drv (.A(mem_addr_l[gi]), .X(mem_addr[gi]));
+    end
+    for (gi = 0; gi < 16; gi = gi + 1) begin : g_din_drv
+      sg13cmos5l_buf_4 u_drv (.A(mem_din_l[gi]), .X(mem_din[gi]));
+    end
+  endgenerate
+  sg13cmos5l_buf_4 u_wen_drv (.A(mem_wen),   .X(mem_wen_b));
+  sg13cmos5l_buf_4 u_men_drv (.A(mem_men_l), .X(mem_men));
+`else
+  assign mem_addr  = mem_addr_l;
+  assign mem_din   = mem_din_l;
+  assign mem_wen_b = mem_wen;
+  assign mem_men   = mem_men_l;
+`endif
 
   RM_IHPSG13_1P_256x16_c2_bm_bist u_sram (
       .A_CLK      (clk),
       .A_MEN      (mem_men),
-      .A_WEN      (mem_wen),
+      .A_WEN      (mem_wen_b),
       .A_REN      (mem_ren),
       .A_ADDR     (mem_addr),
       .A_DIN      (mem_din),
@@ -299,7 +330,7 @@ module protocol_program_memory (
       serial_loaded <= 1'b0;
     end else begin
       if (mem_wen) begin
-        pm_crc <= crc16_word(pm_crc, mem_din);
+        pm_crc <= crc16_word(pm_crc, mem_din_l);
       end else if (pm_crc_clr) begin
         pm_crc <= 16'h0000;
       end
