@@ -1,0 +1,10 @@
+started 2026-10-10T05:51:02Z
+== protocol_program_memory: synthesize (nominal corner) ==
+== protocol_program_memory: place-and-route (target_stage: place) ==
+FATAL: klt place-and-route failed for protocol_program_memory (rc=1) -- see <repo>/flow/par-scratch/par-protocol-program-memory.log
+== tt_um_2amlogic_protocol_emulator: synthesize (nominal corner) ==
+== tt_um_2amlogic_protocol_emulator: place-and-route (target_stage: place) ==
+FATAL: klt place-and-route failed for tt_um_2amlogic_protocol_emulator (rc=1) -- see <repo>/flow/par-scratch/par-tt-um-2amlogic-protocol-emulator.log
+<repo>/flow/die-area-par-results.json
+exit 1
+ended 2026-10-10T05:51:06Z
