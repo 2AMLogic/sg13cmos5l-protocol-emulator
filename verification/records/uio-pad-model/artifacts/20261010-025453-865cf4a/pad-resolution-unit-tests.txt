@@ -1,0 +1,10 @@
+PASS test_bad_arguments_are_rejected
+PASS test_bits_normalisation
+PASS test_constructor_and_external_side_validate
+PASS test_contention_is_only_ever_known_opposite_drives
+PASS test_i2c_board_wiring
+PASS test_known_drive_truth_table_is_complete_and_holds
+PASS test_open_drain_bus_is_a_wired_and
+PASS test_unknown_design_side
+PASS test_without_output_enable_the_design_cannot_pull_low
+PASS: 9 pad-resolution tests

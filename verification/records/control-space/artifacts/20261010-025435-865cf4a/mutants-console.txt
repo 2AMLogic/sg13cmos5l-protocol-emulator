@@ -1,0 +1,14 @@
+ok   golden (unmodified copy): 9/9 passed
+ok   stall-skipped-on-zero-data: 4/9 tests failed -- WCTL PM_DATA_LO skips its stall cycle when the written byte is 0x00 (data-dependent latency)
+ok   run-falls-through: 1/9 tests failed -- WCTL RUN stalls its 2 cycles but then fetches pc+1 instead of Rs
+ok   rctl-sets-z: 1/9 tests failed -- a 1-cycle RCTL writes the Z flag from the value it read
+ok   reserved-read-leaks: 1/9 tests failed -- a read of an unassigned index returns PM_ADDR instead of 0x00
+ok   port01-decodes-as-wctl: 1/9 tests failed -- OUT to the reserved port 01 is decoded as a control write
+ok   no-addr-increment-on-read: 1/9 tests failed -- RCTL PM_DATA_LO does not advance PM_ADDR
+ok   uio-od-resets-enabled: 9/9 tests failed -- UIO_OD resets to 0x81 instead of 0x00 (pins driven from reset)
+ok   od-does-not-win: 1/9 tests failed -- pin mode: UIO_DIR drives a pin push-pull even when UIO_OD selects open-drain
+ok   crc-wrong-polynomial: 2/9 tests failed -- PM_CRC uses polynomial 0x8005 (CRC-16/ARC family) instead of 0x1021
+ok   crc-skips-serial-load: 2/9 tests failed -- PM_CRC covers PM_DATA_LO commits but not the serial load's
+ok   crc-byte-order-swapped: 2/9 tests failed -- PM_CRC feeds each word low byte first
+ok   pm-write-wrong-address: 2/9 tests failed -- a run-phase program-memory write lands at the fetch address, not PM_ADDR
+RESULT: golden passes and every mutant is caught by its target test
