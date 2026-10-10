@@ -121,6 +121,30 @@ async def test_uart_negative_control_flags_drift_over_bound(dut):
     await _tick()
 
 
+def _encode_late_mistimed_frame(data, baud, line, t0=0.0, later_scale=1.03):
+    """One 8N1 frame whose start bit and first data bit are nominal and
+    whose remaining eight bit periods (data bits 1-7 and the stop bit) are
+    ``later_scale`` x nominal; returns the end of the stop bit.
+
+    Issue #97's blind case: for payload 0xFF the only in-frame edge after
+    the start fall is the rise at bit 1, so the in-frame last-edge drift
+    reads 0 whatever ``later_scale`` is.  Only the frame's length -- the
+    pitch to a following start -- carries the error.  Kept in this bench
+    (not ``stimulus.py``, which the SPI and I2C evidence also hashes).
+    """
+    period = uart_model.bit_period_ns(baud)
+    t = float(t0)
+    line.add(t, 0)
+    t += period
+    line.add(t, data & 1)
+    t += period
+    for i in range(1, uart_model.UART_DATA_BITS):
+        line.add(t, (data >> i) & 1)
+        t += period * later_scale
+    line.add(t, 1)
+    return t + period * later_scale
+
+
 @cocotb.test()
 async def test_uart_frame_pitch_grades_back_to_back_0xff(dut):
     """Issue #97: 0xFF frames have no in-frame edge past bit 1, so the
@@ -177,7 +201,7 @@ async def test_uart_frame_pitch_grades_back_to_back_0xff(dut):
     # Last-edge drift reads 0 on the slow frame; pitch shows 8 x 3 % = 24 %.
     for scale, back_to_back in ((1.03, True), (0.97, False)):
         line = Signal(1, name="uart_stream")
-        end = stimulus.encode_late_mistimed_frame(
+        end = _encode_late_mistimed_frame(
             0xFF, baud, line, t0=period, later_scale=scale
         )
         uart_model.encode_frame(0xFF, baud, line, t0=end)
@@ -207,7 +231,7 @@ async def test_uart_isolated_0xff_frame_is_documented_unobservable(dut):
     for scale in (0.97, 1.03):
         for back_to_back in (False, True):
             line = Signal(1, name="uart_isolated")
-            stimulus.encode_late_mistimed_frame(
+            _encode_late_mistimed_frame(
                 0xFF, baud, line, t0=period, later_scale=scale
             )
             decoder = uart_model.UartDecoder(baud, back_to_back=back_to_back)
