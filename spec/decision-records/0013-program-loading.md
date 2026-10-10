@@ -391,9 +391,11 @@ looped receiver plus the `0xA5`/count/CRC framing, the CRC check and the
 `0x06`/`0x15` reply does not obviously fit in 35. This issue does not raise
 the cap, shrink the SPI program, or move work into hardware. Options for
 #139 and for ratification, none taken here: raise the cap (the ROM is
-logic: the 30-word ROM measured 1,531.20 um^2 in the klt/Yosys flow, and
-the die is 57 % unoccupied (notes of issue #138), so a larger cap is likely
-affordable, but that is #129's call, not a firmware issue's); cut the SPI program (the 6-word signature
+logic, and the measurement below gives its price: 29-34 um^2 per word on
+either flow, so the 35 words that the UART load would want beyond today's
+cap, or the 98 more of a doubled cap, are about 1.0-1.2 k um^2 or 2.8-3.3 k
+um^2 on a die that is 55 % unoccupied; but that is #129's call, not a
+firmware issue's); cut the SPI program (the 6-word signature
 check is the cheapest to lose, and costs the dead-MISO rule above); or let the UART load be a short stub that loads a
 longer loader into program memory. The first two change numbers this record
 states; the third changes the DR 0013 UART design.
@@ -416,7 +418,35 @@ resolved through `verification/uio_pads.py` with pull-ups on `uio[0]`,
 released the pins) reads as low to the flash model; CS0 is high by then, so
 a real flash ignores them. Zero delay, logical levels.
 
+**Area and timing of the 93-word ROM, each number with its flow** (§
+Consequences: "Both flows measure it"). The change is +63 ROM words and +2
+flip-flops: bits 4 and 7 of the ROM word, zero in every word of the 30-word
+image (issue #138's notes), are used by the SPI program, so the two output
+flops that were optimized away are back.
+
+| | klt/Yosys flow (synthesis, cell area only) | LibreLane flow (placed and routed, 20 ns) |
+|---|---|---|
+| Standard-cell area, 30 -> 93 words | 19,451.43 -> 21,263.63 um^2 (+1,812.21, +9.3 %) | 26,123.7 -> 28,266.5 um^2 placed (+2,142.8, +8.2 %) |
+| Instances | 1,189 -> 1,366 | 1,680 -> 1,946 |
+| Flip-flops | 176 -> 178 | 176 -> 178 |
+| ROM alone | 104 -> 274 instances, 1,531.20 -> 3,116.76 um^2 | not separable |
+| Utilization of the 2x2 die | not measured by this flow | 42.82 % -> 44.51 % |
+| Worst setup slack (slow / typ / fast) | **no timing**: this flow cannot time the design | +7.422 / +12.168 / +14.473 -> +6.300 / +11.499 / +14.327 ns |
+| Worst hold slack (slow / typ / fast) | n/a | +0.604 / +0.300 / +0.119 -> +0.565 / +0.282 / +0.114 ns |
+| Setup and hold violations | n/a | 0 at all three corners, before and after |
+
+Records: `verification/records/synthesis-baseline/records/20261010-020506-ed5f2d1.md`
+(the baseline was re-measured with the same host tools: the host's Yosys
+0.67 gives the same 19,451.43 um^2 for the 30-word tree as the earlier
+record's 0.69) and
+`verification/records/librelane-corner-timing/records/20261010-020340-ed5f2d1.md`
+(`gds` run 38013383254, whose gl_test and precheck are green). The two
+flows differ by about 3 % in absolute synthesis area, as before, and agree
+on what the change costs, within 18 %. The LibreLane run shows the
+max-slew violation of issue #138's notes gone and max-cap up by one at the
+fast corner; neither is a setup or hold violation. The 2x2 budget is not
+threatened (55 % of the core is unoccupied), so nothing is raised against
+DR 0014 or on #129.
+
 **Not claimed.** No real flash, Pmod, demo board or silicon was involved.
-No timing against a part's datasheet. No area or timing was re-measured for
-the larger ROM in this issue (the gds workflow on this branch's tree gives
-the LibreLane figures: see the records). The DR 0013 UART load is #139.
+No timing against a part's datasheet. The DR 0013 UART load is #139.

@@ -118,7 +118,7 @@ coverage.
   no violation, and the design's `uio_out`/`uio_oe` equal, on every edge,
   those of `BootModel` (the ISA interpreter of `test_boot_rom.py`) running
   the committed boot image against its own flash model. A blank flash, no
-  Pmod (MISO high or low), a flash of zeros, fourteen images one defect from
+  Pmod (MISO high or low), a flash of zeros, seven images one defect from
   a good one, a shifted and a truncated image, and a valid-CRC image with a
   zero signature are never run and leave every pin an input; the committed
   `uart_tx` and `spi_mode0` programs boot from the flash and are graded by

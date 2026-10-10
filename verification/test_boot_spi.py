@@ -26,7 +26,7 @@ The claims, each with the independent party that grades it
   boot, and `uo_out` must stay 0. That is also where the cycle counts come
   from.
 * **A blank or corrupt flash never reaches `RUN`.** All-0xFF (blank), no
-  Pmod with MISO pulled high or low, a fitted flash of zeros, 14 images
+  Pmod with MISO pulled high or low, a fitted flash of zeros, 7 images
   one defect away from a good one, a good image shifted by one byte, and a
   valid-CRC image whose signature is 0x0000: none runs. White-box (RTL
   only): the core never leaves the boot ROM and halts at `spi_fail`.
