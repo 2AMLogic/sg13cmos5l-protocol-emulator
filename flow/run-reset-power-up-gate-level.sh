@@ -11,8 +11,9 @@
 # synthesis or timing number is produced or implied.
 #
 # Default netlist: the byte-identical copy frozen under verification/records/
-# post-layout-sdf-regression/ from gds run 37996177546 (the first netlist with
-# DR 0013's boot ROM, issue #138). Override with --netlist <file>. The netlist
+# post-layout-sdf-regression/ from gds run 38012921517 (the first netlist with
+# the UART loader in DR 0013's boot ROM, issue #139). Override with
+# --netlist <file>. The netlist
 # is never edited: the bench sets the power-up state from the testbench
 # (verification/test_reset_power_up.py's docstring says how).
 #
@@ -48,7 +49,7 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SCRATCH="${REPO_ROOT}/flow/reset-power-up"
-NETLIST="${REPO_ROOT}/verification/records/post-layout-sdf-regression/artifacts/20261009-220911-1dc1842/tt_um_2amlogic_protocol_emulator.v"
+NETLIST="${REPO_ROOT}/verification/records/post-layout-sdf-regression/artifacts/20261010-014153-661c4bf/tt_um_2amlogic_protocol_emulator.v"
 JUSTIFICATIONS="${REPO_ROOT}/verification/reset_coverage_justifications.json"
 MODULE=test_reset_power_up
 export PDK_ROOT="${PDK_ROOT:-$HOME/share/pdk}"

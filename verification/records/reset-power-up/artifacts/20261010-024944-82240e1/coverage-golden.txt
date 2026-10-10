@@ -1,0 +1,4 @@
+netlist <repo>/verification/records/post-layout-sdf-regression/artifacts/20261010-014153-661c4bf/tt_um_2amlogic_protocol_emulator.v (top tt_um_2amlogic_protocol_emulator): 179 state element(s): 178 flop(s), 1 macro(s); 178 reset from rst_n alone, 1 not
+  not reset: u_prog_mem.u_sram (macro, RM_IHPSG13_1P_256x16_c2_bm_bist): macro: not a standard cell, no reset pin in this flow
+  justified by `u_prog_mem.u_sram`: 1 element(s)
+OK: every non-reset state element is justified and every justification is live
