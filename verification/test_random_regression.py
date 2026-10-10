@@ -40,7 +40,10 @@ number is produced or implied.
 
 Negative controls (a regression that cannot fail cannot cite its passes):
 mutated templates run on the DUT and graded by the same models -- a UART
-program whose bit period is 3 cycles short, an SPI program driving the
+program whose bit period is 3 cycles short, back-to-back streams of three
+0xFF frames whose data-bit periods are 3 cycles long and 3 cycles short
+(issue #97: 0xFF has no in-frame edge after bit 1, so only the model's
+frame-pitch check can see the slow one), an SPI program driving the
 wrong CPOL idle level, and I2C programs whose data-clock low phase is 10
 cycles under the Table 10 floor -- must each be FAILED by the model; and
 every SPI burst with a non-zero MOSI byte is re-graded under the three
@@ -81,6 +84,13 @@ A further control per grade and family: the generated program with its
 zero-delay and logical -- nothing here is a claim about pull-up rise
 time or pad drive strength -- and it decides nothing about the pin plan
 (#94).
+
+UART spacing (issue #97). Odd-indexed multi-frame UART programs send
+their frames back to back (next START one bit after the STOP) and are
+graded with the model's back-to-back frame-pitch check plus an exact
+10-bit start-to-start cycle count; the others idle 256 cycles between
+frames, where a single frame's timing is graded on its last in-frame edge
+only (the model's documented isolated-frame limitation).
 
 Directions not covered: UART RX (no firmware exists for it yet; deferred,
 not implied).
@@ -127,7 +137,7 @@ from test_firmware_i2c import run_words as run_i2c_on_pads  # noqa: E402
 from test_firmware_i2c_sr import run_on_pads as run_i2c_rd_on_pads  # noqa: E402
 from reference_models.i2c import check_transfer  # noqa: E402
 from reference_models.spi import MODES, check_burst  # noqa: E402
-from reference_models.uart import UartDecoder  # noqa: E402
+from reference_models.uart import MAX_FRAME_DRIFT_PCT, UartDecoder  # noqa: E402
 
 #: The one recorded seed; mirrored into the request's `random_seed`.
 RECORDED_SEED = 20261009
@@ -220,7 +230,10 @@ def grade_uart(case, tx):
     bound; cycle gaps are then measured at the pin."""
     period = case.params["period"]
     baud = 1e9 / (period * CLK_PERIOD_NS)
-    decoder = UartDecoder(baud)
+    back_to_back = case.params.get("back_to_back", False)
+    # A back-to-back case declares its stream to the model, so a late
+    # following start is graded as pitch drift rather than idle (#97).
+    decoder = UartDecoder(baud, back_to_back=back_to_back)
     try:
         reports = decoder.decode(tx.signal)
     except ValueError as exc:  # UartFrameError: the model rejects the frame
@@ -234,18 +247,35 @@ def grade_uart(case, tx):
         if not report.stop_ok:
             return False, f"frame {n}: framing error"
         if not decoder.check_frame(report):
-            return False, f"frame {n}: row-10 drift {report.drift_pct:.3f}%"
+            pitch = (
+                "n/a" if report.pitch_drift_pct is None
+                else f"{report.pitch_drift_pct:.3f}%"
+            )
+            return False, (
+                f"frame {n}: row-10 drift {report.drift_pct:.3f}% "
+                f"(last edge), pitch {pitch}"
+            )
         start = cycle_at_time(tx, report.t_start)
+        # Half-open window: on a back-to-back stream the next frame's start
+        # edge sits exactly at start + 10 * period and is not this frame's.
         edges = [
             c
             for c in tx.transition_cycles
-            if start <= c <= start + 10 * period
+            if start <= c < start + 10 * period
         ]
         offsets = [c - start for c in edges]
         wanted = [k * period for k in expected_edge_offsets(payload)]
         if offsets != wanted:
             return False, f"frame {n}: edge offsets {offsets} != {wanted} cycles"
-    return True, f"{len(want)} frame(s) @ {period} cycles/bit"
+        if back_to_back and n + 1 < len(reports):
+            gap = cycle_at_time(tx, reports[n + 1].t_start) - start
+            if gap != 10 * period:
+                return False, (
+                    f"frame {n}: start-to-start {gap} cycles != "
+                    f"{10 * period} on a back-to-back stream"
+                )
+    spacing = " back to back" if back_to_back else ""
+    return True, f"{len(want)} frame(s){spacing} @ {period} cycles/bit"
 
 
 @cocotb.test()
@@ -653,6 +683,45 @@ async def test_negative_controls_mutated_templates_fail(dut):
     )
     dut._log.info(f"negative control UART mistimed: ok={ok} ({detail})")
     assert not ok, "NEGATIVE CONTROL FAILED TO FAIL: mistimed UART passed"
+
+    # UART, issue #97: a back-to-back stream of 0xFF frames whose data-bit
+    # periods are 3 cycles long / short. 0xFF has no in-frame edge after
+    # bit 1 and the start and first data bit are nominal, so the last-edge
+    # drift and the cycle edge offsets are blind to the slow stream; only
+    # the frame-pitch check can fail it.
+    for delta in (3, -3):
+        case = ft.gen_uart(
+            RECORDED_SEED, 1, mistime_delta=delta,
+            force_payloads=[0xFF, 0xFF, 0xFF], back_to_back=True,
+        )
+        tx = await run_uart(dut, case)
+        ok, detail = grade_uart(case, tx)
+        baud = 1e9 / (case.params["period"] * CLK_PERIOD_NS)
+        reports = UartDecoder(baud, back_to_back=True).decode(tx.signal)
+        last_edge = [round(r.drift_pct, 3) for r in reports]
+        pitch = [
+            None if r.pitch_drift_pct is None else round(r.pitch_drift_pct, 3)
+            for r in reports
+        ]
+        name = f"uart_0xff_stream_bit_period_{'plus' if delta > 0 else 'minus'}_3"
+        NEGATIVE_CONTROLS.append(
+            {"name": name, "params": case.params,
+             "model_verdict": "FAIL" if not ok else "PASS", "detail": detail,
+             "last_edge_drift_pct": last_edge, "pitch_drift_pct": pitch}
+        )
+        dut._log.info(
+            f"negative control {name}: ok={ok} ({detail}); last-edge drift "
+            f"{last_edge} %, pitch {pitch} %"
+        )
+        assert not ok and "pitch" in detail, (
+            f"NEGATIVE CONTROL FAILED TO FAIL: {name} passed ({detail})"
+        )
+        assert [r.data for r in reports] == [0xFF, 0xFF, 0xFF], reports
+        if delta > 0:
+            # The pre-#97 measurement alone passes this stream.
+            assert all(r.drift_pct <= MAX_FRAME_DRIFT_PCT for r in reports), (
+                f"expected the last-edge drift to be blind: {last_edge}"
+            )
 
     # SPI: drive the wrong CPOL idle level for the declared mode.
     case = ft.gen_spi(RECORDED_SEED, 0, flip_idle=1)

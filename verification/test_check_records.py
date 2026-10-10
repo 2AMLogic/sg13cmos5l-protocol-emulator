@@ -71,8 +71,8 @@ def make_record(
     record_id: str,
     experiment: str,
     *,
-    inputs: list[tuple[str, str]],
-    supersedes: str | None = None,
+    inputs: list[tuple],
+    supersedes=None,
     omit_field: str | None = None,
     omit_provenance_key: str | None = None,
 ) -> str:
@@ -106,7 +106,7 @@ def make_record(
         ("klt provenance", "klt 0.0.0-selftest; PDK: n/a; deck content_hash: n/a"),
         ("Links", "Design under test: `rtl/dut.v`"),
         ("Timestamp / author", "2026-01-01T00:00:00Z, selftest"),
-        ("Supersedes", supersedes or "none"),
+        ("Supersedes", supersedes if isinstance(supersedes, str) else "none"),
     ]
     bullets = "\n".join(
         f"- **{name}**: {value}" for name, value in fields if name != omit_field
@@ -259,6 +259,76 @@ def case_superseded_record_exempt_from_freshness(repo: Path) -> None:
     _git(repo, "commit", "--quiet", "-m", "fixture: supersede the first record")
 
 
+def case_shared_id_superseded_elsewhere_still_checked(repo: Path) -> None:
+    """Record IDs are `<timestamp>-<sha>` and are NOT unique across
+    experiments: a batch mint gives every experiment the same ID. The
+    freshness exemption must be keyed on (experiment, record_id), so that
+    superseding experiment A's copy of an ID does not also exempt experiment
+    B's still-live copy of that ID (#157)."""
+    shared_id = "20260101-000000-abc1234"
+    (repo / "verification" / "records" / "other" / "records").mkdir(parents=True)
+    record_path(repo, "other", shared_id).write_text(
+        make_record(shared_id, "other", inputs=[("rtl/dut.v", _sha256_text(DUMMY_RTL))]),
+        encoding="utf-8",
+    )
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "--quiet", "-m", "fixture: second experiment, same id")
+    # Supersede only `demo`'s copy, then change the cited source.
+    case_superseded_record_exempt_from_freshness(repo)
+
+
+ZEROED_HASH = "sha256:" + "0" * 64
+
+
+def case_nested_copy_not_exempted_by_leaf_name(repo: Path) -> None:
+    """The Judge's repro on #183: a tampered copy of a superseded record
+    (every input hash zeroed) planted under a NESTED directory whose leaf name
+    matches a real experiment, `verification/records/zz/demo/records/`. The
+    genuine `demo` supersession must not exempt it -- and nested experiment
+    directories are rejected outright, so the leaf name can never alias."""
+    case_superseded_record_exempt_from_freshness(repo)  # demo: B supersedes A
+    old_id = "20260101-000000-abc1234"
+    nested = repo / "verification" / "records" / "zz" / "demo" / "records"
+    nested.mkdir(parents=True)
+    (nested / f"{old_id}.md").write_text(
+        make_record(old_id, "demo", inputs=[("rtl/dut.v", ZEROED_HASH)]),
+        encoding="utf-8",
+    )
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "--quiet", "-m", "fixture: tampered nested copy")
+
+
+def case_self_supersession_rejected(repo: Path) -> None:
+    """A record that lists its own ID in `supersedes` must not exempt itself
+    from the freshness check (#183 review)."""
+    rid = "20260102-000000-abc1234"
+    (repo / "verification" / "records" / "selfsup" / "records").mkdir(parents=True)
+    record_path(repo, "selfsup", rid).write_text(
+        make_record(rid, "selfsup", inputs=[("rtl/dut.v", ZEROED_HASH)], supersedes=rid),
+        encoding="utf-8",
+    )
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "--quiet", "-m", "fixture: record supersedes itself")
+
+
+def case_supersession_cycle_rejected(repo: Path) -> None:
+    """Two records that supersede each other (A -> B -> A) would each exempt
+    the other. A record may only supersede a strictly earlier ID, so a cycle
+    cannot be expressed (#183 review)."""
+    a, b = "20260102-000000-abc1234", "20260103-000000-abc1234"
+    (repo / "verification" / "records" / "cyc" / "records").mkdir(parents=True)
+    record_path(repo, "cyc", a).write_text(
+        make_record(a, "cyc", inputs=[("rtl/dut.v", ZEROED_HASH)], supersedes=b),
+        encoding="utf-8",
+    )
+    record_path(repo, "cyc", b).write_text(
+        make_record(b, "cyc", inputs=[("rtl/dut.v", ZEROED_HASH)], supersedes=a),
+        encoding="utf-8",
+    )
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "--quiet", "-m", "fixture: supersession cycle")
+
+
 def case_bad_record_id_grammar(repo: Path) -> None:
     bad = record_path(repo, "demo", "not-a-record-id")
     bad.write_text(
@@ -302,6 +372,110 @@ def case_new_record_is_a_pure_addition(repo: Path) -> None:
     _git(repo, "commit", "--quiet", "-m", "fixture: add a new record")
 
 
+# --- #183 second review: symlinks, degenerate inputs, crash cases ----------
+
+NEW_ID = "20260102-000000-abc1234"
+
+
+def _add_record(repo: Path, experiment: str, record_id: str, text: str, msg: str) -> None:
+    path = record_path(repo, experiment, record_id)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(text, encoding="utf-8")
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "--quiet", "-m", msg)
+
+
+def _add_record_with_inputs(repo: Path, inputs: list[tuple], msg: str) -> None:
+    _add_record(repo, "demo", NEW_ID, make_record(NEW_ID, "demo", inputs=inputs), msg)
+
+
+def case_symlinked_record_file(repo: Path) -> None:
+    """The Judge's A2: a record file that is a symlink to a file outside
+    `verification/records/`. git versions only the link text, so the target
+    could be edited after merge with no append-only violation."""
+    (repo / "docs").mkdir()
+    (repo / "docs" / "evil-record.md").write_text(
+        make_record(NEW_ID, "demo", inputs=[("rtl/dut.v", _sha256_text(DUMMY_RTL))]),
+        encoding="utf-8",
+    )
+    record_path(repo, "demo", NEW_ID).symlink_to("../../../../docs/evil-record.md")
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "--quiet", "-m", "fixture: symlinked record file")
+
+
+def case_symlinked_experiment_dir(repo: Path) -> None:
+    """The Judge's A1: an experiment directory that is a symlink to a real
+    one, committed together with a change that makes the real record stale."""
+    (repo / "verification" / "records" / "evil").symlink_to("demo")
+    case_stale_provenance_hash(repo)
+
+
+def case_empty_content_hash(repo: Path) -> None:
+    _add_record_with_inputs(repo, [("rtl/dut.v", "")], "fixture: empty hash")
+
+
+def case_null_content_hash(repo: Path) -> None:
+    _add_record_with_inputs(repo, [("rtl/dut.v", None)], "fixture: null hash")
+
+
+def case_empty_input_path(repo: Path) -> None:
+    _add_record_with_inputs(repo, [("", ZEROED_HASH)], "fixture: empty path")
+
+
+def case_dev_null_input_path(repo: Path) -> None:
+    _add_record_with_inputs(
+        repo, [("/dev/null", _sha256_text(""))], "fixture: /dev/null input"
+    )
+
+
+def case_absolute_input_path(repo: Path) -> None:
+    """An absolute path to a real file with the right hash: it passed the
+    freshness check before, but it is not a repo-relative input."""
+    _add_record_with_inputs(
+        repo,
+        [(str((repo / "rtl" / "dut.v").resolve()), _sha256_text(DUMMY_RTL))],
+        "fixture: absolute input path",
+    )
+
+
+def case_dotdot_escape_input_path(repo: Path) -> None:
+    """A `..` path to a real file outside the repo, with the right hash."""
+    outside = "outside the repo\n"
+    (repo.parent / "outside.txt").write_text(outside, encoding="utf-8")
+    _add_record_with_inputs(
+        repo, [("../outside.txt", _sha256_text(outside))], "fixture: .. escape"
+    )
+
+
+def case_unicode_lookalike_experiment(repo: Path) -> None:
+    """The Judge's A9c: an experiment named with a Cyrillic look-alike letter.
+    It used to crash the linter (git octal-quotes non-ASCII paths)."""
+    name = "d\u0435mo"  # Cyrillic small ie, not Latin e
+    _add_record(
+        repo,
+        name,
+        NEW_ID,
+        make_record(NEW_ID, name, inputs=[("rtl/dut.v", _sha256_text(DUMMY_RTL))]),
+        "fixture: unicode look-alike experiment",
+    )
+
+
+def case_supersedes_is_a_list(repo: Path) -> None:
+    """The Judge's A8g: `supersedes` given as a list used to raise TypeError."""
+    _add_record(
+        repo,
+        "demo",
+        NEW_ID,
+        make_record(
+            NEW_ID,
+            "demo",
+            inputs=[("rtl/dut.v", _sha256_text(DUMMY_RTL))],
+            supersedes=["20260101-000000-abc1234"],
+        ),
+        "fixture: supersedes is a list",
+    )
+
+
 CASES = [
     # (name, mutation, expected_exit, expected_substring)
     ("valid record passes", case_valid, 0, "PASS: all records valid"),
@@ -342,6 +516,42 @@ CASES = [
         "PASS: all records valid",
     ),
     (
+        "same id superseded in another experiment does not exempt a live record",
+        case_shared_id_superseded_elsewhere_still_checked,
+        1,
+        "other/records/20260101-000000-abc1234.md: provenance hash for `rtl/dut.v` is stale",
+    ),
+    (
+        "nested copy of a superseded record is not exempted by its leaf name",
+        case_nested_copy_not_exempted_by_leaf_name,
+        1,
+        "nested experiment directories are not allowed",
+    ),
+    (
+        "nested copy is also checked for freshness",
+        case_nested_copy_not_exempted_by_leaf_name,
+        1,
+        "zz/demo/records/20260101-000000-abc1234.md: provenance hash for `rtl/dut.v` is stale",
+    ),
+    (
+        "a record superseding itself fails",
+        case_self_supersession_rejected,
+        1,
+        "supersedes itself",
+    ),
+    (
+        "a self-superseding record is not exempt from freshness",
+        case_self_supersession_rejected,
+        1,
+        "selfsup/records/20260102-000000-abc1234.md: provenance hash for `rtl/dut.v` is stale",
+    ),
+    (
+        "a supersession cycle fails",
+        case_supersession_cycle_rejected,
+        1,
+        "does not sort strictly earlier",
+    ),
+    (
         "malformed record id fails",
         case_bad_record_id_grammar,
         1,
@@ -358,6 +568,72 @@ CASES = [
         case_new_record_is_a_pure_addition,
         0,
         "no append-only violations",
+    ),
+    (
+        "a symlinked record file fails",
+        case_symlinked_record_file,
+        1,
+        "demo/records/20260102-000000-abc1234.md: is a symlink",
+    ),
+    (
+        "a symlinked experiment directory fails",
+        case_symlinked_experiment_dir,
+        1,
+        "verification/records/evil: is a symlink",
+    ),
+    (
+        "a symlinked experiment directory does not hide a stale record",
+        case_symlinked_experiment_dir,
+        1,
+        "demo/records/20260101-000000-abc1234.md: provenance hash for `rtl/dut.v` is stale",
+    ),
+    (
+        "an empty input content_hash fails",
+        case_empty_content_hash,
+        1,
+        "has content_hash ''",
+    ),
+    (
+        "a null input content_hash fails",
+        case_null_content_hash,
+        1,
+        "has content_hash None",
+    ),
+    (
+        "an empty input path fails",
+        case_empty_input_path,
+        1,
+        "has an empty or non-string path ''",
+    ),
+    (
+        "a /dev/null input path fails",
+        case_dev_null_input_path,
+        1,
+        "path `/dev/null` is absolute",
+    ),
+    (
+        "an absolute input path fails",
+        case_absolute_input_path,
+        1,
+        "is absolute; inputs must be repo-relative",
+    ),
+    (
+        "a `..` input path escaping the repo fails",
+        case_dotdot_escape_input_path,
+        1,
+        "path `../outside.txt` must be a repo-relative POSIX path with no `..` component",
+    ),
+    (
+        "a unicode look-alike experiment name fails cleanly",
+        case_unicode_lookalike_experiment,
+        1,
+        "must match `[a-z0-9][a-z0-9._-]*`",
+    ),
+    (
+        "a list in supersedes fails cleanly",
+        case_supersedes_is_a_list,
+        1,
+        "`supersedes` must be a record-id string or null, not list",
     ),
 ]
 
@@ -383,6 +659,8 @@ def main() -> int:
                 problems.append(f"exit {exit_code}, expected {expected_exit}")
             if expected_substring not in output:
                 problems.append(f"output missing {expected_substring!r}")
+            if "Traceback (most recent call last)" in output:
+                problems.append("linter crashed with a traceback")
 
             if problems:
                 failures += 1

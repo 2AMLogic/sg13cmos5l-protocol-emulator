@@ -138,6 +138,21 @@ capture, PVT corner sweeps, or Monte Carlo.
   match` (`klt-lvs-asrouted.json`); whether item 4 should be defined against
   that reference rather than the pre-place-and-route klt/Yosys netlist is an
   open question for the issue owner, not decided by this note.
+- **Items 3, 4 and 7, state as of 2026-10-10 (issue #158).** Append-only;
+  the bullet above is the earlier state. All three citations now describe
+  the layout the LibreLane flow builds for the design with the control space
+  (DR 0012) and the boot ROM (DR 0013). Items 3 and 4 cite record
+  `20261010-020408-5a5cddc` (`librelane-gds-signoff-check/`, the GDS of gds
+  run 38014090810, `sha256:ca28f860…`). Item 7 cites
+  `post-layout-sdf-regression` record `20261009-220911-1dc1842`, whose routed
+  netlist is byte-identical to that run's. **Item 3 stays `met`.** **Item 4
+  stays `unmet`/`check_errored`**: the converter now stops at a different
+  Yosys shape (an `assign` with a concatenation on the left given a sized
+  constant), added to klayout-tools#2941. The compare against the post-route
+  reference is again `match` with `power_connectivity` `match`, and is again
+  not cited; the open question above stands. **Item 7 stays
+  `unmet`/`check_failed`** (#106). Baseline: `signoff-baseline` record
+  `20261010-020408-5a5cddc`, 1 of 11.
 - **Every citation pins a `content_hash`** — the sha256 of the cited
   artifact file, verifiable with `sha256sum`. Two honest caveats, on
   record here because the issue calls freshness "the point":

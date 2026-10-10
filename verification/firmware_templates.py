@@ -157,14 +157,24 @@ def render_uart(name, seed, index, params) -> str:
     w_loop = period - 7 + delta  # loop body = 7 + w cycles
     w_first = period - 4  # OUT + WAIT(w+1) + MOV + AND
     w_stop = 1  # OUT SHF SUB WAIT(w+1) BNZ WAIT(2) fixes the stop bit pitch
-    assert 0 <= w_loop <= 255 and 0 <= w_first <= 255
+    # Back-to-back stream (issue #97): the next START follows the STOP by
+    # exactly one bit, OUT + WAIT(w+1) + 3x LDI = period, so the frame
+    # pitch is 10 bits and the model's pitch check sees every bit period.
+    w_b2b = period - 5
+    back_to_back = params.get("back_to_back", False)
+    assert 0 <= w_loop <= 255 and 0 <= w_first <= 255 and 0 <= w_b2b <= 255
     out = [_header(name, seed, "uart", index, params)]
     out.append(
         "        LDI   R1, 1\n"
         "        OUT   UO_OUT, R1       ; TX idles HIGH\n"
         "        WAIT  255              ; idle before the first start bit\n"
     )
+    n_frames = len(params["payloads"])
     for n, payload in enumerate(params["payloads"], start=1):
+        if back_to_back and n < n_frames:
+            after_stop = f"        WAIT  {w_b2b}              ; next START one bit on\n"
+        else:
+            after_stop = "        WAIT  255\n"
         out.append(
             f"; ---- frame {n}: 0x{payload:02X}\n"
             f"        LDI   R0, 0x{payload:02X}\n"
@@ -184,13 +194,14 @@ def render_uart(name, seed, index, params) -> str:
             ".endcyclesec\n"
             f"        WAIT  {w_stop}\n"
             "        OUT   UO_OUT, R1       ; STOP\n"
-            "        WAIT  255\n"
+            + after_stop
         )
     out.append("        HALT\n")
     return "".join(out)
 
 
-def gen_uart(seed, index, mistime_delta=0, force_payloads=None) -> Case:
+def gen_uart(seed, index, mistime_delta=0, force_payloads=None,
+             back_to_back=None) -> Case:
     rng = _rng(seed, "uart", index)
     period = rng.choice(UART_PERIODS)
     n_frames = rng.randrange(1, UART_FRAMES_MAX + 1)
@@ -199,13 +210,26 @@ def gen_uart(seed, index, mistime_delta=0, force_payloads=None) -> Case:
     payloads = [_draw_byte(rng, c) for c in classes]
     if force_payloads is not None:  # negative control only
         payloads = list(force_payloads)
+    if back_to_back is None:
+        # Issue #97: odd-indexed multi-frame cases send their frames back
+        # to back so the model's frame-pitch check grades them. Decided
+        # by index, not drawn, so the seeded draws above are unchanged.
+        back_to_back = index % 2 == 1
+    back_to_back = bool(back_to_back) and len(payloads) > 1
     params = {"period": period, "payloads": payloads}
     if mistime_delta:
         params["mistime_delta"] = mistime_delta
+    if back_to_back:
+        params["back_to_back"] = True
     name = f"uart_{index:02d}"
     src = render_uart(name, seed, index, params)
+    if len(payloads) == 1:
+        spacing = "single"
+    else:
+        spacing = "back_to_back" if back_to_back else "idle"
     bins = tuple(("uart.byte_class", payload_class(p)) for p in payloads) + (
         ("uart.bit_period_cycles", str(period)),
+        ("uart.frame_spacing", spacing),
     )
     return Case("uart", index, seed, params, bins, src)
 
@@ -553,6 +577,7 @@ def planned_bin_universe() -> dict:
     u = {
         "uart.byte_class": list(_PAYLOAD_CLASSES),
         "uart.bit_period_cycles": [str(p) for p in UART_PERIODS],
+        "uart.frame_spacing": ["single", "idle", "back_to_back"],
         "spi.mode_x_bursts": [
             f"mode{m}/bursts{n}"
             for m in range(4)
