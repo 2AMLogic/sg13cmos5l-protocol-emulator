@@ -1,0 +1,193 @@
+{
+ "benches": [
+  "verification/request-firmware-i2c-sr.json",
+  "verification/request-firmware-i2c.json"
+ ],
+ "pin_mode_anchor": "assign uio_oe = (uio_od & ~uio_out) | (~uio_od & uio_dir);",
+ "runs": [
+  {
+   "kind": "golden",
+   "request": "verification/request-firmware-i2c.json",
+   "tests": 4,
+   "failed": [],
+   "as_required": true
+  },
+  {
+   "kind": "golden",
+   "request": "verification/request-firmware-i2c-sr.json",
+   "tests": 5,
+   "failed": [],
+   "as_required": true
+  },
+  {
+   "kind": "mutant",
+   "name": "oe-fixed-at-zero",
+   "defect": "the pre-DR-0012 top: uio_oe = 8'h00, no pad ever drives (the design the bench-composed evidence was minted on)",
+   "file": "src/tt_um_2amlogic_protocol_emulator.v",
+   "replacement": "assign uio_oe = 8'h00;",
+   "request": "verification/request-firmware-i2c.json",
+   "tests": 4,
+   "failed": [
+    "test_i2c_both_grades_pass_independent_reference_model"
+   ],
+   "expected_catchers": [
+    "test_i2c_both_grades_pass_independent_reference_model"
+   ],
+   "as_required": true
+  },
+  {
+   "kind": "mutant",
+   "name": "oe-fixed-at-zero",
+   "defect": "the pre-DR-0012 top: uio_oe = 8'h00, no pad ever drives (the design the bench-composed evidence was minted on)",
+   "file": "src/tt_um_2amlogic_protocol_emulator.v",
+   "replacement": "assign uio_oe = 8'h00;",
+   "request": "verification/request-firmware-i2c-sr.json",
+   "tests": 5,
+   "failed": [
+    "test_sr_exact_programs_pass_model_with_negative_controls",
+    "test_sr_poll_programs_stretch"
+   ],
+   "expected_catchers": [
+    "test_sr_exact_programs_pass_model_with_negative_controls",
+    "test_sr_poll_programs_stretch"
+   ],
+   "as_required": true
+  },
+  {
+   "kind": "mutant",
+   "name": "open-drain-drives-high",
+   "defect": "an open-drain pin is enabled whatever uio_out is, so writing 1 drives the line high instead of releasing it (push-pull on an I2C bus)",
+   "file": "src/tt_um_2amlogic_protocol_emulator.v",
+   "replacement": "assign uio_oe = uio_od | uio_dir;",
+   "request": "verification/request-firmware-i2c.json",
+   "tests": 4,
+   "failed": [
+    "test_i2c_both_grades_pass_independent_reference_model"
+   ],
+   "expected_catchers": [
+    "test_i2c_both_grades_pass_independent_reference_model"
+   ],
+   "as_required": true
+  },
+  {
+   "kind": "mutant",
+   "name": "open-drain-drives-high",
+   "defect": "an open-drain pin is enabled whatever uio_out is, so writing 1 drives the line high instead of releasing it (push-pull on an I2C bus)",
+   "file": "src/tt_um_2amlogic_protocol_emulator.v",
+   "replacement": "assign uio_oe = uio_od | uio_dir;",
+   "request": "verification/request-firmware-i2c-sr.json",
+   "tests": 5,
+   "failed": [
+    "test_sr_exact_programs_pass_model_with_negative_controls",
+    "test_sr_poll_programs_stretch"
+   ],
+   "expected_catchers": [
+    "test_sr_exact_programs_pass_model_with_negative_controls",
+    "test_sr_poll_programs_stretch"
+   ],
+   "as_required": true
+  },
+  {
+   "kind": "mutant",
+   "name": "open-drain-polarity-inverted",
+   "defect": "an open-drain pin is enabled on a 1 and released on a 0: it can never pull a line low",
+   "file": "src/tt_um_2amlogic_protocol_emulator.v",
+   "replacement": "assign uio_oe = (uio_od & uio_out) | (~uio_od & uio_dir);",
+   "request": "verification/request-firmware-i2c.json",
+   "tests": 4,
+   "failed": [
+    "test_i2c_both_grades_pass_independent_reference_model"
+   ],
+   "expected_catchers": [
+    "test_i2c_both_grades_pass_independent_reference_model"
+   ],
+   "as_required": true
+  },
+  {
+   "kind": "mutant",
+   "name": "open-drain-polarity-inverted",
+   "defect": "an open-drain pin is enabled on a 1 and released on a 0: it can never pull a line low",
+   "file": "src/tt_um_2amlogic_protocol_emulator.v",
+   "replacement": "assign uio_oe = (uio_od & uio_out) | (~uio_od & uio_dir);",
+   "request": "verification/request-firmware-i2c-sr.json",
+   "tests": 5,
+   "failed": [
+    "test_sr_exact_programs_pass_model_with_negative_controls",
+    "test_sr_poll_programs_stretch"
+   ],
+   "expected_catchers": [
+    "test_sr_exact_programs_pass_model_with_negative_controls",
+    "test_sr_poll_programs_stretch"
+   ],
+   "as_required": true
+  },
+  {
+   "kind": "mutant",
+   "name": "sda-pad-never-enabled",
+   "defect": "uio_oe[7] stuck at 0: SCL toggles, SDA is never driven",
+   "file": "src/tt_um_2amlogic_protocol_emulator.v",
+   "replacement": "assign uio_oe = ((uio_od & ~uio_out) | (~uio_od & uio_dir)) & 8'h7F;",
+   "request": "verification/request-firmware-i2c.json",
+   "tests": 4,
+   "failed": [
+    "test_i2c_both_grades_pass_independent_reference_model"
+   ],
+   "expected_catchers": [
+    "test_i2c_both_grades_pass_independent_reference_model"
+   ],
+   "as_required": true
+  },
+  {
+   "kind": "mutant",
+   "name": "sda-pad-never-enabled",
+   "defect": "uio_oe[7] stuck at 0: SCL toggles, SDA is never driven",
+   "file": "src/tt_um_2amlogic_protocol_emulator.v",
+   "replacement": "assign uio_oe = ((uio_od & ~uio_out) | (~uio_od & uio_dir)) & 8'h7F;",
+   "request": "verification/request-firmware-i2c-sr.json",
+   "tests": 5,
+   "failed": [
+    "test_sr_exact_programs_pass_model_with_negative_controls",
+    "test_sr_poll_programs_stretch"
+   ],
+   "expected_catchers": [
+    "test_sr_exact_programs_pass_model_with_negative_controls",
+    "test_sr_poll_programs_stretch"
+   ],
+   "as_required": true
+  },
+  {
+   "kind": "mutant",
+   "name": "scl-pad-never-enabled",
+   "defect": "uio_oe[0] stuck at 0: SDA moves, SCL is never driven",
+   "file": "src/tt_um_2amlogic_protocol_emulator.v",
+   "replacement": "assign uio_oe = ((uio_od & ~uio_out) | (~uio_od & uio_dir)) & 8'hFE;",
+   "request": "verification/request-firmware-i2c.json",
+   "tests": 4,
+   "failed": [
+    "test_i2c_both_grades_pass_independent_reference_model"
+   ],
+   "expected_catchers": [
+    "test_i2c_both_grades_pass_independent_reference_model"
+   ],
+   "as_required": true
+  },
+  {
+   "kind": "mutant",
+   "name": "scl-pad-never-enabled",
+   "defect": "uio_oe[0] stuck at 0: SDA moves, SCL is never driven",
+   "file": "src/tt_um_2amlogic_protocol_emulator.v",
+   "replacement": "assign uio_oe = ((uio_od & ~uio_out) | (~uio_od & uio_dir)) & 8'hFE;",
+   "request": "verification/request-firmware-i2c-sr.json",
+   "tests": 5,
+   "failed": [
+    "test_sr_exact_programs_pass_model_with_negative_controls",
+    "test_sr_poll_programs_stretch"
+   ],
+   "expected_catchers": [
+    "test_sr_exact_programs_pass_model_with_negative_controls",
+    "test_sr_poll_programs_stretch"
+   ],
+   "as_required": true
+  }
+ ]
+}

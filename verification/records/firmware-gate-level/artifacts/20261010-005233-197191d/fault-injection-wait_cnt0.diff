@@ -1,0 +1,12 @@
+7891c7891
+<     .A_N(\u_core.wait_cnt[0] ));
+---
+>     .A_N(1'b0));
+9782c9782
+<     .B(\u_core.wait_cnt[0] ),
+---
+>     .B(1'b0),
+12684c12684
+<  sg13cmos5l_dlygate4sd3_1 hold374 (.A(\u_core.wait_cnt[0] ),
+---
+>  sg13cmos5l_dlygate4sd3_1 hold374 (.A(1'b0),
