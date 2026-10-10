@@ -102,7 +102,7 @@ MUTANTS = [
      [("      8'h17: word = 16'h6100;", "      8'h17: word = 16'h6000;", 1)],
      {T_CORRUPT}),
     ("straps-01-and-10-swapped",
-     "boot program: strap 01 warm-starts and strap 10 goes to the SPI stub",
+     "boot program: strap 01 warm-starts and strap 10 goes to the SPI-flash boot",
      ROM,
      [("      8'h03: word = 16'h1440;", "      8'h03: word = 16'h1420;", 1),
       ("      8'h06: word = 16'h1420;", "      8'h06: word = 16'h1440;", 1)],
