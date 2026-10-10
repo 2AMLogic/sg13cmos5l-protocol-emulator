@@ -5,11 +5,13 @@
   "freeze_takes_effect": "at the merge commit of the pull request that adds this file (issue #141, part 1)",
   "first_amending_dr": 18,
   "amendment_rules": {
-    "fields": "path, kind, invalidates_row13_evidence, sha256_before, sha256_after, and dr and/or ref (+ summary when only ref)",
+    "fields": "path, op (modify | pin | unpin; default modify), kind, invalidates_row13_evidence, sha256_before (not for pin), sha256_after (not for unpin), and dr and/or ref (+ summary when only ref)",
     "isa-change": "dr >= first_amending_dr required; ref alone refused",
     "conformance-fix": "dr >= first_amending_dr required; ref alone refused",
     "no-behaviour-change": "dr >= first_amending_dr, or ref ('#N' or 'owner/repo#N', form-checked only) with a non-empty summary; invalidates_row13_evidence must be false",
-    "see": "DR 0017, section 4 'Change control after the freeze'"
+    "see": "DR 0017, sections 4 and 5",
+    "pin-set": "pins, schema, record, freeze_base_commit and first_amending_dr never change after the first commit of this file; the pinned set changes only by an amendment with op pin or unpin, which needs dr >= first_amending_dr whatever its kind",
+    "append-only": "amendments already on the base ref are never edited or removed"
   },
   "pins": [
     {

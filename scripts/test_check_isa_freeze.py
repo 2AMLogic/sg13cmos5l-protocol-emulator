@@ -84,10 +84,10 @@ class IsaFreezeCheck(unittest.TestCase):
         rows = "\n".join(f"| `{p['path']}` | `{p['sha256']}` |" for p in (pins or self.manifest["pins"]))
         self.write(RECORD, f"# 0017\n\nMachine-readable: `{cif.MANIFEST_REL}`.\n\n{rows}\n")
 
-    def run_main(self) -> tuple[int, str]:
+    def run_main(self, *extra: str) -> tuple[int, str]:
         out, err = io.StringIO(), io.StringIO()
         with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
-            code = cif.main(["--repo", str(self.repo)])
+            code = cif.main(["--repo", str(self.repo), "--base-ref", "no-such-ref", *extra])
         return code, out.getvalue() + err.getvalue()
 
     def amend(self, rel: str, new_text: str, dr: int | None = 18, **over) -> None:
@@ -245,7 +245,7 @@ class IsaFreezeCheck(unittest.TestCase):
         self.write_record(wrong)
         code, out = self.run_main()
         self.assertEqual(code, 1)
-        self.assertIn("the record and the manifest disagree", out)
+        self.assertIn("pin different hashes", out)
 
     def test_symlink_pin_fails(self) -> None:
         self.write("rtl/real.v", "module core; endmodule\n")
@@ -283,11 +283,138 @@ class IsaFreezeCheck(unittest.TestCase):
         self.assertIn("not valid JSON", out)
 
     def test_missing_freeze_commit_is_a_note_not_a_failure(self) -> None:
+        # Rewrite the freezing commit itself, so the manifest's first
+        # committed version already names the absent commit.
         self.manifest["freeze_base_commit"] = "0" * 40
         self.write_manifest()
+        self.git("commit", "-q", "-a", "--amend", "-m", "freeze")
         code, out = self.run_main()
         self.assertEqual(code, 0, out)
         self.assertIn("NOTE: freeze commit", out)
+
+
+    # -- shrinking or rewriting the pinned set (PR #233 review) ----------
+    def drop_pin(self, rel: str, *, from_manifest: bool = True, from_record: bool = False) -> None:
+        kept = [p for p in self.manifest["pins"] if p["path"] != rel]
+        if from_manifest:
+            self.manifest["pins"] = kept
+            self.write_manifest()
+        if from_record:
+            self.write_record(kept)
+
+    def test_removing_a_manifest_pin_fails_with_file_unchanged(self) -> None:
+        self.drop_pin(CORE)
+        code, out = self.run_main()
+        self.assertEqual(code, 1, out)
+        self.assertIn(f"{CORE}: pinned in {RECORD} but not in", out)
+
+    def test_removing_a_manifest_pin_fails_with_file_changed(self) -> None:
+        # The reviewer's repro: drop CORE from the manifest, change CORE,
+        # leave the record alone.
+        self.drop_pin(CORE)
+        self.write(CORE, "module core; wire changed; endmodule\n")
+        code, out = self.run_main()
+        self.assertEqual(code, 1, out)
+        self.assertIn(f"{CORE}: pinned in {RECORD} but not in", out)
+
+    def test_removing_a_record_row_fails(self) -> None:
+        self.drop_pin(CORE, from_manifest=False, from_record=True)
+        self.write(CORE, "module core; wire changed; endmodule\n")
+        code, out = self.run_main()
+        self.assertEqual(code, 1, out)
+        self.assertIn(f"{CORE}: pinned in {cif.MANIFEST_REL} but missing from {RECORD}", out)
+
+    def test_removing_a_pin_from_both_fails_against_first_commit(self) -> None:
+        self.drop_pin(CORE, from_manifest=True, from_record=True)
+        self.write(CORE, "module core; wire changed; endmodule\n")
+        code, out = self.run_main()
+        self.assertEqual(code, 1, out)
+        self.assertIn(f"removed {CORE}", out)
+        # Committing the removal does not move the anchor.
+        self.commit("drop the pin")
+        code, out = self.run_main()
+        self.assertEqual(code, 1, out)
+        self.assertIn("as first committed", out)
+
+    def test_rehashing_a_pin_in_both_and_committing_fails(self) -> None:
+        self.write(CORE, "v2\n")
+        self.manifest["pins"][0]["sha256"] = sha("v2\n")
+        self.write_manifest()
+        self.write_record()
+        self.commit("re-pin")
+        code, out = self.run_main()
+        self.assertEqual(code, 1, out)
+        self.assertIn(f"re-hashed {CORE}", out)
+
+    def test_changing_the_freeze_commit_fails(self) -> None:
+        self.manifest["freeze_base_commit"] = "0" * 40
+        self.write_manifest()
+        code, out = self.run_main()
+        self.assertEqual(code, 1, out)
+        self.assertIn("freeze_base_commit: changed", out)
+
+    def test_duplicate_record_row_fails(self) -> None:
+        self.write_record(self.manifest["pins"] + [self.manifest["pins"][0]])
+        code, out = self.run_main()
+        self.assertEqual(code, 1, out)
+        self.assertIn("appears twice in the pin table", out)
+
+    def test_unpin_by_amendment_with_dr_passes(self) -> None:
+        self.write_dr(18, CORE)
+        self.manifest["amendments"].append({
+            "op": "unpin", "dr": 18, "path": CORE, "kind": "isa-change",
+            "invalidates_row13_evidence": False, "sha256_before": self.manifest["pins"][0]["sha256"],
+        })
+        self.write_manifest()
+        self.write(CORE, "moved away\n")
+        code, out = self.run_main()
+        self.assertEqual(code, 0, out)
+        self.assertIn("OK: 1 ISA-defining file(s)", out)
+
+    def test_unpin_with_only_a_ref_fails(self) -> None:
+        self.manifest["amendments"].append({
+            "op": "unpin", "ref": "#218", "summary": "x", "path": CORE, "kind": "no-behaviour-change",
+            "invalidates_row13_evidence": False, "sha256_before": self.manifest["pins"][0]["sha256"],
+        })
+        self.write_manifest()
+        code, out = self.run_main()
+        self.assertEqual(code, 1, out)
+        self.assertIn("op unpin changes the pinned set and needs a decision record", out)
+
+    def test_pin_a_new_file_by_amendment_is_then_checked(self) -> None:
+        self.write("rtl/new.v", "new\n")
+        self.write_dr(18, "rtl/new.v")
+        self.manifest["amendments"].append({
+            "op": "pin", "dr": 18, "path": "rtl/new.v", "kind": "isa-change",
+            "invalidates_row13_evidence": False, "sha256_after": sha("new\n"),
+        })
+        self.write_manifest()
+        self.commit("pin new")
+        code, out = self.run_main()
+        self.assertEqual(code, 0, out)
+        self.assertIn("OK: 3 ISA-defining file(s)", out)
+        self.write("rtl/new.v", "changed\n")
+        code, out = self.run_main()
+        self.assertEqual(code, 1, out)
+        self.assertIn("rtl/new.v: sha256", out)
+
+    def test_amendments_on_the_base_ref_are_append_only(self) -> None:
+        self.write_dr(18, CORE)
+        self.amend(CORE, "v2\n", dr=18)
+        self.commit("amend on main")
+        self.git("checkout", "-q", "-b", "topic")
+        self.assertEqual(self.run_main("--base-ref", "main")[0], 0)
+        # Rewrite the landed amendment and the file to match: still refused.
+        self.manifest["amendments"][0]["sha256_after"] = sha("v3\n")
+        self.write(CORE, "v3\n")
+        self.write_manifest()
+        code, out = self.run_main("--base-ref", "main")
+        self.assertEqual(code, 1, out)
+        self.assertIn("amendments are append-only", out)
+        # Appending instead passes.
+        self.manifest["amendments"][0]["sha256_after"] = sha("v2\n")
+        self.amend(CORE, "v3\n", dr=18)
+        self.assertEqual(self.run_main("--base-ref", "main")[0], 0)
 
 
 if __name__ == "__main__":

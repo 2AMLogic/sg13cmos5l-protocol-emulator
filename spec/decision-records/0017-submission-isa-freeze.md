@@ -127,9 +127,18 @@ cites its own issue or PR, not a new record.
 
 1. **Every change to a pinned file needs an amendment.** The amendment is an
    entry appended to `amendments` in `spec/isa-freeze.json`. Pins are never
-   edited. Each entry carries `sha256_before` and `sha256_after`, and the
-   entries for one path form a chain. What the entry must cite depends on
-   its kind (item 2).
+   edited or removed, and neither is a landed amendment. Each entry carries
+   `sha256_before` and `sha256_after`, and the entries for one path form a
+   chain. What the entry must cite depends on its kind (item 2).
+
+   **The pinned set itself changes only by amendment.** An entry with `op`
+   `unpin` stops checking a file (for example, one that moves; it gives the
+   last `sha256_before` and no `sha256_after`), and `op` `pin` starts checking
+   a new one (it gives a `sha256_after` and no `sha256_before`). Both need a
+   decision record numbered 0018 or later that names the path, whatever
+   their kind, because what counts as the ISA is a decision, not a note. A
+   move is an `unpin` of the old path and a `pin` of the new one in the same
+   record.
 2. **Each amendment says what kind of change it is** (`kind`):
    - `isa-change`: the ISA-visible behaviour changes (a new or removed
      instruction or control index, a changed latency, flag, reset value or
@@ -186,13 +195,26 @@ cites its own issue or PR, not a new record.
   `summary`, or says it invalidates row-13 evidence;
 - an amendment breaks its path's chain, or leaves out `kind` or
   `invalidates_row13_evidence`;
-- this record's pin table and the manifest disagree on any path or hash;
-- a pin differs from the file at the freeze base commit. If that commit is
-  not in the clone (a shallow checkout), the check prints a NOTE and skips
-  only this step.
+- this record's pin table and the manifest's `pins` are not the same
+  path-to-hash mapping. They are compared in both directions, so a row
+  dropped from either side fails, and so does a duplicate row;
+- `pins`, `schema`, `record`, `freeze_base_commit` or `first_amending_dr`
+  differ from the manifest as first committed (the earliest commit that
+  added `spec/isa-freeze.json`) or as on the merge-base with `origin/main`.
+  So removing or re-hashing a pin in both the manifest and this record fails
+  too, even after it is committed. Neither file can shrink the frozen set on
+  its own, and both together cannot either;
+- an amendment already on `origin/main` is edited or removed (amendments are
+  append-only);
+- an `unpin` or `pin` amendment cites no record numbered 0018 or later;
+- a pin differs from the file at the freeze base commit.
 
-It hashes the working tree, needs only the standard library and `git`, and
-never rewrites anything.
+A shallow checkout, a clone without the freeze commit, or an unresolvable
+base ref prints a NOTE and skips only the comparison it cannot make. The
+check hashes the working tree, needs only the standard library and `git`,
+and never rewrites anything. This repository merges with merge commits
+(issue #141's PR included), so the commit that first added the manifest
+stays reachable from `main`.
 
 ### 6. Row 13: how the protocol is chosen
 
