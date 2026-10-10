@@ -454,3 +454,35 @@ characterization; Tiny Tapeout is checking whether SG13G2-derived numbers
 exist. Any claim of a maximum toggle rate at the pins, including the SPI SCLK
 ceiling of f_clk/4 (12.5 MHz at 50 MHz), holds for the core's cycle timing
 only, not at the pad.
+
+### One device on the `uio` header at a time (decided in #196, 2026-10-09)
+
+The QSPI flash/PSRAM Pmod uses the whole `uio` header: `uio[0]` CS0 (flash),
+`uio[1]` SD0/MOSI, `uio[2]` SD1/MISO, `uio[3]` SCK, `uio[4]` SD2, `uio[5]`
+SD3, `uio[6]` CS1 (RAM A), `uio[7]` CS2 (RAM B). The SPI Pmod (CS `uio[0]`,
+MOSI `uio[1]`, MISO `uio[2]`, SCK `uio[3]`) and the I2C Pmod (SCL `uio[2]`,
+SDA `uio[3]`) sit on the same four pins. The rule is therefore **one device
+on the `uio` header at a time**. With the flash Pmod fitted (strap `01`),
+after the boot hands over:
+
+- A **user SPI program talks to the flash**, not to a separate peripheral.
+- **No I2C peripheral can share the header.** An I2C program toggles the
+  flash's MISO and SCK lines; CS0 is held high by the Pmod pull-up, so the
+  flash should ignore them, but the bus is not usable.
+- **UART** (`ui_in[1]`, `uo_out[0]`) is unaffected.
+- **A user SPI program can ERASE OR OVERWRITE THE BOOT IMAGE.** A write
+  enable (`0x06`) followed by an erase or program opcode in a later CS-low
+  burst rewrites the flash, including address 0. The shipped `spi_mode0`
+  sends `0xA5` and `0x3C`, one byte per burst; neither is a write enable, so
+  the shipped images cannot arm a write (opcodes recalled, not re-read from
+  the flash datasheet).
+
+To use a different SPI device, **remove the flash Pmod after boot** (or boot
+with strap `00`/`10` instead): the SPI profile's CS is `uio[0]`, the same pin
+as the flash's CS0, so driving it low also selects the flash, and holding CS0
+high does not help. Holding CS0 high (or leaving it on the Pmod pull-up)
+isolates the flash only from a program that does not drive `uio[0]`, such as
+I2C on `uio[2..3]`; the flash's MISO and SCK lines are still on those pins,
+so the bus is loaded by the Pmod and is not verified as usable. The SPI and I2C Pmods also come in a bottom-row variant
+on `uio[4..7]`; moving a profile there is a possible future option and is
+not done here. See [spi-flash-boot.md](spi-flash-boot.md).
