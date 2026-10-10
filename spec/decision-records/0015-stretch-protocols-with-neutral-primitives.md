@@ -673,6 +673,19 @@ unchanged.
     not edited. Its measurements stand, and this note replaces its paraphrase
     of the trigger. (The `synthesis-baseline` record does not state the
     condition.)
+  - **Re-measured after merging `main` (2026-10-10, PR #212).** `main` gained
+    issue #139's UART load (a 223-word boot ROM) while this change was in
+    review, so the design that would be submitted is P1 and P2 plus that ROM.
+    Its own LibreLane run (gds run 38071502150, record
+    `librelane-corner-timing` `20261010-175100-f8428aa`, LibreLane flow):
+    placed standard cells 44,294.9 um^2; with the macro, **57.17 %** of the
+    core, **3,589 um^2** under the 60 % target (the 6,056 um^2 above was the
+    margin before the merge); the `gds` job took 32 min 13 s. Crossing 60 %
+    now needs about 8.1 % growth of placed standard-cell area (3,589 /
+    44,294.9), against 14.5 % above. Setup and hold still have zero
+    violations at all three corners. This note records the measurement and
+    does not re-judge "at risk": the judgment above was made on 55.2 %, and
+    the ratifying act should weigh the merged figure, not that one.
 
   Setup and hold have zero violations at all three corners the flow emits.
   So the full interface is kept, including `CRC_BYTE`, which condition 4

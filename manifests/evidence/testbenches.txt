@@ -2,6 +2,12 @@
 # committed, with a cold-start invocation a third party can run, and the PDK
 # revision is pinned.
 #
+# Refreshed 2026-10-10 for the merge of issue #208 with main (PR #212): the
+# `primitives` experiment line (issue #208) and `boot-uart` (issue #139) are
+# both here, the firmware-gate-level line carries `--primitives --boot-uart`
+# and the merged design's frozen netlist, and the PDK revision's source record
+# moves to librelane-gds-signoff-check 20261010-175000-f8428aa (same revision).
+#
 # Refreshed 2026-10-10 for issue #139 (the UART load): a `boot-uart` experiment
 # line is added, the firmware-gate-level line gains `--boot-uart` and its new
 # default netlist, and the PDK revision's source record moves to
@@ -32,7 +38,7 @@
 # PDK, for every leg marked [PDK]: IHP-Open-PDK
 #   2bbec755dc67ca3db0261c3d6163e15735d66710
 # the revision the LibreLane gds runs used (their pdk.json, frozen in
-# librelane-gds-signoff-check record 20261010-133100-a0f91e3) and the one every
+# librelane-gds-signoff-check record 20261010-175000-f8428aa) and the one every
 # local PDK leg below ran against. Fetch it the way the template's action does:
 #   git init "$PDK_ROOT"
 #   git -C "$PDK_ROOT" fetch --depth 1 https://github.com/IHP-GmbH/IHP-Open-PDK.git 2bbec755dc67ca3db0261c3d6163e15735d66710
@@ -109,7 +115,7 @@ experiment  control-space  verification/test_control_space.py; `klt functional-v
 experiment  core-datapath  verification/test_protocol_emulator.py; `klt functional-verification verification/request-protocol-emulator.json --format json`
 experiment  die-area-baseline  flow/run-die-area-par.sh [PDK]; BLOCKED by klayout-tools#2635, records claim no measurement
 experiment  firmware-assembler-roundtrip  verification/test_firmware_roundtrip.py; `klt functional-verification verification/request-firmware-roundtrip.json --format json`
-experiment  firmware-gate-level  `PDK_ROOT=<pdk> ./flow/run-firmware-gate-level.sh --full --control-space --boot-rom --boot-spi --primitives --boot-uart` [PDK]; default netlist frozen in post-layout-sdf-regression/artifacts/@@SDFREC@@/
+experiment  firmware-gate-level  `PDK_ROOT=<pdk> ./flow/run-firmware-gate-level.sh --full --control-space --boot-rom --boot-spi --primitives --boot-uart` [PDK]; default netlist frozen in post-layout-sdf-regression/artifacts/20261010-174900-f8428aa/
 experiment  firmware-i2c  verification/test_firmware_i2c.py, test_firmware_i2c_sr.py; `klt functional-verification verification/request-firmware-i2c.json --format json` and `... request-firmware-i2c-sr.json ...`
 experiment  firmware-loadseq  verification/test_loadseq.py, test_loadseq_top.py; `klt functional-verification verification/request-loadseq.json --format json` and `... request-loadseq-top.json ...`; `python3 firmware/tools/test_loadseq.py` (not in run-rtl-benches.sh; cold-started by hand for this audit, both pass)
 experiment  firmware-spi  verification/test_firmware_spi.py; `klt functional-verification verification/request-firmware-spi.json --format json`
@@ -171,3 +177,16 @@ experiment  uio-pad-model  verification/test_uio_pads.py; `klt functional-verifi
 # audit above and the records say how: Yosys 0.67+post (not 0.69+post) and
 # the host's IHP-Open-PDK checkout 607e18d4 (not 2bbec755) for the local legs;
 # the LibreLane legs are the hosted run's and used 2bbec755.
+
+## PR #212 (2026-10-10): issue #208 merged with main's issue #139
+
+# No new evidence directory. Re-run on the merged tree (P1/P2 and the
+# UART-load boot ROM) and the gds run 38071502150 netlist: every stale
+# request-based record through verification/remint_records.py --rerun (every
+# request passed), the klt synthesis, DRC, extraction and LVS legs,
+# flow/run-post-layout-sdf.sh --from (3 corners), flow/run-firmware-gate-level.sh
+# with --primitives --boot-uart (10 modules, every negative control fails as
+# required), flow/run-reset-power-up-gate-level.sh, and the two blocked klt
+# legs (sta-corner-sweep, die-area-baseline). Not re-run: the mutant runners
+# and the formal properties, whose records' hashed inputs did not change.
+# Tools as in the #208 section above.

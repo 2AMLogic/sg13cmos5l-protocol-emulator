@@ -20,7 +20,7 @@
 # Which netlist: the `tt_submission` artifact's `<top>.v` of a `gds` workflow
 # run -- the final netlist that the template's own `gl_test` job compiles.
 # Default: the byte-identical copy frozen under verification/records/
-# post-layout-sdf-regression/ from run @@RUN@@ (the first netlist with
+# post-layout-sdf-regression/ from run 38071502150 (the first netlist with
 # both DR 0015's P1/P2 plus the drive buffers on every SRAM macro input, issue
 # #208, and the UART load in the boot ROM, issue #139; before it, run
 # 38055685598's (#208 alone) and run 38054423540's (#139 alone), and before
@@ -108,7 +108,7 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SCRATCH="${REPO_ROOT}/flow/firmware-gate-level"
-NETLIST="${REPO_ROOT}/verification/records/post-layout-sdf-regression/artifacts/20261010-160000-9d62f29/tt_um_2amlogic_protocol_emulator.v"
+NETLIST="${REPO_ROOT}/verification/records/post-layout-sdf-regression/artifacts/20261010-174900-f8428aa/tt_um_2amlogic_protocol_emulator.v"
 MODULES=(test_firmware_uart test_firmware_uart_rx test_firmware_spi test_firmware_i2c)
 export PDK_ROOT="${PDK_ROOT:-$HOME/share/pdk}"
 

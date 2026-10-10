@@ -6,8 +6,8 @@
 # the LibreLane-only drive buffers on every SRAM macro input in
 # rtl/protocol_program_memory.v (issue #208), and the 223-word boot ROM with
 # the UART load (issue #139). The RTL hashes, the boot-ROM chain and the two
-# netlists of record below describe the merged design (gds run @@RUN@@ at
-# @@SHA@@). Before the merge, #208 alone was gds run 38055685598 at cb4b7aa
+# netlists of record below describe the merged design (gds run 38071502150 at
+# f8428aa). Before the merge, #208 alone was gds run 38055685598 at cb4b7aa
 # and #139 alone gds run 38054423540 at a0f91e3.
 #
 # Audited 2026-10-10 for issue #83 against main @ 5669077. The design these
@@ -75,15 +75,16 @@ file  src/pdn_cfg.tcl
 ## The derived gate-level netlists of record
 
 # klt/Yosys flow: `klt synthesize flow/synthesize-protocol-emulator.json`
-# re-run by librelane-gds-signoff-check record 20261010-160200-9d62f29
-# (2,161 instances, 32,178.7242 um^2 on that flow, Yosys 0.67+post; 1,377 / 21,331.0314 before P1 and P2). This is the
-# reference T1 item 4's LVS compares against.
-sha256:1ef9d4dcc3d9f3864f916b2f81ea23a0b4878c9354e7184eb9572326c42a5b6d  verification/records/librelane-gds-signoff-check/artifacts/20261010-160200-9d62f29/reference-klt-yosys.v
+# run by synthesis-baseline record 20261010-172400-f8428aa and frozen by
+# librelane-gds-signoff-check record 20261010-175000-f8428aa (2,392 instances,
+# 34,670.5758 um^2 on that flow, Yosys 0.67+post). This is the reference T1
+# item 4's LVS compares against.
+sha256:3754e002cf96ccfbf27c935eaff63ad06f25b56bde54b56269621f0cb46aa640  verification/records/librelane-gds-signoff-check/artifacts/20261010-175000-f8428aa/reference-klt-yosys.v
 
-# LibreLane flow: the post-route netlist of gds run 38055685598 at cb4b7aa
+# LibreLane flow: the post-route netlist of gds run 38071502150 at f8428aa
 # (tt_submission artifact), frozen by librelane-gds-signoff-check record
-# 20261010-160200-9d62f29 and byte-identical to the one frozen by the
-# post-layout-sdf-regression record 20261010-160000-9d62f29. It is the netlist
+# 20261010-175000-f8428aa and byte-identical to the one frozen by the
+# post-layout-sdf-regression record 20261010-174900-f8428aa. It is the netlist
 # the committed GDS (T1 item 2) was routed as, and the one the post-layout SDF
 # regression (T1 item 7) simulates.
-sha256:ba6b7535be2dc6f7dd1e85e613212952fc917944ced86268863187c73d41578f  verification/records/librelane-gds-signoff-check/artifacts/20261010-160200-9d62f29/reference-asrouted.v
+sha256:c9be686fc557ea6fd31c139991b177bf8b976b967b89fae161ed96ef618fc1c0  verification/records/librelane-gds-signoff-check/artifacts/20261010-175000-f8428aa/reference-asrouted.v

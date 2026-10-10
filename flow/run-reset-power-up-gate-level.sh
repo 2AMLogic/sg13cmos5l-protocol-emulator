@@ -11,7 +11,7 @@
 # synthesis or timing number is produced or implied.
 #
 # Default netlist: the byte-identical copy frozen under verification/records/
-# post-layout-sdf-regression/ from gds run @@RUN@@ (the first netlist with
+# post-layout-sdf-regression/ from gds run 38071502150 (the first netlist with
 # both DR 0015's P1/P2, issue #208, and the UART load in the boot ROM, issue
 # #139; before the merge it was gds run 38055685598's for #208 and gds run
 # 38054423540's for #139; before those gds run 38032061275's, the first with
@@ -55,7 +55,7 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SCRATCH="${REPO_ROOT}/flow/reset-power-up"
-NETLIST="${REPO_ROOT}/verification/records/post-layout-sdf-regression/artifacts/20261010-160000-9d62f29/tt_um_2amlogic_protocol_emulator.v"
+NETLIST="${REPO_ROOT}/verification/records/post-layout-sdf-regression/artifacts/20261010-174900-f8428aa/tt_um_2amlogic_protocol_emulator.v"
 JUSTIFICATIONS="${REPO_ROOT}/verification/reset_coverage_justifications.json"
 MODULE=test_reset_power_up
 export PDK_ROOT="${PDK_ROOT:-$HOME/share/pdk}"

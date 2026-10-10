@@ -1,0 +1,113 @@
+{
+  "schema_version": 1,
+  "engine": "icarus",
+  "hdl_toplevel": "tt_um_2amlogic_protocol_emulator",
+  "testbench": "sdf_alignment",
+  "status": "pass",
+  "test_count": 13,
+  "passed_count": 12,
+  "failed_count": 0,
+  "skipped_count": 1,
+  "tests": [
+    {
+      "name": "test_run_entry_fetch_ahead_costs_exactly_one_cycle",
+      "status": "passed",
+      "sim_time_ns": 1296.001,
+      "real_time_s": 4.116
+    },
+    {
+      "name": "test_reset_and_load_leaves_pins_cleared",
+      "status": "passed",
+      "sim_time_ns": 756.0030000000002,
+      "real_time_s": 0.009
+    },
+    {
+      "name": "test_ldi_mov_out_write_latency",
+      "status": "passed",
+      "sim_time_ns": 2316.0009999999997,
+      "real_time_s": 0.031
+    },
+    {
+      "name": "test_alu_results_pin_observable",
+      "status": "passed",
+      "sim_time_ns": 6056.001,
+      "real_time_s": 0.074
+    },
+    {
+      "name": "test_alu_flags_whitebox",
+      "status": "skipped",
+      "sim_time_ns": null,
+      "real_time_s": 0.0
+    },
+    {
+      "name": "test_shf_results_pin_observable",
+      "status": "passed",
+      "sim_time_ns": 2656.001,
+      "real_time_s": 0.025
+    },
+    {
+      "name": "test_in_ports_and_direction_noops",
+      "status": "passed",
+      "sim_time_ns": 3636.0009999999984,
+      "real_time_s": 0.04
+    },
+    {
+      "name": "test_out_port11_drives_uio_out_not_oe",
+      "status": "passed",
+      "sim_time_ns": 1296.0020000000004,
+      "real_time_s": 0.014
+    },
+    {
+      "name": "test_wait_cycle_exact",
+      "status": "passed",
+      "sim_time_ns": 3796.001,
+      "real_time_s": 0.04
+    },
+    {
+      "name": "test_branches_taken_and_not_taken",
+      "status": "passed",
+      "sim_time_ns": 4996.001,
+      "real_time_s": 0.052
+    },
+    {
+      "name": "test_bnz_taken_countdown_loop",
+      "status": "passed",
+      "sim_time_ns": 3116.001,
+      "real_time_s": 0.038
+    },
+    {
+      "name": "test_nop_costs_one_cycle",
+      "status": "passed",
+      "sim_time_ns": 2996.0009999999966,
+      "real_time_s": 0.028
+    },
+    {
+      "name": "test_latency_independent_of_data",
+      "status": "passed",
+      "sim_time_ns": 5996.000999999997,
+      "real_time_s": 0.089
+    }
+  ],
+  "coverage": null,
+  "trace": null,
+  "environment": {
+    "engine": "icarus",
+    "engine_version": "13.0",
+    "cocotb_version": "2.1.0",
+    "results_xml": "<repo>/flow/post-layout-sdf/nom_slow_1p08V_125C/.klt/functional-verification/results_icarus.xml",
+    "random_seed": 1,
+    "sdf": {
+      "file": "<repo>/flow/post-layout-sdf/sdf/nom_slow_1p08V_125C.normalized.sdf",
+      "corner": "typ",
+      "entries": "all",
+      "annotated": true,
+      "partial": true,
+      "dropped": {
+        "timingcheck": {
+          "count": 263,
+          "reason": "Icarus Verilog implements SDF delay annotation (IOPATH/INTERCONNECT) but not SDF TIMINGCHECK -- every TIMINGCHECK section in the SDF is dropped, so $setup/$hold/$width checks run against the cell library's own placeholder timing, not the characterised limits in the SDF"
+        }
+      }
+    }
+  }
+}

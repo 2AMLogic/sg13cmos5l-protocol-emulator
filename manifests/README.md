@@ -261,6 +261,25 @@ capture, PVT corner sweeps, or Monte Carlo.
   post-route reference is `match` and is not cited); **item 7 stays
   `unmet`/`unverifiable_provenance`**. Baseline: `signoff-baseline` record
   `20261010-161100-9d62f29`, 5 of 11.
+- **Items 1, 2, 3, 4, 7 and 9, state as of 2026-10-10 (PR #212, issue #208
+  merged with `main`'s issue #139).** Append-only; the two bullets above are
+  the two parents' states. The merged design carries both DR 0015's P1/P2
+  and the 223-word UART-load boot ROM, so it had its own gds run
+  (38071502150 at `f8428aa`) and every citation that names design bytes
+  moved: items 2, 3 and 4 cite `librelane-gds-signoff-check` record
+  `20261010-175000-f8428aa` (GDS `sha256:7cc02425…`); item 7 cites
+  `post-layout-sdf-regression` record `20261010-174900-f8428aa` (12 passed,
+  0 failed, 1 skipped at all three corners, annotated), whose routed netlist
+  is byte-identical to that run's; item 1's inventory carries the merged RTL
+  hashes and both new derived netlists; item 9's inventory lists both the
+  `primitives` and `boot-uart` benches and the gate-level command with
+  `--primitives --boot-uart`. **Verdicts are unchanged: items 1, 2, 3, 9 and
+  10 `met`; item 4 `unmet`/`check_errored`** (klayout-tools#2941, the
+  converter stopping at `1'h1` on the klt/Yosys reference; the compare against
+  the post-route reference is `match` and is not cited); **item 7 stays
+  `unmet`/`unverifiable_provenance`**. Baseline: `signoff-baseline` record
+  `20261010-185501-f8428aa` (twin `20261010-185500-f8428aa` closes `main`'s
+  fork), 5 of 11.
 - **Every citation pins a `content_hash`**, and what it is the hash of
   depends on the cited envelope (clarified 2026-10-10, issue #168; the
   manifests on `main` have always followed this, the sentence here did

@@ -1,0 +1,7 @@
+{
+  "schema_version": 1,
+  "error": {
+    "command": "lvs",
+    "message": "could not convert gate-level-verilog reference netlist '../verification/records/librelane-gds-signoff-check/artifacts/20261010-175000-f8428aa/reference-klt-yosys-with-macro-stub.v' to plain-element form: connection \"1'h1\" is not a plain net reference, a single-index bit-select, or a '1'b0'/'1'b1' constant -- concatenation and general expressions are not supported"
+  }
+}
