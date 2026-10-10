@@ -1,0 +1,14 @@
+ok   golden (unmodified copy): 9/9 passed
+ok   no-readout: 9/9 tests failed -- uo_out is the core's register in every phase (the design before issue #137)
+ok   bytes-swapped: 9/9 tests failed -- ui_in[1] = 0 selects the high byte and 1 the low byte
+ok   select-on-ui_in-2: 9/9 tests failed -- the byte select is ui_in[2], not ui_in[1]
+ok   select-xor-serial-data: 4/9 tests failed -- the serial data pin flips the byte select
+ok   readout-leaks-into-run-phase: 1/9 tests failed -- in the run phase ui_in[1] = 1 still puts the CRC high byte on uo_out
+ok   readout-follows-mode-pin: 1/9 tests failed -- the readout is gated on the MODE pin, not the latched phase: raising MODE in the run phase shows the CRC again
+ok   crc-skips-serial-load: 9/9 tests failed -- PM_CRC covers PM_DATA_LO commits but not the serial load's
+ok   crc-byte-order-swapped: 9/9 tests failed -- PM_CRC feeds each word low byte first
+ok   crc-advances-on-every-bit: 9/9 tests failed -- PM_CRC advances on every load-phase edge, not only on a commit
+ok   crc-ignores-saturation: 1/9 tests failed -- PM_CRC keeps advancing on word boundaries after 256 words, when nothing is committed
+ok   crc-survives-reset: 9/9 tests failed -- reset does not clear PM_CRC
+ok   boot-status-never-set: 1/9 tests failed -- BOOT_STATUS[0] is not set when the load phase ends
+RESULT: golden passes and every mutant is caught by its target test
