@@ -1,6 +1,13 @@
 # T1 item 1 (Design sources), Digital column: the committed RTL sources and
 # the synthesized gate-level netlists derived from them.
 #
+# Refreshed 2026-10-10 for issue #137 (PR #167, DR 0013 layer 1's load-phase
+# CRC readout on uo_out): the top, src/tt_um_2amlogic_protocol_emulator.v,
+# gained the run_phase mux, so its hash and the two netlists of record below
+# now describe the design of gds run 38074873225 at 6e9a315 (main @ 9fb7815
+# merged in, then main @ 77c9a14, which changed no design source). Every
+# other hashed source is byte-identical to the #139 refresh.
+#
 # Refreshed 2026-10-10 for issue #139 (the UART load): the boot ROM is now
 # 223 words, so the ROM, its assembly source and its hex below, the two
 # netlists of record and their artifact paths describe the design of gds run
@@ -28,7 +35,7 @@
 
 ## RTL, as the klt/Yosys synthesis request and the Tiny Tapeout template read it
 
-sha256:03b53d290605df6589c76a7212474b894735cbc84215e959a1cb90b2fb1fee72  src/tt_um_2amlogic_protocol_emulator.v
+sha256:3ac55ab264ff4c859b8f9aa852b31eb303d57327bed49e63bb12a68c5680975a  src/tt_um_2amlogic_protocol_emulator.v
 sha256:fa692ae7ead0da374f414d104e2ff679414bd49f58e1cbb9ae7165961af8b791  rtl/protocol_core.v
 sha256:f2440338178b680a1c47ea23a9d09d1edb1125eade000660e732855e6135b98f  rtl/protocol_program_memory.v
 sha256:8aa3044e6671f85d6f9154e808f0392e9e55da41a5c69d7159243d1193abd32b  rtl/protocol_boot_rom.v
@@ -74,13 +81,13 @@ file  src/pdn_cfg.tcl
 
 # klt/Yosys flow: `klt synthesize flow/synthesize-protocol-emulator.json`
 # run at the klt v0.7.0 pin by librelane-gds-signoff-check record
-# 20261010-133100-a0f91e3 (1,614 instances, 23,729.0256 um^2 on that flow, see
-# synthesis-baseline 20261010-133300-a0f91e3). This is the reference T1 item
+# 20261010-191500-b7b2b35 (1,630 instances, 24,019.3296 um^2 on that flow, see
+# synthesis-baseline 20261010-191000-b7b2b35). This is the reference T1 item
 # 4's LVS compares against.
-sha256:75d9cf854511160c491d46484bd04d1377e4f1e8758310c4f5addf855ad9cf52  verification/records/librelane-gds-signoff-check/artifacts/20261010-133100-a0f91e3/reference-klt-yosys.v
+sha256:1fa094c882c66b158bffbc698c3ca60b70acb685fd2776f50d108df5ed8d1c3a  verification/records/librelane-gds-signoff-check/artifacts/20261010-191500-b7b2b35/reference-klt-yosys.v
 
-# LibreLane flow: the post-route netlist of gds run 38054423540 at a0f91e3
+# LibreLane flow: the post-route netlist of gds run 38074873225 at 6e9a315
 # (tt_submission artifact), frozen by librelane-gds-signoff-check record
-# 20261010-133100-a0f91e3. It is the netlist the committed GDS (T1 item 2) was
+# 20261010-191500-b7b2b35. It is the netlist the committed GDS (T1 item 2) was
 # routed as, and the one the post-layout SDF regression (T1 item 7) simulates.
-sha256:244eefee73d3e488954e50e44d4b35dd547decd1a31e775823bb289596cca9c1  verification/records/librelane-gds-signoff-check/artifacts/20261010-133100-a0f91e3/reference-asrouted.v
+sha256:eda1717e8c1178d30290b9a6ddaa93a3232b8fbb0e5ac44a8a3f847aa6b85c89  verification/records/librelane-gds-signoff-check/artifacts/20261010-191500-b7b2b35/reference-asrouted.v

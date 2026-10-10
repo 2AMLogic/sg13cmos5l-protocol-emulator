@@ -245,6 +245,24 @@ capture, PVT corner sweeps, or Monte Carlo.
   Item 9 (`evidence/testbenches.txt`) gains the `boot-uart` bench and the
   `--boot-uart` gate-level command. Baseline: `signoff-baseline` record
   `20261010-133500-a0f91e3`, **5 of 11**, unchanged.
+- **Items 1, 2, 3, 4, 7 and 9, state as of 2026-10-10 (issue #137, PR #167).** Append-only;
+  the bullets above are the earlier states. DR 0013 layer 1's load-phase CRC
+  readout put a `run_phase` mux on `uo_out` in the top, so the design and the
+  layout changed (target-spec row 14(b) now excepts the serial-load phase,
+  operator ruling on #166). Item 1 (`evidence/design-sources.txt`: the top's
+  hash and both netlists) and item 2 (the routed GDS of gds run 38074873225
+  at `6e9a315`, `sha256:be7824b9…`, via `evidence/layout-gds.json`) are
+  `met` against the new bytes. Items 3 and 4 cite record
+  `20261010-191500-b7b2b35` (`librelane-gds-signoff-check/`): **item 3 stays
+  `met`**, **item 4 stays `unmet`/`check_errored`** on the same converter
+  shape (klayout-tools#2941); the post-route compare is `match` with
+  `power_connectivity` `match`, not cited. Item 7 cites
+  `post-layout-sdf-regression` record `20261010-190334-b7b2b35` (12 passed,
+  0 failed, 1 skipped at all three corners, annotated):
+  **`unmet`/`unverifiable_provenance`**, as before. Item 9
+  (`evidence/testbenches.txt`) gains the `load-integrity` bench and
+  `--load-integrity` on the gate-level command. Baseline: `signoff-baseline`
+  record `20261010-194958-b7b2b35`, **5 of 11**, unchanged.
 - **Every citation pins a `content_hash`**, and what it is the hash of
   depends on the cited envelope (clarified 2026-10-10, issue #168; the
   manifests on `main` have always followed this, the sentence here did

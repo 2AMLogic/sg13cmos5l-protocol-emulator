@@ -8,6 +8,13 @@
 # librelane-gds-signoff-check 20261010-133100-a0f91e3. The audit text below is
 # issue #83's, written against the 95-word design.
 #
+# Refreshed 2026-10-10 for issue #137 (PR #167, DR 0013 layer 1's load-phase
+# CRC readout on uo_out): a `load-integrity` experiment line is added, the
+# firmware-gate-level line gains `--load-integrity` and its new default
+# netlist (gds run 38074873225 at 6e9a315), and the PDK revision's source
+# record moves to librelane-gds-signoff-check 20261010-191500-b7b2b35 (same
+# revision). Row 14 gains the readout's per-cycle check.
+#
 # Audited 2026-10-10 for issue #83 against main @ 5669077 (design last
 # changed by 704a3fb), at the klt v0.7.0 pin. Attested by testbenches.json
 # beside this file; the manifest cites that envelope for item 9.
@@ -32,7 +39,7 @@
 # PDK, for every leg marked [PDK]: IHP-Open-PDK
 #   2bbec755dc67ca3db0261c3d6163e15735d66710
 # the revision the LibreLane gds runs used (their pdk.json, frozen in
-# librelane-gds-signoff-check record 20261010-133100-a0f91e3) and the one every
+# librelane-gds-signoff-check record 20261010-191500-b7b2b35) and the one every
 # local PDK leg below ran against. Fetch it the way the template's action does:
 #   git init "$PDK_ROOT"
 #   git -C "$PDK_ROOT" fetch --depth 1 https://github.com/IHP-GmbH/IHP-Open-PDK.git 2bbec755dc67ca3db0261c3d6163e15735d66710
@@ -97,7 +104,11 @@ file  .github/workflows/gds.yaml
 # Row 14, reset, power-up, reselect: experiments reset-power-up [PDK] (gate
 #   level, random and X initial state), reset-pin-through, boot-rom,
 #   firmware-gate-level [PDK]. (The row's State text predates the
-#   reset-power-up bench; the bench and its records exist.)
+#   reset-power-up bench; the bench and its records exist.) Clause (b)'s
+#   serial-load exception (amended 2026-10-10, issue #166): the readout is
+#   graded per cycle by verification/test_protocol_emulator.py's
+#   test_reset_and_load_leaves_pins_cleared (experiments reset-pin-through,
+#   post-layout-sdf-regression [PDK][LL]) and in depth by load-integrity.
 # T1 item 7, post-layout: experiment post-layout-sdf-regression [PDK][LL].
 
 ## By evidence directory (every directory under verification/records/)
@@ -109,7 +120,7 @@ experiment  control-space  verification/test_control_space.py; `klt functional-v
 experiment  core-datapath  verification/test_protocol_emulator.py; `klt functional-verification verification/request-protocol-emulator.json --format json`
 experiment  die-area-baseline  flow/run-die-area-par.sh [PDK]; BLOCKED by klayout-tools#2635, records claim no measurement
 experiment  firmware-assembler-roundtrip  verification/test_firmware_roundtrip.py; `klt functional-verification verification/request-firmware-roundtrip.json --format json`
-experiment  firmware-gate-level  `PDK_ROOT=<pdk> ./flow/run-firmware-gate-level.sh --full --control-space --boot-rom --boot-spi --boot-uart` [PDK]; default netlist frozen in post-layout-sdf-regression/artifacts/20261010-133000-a0f91e3/
+experiment  firmware-gate-level  `PDK_ROOT=<pdk> ./flow/run-firmware-gate-level.sh --full --control-space --boot-rom --boot-spi --boot-uart --load-integrity` [PDK]; default netlist frozen in post-layout-sdf-regression/artifacts/20261010-190334-b7b2b35/
 experiment  firmware-i2c  verification/test_firmware_i2c.py, test_firmware_i2c_sr.py; `klt functional-verification verification/request-firmware-i2c.json --format json` and `... request-firmware-i2c-sr.json ...`
 experiment  firmware-loadseq  verification/test_loadseq.py, test_loadseq_top.py; `klt functional-verification verification/request-loadseq.json --format json` and `... request-loadseq-top.json ...`; `python3 firmware/tools/test_loadseq.py` (not in run-rtl-benches.sh; cold-started by hand for this audit, both pass)
 experiment  firmware-spi  verification/test_firmware_spi.py; `klt functional-verification verification/request-firmware-spi.json --format json`
@@ -119,6 +130,7 @@ experiment  isa-lockstep  verification/test_isa_lockstep.py + reference_models/i
 experiment  librelane-corner-timing  [LL] gds workflow; `gh run download <run-id>`; the figures are GDS_logs runs/wokwi/final/metrics.json, projected as the records describe
 experiment  librelane-gds-signoff-check  [PDK] from flow/: `klt synthesize synthesize-protocol-emulator.json`, `klt drc drc-librelane-gds.json`, `klt extract extract-librelane-gds.json`, `klt lvs lvs-librelane-gds-asrouted.json`, `klt lvs lvs-librelane-gds-klt-netlist.json` (each `--format json`)
 experiment  librelane-pdn-bridge  [LL] gds workflow (PDN configuration src/pdn_cfg.tcl, src/config.json)
+experiment  load-integrity  verification/test_load_integrity.py; `klt functional-verification verification/request-load-integrity.json --format json`; controls `python3 verification/load_integrity_mutants.py --out <dir>`
 experiment  no-data-dependent-latency  `./verification/formal/run-no-data-dependent-latency.sh <dir>` (formal toolchain); `verification/formal/test-mutant-gate.sh`
 experiment  pin-write-latency  `./verification/formal/run-pin-write-latency.sh <dir>` (formal toolchain)
 experiment  post-layout-sdf-regression  [PDK][LL] `KLT_BIN=<klt> PDK_ROOT=<pdk> ./flow/run-post-layout-sdf.sh --run-id <gds run>` (or `--from <dir>` on downloaded artifacts); the SDFs and netlist of each cited run are frozen in its record
