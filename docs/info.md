@@ -418,7 +418,7 @@ No pin claim here is backed by silicon or by the LibreLane flow.
   and only the core bench ran, not the firmware above. The sign-off grader
   still renders T1 item 7 unmet, on provenance binding (see
   `manifests/README.md`). LibreLane timing and area evidence is in
-  [`librelane-corner-timing`](../verification/records/librelane-corner-timing/records/20261010-175100-f8428aa.md):
+  [`librelane-corner-timing`](../verification/records/librelane-corner-timing/records/20261010-204000-8a73b84.md):
   zero setup and hold violations at all three corners at 20 ns, and the placed standard-cell area
   with P1, P2 and the UART-load ROM is 44,295 µm² (LibreLane flow), 57.2 % of the core with the
   macro against the 60 % target (P1 and P2 alone, before the merge with the UART load: 41,827 µm²,
