@@ -397,7 +397,7 @@ def _lint_data_dependent_branches(program: Program, label_addrs: set) -> None:
     # Stored control state. Keys: the plain register indices, "hi" (the
     # WCTL PM_DATA_HI latch, write-only but half of every committed word)
     # and "crc" (PM_CRC_HI:LO, one accumulator behind two indices).
-    ctl = {k: has_run for k in (*stored, "hi", "crc")}
+    ctl = {k: False for k in (*stored, "hi", "crc")}
 
     def forget_ctl() -> None:
         for key in ctl:
@@ -409,7 +409,9 @@ def _lint_data_dependent_branches(program: Program, label_addrs: set) -> None:
         rs = (ins.word >> 8) & 0x3
         k = ins.word & 0xFF
 
-        if ins.addr in merge_addrs:
+        # A program with a WCTL RUN can land on any address, so every
+        # instruction is a merge point for the stored control state.
+        if has_run or ins.addr in merge_addrs:
             forget_ctl()
 
         if mnemonic == "LDI":
