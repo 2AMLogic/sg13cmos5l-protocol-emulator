@@ -371,6 +371,17 @@ auditable rather than a bare assertion:
   its protocol must be outside DR 0017's exclusion list (DR 0015's tables,
   and the protocols DRs 0012 and 0013 were designed around). No row-13
   protocol is chosen yet.
+
+  *Dated note 2026-10-10 (issue #141, part 2). Nothing above is changed.*
+  DR 0017 merged as `1696045bfa1a33f93c95a5bf6c29b05f4ea0d734`. DR 0018
+  ([`decision-records/0018-row13-protocol-choice.md`](decision-records/0018-row13-protocol-choice.md),
+  Proposed) chose WS2812 in the next commit. The bench is
+  `verification/test_firmware_ws2812.py`, graded by
+  `verification/reference_models/ws2812.py` (a WS2812B receiver written
+  from the datasheet). It runs at RTL (`klt functional-verification`) and
+  on the gate-level netlist (`flow/run-ws2812-gate-level.sh`), with three
+  mutant programs and a WAIT-counter stuck-at fault as negative controls.
+  The stretch, which runs on the silicon-true pad model, is issue #235.
 - **Control-register bench (DR 0012).** It checks:
   - reset values, readback, and reserved-index behaviour (no-op write, read
     returns 0)

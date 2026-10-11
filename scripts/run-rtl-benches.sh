@@ -36,6 +36,7 @@ BENCHES=(
   firmware-i2c
   firmware-i2c-sr
   firmware-roundtrip
+  firmware-ws2812
   random-regression
   isa-lockstep
 )

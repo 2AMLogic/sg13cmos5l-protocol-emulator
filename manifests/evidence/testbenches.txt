@@ -2,6 +2,11 @@
 # committed, with a cold-start invocation a third party can run, and the PDK
 # revision is pinned.
 #
+# Refreshed 2026-10-10 for issue #141 part 2 (row 13, DR 0018): the
+# `firmware-ws2812` (RTL) and `firmware-ws2812-gate-level` experiment lines
+# are added. The gate-level leg has its own runner and uses the same frozen
+# netlist as firmware-gate-level. The PDK revision is unchanged.
+#
 # Refreshed 2026-10-10 for issue #137 (PR #167, DR 0013 layer 1's load-phase
 # CRC readout on uo_out): a `load-integrity` experiment line is added, the
 # firmware-gate-level line gains `--load-integrity` and its new default
@@ -130,6 +135,8 @@ experiment  firmware-i2c  verification/test_firmware_i2c.py, test_firmware_i2c_s
 experiment  firmware-loadseq  verification/test_loadseq.py, test_loadseq_top.py; `klt functional-verification verification/request-loadseq.json --format json` and `... request-loadseq-top.json ...`; `python3 firmware/tools/test_loadseq.py` (not in run-rtl-benches.sh; cold-started by hand for this audit, both pass)
 experiment  firmware-spi  verification/test_firmware_spi.py; `klt functional-verification verification/request-firmware-spi.json --format json`
 experiment  firmware-uart  verification/test_firmware_uart.py; `klt functional-verification verification/request-firmware-uart.json --format json`
+experiment  firmware-ws2812  verification/test_firmware_ws2812.py + reference_models/ws2812.py; `klt functional-verification verification/request-firmware-ws2812.json --format json`; model self-test `python3 verification/test_ws2812_model.py` (in `npm run lint`); mutant programs are tests in the bench
+experiment  firmware-ws2812-gate-level  `PDK_ROOT=<pdk> ./flow/run-ws2812-gate-level.sh` [PDK]; default netlist frozen in post-layout-sdf-regression/artifacts/20261010-205119-af36071/
 experiment  firmware-uart-rx  verification/test_firmware_uart_rx.py; `klt functional-verification verification/request-firmware-uart-rx.json --format json`
 experiment  isa-lockstep  verification/test_isa_lockstep.py + reference_models/isa.py; `klt functional-verification verification/request-isa-lockstep.json --format json`; controls `python3 verification/isa_lockstep_mutants.py --out <dir>`
 experiment  librelane-corner-timing  [LL] gds workflow; `gh run download <run-id>`; the figures are GDS_logs runs/wokwi/final/metrics.json, projected as the records describe

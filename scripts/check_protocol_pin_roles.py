@@ -94,6 +94,7 @@ PHASES = (
     "spi_result",
     "i2c_transfer",
     "i2c_result",
+    "ws2812",
 )
 UNUSED = "unused"
 # PROG_SER / PROG_MODE are the serial program-load inputs. CRC_BYTE_SEL (an
@@ -104,7 +105,7 @@ LOAD_ROLE_PORT = {"PROG_SER": "ui_in", "PROG_MODE": "ui_in",
                   "CRC_BYTE_SEL": "ui_in", "CRC_READOUT": "uo_out"}
 
 # Role classes (what the role does electrically).
-DRIVE_PP = {"TX", "CS", "SCLK", "MOSI"} | {f"RESULT[{i}]" for i in range(8)}
+DRIVE_PP = {"TX", "CS", "SCLK", "MOSI", "DIN"} | {f"RESULT[{i}]" for i in range(8)}
 DRIVE_OD = {"SCL", "SDA"}
 SAMPLE = {"MISO", "RX"}
 ALL_ROLES = DRIVE_PP | DRIVE_OD | SAMPLE
@@ -118,6 +119,8 @@ PHASE_VOCAB = {
     "spi_result": {f"RESULT[{i}]" for i in range(8)},
     "i2c_transfer": {"SCL", "SDA"},
     "i2c_result": {f"RESULT[{i}]" for i in range(8)},
+    # Row 13 (DR 0018, issue #141): the WS2812 data line, an output only.
+    "ws2812": {"DIN"},
 }
 
 # Extraction patterns this script implements. An inventory entry naming any
@@ -134,7 +137,9 @@ PATTERNS = {
     "i2c_in_masks",         # IN UIO_IN ... AND Rx, Ry nearest-LDI mask
     "i2c_poll_mask",        # `LDI R3, imm` before `pollN: IN`
     "gen_strings",          # instruction string literals of gen_i2c_sr.py
+    "ws2812_din",           # first `LDI R2, imm` == DIN pin image; every OUT UO_OUT from R1/R2
     "bench_uart_tx",        # TX_PIN, TX_BIT = "port", n
+    "bench_ws2812",         # DIN_PIN, DIN_BIT = "port", n
     "bench_spi_consts",     # CS/SCLK/MOSI/MISO constants and capture ports
     "bench_i2c_consts",     # SCL/SDA constants, LINE_PIN, CAPTURE_SPECS, i2c_board(scl=, sda=), pad calls
     "bench_i2c_sr_consts",  # imports from test_firmware_i2c, pad calls by named bit, no uio_in write
@@ -954,6 +959,42 @@ class Checker:
         # generic ISA demo: whole-port use, no protocol pin roles asserted
         self.check_ports(rel, ins, {"UO_OUT"}, {"UI_IN"}, {"UO_OUT"}, {"UI_IN"})
 
+    # ------------------------------------------------------ profile: ws2812
+    def prof_ws2812(self, rel, ent):
+        """Row 13's WS2812 program (DR 0018, issue #141): DIN on the table's
+        pin, written only through `OUT UO_OUT` from the DIN pin image (R2)
+        or from R1, which holds that image ANDed with the data or zero."""
+        text = self.read(rel, self.concrete)
+        if text is None:
+            return
+        c = self.concrete
+        ins = self.asm_instrs(text)
+        outs, _ins, _ = self.out_in_ports([("ws2812", ["DIN"])], [], "spi_result")
+        self.check_ports(rel, ins, outs, set(), outs, set())
+        mask = self.mask_of("ws2812", "DIN")
+        first = next((i for i in ins if i["m"] == "LDI" and i["ops"][0] == "R2"), None)
+        if first is None:
+            c.err(f"{rel}: no `LDI R2, imm` DIN pin-image site found (pattern ws2812_din)")
+        else:
+            c.sites += 1
+            v = self.imm(first["ops"][1])
+            if v != mask:
+                c.err(f"{rel}:{first['no']}: DIN pin image LDI R2, {first['ops'][1]} but the table's "
+                      f"ws2812 DIN pin {self.role_pin('ws2812', 'DIN')} is 0x{mask:02X}")
+        if not any(i["m"] == "AND" and i["ops"][1] == "R2" for i in ins):
+            c.err(f"{rel}: no `AND Rx, R2` bit-isolation site found")
+        for i in ins:
+            if i["m"] == "OUT" and i["ops"][0].upper() == "UO_OUT":
+                c.sites += 1
+                if i["ops"][1].upper() not in ("R1", "R2"):
+                    c.err(f"{rel}:{i['no']}: OUT UO_OUT from {i['ops'][1]}; only R2 (the DIN image) "
+                          "or R1 (DIN image AND data, or 0) may drive DIN")
+            if i["m"] == "LDI" and i["ops"][0] == "R2" and i is not first:
+                c.err(f"{rel}:{i['no']}: R2 is reloaded; it must hold the DIN pin image throughout")
+        # R1 also carries loop counts and the table address. Which value an
+        # OUT from R1 drives is a dataflow question this text check does not
+        # answer; the bench grades every DIN level the program produces.
+
     # ------------------------------------------------------- profile: benches
     def need(self, text, pattern, rel, what, flags=re.M):
         m = re.search(pattern, text, flags)
@@ -982,6 +1023,14 @@ class Checker:
         m = self.need(text, r'^TX_PIN,\s*TX_BIT\s*=\s*"(\w+)",\s*(\d+)', rel, "TX_PIN, TX_BIT")
         if m:
             self.check_pb(rel, "TX_PIN/TX_BIT", m.group(1), int(m.group(2)), "uart_tx", "TX")
+
+    def prof_bench_ws2812(self, rel, ent):
+        text = self.read(rel, self.concrete)
+        if text is None:
+            return
+        m = self.need(text, r'^DIN_PIN,\s*DIN_BIT\s*=\s*"(\w+)",\s*(\d+)', rel, "DIN_PIN, DIN_BIT")
+        if m:
+            self.check_pb(rel, "DIN_PIN/DIN_BIT", m.group(1), int(m.group(2)), "ws2812", "DIN")
 
     def prof_bench_spi(self, rel, ent):
         text = self.read(rel, self.concrete)

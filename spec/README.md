@@ -66,6 +66,14 @@ Proposed specification and decision records.
   protocols row 13 may not choose. The pins are machine-readable in
   `isa-freeze.json` and checked by `scripts/check_isa_freeze.py`
   (`npm run lint`). Row 13's protocol is chosen in a later commit.
+- `decision-records/0018-row13-protocol-choice.md` — **Proposed
+  2026-10-10** (not ratified), issue #141 part 2. Chooses WS2812 (single-wire
+  NRZ LED data, graded on the WS2812B datasheet's timing) as row 13's primary
+  protocol, after DR 0017's freeze at merge commit
+  `1696045bfa1a33f93c95a5bf6c29b05f4ea0d734`. It checks the choice against
+  DR 0017's exclusion list and records where WS2812 appears in the repository
+  (three places, none weighing it against the ISA). The stretch column is not
+  chosen. No pinned file changes.
 - `verification-plan.md` — what is verified and how, including the formal
   properties, constrained-random suites, and reference models.
 - `gap-to-submission.md` — every spec row and template checklist item
