@@ -300,6 +300,19 @@ the ratification act and are left to issue #44.
   > Row 12 Source: NXP UM10204 "I²C-bus specification and user manual,"
   > Rev. 6 (2014), Table 10 (Standard/Fast-mode AC characteristics)
 
+- **Items 1 and 4, dated 2026-10-11 (operator ruling on issue #85).** The
+  introduction above left these to issue #44. The operator has since ruled
+  on #85, and both are now done outside this file. No cell here changed for
+  them. **Item 1:** DR 0001 carries a dated amendment that replaces its
+  "fetch and execute happen in the same cycle" sentence with DR 0005's
+  fetch-ahead text, which is what the RTL does. DR 0005 is not bound into
+  the act. **Item 4:** DRs 0006 and 0007 carry dated notes that agree with
+  the record drafted for the act (DR 0009): the act does not bind DR 0007.
+  Row 4 therefore has no ratified corner set, and DR 0007 stays `Proposed`
+  until the klt flow has timing evidence for this design
+  (`2AMLogic/klayout-tools#2635`). Row 4's State cell already says the klt
+  leg has no result.
+
 ## Ratification
 
 > **2026-09-26 reconciliation — the act described in this section was not

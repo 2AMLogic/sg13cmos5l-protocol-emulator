@@ -64,6 +64,19 @@ coverage.
   `test_alu_flags_whitebox` is registered as skipped (a flattened netlist
   has no `u_core`). With the variables unset it rebinds nothing; no RTL
   request names it.
+- `sdf_protocol_alignment.py` with `sdf_protocol_uart_tx.py`,
+  `sdf_protocol_spi.py`, `sdf_protocol_i2c_sr.py` — the post-layout entry
+  points for the UART TX, SPI and I2C repeated-START/read/stretch firmware
+  benches (issue #217), used only by `flow/run-post-layout-sdf.sh --suite
+  protocols`. The bench files are unchanged; the wrappers rebind the
+  benches' `RisingEdge` (capture and reactive peripherals read at the drive
+  offset minus 1 ns and drive at the drive offset; the load phase is
+  aligned through `sdf_alignment`), monitor every `uo_out` / `uio_out` /
+  `uio_oe` transition's delay after the clk pin edge (each must land
+  strictly before that observe point), add an SPI timing negative control
+  (every conformant DUT burst compressed to 0.9x the f_clk/4 ceiling must
+  fail), and write a per-run report (`PE_SDF_PROTOCOL_REPORT`). With
+  `PE_ALIGN_*` unset they patch nothing.
 - `test_control_space.py` — cocotb bench for DR 0012's control space
   (issue #135) on the top: reset values, readback, the `uio_oe` pin-mode
   rule, reserved-index behaviour, the fixed 2-cycle stall and its
@@ -520,7 +533,7 @@ PDK-free RTL bench, as a **pass/fail gate only**. It writes nothing under
 deliberate local runs. The benches need `klt` (the `request-*.json` files
 carry sources, defines and recorded seeds), provisioned by
 `scripts/setup-env.sh` like the `signoff` job. Run it locally with
-`scripts/run-rtl-benches.sh` (about 7 min serial, most of it `boot-uart`, whose host plays 2.2 million cycles of frames, plus about a minute for `test_boot_spi`).
+`scripts/run-rtl-benches.sh` (about 7 min serial, plus about 3 s for the two loadseq benches, most of it `boot-uart`, whose host plays 2.2 million cycles of frames, plus about a minute for `test_boot_spi`).
 
 CI-covered (RTL, Icarus, no PDK): `test_protocol_emulator`,
 `test_control_space`, `test_primitives`, `test_boot_rom`, `test_boot_spi`,
@@ -529,7 +542,14 @@ CI-covered (RTL, Icarus, no PDK): `test_protocol_emulator`,
 `test_firmware_spi`, `test_uio_pads`, `test_firmware_i2c`,
 `test_firmware_i2c_sr`, `test_firmware_roundtrip`,
 `test_random_regression`, `test_isa_lockstep`, `test_load_integrity`,
-`test_firmware_ws2812`.
+`test_firmware_ws2812`, `test_loadseq` and
+`test_loadseq_top` (the independent host-load replay benches, issue #225).
+
+The bench list is `scripts/rtl-bench-inventory.txt`: every
+`verification/request-*.json` is either `include`d or `exclude`d with a
+reason, and `scripts/check_rtl_bench_inventory.py` (run by `npm run lint`
+and at the start of the runner) fails on an unclassified new request or a
+stale entry. Currently nothing is excluded.
 
 Covered elsewhere in CI: `test_check_records.py`,
 `test_firmware_templates.py`, `test_uio_pad_resolution.py` and

@@ -374,3 +374,47 @@ async def test_i2c_negative_control_flags_stop_setup_violation(dut):
         f"t_SU;STO violation not named: {report.violations}"
     )
     await _tick()
+
+
+@cocotb.test()
+async def test_i2c_negative_control_flags_overspeed_period_only(dut):
+    """Issue #125: clocks whose low and high sit exactly AT the Table-10
+    minimums (Standard: 4700 + 4000 ns = 235 + 200 cycles at the nominal
+    20 ns clock) pass t_LOW and t_HIGH but are over the f_SCL ceiling; the
+    independent full-period bound must flag them, and only it. Both grades."""
+    for fast_mode, limit in ((False, 10000.0), (True, 2500.0)):
+        scl, sda = stimulus.i2c_negative_overspeed_case(fast_mode)
+        report = check_transfer(scl, sda, fast_mode=fast_mode)
+        assert not report.ok, f"overspeed passed (fast={fast_mode})"
+        assert report.data_bytes == [0x5A] and report.address == 0x50
+        assert all(v.startswith("t_SCL period") for v in report.violations), (
+            f"only the period bound may fire: {report.violations}"
+        )
+        assert report.measurements["t_LOW(min)"] == stimulus.i2c.minimum_ns(
+            "t_LOW", fast_mode
+        )
+        assert report.measurements["t_HIGH(min)"] == stimulus.i2c.minimum_ns(
+            "t_HIGH", fast_mode
+        )
+        assert report.measurements["t_SCL(min)"] < limit
+    await _tick()
+
+
+@cocotb.test()
+async def test_i2c_period_bound_edges_and_stretching(dut):
+    """Exactly the f_SCL period passes (Standard 500 cycles = 10000 ns,
+    Fast 125 cycles = 2500 ns); one cycle under fails (stretching, being longer, is
+    covered by the stretch test above)."""
+    for fast_mode, cycles in ((False, 500), (True, 125)):
+        for total, want_ok in ((cycles, True), (cycles - 1, False)):
+            low = stimulus.i2c.minimum_ns("t_LOW", fast_mode)
+            high = total * 20.0 - low
+            scl = Signal(1, name="scl")
+            sda = Signal(1, name="sda")
+            stimulus.i2c.encode_transfer(
+                0x50, False, [0x5A], [True], fast_mode, scl, sda,
+                clock_low_ns=low, clock_high_ns=high,
+            )
+            report = check_transfer(scl, sda, fast_mode=fast_mode)
+            assert report.ok == want_ok, (fast_mode, total, report)
+    await _tick()

@@ -25,8 +25,10 @@ which is the case a push-pull pad would turn into a fight. (Until #136
 the bench composed `uio_out AND uio_in` itself and never read `uio_oe`;
 the records minted that way are superseded.) The decode and every timing
 verdict come from the independent model
-`verification/reference_models/i2c.py` (unchanged). The only bench-side
-inputs to a comparison are the expected bytes.
+`verification/reference_models/i2c.py` (which since issue #125 also bounds
+each data/ACK clock's complete period by Table 10's f_SCL maximum -- the
+Standard programs pace a 500-cycle clock, 258 low + 242 high, instead of
+the former 235/200 = 435). The only bench-side inputs to a comparison are the expected bytes.
 
 What this bench adds over the sibling
 -------------------------------------
@@ -84,7 +86,12 @@ import cocotb
 from cocotb.clock import Clock
 from cocotb.triggers import ReadOnly, RisingEdge, Timer
 
-from reference_models.i2c import check_transfer, encode_transfer, minimum_ns
+from reference_models.i2c import (
+    check_transfer,
+    encode_transfer,
+    minimum_ns,
+    minimum_period_ns,
+)
 from reference_models.waveform import Signal
 
 from test_firmware_i2c import (  # noqa: E402  (helpers; no test objects)
@@ -372,7 +379,14 @@ async def test_sr_exact_programs_pass_model_with_negative_controls(dut):
             "t_SU;STA must sit exactly at the Table 10 minimum"
         )
         assert m["t_SU;STO"] == v.SUSTO * CLK_PERIOD_NS
-        assert minimum_ns("t_LOW", v.fast_mode) == v.L * CLK_PERIOD_NS
+        assert v.L * CLK_PERIOD_NS >= minimum_ns("t_LOW", v.fast_mode)
+        assert v.H * CLK_PERIOD_NS >= minimum_ns("t_HIGH", v.fast_mode)
+        # the complete clock: measured fall to fall, never an average. The
+        # EXACT programs' shortest clock is exactly L + H, and meets f_SCL.
+        assert m["t_SCL(min)"] == (v.L + v.H) * CLK_PERIOD_NS
+        assert m["t_SCL(min)"] >= minimum_period_ns(v.fast_mode)
+        if not v.fast_mode:
+            assert v.L + v.H >= 500, "Standard clock under 500 cycles"
 
         # control: uniform compression of the DUT's own waveform
         sq = check_transfer(
@@ -381,6 +395,9 @@ async def test_sr_exact_programs_pass_model_with_negative_controls(dut):
             fast_mode=v.fast_mode,
         )
         assert not sq.ok and any(x.startswith("t_LOW") for x in sq.violations)
+        assert any(x.startswith("t_SCL period") for x in sq.violations), (
+            "the compression must also break the f_SCL period bound"
+        )
         assert any(x.startswith("t_SU;STA") for x in sq.violations), (
             "the compression must also break the exactly-floored t_SU;STA"
         )
@@ -426,6 +443,8 @@ async def test_sr_poll_programs_stretch(dut):
         hd_u, sta_u = sr_keys(rep_u)
         assert mu["t_LOW(min)"] == v.L * CLK_PERIOD_NS
         assert mu["t_HIGH(min)"] == (v.H + v.extra) * CLK_PERIOD_NS
+        assert mu["t_SCL(min)"] == (v.L + v.H + v.extra) * CLK_PERIOD_NS
+        assert mu["t_SCL(min)"] >= minimum_period_ns(v.fast_mode)
         assert sta_u == (v.SUSTA + v.extra) * CLK_PERIOD_NS
         assert mu["t_SU;STO"] == (v.SUSTO + v.extra) * CLK_PERIOD_NS
         assert [h[2] for h in hd_u] == [v.HD * CLK_PERIOD_NS] * 2
@@ -447,6 +466,9 @@ async def test_sr_poll_programs_stretch(dut):
         slack = 3 * CLK_PERIOD_NS  # one poll pass (IN, AND, BZ)
         assert ms["t_LOW(min)"] == v.L * CLK_PERIOD_NS
         assert ms["t_HIGH(min)"] >= v.H * CLK_PERIOD_NS
+        # stretched clocks are at least as long as the unstretched period
+        assert ms["t_SCL(min)"] >= (v.L + v.H) * CLK_PERIOD_NS
+        assert ms["t_SCL(min)"] >= minimum_period_ns(v.fast_mode)
         assert v.SUSTA * CLK_PERIOD_NS <= sta_s <= (v.SUSTA * CLK_PERIOD_NS
                                                     + slack)
         assert v.SUSTO * CLK_PERIOD_NS <= ms["t_SU;STO"] <= (

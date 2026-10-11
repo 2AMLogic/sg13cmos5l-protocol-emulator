@@ -327,6 +327,32 @@ In order, and not skippable:
 > record reporting the act must also list DR 0007 among the records it
 > binds. Steps 1–5 are otherwise unchanged.
 
+> **Dated note 2026-10-11 (issue #85, item 4): the act record does not bind
+> DR 0007. This supersedes the numbering note's sentence that the record
+> reporting the act "must also list DR 0007 among the records it binds";
+> the note is kept as written.**
+> The record drafted for that act (DR 0009, on the ceremony's carrying
+> branch) declines to: issue #44 scopes the act to the files pull request
+> #29 claimed to ratify (`spec/target-spec.md` and DRs 0001–0004), and
+> DR 0007's own § "New record, not an amendment to DR 0005" argues that its
+> question must stay separable so a key-holder can accept one question and
+> reject another. The operator ruled on issue #85 on 2026-10-11 to follow
+> DR 0009. So:
+>
+> - The record reporting the act names DR 0007 among the records the act
+>   does **not** bind.
+> - DR 0007 goes to the keys on a carrying PR of its own, as DRs 0005 and
+>   0008 do.
+> - DR 0007 stays `Proposed`, and with it row 4's corner set, until the klt
+>   flow produces timing evidence for this design. Today `klt sta` cannot
+>   declare the program-memory macro and reports 0 of 6 corners
+>   (`2AMLogic/klayout-tools#2635`), so only one of the two flows has a
+>   number.
+>
+> Step 4 already has the record say which of DRs 0001–0005 it binds. DR 0005
+> is not among them either (operator ruling, issue #85 item 1). The numbering
+> note's "next free record number" reading stands.
+
 Until step 4 lands, every `Status:` line under `spec/` says `DRAFT`,
 `Proposed`, or `Recorded`, and the repository's governance claims and its
 forge record agree.

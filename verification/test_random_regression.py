@@ -817,10 +817,10 @@ async def test_negative_controls_mutated_templates_fail(dut):
     dut._log.info(f"negative control SPI wrong idle: ok={ok} ({detail})")
     assert not ok, "NEGATIVE CONTROL FAILED TO FAIL: wrong-CPOL SPI passed"
 
-    # I2C: data-clock low phase 10 cycles under the Table 10 floor, both
-    # grades (indices 0 / 1 are fast / std).
+    # I2C: data-clock low phase 30 cycles shorter (under the Table 10 floor in
+    # both grades: Fast 65 -> 35, Standard 258 -> 228 < 235), both grades (indices 0 / 1 are fast / std).
     for index in (0, 1):
-        case = ft.gen_i2c(RECORDED_SEED, index, mistime_low_delta=-10)
+        case = ft.gen_i2c(RECORDED_SEED, index, mistime_low_delta=-30)
         case.params["ack_address"] = True
         mode, caps = await run_i2c(dut, case)
         try:
@@ -831,7 +831,7 @@ async def test_negative_controls_mutated_templates_fail(dut):
         except ValueError as exc:
             failed, detail = True, f"model rejected: {exc}"
         NEGATIVE_CONTROLS.append(
-            {"name": f"{mode.name}_low_phase_minus_10", "params": case.params,
+            {"name": f"{mode.name}_low_phase_minus_30", "params": case.params,
              "model_verdict": "FAIL" if failed else "PASS", "detail": detail}
         )
         dut._log.info(f"negative control {mode.name} short t_LOW: {detail}")

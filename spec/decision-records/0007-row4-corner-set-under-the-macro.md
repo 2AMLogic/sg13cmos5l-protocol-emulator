@@ -21,6 +21,22 @@ how this directory numbers its records. Read DR 0006's "`0007`" as "the next
 free number when the act happens". That record's list of what it binds
 must also include this one. DR 0006 carries a dated note to the same effect.
 
+> **Dated note 2026-10-11 (issue #85, item 4): the act record does not bind
+> this record. This supersedes the numbering note's sentence "That record's
+> list of what it binds must also include this one"; the note is kept as
+> written.** The record drafted for the act (DR 0009, on the ceremony's
+> carrying branch) lists this record among those the act does **not**
+> bind: issue #44 scopes the act to the files pull request #29 claimed to
+> ratify, and § "New record, not an amendment to DR 0005" below argues that
+> this question must stay separable from DR 0005's and from the target
+> spec's. The operator ruled on issue #85 on 2026-10-11 to follow DR 0009,
+> and DR 0006 carries a dated note to the same effect. This record goes to
+> the keys on a carrying PR of its own. It stays `Proposed`, and with it
+> row 4's corner set, until the klt flow has timing evidence for this
+> design: `klt sta` cannot declare the macro today and reports 0 of 6
+> corners (`2AMLogic/klayout-tools#2635`), so the corner set would
+> otherwise be ratified on one flow's numbers only.
+
 ## New record, not an amendment to DR 0005
 
 This is a **standalone record that depends on DR 0005**. It does not amend
@@ -358,3 +374,9 @@ superseded for its own reasons.
 4. **Ratification.** This record, DRs 0001–0005, and `spec/target-spec.md`
    are waiting on the same two-key act (DR 0006 § "How this gets closed";
    #44, #45).
+
+   *Dated note 2026-10-11 (issue #85, item 4):* not the same act. The act
+   for the target spec and DRs 0001–0004 does not bind this record (see the
+   dated note under "Numbering note" above). This record needs a carrying
+   PR of its own, after klt timing evidence exists
+   (`2AMLogic/klayout-tools#2635`).
