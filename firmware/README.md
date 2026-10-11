@@ -79,6 +79,7 @@ python3 firmware/tools/test_asm.py
 
 # Assemble a program (writes firmware/build/<stem>.hex + .cycles.txt):
 python3 firmware/tools/asm.py firmware/asm/demo_roundtrip.asm
+```
 
 ```bash
 # Verify the committed build artifacts still match the committed source

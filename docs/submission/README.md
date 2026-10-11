@@ -42,8 +42,8 @@ re-hardening for a newer flow, are allowed after it.
 | # | Deliverable | Judge-facing artifact (target) | What exists today | State |
 |---|---|---|---|---|
 | D1 | Passing GDS + precheck, Tiny Tapeout flow | `gds` workflow (`.github/workflows/gds.yaml`) green on the **final** top, with the run linked from this file and from `README.md` | All four jobs (`gds`, `precheck`, `gl_test`, `viewer`) green on `main` @ `4193268`: [run 37974043486](https://github.com/2AMLogic/sg13cmos5l-protocol-emulator/actions/runs/37974043486), 2026-10-09. Sign-off evidence: `verification/records/librelane-gds-signoff-check/records/20261009-054750-676f8b2.md`, `verification/records/librelane-pdn-bridge/records/20261001-085017-21a2a63.md`. | **Partial.** It is green, but not on the final top. DR 0012 (control space, #135) and DR 0013 (program loading) still change the RTL, and #129 may change the tile count. Re-run and re-link after the last RTL change. |
-| D2 | Architecture + ISA documentation | A standalone doc, `docs/submission/architecture.md` (to write), distilled from DR 0001. It must not be the decision record itself. | The content is spread across `spec/decision-records/0001-isa.md`, `rtl/README.md`, and the datasheet `docs/info.md` § How it works. DR 0012 and DR 0013 extend the ISA and the load path. | **Partial.** The material exists, but there is no judge-facing doc. The ISA is not frozen until #135 lands. DR 0001's Status is still **Proposed** (DR 0006, #44). |
-| D3 | Assembler / toolchain + example programs | `firmware/` with a quickstart a judge can run from a fresh clone | `firmware/tools/asm.py` (the DR 0003 assembler) and its test `firmware/tools/test_asm.py`. 16 programs in `firmware/asm/` (UART TX/RX at three bauds, SPI modes 0–3, I2C Standard/Fast with repeated START and clock stretch, plus `demo_roundtrip.asm`) with committed images in `firmware/build/`. `firmware/README.md` § Cold-start invocation. | **Partial, close to ready.** The cold-start section is the quickstart, but nothing links it as the judge's entry point. The assembler has to gain the DR 0012 control-space mnemonics (#135). |
+| D2 | Architecture + ISA documentation | A standalone doc, `docs/submission/architecture.md` (to write), distilled from DR 0001. It must not be the decision record itself. | The content is spread across `spec/decision-records/0001-isa.md`, `rtl/README.md`, and the datasheet `docs/info.md` § How it works. DR 0012 and DR 0013 extend the ISA and the load path. | **Partial.** The material exists, but there is no judge-facing doc. The ISA is not frozen until #135 lands. DR 0001's Status is still **Proposed** (DR 0006, #44). **Superseded 2026-10-11 (#230, #251):** the judge-facing doc now exists and #135 is closed; see the D2 dated update below and [Judge quickstart](#judge-quickstart-d2-d3). The row text is kept as the 2026-10-09 record. |
+| D3 | Assembler / toolchain + example programs | `firmware/` with a quickstart a judge can run from a fresh clone | `firmware/tools/asm.py` (the DR 0003 assembler) and its test `firmware/tools/test_asm.py`. 16 programs in `firmware/asm/` (UART TX/RX at three bauds, SPI modes 0–3, I2C Standard/Fast with repeated START and clock stretch, plus `demo_roundtrip.asm`) with committed images in `firmware/build/`. `firmware/README.md` § Cold-start invocation. | **Partial, close to ready.** The cold-start section is the quickstart, but nothing links it as the judge's entry point. The assembler has to gain the DR 0012 control-space mnemonics (#135). **Superseded 2026-10-11 (#251):** `WCTL`/`RCTL` are implemented (#135, closed); the quickstart is now linked from here. See the D3 dated update and [Judge quickstart](#judge-quickstart-d2-d3). |
 | D4 | Verification write-up | `docs/submission/verification.md` (to write), distilled from `spec/verification-plan.md` and the evidence records, and stating what is **not** covered | `spec/verification-plan.md` (Status DRAFT; its preamble line "None of the artifacts described below exist yet" is now stale). 21 record families under `verification/records/`, for example `firmware-uart`, `firmware-spi`, `firmware-i2c`, `firmware-gate-level`, `random-regression`, `no-data-dependent-latency` (formal), `post-layout-sdf-regression` and `sta-corner-sweep`. | **Partial.** The evidence is strong and append-only, but nothing reads it to a judge. Known holes that the write-up must state: #136 (I2C evidence does not run through the real `uio_oe`, so silicon cannot drive an I2C line today) and row 14 (reset/reselect, unmet). **Updated 2026-10-10 (issue #214): see the dated update below the table; the preceding text is the 2026-10-09 reading and is kept as written.** |
 | D5 | AI-use write-up | [`docs/submission/ai-use.md`](ai-use.md): how agents produced the spec, RTL, firmware and verification; the Loom Builder/Judge/Curator loop; the append-only evidence rule; the klayout-tools friction issues filed; and the ratification history told honestly | **2026-10-10 (#213):** [`ai-use.md`](ai-use.md) is written. It covers who acted as the forge records it, the development loop (intended vs observed, with PR #210 as a worked example), the mechanical CI checks and their limits, append-only evidence (including the failing-then-superseded post-layout record), agent verdict vs operator decision, the ratification history (DR 0006, PR #29, the PR #48 gate, the refused PR #84 ceremony, #85), klayout-tools friction, and the limits of AI-generated verification. Before 2026-10-10 only fragments existed: `README.md` § Built agent-native and `spec/verification-plan.md` § 5. | **Partial** (2026-10-10). The document is judge-facing and current as of `main` @ `9fb7815`, but it describes a history that is still moving. Before submission, refresh the PR counts, the ratification outcome (#44, #84, #85: the spec is still **Proposed**, and no independent human review has taken place), and the open klayout-tools issues. Then mark it Ready. |
 | D6 | Demo (optional) | A protocol the ISA was **not** designed for (for example 1-Wire, WS2812, DMX512 or Manchester), written as firmware after the fact with a bench: target-spec row 13. If possible, a video. | Nothing. Row 13 is "Proposed 2026-10-09 ... unmet, no firmware yet" (`spec/target-spec.md`). | **Blocked** on the frozen submission ISA (#135, with #130 deciding which protocol-neutral primitives exist). A physical-board demo also needs the host loader (#118). |
@@ -80,6 +80,71 @@ this update supersedes its "What exists today" and its reason for Partial.
   document with no known refresh left. DR 0001, 0005, 0012, 0013, 0015, 0016
   and 0017 stay **Proposed**; ratification is #44. This update ratifies
   nothing and marks no spec row met.
+
+### D3 dated update, 2026-10-11 (issue #251)
+
+Reviewed commit: `origin/main` @ `f015802f`. The D3 row above is left as
+written; this update supersedes its "What exists today" count and its reason
+for Partial.
+
+- **Control-space mnemonics are implemented.** `firmware/tools/asm.py`
+  assembles `WCTL k, Rs` and `RCTL Rd, k` (#135, closed) and 13 committed
+  programs under `firmware/asm/` use them (for example `i2c_std.asm`,
+  `spi_mode0.asm`, `ws2812.asm`, `boot/boot_rom.asm`). The row's "has to
+  gain the mnemonics" reason is stale.
+- **Program count.** `firmware/asm/` now holds 18 top-level programs (the
+  16 listed in the row, plus `ps2_device.asm` and `ws2812.asm`) and one boot
+  program under `firmware/asm/boot/`. `firmware/tools/check_firmware.py` checks every committed program and
+  the boot program.
+- **Entry point.** The cold-start section is now linked from the
+  [Judge quickstart](#judge-quickstart-d2-d3) below.
+- **Corrections to the D2 update above, from the live tracker on this date.**
+  That update lists open PR #248 for #211 and treats it as a pending
+  refresh. PR #248 is merged and #211 is closed; the 232-word boot ROM the
+  load-path section describes is on `main`. #244 (routed open-drain release
+  glitch) and #217 (no routed-SDF evidence for the protocol firmware) are
+  still open.
+- **State: still Partial, not Ready.** What is implemented: the assembler,
+  its 53 unit tests, the 18 + 1 programs with committed images, the
+  freshness check and the RTL round-trip bench. What remains: the ISA text
+  stays **Proposed** (DR 0001, 0012, 0013, 0017; ratification is #44, open),
+  so nothing here is ratified; open #244 and #217 may still change the
+  architecture document or its evidence; and D1 has to be re-run on the
+  final top. Nothing in this update is a hardware or physical-signoff
+  claim.
+
+## Judge quickstart (D2, D3)
+
+Commands below were run on 2026-10-11 against `origin/main` @ `f015802f`
+(Python 3.12.3). Steps 1 to 3 need only Python 3 (>= 3.9) from the stdlib.
+
+1. **Read the architecture and ISA.** [`architecture.md`](architecture.md)
+   (provisional draft; the decision records win where they disagree). Its
+   tables are compared with the assembler and the independent ISA model by
+   [`scripts/check_architecture.py`](../../scripts/check_architecture.py):
+   `python3 scripts/check_architecture.py`.
+2. **Assemble an example.** From the repository root:
+   `python3 firmware/tools/asm.py firmware/asm/demo_roundtrip.asm`
+   writes `firmware/build/demo_roundtrip.hex` and `.cycles.txt` (27 words,
+   30 fall-through cycles). Use `--out-dir <dir>` to write elsewhere.
+3. **Compare with the committed artifacts.**
+   `python3 firmware/tools/asm.py firmware/asm/demo_roundtrip.asm --check`
+   for one program (prints `OK: committed artifacts match ...`), or
+   `python3 firmware/tools/check_firmware.py` for every program, the boot
+   ROM chain and the load sequences (ends with `0 failing check(s)`). The
+   unit tests are `python3 firmware/tools/test_asm.py` (53 tests).
+4. **Run it on the RTL.** This step needs the pinned `klt`, cocotb and
+   Icarus (`./scripts/setup-env.sh`; see
+   [`verification/README.md`](../../verification/README.md)):
+   `klt functional-verification verification/request-firmware-roundtrip.json --format json`
+   assembles `demo_roundtrip.asm`, loads it through the program-memory load
+   phase and reads every word back; it reported `status: pass`, 3 of 3 tests.
+   The per-protocol firmware benches and their append-only records are listed
+   in the [`firmware/README.md`](../../firmware/README.md#cold-start-invocation-a-third-party-can-run-this-from-a-fresh-clone)
+   cold-start section and under `verification/records/`.
+
+Step 4 is a logical RTL simulation of the load path. It is not evidence of
+silicon behaviour, and this walkthrough infers none.
 
 ### D6 dated update, 2026-10-10 (issue #141 part 2)
 
@@ -154,6 +219,8 @@ supersede its stale parts:
 
 1. Freeze the ISA: #135 (DR 0012), then DR 0013. D2, D3 and D6 cannot finish
    before this.
+   (Superseded 2026-10-11, #251: #135 and #141 are closed and DR 0017's
+   freeze is on `main`; what is left for D2/D3 is in their dated updates.)
 2. Settle the area: #129. If the tile count grows, harden it in CI and record
    the wall time (R1).
 3. Write D5 (AI-use) now. It depends on no RTL change and is the most
