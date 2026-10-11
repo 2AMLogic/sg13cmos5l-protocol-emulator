@@ -1035,6 +1035,35 @@ bit (217 cycles) the #139 timing notes allow; the dispatch adds 2 cycles to
 the trailer-high path. The assembler's data-dependent-branch lint reports 13 warnings (12
 before); the new one is the complement verdict, which paces no pin.
 
+**Area and timing of the 232-word ROM, each number with its flow** (against
+the 223-word ROM of the #139 and #201 notes above, as last measured with the
+load-phase readout of issue #137). **klt/Yosys flow** (synthesis only, cell
+area, no timing; `synthesis-baseline` `20261011-034407-1c19c24`): the top
+goes from 2,408 instances / 34,960.88 um^2 to **2,509 / 35,086.38 um^2
+(+101, +125.50 um^2)**; the ROM alone from 545 / 5,837.45 to **556 /
+5,939.36 um^2 (+11, +101.91 um^2)**, about 11 um^2 per added word. **LibreLane
+flow** (gds run 38108543866 at `f1b21df`, post-route, 20 ns;
+`librelane-corner-timing` `20261011-040000-1c19c24`): its own synthesis step
+goes from 2,578 cells / 35,791.12 um^2 to **2,626 / 35,738.50 um^2 (+48 cells,
+-52.62 um^2)**, so **the two flows disagree on the sign of the area change**;
+that is recorded, not reconciled. Placed standard cells 45,057.0 ->
+**44,964.5 um^2**, utilization 57.77 % -> 57.70 %. Setup and hold still close
+with **zero violations at all three corners**, with less margin at the slow
+corner: worst setup slack +3.527 -> **+1.925 ns** (slow), +9.806 -> +8.796 ns
+(typ), +11.167 -> +11.109 ns (fast); worst hold +0.1399 -> +0.1291 ns (fast).
+The binding slow-corner path is an SRAM read (`A_DOUT[9]`) through the
+core's `exec_word = fetch_rom ? rom_word : instr_word` mux into a flop.
+**Max-slew 0/0/0 -> 2/0/0** (slow/typ/fast), both on one internal net (a
+`nor3_1` driving a `nor4_1`, 2.99 ns against 2.51 ns at the slow corner), not
+an SRAM pin; the flow does not fail on it and it is not fixed here. Max-cap
+stays 0/0/0. The #139 notes named further ROM growth as the thing to watch
+for the slow-corner margin; nine words cost 1.6 ns of it on this placement,
+and 24 words of the ROM's address space are left. DRC is clean and LVS
+against the post-route netlist matches (`librelane-gds-signoff-check`
+`20261011-040500-1c19c24`); the core bench passes at all three SDF corners
+(`post-layout-sdf-regression` `20261011-042235-2f504f0`); the template's
+`gl_test` passes 4/4 on the netlist, including a UART frame in the new format.
+
 **Host side.** `firmware/tools/loadseq.py --uart` writes the new frame (and
 its `--check` checks the complement); `verification/uart_boot_host.py`, the
 bench's independent host, frames it independently, and the bench asserts the

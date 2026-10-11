@@ -485,8 +485,8 @@ No pin claim here is backed by silicon or by the LibreLane flow.
 ## Evidence not yet in hand
 
 - **Tiny Tapeout LibreLane flow.** The routed-netlist SDF regression of the
-  submitted core ([record](../verification/records/post-layout-sdf-regression/records/20261010-205119-af36071.md),
-  LibreLane run 38083802720, with DR 0015's P1 and P2, the UART-load boot ROM and the load check's readout) passes at all three corners: 12 of the core
+  submitted core ([record](../verification/records/post-layout-sdf-regression/records/20261011-042235-2f504f0.md),
+  LibreLane run 38108543866, with DR 0015's P1 and P2, the UART-load boot ROM with its count-complement check and the load check's readout) passes at all three corners: 12 of the core
   bench's 13 tests pass and the white-box flag test is skipped (it reads
   core internals a flattened netlist does not have), so the C flag has no
   post-layout evidence. One of the 12 grades the load check's readout every
@@ -500,10 +500,13 @@ No pin claim here is backed by silicon or by the LibreLane flow.
   and only the core bench ran, not the firmware above. The sign-off grader
   still renders T1 item 7 unmet, on provenance binding (see
   `manifests/README.md`). LibreLane timing and area evidence is in
-  [`librelane-corner-timing`](../verification/records/librelane-corner-timing/records/20261010-205300-af36071.md):
-  zero setup and hold violations at all three corners at 20 ns, and the placed standard-cell area
-  with P1, P2, the UART-load ROM and the load check's readout is 45,057 µm² (LibreLane flow), 57.8 %
-  of the core with the macro against the 60 % target (44,295 µm², 57.2 %, without the readout; P1 and P2 alone, before the merge with the UART load: 41,827 µm²,
+  [`librelane-corner-timing`](../verification/records/librelane-corner-timing/records/20261011-040000-1c19c24.md):
+  zero setup and hold violations at all three corners at 20 ns, with the worst setup slack +1.9 ns
+  at the slow corner (+3.5 ns before the 232-word boot ROM of issue #211; the binding path is an
+  SRAM read into instruction decode), and two max-slew violations on one internal net at that
+  corner (the flow does not fail on them; recorded, not fixed). The placed standard-cell area
+  with P1, P2, the UART-load ROM and the load check's readout is 44,965 µm² (LibreLane flow), 57.7 %
+  of the core with the macro against the 60 % target (45,057 µm² with the 223-word ROM; 44,295 µm², 57.2 %, without the readout; P1 and P2 alone, before the merge with the UART load: 41,827 µm²,
   55.2 %; 28,256 µm² without them). On the klt/Yosys flow P1 and P2 cost +10,848 µm²
   (synthesis only). DR 0015 estimated about 4,600 µm² for the two primitives; the measured cost is
   2.4 to 2.9 times that, which DR 0015's dated notes record. The load check's readout costs 16
