@@ -26,7 +26,11 @@ checker fails (exit 1) when any of them disagrees with its sources:
     existing sources; it is not a new proof of the ISA.
 
 It also fails on a missing table or column, a missing, duplicate or
-unknown row, a malformed cell, and a relative link that does not resolve.
+unknown row, a malformed cell, an `Encoding` whose letter fields are not
+exactly the operands the instruction has (a phantom field on bits the
+assembler always emits as 0 would otherwise encode to the same word), a
+relative link that does not resolve, and a `#fragment` link naming no
+heading of the document.
 Every message names the document line and row.
 
 It never rewrites anything and sets `sys.dont_write_bytecode` before
@@ -57,6 +61,7 @@ TABLES = {
 Z_RULES = ("zero", "unchanged")
 C_RULES = ("carry", "borrow", "shift-out", "unchanged")
 FIELD_WIDTH = {"d": 2, "s": 2, "p": 2, "r": 1, "i": 8, "k": 8}
+FIELD_NAME = {"d": "Rd", "s": "Rs", "p": "port", "r": "shift direction", "i": "imm8", "k": "control index"}
 LINK = re.compile(r"\]\(([^)\s]+)\)")
 RESERVED_CASES = (
     "unassigned write",
@@ -451,7 +456,24 @@ def check_opcodes(asm, isa, t: Table, ctl_doc: dict, errs: list):
                 errs.append(
                     f"{where}: Encoding's opcode bits {bits[:4]} do not match Opcode {row['Opcode']}"
                 )
-        for operands, fields, ctl in samples(asm, mnemonic, kind):
+        form = samples(asm, mnemonic, kind)
+        if bits is not None:
+            # A letter run on bits the assembler always emits as 0 would encode
+            # to the same word, so compare the field sets, not just the words.
+            have = set(bits) - {"0", "1"}
+            need = set().union(*(set(f) for _o, f, _c in form)) if form else set()
+            for letter in sorted(have - need):
+                errs.append(
+                    f"{where}: Encoding '{row['Encoding']}' has field '{letter}' "
+                    f"({FIELD_NAME[letter]}) but {mnemonic} ({kind}) has no such operand; "
+                    f"write those bits as the fixed 0/1 the assembler emits"
+                )
+            for letter in sorted(need - have):
+                errs.append(
+                    f"{where}: Encoding '{row['Encoding']}' has no field '{letter}' "
+                    f"({FIELD_NAME[letter]}) but {mnemonic} ({kind}) takes that operand"
+                )
+        for operands, fields, ctl in form:
             source = f"{mnemonic} {operands}".strip()
             ins, err = assemble_one(asm, source)
             if err is not None:
@@ -623,10 +645,32 @@ def check_reserved(asm, t: Table, errs: list):
             errs.append(f"line {t.line}: table 'reserved': no example row for the case '{case}'")
 
 
+def heading_anchors(text: str) -> set:
+    """GitHub-style slugs of the document's own ATX headings (outside code fences)."""
+    anchors, counts, fenced = set(), {}, False
+    for line in text.splitlines():
+        if line.lstrip().startswith("```"):
+            fenced = not fenced
+            continue
+        m = None if fenced else re.match(r"#{1,6}\s+(.*?)\s*#*\s*$", line)
+        if not m:
+            continue
+        slug = re.sub(r"[^\w\- ]", "", m.group(1).replace("`", "").lower()).replace(" ", "-")
+        n = counts.get(slug, 0)
+        counts[slug] = n + 1
+        anchors.add(slug if n == 0 else f"{slug}-{n}")
+    return anchors
+
+
 def check_links(text: str, doc_dir: Path, errs: list):
+    anchors = heading_anchors(text)
     for line_no, line in enumerate(text.splitlines(), start=1):
         for link in LINK.findall(line):
-            if link.startswith(("http://", "https://", "mailto:", "#")):
+            if link.startswith("#"):
+                if link[1:] not in anchors:
+                    errs.append(f"line {line_no}: link {link} names no heading in this document")
+                continue
+            if link.startswith(("http://", "https://", "mailto:")):
                 continue
             target = link.split("#", 1)[0]
             if target and not (doc_dir / target).exists():

@@ -478,7 +478,9 @@ tables are free text. In a checked table:
   `CTL_MNEMONICS`, exactly once each. `Opcode` is `0x` and one hex digit;
   `Kind` is the assembler's operand kind; `Encoding` is 16 characters from
   `0 1 d s p r i k` (spaces ignored), where a letter run gives the field of
-  the matching operand; `Cycles` is a number, `imm8 + N`, or `control table`;
+  the matching operand, and the letters present must be exactly the
+  operands that instruction has (bits it does not use are written as the
+  fixed 0/1 the assembler emits); `Cycles` is a number, `imm8 + N`, or `control table`;
   `Z` is `zero` or `unchanged`; `C` is `carry`, `borrow`, `shift-out` or
   `unchanged`.
 - `shift`: rows `LEFT` and `RIGHT`; `Rs[0]` and `Fill` are 0 or 1; `C` is

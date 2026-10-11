@@ -181,6 +181,33 @@ class ArchitectureDrift(unittest.TestCase):
         self.assertFails(self.mutate(line, line.replace("`1001 dd 10 kkkkkkkk`", "`1001 dd 11 kkkkkkkk`")),
                          "row 'RCTL': documented encoding gives")
 
+    def test_phantom_encoding_fields(self):
+        # Letter runs on bits the assembler always emits as 0 encode to the same
+        # word, so only the field-set comparison catches them.
+        cases = (
+            ("JMP", "`1100 00 00 iiiiiiii`", "`1100 dd 00 iiiiiiii`", "field 'd' (Rd) but JMP (branch)"),
+            ("NOP", "`0000 00 00 00000000`", "`0000 00 00 iiiiiiii`", "field 'i' (imm8) but NOP (none)"),
+            ("HALT", "`1111 00 00 00000000`", "`1111 dd ss 00000000`", "field 's' (Rs) but HALT (none)"),
+            ("WAIT", "`1011 00 00 iiiiiiii`", "`1011 dd 00 iiiiiiii`", "field 'd' (Rd) but WAIT (wait)"),
+            ("MOV", "`0010 dd ss 00000000`", "`0010 dd ss kkkkkkkk`", "field 'k' (control index) but MOV (rr)"),
+        )
+        for mnemonic, old, new, needle in cases:
+            with self.subTest(mnemonic):
+                line = row_line(f"| `{mnemonic}` |")
+                errs = self.assertFails(self.mutate(line, line.replace(old, new)),
+                                        f"row '{mnemonic}': Encoding '{new.strip('`')}' has {needle}")
+                self.assertTrue(all(f"row '{mnemonic}'" in e for e in errs), errs)
+        # HALT's dd and ss are both reported, each on its own line.
+        line = row_line("| `HALT` |")
+        errs = self.run_check(self.mutate(line, line.replace("`1111 00 00 00000000`", "`1111 dd ss 00000000`")))
+        self.assertEqual(len([e for e in errs if "has field" in e]), 2, errs)
+
+    def test_missing_encoding_field(self):
+        # The converse: an operand the instruction takes but the Encoding omits.
+        line = row_line("| `SHF` |")
+        self.assertFails(self.mutate(line, line.replace("`1000 dd 0r 00000000`", "`1000 dd 00 00000000`")),
+                         "row 'SHF': Encoding '1000 dd 00 00000000' has no field 'r' (shift direction)")
+
     def test_wait_boundaries(self):
         # 'imm8' alone is off by one at WAIT 0 and at WAIT 255.
         line = row_line("| `WAIT` |")
@@ -282,6 +309,10 @@ class ArchitectureDrift(unittest.TestCase):
         self.assertFails(self.mutate("(../../verification/records/isa-lockstep/)",
                                      "(../../verification/records/isa-lockstep-gone/)"),
                          "link target ../../verification/records/isa-lockstep-gone/ does not exist")
+
+    def test_broken_anchor(self):
+        self.assertFails(self.mutate("](#reserved-encodings)", "](#reserved-encoding-gone)"),
+                         "link #reserved-encoding-gone names no heading")
 
     def test_prose_outside_tables_is_free(self):
         text = TEXT.replace("## Timing model", "## Timing model\n\n| a | b |\n|---|---|\n| free | table |")
