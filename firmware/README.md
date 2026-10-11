@@ -34,6 +34,13 @@ firmware/
                          cycles per bit, refreshed with a >280 us reset
                          (target-spec row 13, issue #141; protocol chosen
                          by DR 0018 after DR 0017's ISA freeze)
+    ps2_device.asm       PS/2 keyboard/mouse DEVICE on uio[2] (CLK) and
+                         uio[3] (DATA), both open-drain: generates the clock
+                         the host may inhibit, receives host bytes with an
+                         ACK, echoes them (0xFE on a parity or stop error)
+                         (target-spec row 13 stretch column, issue #235;
+                         protocol chosen by the dated note in DR 0018 after
+                         DR 0017's ISA freeze)
     boot/boot_rom.asm    the on-chip boot ROM's program (issues #138 and
                          #139, DR 0013 layer 2: warm start and UART load).
                          Not loaded into program memory: the ROM in

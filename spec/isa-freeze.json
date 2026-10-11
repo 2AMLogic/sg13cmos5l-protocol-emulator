@@ -92,6 +92,16 @@
       "summary": "dated 2026-10-11 amendment superseding the timing model's 'fetch and execute happen in the same cycle' with DR 0005's fetch-ahead text (fixed +1 cycle at run-phase entry), which the frozen RTL already implements; DR 0005 is not bound; no RTL, timing or interface change"
     },
     {
+      "path": "spec/decision-records/0001-isa.md",
+      "op": "modify",
+      "kind": "no-behaviour-change",
+      "invalidates_row13_evidence": false,
+      "sha256_before": "b5d01e4c81a95932284ae28546f5c320f781cf33cb78cbc1a965460244f11d87",
+      "sha256_after": "6be6663553a705acd15d3a2562086afe0c4e601a7de5596a1c06841d4a71ae1a",
+      "ref": "#44",
+      "summary": "dated 2026-10-11 amendment superseding the port table's 'uio_oe direction is fixed at synthesis time' with DR 0012's run-time pin-mode text (UIO_DIR/UIO_OD, reset = all inputs), which the frozen RTL already implements; DR 0012 is not bound; no RTL, timing or interface change"
+    },
+    {
       "path": "spec/decision-records/0013-program-loading.md",
       "op": "modify",
       "kind": "no-behaviour-change",

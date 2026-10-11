@@ -60,6 +60,17 @@ is [`row13-ws2812.md`](row13-ws2812.md). **State: partial.** The row is
 Proposed and unmet. There is no SDF run, no board and no video. The stretch
 column (a new role or pin direction) is issue #235.
 
+### D6 dated update, 2026-10-11 (issue #235)
+
+The stretch column of row 13 has firmware and evidence too: a PS/2 keyboard
+or mouse **device** on two open-drain lines that a host also drives, chosen by
+a dated note in DR 0018 after the freeze, with no pinned file changed. An
+independent host model, running on the silicon-true pad model, graded it at
+RTL and on the gate-level netlist; see `docs/info.md` and
+[`row13-ps2.md`](row13-ps2.md). **State: partial.** The row is Proposed and
+unmet, the pad model has zero delay, and there is no SDF run, no board and no
+video.
+
 ### D4 dated update, 2026-10-10 (issue #214)
 
 Reviewed commit: `main` @ `9fb7815`. The judge-facing narrative now exists:

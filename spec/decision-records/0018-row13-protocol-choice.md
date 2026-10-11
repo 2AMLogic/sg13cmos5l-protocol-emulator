@@ -196,3 +196,139 @@ instruction's latency depends on data (target-spec row 3).
 1. **The 280 µs reset figure** (section 2) has no primary source in this
    repository. If one is found, a dated note here can record it. The firmware
    already meets it.
+
+## Dated note 2026-10-11 (issue #235): the stretch column's protocol is the PS/2 device
+
+Status: Proposed, like the rest of this record. It changes no RTL, no pinned
+file of DR 0017's freeze and no target-spec value, and it makes no row met.
+This note is committed before any PS/2 firmware, bench or reference model
+exists. Its parent is `origin/main` at `39287e2c`, which contains the freeze
+commit `1696045bfa1a33f93c95a5bf6c29b05f4ea0d734`; `python3
+scripts/check_isa_freeze.py` reports the same eleven pinned files and the same
+two amendments before and after this note.
+
+Section 4 above left the stretch column to a follow-up. Issue #235 is that
+follow-up. Row 13's stretch column asks for "a protocol in a role or pin
+direction the core protocols never use".
+
+### What is chosen
+
+**The device side of the PS/2 keyboard/mouse interface**, graded against Adam
+Chapweske, *The PS/2 Mouse/Keyboard Protocol* (1999), read at
+`https://www.burtonsys.com/ps2_chapweske.htm` (the copy read for this note has
+sha256 `0010e2a50bb08b8b0d59207f582d08ec459f301d4d217ab9b110b0f4eac9a284`).
+That page says it comes from the author's experience and that IBM's manual was
+not available to him, so it is a secondary description of a de facto
+interface. It is the best primary-quality text this repository could check.
+The model's limits are quoted from it, and a reader who holds the IBM manual
+can check them there.
+
+The firmware plays the keyboard or mouse. The model plays the host.
+
+### Why this meets the stretch column
+
+The core protocols (UART, SPI controller, I2C controller, WS2812) never do any
+of the three things below. The PS/2 device does all three on two lines:
+
+1. **It generates a clock on an open-drain line that the other side may hold
+   low.** The device owns the clock, but the host can inhibit it by holding
+   CLK low for 100 µs or more, and the device must notice, abort the frame
+   and release DATA. I2C's controller can see a peripheral stretch SCL, but
+   a stretch there pauses a bit and does not cancel a frame.
+2. **It turns a data line around mid-transaction, on a schedule set by the
+   other side.** In host-to-device frames the host drives DATA for eight data
+   bits, parity and stop. The device then pulls DATA low as the ACK bit, in
+   the high phase of the 11th clock, and releases both lines.
+3. **It samples a data line the other side drives, on a clock the device
+   itself generates.** The host changes DATA while CLK is low, and the device
+   reads it while CLK is high. The device-to-host direction is the reverse
+   (device writes while CLK is high, host reads while CLK is low), so one
+   program does both phase relationships.
+
+All of it uses DR 0012's runtime `UIO_OD`: both pins open-drain, the program
+releases a line by writing 1 and pulls it low by writing 0. It also reads
+`uio_in` to learn whether the line is really high, which is the case the pad
+model (`verification/uio_pads.py`) resolves from the design's `uio_oe`,
+`uio_out` and the host's driver, with a pull-up on each line.
+
+### Exclusion check (DR 0017 section 6; the rules are the same as for WS2812)
+
+The stretch column is not bound by the primary column's exclusion list, but
+the issue asks for the same check, and a protocol the ISA records named would
+say little about "not designed for".
+
+- **Rows 1-2:** UART, SPI controller, I2C controller, USB, 10BASE-T. PS/2 is
+  none of them. It is a synchronous two-wire interface, but I2C's start and
+  stop conditions, addressing and per-byte ACK-by-the-receiver have no
+  counterpart in it, and the clock owner differs.
+- **DR 0015's tables and ineligible lists** (`spec/isa-freeze.json`,
+  `row13_excluded_protocols.dr_0015`): PS/2 is not named, and it is not a
+  coded-line scheme (NRZI, Manchester) or a CRC protocol. It has one odd
+  parity bit per byte and no CRC.
+- **The protocols the ISA records were designed around**
+  (`row13_excluded_protocols.isa_design_records`): target-role SPI, the
+  I2C-target and SPI-target loads, the SPI flash read and the UART load
+  frame. PS/2 is none of them.
+- **Search:** `git grep -i -E 'ps/2|ps2'` over the repository at this note's
+  parent finds the string in `spec/gap-to-submission.md` row 13 (the line
+  that lists this issue's candidates, added 2026-10-11) and in a Loom hook
+  test (an unrelated tool). It is in no spec, decision record, firmware,
+  bench or model before then.
+
+### Why not the other candidates
+
+- **PS/2 host:** a controller that inhibits and requests. It exercises the
+  same two lines but the device role is the harder half (the clock source and
+  the ACK), so the device is the more demanding firmware.
+- **SWD target:** it would sample a clock it does not generate, which neither
+  PS/2 role does, so it is the only candidate that covers that part of the
+  column. It is a larger build (line reset, the request packet, parity, ACK
+  and turnaround cycles, a data phase) and is not chosen here. It stays a
+  candidate for a later increment if the deadline allows (CLAUDE.md,
+  deadline discipline).
+- **MDIO PHY side:** the issue notes that it is part of IEEE 802.3, and DR
+  0015 excludes "other 802.3 Manchester PHYs". MDIO is not a Manchester PHY,
+  but the reviewer was asked to confirm that the exclusion does not reach it.
+  That has not been confirmed, so it is not chosen.
+- **Target-role SPI or I2C, 1-Wire:** valid stretch evidence by the issue's
+  text, but they are the protocols DR 0012 was designed around, so they say
+  less about "not designed for".
+
+### What is graded, and what is not
+
+Graded (the model's limits, each cited to Chapweske's page):
+
+| Quantity | Limit |
+|---|---|
+| CLK high, CLK low (device generated) | 30 to 50 µs each |
+| Frame, device to host | start 0, eight data bits LSB first, odd parity, stop 1; 11 clocks including the stop |
+| Data change after a CLK rising edge | at least 5 µs |
+| Data change before the next CLK falling edge | at least 5 µs and at most 25 µs |
+| Device may start a transmission | only after CLK and DATA have both been high, CLK continuously for at least 50 µs |
+| Host inhibit | CLK held low for 100 µs or more; the device must abort a frame inhibited before its 11th clock, release DATA, and send nothing until CLK has been high 50 µs |
+| Host request to send | CLK low 100 µs or more, then DATA low, then CLK released; the device must begin clocking (the page allows 15 ms; the bench checks that the device does so well within the 10 ms polling bound) |
+| Frame, host to device | eight data bits LSB first, odd parity, stop 1, read by the device while CLK is high |
+| ACK | the device pulls DATA low in the high phase of the 11th clock, with the CLK fall 5 to 25 µs later, and releases both lines after that pulse |
+| Contention | the design only ever pulls CLK and DATA low and drives no other pin, and the pad model (`verification/uio_pads.py`) reports no fight between the design and the host |
+
+Not graded, and stated as limits of this increment: the keyboard and mouse
+command sets above the byte layer (the program answers a command byte by
+echoing it, or with 0xFE "resend" on a parity or stop error, which is a
+bench-visible behaviour and not a claim to be a keyboard); the device's
+handling of a host that never releases DATA after the ACK (the page says the
+device keeps clocking; this program does not); a 16-byte output buffer (the
+program holds one pending byte); clock timing at an electrical level (the pad
+model has zero delay and ideal pull-ups, and no pad's real rise time is
+measured). The 50 MHz clock is row 4's target and is not confirmed, so every
+microsecond figure is core cycles times 20 ns.
+
+### Consequences
+
+- Issue #235 builds `firmware/asm/ps2_device.asm`, an independent PS/2 host
+  model written from the table above, a cocotb bench at RTL and at gate level
+  with negative controls, and the append-only records. Pin roles go into DR
+  0010's table as a `ps2` phase.
+- Row 13 stays Proposed. The stretch column then has a candidate with
+  evidence. It is not marked met by this note.
+- If a pinned file changes after this note, DR 0017 section 4 item 3 decides
+  whether the change invalidates this evidence.
