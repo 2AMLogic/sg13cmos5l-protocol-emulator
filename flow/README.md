@@ -84,7 +84,18 @@ recorded rather than silently resolved.
   (`verification/records/post-layout-sdf-regression/`). Environment:
   `klt` at the `layout/toolchain.json` pin (`KLT_BIN` honored), Icarus
   >= 13.0, a resolvable `ihp-sg13cmos5l` PDK, and `gh` for `--run-id`
-  mode.
+  mode. **Protocol suite (issue #217, opt-in):** `--suite protocols`
+  (optionally `--protocol uart_tx|spi|i2c_sr`, repeatable) keeps the same
+  acquisition, normalization and SDC alignment but runs the committed UART
+  TX, SPI modes 0-3 and I2C write / repeated START / read / stretch benches
+  through `verification/sdf_protocol_{uart_tx,spi,i2c_sr}.py`, one klt run
+  per (corner, protocol), strictly serial. Each run is graded by
+  `post_layout_protocols.py` and the matrix, with the SRAM (zero-delay
+  FUNCTIONAL) and pad (zero-delay model) limitations, goes to
+  `flow/post-layout-sdf-protocol-results.json`; any failed, missing or
+  unannotated cell exits non-zero. `--suite core` (the default) is
+  unchanged. Self-test without a routed run:
+  `python3 flow/test_post_layout_protocols.py` (in `npm run lint`).
 - `run-reset-power-up-gate-level.sh` — target-spec row 14 /
   `spec/verification-plan.md` section 8 (issue #131): reset, power-up and
   reselect on the **LibreLane gate-level netlist** (default: the frozen
