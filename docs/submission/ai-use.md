@@ -1,7 +1,7 @@
 # How AI was used to build this design
 
 Status: written 2026-10-10 for issue #213 (submission deliverable D5). It
-describes the repository as of `main` @ `9fb7815`. Every claim below links to
+describes the repository as of `main` @ `ceaebe02`. Every claim below links to
 a file in this repository, a pull request, or an issue. Where the text
 describes how the process is *meant* to work rather than what the forge
 record shows, it says so.
@@ -65,7 +65,7 @@ as PR comments.
 - The Judge's re-review then failed the PR on a mechanical point: the CI
   record check found a stale hash and a missing provenance line.
 - The Doctor re-minted the
-  [record](../../verification/records/boot-uart/records/20261010-164351-57c5c8c.md).
+  [record](../../verification/records/boot-uart/records/20261010-223341-e74d2b6.md).
   The Judge checked the hashes byte for byte and approved, and the PR merged.
 
 Steps 1 to 4 are visible in issue and PR comments throughout the history. We
@@ -90,35 +90,35 @@ reports but is not a required check on `main`.
 
 ## How evidence is kept honest
 
-- **No claim without a recorded run.** There are 30 record kinds under
+- **No claim without a recorded run.** There are 34 record kinds under
   [`verification/records/`](../../verification/records/), indexed in
   [`manifests/evidence/testbenches.txt`](../../manifests/evidence/testbenches.txt).
   Each record names its command, tool versions and input hashes.
 - **Failures are recorded, not hidden.** PR #107 committed a post-layout run
   that **failed** 12 of 13 tests at every corner, and left every assertion
   unchanged:
-  [record](../../verification/records/post-layout-sdf-regression/records/20261009-103407-9716a9e.md).
+  [record](../../verification/records/post-layout-sdf-regression/records/20261009-103407-9716a9e.md) <!-- superseded-ok: history of the failed-then-fixed record chain -->.
   The cause was diagnosed as stimulus and sampling racing the routed delays.
   The failure was kept. As the design moved on, it was re-run on each later
   netlist and re-recorded five more times, still failing 12 of 13, each record
   superseding the one before by reference. PR #202 then drove the unmodified
   bench file at the flow's own SDC timing, on the design current at the time,
   which gave 12 passes and 1 skip:
-  [record](../../verification/records/post-layout-sdf-regression/records/20261010-102552-d43f89c.md).
+  [record](../../verification/records/post-layout-sdf-regression/records/20261010-102552-d43f89c.md) <!-- superseded-ok: history of the failed-then-fixed record chain -->.
   That record supersedes the last failing one
-  ([`704a3fb`](../../verification/records/post-layout-sdf-regression/records/20261010-083555-704a3fb.md)),
+  ([`704a3fb`](../../verification/records/post-layout-sdf-regression/records/20261010-083555-704a3fb.md) <!-- superseded-ok: history of the failed-then-fixed record chain -->),
   whose netlist it shares, and states what it still does not show. A later
   record on a newer netlist
-  ([`a0f91e3`](../../verification/records/post-layout-sdf-regression/records/20261010-133000-a0f91e3.md))
+  ([`af36071`](../../verification/records/post-layout-sdf-regression/records/20261010-205119-af36071.md))
   has since superseded it, still passing.
 - **Independent references.** Protocol firmware is graded against separately
   written reference models
-  ([record](../../verification/records/protocol-reference-models/records/20261010-002540-b63cb8f.md)).
+  ([record](../../verification/records/protocol-reference-models/records/20261010-180436-9fb7815.md)).
   The core is checked edge by edge against an independent instruction-set
   simulator written from the decision records (PR #204,
-  [record](../../verification/records/isa-lockstep/records/20261010-132631-8372c57.md)).
+  [record](../../verification/records/isa-lockstep/records/20261010-202836-bce5bf4.md)).
   The control space is checked with mutants
-  ([record](../../verification/records/control-space/records/20261009-210912-a46a399.md)).
+  ([record](../../verification/records/control-space/records/20261011-012750-428e12f.md)).
 - **Two flows, both named.** Every number is attributed either to the
   competition's LibreLane flow or to this program's klt flow, per
   [DR 0002](../../spec/decision-records/0002-flow-of-record.md).
@@ -181,7 +181,7 @@ design detail. Representative issues:
   - a remaining log-interleaving case
     ([#2996](https://github.com/2AMLogic/klayout-tools/issues/2996)). The
     workaround for it is disclosed in the
-    [record](../../verification/records/post-layout-sdf-regression/records/20261010-133000-a0f91e3.md)
+    [record](../../verification/records/post-layout-sdf-regression/records/20261010-205119-af36071.md)
     that needed it.
 
 ## Limitations of AI-generated verification
@@ -193,7 +193,7 @@ design detail. Representative issues:
   reduce this risk; they do not remove it.
 - **No human or silicon ground truth.** Nothing has been taped out or measured.
   Pad electrical timing is not characterised: the
-  [pad model](../../verification/records/uio-pad-model/records/20261010-025453-865cf4a.md)
+  [pad model](../../verification/records/uio-pad-model/records/20261011-012812-428e12f.md)
   is logical and zero-delay. Post-layout simulation runs the SRAM as a
   zero-delay functional model, so its read timing is evidenced only by STA.
 - **Unratified targets.** Pass and fail are graded against proposed rows.

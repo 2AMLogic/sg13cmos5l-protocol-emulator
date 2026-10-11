@@ -491,6 +491,11 @@ gates. The host-side loader is issue #118.
 - `test_check_records.py` — the linter's own self-test: one executable
   negative case per violation class named below, run against a throwaway
   fixture repo.
+- `check_docs_records.py` — fails when a document under `docs/submission/`
+  cites a superseded or nonexistent record id (#238). A deliberate historical
+  citation carries `<!-- superseded-ok: reason -->` on its line.
+- `test_check_docs_records.py` — its self-test (throwaway records tree; one
+  case per violation class, plus the shipped docs).
 - `_repo_utils.py` — shared `REPO_ROOT`/`run_git`/`sha256_of` helpers used by
   `check_records.py`.
 - `records/` — the append-only evidence records this convention produces.

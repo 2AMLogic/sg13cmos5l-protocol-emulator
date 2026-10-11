@@ -41,7 +41,7 @@ re-hardening for a newer flow, are allowed after it.
 
 | # | Deliverable | Judge-facing artifact (target) | What exists today | State |
 |---|---|---|---|---|
-| D1 | Passing GDS + precheck, Tiny Tapeout flow | `gds` workflow (`.github/workflows/gds.yaml`) green on the **final** top, with the run linked from this file and from `README.md` | All four jobs (`gds`, `precheck`, `gl_test`, `viewer`) green on `main` @ `4193268`: [run 37974043486](https://github.com/2AMLogic/sg13cmos5l-protocol-emulator/actions/runs/37974043486), 2026-10-09. Sign-off evidence: `verification/records/librelane-gds-signoff-check/records/20261009-054750-676f8b2.md`, `verification/records/librelane-pdn-bridge/records/20261001-085017-21a2a63.md`. | **Partial.** It is green, but not on the final top. DR 0012 (control space, #135) and DR 0013 (program loading) still change the RTL, and #129 may change the tile count. Re-run and re-link after the last RTL change. |
+| D1 | Passing GDS + precheck, Tiny Tapeout flow | `gds` workflow (`.github/workflows/gds.yaml`) green on the **final** top, with the run linked from this file and from `README.md` | All four jobs (`gds`, `precheck`, `gl_test`, `viewer`) green on `main` @ `4193268`: [run 37974043486](https://github.com/2AMLogic/sg13cmos5l-protocol-emulator/actions/runs/37974043486), 2026-10-09. Sign-off evidence: `verification/records/librelane-gds-signoff-check/records/20261010-205400-af36071.md`, `verification/records/librelane-pdn-bridge/records/20261001-085017-21a2a63.md`. | **Partial.** It is green, but not on the final top. DR 0012 (control space, #135) and DR 0013 (program loading) still change the RTL, and #129 may change the tile count. Re-run and re-link after the last RTL change. |
 | D2 | Architecture + ISA documentation | A standalone doc, `docs/submission/architecture.md` (to write), distilled from DR 0001. It must not be the decision record itself. | The content is spread across `spec/decision-records/0001-isa.md`, `rtl/README.md`, and the datasheet `docs/info.md` § How it works. DR 0012 and DR 0013 extend the ISA and the load path. | **Partial.** The material exists, but there is no judge-facing doc. The ISA is not frozen until #135 lands. DR 0001's Status is still **Proposed** (DR 0006, #44). |
 | D3 | Assembler / toolchain + example programs | `firmware/` with a quickstart a judge can run from a fresh clone | `firmware/tools/asm.py` (the DR 0003 assembler) and its test `firmware/tools/test_asm.py`. 16 programs in `firmware/asm/` (UART TX/RX at three bauds, SPI modes 0–3, I2C Standard/Fast with repeated START and clock stretch, plus `demo_roundtrip.asm`) with committed images in `firmware/build/`. `firmware/README.md` § Cold-start invocation. | **Partial, close to ready.** The cold-start section is the quickstart, but nothing links it as the judge's entry point. The assembler has to gain the DR 0012 control-space mnemonics (#135). |
 | D4 | Verification write-up | `docs/submission/verification.md` (to write), distilled from `spec/verification-plan.md` and the evidence records, and stating what is **not** covered | `spec/verification-plan.md` (Status DRAFT; its preamble line "None of the artifacts described below exist yet" is now stale). 21 record families under `verification/records/`, for example `firmware-uart`, `firmware-spi`, `firmware-i2c`, `firmware-gate-level`, `random-regression`, `no-data-dependent-latency` (formal), `post-layout-sdf-regression` and `sta-corner-sweep`. | **Partial.** The evidence is strong and append-only, but nothing reads it to a judge. Known holes that the write-up must state: #136 (I2C evidence does not run through the real `uio_oe`, so silicon cannot drive an I2C line today) and row 14 (reset/reselect, unmet). **Updated 2026-10-10 (issue #214): see the dated update below the table; the preceding text is the 2026-10-09 reading and is kept as written.** |
@@ -62,18 +62,23 @@ column (a new role or pin direction) is issue #235.
 
 ### D4 dated update, 2026-10-10 (issue #214)
 
-Reviewed commit: `main` @ `9fb7815`. The judge-facing narrative now exists:
+Reviewed commit: `main` @ `ceaebe02`. The judge-facing narrative now exists:
 [`docs/submission/verification.md`](verification.md), linked from the root
 `README.md`. It maps each claim to its independent oracle, tested design level
 and flow, evidence record, reproduction command and limits, and lists what is
-not shown. The 2026-10-09 row above is left as written; these corrections
+not shown. The 2026-10-09 row above is left as written, except that its record citations point to the live records; these corrections
 supersede its stale parts:
 
-- **Record families:** 30 directories under `verification/records/` at this
+- **Record families:** 34 directories under `verification/records/` at this
   commit, not 21.
+- **Latest `gds` run:** [38083802720](https://github.com/2AMLogic/sg13cmos5l-protocol-emulator/actions/runs/38083802720)
+  at `bce5bf4` (all four jobs green, as recorded in
+  `post-layout-sdf-regression` `20261010-205119-af36071`); the design files
+  (`src`, `rtl`, `info.yaml`, `firmware/build/boot`) are unchanged since. D1
+  stays **Partial** for the reasons in its row.
 - **#136 has landed.** The I2C and SPI evidence runs on the logical, zero-delay
   `uio` pad model, which resolves the design's own `uio_oe`/`uio_out`
-  (`uio-pad-model` record `20261010-132636-8372c57`). It is not an electrical
+  (`uio-pad-model` record `20261011-012812-428e12f`). It is not an electrical
   pad characterization. The "does not run through the real `uio_oe`" hole is
   closed; the electrical hole is not.
 - **UART RX is covered**, directed (`firmware-uart-rx`) and in the seeded
@@ -83,12 +88,11 @@ supersede its stale parts:
   made for UART RX under constrained random predates #192 and is left as
   written.
 - **Row 14** still reads unmet in `spec/target-spec.md`. The
-  `reset-power-up` record `20261010-133700-a0f91e3` shows (a), (b), (c) and
+  `reset-power-up` record `20261010-205223-af36071` shows (a), (b), (c) and
   the reselect cycle on the routed netlist at zero delay; no grade is changed
   here.
 - **Open and visible in the narrative:** DR 0013 finding F8 (#211, the UART
-  load's count byte is outside the CRC), the PM_CRC readout (#167), the
-  Standard-mode I2C allocation (#125), no SDF run for the firmware benches or
+  load's count byte is outside the CRC), no SDF run for the firmware benches or
   the random regression (#217), bounded versus unbounded formal scope, SRAM
   timing omitted from SDF, a Proposed specification (DR 0006), and no
   silicon.
