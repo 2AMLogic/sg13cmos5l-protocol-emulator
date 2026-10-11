@@ -245,7 +245,7 @@ The table is mechanically checked against `firmware/asm/`,
 | [`i2c_fast_sr_poll`](../firmware/asm/i2c_fast_sr_poll.asm) | as `i2c_fast_sr`, polls SCL (tolerates clock stretching) | 127 per SCL clock unstretched (low 65 + high 62) | 192 | 1889 | [`test_firmware_i2c_sr.py`](../verification/test_firmware_i2c_sr.py) | [firmware-i2c 20261010-202823-bce5bf4](../verification/records/firmware-i2c/records/20261010-202823-bce5bf4.md) |
 | [`i2c_std_sr`](../firmware/asm/i2c_std_sr.asm) | I2C controller, Standard-mode budget, write + repeated START + read, no pin-dependent branch | 435 per SCL clock (low 235 + high 200) | 152 | 5319 | [`test_firmware_i2c_sr.py`](../verification/test_firmware_i2c_sr.py) | [firmware-i2c 20261010-202823-bce5bf4](../verification/records/firmware-i2c/records/20261010-202823-bce5bf4.md) |
 | [`i2c_std_sr_poll`](../firmware/asm/i2c_std_sr_poll.asm) | as `i2c_std_sr`, polls SCL (tolerates clock stretching) | 437 per SCL clock unstretched (low 235 + high 202) | 192 | 5339 | [`test_firmware_i2c_sr.py`](../verification/test_firmware_i2c_sr.py) | [firmware-i2c 20261010-202823-bce5bf4](../verification/records/firmware-i2c/records/20261010-202823-bce5bf4.md) |
-| [`ws2812`](../firmware/asm/ws2812.asm) | WS2812 / WS2812B LED data on `uo_out[7]`, GRB pixels from a table in program memory (target-spec row 13) | 63 per bit (T0H 20, T1H 40); reset 15,499 or more | 60 | 377 | [`test_firmware_ws2812.py`](../verification/test_firmware_ws2812.py) | record pending (issue #141) |
+| [`ws2812`](../firmware/asm/ws2812.asm) | WS2812 / WS2812B LED data on `uo_out[7]`, GRB pixels from a table in program memory (target-spec row 13) | 63 per bit (T0H 20, T1H 40); reset 15,499 or more | 60 | 377 | [`test_firmware_ws2812.py`](../verification/test_firmware_ws2812.py) | [firmware-ws2812 20261010-233344-21acbc8](../verification/records/firmware-ws2812/records/20261010-233344-21acbc8.md) |
 | [`demo_roundtrip`](../firmware/asm/demo_roundtrip.asm) | none (assembler and load-phase round-trip coverage program) | n/a | 27 | 30 | [`test_firmware_roundtrip.py`](../verification/test_firmware_roundtrip.py) | [firmware-assembler-roundtrip 20261010-172335-f8428aa](../verification/records/firmware-assembler-roundtrip/records/20261010-172335-f8428aa.md) |
 <!-- firmware-images:end -->
 
@@ -275,6 +275,21 @@ Notes, all from the cited records:
   reference model grades are those. With `UIO_OD` left at reset the I2C
   images put no transfer on the bus, and the benches require that. See
   Pins.
+- WS2812 (target-spec row 13; *dated note 2026-10-10, issue #141 part 2*):
+  `ws2812` was written **after** the ISA was frozen (DR 0017, freeze merge
+  `1696045b`; the protocol was chosen by DR 0018 in a commit of its own,
+  before any WS2812 file existed), and no ISA-defining file changed to build
+  it (`scripts/check_isa_freeze.py`: 0 amendments). An independent WS2812B
+  model measured every pulse on `uo_out[7]`: T0H 20, T1H 40, T0L 43 and T1L
+  23 cycles, 63 per bit (400 / 800 / 860 / 460 / 1260 ns at the 20 ns
+  target), each at least 140 ns inside its datasheet window, and a reset of
+  at least 15,499 cycles. It decoded the loaded GRB frame, the committed 8
+  pixels and seeded 1- to 73-pixel frames, at RTL and on the LibreLane
+  netlist, zero-delay ([gate-level record](../verification/records/firmware-ws2812-gate-level/records/20261010-233534-21acbc8.md)). Three mutant programs (a
+  short T1H, a dropped bit, a short reset) are rejected. This is primary-column
+  evidence only, and row 13 stays Proposed and unmet. The stretch column (a
+  role or pin direction the core protocols never use) is not done: issue #235.
+  The write-up is [`submission/row13-ws2812.md`](submission/row13-ws2812.md).
 
 ## How to run a protocol
 
