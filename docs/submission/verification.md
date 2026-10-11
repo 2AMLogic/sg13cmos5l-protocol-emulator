@@ -145,7 +145,7 @@ failing `.asm` byte for byte.
 | Claim | Oracle | Level / flow | Record | Repro | Limits |
 |---|---|---|---|---|---|
 | The directed firmware benches (UART TX 3, UART RX 10, SPI 3, I2C 4, I2C Sr 5), control space (9), boot ROM (7), SPI boot (6), primitives (11), UART boot (8, pin-only) and load integrity (9, pin-only) pass on the routed netlist; each of the eleven modules fails on its own stuck-at fault (and the SPI/I2C modules on a `uio_oe[3]` stuck-at-0) | The same oracles as RTL | **Zero-delay**, LibreLane netlist of gds run 38083802720 (`bce5bf4`) | [firmware-gate-level 20261011-020000](../../verification/records/firmware-gate-level/records/20261011-020000-428e12f.md): 25 rows, `as_required` on every row | `PDK_ROOT=<pdk> ./flow/run-firmware-gate-level.sh --full --control-space --boot-rom --boot-spi --primitives --boot-uart --load-integrity` | `test_boot_uart` is pin-only on gates (white-box reads and two long runs are skipped). No SDF, no SRAM timing, no pad characterization. Not the constrained-random regression. |
-| The core bench (12 pin-observing tests, 1 skipped) passes at all three corners with real post-route delay | Same bench file, drive/sample aligned to the SDC (`verification/sdf_alignment.py`) | **SDF-annotated**, LibreLane netlist + SDF | [post-layout-sdf-regression 20261010-205119](../../verification/records/post-layout-sdf-regression/records/20261010-205119-af36071.md): 12 passed, 0 failed, 1 skipped at each corner | `KLT_BIN=<klt> PDK_ROOT=<pdk> ./flow/run-post-layout-sdf.sh --run-id 38054423540` (or `--from <dir>`) | Section 5. The skipped test is white-box and is *skipped, not passed*. |
+| The core bench (12 pin-observing tests, 1 skipped) passes at all three corners with real post-route delay | Same bench file, drive/sample aligned to the SDC (`verification/sdf_alignment.py`) | **SDF-annotated**, LibreLane netlist + SDF | [post-layout-sdf-regression 20261010-205119](../../verification/records/post-layout-sdf-regression/records/20261010-205119-af36071.md): 12 passed, 0 failed, 1 skipped at each corner | `KLT_BIN=<klt> PDK_ROOT=<pdk> ./flow/run-post-layout-sdf.sh --run-id 38083802720` (the record ran `--from` a download of that run) | Section 5. The skipped test is white-box and is *skipped, not passed*. |
 
 The `bce5bf4` netlist is current for the design: `git diff bce5bf4..ceaebe02 --
 src rtl info.yaml firmware/build/boot` is empty. The cited gate-level records
@@ -244,7 +244,12 @@ and the header of `flow/run-post-layout-sdf.sh`:
   the gate-level reset bench. The records show (a), (b) and the reselect cycle
   passing on the routed netlist, but this document does not upgrade the row.
 - Standard-mode I2C runs at 500 cycles per data/ACK clock (#125, ruled `enforce_500`); the kHz figure is arithmetic at an unconfirmed 50 MHz.
-- No unplanned-protocol firmware exists yet (row 13 / D6, blocked on #135).
+- Row 13 (D6) has firmware and evidence, but the row is still graded partial:
+  WS2812 ([`row13-ws2812.md`](row13-ws2812.md)) passes an independent WS2812B
+  model at RTL ([firmware-ws2812 20261010-233344](../../verification/records/firmware-ws2812/records/20261010-233344-21acbc8.md): 6/6)
+  and on the LibreLane netlist, zero-delay
+  ([firmware-ws2812-gate-level 20261010-233534](../../verification/records/firmware-ws2812-gate-level/records/20261010-233534-21acbc8.md): 6/6, wait-counter stuck-at fails 5 of 6).
+  There is no SDF run of it, no board and no video, and the row is Proposed.
 - No stretch protocol (low-speed USB, 10BASE-T) is designed or tested.
 - The specification is Proposed (DR 0006). Two-key ratification never ran.
 - The STA and die-area legs of the klt flow are blocked
@@ -278,11 +283,11 @@ do not occur in this document's evidence: nothing here is a SPICE result.
 
 - Freeze the submission ISA (#135, DR 0012/0013), then re-run and re-mint the
   affected records and re-link the final `gds` run (D1).
-- Close or accept DR 0013 F8 (#211) and the `PM_CRC` readout (#167).
+- Close or accept DR 0013 F8 (#211).
 - SDF-annotated protocol waveforms on the routed corners (#217).
 - Run the constrained-random regression at gate level.
-- Decide the Standard-mode I2C allocation (#125).
-- Row 13 unplanned-protocol firmware (#141) with its own independent model.
+- Row 13: an SDF-annotated run of the WS2812 bench, and the stretch column
+  (a new role or pin direction, #235).
 - Ratification (#44).
 - `spec/verification-plan.md` still says "None of the artifacts described below
   exist yet"; its dated notes are the history, and this document is the
