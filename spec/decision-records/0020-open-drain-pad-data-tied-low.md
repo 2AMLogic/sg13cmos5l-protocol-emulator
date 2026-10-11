@@ -173,7 +173,7 @@ does not state them.
 
 ### 5. Benches that read the `uio_out` wires of an open-drain pin
 
-Five benches treated `dut.uio_out` as the port-11 register on pins that were
+Six benches treated `dut.uio_out` as the port-11 register on pins that were
 open-drain at the time. None is pinned (DR 0017 section 3). Each is updated to
 check what the pad sees, and none loses a check:
 
@@ -184,6 +184,11 @@ check what the pad sees, and none loses a check:
 | `test_firmware_ps2.py` (idle check) | `uio_out` shows both lines released | `uio_oe` 0 on both, pad data 0, `uio_in` high on both |
 | `test_boot_rom.py` (UART loader idle) | `uio_out == 0xFF` behind the guard | `uio_out` is 0xFF between the guard's `OUT` and its `WCTL UIO_OD`, and 0 after |
 | `test_isa_lockstep.py` | ISS `uio_out` against the `uio_out` pins | ISS `uio_out` against the core's port-11 register, and the pins against `port 11 & ~UIO_OD` taken from the ISS |
+| `test_reset_power_up.py` (gate level only; UART loader idle) | pins end at `01 ff 00` | pins end at `01 00 00`, and 0xFF appears on `uio_out` for exactly one contiguous stretch before it |
+
+The sixth was found last: it runs only on the gate-level netlist, so the RTL
+bench sweep did not exercise it, and a rehearsal on the first netlist built
+from the fixed top failed it on that one comparison.
 
 The `UIO_OD` negative control of the I2C benches (the image with its `WCTL
 UIO_OD` removed) still composes a bus from the `uio_out` intent: with
