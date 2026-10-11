@@ -3,17 +3,17 @@
   "kind": "generic",
   "status": "pass",
   "t1_item": 2,
-  "summary": "Layout (Digital): the committed routed GDS of the LibreLane flow (gds workflow run 38083802720 at bce5bf4: TinyTapeout/tt-gds-action@ihp-cmos5l, LibreLane 3.1.0.dev3, IHP-Open-PDK 2bbec755), placed and routed from the LibreLane gate-level netlist reference-asrouted.v by the committed flow (.github/workflows/gds.yaml, src/config.json, src/pdn_cfg.tcl, info.yaml). The design carries DR 0015's P1/P2 (issue #208), the UART-load boot ROM (issue #139) and the load-phase CRC readout on uo_out (issue #137). DRC/LVS of these bytes: librelane-gds-signoff-check 20261010-205400-af36071. Refreshed for issues #208/#139 and #137; first written by issue #83.",
-  "source": "verification/records/librelane-gds-signoff-check/records/20261010-205400-af36071.md",
+  "summary": "Layout (Digital): the committed routed GDS of the LibreLane flow (gds workflow run 38136727636 at 6dd0e9d: TinyTapeout/tt-gds-action@ihp-cmos5l, LibreLane 3.1.0.dev3, IHP-Open-PDK 2bbec755), placed and routed from the LibreLane gate-level netlist reference-asrouted.v by the committed flow (.github/workflows/gds.yaml, src/config.json, src/pdn_cfg.tcl, info.yaml). The design carries DR 0015's P1/P2 (issue #208), the UART-load boot ROM (issue #139), the load-phase CRC readout on uo_out (issue #137), the UART load's count-complement check (issue #211, 232-word boot ROM), the open-drain pad-data fix of DR 0020 (issue #244) and the LibreLane timing-repair keys of issue #246. DRC/LVS of these bytes: librelane-gds-signoff-check 20261011-144308-e5a0bae. Refreshed for issues #208/#139, #137, #211 and #244/#246; first written by issue #83.",
+  "source": "verification/records/librelane-gds-signoff-check/records/20261011-144308-e5a0bae.md",
   "provenance": {
     "klt_version": "0.7.0",
     "klayout_version": "0.30.12",
     "pdk": null,
     "deck": null,
     "input": {
-      "content_hash": "sha256:2eeb61ea761f3a914cc0b8c6bb9390c0bb2f012798b8b222e6e2f6888271f784",
+      "content_hash": "sha256:2c8fb81d18ab9d6cfd2ed0566e32f16d3cebdbbdff41520afbff29fa0e19c3af",
       "path": {
-        "path": "verification/records/librelane-gds-signoff-check/artifacts/20261010-205400-af36071/tt_um_2amlogic_protocol_emulator.gds",
+        "path": "verification/records/librelane-gds-signoff-check/artifacts/20261011-144308-e5a0bae/tt_um_2amlogic_protocol_emulator.gds",
         "scope": "repo"
       }
     }

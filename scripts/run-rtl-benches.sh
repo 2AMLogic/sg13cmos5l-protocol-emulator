@@ -18,28 +18,23 @@ set -u
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$REPO_ROOT" || exit 1
 
-BENCHES=(
-  protocol-emulator
-  control-space
-  primitives
-  boot-rom
-  boot-spi
-  boot-uart
-  boot-uart-count-alias
-  load-integrity
-  program-memory
-  protocol-models
-  firmware-uart
-  firmware-uart-rx
-  firmware-spi
-  uio-pads
-  firmware-i2c
-  firmware-i2c-sr
-  firmware-roundtrip
-  firmware-ws2812
-  random-regression
-  isa-lockstep
-)
+# The bench list lives in scripts/rtl-bench-inventory.txt (issue #225), which
+# classifies every verification/request-*.json as included here or excluded
+# with a reason; the check below fails on an unclassified or stale entry.
+python3 scripts/check_rtl_bench_inventory.py >&2 || exit 1
+# Portable read loop (not `mapfile`, which needs bash >= 4; macOS ships 3.2).
+# Capture first so a failing lister is caught rather than hidden by the loop.
+bench_list="$(python3 scripts/check_rtl_bench_inventory.py --list-includes)" || exit 1
+BENCHES=()
+while IFS= read -r line; do
+  [ -n "$line" ] && BENCHES+=("$line")
+done <<EOF
+$bench_list
+EOF
+if [ "${#BENCHES[@]}" -eq 0 ]; then
+  echo "ERROR: bench inventory lists no benches" >&2
+  exit 1
+fi
 
 command -v klt >/dev/null || { echo "ERROR: klt not on PATH (run scripts/setup-env.sh)" >&2; exit 1; }
 command -v iverilog >/dev/null || { echo "ERROR: iverilog not on PATH" >&2; exit 1; }

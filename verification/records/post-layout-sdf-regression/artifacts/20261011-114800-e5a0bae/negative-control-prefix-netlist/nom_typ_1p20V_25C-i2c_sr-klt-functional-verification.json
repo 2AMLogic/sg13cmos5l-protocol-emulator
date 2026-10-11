@@ -1,0 +1,69 @@
+{
+  "schema_version": 1,
+  "engine": "icarus",
+  "hdl_toplevel": "tt_um_2amlogic_protocol_emulator",
+  "testbench": "sdf_protocol_i2c_sr",
+  "status": "fail",
+  "test_count": 5,
+  "passed_count": 3,
+  "failed_count": 2,
+  "skipped_count": 0,
+  "tests": [
+    {
+      "name": "test_sr_images_fresh",
+      "status": "passed",
+      "sim_time_ns": 0.0,
+      "real_time_s": 0.004
+    },
+    {
+      "name": "test_sr_exact_programs_pass_model_with_negative_controls",
+      "status": "failed",
+      "sim_time_ns": 181464.0,
+      "real_time_s": 1.552,
+      "error_type": "AssertionError",
+      "error_message": "i2c_fast_sr: the design drove uio pins 0x0c HIGH; open-drain pads only ever pull low\nassert 12 == 0\n +  where 12 = <uio_pads.UioPads object at 0x107e8a510>.drove_high"
+    },
+    {
+      "name": "test_sr_poll_programs_stretch",
+      "status": "failed",
+      "sim_time_ns": 195883.99999999997,
+      "real_time_s": 1.756,
+      "error_type": "AssertionError",
+      "error_message": "i2c_sr: the design drove uio pins 0x0c HIGH; open-drain pads only ever pull low\nassert 12 == 0\n +  where 12 = <uio_pads.UioPads object at 0x107ec3250>.drove_high"
+    },
+    {
+      "name": "test_sr_uio_od_left_at_reset_cannot_drive_the_bus",
+      "status": "passed",
+      "sim_time_ns": 1393924.0,
+      "real_time_s": 10.038
+    },
+    {
+      "name": "test_sr_model_nominal_repeated_start_passes",
+      "status": "passed",
+      "sim_time_ns": 0.0,
+      "real_time_s": 0.0
+    }
+  ],
+  "coverage": null,
+  "trace": null,
+  "environment": {
+    "engine": "icarus",
+    "engine_version": "13.0",
+    "cocotb_version": "2.1.0",
+    "results_xml": "<repo>/flow/post-layout-sdf/protocols/nom_typ_1p20V_25C/i2c_sr/.klt/functional-verification/results_icarus.xml",
+    "random_seed": 1,
+    "sdf": {
+      "file": "<repo>/flow/post-layout-sdf/sdf/nom_typ_1p20V_25C.normalized.sdf",
+      "corner": "typ",
+      "entries": "all",
+      "annotated": true,
+      "partial": true,
+      "dropped": {
+        "timingcheck": {
+          "count": 263,
+          "reason": "Icarus Verilog implements SDF delay annotation (IOPATH/INTERCONNECT) but not SDF TIMINGCHECK -- every TIMINGCHECK section in the SDF is dropped, so $setup/$hold/$width checks run against the cell library's own placeholder timing, not the characterised limits in the SDF"
+        }
+      }
+    }
+  }
+}

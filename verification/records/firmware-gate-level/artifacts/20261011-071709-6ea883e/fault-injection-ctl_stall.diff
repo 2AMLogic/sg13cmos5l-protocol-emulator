@@ -1,0 +1,4 @@
+18488c18488
+<  sg13cmos5l_buf_1 fanout298 (.A(\u_core.ctl_stall ),
+---
+>  sg13cmos5l_buf_1 fanout298 (.A(1'b0),

@@ -90,6 +90,29 @@
 # `environment.sdf.annotated` is not true, or if the regression itself
 # fails -- an annotated run that silently fell back to zero delay is a
 # FAILURE here, not a pass.
+#
+# Protocol suite (issue #217; opt-in, default off):
+#   ./flow/run-post-layout-sdf.sh --suite protocols --from <dir> [corner ...]
+#   ./flow/run-post-layout-sdf.sh --suite protocols --protocol spi --run-id <id>
+# `--suite core` (the default) is everything above, unchanged. `--suite
+# protocols` reuses the same acquisition, macro models, renames, SDF
+# normalization and SDC alignment, then runs the committed UART TX, SPI
+# (modes 0-3) and I2C write / repeated START / read / clock-stretch benches
+# (verification/test_firmware_{uart,spi,i2c_sr}.py, byte-unchanged) through
+# their wrappers verification/sdf_protocol_{uart_tx,spi,i2c_sr}.py, which
+# align capture and peripherals to the routed delays and measure every
+# output transition's pin delay (verification/sdf_protocol_alignment.py).
+# `--protocol <name>` (repeatable: uart_tx, spi, i2c_sr) selects a subset;
+# default all. One klt run per (corner, protocol), strictly one at a time,
+# corner-major. Each run is graded by flow/post_layout_protocols.py (klt
+# exit, environment.sdf.annotated true, every expected test passed and none
+# missing or skipped, the wrapper's report present with its captures, no
+# output transition at or after the observe point, nonzero pin delay seen,
+# the required timing controls run and failed as required). Writes
+# flow/post-layout-sdf-protocol-results.json (gitignored): the per-protocol,
+# per-corner matrix, every run's entry, and the SRAM / pad / scope
+# limitations. Exits non-zero unless every (corner, protocol) cell passed.
+# The core results file is not written in this mode.
 
 set -euo pipefail
 
@@ -120,18 +143,43 @@ klt_require_verbs "functional-verification"
 RUN_ID_ARG=""
 FROM_DIR=""
 CORNERS=()
+SUITE="core"
+PROTOCOL_ARGS=()
 while [ $# -gt 0 ]; do
   case "$1" in
     --run-id)
       RUN_ID_ARG="$2"; shift 2 ;;
     --from)
       FROM_DIR="$2"; shift 2 ;;
+    --suite)
+      SUITE="$2"; shift 2 ;;
+    --protocol)
+      PROTOCOL_ARGS+=("$2"); shift 2 ;;
     -h|--help)
-      sed -n '2,92p' "${BASH_SOURCE[0]}"; exit 0 ;;
+      sed -n '2,115p' "${BASH_SOURCE[0]}"; exit 0 ;;
     *)
       CORNERS+=("$1"); shift ;;
   esac
 done
+
+case "$SUITE" in
+  core)
+    if [ "${#PROTOCOL_ARGS[@]}" -ne 0 ]; then
+      echo "FATAL: --protocol needs --suite protocols (the core suite runs the core bench only)." >&2
+      exit 1
+    fi ;;
+  protocols)
+    # Validate the selection before any download or normalization.
+    PROTOCOL_HELPER="${REPO_ROOT}/flow/post_layout_protocols.py"
+    SELECT_ARGS=()
+    for p in "${PROTOCOL_ARGS[@]+"${PROTOCOL_ARGS[@]}"}"; do SELECT_ARGS+=(--protocol "$p"); done
+    PROTOCOLS_TEXT="$(python3 "$PROTOCOL_HELPER" select "${SELECT_ARGS[@]+"${SELECT_ARGS[@]}"}")" || exit 1
+    read -r -a PROTOCOLS <<< "$(echo $PROTOCOLS_TEXT)"
+    ;;
+  *)
+    echo "FATAL: --suite must be 'core' (default) or 'protocols', got '${SUITE}'." >&2
+    exit 1 ;;
+esac
 
 if [ -z "$RUN_ID_ARG" ] && [ -z "$FROM_DIR" ]; then
   echo "FATAL: exactly one of --run-id <gds-workflow-run-id> or --from <downloaded-artifacts-dir> is required." >&2
@@ -505,23 +553,13 @@ print(f"   normalized {src_path}: header_triplets_filled={header_filled} zero_de
 PYEOF
 done
 
-# --- One klt functional-verification run per SDF corner -------------------
-echo "[" > "${RESULTS_FILE}"
-first=1
-FAILED=0
-
-for corner in "${CORNERS[@]}"; do
-  corner_dir="${SCRATCH_DIR}/${corner}"
-  mkdir -p "$corner_dir"
-  request_path="${corner_dir}/request.json"
-  sdf_file="${SCRATCH_DIR}/sdf/${corner}.sdf"
-  if [ ! -f "$sdf_file" ]; then
-    echo "FATAL: no SDF for corner '${corner}' (have: ${SDF_CORNERS[*]})." >&2
-    exit 1
-  fi
-
-  python3 - "$request_path" "$NETLIST_FOR_FV" "${SCRATCH_DIR}/sdf/${corner}.normalized.sdf" "$STDCELL_V" "$UDP_V" \
-    "$REPO_ROOT/verification" "$HDL_TOPLEVEL" "$BENCH_MODULE" "${MACRO_SOURCES[@]}" <<'PYEOF'
+# --- The klt functional-verification request (both suites) ---------------
+# write_fv_request <request.json> <normalized.sdf> <testbench-module>: the
+# one request shape every run uses; only the testbench module differs
+# between the core suite (sdf_alignment) and the protocol suite.
+write_fv_request() {
+  python3 - "$1" "$NETLIST_FOR_FV" "$2" "$STDCELL_V" "$UDP_V" \
+    "$REPO_ROOT/verification" "$HDL_TOPLEVEL" "$3" "${MACRO_SOURCES[@]+"${MACRO_SOURCES[@]}"}" <<'PYEOF'
 import json
 import os
 import sys
@@ -564,6 +602,91 @@ with open(request_path, "w", encoding="utf-8") as handle:
     json.dump(request, handle, indent=2)
     handle.write("\n")
 PYEOF
+}
+
+check_corner_sdf() {  # check_corner_sdf <corner>: FATAL if no SDF was emitted for it
+  if [ ! -f "${SCRATCH_DIR}/sdf/${1}.sdf" ]; then
+    echo "FATAL: no SDF for corner '${1}' (have: ${SDF_CORNERS[*]})." >&2
+    exit 1
+  fi
+}
+
+# --- Protocol suite (issue #217): one klt run per (corner, protocol) -------
+if [ "$SUITE" = "protocols" ]; then
+  PROTOCOL_RESULTS_FILE="${REPO_ROOT}/flow/post-layout-sdf-protocol-results.json"
+  PROTO_DIR="${SCRATCH_DIR}/protocols"
+  for corner in "${CORNERS[@]}"; do check_corner_sdf "$corner"; done
+  rm -rf "$PROTO_DIR" "$PROTOCOL_RESULTS_FILE"
+  mkdir -p "${PROTO_DIR}/entries"
+  echo "== protocol suite: ${PROTOCOLS[*]} x ${CORNERS[*]} (serial)" >&2
+  FAILED=0
+  seq_no=0
+  for corner in "${CORNERS[@]}"; do
+    for proto in "${PROTOCOLS[@]}"; do
+      seq_no=$((seq_no + 1))
+      run_dir="${PROTO_DIR}/${corner}/${proto}"
+      mkdir -p "$run_dir"
+      module="$(python3 "$PROTOCOL_HELPER" module "$proto")"
+      write_fv_request "${run_dir}/request.json" "${SCRATCH_DIR}/sdf/${corner}.normalized.sdf" "$module"
+      report="${run_dir}/protocol-report.json"
+      echo "== ${corner} / ${proto} (${module}) ==" >&2
+      start_ts=$(date +%s)
+      set +e
+      PE_SDF_PROTOCOL_REPORT="$report" "$KLT" functional-verification "${run_dir}/request.json" --format json \
+        > "${run_dir}/klt-functional-verification.json" \
+        2> "${run_dir}/fv-console.txt"
+      run_rc=$?
+      set -e
+      elapsed=$(( $(date +%s) - start_ts ))
+      results_xml="$(python3 -c 'import json,sys
+try:
+    print((json.load(open(sys.argv[1])).get("environment") or {}).get("results_xml") or "")
+except Exception:
+    print("")' "${run_dir}/klt-functional-verification.json")"
+      if [ -n "$results_xml" ] && [ -f "$results_xml" ]; then
+        cp "$results_xml" "${run_dir}/results_icarus.xml"
+      fi
+      if ! python3 "$PROTOCOL_HELPER" grade --protocol "$proto" --corner "$corner" \
+          --envelope "${run_dir}/klt-functional-verification.json" --rc "$run_rc" \
+          --report "$report" --elapsed "$elapsed" \
+          --out "${PROTO_DIR}/entries/$(printf '%03d' "$seq_no")-${corner}-${proto}.json"; then
+        FAILED=1
+      fi
+      echo "   rc=${run_rc} elapsed_s=${elapsed}" >&2
+    done
+  done
+  NORMALIZATION_REPORTS=()
+  for corner in "${CORNERS[@]}"; do
+    NORMALIZATION_REPORTS+=("${SCRATCH_DIR}/sdf/${corner}.normalization.json")
+  done
+  if ! python3 "$PROTOCOL_HELPER" aggregate --entries-dir "${PROTO_DIR}/entries" \
+      --corners "${CORNERS[@]}" --protocols "${PROTOCOLS[@]}" \
+      --alignment "$ALIGNMENT_JSON" --renames "$MACRO_RENAME_JSON" \
+      --macro-types ${MACRO_TYPES} \
+      --normalization "${NORMALIZATION_REPORTS[@]}" \
+      --out "$PROTOCOL_RESULTS_FILE"; then
+    FAILED=1
+  fi
+  echo "wrote ${PROTOCOL_RESULTS_FILE}" >&2
+  if [ "$FAILED" -ne 0 ]; then
+    echo "FATAL: the protocol suite is not a pass at every (corner, protocol) -- see ${PROTOCOL_RESULTS_FILE} and the per-run fv-console.txt files under ${PROTO_DIR}/." >&2
+    exit 1
+  fi
+  exit 0
+fi
+
+# --- One klt functional-verification run per SDF corner -------------------
+echo "[" > "${RESULTS_FILE}"
+first=1
+FAILED=0
+
+for corner in "${CORNERS[@]}"; do
+  corner_dir="${SCRATCH_DIR}/${corner}"
+  mkdir -p "$corner_dir"
+  request_path="${corner_dir}/request.json"
+  check_corner_sdf "$corner"
+
+  write_fv_request "$request_path" "${SCRATCH_DIR}/sdf/${corner}.normalized.sdf" "$BENCH_MODULE"
 
   echo "== ${corner} ==" >&2
   start_ts=$(date +%s)

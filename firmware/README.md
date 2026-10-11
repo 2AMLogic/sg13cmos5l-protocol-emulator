@@ -34,6 +34,13 @@ firmware/
                          cycles per bit, refreshed with a >280 us reset
                          (target-spec row 13, issue #141; protocol chosen
                          by DR 0018 after DR 0017's ISA freeze)
+    ps2_device.asm       PS/2 keyboard/mouse DEVICE on uio[2] (CLK) and
+                         uio[3] (DATA), both open-drain: generates the clock
+                         the host may inhibit, receives host bytes with an
+                         ACK, echoes them (0xFE on a parity or stop error)
+                         (target-spec row 13 stretch column, issue #235;
+                         protocol chosen by the dated note in DR 0018 after
+                         DR 0017's ISA freeze)
     boot/boot_rom.asm    the on-chip boot ROM's program (issues #138 and
                          #139, DR 0013 layer 2: warm start and UART load).
                          Not loaded into program memory: the ROM in
@@ -72,6 +79,7 @@ python3 firmware/tools/test_asm.py
 
 # Assemble a program (writes firmware/build/<stem>.hex + .cycles.txt):
 python3 firmware/tools/asm.py firmware/asm/demo_roundtrip.asm
+```
 
 ```bash
 # Verify the committed build artifacts still match the committed source
@@ -112,9 +120,11 @@ committed program fails CI at the link that went stale. The generator
 refuses an image over **256 words**, the fetch address space. DR 0013
 proposed a cap of 128; the UART load does not fit it (finding F4 in that
 record), so the cap is the address space until the record decides. The image
-is **223** words (the SPI-flash boot 64, the UART load 129, the strap
+is **232** words (the SPI-flash boot 64, the UART load 138, the strap
 dispatch and warm start the rest, which includes the two-word zero-signature
-refusal of issue #168).
+refusal of issue #168); 24 of the 256 are free. The UART load was 129 words
+until issue #211 added the count-complement check (+9: a seventh phase in the
+dispatch, 2, and its handler, 7).
 
 What the program does: its first instruction reads the straps `ui_in[6:5]`.
 Strap `10` is the **warm start**: it reads every word of program memory and
@@ -140,7 +150,7 @@ pin, and either takes the warm start's hand-over (`run_image`) or halts.
 putting one on the Pmod. Bench: `verification/test_boot_spi.py`
 (`verification/request-boot-spi.json`), negative controls
 `verification/boot_spi_mutants.py`, evidence in
-`verification/records/boot-spi/`. With the UART load the image is 223 words,
+`verification/records/boot-spi/`. With the UART load the image is 232 words,
 which is why the ROM's cap is the 256-word address space (DR 0013 finding F4).
 
 ### The UART load (issue #139, DR 0013 layer 2)
@@ -151,19 +161,25 @@ row-4 clock; the cycle count is the claim, the baud figure is arithmetic at
 that unconfirmed clock). The frame, built by `firmware/tools/loadseq.py`:
 
 ```
-0xA5   N-1   2N bytes, high byte of each word first   CRC-16/XMODEM, high byte first
+0xA5   N-1   ~(N-1)   2N bytes, high byte of each word first   CRC-16/XMODEM, high byte first
 ```
 
-N is 1 to 256. The loader writes each word through `PM_DATA_HI` /
-`PM_DATA_LO`, compares `PM_CRC` with the trailer, and answers `0x06` + `PM_CRC`
-(high byte first) and `RUN 0` on a match, or `0x15` + `PM_CRC` and a wait for
-the next `0xA5` on a mismatch. An image whose payload or trailer is
-corrupted is never run (CRC-16 over the words the loader took). The count
-byte is **not** covered by the CRC: a corrupted count is rejected unless the
-CRC of the shorter prefix happens to equal the two bytes that follow it, in
-which case the truncated image is accepted and run (DR 0013 finding F8; the
-frame `a5 00 f0 00 13 c1 00 00` is the RTL regression). TX idles high from
-the loader's start to the `RUN`, and no `uio` pin is ever driven.
+N is 1 to 256. The third byte is the count's ones' complement (issue #211,
+DR 0013 finding F8 resolved). The loader checks it before it commits any word;
+a count and complement that do not match are answered `0x15 00 00` at once
+(nothing committed) and the loader goes back to waiting for `0xA5`. Otherwise
+it writes each word through `PM_DATA_HI` / `PM_DATA_LO`, compares `PM_CRC`
+with the trailer, and answers `0x06` + `PM_CRC` (high byte first) and `RUN 0`
+on a match, or `0x15` + `PM_CRC` and a wait for the next `0xA5` on a
+mismatch. An image whose payload or trailer is corrupted is never run
+(CRC-16 over the words the loader took), and any corruption of the count
+byte alone, or of the complement alone, is rejected before a word is written
+(the old F8 counterexample, `a5 00 fe f0 00 13 c1 00 00` in the new frame,
+is the RTL regression). What is still not guaranteed: a corruption that
+changes the count and its complement consistently (two or more bit errors,
+placed to match) and also makes the shorter or longer stream's CRC match.
+TX idles high from the loader's start to the `RUN`, and no `uio` pin is ever
+driven.
 
 ```bash
 python3 firmware/tools/loadseq.py firmware/build/uart_tx.hex --uart -o uart_tx.frame
@@ -173,8 +189,8 @@ python3 firmware/tools/loadseq.py firmware/build/uart_tx.hex --uart -o uart_tx.f
 How it is built, because the ISA has no call and four registers:
 
 - one byte receiver (`rx_next`..`rx_bit`) is followed by a dispatch on a
-  phase number in `R3` (waiting for `0xA5`, count, payload high byte, payload
-  low byte, trailer high, trailer low). The receiver is a loop: the start
+  phase number in `R3` (waiting for `0xA5`, count, count complement, payload
+  high byte, payload low byte, trailer high, trailer low). The receiver is a loop: the start
   edge is found by a 3-cycle poll of `ui_in[1]` (the other `ui_in` bits are
   masked, not assumed constant), the first sample lands 1.5 bit periods after
   the edge, and the eight samples are exactly 434 cycles apart with no branch
@@ -195,16 +211,18 @@ How it is built, because the ISA has no call and four registers:
 
 If the host loses sync (a wrong length, a lost byte) the loader reads the
 stray bytes as a new frame whenever one of them is `0xA5`, and waits for the
-rest. There is no timeout. Recover by pulsing `rst_n`, or by sending non-zero
+rest; since issue #211 the two bytes after a stray `0xA5` must also be a
+count and its complement, so most false starts are answered `0x15 00 00`
+after two bytes instead. There is no timeout. Recover by pulsing `rst_n`, or by sending non-zero
 filler until the loader answers `0x15` (zero filler does not work: a message
 followed by its own CRC and then zeros still has CRC 0, so the loader reads it
 as a valid longer image). Auto-baud was not attempted.
 
-The assembler reports data-dependent-branch warnings for this program (12),
+The assembler reports data-dependent-branch warnings for this program (13),
 all intended: the two strap branches, the warm start's zero-signature and CRC
 verdicts, and in
 the UART load the start-edge poll, the phase dispatch, the handlers and the
-verdicts. None paces a pin: the samples and the transmitted bits are paced by
+verdicts (the count-complement check of issue #211 is the thirteenth). None paces a pin: the samples and the transmitted bits are paced by
 `WAIT` literals and a counter that never holds pin data.
 
 Zero signatures are refused (DR 0013 Finding F1, closed by issue #168): 256
@@ -329,7 +347,9 @@ upper row; issue #155): SCL = `UIO_OUT` bit 2, SDA = `UIO_OUT` bit 3,
 open-drain convention (1 = released, 0 = asserted).
 Each I2C program makes that convention real on the pins with one
 instruction in its setup, `WCTL UIO_OD, R3` with `R3 = 0x0C` (DR 0012:
-SCL and SDA become open-drain, `uio_oe[n] = ~uio_out[n]`). It comes
+SCL and SDA become open-drain, `uio_oe[n] = ~uio_out[n]`, where `uio_out`
+is the port-11 register; the pad data of an open-drain pin is tied to 0,
+DR 0020). It comes
 **after** the `OUT UIO_OUT` of `0x0C`, because `uio_out` resets to 0 and
 enabling open-drain first would pull both lines low for a cycle. It sits in
 the idle setup, outside every `.cyclesec`, so no phase length changed.
@@ -349,11 +369,35 @@ budget), and each program therefore carries exactly one assembler
 themselves never branch on pin data: every phase is straight-line code
 with assemble-time `WAIT` literals.
 
+**Where the ACK is sampled (issue #258).** Both ACK slots are sampled in
+the middle of the ninth SCL **high** phase — the `IN` is 30 cycles after
+the rise and 30 before the fall on Fast, 121 / 121 on Standard — where
+UM10204 requires SDA to be stable. The ACK low phases carry no sample: a
+peripheral may answer anywhere in them, up to t_SU;DAT before the rise.
+Until #258 the `IN` sat in the ACK *low* phase, 22 (Fast) / 32
+(Standard) cycles after the SCL fall, so a legal but late ACK was read as
+a NACK (the address branch then sent STOP instead of the data byte); the
+benches' peripheral answered one cycle after the fall and never showed
+it. The address `BNZ` keeps its place in the high phase, so both branch
+paths keep the ninth high at exactly 60 / 242 cycles. Rederiving that
+for #258 found that Standard's NACK path had held it 284 cycles since
+issue #125 (a `WAIT 47` where `WAIT 5` belonged): legal, since UM10204
+sets no t_HIGH maximum, but not the stated budget, and invisible to the
+fall-through `.cyclesec` count and to the model's t_HIGH(min). It is 242
+now. The data ACK is sampled the same way and not branched on; the
+core's Z flag holds that reading to `HALT`.
+`verification/test_firmware_i2c_ack.py` checks the schedule statically,
+runs early and late responders (the latest one exactly t_SU;DAT ahead
+of the rise) on both address outcomes, and
+`verification/i2c_ack_schedule_mutants.py` shows the original schedule,
+assembled into scratch images, failing its late-response test.
+
 **The eight clocks per byte are unrolled, not looped.** DR 0001's
 blessed constant-trip-count loop needs five live values (byte, mask,
 SCL constant, temp, loop counter) and the ISA has four registers — so
 each byte is 65 instructions of straight-line phases (97 since issue
-#155's SDA-alignment shifts), and a whole program is 246 words. That fits DR 0001's 256-word memory for one
+#155's SDA-alignment shifts), and a whole program is 246 words (245
+since issue #258 moved the ACK samples). That fits DR 0001's 256-word memory for one
 protocol with headroom, but it challenges the sketch's "all three core
 protocols coexist with room for a dispatch table" sizing narrative —
 recorded as an ISA finding in the evidence record, not a spec change.
@@ -365,7 +409,9 @@ state each phase's exact length — the bench cross-checks all 41):
 |---|---|---|
 | data-clock low | `OUT`+`WAIT 62`/`255`+`OR` | **65 / 258** |
 | data-clock high | `OUT`+`SHF`+`WAIT 51`/`233`+`MOV`+4x`SHF`+`AND` | **60 / 242** |
-| ACK low (incl. the `IN` sample) | `OUT`+`WAIT`+`IN`+`WAIT`+`AND`+`LDI` | **65 / 258** |
+| ACK low (no sample since issue #258) | `OUT`+`WAIT 62`/`255`+`LDI` | **65 / 258** |
+| address ACK high (incl. the `IN` sample), either branch path | `OUT`+`WAIT`+`IN`+`AND`+`WAIT`+`BNZ`, then `LDI`+`MOV`+4x`SHF`+`AND` (ACK) or `LDI`+`WAIT 5` (NACK) | **60 / 242** |
+| data ACK high (incl. the `IN` sample) | `OUT`+`WAIT`+`IN`+`AND`+`WAIT`+`LDI` | **60 / 242** |
 | START hold (t_HD;STA) | `OUT`+`WAIT`+`LDI`+`MOV`+4x`SHF`+`AND` | **65 / 205** |
 | STOP setup (t_SU;STO) | `OUT`+`WAIT`+`LDI` | **60 / 205** |
 
@@ -381,7 +427,8 @@ stance as `uart_tx.asm`).
 **Open-drain, and what the bench does about it.** The programs' first
 instructions release both lines (`OUT` of `0x0C`) and then write `0x0C`
 to DR 0012's `UIO_OD` control register, so SCL (`uio[2]`) and SDA
-(`uio[3]`) are open-drain pads: `uio_oe[n] = ~uio_out[n]`. The
+(`uio[3]`) are open-drain pads: `uio_oe[n]` is the complement of the
+port-11 bit and the pad data is 0 (DR 0020). The
 DUT-facing benches run on a pad model (`verification/uio_pads.py`, issue
 #136) that resolves each line from the design's `uio_oe` / `uio_out`, a
 pull-up, and the peripheral as an external open-drain driver, and feeds
@@ -474,7 +521,7 @@ is published on `UO_OUT`. t_SU;STA is paced exactly at the Table 10
 minimum (30 cycles Fast, 235 Standard). Standard data/ACK clocks are 500
 cycles (low 258 + high 242; polled rise phases +2), Fast 125 (issue #125). The bit loops keep a counter, so
 the programs are 152 words (`_sr`) and 192 words (`_sr_poll`) of the
-256-word store, against 246 words for the unrolled write-only programs
+256-word store, against 246 words (245 since issue #258) for the unrolled write-only programs
 (131 / 171 / 181 before issue #155's SDA-alignment shifts; SCL is
 `uio[2]`, SDA `uio[3]`, `UIO_OD` = `0x0C`).
 `_sr` has no pin-dependent branch; `_sr_poll` polls the peripheral's SCL

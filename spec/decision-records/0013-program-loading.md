@@ -956,3 +956,139 @@ the table declaring those roles it requires the top's
 `assign uo_out = run_phase ? <core net> : ui_in[n] ? ... : ...;` with `n` the
 `CRC_BYTE_SEL` pin, and the schema requires the readout to cover all of
 `uo_out[7:0]` with exactly one byte-select pin.
+
+## 2026-10-11 (issue #211): the UART frame carries the count's complement; finding F8 resolved
+
+> A dated entry. The Decision above and the #139 notes, including F4 and F8,
+> are left as written; this entry supersedes the frame they describe. This
+> record's Status line is not flipped: the change was ruled by the operator
+> on issue #211 (option 1 of the curator's ranked options), recorded there by
+> an agent session on the operator's behalf, and it does not ratify anything
+> through the two-key mechanism. It is a firmware and wire-format change, not
+> an ISA change: no opcode, encoding, timing, register, control-space or
+> hand-over rule moves, and DR 0017 pins no boot ROM file (the amendment in
+> `spec/isa-freeze.json` for this file is `no-behaviour-change`).
+
+**The frame.** The UART load's frame (strap `00`, and `11`, and a failed warm
+start) is now, all bytes 8N1:
+
+```
+0xA5   N-1   ~(N-1)   2N bytes, each word high byte first   CRC-16/XMODEM of the 2N bytes, high byte first
+```
+
+`~(N-1)` is the ones' complement of the count byte, `0xFF - (N-1)`. N is
+still 1..256. The CRC is unchanged: it still covers the `2N` image bytes only,
+not the magic, the count or the complement. The reply bytes are unchanged.
+
+**What the loader does with it.** The boot ROM checks the complement after
+the third byte, before it commits any payload word (the count handler clears
+`PM_ADDR` and `PM_CRC` and moves to a new phase; the new handler compares and
+only then moves to the payload phase). A count and complement whose XOR is not
+`0xFF` take the existing failure path: the loader answers `0x15` followed by
+`PM_CRC`, which is `0x0000` because nothing was committed, and goes back to
+waiting for `0xA5`. Nothing is run. The reply goes out as soon as the third
+byte is in, while a host that does not read its RX line is still sending the
+payload; the loader does not listen while it transmits, and afterwards reads
+the rest of that payload as it reads any stray bytes (finding F6), so a host
+that sees `0x15` early recovers as F6 says, by pulsing `rst_n` (or by non-zero
+filler). The other failure paths are unchanged.
+
+**What this rejects, and what it does not.** Rejected before a word is
+written: any corruption of the count byte alone, or of the complement byte
+alone (every single-bit flip of each is simulated, below), including F8's
+counterexample. A lost or inserted byte between the magic and the payload is
+rejected unless the byte that lands in the complement position happens to
+complement the count (1 in 256 for an arbitrary byte). A false `0xA5` in stray
+bytes now needs the two bytes after it to be a count and its complement
+before the loader takes anything, so a desynchronised loader answers most
+false starts after two bytes instead of waiting (F6's recovery is otherwise
+unchanged). **Not guaranteed:** a corruption that changes the count and the
+complement consistently, which takes at least two bit errors placed to
+match (the same bit position in both bytes), and that also makes the
+trailer comparison succeed on the shorter or longer stream (about 1 in 65,536
+for an arbitrary image, certain for a constructed one, as F8 says). The
+protocol's integrity is now "count checked against its complement, CRC-16
+over the words taken", not an authenticated frame, and nothing here claims
+that every bad length or every CRC collision is impossible. Finding 2 of the
+#218 entry above (a frame of zero words with trailer `0x0000` is accepted) is
+unchanged by this.
+
+**Finding F8: resolved for the corruption class it reported.** The single-bit
+count flip `a5 01 ... -> a5 00 ...` that F8 recorded as accepted and run is
+rejected. The records that pinned the acceptance
+(`verification/records/boot-uart/records/20261010-164351-57c5c8c.md` and its
+re-mint `20261010-172329-f8428aa`) stay as the evidence of the old frame; a
+later record supersedes them with the new oracle. #139's requirement "bad
+lengths never reach `RUN`" is met for every length corruption except the
+coordinated, CRC-aliasing one above; it is not relaxed.
+
+**ROM size (finding F4's budget).** The UART load grows from 129 to **138
+words** (+9: two in the phase dispatch for a seventh phase, seven for the
+complement handler; the count handler only changes which phase comes next).
+The boot image grows from 223 to **232 of 256 words**, leaving **24 free** (33
+before). The warm start and the SPI-flash boot move up by nine addresses and
+do not change otherwise: the warm start still reaches `RUN` 2,325 cycles after
+the first instruction and the SPI-flash boot 58,793 (their benches pass
+unchanged). The complement handler's path from the third byte's stop-bit
+middle back to the poll is 21 cycles (by the cycle report), inside the half
+bit (217 cycles) the #139 timing notes allow; the dispatch adds 2 cycles to
+the trailer-high path. The assembler's data-dependent-branch lint reports 13 warnings (12
+before); the new one is the complement verdict, which paces no pin.
+
+**Area and timing of the 232-word ROM, each number with its flow** (against
+the 223-word ROM of the #139 and #201 notes above, as last measured with the
+load-phase readout of issue #137). **klt/Yosys flow** (synthesis only, cell
+area, no timing; `synthesis-baseline` `20261011-034407-1c19c24`): the top
+goes from 2,408 instances / 34,960.88 um^2 to **2,509 / 35,086.38 um^2
+(+101, +125.50 um^2)**; the ROM alone from 545 / 5,837.45 to **556 /
+5,939.36 um^2 (+11, +101.91 um^2)**, about 11 um^2 per added word. **LibreLane
+flow** (gds run 38108543866 at `f1b21df`, post-route, 20 ns;
+`librelane-corner-timing` `20261011-040000-1c19c24`): its own synthesis step
+goes from 2,578 cells / 35,791.12 um^2 to **2,626 / 35,738.50 um^2 (+48 cells,
+-52.62 um^2)**, so **the two flows disagree on the sign of the area change**;
+that is recorded, not reconciled. Placed standard cells 45,057.0 ->
+**44,964.5 um^2**, utilization 57.77 % -> 57.70 %. Setup and hold still close
+with **zero violations at all three corners**, with less margin at the slow
+corner: worst setup slack +3.527 -> **+1.925 ns** (slow), +9.806 -> +8.796 ns
+(typ), +11.167 -> +11.109 ns (fast); worst hold +0.1399 -> +0.1291 ns (fast).
+The binding slow-corner path is an SRAM read (`A_DOUT[9]`) through the
+core's `exec_word = fetch_rom ? rom_word : instr_word` mux into a flop.
+**Max-slew 0/0/0 -> 2/0/0** (slow/typ/fast), both on one internal net (a
+`nor3_1` driving a `nor4_1`, 2.99 ns against 2.51 ns at the slow corner), not
+an SRAM pin; the flow does not fail on it and it is not fixed here. Max-cap
+stays 0/0/0. The #139 notes named further ROM growth as the thing to watch
+for the slow-corner margin; nine words cost 1.6 ns of it on this placement,
+and 24 words of the ROM's address space are left. DRC is clean and LVS
+against the post-route netlist matches (`librelane-gds-signoff-check`
+`20261011-040500-1c19c24`); the core bench passes at all three SDF corners
+(`post-layout-sdf-regression` `20261011-042235-2f504f0`); the template's
+`gl_test` passes 4/4 on the netlist, including a UART frame in the new format.
+
+**Host side.** `firmware/tools/loadseq.py --uart` writes the new frame (and
+its `--check` checks the complement); `verification/uart_boot_host.py`, the
+bench's independent host, frames it independently, and the bench asserts the
+two agree byte for byte with `binascii.crc_hqx` as a third opinion. The
+template's `test/test.py` sends the new frame in its gate-level boot test.
+`docs/info.md`, `firmware/README.md`, `verification/README.md` and
+`spec/verification-plan.md` §7 describe the new frame and its residue.
+
+**Verification (RTL, Icarus, cocotb; the flows' numbers are named where
+they appear).** `verification/test_boot_uart_count_alias.py` now asserts
+rejection: the F8 frame in the new format (`a5 00 fe f0 00 13 c1 00 00`) and
+every other single-bit flip of the count byte and of the complement byte, 16
+frames in all, are each answered `15 00 00`, write nothing, leave `uio_oe` at
+0, and never leave the boot ROM; the valid frame `a5 01 fe f0 00 13 c1 00 00`
+is accepted (`06 00 00`) and run, before them and, with no reset, after a
+rejected one. `verification/test_boot_uart.py` gives its bad-length cases a
+consistent complement (so the CRC is still what rejects them), adds a
+complement mismatch, and allows its wrong-magic case to be answered `15 00 00`
+(that image's payload holds a `0xA5`, which now starts a false header that the
+complement rejects, where before the loader waited silently).
+`verification/boot_uart_mutants.py` adds an eighth ROM defect, the complement
+check's branch made a `NOP`, which the count-alias bench catches (the F8 frame
+is then answered `06` and run); the seven older defects, moved to their new
+addresses, are still each caught. `verification/boot_rom_mutants.py`'s
+warm-start anchors move by nine addresses and are still each caught. Records:
+`verification/records/boot-uart/` and the gate-level records that hash the
+ROM (`firmware-gate-level/`, and the others `verification/remint_records.py`
+lists as stale), each a new record superseding the old one.

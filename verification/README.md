@@ -64,13 +64,29 @@ coverage.
   `test_alu_flags_whitebox` is registered as skipped (a flattened netlist
   has no `u_core`). With the variables unset it rebinds nothing; no RTL
   request names it.
+- `sdf_protocol_alignment.py` with `sdf_protocol_uart_tx.py`,
+  `sdf_protocol_spi.py`, `sdf_protocol_i2c_sr.py` — the post-layout entry
+  points for the UART TX, SPI and I2C repeated-START/read/stretch firmware
+  benches (issue #217), used only by `flow/run-post-layout-sdf.sh --suite
+  protocols`. The bench files are unchanged; the wrappers rebind the
+  benches' `RisingEdge` (capture and reactive peripherals read at the drive
+  offset minus 1 ns and drive at the drive offset; the load phase is
+  aligned through `sdf_alignment`), monitor every `uo_out` / `uio_out` /
+  `uio_oe` transition's delay after the clk pin edge (each must land
+  strictly before that observe point), add an SPI timing negative control
+  (every conformant DUT burst compressed to 0.9x the f_clk/4 ceiling must
+  fail), and write a per-run report (`PE_SDF_PROTOCOL_REPORT`). With
+  `PE_ALIGN_*` unset they patch nothing.
 - `test_control_space.py` — cocotb bench for DR 0012's control space
   (issue #135) on the top: reset values, readback, the `uio_oe` pin-mode
   rule, reserved-index behaviour, the fixed 2-cycle stall and its
   data-independence, no flag side effects, a program-memory
   write-then-read round trip, code written through the control space
   executed via `RUN`, `PM_CRC` against `binascii.crc_hqx`, and the I2C
-  images' open-drain preamble. Pin-observable except for two labelled
+  images' open-drain preamble, and DR 0020's open-drain pad data
+  (`uio_out[n] & UIO_OD[n]` is 0 on every edge, over all 8 pin-mode
+  combinations on every pin, so `uio_oe & uio_out & UIO_OD` is never 1;
+  issue #244). Pin-observable except for three labelled
   white-box reads, so it also runs on a gate-level netlist. Driven by
   `klt functional-verification` (see `request-control-space.json`);
   `control_space_mutants.py` is its negative-control runner.
@@ -136,6 +152,20 @@ coverage.
   the pre-DR-0012 `uio_oe = 8'h00`), each of which the I2C benches must
   fail on. None of them changes `uio_out`, so none could change the
   verdict of the old bench-composed bus.
+- `test_firmware_i2c_ack.py` — the I2C write programs' ACK slots (issue
+  #258), on the pad model like its sibling `test_firmware_i2c.py` (which
+  it imports and leaves unchanged): statically, each ACK `IN` sits
+  strictly inside the ninth SCL high and the ninth high is exactly the
+  budget on both address-ACK branch paths; dynamically, early and late
+  responders (one cycle after the former low-phase sample, and exactly
+  t_SU;DAT ahead of the rise, set-up measured on the line) on both address
+  outcomes, with SDA stable while SCL is high and the controller's own
+  reading of the data ACK checked through the Z flag (white-box, RTL
+  only). Driven by `klt functional-verification`
+  (`request-firmware-i2c-ack.json`); `i2c_ack_schedule_mutants.py` is its
+  negative-control runner (the original low-phase schedule, per grade and
+  slot, assembled into scratch images, must fail the late-response test
+  with an assertion). Evidence in `records/firmware-i2c/`.
 - `test_boot_rom.py` — cocotb bench for DR 0013 layer 2 (issue #138) on
   the top: the boot ROM, the fetch-source switch and the warm start, and
   target-spec row 14 (c). With `MODE` low at reset the stub straps move no
@@ -179,8 +209,10 @@ coverage.
 - `test_boot_uart.py` — cocotb bench for DR 0013 layer 2's UART load,
   strap `00` (issue #139): a framed image sent on `ui_in[1]` is accepted
   (reply `0x06` + CRC, `RUN 0`, the state a reset leaves) and corrupted
-  payloads, bad CRCs, bad lengths and a wrong magic are never run (bad
-  lengths with the caveat of finding F8, below); the
+  payloads, bad CRCs, bad lengths (with a consistent count complement, so
+  the CRC is what rejects them), a count whose complement does not match
+  (answered `15 00 00` before any word is written, issue #211) and a wrong
+  magic are never run; the
   host runs at nominal rate and at the row-10 ±2 % edges (with idle bits,
   edge jitter and the unrelated `ui_in` bits toggling), with a sweep past
   them recorded and a 12 %-off negative control; the committed `uart_tx`
@@ -194,19 +226,23 @@ coverage.
   (`flow/run-firmware-gate-level.sh --boot-uart`); the two long runs are
   RTL-only. Driven by `klt functional-verification` (see
   `request-boot-uart.json`); `boot_uart_mutants.py` is its negative-control
-  runner (seven single defects in the boot ROM, each caught by a test meant
-  to catch it). Evidence in `records/boot-uart/`.
+  runner (eight single defects in the boot ROM, each caught by a test meant
+  to catch it; the eighth, the count-complement check removed, is caught by
+  `test_boot_uart_count_alias.py`). Evidence in `records/boot-uart/`.
 - `test_boot_uart_count_alias.py` — RTL regression for DR 0013 finding F8
-  (PR #210 review): the count byte is not covered by the CRC, so the valid
-  image `[0xF000, 0x13C1]` (`a5 01 f0 00 13 c1 00 00`) with count bit 0
-  flipped (`a5 00 f0 00 13 c1 00 00`) is **accepted and run** as the
-  one-word image `[0xF000]`. The test pins that behaviour (ACK `06 13 c1`,
-  the core leaves the ROM) next to an uncorrupted control; it is a record
-  of a residue, not a pass of an unconditional bad-length guarantee. A
-  separate module so the gate-level records that hash `test_boot_uart.py`
-  stay live. Driven by `request-boot-uart-count-alias.json`; evidence in
-  `records/boot-uart/ (record 20261010-164351-57c5c8c)`; re-minted on the
-  tree merged with issue #208 as record `20261010-172329-f8428aa`.
+  (PR #210 review), resolved by issue #211. Before #211 the count byte was
+  not covered by anything, so the valid image `[0xF000, 0x13C1]`
+  (`a5 01 f0 00 13 c1 00 00`) with count bit 0 flipped was **accepted and
+  run** as the one-word image `[0xF000]`; the module pinned that (records
+  `20261010-164351-57c5c8c` and `20261010-172329-f8428aa` in
+  `records/boot-uart/`, kept as the evidence of the old behaviour). Since
+  #211 the frame carries `~(N-1)` after the count, and the module asserts
+  **rejection**: the F8 frame `a5 00 fe f0 00 13 c1 00 00` and every other
+  single-bit flip of the count byte and of the complement byte (16 frames)
+  are answered `15 00 00`, nothing is written and the core never leaves the
+  ROM; the valid frame is accepted and run before them and, with no reset,
+  after a rejected one. Driven by `request-boot-uart-count-alias.json`;
+  evidence in `records/boot-uart/` (the records whose request is that file).
 - `test_reset_power_up.py` — **gate-level only** cocotb bench for
   target-spec row 14 / `spec/verification-plan.md` section 8 (issue #131):
   reset, power-up and reselect on the LibreLane netlist. Every flop of the
@@ -449,6 +485,32 @@ gates. The host-side loader is issue #118.
   `\u_core.wait_cnt[0]` stuck-at fault. Driven by `klt
   functional-verification` (`request-firmware-ws2812.json`); evidence in
   `records/firmware-ws2812/` and `records/firmware-ws2812-gate-level/`.
+- `test_firmware_ps2.py` — the **row-13 stretch** bench (issue #235; the
+  protocol choice is the dated note of 2026-10-11 in DR 0018, made after DR
+  0017's ISA freeze): the committed `firmware/asm/ps2_device.asm` plays a PS/2
+  keyboard/mouse device on `uio[2]` (CLK) and `uio[3]` (DATA), open-drain,
+  and the bench plays the host. `reference_models/ps2.py`, written from
+  Chapweske's description alone, is a passive bus monitor: it takes the
+  resolved line levels plus what the host is pulling, and grades the clock
+  widths (30 to 50 µs), data setup and hold against the clock, the 50 µs
+  hold-off, the inhibit-and-resend rule, the request-to-send response, the
+  ACK turnaround and the release after it, and the bench's host driver too.
+  The lines come from the silicon-true pad model (`uio_pads.py`, pull-ups on
+  both lines, the other six `uio` pins tied low), so the bench also asserts no
+  contention, only CLK and DATA enabled, and both only ever driven low.
+  Scenarios: the power-up BAT frame, eight echoed host bytes, bad parity and
+  stop bits answered 0xFE, inhibits after clock 1, 4, 10 and 11, a bus held
+  inhibited from reset, a request to send before the BAT code is out, and a
+  host that abandons its own transfer. Negative controls: seven mutant
+  programs (no inhibit check, a hold-off of 18 polls, no ACK, late and early
+  data, even parity, `UIO_DIR` instead of `UIO_OD`), an unchecked host parity
+  (caught by the byte comparison), and the golden log re-graded with its DATA
+  edges moved. `test_ps2_model.py` is the model's simulator-free self-test
+  (`npm run lint`). Pin-only, so it also runs on the gate-level netlist with
+  `flow/run-ps2-gate-level.sh` (its own runner), whose negative control is the
+  `\u_core.wait_cnt[0]` stuck-at fault. Driven by `klt
+  functional-verification` (`request-firmware-ps2.json`); evidence in
+  `records/firmware-ps2/` and `records/firmware-ps2-gate-level/`.
 - `formal/` — the §2 formal-properties leg (issue #24, distinct from the
   cocotb legs above: no `klt`, no PDK, no simulator — a Yosys+SMTBMC model
   checking harness). `formal/no_data_dependent_latency.sv` is
@@ -519,16 +581,23 @@ PDK-free RTL bench, as a **pass/fail gate only**. It writes nothing under
 deliberate local runs. The benches need `klt` (the `request-*.json` files
 carry sources, defines and recorded seeds), provisioned by
 `scripts/setup-env.sh` like the `signoff` job. Run it locally with
-`scripts/run-rtl-benches.sh` (about 7 min serial, most of it `boot-uart`, whose host plays 2.2 million cycles of frames, plus about a minute for `test_boot_spi`).
+`scripts/run-rtl-benches.sh` (about 7 min serial, most of it `boot-uart`, whose host plays 2.2 million cycles of frames, plus about 3 s for the two loadseq benches and about a minute for `test_boot_spi`).
 
 CI-covered (RTL, Icarus, no PDK): `test_protocol_emulator`,
 `test_control_space`, `test_primitives`, `test_boot_rom`, `test_boot_spi`,
 `test_boot_uart`,
 `test_program_memory`, `test_protocol_models`, `test_firmware_uart`,
 `test_firmware_spi`, `test_uio_pads`, `test_firmware_i2c`,
-`test_firmware_i2c_sr`, `test_firmware_roundtrip`,
+`test_firmware_i2c_sr`, `test_firmware_i2c_ack`, `test_firmware_roundtrip`,
 `test_random_regression`, `test_isa_lockstep`, `test_load_integrity`,
-`test_firmware_ws2812`.
+`test_firmware_ws2812`, `test_firmware_ps2`, `test_loadseq` and
+`test_loadseq_top` (the independent host-load replay benches, issue #225).
+
+The bench list is `scripts/rtl-bench-inventory.txt`: every
+`verification/request-*.json` is either `include`d or `exclude`d with a
+reason, and `scripts/check_rtl_bench_inventory.py` (run by `npm run lint`
+and at the start of the runner) fails on an unclassified new request or a
+stale entry. Currently nothing is excluded.
 
 Covered elsewhere in CI: `test_check_records.py`,
 `test_firmware_templates.py`, `test_uio_pad_resolution.py` and

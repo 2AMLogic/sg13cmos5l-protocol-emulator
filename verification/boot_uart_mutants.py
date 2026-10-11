@@ -18,7 +18,8 @@ silently turn a negative control into a second positive run.
 
 To keep a run affordable each mutant is run against just the tests that are
 meant to catch it (the request's `testcase` is narrowed in the copy); the
-golden run is the whole bench.
+golden run is the whole bench (and, for a mutant whose catcher is in the
+count-alias bench of issue #211, that whole bench too).
 
 Usage:
     python3 verification/boot_uart_mutants.py [--out DIR] [--only NAME]
@@ -44,28 +45,32 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parent.parent
 ROM = "rtl/protocol_boot_rom.v"
 REQUEST = "verification/request-boot-uart.json"
+ALIAS_REQUEST = "verification/request-boot-uart-count-alias.json"
 
 T_NOMINAL = "test_nominal_load_runs_the_image"
 T_BAD = "test_bad_images_never_run"
 T_TOL = "test_row10_tolerance_edges"
+T_ALIAS = "test_count_corruption_is_rejected"   # in test_boot_uart_count_alias.py
 
 
 def word(addr, old, new):
     return (f"      8'h{addr:02X}: word = 16'h{old:04X};", f"      8'h{addr:02X}: word = 16'h{new:04X};", 1)
 
 
-# (name, what the defect is, [(old, new, count)], tests that must catch it)
+# (name, what the defect is, [(old, new, count)], tests that must catch it[, request])
+# The request defaults to REQUEST; a mutant whose catcher lives in another
+# bench names that bench's request.
 MUTANTS = [
     ("verdict-always-accepts",
      "the trailer comparison's branch is a NOP: every frame is answered 0x06 and run",
-     [word(0x3C, 0xE03E, 0x0000)], {T_BAD}),
+     [word(0x3E, 0xE040, 0x0000)], {T_BAD}),
     ("trailer-high-byte-unchecked",
      "the trailer comparison ORs R0 with itself, so only the low CRC byte is compared",
-     [word(0x3A, 0x6100, 0x6000)], {T_BAD}),
+     [word(0x3C, 0x6100, 0x6000)], {T_BAD}),
     ("crc-not-cleared-at-the-count",
      "the count handler no longer clears PM_CRC, so a retry after a rejected frame carries the "
      "old frame's residue",
-     [word(0x7A, 0xA406, 0x0000)], {T_BAD}),
+     [word(0x7C, 0xA406, 0x0000)], {T_BAD}),
     ("rx-bit-period-wrong",
      "the receiver's bit period is 466 cycles, not 434",
      [word(0x25, 0xB0A3, 0xB0C3)], {T_NOMINAL}),
@@ -74,11 +79,15 @@ MUTANTS = [
      [word(0x0F, 0x1402, 0x1401)], {T_NOMINAL}),
     ("tx-stop-bit-too-short",
      "the reply's stop bit is padded for 82 cycles, not 171",
-     [word(0x53, 0xB0AA, 0xB051)], {T_NOMINAL}),
+     [word(0x55, 0xB0AA, 0xB051)], {T_NOMINAL}),
     ("handover-drops-the-guard-last",
      "the hand-over clears uio_out before UIO_OD and UIO_DIR: for two cycles every uio pin drives low",
-     [word(0x68, 0xA000, 0xA300), word(0x69, 0xA001, 0xA000), word(0x6A, 0xA300, 0xA001)],
+     [word(0x6A, 0xA000, 0xA300), word(0x6B, 0xA001, 0xA000), word(0x6C, 0xA300, 0xA001)],
      {T_NOMINAL}),
+    ("complement-check-removed",
+     "the count-complement check's branch is a NOP (issue #211): a count whose third byte is not "
+     "its complement is taken, so the F8 frame with count 01 flipped to 00 is answered 0x06 and run",
+     [word(0x83, 0xE040, 0x0000)], {T_ALIAS}, ALIAS_REQUEST),
 ]
 
 
@@ -94,17 +103,17 @@ def copy_tree(dst: Path) -> None:
                     ignore=shutil.ignore_patterns("__pycache__", "records", ".klt"))
 
 
-def narrow_request(tree: Path, testcases) -> None:
-    path = tree / REQUEST
+def narrow_request(tree: Path, testcases, request: str = REQUEST) -> None:
+    path = tree / request
     doc = json.loads(path.read_text(encoding="utf-8"))
     names = sorted(testcases)
     doc["testbench"]["testcase"] = names if len(names) > 1 else names[0]
     path.write_text(json.dumps(doc, indent=2) + "\n", encoding="utf-8")
 
 
-def run_bench(tree: Path) -> dict:
+def run_bench(tree: Path, request: str = REQUEST) -> dict:
     proc = subprocess.run(
-        klt_command() + ["functional-verification", REQUEST, "--format", "json"],
+        klt_command() + ["functional-verification", request, "--format", "json"],
         cwd=tree, capture_output=True, text=True, check=False,
     )
     (tree / "klt-stdout.json").write_text(proc.stdout, encoding="utf-8")
@@ -139,16 +148,20 @@ def main(argv=None) -> int:
         golden = out / "golden"
         shutil.rmtree(golden, ignore_errors=True)
         copy_tree(golden)
-        res = run_bench(golden)
-        failed = sorted(n for n, s in res["tests"].items() if s != "passed")
-        good = res["parsed"] and res["tests"] and not failed
-        print(f"{'ok  ' if good else 'FAIL'} golden (unmodified copy): "
-              f"{len(res['tests']) - len(failed)}/{len(res['tests'])} passed")
-        summary["runs"].append({"kind": "golden", "tests": len(res["tests"]), "failed": failed,
-                                "as_required": bool(good)})
-        ok = ok and bool(good)
+        # Every bench a mutant is run against passes whole on the unmodified copy.
+        requests = [REQUEST] + sorted({m[4] for m in MUTANTS if len(m) > 4} - {REQUEST})
+        for request in requests:
+            res = run_bench(golden, request)
+            failed = sorted(n for n, s in res["tests"].items() if s != "passed")
+            good = res["parsed"] and res["tests"] and not failed
+            print(f"{'ok  ' if good else 'FAIL'} golden (unmodified copy, {request}): "
+                  f"{len(res['tests']) - len(failed)}/{len(res['tests'])} passed")
+            summary["runs"].append({"kind": "golden", "request": request, "tests": len(res["tests"]),
+                                    "failed": failed, "as_required": bool(good)})
+            ok = ok and bool(good)
 
-    for name, what, subs, catchers in MUTANTS:
+    for name, what, subs, catchers, *rest in MUTANTS:
+        request = rest[0] if rest else REQUEST
         if args.only and name != args.only:
             continue
         tree = out / name
@@ -169,8 +182,8 @@ def main(argv=None) -> int:
             ok = False
             continue
         path.write_text(text, encoding="utf-8")
-        narrow_request(tree, catchers)
-        res = run_bench(tree)
+        narrow_request(tree, catchers, request)
+        res = run_bench(tree, request)
         failed = sorted(n for n, s in res["tests"].items() if s != "passed")
         caught = res["parsed"] and bool(failed)
         targeted = bool(catchers & set(failed))
@@ -180,7 +193,7 @@ def main(argv=None) -> int:
               f"{'' if targeted or not caught else ' (not by a test meant to catch it)'}"
               f" -- {what}")
         summary["runs"].append({
-            "kind": "mutant", "name": name, "defect": what, "file": ROM,
+            "kind": "mutant", "name": name, "defect": what, "file": ROM, "request": request,
             "tests": len(res["tests"]), "failed": failed,
             "expected_catchers": sorted(catchers), "as_required": bool(good),
         })

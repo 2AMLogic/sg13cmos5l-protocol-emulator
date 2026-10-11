@@ -128,7 +128,9 @@ def expect_fail(fx: Fixture, needle: str, layer: str | None = None, *extra: str)
 # is implementation-COMPLETE, and the cases that used to start from
 # `assign uio_oe = 8'h00;` first put that synthesis-time shape back.
 TOP = "src/tt_um_2amlogic_protocol_emulator.v"
-RUNTIME_OE = "assign uio_oe = (uio_od & ~uio_out) | (~uio_od & uio_dir);"
+RUNTIME_OE = "assign uio_oe  = (uio_od & ~core_uio_out) | (~uio_od & uio_dir);"
+# DR 0020 (issue #244): the pad data of an open-drain pin is tied to 0.
+PAD_DATA = "assign uio_out = core_uio_out & ~uio_od;"
 
 
 @case("committed tree: consistency passes, runtime pin mode is complete")
@@ -164,8 +166,35 @@ def _(fx):
 @case("runtime pin mode: a top-level uio_oe that is not DR 0012's rule fails")
 def _(fx):
     # open-drain no longer wins over push-pull
-    fx.mutate(TOP, RUNTIME_OE, "assign uio_oe = (uio_od & ~uio_out) | uio_dir;")
+    fx.mutate(TOP, RUNTIME_OE, "assign uio_oe = (uio_od & ~core_uio_out) | uio_dir;")
     expect_fail(fx, "is not DR 0012's pin-mode rule", "concrete-firmware-bench")
+
+
+@case("DR 0020: the pre-#244 wiring (uio_oe from the pad data) is refused by name")
+def _(fx):
+    # The old top: the core's register straight onto the pads and the
+    # open-drain enable derived from it. Under routed delays the pad saw
+    # oe=1 with out=1 for about 100 ps on every release.
+    fx.mutate(TOP, ".port_uio_out(core_uio_out),", ".port_uio_out(uio_out),")
+    fx.mutate(TOP, PAD_DATA + "\n", "")
+    fx.mutate(TOP, RUNTIME_OE, "assign uio_oe = (uio_od & ~uio_out) | (~uio_od & uio_dir);")
+    expect_fail(fx, "is the pre-DR-0020 wiring", "concrete-firmware-bench")
+
+
+@case("DR 0020: pad data that is not masked by ~uio_od fails")
+def _(fx):
+    # uio_oe is right but an open-drain pin's pad data still follows the
+    # register, so the release race of issue #244 is back.
+    fx.mutate(TOP, PAD_DATA, "assign uio_out = core_uio_out;")
+    expect_fail(fx, "the top must have `assign uio_out = core_uio_out & ~uio_od;`",
+                "metadata-capability")
+
+
+@case("DR 0020: pad data masked on only some pins fails")
+def _(fx):
+    fx.mutate(TOP, PAD_DATA, "assign uio_out = core_uio_out & ~(uio_od & 8'h0C);")
+    expect_fail(fx, "the top must have `assign uio_out = core_uio_out & ~uio_od;`",
+                "metadata-capability")
 
 
 # Issue #137 (DR 0013 layer 1): outside the run phase uo_out shows the load
@@ -403,6 +432,64 @@ def _(fx):
         pin(t, "uo_out[6]")["protocol_roles"]["ws2812"] = "DIN"
     fx.mutate_table(mv)
     expect_fail(fx, "firmware/asm/ws2812.asm", "concrete-firmware-bench")
+
+
+@case("PS/2 released-bus image mutated")
+def _(fx):
+    fx.mutate("firmware/asm/ps2_device.asm", "LDI   R3, 0x0C\n        OUT   UIO_OUT, R3      ; both lines released ...",
+              "LDI   R3, 0x0D\n        OUT   UIO_OUT, R3      ; both lines released ...")
+    expect_fail(fx, "released-bus image 0x0D", "concrete-firmware-bench")
+
+
+@case("PS/2 CLK mask mutated")
+def _(fx):
+    fx.mutate("firmware/asm/ps2_device.asm", "LDI   R3, 0x04\n        OR    R3, R1\n        OUT   UIO_OUT, R3      ; CLK stays",
+              "LDI   R3, 0x02\n        OR    R3, R1\n        OUT   UIO_OUT, R3      ; CLK stays")
+    expect_fail(fx, "CLK mask 0x02", "concrete-firmware-bench")
+
+
+@case("PS/2 stop-bit image is not the DATA mask")
+def _(fx):
+    fx.mutate("firmware/asm/ps2_device.asm", "LDI   R1, 8            ; stop bit", "LDI   R1, 0            ; stop bit")
+    expect_fail(fx, "the pure pin images in LDI R1 are [0]", "concrete-firmware-bench")
+
+
+@case("PS/2 data bit moved by the wrong number of doublings")
+def _(fx):
+    fx.mutate("firmware/asm/ps2_device.asm", "        ADD   R3, R3\n        ADD   R3, R3\n        ADD   R3, R3\n",
+              "        ADD   R3, R3\n        ADD   R3, R3\n")
+    expect_fail(fx, "a bit is moved by 2 doubling(s)", "concrete-firmware-bench")
+
+
+@case("PS/2 bit-isolation shifts do not match the table's pin")
+def _(fx):
+    fx.mutate("firmware/asm/ps2_device.asm", "        SHF   R3, LEFT         ; CLK (bit 2) -> bit 7\n",
+              "        SHF   R3, LEFT\n        SHF   R3, LEFT         ; CLK (bit 2) -> bit 7\n")
+    expect_fail(fx, "which is none of the recipes", "concrete-firmware-bench")
+
+
+@case("PS/2 bench pin constants moved")
+def _(fx):
+    fx.mutate("verification/test_firmware_ps2.py", "CLK_BIT, DATA_BIT = 2, 3", "CLK_BIT, DATA_BIT = 2, 4")
+    expect_fail(fx, "DATA_BIT is uio[4]", "concrete-firmware-bench")
+
+
+@case("PS/2 pins moved in the table alone")
+def _(fx):
+    def mv(t):
+        pin(t, "uio[2]")["protocol_roles"]["ps2"] = "unused"
+        pin(t, "uio[0]")["protocol_roles"]["ps2"] = "PS2_CLK"
+        pin(t, "uio[0]")["shared_pin_rationale"] = "moved for the test"
+        t["pin_modes"]["ps2"]["uio_od"] = "0x09"
+    fx.mutate_table(mv)
+    expect_fail(fx, "firmware/asm/ps2_device.asm", "concrete-firmware-bench")
+
+
+@case("PS/2 program does not write the table's UIO_OD value")
+def _(fx):
+    fx.mutate("firmware/asm/ps2_device.asm", "WCTL  UIO_OD, R3       ; ... then", "NOP                    ; ... then")
+    code, out = fx.run("--require-implemented")
+    assert code == 1 and "ps2_device.asm" in out and "UIO_OD" in out, out
 
 
 @case("UART RX mask LDI mutated in each RX program")

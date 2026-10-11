@@ -39,7 +39,7 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SCRATCH="${REPO_ROOT}/flow/ws2812-gate-level"
-NETLIST="${REPO_ROOT}/verification/records/post-layout-sdf-regression/artifacts/20261010-205119-af36071/tt_um_2amlogic_protocol_emulator.v"
+NETLIST="${REPO_ROOT}/verification/records/post-layout-sdf-regression/artifacts/20261011-114800-e5a0bae/tt_um_2amlogic_protocol_emulator.v"
 MODULE=test_firmware_ws2812
 export PDK_ROOT="${PDK_ROOT:-$HOME/share/pdk}"
 

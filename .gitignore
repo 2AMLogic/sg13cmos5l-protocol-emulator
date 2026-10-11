@@ -24,6 +24,8 @@ flow/die-area-par-results.json
 # dirs, and the sweep summary (issue #26)
 flow/post-layout-sdf/
 flow/post-layout-sdf-results.json
+# ... and its opt-in protocol suite's matrix (issue #217)
+flow/post-layout-sdf-protocol-results.json
 # SRAM-macro feasibility probe summary: regenerated on demand from the PDK
 # and the vendored upstream tables, frozen per-run under
 # verification/records/program-memory-macro-feasibility/artifacts/ (issue #39)
@@ -78,6 +80,7 @@ test/gate_level_netlist.v
 .loom/claims/
 .loom/locks/
 .loom/signals/
+.loom/sweep-dispatch-tap/
 .loom/status/
 .loom/retry-state/
 .loom/exit-codes/
@@ -130,5 +133,6 @@ test/gate_level_netlist.v
 # gate-level firmware regression scratch (issue #108)
 flow/firmware-gate-level/
 flow/ws2812-gate-level/
+flow/ps2-gate-level/
 # reset / power-up / reselect gate-level regression scratch (issue #131)
 flow/reset-power-up/

@@ -1,0 +1,36 @@
+{
+  "schema": "pe.sdf_protocol_report/1",
+  "protocol": "uart_tx",
+  "bench_module": "test_firmware_uart",
+  "alignment_ps": {
+    "clock_period": 20000,
+    "drive_offset": 4000,
+    "sample_offset": 16000,
+    "observe_offset": 3000
+  },
+  "captures": 1,
+  "captured_cycles": 1779,
+  "pin_events": {
+    "uo_out": {
+      "count": 17,
+      "zero_delay": 0,
+      "min_delay_ps": 940,
+      "max_delay_ps": 950
+    },
+    "uio_out": {
+      "count": 0,
+      "zero_delay": 0,
+      "min_delay_ps": null,
+      "max_delay_ps": null
+    },
+    "uio_oe": {
+      "count": 0,
+      "zero_delay": 0,
+      "min_delay_ps": null,
+      "max_delay_ps": null
+    }
+  },
+  "contract_violation_count": 0,
+  "contract_violations": [],
+  "timing_controls": {}
+}

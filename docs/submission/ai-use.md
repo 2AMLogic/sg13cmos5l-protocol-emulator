@@ -65,8 +65,14 @@ as PR comments.
 - The Judge's re-review then failed the PR on a mechanical point: the CI
   record check found a stale hash and a missing provenance line.
 - The Doctor re-minted the
-  [record](../../verification/records/boot-uart/records/20261010-223341-e74d2b6.md).
+  [record](../../verification/records/boot-uart/records/20261010-223341-e74d2b6.md) <!-- superseded-ok: the record that PR #210's review actually re-minted, cited as history -->.
   The Judge checked the hashes byte for byte and approved, and the PR merged.
+- The fix went to the operator as a ranked decision (#211). The operator
+  chose a count-complement byte; the frame became `0xA5`, `N-1`, `~(N-1)`,
+  payload, CRC-16, the boot ROM checks the complement before it commits a
+  word, and the bench that had pinned the acceptance now asserts rejection of
+  every single-bit flip of the count and complement bytes (DR 0013, dated
+  entry 2026-10-11).
 
 Steps 1 to 4 are visible in issue and PR comments throughout the history. We
 have not audited every merged PR for a Judge verdict. Step 5's ratification
@@ -109,16 +115,16 @@ reports but is not a required check on `main`.
   ([`704a3fb`](../../verification/records/post-layout-sdf-regression/records/20261010-083555-704a3fb.md) <!-- superseded-ok: history of the failed-then-fixed record chain -->),
   whose netlist it shares, and states what it still does not show. A later
   record on a newer netlist
-  ([`af36071`](../../verification/records/post-layout-sdf-regression/records/20261010-205119-af36071.md))
+  ([`e5a0bae`](../../verification/records/post-layout-sdf-regression/records/20261011-114802-e5a0bae.md))
   has since superseded it, still passing.
 - **Independent references.** Protocol firmware is graded against separately
   written reference models
   ([record](../../verification/records/protocol-reference-models/records/20261010-180436-9fb7815.md)).
   The core is checked edge by edge against an independent instruction-set
   simulator written from the decision records (PR #204,
-  [record](../../verification/records/isa-lockstep/records/20261010-202836-bce5bf4.md)).
+  [record](../../verification/records/isa-lockstep/records/20261011-104246-d81097f.md)).
   The control space is checked with mutants
-  ([record](../../verification/records/control-space/records/20261011-012750-428e12f.md)).
+  ([record](../../verification/records/control-space/records/20261011-165710-56ebaf9.md)).
 - **Two flows, both named.** Every number is attributed either to the
   competition's LibreLane flow or to this program's klt flow, per
   [DR 0002](../../spec/decision-records/0002-flow-of-record.md).
@@ -181,7 +187,7 @@ design detail. Representative issues:
   - a remaining log-interleaving case
     ([#2996](https://github.com/2AMLogic/klayout-tools/issues/2996)). The
     workaround for it is disclosed in the
-    [record](../../verification/records/post-layout-sdf-regression/records/20261010-205119-af36071.md)
+    [record](../../verification/records/post-layout-sdf-regression/records/20261010-205119-af36071.md) <!-- superseded-ok: the record that needed the workaround, cited as history -->
     that needed it.
 
 ## Limitations of AI-generated verification
@@ -193,7 +199,7 @@ design detail. Representative issues:
   reduce this risk; they do not remove it.
 - **No human or silicon ground truth.** Nothing has been taped out or measured.
   Pad electrical timing is not characterised: the
-  [pad model](../../verification/records/uio-pad-model/records/20261011-012812-428e12f.md)
+  [pad model](../../verification/records/uio-pad-model/records/20261011-104304-d81097f.md)
   is logical and zero-delay. Post-layout simulation runs the SRAM as a
   zero-delay functional model, so its read timing is evidenced only by STA.
 - **Unratified targets.** Pass and fail are graded against proposed rows.

@@ -41,13 +41,121 @@ re-hardening for a newer flow, are allowed after it.
 
 | # | Deliverable | Judge-facing artifact (target) | What exists today | State |
 |---|---|---|---|---|
-| D1 | Passing GDS + precheck, Tiny Tapeout flow | `gds` workflow (`.github/workflows/gds.yaml`) green on the **final** top, with the run linked from this file and from `README.md` | All four jobs (`gds`, `precheck`, `gl_test`, `viewer`) green on `main` @ `4193268`: [run 37974043486](https://github.com/2AMLogic/sg13cmos5l-protocol-emulator/actions/runs/37974043486), 2026-10-09. Sign-off evidence: `verification/records/librelane-gds-signoff-check/records/20261010-205400-af36071.md`, `verification/records/librelane-pdn-bridge/records/20261001-085017-21a2a63.md`. | **Partial.** It is green, but not on the final top. DR 0012 (control space, #135) and DR 0013 (program loading) still change the RTL, and #129 may change the tile count. Re-run and re-link after the last RTL change. |
-| D2 | Architecture + ISA documentation | A standalone doc, `docs/submission/architecture.md` (to write), distilled from DR 0001. It must not be the decision record itself. | The content is spread across `spec/decision-records/0001-isa.md`, `rtl/README.md`, and the datasheet `docs/info.md` § How it works. DR 0012 and DR 0013 extend the ISA and the load path. | **Partial.** The material exists, but there is no judge-facing doc. The ISA is not frozen until #135 lands. DR 0001's Status is still **Proposed** (DR 0006, #44). |
-| D3 | Assembler / toolchain + example programs | `firmware/` with a quickstart a judge can run from a fresh clone | `firmware/tools/asm.py` (the DR 0003 assembler) and its test `firmware/tools/test_asm.py`. 16 programs in `firmware/asm/` (UART TX/RX at three bauds, SPI modes 0–3, I2C Standard/Fast with repeated START and clock stretch, plus `demo_roundtrip.asm`) with committed images in `firmware/build/`. `firmware/README.md` § Cold-start invocation. | **Partial, close to ready.** The cold-start section is the quickstart, but nothing links it as the judge's entry point. The assembler has to gain the DR 0012 control-space mnemonics (#135). |
+| D1 | Passing GDS + precheck, Tiny Tapeout flow | `gds` workflow (`.github/workflows/gds.yaml`) green on the **final** top, with the run linked from this file and from `README.md` | All four jobs (`gds`, `precheck`, `gl_test`, `viewer`) green on `main` @ `4193268`: [run 37974043486](https://github.com/2AMLogic/sg13cmos5l-protocol-emulator/actions/runs/37974043486), 2026-10-09. Sign-off evidence: `verification/records/librelane-gds-signoff-check/records/20261011-144308-e5a0bae.md`, `verification/records/librelane-pdn-bridge/records/20261011-145000-e5a0bae.md`. | **Partial.** It is green, but not on the final top. DR 0012 (control space, #135) and DR 0013 (program loading) still change the RTL, and #129 may change the tile count. Re-run and re-link after the last RTL change. |
+| D2 | Architecture + ISA documentation | A standalone doc, `docs/submission/architecture.md` (to write), distilled from DR 0001. It must not be the decision record itself. | The content is spread across `spec/decision-records/0001-isa.md`, `rtl/README.md`, and the datasheet `docs/info.md` § How it works. DR 0012 and DR 0013 extend the ISA and the load path. | **Partial.** The material exists, but there is no judge-facing doc. The ISA is not frozen until #135 lands. DR 0001's Status is still **Proposed** (DR 0006, #44). **Superseded 2026-10-11 (#230, #251):** the judge-facing doc now exists and #135 is closed; see the D2 dated update below and [Judge quickstart](#judge-quickstart-d2-d3). The row text is kept as the 2026-10-09 record. |
+| D3 | Assembler / toolchain + example programs | `firmware/` with a quickstart a judge can run from a fresh clone | `firmware/tools/asm.py` (the DR 0003 assembler) and its test `firmware/tools/test_asm.py`. 16 programs in `firmware/asm/` (UART TX/RX at three bauds, SPI modes 0–3, I2C Standard/Fast with repeated START and clock stretch, plus `demo_roundtrip.asm`) with committed images in `firmware/build/`. `firmware/README.md` § Cold-start invocation. | **Partial, close to ready.** The cold-start section is the quickstart, but nothing links it as the judge's entry point. The assembler has to gain the DR 0012 control-space mnemonics (#135). **Superseded 2026-10-11 (#251):** `WCTL`/`RCTL` are implemented (#135, closed); the quickstart is now linked from here. See the D3 dated update and [Judge quickstart](#judge-quickstart-d2-d3). |
 | D4 | Verification write-up | `docs/submission/verification.md` (to write), distilled from `spec/verification-plan.md` and the evidence records, and stating what is **not** covered | `spec/verification-plan.md` (Status DRAFT; its preamble line "None of the artifacts described below exist yet" is now stale). 21 record families under `verification/records/`, for example `firmware-uart`, `firmware-spi`, `firmware-i2c`, `firmware-gate-level`, `random-regression`, `no-data-dependent-latency` (formal), `post-layout-sdf-regression` and `sta-corner-sweep`. | **Partial.** The evidence is strong and append-only, but nothing reads it to a judge. Known holes that the write-up must state: #136 (I2C evidence does not run through the real `uio_oe`, so silicon cannot drive an I2C line today) and row 14 (reset/reselect, unmet). **Updated 2026-10-10 (issue #214): see the dated update below the table; the preceding text is the 2026-10-09 reading and is kept as written.** |
 | D5 | AI-use write-up | [`docs/submission/ai-use.md`](ai-use.md): how agents produced the spec, RTL, firmware and verification; the Loom Builder/Judge/Curator loop; the append-only evidence rule; the klayout-tools friction issues filed; and the ratification history told honestly | **2026-10-10 (#213):** [`ai-use.md`](ai-use.md) is written. It covers who acted as the forge records it, the development loop (intended vs observed, with PR #210 as a worked example), the mechanical CI checks and their limits, append-only evidence (including the failing-then-superseded post-layout record), agent verdict vs operator decision, the ratification history (DR 0006, PR #29, the PR #48 gate, the refused PR #84 ceremony, #85), klayout-tools friction, and the limits of AI-generated verification. Before 2026-10-10 only fragments existed: `README.md` § Built agent-native and `spec/verification-plan.md` § 5. | **Partial** (2026-10-10). The document is judge-facing and current as of `main` @ `9fb7815` (citations refreshed to `ceaebe02` on 2026-10-11, #238), but it describes a history that is still moving. Before submission, refresh the PR counts, the ratification outcome (#44, #84, #85: the spec is still **Proposed**, and no independent human review has taken place), and the open klayout-tools issues. Then mark it Ready. |
 | D6 | Demo (optional) | A protocol the ISA was **not** designed for (for example 1-Wire, WS2812, DMX512 or Manchester), written as firmware after the fact with a bench: target-spec row 13. If possible, a video. | Nothing. Row 13 is "Proposed 2026-10-09 ... unmet, no firmware yet" (`spec/target-spec.md`). | **Blocked** on the frozen submission ISA (#135, with #130 deciding which protocol-neutral primitives exist). A physical-board demo also needs the host loader (#118). |
 | D7 | Required external parts | A parts list in the datasheet (`docs/info.md`) and the submission, aligned with TT-recommended Pmods | Nothing beyond DR 0008 item 1 (I2C needs external pull-ups). | **Parts list written** in `docs/info.md` (#133). Pins are not yet on the TT-recommended pinouts: DR 0010 records the target plan, and the moves are #155 (after #135). |
+
+### D2 dated update, 2026-10-11 (issue #230)
+
+Reviewed commit: `main` @ `16c0b2a`. The D2 row above is left as written;
+this update supersedes its "What exists today" and its reason for Partial.
+
+- **Artifact.** [`architecture.md`](architecture.md) now exists, linked from
+  the root `README.md`. It covers the datapath and a block diagram,
+  fetch-ahead and the fixed +1 run-entry cycle, `IN`/`OUT` pin timing, the
+  instruction table (encoding, operands, cycles, `Z`/`C`), the ports, the
+  full control map with per-direction latency, runtime direction and open
+  drain, P1/P2, the reserved encodings and `--allow-reserved`, the
+  boot/load path, what the ISA does not do, evidence links, and limitations.
+  It separates logical timing from electrical evidence.
+- **Checker.** [`scripts/check_architecture.py`](../../scripts/check_architecture.py)
+  compares the document's five marked tables with `firmware/tools/asm.py`
+  (mnemonics, opcodes, kinds, control indices, permissions, latencies,
+  ports, and assembled words and cycle counts for every operand form) and,
+  for flags, with the independent model `verification/reference_models/isa.py`.
+  Its self-test is [`scripts/test_check_architecture.py`](../../scripts/test_check_architecture.py).
+  Both run in `npm run lint`, which the CI `records` job runs.
+- **The "ISA is not frozen until #135 lands" reason is stale.** #135 and
+  #141 are closed, and DR 0017's freeze is on `main` with its lint.
+- **State: still Partial, not Ready.** The document is marked provisional,
+  and known changes would still make it refresh: open finding #244 (routed
+  open-drain release glitch; any fix changes the pinned top and the
+  open-drain text), open PR #248 for #211 (the boot ROM's UART frame, which
+  the load-path section describes), and #217 (no routed-SDF evidence for the
+  protocol firmware). The tracker's Ready definition needs a current
+  document with no known refresh left. DR 0001, 0005, 0012, 0013, 0015, 0016
+  and 0017 stay **Proposed**; ratification is #44. This update ratifies
+  nothing and marks no spec row met.
+
+### D3 dated update, 2026-10-11 (issue #251)
+
+Reviewed commit: `origin/main` @ `f015802f`. The D3 row above is left as
+written; this update supersedes its "What exists today" count and its reason
+for Partial.
+
+- **Control-space mnemonics are implemented.** `firmware/tools/asm.py`
+  assembles `WCTL k, Rs` and `RCTL Rd, k` (#135, closed) and 13 committed
+  programs under `firmware/asm/` use them (for example `i2c_std.asm`,
+  `spi_mode0.asm`, `ws2812.asm`, `boot/boot_rom.asm`). The row's "has to
+  gain the mnemonics" reason is stale.
+- **Program count.** `firmware/asm/` now holds 18 top-level programs (the
+  16 listed in the row, plus `ps2_device.asm` and `ws2812.asm`) and one boot
+  program under `firmware/asm/boot/`. `firmware/tools/check_firmware.py` checks every committed program and
+  the boot program.
+- **Entry point.** The cold-start section is now linked from the
+  [Judge quickstart](#judge-quickstart-d2-d3) below.
+- **Corrections to the D2 update above, from the live tracker on this date.**
+  That update lists open PR #248 for #211 and treats it as a pending
+  refresh. PR #248 is merged and #211 is closed; the 232-word boot ROM the
+  load-path section describes is on `main`. #244 (routed open-drain release
+  glitch) and #217 (no routed-SDF evidence for the protocol firmware) are
+  still open.
+- **State: still Partial, not Ready.** What is implemented: the assembler,
+  its 53 unit tests, the 18 + 1 programs with committed images, the
+  freshness check and the RTL round-trip bench. What remains: the ISA text
+  stays **Proposed** (DR 0001, 0012, 0013, 0017; ratification is #44, open),
+  so nothing here is ratified; open #244 and #217 may still change the
+  architecture document or its evidence; and D1 has to be re-run on the
+  final top. Nothing in this update is a hardware or physical-signoff
+  claim.
+- **Update 2026-10-11 (issues #244 and #246).** #244 is fixed in the top by
+  DR 0020 (an open-drain pin's pad data is tied to 0), with the routed-SDF
+  I2C repeated-START run passing at all three corners and failing on the
+  pre-fix netlist; `architecture.md`'s open-drain text is refreshed for it.
+  #246's slow-corner margin is +5.8 ns on the LibreLane flow (it was +1.9 ns),
+  with no max-slew or max-capacitance violation, from five repair settings
+  in `src/config.json`. Both are in the records of gds run 38136727636
+  (`librelane-corner-timing` `20261011-144900-e5a0bae`,
+  `post-layout-sdf-regression` `20261011-114800-e5a0bae`). #217 is still
+  open; three of its protocols now have routed-SDF runs. D1 still has to be
+  re-linked to the final top's run. Nothing here is a silicon claim.
+
+## Judge quickstart (D2, D3)
+
+Commands below were run on 2026-10-11 against `origin/main` @ `f015802f`
+(Python 3.12.3). Steps 1 to 3 need only Python 3 (>= 3.9) from the stdlib.
+
+1. **Read the architecture and ISA.** [`architecture.md`](architecture.md)
+   (provisional draft; the decision records win where they disagree). Its
+   tables are compared with the assembler and the independent ISA model by
+   [`scripts/check_architecture.py`](../../scripts/check_architecture.py):
+   `python3 scripts/check_architecture.py`.
+2. **Assemble an example.** From the repository root:
+   `python3 firmware/tools/asm.py firmware/asm/demo_roundtrip.asm`
+   writes `firmware/build/demo_roundtrip.hex` and `.cycles.txt` (27 words,
+   30 fall-through cycles). Use `--out-dir <dir>` to write elsewhere.
+3. **Compare with the committed artifacts.**
+   `python3 firmware/tools/asm.py firmware/asm/demo_roundtrip.asm --check`
+   for one program (prints `OK: committed artifacts match ...`), or
+   `python3 firmware/tools/check_firmware.py` for every program, the boot
+   ROM chain and the load sequences (ends with `0 failing check(s)`). The
+   unit tests are `python3 firmware/tools/test_asm.py` (53 tests).
+4. **Run it on the RTL.** This step needs the pinned `klt`, cocotb and
+   Icarus (`./scripts/setup-env.sh`; see
+   [`verification/README.md`](../../verification/README.md)):
+   `klt functional-verification verification/request-firmware-roundtrip.json --format json`
+   assembles `demo_roundtrip.asm`, loads it through the program-memory load
+   phase and reads every word back; it reported `status: pass`, 3 of 3 tests.
+   The per-protocol firmware benches and their append-only records are listed
+   in the [`firmware/README.md`](../../firmware/README.md#cold-start-invocation-a-third-party-can-run-this-from-a-fresh-clone)
+   cold-start section and under `verification/records/`.
+
+Step 4 is a logical RTL simulation of the load path. It is not evidence of
+silicon behaviour, and this walkthrough infers none.
 
 ### D6 dated update, 2026-10-10 (issue #141 part 2)
 
@@ -59,6 +167,17 @@ The judge-facing write-up, including what the frozen ISA made easy and hard,
 is [`row13-ws2812.md`](row13-ws2812.md). **State: partial.** The row is
 Proposed and unmet. There is no SDF run, no board and no video. The stretch
 column (a new role or pin direction) is issue #235.
+
+### D6 dated update, 2026-10-11 (issue #235)
+
+The stretch column of row 13 has firmware and evidence too: a PS/2 keyboard
+or mouse **device** on two open-drain lines that a host also drives, chosen by
+a dated note in DR 0018 after the freeze, with no pinned file changed. An
+independent host model, running on the silicon-true pad model, graded it at
+RTL and on the gate-level netlist; see `docs/info.md` and
+[`row13-ps2.md`](row13-ps2.md). **State: partial.** The row is Proposed and
+unmet, the pad model has zero delay, and there is no SDF run, no board and no
+video.
 
 ### D4 dated update, 2026-10-10 (issue #214)
 
@@ -73,12 +192,12 @@ supersede its stale parts:
   commit, not 21.
 - **Latest `gds` run:** [38083802720](https://github.com/2AMLogic/sg13cmos5l-protocol-emulator/actions/runs/38083802720)
   at `bce5bf4` (all four jobs green, as recorded in
-  `post-layout-sdf-regression` `20261010-205119-af36071`); the design files
+  `post-layout-sdf-regression` `20261010-205119-af36071` <!-- superseded-ok: live when this dated update was written (2026-10-10); newer records and a newer gds run exist -->); the design files
   (`src`, `rtl`, `info.yaml`, `firmware/build/boot`) are unchanged since. D1
   stays **Partial** for the reasons in its row.
 - **#136 has landed.** The I2C and SPI evidence runs on the logical, zero-delay
   `uio` pad model, which resolves the design's own `uio_oe`/`uio_out`
-  (`uio-pad-model` record `20261011-012812-428e12f`). It is not an electrical
+  (`uio-pad-model` record `20261011-012812-428e12f` <!-- superseded-ok: live when this dated update was written (2026-10-10) -->). It is not an electrical
   pad characterization. The "does not run through the real `uio_oe`" hole is
   closed; the electrical hole is not.
 - **UART RX is covered**, directed (`firmware-uart-rx`) and in the seeded
@@ -88,17 +207,25 @@ supersede its stale parts:
   made for UART RX under constrained random predates #192 and is left as
   written.
 - **Row 14** still reads unmet in `spec/target-spec.md`. The
-  `reset-power-up` record `20261010-205223-af36071` shows (a), (b), (c) and
+  `reset-power-up` record `20261010-205223-af36071` <!-- superseded-ok: live when this dated update was written (2026-10-10) --> shows (a), (b), (c) and
   the reselect cycle on the routed netlist at zero delay; no grade is changed
   here.
-- **Open and visible in the narrative:** DR 0013 finding F8 (#211, the UART
-  load's count byte is outside the CRC), no SDF run for the firmware benches or
+- **Open and visible in the narrative:** the residue of DR 0013 finding F8
+  (#211 added a count-complement byte that the UART load checks before it
+  commits a word; a coordinated corruption of count and complement that also
+  aliases the CRC is still not rejected), the PM_CRC readout (#167), the
+  Standard-mode I2C allocation (#125), no SDF run for the firmware benches or
   the random regression (#217), bounded versus unbounded formal scope, SRAM
   timing omitted from SDF, a Proposed specification (DR 0006), and no
   silicon.
-- **State:** still **Partial**, not Ready. The report describes the design
-  before the ISA freeze (#135), and its records go stale when the RTL
-  changes. Re-review it after the freeze and after the final `gds` run.
+- **State:** still **Partial**, not Ready. The ISA is frozen mechanically —
+  DR 0017 pins the ISA-defining files in `spec/isa-freeze.json` and
+  `npm run lint` enforces the pins — but the specification is Proposed, not
+  ratified (#44). #211 has since closed DR 0013's F8 (its residue is listed
+  above), and the design has changed under the report since (DR 0020's
+  open-drain fix and #246's timing repair, gds run 38136727636). What remains
+  before Ready: re-review the report against the current tree, and the final
+  `gds` re-link (D1).
 
 ## Risks
 
@@ -113,6 +240,8 @@ supersede its stale parts:
 
 1. Freeze the ISA: #135 (DR 0012), then DR 0013. D2, D3 and D6 cannot finish
    before this.
+   (Superseded 2026-10-11, #251: #135 and #141 are closed and DR 0017's
+   freeze is on `main`; what is left for D2/D3 is in their dated updates.)
 2. Settle the area: #129. If the tile count grows, harden it in CI and record
    the wall time (R1).
 3. Write D5 (AI-use) now. It depends on no RTL change and is the most
@@ -122,8 +251,28 @@ supersede its stale parts:
    still unmet as such. (First version written 2026-10-10, #214; re-review
    after the ISA freeze.)
 5. Do D6, the row-13 unplanned-protocol firmware, on the frozen ISA.
+   (2026-10-11: #141 is closed — WS2812 and PS/2 firmware and evidence are
+   in; the rows stay partial per their dated updates and `row13-*.md`.)
 6. Do the final `gds` run on the final top (D1), link it, then update every
    row here to **Ready** with citations.
+   (2026-10-11: #129 is closed — the tile count did not grow, so R1's CI
+   hardening did not trigger. Item 6 is the remaining gate before Ready.)
+
+## R2 update, 2026-10-11 (#240): the GL results gate ran in CI
+
+The 2026-10-10 R2 update above is left as written; its **Not verified** bullet
+is superseded by this one.
+
+- **The gate is in the job and has passed.** [Run 38083802720](https://github.com/2AMLogic/sg13cmos5l-protocol-emulator/actions/runs/38083802720)
+  at `bce5bf4` — with the gate change (`15f112cc`, PR #228) already merged —
+  ran the modified `gds.yaml`: the `Validate GL results (repository-owned)`
+  step executed after `gl_sim`, the `if:` expression was exercised by the
+  Actions runner, and all four jobs are green. [Run 38136727636](https://github.com/2AMLogic/sg13cmos5l-protocol-emulator/actions/runs/38136727636)
+  at `6dd0e9d` (the final top, DR 0020 + #246) passed the same gate with all
+  four jobs green. Caveat (b) is closed by those runs.
+- **R2 state.** Still **Open** on caveat (a): the `ihp-cmos5l` branch ref
+  still floats, evidence records should keep naming the action SHA a run
+  used, and the branch tip and tags must be re-checked before submission.
 
 ## R2 update, 2026-10-10 (#216): repository-owned GL results gate
 

@@ -1,0 +1,8 @@
+9254c9254
+<     .C(\u_core.rom_exit ),
+---
+>     .C(1'b0),
+18974c18974
+<  sg13cmos5l_dlygate4sd3_1 hold534 (.A(\u_core.rom_exit ),
+---
+>  sg13cmos5l_dlygate4sd3_1 hold534 (.A(1'b0),

@@ -39,9 +39,11 @@ now resolves the bus through the design's own `uio_oe` and `uio_out`; it does
 not characterize electrical pad timing. The
 [DR 0013 boot ROM](verification/records/boot-rom/records/20261010-004726-197191d.md)
 is implemented, with UART and SPI-flash boot loaders
-([UART record](verification/records/boot-uart/records/20261010-132617-8372c57.md),
-with its count-byte aliasing limitation recorded as
-[DR 0013 finding F8](verification/records/boot-uart/records/20261010-164351-57c5c8c.md);
+([UART record](verification/records/boot-uart/records/20261011-061439-6ea883e.md);
+the count-byte aliasing of
+[DR 0013 finding F8](verification/records/boot-uart/records/20261010-164351-57c5c8c.md)
+is now rejected by a count-complement byte,
+[record](verification/records/boot-uart/records/20261011-061440-6ea883e.md), #211;
 [SPI-flash record](verification/records/boot-spi/records/20261010-132616-8372c57.md);
 #139, #140). The serial-load CRC readout is still open (#167).
 
@@ -100,7 +102,11 @@ every verdict graded against these rows stays provisional by construction
 (T1 item 5) until the keys actually land.
 Design decisions behind those targets (the ISA, which flow produces the submitted
 GDS, the firmware toolchain) are recorded in
-[`spec/decision-records/`](spec/decision-records/). What's judged and how
+[`spec/decision-records/`](spec/decision-records/). The judge-facing
+architecture and instruction-set document, distilled from those records and
+checked against the assembler by `python3 scripts/check_architecture.py`, is
+[`docs/submission/architecture.md`](docs/submission/architecture.md)
+(provisional; the records it describes are Proposed). What's judged and how
 it's checked is in [`spec/verification-plan.md`](spec/verification-plan.md).
 Current status against every row and the 2027-01-18 deadline is tracked in
 [`spec/gap-to-submission.md`](spec/gap-to-submission.md).

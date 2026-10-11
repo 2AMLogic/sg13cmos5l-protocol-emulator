@@ -102,8 +102,8 @@ before. The remaining pins (`ui_in[6:2]`, `uio`) are untouched by loading.
 boot ROM** (`spec/decision-records/0013-program-loading.md` layer 2,
 Proposed). After a power-up or a reselect the SRAM holds nothing a host put
 there, so the core fetches from a small on-chip ROM instead. The ROM is
-synthesized logic, 223 words (DR 0013 proposed a cap of 128; the UART
-load alone is 129 words and does not fit it, finding F4, so the cap is the
+synthesized logic, 232 words (DR 0013 proposed a cap of 128; the UART
+load alone is 138 words and does not fit it, finding F4, so the cap is the
 256-word fetch address space until the record decides), and its contents
 are a program in this same instruction set
 ([`firmware/asm/boot/boot_rom.asm`](../firmware/asm/boot/boot_rom.asm));
@@ -130,22 +130,28 @@ flash: [spi-flash-boot.md](spi-flash-boot.md).
 **UART load (strap `00`).** The demo board's USB-UART bridge, Tiny Tapeout
 "option B": RX `ui_in[1]`, TX `uo_out[0]`, 8N1, 434 core cycles per bit (115,200
 baud if the core clock is the 50 MHz of target-spec row 4, which is unconfirmed;
-the cycle count is the claim). Send `0xA5`, `N-1` (N is 1 to 256), `2N` image
-bytes with the high byte of each word first, then the image's CRC-16/XMODEM
-(high byte first). The chip writes the words, checks its CRC against yours, and
-answers `0x06` plus its CRC (high byte first) and runs the image from address
-0, or answers `0x15` plus its CRC and waits for the next `0xA5`. It never
-runs an image that failed. `python3 firmware/tools/loadseq.py IMAGE.hex --uart -o
+the cycle count is the claim). Send `0xA5`, `N-1` (N is 1 to 256), the
+count's complement `~(N-1)` (that is, `0xFF - (N-1)`), `2N` image bytes with
+the high byte of each word first, then the CRC-16/XMODEM of the image bytes
+(high byte first; the CRC does not cover the first three bytes). The chip
+checks the complement first: if it does not match it answers `0x15 00 00` at
+once, while you are still sending, writes nothing, and waits for the next
+`0xA5`, so read the reply as it arrives and, on `0x15`, finish or abandon the
+frame and pulse `rst_n` before resending. Otherwise the chip writes the
+words, checks its CRC against yours, and answers `0x06` plus its CRC (high
+byte first) and runs the image from address 0, or answers `0x15` plus its CRC
+and waits for the next `0xA5`. It never runs an image that failed. `python3 firmware/tools/loadseq.py IMAGE.hex --uart -o
 FRAME` writes the frame. TX idles high from the first instruction of the
 loader; no `uio` pin is driven, though `uio_out` reads `0xFF` while the loader
 waits (it uses `UIO_DIR` as storage under a guard, DR 0013 finding F5). A
 loader that has lost sync (a wrong length) reads stray bytes as a frame
 whenever one is `0xA5`: pulse `rst_n`, or send non-zero filler until it answers
-`0x15` (zero filler is read as a valid, longer image). The CRC covers the
-words and not the count byte, so a wrong length is rejected unless the
-CRC of the shorter prefix equals the two bytes after it (about 1 in 65,536 for
-an arbitrary image; a constructed image can make it certain, DR 0013 finding
-F8): then the truncated image is accepted and run. The loaded program starts
+`0x15` (zero filler is read as a valid, longer image). A corrupted count
+byte, or a corrupted complement, is rejected before anything is written
+(every single-bit flip of either is in the RTL regression; DR 0013 finding
+F8, resolved by issue #211). Not ruled out: a corruption that changes the
+count and its complement consistently (at least two bit errors placed to
+match) and also makes the CRC of the shorter or longer stream match. The loaded program starts
 in the state a warm start leaves, with `PM_CRC` holding the image's CRC. In RTL
 simulation the loader accepted hosts up to 5 % slow and 4 % fast
 (`verification/records/boot-uart/`). 
@@ -239,13 +245,14 @@ The table is mechanically checked against `firmware/asm/`,
 | [`spi_mode1`](../firmware/asm/spi_mode1.asm) | SPI controller, CPOL 0 / CPHA 1 | 4 per SCLK period (ceiling burst), 10 per bit (functional burst) | 138 | 198 | [`test_firmware_spi.py`](../verification/test_firmware_spi.py) | [firmware-spi 20261011-012805-428e12f](../verification/records/firmware-spi/records/20261011-012805-428e12f.md) |
 | [`spi_mode2`](../firmware/asm/spi_mode2.asm) | SPI controller, CPOL 1 / CPHA 0 | 4 per SCLK period (ceiling burst), 10 per bit (functional burst) | 137 | 197 | [`test_firmware_spi.py`](../verification/test_firmware_spi.py) | [firmware-spi 20261011-012805-428e12f](../verification/records/firmware-spi/records/20261011-012805-428e12f.md) |
 | [`spi_mode3`](../firmware/asm/spi_mode3.asm) | SPI controller, CPOL 1 / CPHA 1 | 4 per SCLK period (ceiling burst), 10 per bit (functional burst) | 138 | 198 | [`test_firmware_spi.py`](../verification/test_firmware_spi.py) | [firmware-spi 20261011-012805-428e12f](../verification/records/firmware-spi/records/20261011-012805-428e12f.md) |
-| [`i2c_fast`](../firmware/asm/i2c_fast.asm) | I2C controller, Fast-mode budget, write only | 125 per SCL clock (low 65 + high 60) | 246 | 3350 | [`test_firmware_i2c.py`](../verification/test_firmware_i2c.py) | [firmware-i2c 20261011-012758-428e12f](../verification/records/firmware-i2c/records/20261011-012758-428e12f.md) |
-| [`i2c_std`](../firmware/asm/i2c_std.asm) | I2C controller, Standard-mode budget, write only | 500 per SCL clock (low 258 + high 242) | 246 | 10958 | [`test_firmware_i2c.py`](../verification/test_firmware_i2c.py) | [firmware-i2c 20261011-012758-428e12f](../verification/records/firmware-i2c/records/20261011-012758-428e12f.md) |
+| [`i2c_fast`](../firmware/asm/i2c_fast.asm) | I2C controller, Fast-mode budget, write only | 125 per SCL clock (low 65 + high 60) | 245 | 3350 | [`test_firmware_i2c.py`](../verification/test_firmware_i2c.py), [`test_firmware_i2c_ack.py`](../verification/test_firmware_i2c_ack.py) | [firmware-i2c 20261011-160445-156b58f](../verification/records/firmware-i2c/records/20261011-160445-156b58f.md) |
+| [`i2c_std`](../firmware/asm/i2c_std.asm) | I2C controller, Standard-mode budget, write only | 500 per SCL clock (low 258 + high 242) | 245 | 10916 | [`test_firmware_i2c.py`](../verification/test_firmware_i2c.py), [`test_firmware_i2c_ack.py`](../verification/test_firmware_i2c_ack.py) | [firmware-i2c 20261011-160445-156b58f](../verification/records/firmware-i2c/records/20261011-160445-156b58f.md) |
 | [`i2c_fast_sr`](../firmware/asm/i2c_fast_sr.asm) | I2C controller, Fast-mode budget, write + repeated START + read, no pin-dependent branch | 125 per SCL clock (low 65 + high 60) | 152 | 1869 | [`test_firmware_i2c_sr.py`](../verification/test_firmware_i2c_sr.py) | [firmware-i2c 20261011-012759-428e12f](../verification/records/firmware-i2c/records/20261011-012759-428e12f.md) |
 | [`i2c_fast_sr_poll`](../firmware/asm/i2c_fast_sr_poll.asm) | as `i2c_fast_sr`, polls SCL (tolerates clock stretching) | 127 per SCL clock unstretched (low 65 + high 62) | 192 | 1889 | [`test_firmware_i2c_sr.py`](../verification/test_firmware_i2c_sr.py) | [firmware-i2c 20261011-012759-428e12f](../verification/records/firmware-i2c/records/20261011-012759-428e12f.md) |
 | [`i2c_std_sr`](../firmware/asm/i2c_std_sr.asm) | I2C controller, Standard-mode budget, write + repeated START + read, no pin-dependent branch | 500 per SCL clock (low 258 + high 242) | 152 | 5885 | [`test_firmware_i2c_sr.py`](../verification/test_firmware_i2c_sr.py) | [firmware-i2c 20261011-012759-428e12f](../verification/records/firmware-i2c/records/20261011-012759-428e12f.md) |
 | [`i2c_std_sr_poll`](../firmware/asm/i2c_std_sr_poll.asm) | as `i2c_std_sr`, polls SCL (tolerates clock stretching) | 502 per SCL clock unstretched (low 258 + high 244) | 192 | 5905 | [`test_firmware_i2c_sr.py`](../verification/test_firmware_i2c_sr.py) | [firmware-i2c 20261011-012759-428e12f](../verification/records/firmware-i2c/records/20261011-012759-428e12f.md) |
 | [`ws2812`](../firmware/asm/ws2812.asm) | WS2812 / WS2812B LED data on `uo_out[7]`, GRB pixels from a table in program memory (target-spec row 13) | 63 per bit (T0H 20, T1H 40); reset 15,499 or more | 60 | 377 | [`test_firmware_ws2812.py`](../verification/test_firmware_ws2812.py) | [firmware-ws2812 20261010-233344-21acbc8](../verification/records/firmware-ws2812/records/20261010-233344-21acbc8.md) |
+| [`ps2_device`](../firmware/asm/ps2_device.asm) | PS/2 keyboard/mouse device on `uio[2]` (CLK) and `uio[3]` (DATA), open-drain: sends 0xAA, ACKs and echoes host bytes, abandons a frame the host inhibits (target-spec row 13, stretch column) | clock low about 2,006 and high about 2,035..2,083 cycles; 50 us hold-off about 4,016 | 213 | 951 | [`test_firmware_ps2.py`](../verification/test_firmware_ps2.py) | [firmware-ps2 20261011-054024-1623ac4](../verification/records/firmware-ps2/records/20261011-054024-1623ac4.md) |
 | [`demo_roundtrip`](../firmware/asm/demo_roundtrip.asm) | none (assembler and load-phase round-trip coverage program) | n/a | 27 | 30 | [`test_firmware_roundtrip.py`](../verification/test_firmware_roundtrip.py) | [firmware-assembler-roundtrip 20261010-172335-f8428aa](../verification/records/firmware-assembler-roundtrip/records/20261010-172335-f8428aa.md) |
 <!-- firmware-images:end -->
 
@@ -296,6 +303,31 @@ Notes, all from the cited records:
   evidence only, and row 13 stays Proposed and unmet. The stretch column (a
   role or pin direction the core protocols never use) is not done: issue #235.
   The write-up is [`submission/row13-ws2812.md`](submission/row13-ws2812.md).
+- PS/2 device (target-spec row 13, **stretch column**; *dated note 2026-10-11,
+  issue #235*): `ps2_device` plays a PS/2 keyboard/mouse device on `uio[2]`
+  (CLK) and `uio[3]` (DATA), both open-drain with pull-ups, and a host drives
+  the same two lines. It was written **after** the ISA was frozen (DR 0017,
+  freeze merge `1696045b`; the protocol was chosen by a dated note in DR 0018
+  in a commit of its own, before any PS/2 file existed), and no ISA-defining
+  file changed to build it (`scripts/check_isa_freeze.py`: 2 amendments, the
+  same as before). It does what the core protocols never do: it generates a
+  clock on a line the host may hold low (it abandons a frame the host
+  inhibits, releases DATA and sends the frame again after 50 µs of CLK high),
+  it turns DATA around for the ACK of a host-to-device byte, and it reads a
+  line the host drives on a clock it generates. An independent host model
+  written from Chapweske's description graded every edge on the pads, at RTL
+  ([record](../verification/records/firmware-ps2/records/20261011-054024-1623ac4.md)) and on the LibreLane netlist, zero-delay
+  ([gate-level record](../verification/records/firmware-ps2-gate-level/records/20261011-061202-f90bef2.md)): CLK low 40.12 to 40.14 µs and CLK high 40.70
+  to 41.66 µs (limits 30 to 50), data change 20.34 µs before the falling edge
+  (5 to 25), hold-off 80.2 µs or more (50), all at the 20 ns target clock.
+  Eight negative controls (no inhibit check, a short hold-off, no ACK, late
+  and early data, even parity, push-pull pads, an unchecked host parity) are
+  rejected. Only the timing on the two lines is graded; the keyboard and mouse
+  command sets are not implemented, and the model does not cover a host that
+  never releases DATA after the ACK. This is stretch-column evidence only:
+  row 13 stays Proposed and unmet. The pins are the standard I2C Pmod row, so
+  an I2C-wired board needs no jumper; the pad model has zero delay and ideal
+  pull-ups, so no pull-up rise time is claimed.
 
 ## How to run a protocol
 
@@ -441,8 +473,8 @@ Fixed by the RTL (`src/tt_um_2amlogic_protocol_emulator.v`), not provisional:
 | `ui_in[0]` | serial program data in load phase, MSB first (no run-phase role; UART RX is `ui_in[1]`) |
 | `ui_in[1]` | serial-load phase (MODE high at reset, until it drops): selects which `PM_CRC` byte `uo_out` shows (0 = low, 1 = high). Otherwise an ordinary input read by `IN`; the boot ROM's UART load (strap `00`) uses it as RX |
 | `uo_out[7:0]` | serial-load phase: the selected `PM_CRC` byte. Run phase (including the boot ROM, whose UART TX is `uo_out[0]`): written by `OUT`. 0 in reset |
-| `uio_oe[7:0]` | set by firmware: `UIO_OD[n]` → open-drain (`uio_oe[n] = ~uio_out[n]`), else `UIO_DIR[n]` → push-pull, else input. **0 after reset**: every bidirectional pin is an input until a program writes `UIO_DIR` or `UIO_OD` |
-| `uio_out[7:0]` | written by `OUT`; reaches a pin only where `uio_oe` enables it |
+| `uio_oe[7:0]` | set by firmware: `UIO_OD[n]` → open-drain (`uio_oe[n]` is the complement of the port-11 bit a program wrote with `OUT`), else `UIO_DIR[n]` → push-pull, else input. **0 after reset**: every bidirectional pin is an input until a program writes `UIO_DIR` or `UIO_OD` |
+| `uio_out[7:0]` | the pad data: the port-11 register written by `OUT`, except on an open-drain pin, where it is tied to 0 so the pad can only pull low or release ([DR 0020](../spec/decision-records/0020-open-drain-pad-data-tied-low.md)). Reaches a pin only where `uio_oe` enables it |
 
 Observed in committed firmware (provisional, per image family):
 
@@ -454,7 +486,7 @@ Observed in committed firmware (provisional, per image family):
 | SPI | MISO | `uio[2]` (`uio_in[2]`) | yes (input) |
 | SPI | SCLK (Pmod SCK) | `uio[3]` | as CS |
 | SPI, I2C `_sr` | result byte echo | `uo_out[7:0]` after the transfer | yes |
-| I2C | SCL (1 = released) | `uio[2]` (`uio_out[2]`) | yes in RTL, open-drain (`UIO_OD` = `0x0C`); verified through a logical pad model at RTL and on the gate-level netlist, zero delay |
+| I2C | SCL (1 = released) | `uio[2]` (port 11 bit 2) | yes in RTL, open-drain (`UIO_OD` = `0x0C`; the pad data is tied to 0 and `uio_oe` carries the bit, DR 0020); verified through a logical pad model at RTL, on the gate-level netlist at zero delay, and on the routed netlist with SDF delays (the repeated-START programs) |
 | I2C | SDA (1 = released) | `uio[3]` (`uio_out[3]`) | as SCL |
 | I2C | SCL / SDA sampled | `uio_in[2]` / `uio_in[3]` | yes (input) |
 
@@ -479,8 +511,8 @@ No pin claim here is backed by silicon or by the LibreLane flow.
 ## Evidence not yet in hand
 
 - **Tiny Tapeout LibreLane flow.** The routed-netlist SDF regression of the
-  submitted core ([record](../verification/records/post-layout-sdf-regression/records/20261010-205119-af36071.md),
-  LibreLane run 38083802720, with DR 0015's P1 and P2, the UART-load boot ROM and the load check's readout) passes at all three corners: 12 of the core
+  submitted core ([record](../verification/records/post-layout-sdf-regression/records/20261011-114800-e5a0bae.md),
+  LibreLane run 38136727636, with DR 0015's P1 and P2, the UART-load boot ROM with its count-complement check, the load check's readout and DR 0020's open-drain pad data) passes at all three corners: 12 of the core
   bench's 13 tests pass and the white-box flag test is skipped (it reads
   core internals a flattened netlist does not have), so the C flag has no
   post-layout evidence. One of the 12 grades the load check's readout every
@@ -490,14 +522,30 @@ No pin claim here is backed by silicon or by the LibreLane flow.
   before the next. The SRAM runs as a zero-delay model there (its read
   timing is LibreLane STA evidence only), setup/hold is checked only
   against the cell models' 0 ns placeholder limits, not the SDF's
-  characterised ones,
-  and only the core bench ran, not the firmware above. The sign-off grader
+  characterised ones.
+  Three firmware benches also run there with delays (same record): UART TX,
+  SPI modes 0-3 and the I2C write / repeated-START / read / clock-stretch
+  programs pass at all three corners, with every output transition measured
+  0.5 to 1.6 ns after the clock pin edge. On the I2C run the open-drain pads
+  only ever pull low. On the netlist before DR 0020 the same run fails at
+  every corner: `uio_out` reached the pins 50 to 210 ps before `uio_oe` and
+  the pads drove SCL and SDA high for that window on each release (issue
+  #244). The boot programs, UART RX, PS/2 and WS2812 have not been run with
+  delays, and no pad cell is in the simulation. The sign-off grader
   still renders T1 item 7 unmet, on provenance binding (see
   `manifests/README.md`). LibreLane timing and area evidence is in
-  [`librelane-corner-timing`](../verification/records/librelane-corner-timing/records/20261010-205300-af36071.md):
-  zero setup and hold violations at all three corners at 20 ns, and the placed standard-cell area
-  with P1, P2, the UART-load ROM and the load check's readout is 45,057 µm² (LibreLane flow), 57.8 %
-  of the core with the macro against the 60 % target (44,295 µm², 57.2 %, without the readout; P1 and P2 alone, before the merge with the UART load: 41,827 µm²,
+  [`librelane-corner-timing`](../verification/records/librelane-corner-timing/records/20261011-144900-e5a0bae.md):
+  zero setup, hold, max-slew and max-capacitance violations at all three corners at 20 ns, with the
+  worst setup slack +5.8 ns at the slow corner (the binding path is an SRAM read into instruction
+  decode) and the worst hold slack +0.08 ns at the fast corner. Before issue #246 the slow-corner
+  margin was +1.9 ns with two max-slew violations on one internal net (+3.5 ns before the 232-word
+  boot ROM of issue #211). Five LibreLane repair settings in `src/config.json` account for most of
+  the change and a placement re-roll for the rest; the record's trial table separates the two. One
+  class is not repaired: on the pre-#244 design the same settings left max-capacitance violations
+  on two SRAM output pins, and the shipped design has none by placement, not by construction.
+  The placed standard-cell area with P1, P2, the UART-load ROM, the load check's readout and the
+  timing repair is 46,048 µm² (LibreLane flow), 58.5 %
+  of the core with the macro against the 60 % target (44,965 µm², 57.7 %, before the timing repair; 45,057 µm² with the 223-word ROM; 44,295 µm², 57.2 %, without the readout; P1 and P2 alone, before the merge with the UART load: 41,827 µm²,
   55.2 %; 28,256 µm² without them). On the klt/Yosys flow P1 and P2 cost +10,848 µm²
   (synthesis only). DR 0015 estimated about 4,600 µm² for the two primitives; the measured cost is
   2.4 to 2.9 times that, which DR 0015's dated notes record. The load check's readout costs 16
@@ -505,8 +553,8 @@ No pin claim here is backed by silicon or by the LibreLane flow.
   `ui_in[1]`-to-`uo_out` path is 0.58 to 1.40 ns pin to pin in LibreLane's post-route analysis,
   under the flow's assumed 4 ns input and output delays; no pad has been measured.
   Firmware, the control-space, boot-ROM, SPI-flash-boot, UART-load, primitive and load-integrity benches on that netlist at zero delay:
-  [`firmware-gate-level`](../verification/records/firmware-gate-level/records/20261011-020000-428e12f.md).
-  Firmware with back-annotated delays: none.
+  [`firmware-gate-level`](../verification/records/firmware-gate-level/records/20261011-125000-e5a0bae.md).
+  Firmware with back-annotated delays: UART TX, SPI and I2C repeated START, as above; nothing else.
 - **klt synthesis and timing.** `klt sta` does not yet support the SRAM
   macro, so the two flows do not agree on timing; per the project rule that
   mismatch is a finding, not a number to pick from.

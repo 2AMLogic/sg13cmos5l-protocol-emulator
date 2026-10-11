@@ -382,6 +382,19 @@ auditable rather than a bare assertion:
   on the gate-level netlist (`flow/run-ws2812-gate-level.sh`), with three
   mutant programs and a WAIT-counter stuck-at fault as negative controls.
   The stretch, which runs on the silicon-true pad model, is issue #235.
+
+  *Dated note 2026-10-11 (issue #235). Nothing above is changed.* The stretch
+  column's protocol is the PS/2 device (a dated note in DR 0018, after the
+  freeze, before any PS/2 file). The bench is
+  `verification/test_firmware_ps2.py`; the independent model is
+  `verification/reference_models/ps2.py` (a host-side bus monitor written
+  from Chapweske's description, which also grades the bench's own host
+  driver). The lines are resolved by the silicon-true pad model with
+  pull-ups, and the design must never drive a line high or fight the host.
+  It runs at RTL (`klt functional-verification`, `verification/records/firmware-ps2/records/20261011-054024-1623ac4.md`) and on the
+  gate-level netlist (`flow/run-ps2-gate-level.sh`, `verification/records/firmware-ps2-gate-level/records/20261011-061202-f90bef2.md`), with eight
+  mutant programs, a log-path control and a WAIT-counter stuck-at fault as
+  negative controls.
 - **Control-register bench (DR 0012).** It checks:
   - reset values, readback, and reserved-index behaviour (no-op write, read
     returns 0)
@@ -432,6 +445,17 @@ auditable rather than a bare assertion:
   after a single count-bit flip (`verification/test_boot_uart_count_alias.py`).
   The requirement is not relaxed here; closing it is a protocol change tracked
   by the follow-up issue named in the DR.
+
+  *Status 2026-10-11 (issue #211, operator ruling option 1).* The frame is now
+  `0xA5`, `N-1`, `~(N-1)`, payload, CRC-16, and the loader checks the
+  complement before it commits a word. `test_boot_uart_count_alias.py` now
+  asserts that the F8 frame and every single-bit flip of the count byte and of
+  the complement byte (16 frames) are rejected (`15 00 00`, never `RUN`), and
+  that the valid frame still loads and runs; a mutant with the check removed
+  is caught (`boot_uart_mutants.py`, `complement-check-removed`). Residue, not
+  claimed closed: a corruption that changes the count and the complement
+  consistently (two or more bit errors placed to match) and also makes the
+  CRC of the shorter or longer stream match.
 - **Runtime swap.** A program loads a second program through `PM_*` and runs
   it with `RUN`. The second program's protocol is graded by its own reference
   model.

@@ -83,6 +83,7 @@ PIN_MODE_PROFILES = {
     "uart": ("uart_tx", "uart_rx"),
     "spi": ("spi_transfer",),
     "i2c": ("i2c_transfer",),
+    "ps2": ("ps2",),
 }
 PIN_MODE_REGS = ("uio_dir", "uio_od")
 CTL_INDEX = {"UIO_DIR": "0X00", "UIO_OD": "0X01"}
@@ -95,6 +96,7 @@ PHASES = (
     "i2c_transfer",
     "i2c_result",
     "ws2812",
+    "ps2",
 )
 UNUSED = "unused"
 # PROG_SER / PROG_MODE are the serial program-load inputs. CRC_BYTE_SEL (an
@@ -106,7 +108,7 @@ LOAD_ROLE_PORT = {"PROG_SER": "ui_in", "PROG_MODE": "ui_in",
 
 # Role classes (what the role does electrically).
 DRIVE_PP = {"TX", "CS", "SCLK", "MOSI", "DIN"} | {f"RESULT[{i}]" for i in range(8)}
-DRIVE_OD = {"SCL", "SDA"}
+DRIVE_OD = {"SCL", "SDA", "PS2_CLK", "PS2_DATA"}
 SAMPLE = {"MISO", "RX"}
 ALL_ROLES = DRIVE_PP | DRIVE_OD | SAMPLE
 
@@ -121,6 +123,8 @@ PHASE_VOCAB = {
     "i2c_result": {f"RESULT[{i}]" for i in range(8)},
     # Row 13 (DR 0018, issue #141): the WS2812 data line, an output only.
     "ws2812": {"DIN"},
+    # Row 13 stretch (DR 0018 note, issue #235): the PS/2 device's two lines.
+    "ps2": {"PS2_CLK", "PS2_DATA"},
 }
 
 # Extraction patterns this script implements. An inventory entry naming any
@@ -140,6 +144,9 @@ PATTERNS = {
     "ws2812_din",           # first `LDI R2, imm` == DIN pin image; every OUT UO_OUT from R1/R2
     "bench_uart_tx",        # TX_PIN, TX_BIT = "port", n
     "bench_ws2812",         # DIN_PIN, DIN_BIT = "port", n
+    "ps2_images",           # ps2_device.asm: release images, CLK mask, DATA images, bit moves, UIO_OD value
+    "ps2_shifts",           # ps2_device.asm: the shift recipe after each IN UIO_IN
+    "bench_ps2",            # CLK_BIT, DATA_BIT = n, m
     "bench_spi_consts",     # CS/SCLK/MOSI/MISO constants and capture ports
     "bench_i2c_consts",     # SCL/SDA constants, LINE_PIN, CAPTURE_SPECS, i2c_board(scl=, sda=), pad calls
     "bench_i2c_sr_consts",  # imports from test_firmware_i2c, pad calls by named bit, no uio_in write
@@ -995,6 +1002,106 @@ class Checker:
         # OUT from R1 drives is a dataflow question this text check does not
         # answer; the bench grades every DIN level the program produces.
 
+    # --------------------------------------------------------- profile: ps2
+    def prof_ps2(self, rel, ent):
+        """Row 13's stretch program (DR 0018 note of 2026-10-11, issue #235):
+        a PS/2 device on two open-drain lines. Checks the pin images the
+        program loads, the bit moves and the shift recipes against the
+        table's `ps2` phase."""
+        text = self.read(rel, self.concrete)
+        if text is None:
+            return
+        c = self.concrete
+        ins = self.asm_instrs(text)
+        clk, data = self.mask_of("ps2", "PS2_CLK"), self.mask_of("ps2", "PS2_DATA")
+        if not clk or not data:
+            c.err(f"{rel}: the table's ps2 phase has no PS2_CLK / PS2_DATA pin")
+            return
+        cb, db = clk.bit_length() - 1, data.bit_length() - 1
+        outs, ins_p, _ = self.out_in_ports(
+            [("ps2", ["PS2_CLK", "PS2_DATA"])], [("ps2", ["PS2_CLK", "PS2_DATA"])], "spi_result")
+        self.check_ports(rel, ins, outs, ins_p, outs, ins_p)
+        # every `LDI R3, imm` that feeds `OUT UIO_OUT, R3` is the released image;
+        # every one that feeds `OR R3, R1` is the CLK mask
+        for a, b in zip(ins, ins[1:]):
+            if a["m"] != "LDI" or a["ops"][0] != "R3":
+                continue
+            v = self.imm(a["ops"][1])
+            if b["m"] == "OUT" and b["ops"][0].upper() == "UIO_OUT" and b["ops"][1] == "R3":
+                c.sites += 1
+                if v != (clk | data):
+                    c.err(f"{rel}:{a['no']}: released-bus image {a['ops'][1]} but the table's "
+                          f"PS2_CLK|PS2_DATA is 0x{clk | data:02X}")
+            elif b["m"] == "OR" and b["ops"] == ["R3", "R1"]:
+                c.sites += 1
+                if v != clk:
+                    c.err(f"{rel}:{a['no']}: CLK mask {a['ops'][1]} but the table's PS2_CLK is 0x{clk:02X}")
+        # pin images in R1 (the CLK-low image): never the CLK bit; the
+        # transmit images are exactly 0 (start bit) and the DATA mask (stop)
+        seen = set()
+        for i in ins:
+            if i["m"] == "LDI" and i["ops"][0] == "R1":
+                c.sites += 1
+                v = self.imm(i["ops"][1])
+                if v is None:
+                    continue
+                if v & clk:
+                    c.err(f"{rel}:{i['no']}: LDI R1, {i['ops'][1]} sets the CLK bit 0x{clk:02X}; "
+                          "R1 holds the CLK-low image")
+                if v & ~(clk | data) == 0:  # a pure pin image (no direction flag)
+                    seen.add(v)
+        if seen != {0, data}:
+            c.err(f"{rel}: the pure pin images in LDI R1 are {sorted(seen)}; "
+                  f"a PS/2 transmitter drives DATA low (start) and releases it (stop): 0 and 0x{data:02X} are expected")
+        # a data bit is moved from bit 0 to the DATA pin by a run of ADD Rx, Rx
+        run = 0
+        for i in ins + [{"m": "", "ops": ["", ""], "no": 0}]:
+            if i["m"] == "ADD" and i["ops"][0] == i["ops"][1]:
+                run += 1
+                continue
+            if run:
+                c.sites += 1
+                if run != db:
+                    c.err(f"{rel}:{i['no']}: a bit is moved by {run} doubling(s), but PS2_DATA is "
+                          f"uio bit {db}")
+            run = 0
+        # the program's pin-mode write is checked with the other profiles'
+        # (runtime_pin_mode); the first LDI R3 of the file is the idle image
+        first = next((i for i in ins if i["m"] == "LDI" and i["ops"][0] == "R3"), None)
+        c.sites += 1
+        if first is None or self.imm(first["ops"][1]) != (clk | data):
+            c.err(f"{rel}: the first `LDI R3` is not the released-bus image 0x{clk | data:02X}")
+        # shift recipes after each IN UIO_IN
+        expected = {
+            (("LEFT", 7 - db), ("RIGHT", 6)): "bus state (DATA << 1 | CLK)",
+            (("LEFT", 7 - cb), ("RIGHT", 7)): "CLK alone",
+            (("LEFT", 7 - db), ("RIGHT", 7), ("LEFT", 7)): "DATA moved to bit 7",
+        }
+        if cb != db - 1:
+            c.err(f"{rel}: the bus-state recipe needs PS2_CLK one bit below PS2_DATA "
+                  f"(uio bits {cb}, {db})")
+        for idx, i in enumerate(ins):
+            if not (i["m"] == "IN" and i["ops"][1].upper() == "UIO_IN"):
+                continue
+            rx, groups = i["ops"][0], []
+            for k in ins[idx + 1:]:
+                if k["m"] == "SHF" and k["ops"][0] == rx:
+                    d = k["ops"][1].upper()
+                    if groups and groups[-1][0] == d:
+                        groups[-1][1] += 1
+                    else:
+                        groups.append([d, 1])
+                elif k["m"] == "OR" and k["ops"] == [rx, rx] and not groups:
+                    continue
+                else:
+                    break
+            sig = tuple((d, n) for d, n in groups)
+            c.sites += 1
+            if sig not in expected:
+                c.err(f"{rel}:{i['no']}: IN UIO_IN is followed by shifts {list(sig)}, which is none of "
+                      f"the recipes the table's PS2_CLK uio[{cb}] / PS2_DATA uio[{db}] allow: "
+                      f"{[list(k) for k in expected]}")
+
     # ------------------------------------------------------- profile: benches
     def need(self, text, pattern, rel, what, flags=re.M):
         m = re.search(pattern, text, flags)
@@ -1031,6 +1138,15 @@ class Checker:
         m = self.need(text, r'^DIN_PIN,\s*DIN_BIT\s*=\s*"(\w+)",\s*(\d+)', rel, "DIN_PIN, DIN_BIT")
         if m:
             self.check_pb(rel, "DIN_PIN/DIN_BIT", m.group(1), int(m.group(2)), "ws2812", "DIN")
+
+    def prof_bench_ps2(self, rel, ent):
+        text = self.read(rel, self.concrete)
+        if text is None:
+            return
+        m = self.need(text, r'^CLK_BIT,\s*DATA_BIT\s*=\s*(\d+),\s*(\d+)', rel, "CLK_BIT, DATA_BIT")
+        if m:
+            self.check_pb(rel, "CLK_BIT", "uio", int(m.group(1)), "ps2", "PS2_CLK")
+            self.check_pb(rel, "DATA_BIT", "uio", int(m.group(2)), "ps2", "PS2_DATA")
 
     def prof_bench_spi(self, rel, ent):
         text = self.read(rel, self.concrete)
@@ -1217,6 +1333,20 @@ class Checker:
                               f"ui_in[{sel_pin[1]}] ? ... : ...;` (run-phase arm the core's whole "
                               f"port, byte select the CRC_BYTE_SEL pin)")
                 continue
+            if m and port == "uio_out" and m.group(1) == "core_uio_out":
+                # DR 0020 (issue #244): the core's port-11 register reaches
+                # the pads through the open-drain pad-data mask, not directly.
+                # The one accepted shape masks the whole port with ~uio_od;
+                # runtime_pin_mode() checks that uio_oe is built from the
+                # same net.
+                pad = re.search(r"assign\s+uio_out\s*=\s*([^;]+);", text)
+                self.uio_out_expr = pad.group(1).strip() if pad else None
+                if pad and re.sub(r"\s+", "", pad.group(1)) == self.DR0020_UIO_OUT:
+                    continue
+                self.meta.err(f"{rel}: core port_uio_out is on `core_uio_out`, so the top must have "
+                              f"`assign uio_out = core_uio_out & ~uio_od;` (DR 0020: the whole port, "
+                              f"open-drain pins' pad data tied to 0)")
+                continue
             if not m or m.group(1) != port:
                 self.meta.err(f"{rel}: core port_{port} is not connected to the whole {port} bus")
         m = re.search(r"assign\s+uio_oe\s*=\s*([^;]+);", text)
@@ -1373,7 +1503,14 @@ class Checker:
                 f"debug writes, or make the mask per-image (DR 0012), before the uio_oe wiring lands"
             )
 
-    DR0012_UIO_OE = "(uio_od&~uio_out)|(~uio_od&uio_dir)"
+    #: DR 0012's pin-mode rule as the top builds it since DR 0020 (issue
+    #: #244): from the core's port-11 register `core_uio_out`, with the pad
+    #: data `uio_out` masked to 0 on open-drain pins. The pre-DR-0020 form,
+    #: which derived `uio_oe` from the pad data itself and let an open-drain
+    #: pad see oe=1 with out=1 under routed delays, is refused by name.
+    DR0012_UIO_OE = "(uio_od&~core_uio_out)|(~uio_od&uio_dir)"
+    DR0020_UIO_OUT = "core_uio_out&~uio_od"
+    PRE_DR0020_UIO_OE = "(uio_od&~uio_out)|(~uio_od&uio_dir)"
 
     def runtime_pin_mode(self, expr: str) -> None:
         """DR 0012 (issue #135): `uio_oe` is driven by the core's `UIO_OD` /
@@ -1382,6 +1519,10 @@ class Checker:
 
         - the top-level expression is DR 0012's pin-mode rule (open-drain
           wins, then push-pull, else input) -- anything else is an error;
+        - the pad data is DR 0020's (issue #244): `uio_out` is the core's
+          port-11 register with every open-drain pin's bit tied to 0, so
+          no relative delay of `uio_out` and `uio_oe` can make an
+          open-drain pad drive high;
         - both registers reset to 0, so every uio pin is an input from
           reset (an error otherwise: a pin would be driven before any
           program asked);
@@ -1398,10 +1539,24 @@ class Checker:
         The DR 0008 prerequisite "uio_out must reset released" does not
         apply in this shape: the pins are inputs at reset whatever
         `uio_out` holds."""
-        if re.sub(r"\s+", "", expr) != self.DR0012_UIO_OE:
+        flat = re.sub(r"\s+", "", expr)
+        if flat == self.PRE_DR0020_UIO_OE:
+            self.concrete.err(
+                f"top-level `uio_oe = {expr}` is the pre-DR-0020 wiring: it derives the "
+                "open-drain enable from the pad data, so an open-drain pad can see oe=1 with "
+                "out=1 under routed delays (issue #244). DR 0020 requires "
+                "`uio_out = core_uio_out & ~uio_od` and "
+                "`uio_oe = (uio_od & ~core_uio_out) | (~uio_od & uio_dir)`")
+        elif flat != self.DR0012_UIO_OE:
             self.concrete.err(
                 f"top-level `uio_oe = {expr}` is not DR 0012's pin-mode rule "
-                "`(uio_od & ~uio_out) | (~uio_od & uio_dir)`")
+                "`(uio_od & ~core_uio_out) | (~uio_od & uio_dir)`")
+        self.concrete.sites += 1
+        pad = getattr(self, "uio_out_expr", None)
+        if pad is None or re.sub(r"\s+", "", pad) != self.DR0020_UIO_OUT:
+            self.concrete.err(
+                f"top-level `uio_out = {pad}` is not DR 0020's pad data "
+                "`core_uio_out & ~uio_od` (an open-drain pin's pad data must be the constant 0)")
         core = getattr(self, "core_text", None) or ""
         for reg in ("uio_dir", "uio_od"):
             self.concrete.sites += 1
@@ -1437,7 +1592,7 @@ class Checker:
         what = {"uio_dir": ("UIO_DIR", "push-pull"), "uio_od": ("UIO_OD", "open-drain")}
         for rel, ent in sorted(self.inv.items()):
             prof = ent["profile"]
-            if prof not in ("spi", "i2c") or prof not in modes:
+            if prof not in ("spi", "i2c", "ps2") or prof not in modes:
                 continue
             text = self.read(rel, self.concrete)
             if text is None:

@@ -1,0 +1,142 @@
+rm -f results.xml
+mkdir -p <repo>/flow/ws2812-gate-level/mutant/sim_build
+/opt/homebrew/bin/iverilog -o <repo>/flow/ws2812-gate-level/mutant/sim_build/sim.vvp -s tb -g2012 -DGL_TEST -DFUNCTIONAL -DSIM -I<repo>/test/../src -f <repo>/flow/ws2812-gate-level/mutant/sim_build/cmds.f  <PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_io/verilog/sg13cmos5l_io.v <PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v <PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_udp.v <repo>/test/../rtl/vendor/RM_IHPSG13_1P_256x16_c2_bm_bist.v <repo>/test/../rtl/vendor/RM_IHPSG13_1P_core_behavioral_bm_bist.v <repo>/flow/ws2812-gate-level/mutant-wait_cnt0-stuck0.v <repo>/test/tb.v
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:42: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:44: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:50: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:52: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:66: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:68: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:103: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:105: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:111: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:113: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:127: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:129: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:177: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:179: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:227: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:229: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:274: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:276: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:290: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:292: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:306: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:308: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:322: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:324: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:346: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:348: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:385: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:387: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:393: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:395: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:405: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:407: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:417: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:419: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:1786: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:1788: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:1830: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:1832: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:1881: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:1883: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:1901: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:1903: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:2487: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:2489: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:2733: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:2735: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:2743: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:2745: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:2802: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:2804: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:2811: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:2813: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:2866: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:2868: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:2875: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:2877: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:2932: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:2934: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:2990: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:2992: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:3199: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:3201: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:3211: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:3213: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:3250: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:3252: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:3262: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:3264: sorry: ifnone with an edge-sensitive path is not supported.
+rm -f results.xml
+COCOTB_TEST_MODULES=test_firmware_ws2812 COCOTB_TESTCASE=  COCOTB_TOPLEVEL=tb TOPLEVEL_LANG=verilog       \
+		 /opt/homebrew/bin/vvp -m <scratch>/venv/lib/python3.13/site-packages/cocotb/libs/libcocotbvpi_icarus.so   <repo>/flow/ws2812-gate-level/mutant/sim_build/sim.vvp -fst   
+     -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:242  in gpi_load_users                  Loaded entry library: '/opt/homebrew/Cellar/python@3.13/3.13.16/Frameworks/Python.framework/Versions/3.13/Python'
+     -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:234  in gpi_load_users                  Running entry func 'initialize' from loaded library '<scratch>/venv/lib/python3.13/site-packages/cocotb/simulator.cpython-313-darwin.so'
+     -.--ns INFO     pygpi                              ..ib/pygpi/embed.cpp:115  in initialize                      Using Python 3.13.14 interpreter at <scratch>/venv/bin/python
+     -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:74   in gpi_print_registered_impl       GPI: VPI support registered
+     0.00ns INFO     cocotb.initialize                  Seeding Python random module with 1791696680
+     0.00ns INFO     cocotb.initialize                  Initialized cocotb v2.1.0 from <scratch>/venv/lib/python3.13/site-packages/cocotb
+     0.00ns INFO     cocotb.initialize                  Running on Icarus Verilog version 13.0 (stable)
+     0.00ns INFO     cocotb.regression                  Running tests
+     0.00ns INFO     cocotb.regression                  running test_firmware_ws2812.test_committed_image_is_fresh (1/6)
+                                                            The committed image and report match the source, both paths through a
+     0.00ns INFO     cocotb.tb                          60 words (35 code + 25 table), bit 63 cycles, T0H 20, T1H 40, latch loop x60, up to 73 pixels
+     0.00ns INFO     cocotb.regression                  test_firmware_ws2812.test_committed_image_is_fresh passed
+     0.00ns INFO     cocotb.regression                  running test_firmware_ws2812.test_committed_frame (2/6)
+                                                            The committed image, unchanged: two frames of its 8-pixel table,
+1428221.00ns WARNING  cocotb.regression                  test_firmware_ws2812.test_committed_frame failed
+                                                        Traceback (most recent call last):
+                                                          File "<repo>/verification/test_firmware_ws2812.py", line 328, in test_committed_frame
+                                                            assert [f.pixels() for f in result.latched_frames] == [pixels, pixels]
+                                                        AssertionError: assert [] == [[(0, 0, 0), (255, 255, 255), (255, 0, 0), (0, 255, 0), (0, 0, 255), (170, 85, 165), ...], [(0, 0, 0), (255, 255, 255), (255, 0, 0), (0, 255, 0), (0, 0, 255), (170, 85, 165), ...]]
+1428221.00ns INFO     cocotb.regression                  running test_firmware_ws2812.test_random_frames (3/6)
+                                                            Seeded random tables, from 1 pixel to the 73 that fill program memory,
+2426382.00ns WARNING  cocotb.regression                  test_firmware_ws2812.test_random_frames failed
+                                                        Traceback (most recent call last):
+                                                          File "<repo>/verification/test_firmware_ws2812.py", line 352, in test_random_frames
+                                                            await grade(dut, layout, words, pixels, f"random {n} px")
+                                                          File "<repo>/verification/test_firmware_ws2812.py", line 243, in grade
+                                                            assert len(latched) == 2, f"[{label}] {len(latched)} latched frame(s), expected 2"
+                                                        AssertionError: [random 1 px] 0 latched frame(s), expected 2
+                                                        assert 0 == 2
+                                                         +  where 0 = len([])
+2426382.00ns INFO     cocotb.regression                  running test_firmware_ws2812.test_negative_short_t1h (4/6)
+3801143.00ns INFO     cocotb.tb                          mutant short-T1H: 0 violation(s), kinds []; first: None
+3801143.00ns WARNING  cocotb.regression                  test_firmware_ws2812.test_negative_short_t1h failed
+                                                        Traceback (most recent call last):
+                                                          File "<repo>/verification/test_firmware_ws2812.py", line 379, in test_negative_short_t1h
+                                                            assert kinds == {"high"}, f"short T1H must fail on the high width only, got {kinds}"
+                                                        AssertionError: short T1H must fail on the high width only, got set()
+                                                        assert set() == {'high'}
+3801143.00ns INFO     cocotb.regression                  running test_firmware_ws2812.test_negative_dropped_bit (5/6)
+5229384.00ns INFO     cocotb.tb                          mutant dropped-bit: 0 violation(s), kinds []; first: None
+5229384.00ns WARNING  cocotb.regression                  test_firmware_ws2812.test_negative_dropped_bit failed
+                                                        Traceback (most recent call last):
+                                                          File "<repo>/verification/test_firmware_ws2812.py", line 390, in test_negative_dropped_bit
+                                                            assert kinds == {"partial-pixel"}, f"a dropped bit must fail as a partial pixel only, got {kinds}"
+                                                        AssertionError: a dropped bit must fail as a partial pixel only, got set()
+                                                        assert set() == {'partial-pixel'}
+5229384.00ns INFO     cocotb.regression                  running test_firmware_ws2812.test_negative_short_reset (6/6)
+5744305.00ns INFO     cocotb.tb                          mutant short-reset: 0 violation(s), kinds []; first: None
+5744305.00ns WARNING  cocotb.regression                  test_firmware_ws2812.test_negative_short_reset failed
+                                                        Traceback (most recent call last):
+                                                          File "<repo>/verification/test_firmware_ws2812.py", line 400, in test_negative_short_reset
+                                                            assert "low" in kinds and "leading-reset" in kinds, kinds
+                                                        AssertionError: set()
+                                                        assert ('low' in set())
+5744305.00ns INFO     cocotb.regression                  ************************************************************************************************************
+                                                        ** TEST                                                STATUS  SIM TIME (ns)  REAL TIME (s)  RATIO (ns/s) **
+                                                        ************************************************************************************************************
+                                                        ** test_firmware_ws2812.test_committed_image_is_fresh   PASS           0.00           0.00          0.00  **
+                                                        ** test_firmware_ws2812.test_committed_frame            FAIL     1428221.00           3.69     387218.90  **
+                                                        ** test_firmware_ws2812.test_random_frames              FAIL      998161.00           2.56     389778.64  **
+                                                        ** test_firmware_ws2812.test_negative_short_t1h         FAIL     1374761.00           8.59     160042.99  **
+                                                        ** test_firmware_ws2812.test_negative_dropped_bit       FAIL     1428241.00           3.67     389304.77  **
+                                                        ** test_firmware_ws2812.test_negative_short_reset       FAIL      514921.00           1.30     397398.83  **
+                                                        ************************************************************************************************************
+                                                        ** TESTS=6 PASS=1 FAIL=5 SKIP=0                                  5744305.00          19.84     289556.46  **
+                                                        ************************************************************************************************************
+FST info: dumpfile tb.fst opened for output.
+make: *** [results.xml] Error 5

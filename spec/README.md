@@ -72,8 +72,22 @@ Proposed specification and decision records.
   protocol, after DR 0017's freeze at merge commit
   `1696045bfa1a33f93c95a5bf6c29b05f4ea0d734`. It checks the choice against
   DR 0017's exclusion list and records where WS2812 appears in the repository
-  (three places, none weighing it against the ISA). The stretch column is not
-  chosen. No pinned file changes.
+  (three places, none weighing it against the ISA). No pinned file changes.
+  *Dated note 2026-10-11 (issue #235):* the stretch column's protocol is the
+  PS/2 device (open-drain CLK and DATA, the host may inhibit and ask to send),
+  chosen in a commit before any PS/2 file existed and checked against the same
+  exclusion list; graded against Chapweske's description, a secondary source.
+- `decision-records/0020-open-drain-pad-data-tied-low.md` — **Proposed
+  2026-10-11** (not ratified), issue #244. An RTL conformance fix to DR 0012's
+  open-drain rule under DR 0017's change control: in the top, an open-drain
+  pin's pad data is tied to 0 and `uio_oe` alone carries the port-11 bit, so
+  the pad cannot drive HIGH at any relative delay of the two nets (the routed
+  netlist did, for about 100 ps on every release). `uio_oe` is the same
+  function of port 11, `UIO_DIR` and `UIO_OD`; no instruction, latency or
+  readback changes; row-13 evidence is not invalidated. One freeze amendment,
+  for `src/tt_um_2amlogic_protocol_emulator.v`. (0019 is not used on `main`:
+  two open PRs each carried a record with that number when this one was
+  numbered.)
 - `verification-plan.md` — what is verified and how, including the formal
   properties, constrained-random suites, and reference models.
 - `gap-to-submission.md` — every spec row and template checklist item
