@@ -1,0 +1,64 @@
+     -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:242  in gpi_load_users                  Loaded entry library: '/usr/lib/x86_64-linux-gnu/libpython3.12.so.1.0'
+     -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:233  in gpi_load_users                  Running entry func 'initialize' from loaded library '<scratch>/klt-venv/lib/python3.12/site-packages/cocotb/simulator.cpython-312-x86_64-linux-gnu.so'
+     -.--ns INFO     pygpi                              ..ib/pygpi/embed.cpp:114  in initialize                      Using Python 3.12.12 interpreter at <scratch>/klt-venv/bin/python
+     -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:74   in gpi_print_registered_impl       GPI: VPI support registered
+     0.00ns INFO     cocotb.initialize                  Seeding Python random module with 1
+     0.00ns INFO     cocotb.initialize                  Initialized cocotb v2.1.0 from <scratch>/klt-venv/lib/python3.12/site-packages/cocotb
+     0.00ns INFO     cocotb.initialize                  Running on Icarus Verilog version 13.0 (stable)
+     0.00ns INFO     cocotb.regression                  Running tests
+     0.00ns INFO     cocotb.regression                  running test_firmware_i2c_ack.test_ack_samples_sit_inside_ninth_high (1/3)
+                                                            Static schedule of both committed programs' ACK slots (no DUT run):
+     0.00ns INFO     ..tt_um_2amlogic_protocol_emulator i2c_fast i2c_ack1: IN samples 30 cycles after the SCL rise, 30 before the fall
+     0.00ns INFO     ..tt_um_2amlogic_protocol_emulator i2c_fast i2c_ack2: IN samples 30 cycles after the SCL rise, 30 before the fall
+     0.00ns INFO     ..tt_um_2amlogic_protocol_emulator i2c_fast: ninth high 60 cycles fall-through, 60 on the NACK path
+     0.00ns INFO     ..tt_um_2amlogic_protocol_emulator i2c_std i2c_ack1: IN samples 121 cycles after the SCL rise, 121 before the fall
+     0.00ns INFO     ..tt_um_2amlogic_protocol_emulator i2c_std i2c_ack2: IN samples 121 cycles after the SCL rise, 121 before the fall
+     0.00ns INFO     ..tt_um_2amlogic_protocol_emulator i2c_std: ninth high 242 cycles fall-through, 242 on the NACK path
+     0.00ns INFO     cocotb.regression                  test_firmware_i2c_ack.test_ack_samples_sit_inside_ninth_high passed
+     0.00ns INFO     cocotb.regression                  running test_firmware_i2c_ack.test_both_address_outcomes_early_response (2/3)
+                                                            The early peripheral (delay 0: the sibling bench's), three ACK
+     0.00ns INFO     ..tt_um_2amlogic_protocol_emulator i2c_fast acks [9] delay 0: capturing 3650 cycles
+151621.00ns WARNING  py.warnings                        <repo>/verification/test_firmware_i2c_ack.py:206: DeprecationWarning: `task.kill()` is deprecated in favor of `task.cancel()`
+                                                          driver.kill()
+151621.00ns WARNING  py.warnings                        <repo>/verification/uio_pads.py:319: DeprecationWarning: `task.kill()` is deprecated in favor of `task.cancel()`
+                                                          task.kill()
+151621.00ns INFO     ..tt_um_2amlogic_protocol_emulator i2c_fast addr ACK, data NACK: I2cReport(addr=0x50W, data=['0x5a'], acks=[True, False], stretched=0, violations=[])
+151621.00ns INFO     ..tt_um_2amlogic_protocol_emulator i2c_fast acks [9, 18] delay 0: capturing 3650 cycles
+303261.00ns INFO     ..tt_um_2amlogic_protocol_emulator i2c_fast addr ACK, data ACK: I2cReport(addr=0x50W, data=['0x5a'], acks=[True, True], stretched=0, violations=[])
+303261.00ns INFO     ..tt_um_2amlogic_protocol_emulator i2c_fast acks [] delay 0: capturing 3650 cycles
+454901.00ns INFO     ..tt_um_2amlogic_protocol_emulator i2c_fast addr NACK: I2cReport(addr=0x50W, data=[], acks=[False], stretched=0, violations=[])
+454901.00ns INFO     ..tt_um_2amlogic_protocol_emulator i2c_std acks [9] delay 0: capturing 11216 cycles
+757861.00ns INFO     ..tt_um_2amlogic_protocol_emulator i2c_std addr ACK, data NACK: I2cReport(addr=0x50W, data=['0x5a'], acks=[True, False], stretched=0, violations=[])
+757861.00ns INFO     ..tt_um_2amlogic_protocol_emulator i2c_std acks [9, 18] delay 0: capturing 11216 cycles
+1060821.00ns INFO     ..tt_um_2amlogic_protocol_emulator i2c_std addr ACK, data ACK: I2cReport(addr=0x50W, data=['0x5a'], acks=[True, True], stretched=0, violations=[])
+1060821.00ns INFO     ..tt_um_2amlogic_protocol_emulator i2c_std acks [] delay 0: capturing 11216 cycles
+1363781.00ns INFO     ..tt_um_2amlogic_protocol_emulator i2c_std addr NACK: I2cReport(addr=0x50W, data=[], acks=[False], stretched=0, violations=[])
+1363781.00ns INFO     cocotb.regression                  test_firmware_i2c_ack.test_both_address_outcomes_early_response passed
+1363781.00ns INFO     cocotb.regression                  running test_firmware_i2c_ack.test_late_ack_responses_are_read_as_ack (3/3)
+                                                            Issue #258's regression. Per grade, two late responders
+1363781.00ns INFO     ..tt_um_2amlogic_protocol_emulator i2c_fast acks [9, 18] delay 22: capturing 3650 cycles
+1515422.00ns INFO     ..tt_um_2amlogic_protocol_emulator i2c_fast late ACK (after-former-IN, delay 22): I2cReport(addr=0x50W, data=['0x5a'], acks=[True, True], stretched=0, violations=[])
+1515422.00ns INFO     ..tt_um_2amlogic_protocol_emulator i2c_fast late ACK (after-former-IN, delay 22), SCL fall 9: response 23 cycles after the fall, set-up 840 ns (t_SU;DAT 100 ns)
+1515422.00ns INFO     ..tt_um_2amlogic_protocol_emulator i2c_fast late ACK (after-former-IN, delay 22), SCL fall 18: response 23 cycles after the fall, set-up 840 ns (t_SU;DAT 100 ns)
+1515422.00ns INFO     ..tt_um_2amlogic_protocol_emulator i2c_fast acks [9, 18] delay 59: capturing 3650 cycles
+1667062.00ns INFO     ..tt_um_2amlogic_protocol_emulator i2c_fast late ACK (latest-legal, delay 59): I2cReport(addr=0x50W, data=['0x5a'], acks=[True, True], stretched=0, violations=[])
+1667062.00ns INFO     ..tt_um_2amlogic_protocol_emulator i2c_fast late ACK (latest-legal, delay 59), SCL fall 9: response 60 cycles after the fall, set-up 100 ns (t_SU;DAT 100 ns)
+1667062.00ns INFO     ..tt_um_2amlogic_protocol_emulator i2c_fast late ACK (latest-legal, delay 59), SCL fall 18: response 60 cycles after the fall, set-up 100 ns (t_SU;DAT 100 ns)
+1667062.00ns INFO     ..tt_um_2amlogic_protocol_emulator i2c_std acks [9, 18] delay 32: capturing 11216 cycles
+1970022.00ns INFO     ..tt_um_2amlogic_protocol_emulator i2c_std late ACK (after-former-IN, delay 32): I2cReport(addr=0x50W, data=['0x5a'], acks=[True, True], stretched=0, violations=[])
+1970022.00ns INFO     ..tt_um_2amlogic_protocol_emulator i2c_std late ACK (after-former-IN, delay 32), SCL fall 9: response 33 cycles after the fall, set-up 4500 ns (t_SU;DAT 250 ns)
+1970022.00ns INFO     ..tt_um_2amlogic_protocol_emulator i2c_std late ACK (after-former-IN, delay 32), SCL fall 18: response 33 cycles after the fall, set-up 4500 ns (t_SU;DAT 250 ns)
+1970022.00ns INFO     ..tt_um_2amlogic_protocol_emulator i2c_std acks [9, 18] delay 244: capturing 11216 cycles
+2272982.00ns INFO     ..tt_um_2amlogic_protocol_emulator i2c_std late ACK (latest-legal, delay 244): I2cReport(addr=0x50W, data=['0x5a'], acks=[True, True], stretched=0, violations=[])
+2272982.00ns INFO     ..tt_um_2amlogic_protocol_emulator i2c_std late ACK (latest-legal, delay 244), SCL fall 9: response 245 cycles after the fall, set-up 260 ns (t_SU;DAT 250 ns)
+2272982.00ns INFO     ..tt_um_2amlogic_protocol_emulator i2c_std late ACK (latest-legal, delay 244), SCL fall 18: response 245 cycles after the fall, set-up 260 ns (t_SU;DAT 250 ns)
+2272982.00ns INFO     cocotb.regression                  test_firmware_i2c_ack.test_late_ack_responses_are_read_as_ack passed
+2272982.00ns INFO     cocotb.regression                  *************************************************************************************************************************
+                                                        ** TEST                                                             STATUS  SIM TIME (ns)  REAL TIME (s)  RATIO (ns/s) **
+                                                        *************************************************************************************************************************
+                                                        ** test_firmware_i2c_ack.test_ack_samples_sit_inside_ninth_high      PASS           0.00           0.00          0.00  **
+                                                        ** test_firmware_i2c_ack.test_both_address_outcomes_early_response   PASS     1363781.00           3.06     445247.24  **
+                                                        ** test_firmware_i2c_ack.test_late_ack_responses_are_read_as_ack     PASS      909201.00           2.09     434213.64  **
+                                                        *************************************************************************************************************************
+                                                        ** TESTS=3 PASS=3 FAIL=0 SKIP=0                                               2272982.00           5.16     440418.77  **
+                                                        *************************************************************************************************************************
