@@ -100,7 +100,11 @@ every verdict graded against these rows stays provisional by construction
 (T1 item 5) until the keys actually land.
 Design decisions behind those targets (the ISA, which flow produces the submitted
 GDS, the firmware toolchain) are recorded in
-[`spec/decision-records/`](spec/decision-records/). What's judged and how
+[`spec/decision-records/`](spec/decision-records/). The judge-facing
+architecture and instruction-set document, distilled from those records and
+checked against the assembler by `python3 scripts/check_architecture.py`, is
+[`docs/submission/architecture.md`](docs/submission/architecture.md)
+(provisional; the records it describes are Proposed). What's judged and how
 it's checked is in [`spec/verification-plan.md`](spec/verification-plan.md).
 Current status against every row and the 2027-01-18 deadline is tracked in
 [`spec/gap-to-submission.md`](spec/gap-to-submission.md).
