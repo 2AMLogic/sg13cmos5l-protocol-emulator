@@ -66,6 +66,10 @@ violating net's logic is.
    state them against this record's 232-word row. Trigger for escalating to
    option 2 or 3: slow-corner worst setup slack below +1.0 ns, any setup
    violation at any corner, or more than the current 2 slew violations.
+   These thresholds (+1.0 ns of setup slack, more than 2 slew violations)
+   are this record's own proposed choice, not derived from the target spec
+   or any other record; ratifying this record is what would make them
+   binding.
 5. **No claim is made about a post-change number.** This record adds no new
    timing measurement. Target-spec row 4 is not met by the LibreLane numbers
    alone; that stays true.
