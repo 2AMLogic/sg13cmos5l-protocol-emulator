@@ -541,26 +541,55 @@ async def test_bad_images_never_run(dut):
     good = host.frame(words)
     n_body = 2 * len(words)
 
-    def with_count(count):          # a header lying about the length, consistently
-        return bytes((good[0], count, count ^ 0xFF)) + good[3:]
+    HEADER = 3                      # 0xA5, N-1, ~(N-1): the payload starts at offset 3
+    assert len(good) == HEADER + n_body + 2
 
+    def with_count(count):          # a header lying about the length, consistently
+        return bytes((good[0], count, count ^ 0xFF)) + good[HEADER:]
+
+    def nak_with_crc_of(body):
+        """The reply a CRC-rejected frame must get: 0x15, then the CRC of the
+        payload bytes the chip committed, computed here by the host model (not
+        read back from the chip). The header reject is `15 00 00`; requiring
+        this value instead means a header NAK cannot pass for a payload one."""
+        crc = host.crc16_xmodem(body)
+        reply = bytes((host.NAK, crc >> 8, crc & 0xFF))
+        assert reply != host.header_reject_reply(), "premise: this case's CRC is not 0x0000"
+        return reply
+
+    # (label, frame, kind, expected reply or None)
     cases = []
-    for name, index, bit in (("payload first byte", 2, 0), ("payload middle", 2 + n_body // 2, 5),
-                             ("payload last byte", 1 + n_body, 7)):
-        cases.append((f"flipped bit, {name}", flip_bit(good, index, bit), "nak"))
+    for name, index, bit in (("payload first byte", HEADER, 0),
+                             ("payload middle", HEADER + n_body // 2, 5),
+                             ("payload last byte", HEADER + n_body - 1, 7)):
+        data = flip_bit(good, index, bit)
+        # The corruption is in the payload and nowhere else: the three header
+        # bytes and the trailer are the good frame's.
+        assert HEADER <= index < HEADER + n_body, (name, index)
+        assert data[:HEADER] == good[:HEADER] and data[-2:] == good[-2:], name
+        assert data[1] ^ data[2] == 0xFF, name
+        cases.append((f"flipped bit, {name}", data, "nak", nak_with_crc_of(data[HEADER:-2])))
+    good_body = good[HEADER:-2]
+
+    def short(count):               # the chip commits count+1 words, then reads a trailer
+        return nak_with_crc_of(good[HEADER:HEADER + 2 * (count + 1)])
+
     cases += [
-        ("bad CRC, high byte", flip_bit(good, len(good) - 2, 3), "nak"),
-        ("bad CRC, low byte", flip_bit(good, len(good) - 1, 0), "nak"),
-        ("bad CRC, both bytes", good[:-2] + bytes((good[-2] ^ 0xFF, good[-1] ^ 0xFF)), "nak"),
-        ("length too small by one word", with_count(len(words) - 2), "nak+reset"),
-        ("length too small by half the image", with_count(len(words) // 2 - 1), "nak+reset"),
-        ("length 1 word", with_count(0), "nak+reset"),
-        ("length too large (stalls)", with_count(len(words) + 4), "stall"),
-        ("count complement mismatch", bytes((good[0], good[1], good[2] ^ 0x10)) + good[3:], "header"),
-        ("wrong magic", bytes((0xA4,)) + good[1:], "silent"),
-        ("magic only, then silence", good[:1], "stall+reset"),
+        ("bad CRC, high byte", flip_bit(good, len(good) - 2, 3), "nak", nak_with_crc_of(good_body)),
+        ("bad CRC, low byte", flip_bit(good, len(good) - 1, 0), "nak", nak_with_crc_of(good_body)),
+        ("bad CRC, both bytes", good[:-2] + bytes((good[-2] ^ 0xFF, good[-1] ^ 0xFF)), "nak",
+         nak_with_crc_of(good_body)),
+        ("length too small by one word", with_count(len(words) - 2), "nak+reset", short(len(words) - 2)),
+        ("length too small by half the image", with_count(len(words) // 2 - 1), "nak+reset",
+         short(len(words) // 2 - 1)),
+        ("length 1 word", with_count(0), "nak+reset", short(0)),
+        ("length too large (stalls)", with_count(len(words) + 4), "stall", None),
+        ("count complement mismatch", bytes((good[0], good[1], good[2] ^ 0x10)) + good[HEADER:], "header",
+         host.header_reject_reply()),
+        ("wrong magic", bytes((0xA4,)) + good[1:], "silent", None),
+        ("magic only, then silence", good[:1], "stall+reset", None),
     ]
-    for label, data, kind in cases:
+    for label, data, kind, expected in cases:
         session = Session(dut)
         await session.reset()
         watch = RomWatch(dut)
@@ -589,11 +618,15 @@ async def test_bad_images_never_run(dut):
             await session.idle(REPLY_WINDOW)
             got, reports = session.reply(t0)
             if kind in ("nak", "nak+reset"):
-                assert got is not None and len(got) == 3 and got[0] == host.NAK, f"{label}: reply {got!r}"
+                # Rejected by the CRC: the reply carries the CRC of exactly the
+                # payload bytes the chip committed, which the host computes
+                # itself. A header reject (`15 00 00`) does not satisfy this.
+                assert got == expected, f"{label}: reply {got!r}, want {expected.hex()}"
                 check_reply_timing(reports, label)
             elif kind == "header":
                 # Rejected at the header, before any word was committed.
-                assert got == host.header_reject_reply(), f"{label}: reply {got!r}"
+                assert expected == host.header_reject_reply()
+                assert got == expected, f"{label}: reply {got!r}"
                 check_reply_timing(reports, label)
             else:
                 # No reply to the frame itself. Its payload may hold a 0xA5
