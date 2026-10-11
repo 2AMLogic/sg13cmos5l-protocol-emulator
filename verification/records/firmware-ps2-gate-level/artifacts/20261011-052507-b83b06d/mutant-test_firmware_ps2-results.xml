@@ -1,0 +1,102 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuites name="cocotb tests"><testsuite name="test_firmware_ps2" errors="0" failures="14" skipped="0" tests="18" time="454.815" timestamp="2026-10-11T05:17:26.003118+00:00" hostname="loom-worker-2"><testcase classname="test_firmware_ps2" name="test_committed_image_is_fresh" time="0.002"><properties><property name="cocotb" value="True" /><property name="random_seed" value="1791695845" /><property name="file" value="&lt;repo&gt;/verification/test_firmware_ps2.py" /><property name="line" value="396" /><property name="sim_time_unit" value="ns" /><property name="sim_time_start" value="0.0" /><property name="sim_time_stop" value="0.0" /><property name="sim_time_duration" value="0.0" /><property name="sim_time_ratio" value="0.0" /></properties></testcase><testcase classname="test_firmware_ps2" name="test_power_up_frame" time="12.899"><failure message="no device frame after power-up&#10;assert False" type="AssertionError">Traceback (most recent call last):
+  File "&lt;repo&gt;/verification/test_firmware_ps2.py", line 425, in test_power_up_frame
+    assert await host.wait_device_frame(), "no device frame after power-up"
+AssertionError: no device frame after power-up
+assert False
+</failure><properties><property name="cocotb" value="True" /><property name="random_seed" value="1791695845" /><property name="file" value="&lt;repo&gt;/verification/test_firmware_ps2.py" /><property name="line" value="419" /><property name="sim_time_unit" value="ns" /><property name="sim_time_start" value="0.001" /><property name="sim_time_stop" value="3068380.001" /><property name="sim_time_duration" value="3068380.0" /><property name="sim_time_ratio" value="237869.14927922396" /></properties><system-err>Test failed with COCOTB_RANDOM_SEED=1791695845
+</system-err></testcase><testcase classname="test_firmware_ps2" name="test_host_commands_are_acked_and_echoed" time="12.633"><failure message="no power-up frame&#10;assert False" type="AssertionError">Traceback (most recent call last):
+  File "&lt;repo&gt;/verification/test_firmware_ps2.py", line 440, in test_host_commands_are_acked_and_echoed
+    assert await host.wait_device_frame(), "no power-up frame"
+AssertionError: no power-up frame
+assert False
+</failure><properties><property name="cocotb" value="True" /><property name="random_seed" value="1791695845" /><property name="file" value="&lt;repo&gt;/verification/test_firmware_ps2.py" /><property name="line" value="434" /><property name="sim_time_unit" value="ns" /><property name="sim_time_start" value="3068380.002" /><property name="sim_time_stop" value="6136760.002" /><property name="sim_time_duration" value="3068380.0000000005" /><property name="sim_time_ratio" value="242879.32615880572" /></properties><system-err>Test failed with COCOTB_RANDOM_SEED=1791695845
+</system-err></testcase><testcase classname="test_firmware_ps2" name="test_bad_frames_get_resend" time="12.745"><failure message="Timer argument time must be positive" type="ValueError">Traceback (most recent call last):
+  File "&lt;repo&gt;/verification/test_firmware_ps2.py", line 460, in test_bad_frames_get_resend
+    assert await host.wait_device_frame()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "&lt;repo&gt;/verification/test_firmware_ps2.py", line 247, in wait_device_frame
+    if not await self.wait_line(CLK_BIT, 0, timeout):
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "&lt;repo&gt;/verification/test_firmware_ps2.py", line 239, in wait_line
+    await First(ValueChange(self.dut.uio_in), Timer(int(remaining), "ns"))
+                                              ~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "&lt;venv&gt;/lib/python3.13/site-packages/cocotb/_gpi_triggers.py", line 143, in __init__
+    raise ValueError("Timer argument time must be positive")
+ValueError: Timer argument time must be positive
+</failure><properties><property name="cocotb" value="True" /><property name="random_seed" value="1791695845" /><property name="file" value="&lt;repo&gt;/verification/test_firmware_ps2.py" /><property name="line" value="454" /><property name="sim_time_unit" value="ns" /><property name="sim_time_start" value="6136760.003" /><property name="sim_time_stop" value="9205139.003" /><property name="sim_time_duration" value="3068379.000000001" /><property name="sim_time_ratio" value="240748.6390499687" /></properties><system-err>Test failed with COCOTB_RANDOM_SEED=1791695845
+</system-err></testcase><testcase classname="test_firmware_ps2" name="test_inhibit_mid_frame_abandons_and_resends" time="12.781"><failure message="no clock 1&#10;assert False" type="AssertionError">Traceback (most recent call last):
+  File "&lt;repo&gt;/verification/test_firmware_ps2.py", line 486, in test_inhibit_mid_frame_abandons_and_resends
+    assert await host.wait_line(CLK_BIT, 0, 3_000 * US), f"no clock {k + 1}"
+AssertionError: no clock 1
+assert False
+</failure><properties><property name="cocotb" value="True" /><property name="random_seed" value="1791695845" /><property name="file" value="&lt;repo&gt;/verification/test_firmware_ps2.py" /><property name="line" value="477" /><property name="sim_time_unit" value="ns" /><property name="sim_time_start" value="9205139.004" /><property name="sim_time_stop" value="12273519.004" /><property name="sim_time_duration" value="3068380.0" /><property name="sim_time_ratio" value="240064.1589811316" /></properties><system-err>Test failed with COCOTB_RANDOM_SEED=1791695845
+</system-err></testcase><testcase classname="test_firmware_ps2" name="test_inhibited_bus_is_not_used" time="25.131"><failure message="no frame after the inhibit&#10;assert False" type="AssertionError">Traceback (most recent call last):
+  File "&lt;repo&gt;/verification/test_firmware_ps2.py", line 515, in test_inhibited_bus_is_not_used
+    assert await host.wait_device_frame(), "no frame after the inhibit"
+AssertionError: no frame after the inhibit
+assert False
+</failure><properties><property name="cocotb" value="True" /><property name="random_seed" value="1791695845" /><property name="file" value="&lt;repo&gt;/verification/test_firmware_ps2.py" /><property name="line" value="506" /><property name="sim_time_unit" value="ns" /><property name="sim_time_start" value="12273519.005" /><property name="sim_time_stop" value="15741899.005" /><property name="sim_time_duration" value="3468380.0" /><property name="sim_time_ratio" value="138011.58916245445" /></properties><system-err>Test failed with COCOTB_RANDOM_SEED=1791695845
+</system-err></testcase><testcase classname="test_firmware_ps2" name="test_request_to_send_while_a_byte_is_pending" time="3.041"><failure message="assert False" type="AssertionError">Traceback (most recent call last):
+  File "&lt;repo&gt;/verification/test_firmware_ps2.py", line 530, in test_request_to_send_while_a_byte_is_pending
+    assert await host.send(0xF2, inhibit_ns=120 * US)
+AssertionError: assert False
+</failure><properties><property name="cocotb" value="True" /><property name="random_seed" value="1791695845" /><property name="file" value="&lt;repo&gt;/verification/test_firmware_ps2.py" /><property name="line" value="523" /><property name="sim_time_unit" value="ns" /><property name="sim_time_start" value="15741899.006" /><property name="sim_time_stop" value="16150939.006" /><property name="sim_time_duration" value="409040.0" /><property name="sim_time_ratio" value="134491.06798258793" /></properties><system-err>Test failed with COCOTB_RANDOM_SEED=1791695845
+</system-err></testcase><testcase classname="test_firmware_ps2" name="test_host_abort_then_recovery" time="12.295"><failure message="assert False" type="AssertionError">Traceback (most recent call last):
+  File "&lt;repo&gt;/verification/test_firmware_ps2.py", line 545, in test_host_abort_then_recovery
+    assert await host.wait_device_frame()
+AssertionError: assert False
+</failure><properties><property name="cocotb" value="True" /><property name="random_seed" value="1791695845" /><property name="file" value="&lt;repo&gt;/verification/test_firmware_ps2.py" /><property name="line" value="538" /><property name="sim_time_unit" value="ns" /><property name="sim_time_start" value="16150939.007" /><property name="sim_time_stop" value="19219319.007" /><property name="sim_time_duration" value="3068380.0" /><property name="sim_time_ratio" value="249567.81444012138" /></properties><system-err>Test failed with COCOTB_RANDOM_SEED=1791695845
+</system-err></testcase><testcase classname="test_firmware_ps2" name="test_unused_pins_are_never_driven" time="15.926"><failure message="assert False" type="AssertionError">Traceback (most recent call last):
+  File "&lt;repo&gt;/verification/test_firmware_ps2.py", line 566, in test_unused_pins_are_never_driven
+    assert await host.wait_device_frame()
+AssertionError: assert False
+</failure><properties><property name="cocotb" value="True" /><property name="random_seed" value="1791695845" /><property name="file" value="&lt;repo&gt;/verification/test_firmware_ps2.py" /><property name="line" value="558" /><property name="sim_time_unit" value="ns" /><property name="sim_time_start" value="19219319.008" /><property name="sim_time_stop" value="22287699.008" /><property name="sim_time_duration" value="3068380.0" /><property name="sim_time_ratio" value="192669.50264524552" /></properties><system-err>Test failed with COCOTB_RANDOM_SEED=1791695845
+</system-err></testcase><testcase classname="test_firmware_ps2" name="test_negative_no_inhibit_check" time="54.038"><properties><property name="cocotb" value="True" /><property name="random_seed" value="1791695845" /><property name="file" value="&lt;repo&gt;/verification/test_firmware_ps2.py" /><property name="line" value="622" /><property name="sim_time_unit" value="ns" /><property name="sim_time_start" value="22287699.009" /><property name="sim_time_stop" value="35996079.009" /><property name="sim_time_duration" value="13708380.000000004" /><property name="sim_time_ratio" value="253679.82271926684" /></properties></testcase><testcase classname="test_firmware_ps2" name="test_negative_short_hold_off" time="14.487"><properties><property name="cocotb" value="True" /><property name="random_seed" value="1791695845" /><property name="file" value="&lt;repo&gt;/verification/test_firmware_ps2.py" /><property name="line" value="633" /><property name="sim_time_unit" value="ns" /><property name="sim_time_start" value="35996079.01" /><property name="sim_time_stop" value="37564459.01" /><property name="sim_time_duration" value="1568380.0" /><property name="sim_time_ratio" value="108264.92744136813" /></properties></testcase><testcase classname="test_firmware_ps2" name="test_negative_no_ack" time="80.908"><failure message="['rts-response']&#10;assert ['rts-response'] == ['no-ack']&#10; +  where ['rts-response'] = kinds(Result(frames=[Frame(direction='dev-&gt;host', t_start=37713199.011, bits=[], complete=False, aborted=True)], violations=...response_ns=[], hold_off_ns=[80360.0], measured={'hold-off': (80360.0, 80360.0), 'host inhibit': (120000.0, 120000.0)}))" type="AssertionError">Traceback (most recent call last):
+  File "&lt;repo&gt;/verification/test_firmware_ps2.py", line 646, in test_negative_no_ack
+    assert kinds(result) == ["no-ack"], kinds(result)
+AssertionError: ['rts-response']
+assert ['rts-response'] == ['no-ack']
+ +  where ['rts-response'] = kinds(Result(frames=[Frame(direction='dev-&gt;host', t_start=37713199.011, bits=[], complete=False, aborted=True)], violations=...response_ns=[], hold_off_ns=[80360.0], measured={'hold-off': (80360.0, 80360.0), 'host inhibit': (120000.0, 120000.0)}))
+</failure><properties><property name="cocotb" value="True" /><property name="random_seed" value="1791695845" /><property name="file" value="&lt;repo&gt;/verification/test_firmware_ps2.py" /><property name="line" value="640" /><property name="sim_time_unit" value="ns" /><property name="sim_time_start" value="37564459.011" /><property name="sim_time_stop" value="58952839.011" /><property name="sim_time_duration" value="21388380.0" /><property name="sim_time_ratio" value="264352.83070253197" /></properties><system-err>Test failed with COCOTB_RANDOM_SEED=1791695845
+</system-err></testcase><testcase classname="test_firmware_ps2" name="test_negative_data_too_late" time="16.432"><failure message="[]&#10;assert 'data-setup' in []&#10; +  where [] = kinds(Result(frames=[Frame(direction='dev-&gt;host', t_start=59101579.012, bits=[], complete=False, aborted=False)], violations...], margins={'hold-off': 30360.0}, rts_response_ns=[], hold_off_ns=[80360.0], measured={'hold-off': (80360.0, 80360.0)}))" type="AssertionError">Traceback (most recent call last):
+  File "&lt;repo&gt;/verification/test_firmware_ps2.py", line 654, in test_negative_data_too_late
+    assert "data-setup" in kinds(result), kinds(result)
+AssertionError: []
+assert 'data-setup' in []
+ +  where [] = kinds(Result(frames=[Frame(direction='dev-&gt;host', t_start=59101579.012, bits=[], complete=False, aborted=False)], violations...], margins={'hold-off': 30360.0}, rts_response_ns=[], hold_off_ns=[80360.0], measured={'hold-off': (80360.0, 80360.0)}))
+</failure><properties><property name="cocotb" value="True" /><property name="random_seed" value="1791695845" /><property name="file" value="&lt;repo&gt;/verification/test_firmware_ps2.py" /><property name="line" value="649" /><property name="sim_time_unit" value="ns" /><property name="sim_time_start" value="58952839.012" /><property name="sim_time_stop" value="62521219.012" /><property name="sim_time_duration" value="3568380.0" /><property name="sim_time_ratio" value="217153.8731288353" /></properties><system-err>Test failed with COCOTB_RANDOM_SEED=1791695845
+</system-err></testcase><testcase classname="test_firmware_ps2" name="test_negative_data_too_soon_after_rise" time="13.848"><failure message="[]&#10;assert 'data-after-rise' in []&#10; +  where [] = kinds(Result(frames=[Frame(direction='dev-&gt;host', t_start=62669959.013, bits=[], complete=False, aborted=False)], violations...], margins={'hold-off': 30360.0}, rts_response_ns=[], hold_off_ns=[80360.0], measured={'hold-off': (80360.0, 80360.0)}))" type="AssertionError">Traceback (most recent call last):
+  File "&lt;repo&gt;/verification/test_firmware_ps2.py", line 664, in test_negative_data_too_soon_after_rise
+    assert "data-after-rise" in kinds(result), kinds(result)
+AssertionError: []
+assert 'data-after-rise' in []
+ +  where [] = kinds(Result(frames=[Frame(direction='dev-&gt;host', t_start=62669959.013, bits=[], complete=False, aborted=False)], violations...], margins={'hold-off': 30360.0}, rts_response_ns=[], hold_off_ns=[80360.0], measured={'hold-off': (80360.0, 80360.0)}))
+</failure><properties><property name="cocotb" value="True" /><property name="random_seed" value="1791695845" /><property name="file" value="&lt;repo&gt;/verification/test_firmware_ps2.py" /><property name="line" value="658" /><property name="sim_time_unit" value="ns" /><property name="sim_time_start" value="62521219.013" /><property name="sim_time_stop" value="66089599.013" /><property name="sim_time_duration" value="3568380.0" /><property name="sim_time_ratio" value="257681.15191223045" /></properties><system-err>Test failed with COCOTB_RANDOM_SEED=1791695845
+</system-err></testcase><testcase classname="test_firmware_ps2" name="test_negative_even_parity" time="13.864"><failure message="[]&#10;assert [] == ['parity']&#10; +  where [] = kinds(Result(frames=[Frame(direction='dev-&gt;host', t_start=66238019.014, bits=[], complete=False, aborted=False)], violations...], margins={'hold-off': 30360.0}, rts_response_ns=[], hold_off_ns=[80360.0], measured={'hold-off': (80360.0, 80360.0)}))" type="AssertionError">Traceback (most recent call last):
+  File "&lt;repo&gt;/verification/test_firmware_ps2.py", line 674, in test_negative_even_parity
+    assert kinds(result) == ["parity"], kinds(result)
+AssertionError: []
+assert [] == ['parity']
+ +  where [] = kinds(Result(frames=[Frame(direction='dev-&gt;host', t_start=66238019.014, bits=[], complete=False, aborted=False)], violations...], margins={'hold-off': 30360.0}, rts_response_ns=[], hold_off_ns=[80360.0], measured={'hold-off': (80360.0, 80360.0)}))
+</failure><properties><property name="cocotb" value="True" /><property name="random_seed" value="1791695845" /><property name="file" value="&lt;repo&gt;/verification/test_firmware_ps2.py" /><property name="line" value="668" /><property name="sim_time_unit" value="ns" /><property name="sim_time_start" value="66089599.014" /><property name="sim_time_stop" value="69657659.014" /><property name="sim_time_duration" value="3568060.0" /><property name="sim_time_ratio" value="257356.4682441759" /></properties><system-err>Test failed with COCOTB_RANDOM_SEED=1791695845
+</system-err></testcase><testcase classname="test_firmware_ps2" name="test_negative_push_pull_instead_of_open_drain" time="54.754"><properties><property name="cocotb" value="True" /><property name="random_seed" value="1791695845" /><property name="file" value="&lt;repo&gt;/verification/test_firmware_ps2.py" /><property name="line" value="677" /><property name="sim_time_unit" value="ns" /><property name="sim_time_start" value="69657659.015" /><property name="sim_time_stop" value="83366039.015" /><property name="sim_time_duration" value="13708380.0" /><property name="sim_time_ratio" value="250362.90323701347" /></properties></testcase><testcase classname="test_firmware_ps2" name="test_negative_parity_not_checked" time="85.711"><failure message="mutant parity-not-checked: the design drove uio pins 0x08; a PS/2 device must drive exactly CLK|DATA = 0x0c&#10;assert 8 == 12&#10; +  where 8 = &lt;uio_pads.UioPads object at 0x72b52c6a6810&gt;.oe_seen" type="AssertionError">Traceback (most recent call last):
+  File "&lt;repo&gt;/verification/test_firmware_ps2.py", line 707, in test_negative_parity_not_checked
+    result = finish(host, pads, "mutant parity-not-checked")
+  File "&lt;repo&gt;/verification/test_firmware_ps2.py", line 349, in finish
+    assert_ps2_open_drain(pads, tag)
+    ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^
+  File "&lt;repo&gt;/verification/test_firmware_ps2.py", line 151, in assert_ps2_open_drain
+    assert pads.oe_seen == OD_MASK, (
+    ...&lt;2 lines&gt;...
+    )
+AssertionError: mutant parity-not-checked: the design drove uio pins 0x08; a PS/2 device must drive exactly CLK|DATA = 0x0c
+assert 8 == 12
+ +  where 8 = &lt;uio_pads.UioPads object at 0x72b52c6a6810&gt;.oe_seen
+</failure><properties><property name="cocotb" value="True" /><property name="random_seed" value="1791695845" /><property name="file" value="&lt;repo&gt;/verification/test_firmware_ps2.py" /><property name="line" value="693" /><property name="sim_time_unit" value="ns" /><property name="sim_time_start" value="83366039.016" /><property name="sim_time_stop" value="104554419.016" /><property name="sim_time_duration" value="21188380.0" /><property name="sim_time_ratio" value="247208.37999726125" /></properties><system-err>Test failed with COCOTB_RANDOM_SEED=1791695845
+</system-err></testcase><testcase classname="test_firmware_ps2" name="test_negative_log_path_can_fail" time="13.319"><failure message="assert False" type="AssertionError">Traceback (most recent call last):
+  File "&lt;repo&gt;/verification/test_firmware_ps2.py", line 720, in test_negative_log_path_can_fail
+    assert await host.wait_device_frame()
+AssertionError: assert False
+</failure><properties><property name="cocotb" value="True" /><property name="random_seed" value="1791695845" /><property name="file" value="&lt;repo&gt;/verification/test_firmware_ps2.py" /><property name="line" value="713" /><property name="sim_time_unit" value="ns" /><property name="sim_time_start" value="104554419.017" /><property name="sim_time_stop" value="107622799.017" /><property name="sim_time_duration" value="3068380.0" /><property name="sim_time_ratio" value="230380.27594011408" /></properties><system-err>Test failed with COCOTB_RANDOM_SEED=1791695845
+</system-err></testcase></testsuite></testsuites>
