@@ -1,0 +1,9 @@
+WARNING: <scratch>/replay_tb.v:13: $readmemh(<scratch>/i2c_std/mutants/leg0/nack_ignored-replay.hex): Not enough words in the file for the requested range [0:5439].
+VCD info: dumpfile <scratch>/i2c_std/mutants/leg0/nack_ignored-cex.vcd opened for output.
+ERROR: <repo>/verification/formal/i2c_ack_window.sv:263: 
+       Time: 54375000  Scope: replay_tb.dut.u_property
+ERROR: <repo>/verification/formal/i2c_ack_window.sv:263: 
+       Time: 54385000  Scope: replay_tb.dut.u_property
+ERROR: <repo>/verification/formal/i2c_ack_window.sv:263: 
+       Time: 54395000  Scope: replay_tb.dut.u_property
+<scratch>/replay_tb.v:21: $finish called at 54400000 (1ps)

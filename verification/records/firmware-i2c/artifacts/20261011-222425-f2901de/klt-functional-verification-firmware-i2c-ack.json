@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "engine": "icarus",
+  "hdl_toplevel": "tt_um_2amlogic_protocol_emulator",
+  "testbench": "test_firmware_i2c_ack",
+  "status": "pass",
+  "test_count": 3,
+  "passed_count": 3,
+  "failed_count": 0,
+  "skipped_count": 0,
+  "tests": [
+    {
+      "name": "test_ack_samples_sit_inside_ninth_high",
+      "status": "passed",
+      "sim_time_ns": 0.0,
+      "real_time_s": 0.005
+    },
+    {
+      "name": "test_both_address_outcomes_early_response",
+      "status": "passed",
+      "sim_time_ns": 1364381.0,
+      "real_time_s": 4.686
+    },
+    {
+      "name": "test_late_ack_responses_are_read_as_ack",
+      "status": "passed",
+      "sim_time_ns": 909600.9999999998,
+      "real_time_s": 3.36
+    }
+  ],
+  "coverage": null,
+  "trace": null,
+  "environment": {
+    "engine": "icarus",
+    "engine_version": "13.0",
+    "cocotb_version": "2.1.0",
+    "results_xml": "<repo>/verification/.klt/functional-verification/results_icarus.xml",
+    "random_seed": 1,
+    "sdf": null
+  }
+}

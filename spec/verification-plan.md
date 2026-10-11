@@ -242,6 +242,16 @@ keep it there.
 > `yosys-smtbmc`, the second engine of §2.2, was measured and not used: it did
 > not reach the Fast data slot in 8 minutes. No routed or electrical claim
 > follows. The statement above is not relaxed.
+>
+> *Re-run 2026-10-11 (issue #272, PR #274).* `i2c_fast` moved from 65 / 60
+> to 70 / 55 core cycles per SCL clock. The same runner, unchanged, was re-run
+> on that image and on the unchanged Standard image: no assertion fails in
+> 3660 (Fast) / 11216 (Standard) frames, all 12 covers are reached, and all
+> 38 mutant/leg runs are rejected and replayed. The Fast STOP bound is now
+> 130 = 70 + 60. Evidence:
+> `verification/records/i2c-ack-window/records/20261011-225549-0387a5c.md`
+> (supersedes `20261011-220500-39aee71`; Yosys 0.67 + ABC 1.01 + Icarus 13.0,
+> RTL only). The figures above describe the superseded run.
 
 ## 3. Gate-level regression
 

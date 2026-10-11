@@ -1,0 +1,5 @@
+WARNING: <scratch>/replay_tb.v:13: $readmemh(<scratch>/i2c_fast/leg0/cover2-replay.hex): Not enough words in the file for the requested range [0:1433].
+VCD info: dumpfile <scratch>/i2c_fast/leg0/cover2-cex.vcd opened for output.
+ERROR: <repo>/verification/formal/i2c_ack_window.sv:270: 
+       Time: 14315000  Scope: replay_tb.dut.u_property
+<scratch>/replay_tb.v:21: $finish called at 14340000 (1ps)
