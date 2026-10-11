@@ -1,0 +1,8 @@
+14124c14124
+<  sg13cmos5l_a21oi_1 _3747_ (.A1(\u_core.ctl_stall ),
+---
+>  sg13cmos5l_a21oi_1 _3747_ (.A1(1'b0),
+18400c18400
+<  sg13cmos5l_buf_1 fanout303 (.A(\u_core.ctl_stall ),
+---
+>  sg13cmos5l_buf_1 fanout303 (.A(1'b0),
