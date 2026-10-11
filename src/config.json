@@ -65,6 +65,10 @@
   "//": "https://tinytapeout.com/faq/#how-can-i-map-an-additional-external-clock-to-one-of-the-gpios",
   "CLOCK_PORT": "clk",
 
+  "//": "issue #246 trial keys",
+  "PL_TIMING_DRIVEN": 1,
+  "PL_RESIZER_SETUP_SLACK_MARGIN": 8.0,
+
   "//": "Configuration docs: https://librelane.readthedocs.io/en/latest/reference/configuration.html",
 
   "//": "------------------------------------------------------------------",
