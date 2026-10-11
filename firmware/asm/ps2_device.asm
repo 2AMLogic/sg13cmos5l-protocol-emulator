@@ -58,10 +58,11 @@
 ; Bit 6 of R1 is the direction flag the shared pulse tail tests; transmit
 ; images are 0x00 and 0x08, so it is clear there.
 ;
-; Every OUT UIO_OUT below writes a value that releases or pulls low pins 2
-; and 3 only. The branches on IN-sampled data are the protocol's own
-; handshakes (wait for the host, abort on inhibit); the assembler's lint says
-; so for each one, and the bench lists them.
+; Only bits 2 and 3 of the images written to UIO_OUT reach a pad: UIO_OD
+; enables those two pins and no others (bits 6 and 7 of R1 are program state).
+; The branches on IN-sampled data are the protocol's own handshakes (wait for
+; the host, abort on inhibit); the assembler's lint says so for each one, and
+; the bench lists them.
 
 ; ------------------------------------------------------------- setup
         LDI   R3, 0x0C

@@ -309,7 +309,7 @@ Graded (the model's limits, each cited to Chapweske's page):
 | Host request to send | CLK low 100 µs or more, then DATA low, then CLK released; the device must begin clocking (the page allows 15 ms; the bench checks that the device does so well within the 10 ms polling bound) |
 | Frame, host to device | eight data bits LSB first, odd parity, stop 1, read by the device while CLK is high |
 | ACK | the device pulls DATA low in the high phase of the 11th clock, with the CLK fall 5 to 25 µs later, and releases both lines after that pulse |
-| Contention | the design never drives a line high; it never pulls a line low while the host holds the same line low and then releases it into a fight; the pad model reports any fight |
+| Contention | the design only ever pulls CLK and DATA low and drives no other pin, and the pad model (`verification/uio_pads.py`) reports no fight between the design and the host |
 
 Not graded, and stated as limits of this increment: the keyboard and mouse
 command sets above the byte layer (the program answers a command byte by

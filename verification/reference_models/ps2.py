@@ -45,6 +45,10 @@ checked):
   no deadline for the release; the model asks for it within 50 us of the
   11th rising edge, which is the point where the device could next transmit.
 
+At the start of a log the lines count as high since the first snapshot, so the
+50 us rule is measured from there; a bench that starts its log at the moment
+the program starts is conservative about a device that powers up on an idle bus.
+
 Not checked, because the page gives no value: what the device does if the
 host never releases DATA after the ACK; electrical rise time; a deadline for
 the device's DATA release after an inhibit (the model asks for it by the time
