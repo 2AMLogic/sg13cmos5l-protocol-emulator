@@ -149,6 +149,20 @@ coverage.
   the pre-DR-0012 `uio_oe = 8'h00`), each of which the I2C benches must
   fail on. None of them changes `uio_out`, so none could change the
   verdict of the old bench-composed bus.
+- `test_firmware_i2c_ack.py` — the I2C write programs' ACK slots (issue
+  #258), on the pad model like its sibling `test_firmware_i2c.py` (which
+  it imports and leaves unchanged): statically, each ACK `IN` sits
+  strictly inside the ninth SCL high and the ninth high is exactly the
+  budget on both address-ACK branch paths; dynamically, early and late
+  responders (one cycle after the former low-phase sample, and exactly
+  t_SU;DAT ahead of the rise, set-up measured on the line) on both address
+  outcomes, with SDA stable while SCL is high and the controller's own
+  reading of the data ACK checked through the Z flag (white-box, RTL
+  only). Driven by `klt functional-verification`
+  (`request-firmware-i2c-ack.json`); `i2c_ack_schedule_mutants.py` is its
+  negative-control runner (the original low-phase schedule, per grade and
+  slot, assembled into scratch images, must fail the late-response test
+  with an assertion). Evidence in `records/firmware-i2c/`.
 - `test_boot_rom.py` — cocotb bench for DR 0013 layer 2 (issue #138) on
   the top: the boot ROM, the fetch-source switch and the warm start, and
   target-spec row 14 (c). With `MODE` low at reset the stub straps move no
@@ -566,7 +580,7 @@ CI-covered (RTL, Icarus, no PDK): `test_protocol_emulator`,
 `test_boot_uart`,
 `test_program_memory`, `test_protocol_models`, `test_firmware_uart`,
 `test_firmware_spi`, `test_uio_pads`, `test_firmware_i2c`,
-`test_firmware_i2c_sr`, `test_firmware_roundtrip`,
+`test_firmware_i2c_sr`, `test_firmware_i2c_ack`, `test_firmware_roundtrip`,
 `test_random_regression`, `test_isa_lockstep`, `test_load_integrity`,
 `test_firmware_ws2812`, `test_firmware_ps2`, `test_loadseq` and
 `test_loadseq_top` (the independent host-load replay benches, issue #225).
