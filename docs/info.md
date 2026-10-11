@@ -246,7 +246,7 @@ The table is mechanically checked against `firmware/asm/`,
 | [`i2c_std_sr`](../firmware/asm/i2c_std_sr.asm) | I2C controller, Standard-mode budget, write + repeated START + read, no pin-dependent branch | 500 per SCL clock (low 258 + high 242) | 152 | 5885 | [`test_firmware_i2c_sr.py`](../verification/test_firmware_i2c_sr.py) | [firmware-i2c 20261011-012759-428e12f](../verification/records/firmware-i2c/records/20261011-012759-428e12f.md) |
 | [`i2c_std_sr_poll`](../firmware/asm/i2c_std_sr_poll.asm) | as `i2c_std_sr`, polls SCL (tolerates clock stretching) | 502 per SCL clock unstretched (low 258 + high 244) | 192 | 5905 | [`test_firmware_i2c_sr.py`](../verification/test_firmware_i2c_sr.py) | [firmware-i2c 20261011-012759-428e12f](../verification/records/firmware-i2c/records/20261011-012759-428e12f.md) |
 | [`ws2812`](../firmware/asm/ws2812.asm) | WS2812 / WS2812B LED data on `uo_out[7]`, GRB pixels from a table in program memory (target-spec row 13) | 63 per bit (T0H 20, T1H 40); reset 15,499 or more | 60 | 377 | [`test_firmware_ws2812.py`](../verification/test_firmware_ws2812.py) | [firmware-ws2812 20261010-233344-21acbc8](../verification/records/firmware-ws2812/records/20261010-233344-21acbc8.md) |
-| [`ps2_device`](../firmware/asm/ps2_device.asm) | PS/2 keyboard/mouse device on `uio[2]` (CLK) and `uio[3]` (DATA), open-drain: sends 0xAA, ACKs and echoes host bytes, abandons a frame the host inhibits (target-spec row 13, stretch column) | clock low about 2,006 and high about 2,035..2,083 cycles; 50 us hold-off about 4,016 | 213 | 951 | [`test_firmware_ps2.py`](../verification/test_firmware_ps2.py) | [firmware-ps2 20261011-050536-b83b06d](../verification/records/firmware-ps2/records/20261011-050536-b83b06d.md) |
+| [`ps2_device`](../firmware/asm/ps2_device.asm) | PS/2 keyboard/mouse device on `uio[2]` (CLK) and `uio[3]` (DATA), open-drain: sends 0xAA, ACKs and echoes host bytes, abandons a frame the host inhibits (target-spec row 13, stretch column) | clock low about 2,006 and high about 2,035..2,083 cycles; 50 us hold-off about 4,016 | 213 | 951 | [`test_firmware_ps2.py`](../verification/test_firmware_ps2.py) | [firmware-ps2 20261011-054024-1623ac4](../verification/records/firmware-ps2/records/20261011-054024-1623ac4.md) |
 | [`demo_roundtrip`](../firmware/asm/demo_roundtrip.asm) | none (assembler and load-phase round-trip coverage program) | n/a | 27 | 30 | [`test_firmware_roundtrip.py`](../verification/test_firmware_roundtrip.py) | [firmware-assembler-roundtrip 20261010-172335-f8428aa](../verification/records/firmware-assembler-roundtrip/records/20261010-172335-f8428aa.md) |
 <!-- firmware-images:end -->
 
@@ -310,8 +310,8 @@ Notes, all from the cited records:
   it turns DATA around for the ACK of a host-to-device byte, and it reads a
   line the host drives on a clock it generates. An independent host model
   written from Chapweske's description graded every edge on the pads, at RTL
-  ([record](../verification/records/firmware-ps2/records/20261011-050536-b83b06d.md)) and on the LibreLane netlist, zero-delay
-  ([gate-level record](../verification/records/firmware-ps2-gate-level/records/20261011-052507-b83b06d.md)): CLK low 40.12 to 40.14 µs and CLK high 40.70
+  ([record](../verification/records/firmware-ps2/records/20261011-054024-1623ac4.md)) and on the LibreLane netlist, zero-delay
+  ([gate-level record](../verification/records/firmware-ps2-gate-level/records/20261011-061202-f90bef2.md)): CLK low 40.12 to 40.14 µs and CLK high 40.70
   to 41.66 µs (limits 30 to 50), data change 20.34 µs before the falling edge
   (5 to 25), hold-off 80.2 µs or more (50), all at the 20 ns target clock.
   Eight negative controls (no inhibit check, a short hold-off, no ACK, late

@@ -391,8 +391,8 @@ auditable rather than a bare assertion:
   from Chapweske's description, which also grades the bench's own host
   driver). The lines are resolved by the silicon-true pad model with
   pull-ups, and the design must never drive a line high or fight the host.
-  It runs at RTL (`klt functional-verification`, `verification/records/firmware-ps2/records/20261011-050536-b83b06d.md`) and on the
-  gate-level netlist (`flow/run-ps2-gate-level.sh`, `verification/records/firmware-ps2-gate-level/records/20261011-052507-b83b06d.md`), with eight
+  It runs at RTL (`klt functional-verification`, `verification/records/firmware-ps2/records/20261011-054024-1623ac4.md`) and on the
+  gate-level netlist (`flow/run-ps2-gate-level.sh`, `verification/records/firmware-ps2-gate-level/records/20261011-061202-f90bef2.md`), with eight
   mutant programs, a log-path control and a WAIT-counter stuck-at fault as
   negative controls.
 - **Control-register bench (DR 0012).** It checks:

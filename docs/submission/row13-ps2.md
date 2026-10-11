@@ -43,8 +43,8 @@ ISA-model byte changed.
 | Bench | [`verification/test_firmware_ps2.py`](../../verification/test_firmware_ps2.py) |
 | Pad model | [`verification/uio_pads.py`](../../verification/uio_pads.py): pull-ups on both lines, the other six `uio` pins tied low; the bench requires no contention and the design only ever driving CLK and DATA low |
 | Pin roles | `ps2` phase in [DR 0010](../../spec/decision-records/0010-protocol-pin-roles.md): CLK `uio[2]`, DATA `uio[3]`, the standard I2C Pmod row with its pull-ups |
-| RTL evidence | [`firmware-ps2` 20261011-050536-b83b06d](../../verification/records/firmware-ps2/records/20261011-050536-b83b06d.md) |
-| Gate-level evidence | [`firmware-ps2-gate-level` 20261011-052507-b83b06d](../../verification/records/firmware-ps2-gate-level/records/20261011-052507-b83b06d.md) (LibreLane netlist, zero-delay) |
+| RTL evidence | [`firmware-ps2` 20261011-054024-1623ac4](../../verification/records/firmware-ps2/records/20261011-054024-1623ac4.md) |
+| Gate-level evidence | [`firmware-ps2-gate-level` 20261011-061202-f90bef2](../../verification/records/firmware-ps2-gate-level/records/20261011-061202-f90bef2.md) (LibreLane netlist, zero-delay) |
 
 ## What was measured
 
