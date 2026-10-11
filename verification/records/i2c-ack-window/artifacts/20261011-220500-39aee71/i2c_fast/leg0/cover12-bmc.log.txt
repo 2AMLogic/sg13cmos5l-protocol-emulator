@@ -1,0 +1,2 @@
+======== ABC command line "read_aiger <scratch>/i2c_fast/leg0/cover12.aig; bmc3 -F 3650 -T 1800; write_cex -a <scratch>/i2c_fast/leg0/cover12.aiw"
+Output 7 of miter "<scratch>/i2c_fast/leg0/cover12" was asserted in frame 1398. Time =     0.16 sec

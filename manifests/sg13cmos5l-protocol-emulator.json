@@ -24,7 +24,7 @@
     },
     "9": {
       "file": "manifests/evidence/testbenches.json",
-      "content_hash": "sha256:9eae03db52d0a2dd3a1710f7650d814b962bcdd86fad9813aaddc65d01663feb"
+      "content_hash": "sha256:cf64febad854045d66b4bcbf8cb1ad1e188a0381f8d6eca7a3419c1db112fe73"
     },
     "10": {
       "file": "manifests/evidence/hygiene.json",

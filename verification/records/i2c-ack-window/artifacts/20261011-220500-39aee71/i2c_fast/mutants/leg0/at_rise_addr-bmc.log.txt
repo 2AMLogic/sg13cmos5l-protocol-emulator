@@ -1,0 +1,2 @@
+======== ABC command line "read_aiger <scratch>/i2c_fast/mutants/leg0/at_rise_addr.aig; bmc3 -F 3650 -T 1800; write_cex -a <scratch>/i2c_fast/mutants/leg0/at_rise_addr.aiw"
+Output 8 of miter "<scratch>/i2c_fast/mutants/leg0/at_rise_addr" was asserted in frame 1398. Time =     0.16 sec

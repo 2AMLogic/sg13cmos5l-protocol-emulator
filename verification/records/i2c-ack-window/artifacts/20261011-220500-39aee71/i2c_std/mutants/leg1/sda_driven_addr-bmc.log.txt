@@ -1,0 +1,2 @@
+======== ABC command line "read_aiger <scratch>/i2c_std/mutants/leg1/sda_driven_addr.aig; bmc3 -F 11216 -T 1800; write_cex -a <scratch>/i2c_std/mutants/leg1/sda_driven_addr.aiw"
+Output 9 of miter "<scratch>/i2c_std/mutants/leg1/sda_driven_addr" was asserted in frame 4473. Time =     0.42 sec

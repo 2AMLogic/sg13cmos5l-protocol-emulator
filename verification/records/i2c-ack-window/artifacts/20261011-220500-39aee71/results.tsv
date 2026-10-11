@@ -1,0 +1,94 @@
+prove	i2c_fast	ACK	CLEAN	3650	4a56465d9676962f
+pdr	i2c_fast	ACK	Properties:		All	=	10.	Proved	=	2.	Disproved	=	0.	Undecided	=	8.			Time	=				60.13	sec
+cover	i2c_fast	ACK	addr_ack_sampled	REACHED	1427	replay:sim	posedge	1426	cover:addr_ack_sampled
+cover	i2c_fast	ACK	addr_nack_sampled	UNREACHED
+cover	i2c_fast	ACK	data_ack_sampled	REACHED	2552	replay:sim	posedge	2551	cover:data_ack_sampled
+cover	i2c_fast	ACK	data_nack_sampled	REACHED	2552	replay:sim	posedge	2551	cover:data_nack_sampled
+cover	i2c_fast	ACK	addr_nack_stop_no_data	UNREACHED
+cover	i2c_fast	ACK	data_ack_stop	REACHED	2708	replay:sim	posedge	2707	cover:data_ack_stop
+cover	i2c_fast	ACK	data_nack_stop	REACHED	2708	replay:sim	posedge	2707	cover:data_nack_stop
+cover	i2c_fast	ACK	addr_ack_after_former_sample	REACHED	1427	replay:sim	posedge	1426	cover:addr_ack_after_former_sample
+cover	i2c_fast	ACK	addr_ack_withdrawn_after_former_sample	UNREACHED
+cover	i2c_fast	ACK	data_ack_after_former_sample	REACHED	2552	replay:sim	posedge	2551	cover:data_ack_after_former_sample
+cover	i2c_fast	ACK	data_ack_withdrawn_after_former_sample	REACHED	2552	replay:sim	posedge	2551	cover:data_ack_withdrawn_after_former_sample
+cover	i2c_fast	ACK	addr_ack_low_phase_changes_3plus	REACHED	1398	replay:sim	posedge	1397	cover:addr_ack_low_phase_changes_3plus
+prove	i2c_fast	NACK	CLEAN	3650	d9bb6b348f7913d7
+pdr	i2c_fast	NACK	Properties:		All	=	10.	Proved	=	2.	Disproved	=	0.	Undecided	=	8.			Time	=				60.16	sec
+cover	i2c_fast	NACK	addr_ack_sampled	UNREACHED
+cover	i2c_fast	NACK	addr_nack_sampled	REACHED	1427	replay:sim	posedge	1426	cover:addr_nack_sampled
+cover	i2c_fast	NACK	data_ack_sampled	UNREACHED
+cover	i2c_fast	NACK	data_nack_sampled	UNREACHED
+cover	i2c_fast	NACK	addr_nack_stop_no_data	REACHED	1583	replay:sim	posedge	1582	cover:addr_nack_stop_no_data
+cover	i2c_fast	NACK	data_ack_stop	UNREACHED
+cover	i2c_fast	NACK	data_nack_stop	UNREACHED
+cover	i2c_fast	NACK	addr_ack_after_former_sample	UNREACHED
+cover	i2c_fast	NACK	addr_ack_withdrawn_after_former_sample	REACHED	1427	replay:sim	posedge	1426	cover:addr_ack_withdrawn_after_former_sample
+cover	i2c_fast	NACK	data_ack_after_former_sample	UNREACHED
+cover	i2c_fast	NACK	data_ack_withdrawn_after_former_sample	UNREACHED
+cover	i2c_fast	NACK	addr_ack_low_phase_changes_3plus	REACHED	1398	replay:sim	posedge	1397	cover:addr_ack_low_phase_changes_3plus
+mutant	i2c_fast	early_orig_addr	ACK	REJECTED	1354	a2_in_window	replay:sim	posedge	1353	a2_in_window	hex:49a9098162c1cc52
+mutant	i2c_fast	early_orig_addr	NACK	REJECTED	1354	a2_in_window	replay:sim	posedge	1353	a2_in_window	hex:49a9098162c1cc52
+mutant	i2c_fast	early_orig_data	ACK	REJECTED	2479	a2_in_window	replay:sim	posedge	2478	a2_in_window	hex:d9d1a4c44b7ed3f2
+mutant	i2c_fast	at_rise_addr	ACK	REJECTED	1398	a2_in_window	replay:sim	posedge	1397	a2_in_window	hex:e6aa8035d4421021
+mutant	i2c_fast	at_rise_addr	NACK	REJECTED	1398	a2_in_window	replay:sim	posedge	1397	a2_in_window	hex:e6aa8035d4421021
+mutant	i2c_fast	at_rise_data	ACK	REJECTED	2523	a2_in_window	replay:sim	posedge	2522	a2_in_window	hex:8fe542f086e81e81
+mutant	i2c_fast	late_addr	ACK	REJECTED	1449	a3_missing_sample	replay:sim	posedge	1448	a2_in_window	hex:e38142500bb43294
+mutant	i2c_fast	late_addr	NACK	REJECTED	1449	a3_missing_sample	replay:sim	posedge	1448	a2_in_window	hex:e38142500bb43294
+mutant	i2c_fast	late_data	ACK	REJECTED	2581	a3_missing_sample	replay:sim	posedge	2580	a2_in_window	hex:712d044f2fb044ea
+mutant	i2c_fast	missing_addr	ACK	REJECTED	1458	a3_missing_sample	replay:sim	posedge	1457	a3_missing_sample	hex:9d7dac7b0aa9c318
+mutant	i2c_fast	missing_addr	NACK	REJECTED	1458	a3_missing_sample	replay:sim	posedge	1457	a3_missing_sample	hex:9d7dac7b0aa9c318
+mutant	i2c_fast	missing_data	ACK	REJECTED	2583	a3_missing_sample	replay:sim	posedge	2582	a3_missing_sample	hex:9c9cc6fa95404eaf
+mutant	i2c_fast	extra_addr	ACK	REJECTED	1427	a3_extra_sample	replay:sim	posedge	1426	a3_extra_sample	hex:f8feefba10253f74
+mutant	i2c_fast	extra_addr	NACK	REJECTED	1427	a3_extra_sample	replay:sim	posedge	1426	a3_extra_sample	hex:f8feefba10253f74
+mutant	i2c_fast	extra_data	ACK	REJECTED	2552	a3_extra_sample	replay:sim	posedge	2551	a3_extra_sample	hex:702176dd1c728a64
+mutant	i2c_fast	sda_driven_addr	ACK	REJECTED	1333	a1_sda_released	replay:sim	posedge	1332	a1_sda_released	hex:40f69e89485219b0
+mutant	i2c_fast	sda_driven_addr	NACK	REJECTED	1333	a1_sda_released	replay:sim	posedge	1332	a1_sda_released	hex:40f69e89485219b0
+mutant	i2c_fast	sda_driven_data	ACK	REJECTED	2458	a1_sda_released	replay:sim	posedge	2457	a1_sda_released	hex:d9b8d1038c300755
+mutant	i2c_fast	nack_ignored	NACK	REJECTED	1583	a4_no_data_after_nack	replay:sim	posedge	1582	a4_no_data_after_nack	hex:39a4b63bd750cecc
+prove	i2c_std	ACK	CLEAN	11216	b1b522ccabd4962b
+pdr	i2c_std	ACK	Properties:		All	=	10.	Proved	=	2.	Disproved	=	0.	Undecided	=	8.			Time	=				60.19	sec
+cover	i2c_std	ACK	addr_ack_sampled	REACHED	4851	replay:sim	posedge	4850	cover:addr_ack_sampled
+cover	i2c_std	ACK	addr_nack_sampled	UNREACHED
+cover	i2c_std	ACK	data_ack_sampled	REACHED	9351	replay:sim	posedge	9350	cover:data_ack_sampled
+cover	i2c_std	ACK	data_nack_sampled	REACHED	9351	replay:sim	posedge	9350	cover:data_nack_sampled
+cover	i2c_std	ACK	addr_nack_stop_no_data	UNREACHED
+cover	i2c_std	ACK	data_ack_stop	REACHED	9936	replay:sim	posedge	9935	cover:data_ack_stop
+cover	i2c_std	ACK	data_nack_stop	REACHED	9936	replay:sim	posedge	9935	cover:data_nack_stop
+cover	i2c_std	ACK	addr_ack_after_former_sample	REACHED	4851	replay:sim	posedge	4850	cover:addr_ack_after_former_sample
+cover	i2c_std	ACK	addr_ack_withdrawn_after_former_sample	UNREACHED
+cover	i2c_std	ACK	data_ack_after_former_sample	REACHED	9351	replay:sim	posedge	9350	cover:data_ack_after_former_sample
+cover	i2c_std	ACK	data_ack_withdrawn_after_former_sample	REACHED	9351	replay:sim	posedge	9350	cover:data_ack_withdrawn_after_former_sample
+cover	i2c_std	ACK	addr_ack_low_phase_changes_3plus	REACHED	4731	replay:sim	posedge	4730	cover:addr_ack_low_phase_changes_3plus
+prove	i2c_std	NACK	CLEAN	11216	c3b2f6b9fb4b3e64
+pdr	i2c_std	NACK	Properties:		All	=	10.	Proved	=	2.	Disproved	=	0.	Undecided	=	8.			Time	=				60.19	sec
+cover	i2c_std	NACK	addr_ack_sampled	UNREACHED
+cover	i2c_std	NACK	addr_nack_sampled	REACHED	4851	replay:sim	posedge	4850	cover:addr_nack_sampled
+cover	i2c_std	NACK	data_ack_sampled	UNREACHED
+cover	i2c_std	NACK	data_nack_sampled	UNREACHED
+cover	i2c_std	NACK	addr_nack_stop_no_data	REACHED	5436	replay:sim	posedge	5435	cover:addr_nack_stop_no_data
+cover	i2c_std	NACK	data_ack_stop	UNREACHED
+cover	i2c_std	NACK	data_nack_stop	UNREACHED
+cover	i2c_std	NACK	addr_ack_after_former_sample	UNREACHED
+cover	i2c_std	NACK	addr_ack_withdrawn_after_former_sample	REACHED	4851	replay:sim	posedge	4850	cover:addr_ack_withdrawn_after_former_sample
+cover	i2c_std	NACK	data_ack_after_former_sample	UNREACHED
+cover	i2c_std	NACK	data_ack_withdrawn_after_former_sample	UNREACHED
+cover	i2c_std	NACK	addr_ack_low_phase_changes_3plus	REACHED	4731	replay:sim	posedge	4730	cover:addr_ack_low_phase_changes_3plus
+mutant	i2c_std	early_orig_addr	ACK	REJECTED	4504	a2_in_window	replay:sim	posedge	4503	a2_in_window	hex:b23a2fcf5dec8a8e
+mutant	i2c_std	early_orig_addr	NACK	REJECTED	4504	a2_in_window	replay:sim	posedge	4503	a2_in_window	hex:b23a2fcf5dec8a8e
+mutant	i2c_std	early_orig_data	ACK	REJECTED	9004	a2_in_window	replay:sim	posedge	9003	a2_in_window	hex:18eb35fc297f5316
+mutant	i2c_std	at_rise_addr	ACK	REJECTED	4731	a2_in_window	replay:sim	posedge	4730	a2_in_window	hex:35965f8c3ed9c35c
+mutant	i2c_std	at_rise_addr	NACK	REJECTED	4731	a2_in_window	replay:sim	posedge	4730	a2_in_window	hex:35965f8c3ed9c35c
+mutant	i2c_std	at_rise_data	ACK	REJECTED	9231	a2_in_window	replay:sim	posedge	9230	a2_in_window	hex:8697c9fe489bb4e2
+mutant	i2c_std	late_addr	ACK	REJECTED	4964	a3_missing_sample	replay:sim	posedge	4963	a2_in_window	hex:0d0debef924c974c
+mutant	i2c_std	late_addr	NACK	REJECTED	4964	a3_missing_sample	replay:sim	posedge	4963	a2_in_window	hex:0d0debef924c974c
+mutant	i2c_std	late_data	ACK	REJECTED	9471	a3_missing_sample	replay:sim	posedge	9470	a2_in_window	hex:5a26b3a4d4adcb92
+mutant	i2c_std	missing_addr	ACK	REJECTED	4973	a3_missing_sample	replay:sim	posedge	4972	a3_missing_sample	hex:52351550cf67c4e5
+mutant	i2c_std	missing_addr	NACK	REJECTED	4973	a3_missing_sample	replay:sim	posedge	4972	a3_missing_sample	hex:52351550cf67c4e5
+mutant	i2c_std	missing_data	ACK	REJECTED	9473	a3_missing_sample	replay:sim	posedge	9472	a3_missing_sample	hex:1efbfb1425aa14f2
+mutant	i2c_std	extra_addr	ACK	REJECTED	4851	a3_extra_sample	replay:sim	posedge	4850	a3_extra_sample	hex:943a256b1af06c42
+mutant	i2c_std	extra_addr	NACK	REJECTED	4851	a3_extra_sample	replay:sim	posedge	4850	a3_extra_sample	hex:943a256b1af06c42
+mutant	i2c_std	extra_data	ACK	REJECTED	9351	a3_extra_sample	replay:sim	posedge	9350	a3_extra_sample	hex:1d8cb003a2f552af
+mutant	i2c_std	sda_driven_addr	ACK	REJECTED	4473	a1_sda_released	replay:sim	posedge	4472	a1_sda_released	hex:60cf1609f8dd287d
+mutant	i2c_std	sda_driven_addr	NACK	REJECTED	4473	a1_sda_released	replay:sim	posedge	4472	a1_sda_released	hex:60cf1609f8dd287d
+mutant	i2c_std	sda_driven_data	ACK	REJECTED	8973	a1_sda_released	replay:sim	posedge	8972	a1_sda_released	hex:05d660bd8db541f6
+mutant	i2c_std	nack_ignored	NACK	REJECTED	5438	a6_stop_bound	replay:sim	posedge	5437	a6_stop_bound	hex:9232b9dc64755c05

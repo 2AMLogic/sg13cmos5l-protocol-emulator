@@ -1,0 +1,3 @@
+======== ABC command line "read_aiger <scratch>/i2c_fast/leg0/cover7.aig; bmc3 -F 3650 -T 1800; write_cex -a <scratch>/i2c_fast/leg0/cover7.aiw"
+No output asserted in 3650 frames. Resource limit reached (conf limit 0). Time =     0.38 sec
+Counter-example is not available.
