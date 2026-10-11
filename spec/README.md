@@ -135,3 +135,9 @@ the operator step that makes the check *blocking* rather than merely red.
 
 See issue #1 for how this surface came to exist, and DR 0006 for why the act
 it describes had not happened as of 2026-09-26.
+- `decision-records/0019-boot-rom-timing-watch.md` — **Proposed
+  2026-10-11** (not ratified), issue #246. Records the LibreLane finding that
+  the 232-word boot ROM cut slow-corner setup slack to +1.925 ns and added two
+  max-slew violations on one internal net; takes "accept and watch", defers a
+  flow repair and any fetch-path change, and requires a LibreLane re-measure
+  before further boot-ROM growth. No RTL or config change.
