@@ -80,6 +80,16 @@
       "sha256_after": "00522c704bebb93c24ebb746944c528c0504feaa06411eee1b502ee21234adf3",
       "ref": "#234",
       "summary": "dated 2026-10-10 note recording the #166 ruling for #218 (loadseq refuses all-zero images, readout load roles moved to DR 0010); no RTL, timing or interface change"
+    },
+    {
+      "path": "spec/decision-records/0001-isa.md",
+      "op": "modify",
+      "kind": "no-behaviour-change",
+      "invalidates_row13_evidence": false,
+      "sha256_before": "2390c030e0e6981b163dd52b85e7f97ceb3e9a9e7501bafef35183b07535a039",
+      "sha256_after": "b5d01e4c81a95932284ae28546f5c320f781cf33cb78cbc1a965460244f11d87",
+      "ref": "#85",
+      "summary": "dated 2026-10-11 amendment superseding the timing model's 'fetch and execute happen in the same cycle' with DR 0005's fetch-ahead text (fixed +1 cycle at run-phase entry), which the frozen RTL already implements; DR 0005 is not bound; no RTL, timing or interface change"
     }
   ],
   "row13_excluded_protocols": {
