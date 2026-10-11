@@ -1,0 +1,9 @@
+<testsuites name="results">
+  <testsuite name="all" package="all">
+    <property name="random_seed" value="1791690542" />
+    <testcase name="test_project" classname="test" file="/home/runner/work/sg13cmos5l-protocol-emulator/sg13cmos5l-protocol-emulator/test/test.py" lineno="82" time="0.04115891456604004" sim_time_ns="1710001.0" ratio_time="41546309.42116513" />
+    <testcase name="test_control_space" classname="test" file="/home/runner/work/sg13cmos5l-protocol-emulator/sg13cmos5l-protocol-emulator/test/test.py" lineno="205" time="0.11345744132995605" sim_time_ns="11320001.0" ratio_time="99773103.17689309" />
+    <testcase name="test_boot_rom" classname="test" file="/home/runner/work/sg13cmos5l-protocol-emulator/sg13cmos5l-protocol-emulator/test/test.py" lineno="408" time="7.488308906555176" sim_time_ns="738380001.0" ratio_time="98604372.52443352" />
+    <testcase name="test_load_crc_readout" classname="test" file="/home/runner/work/sg13cmos5l-protocol-emulator/sg13cmos5l-protocol-emulator/test/test.py" lineno="506" time="0.02111530303955078" sim_time_ns="2220001.0" ratio_time="105137065.56054379" />
+  </testsuite>
+</testsuites>
