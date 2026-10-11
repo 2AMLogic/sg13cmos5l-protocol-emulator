@@ -17,7 +17,7 @@
 ; first would pull both lines low for a cycle). The bench runs on a pad
 ; model that resolves each line from uio_oe/uio_out (uio_pads.py, #136).
 ;
-; Budgets (cycles): t_LOW 65, t_HIGH 60, t_HD;STA 65, t_SU;STA 30,
+; Budgets (cycles): t_LOW 70, t_HIGH 55, t_HD;STA 65, t_SU;STA 30,
 ; t_SU;STO 60.  t_SU;STA is the span from the SCL rise that precedes the
 ; repeated START to the OUT that pulls SDA low, i.e. the UM10204 Table 10
 ; setup time, here paced AT the Table 10 minimum.
@@ -73,7 +73,7 @@
 tx1_loop:
 .cyclesec i2c_tx1_low
         OUT   UIO_OUT, R3   ; SCL falls, SDA = data bit
-        WAIT  61       ; 62 cycles
+        WAIT  66       ; 67 cycles
         LDI   R2, 0x04
         OR    R3, R2         ; raise SCL, SDA unchanged
 .endcyclesec
@@ -83,7 +83,7 @@ tx1_loop:
         poll0: IN    R2, UIO_IN   ; peripheral's SCL level
         AND   R2, R3
         BZ    poll0          ; SCL held low -> poll again
-        WAIT  44       ; 45 cycles
+        WAIT  39       ; 40 cycles
         SHF   R0, LEFT       ; next bit into position
         MOV   R3, R0
         SHF   R3, RIGHT
@@ -100,7 +100,7 @@ tx1_loop:
 .cyclesec i2c_ack1_low
         OUT   UIO_OUT, R3   ; 9th clock: SCL falls, SDA released
         LDI   R3, 0x0C
-        WAIT  62       ; 63 cycles
+        WAIT  67       ; 68 cycles
 .endcyclesec
 .cyclesec i2c_ack1_high
         OUT   UIO_OUT, R3   ; ACK clock rises (peripheral pulls SDA)
@@ -118,13 +118,13 @@ tx1_loop:
         LDI   R2, 0x08
         AND   R3, R2
         XOR   R3, R2         ; R3 = SDA(bit 1), SCL low
-        WAIT  46       ; 47 cycles
+        WAIT  41       ; 42 cycles
 .endcyclesec
 ; ------------------------------------------ byte 2: payload 0x5A
 tx2_loop:
 .cyclesec i2c_tx2_low
         OUT   UIO_OUT, R3   ; SCL falls, SDA = data bit
-        WAIT  61       ; 62 cycles
+        WAIT  66       ; 67 cycles
         LDI   R2, 0x04
         OR    R3, R2         ; raise SCL, SDA unchanged
 .endcyclesec
@@ -134,7 +134,7 @@ tx2_loop:
         poll2: IN    R2, UIO_IN   ; peripheral's SCL level
         AND   R2, R3
         BZ    poll2          ; SCL held low -> poll again
-        WAIT  44       ; 45 cycles
+        WAIT  39       ; 40 cycles
         SHF   R0, LEFT       ; next bit into position
         MOV   R3, R0
         SHF   R3, RIGHT
@@ -151,7 +151,7 @@ tx2_loop:
 .cyclesec i2c_ack2_low
         OUT   UIO_OUT, R3   ; 9th clock: SCL falls, SDA released
         LDI   R3, 0x0C
-        WAIT  62       ; 63 cycles
+        WAIT  67       ; 68 cycles
 .endcyclesec
 .cyclesec i2c_ack2_high
         OUT   UIO_OUT, R3   ; ACK clock rises
@@ -160,7 +160,7 @@ tx2_loop:
         AND   R2, R3
         BZ    poll3          ; SCL held low -> poll again
         LDI   R3, 0x08       ; SCL low, SDA released (for the Sr)
-        WAIT  55       ; 56 cycles
+        WAIT  50       ; 51 cycles
 .endcyclesec
 ; ------------------------------------------------- repeated START
 .cyclesec i2c_sr_low
@@ -168,7 +168,7 @@ tx2_loop:
         LDI   R3, 0x0C
         LDI   R0, 0x5E       ; ~0xA1 for the next byte
         LDI   R1, 0x08
-        WAIT  60       ; 61 cycles
+        WAIT  65       ; 66 cycles
 .endcyclesec
 .cyclesec i2c_sr_rise
         OUT   UIO_OUT, R3   ; SCL rises with SDA high: Sr setup begins
@@ -195,7 +195,7 @@ tx2_loop:
 tx3_loop:
 .cyclesec i2c_tx3_low
         OUT   UIO_OUT, R3   ; SCL falls, SDA = data bit
-        WAIT  61       ; 62 cycles
+        WAIT  66       ; 67 cycles
         LDI   R2, 0x04
         OR    R3, R2         ; raise SCL, SDA unchanged
 .endcyclesec
@@ -205,7 +205,7 @@ tx3_loop:
         poll5: IN    R2, UIO_IN   ; peripheral's SCL level
         AND   R2, R3
         BZ    poll5          ; SCL held low -> poll again
-        WAIT  44       ; 45 cycles
+        WAIT  39       ; 40 cycles
         SHF   R0, LEFT       ; next bit into position
         MOV   R3, R0
         SHF   R3, RIGHT
@@ -222,7 +222,7 @@ tx3_loop:
 .cyclesec i2c_ack3_low
         OUT   UIO_OUT, R3   ; 9th clock: SCL falls, SDA released
         LDI   R3, 0x0C
-        WAIT  62       ; 63 cycles
+        WAIT  67       ; 68 cycles
 .endcyclesec
 .cyclesec i2c_ack3_high
         OUT   UIO_OUT, R3   ; ACK clock rises
@@ -233,14 +233,14 @@ tx3_loop:
         LDI   R0, 0x00       ; receive accumulator
         LDI   R1, 0x08
         LDI   R3, 0x08       ; SCL low, SDA released
-        WAIT  53       ; 54 cycles
+        WAIT  48       ; 49 cycles
 .endcyclesec
 ; ----------------------------------- read byte (peripheral drives SDA)
 rd_loop:
 .cyclesec i2c_rd_low
         OUT   UIO_OUT, R3   ; SCL falls, SDA released to the peripheral
         LDI   R3, 0x0C
-        WAIT  62       ; 63 cycles
+        WAIT  67       ; 68 cycles
 .endcyclesec
 .cyclesec i2c_rd_high
         OUT   UIO_OUT, R3   ; SCL rises: peripheral's bit is on the line
@@ -256,7 +256,7 @@ rd_loop:
         SHF   R2, RIGHT      ; bit 3 -> bit 0
         SHF   R0, LEFT
         OR    R0, R2         ; MSB first
-        WAIT  45       ; 46 cycles
+        WAIT  40       ; 41 cycles
         LDI   R2, 0x01
         SUB   R1, R2         ; counter--  (sets Z)
         BNZ   rd_loop        ; 8 data clocks
@@ -264,7 +264,7 @@ rd_loop:
 .cyclesec i2c_nack_low
         OUT   UIO_OUT, R3   ; 9th clock: SCL falls, SDA stays released
         LDI   R3, 0x0C
-        WAIT  62       ; 63 cycles
+        WAIT  67       ; 68 cycles
 .endcyclesec
 .cyclesec i2c_nack_high
         OUT   UIO_OUT, R3   ; SCL rises, SDA released: controller NACK
@@ -273,14 +273,14 @@ rd_loop:
         AND   R2, R3
         BZ    poll8          ; SCL held low -> poll again
         LDI   R3, 0x08
-        WAIT  55       ; 56 cycles
+        WAIT  50       ; 51 cycles
 .endcyclesec
 ; ------------------------------------------------------------- STOP
 .cyclesec i2c_stop_low
         OUT   UIO_OUT, R3   ; SCL falls, SDA released
         LDI   R3, 0x00       ; SDA low during the low period
         OUT   UIO_OUT, R3
-        WAIT  60       ; 61 cycles
+        WAIT  65       ; 66 cycles
         LDI   R3, 0x04       ; SCL high, SDA low
 .endcyclesec
 .cyclesec i2c_stop_setup
