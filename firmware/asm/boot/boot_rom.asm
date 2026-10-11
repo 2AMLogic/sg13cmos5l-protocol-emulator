@@ -91,22 +91,28 @@
 ; the 50 MHz row-4 clock; the cycle count is the claim, any baud figure is
 ; arithmetic at that unconfirmed clock). Frame, all bytes 8N1:
 ;
-;   0xA5   N-1   2N bytes, each word high byte first   CRC-16/XMODEM, high first
+;   0xA5   N-1   ~(N-1)   2N bytes, each word high byte first   CRC-16/XMODEM, high first
 ;
-; N is 1..256. Each payload word is written through PM_DATA_HI / PM_DATA_LO,
-; so PM_CRC covers exactly the words written. The trailer is compared with
-; PM_CRC. The reply is 0x06 (accepted) or 0x15 (rejected) followed by PM_CRC,
-; high byte first -- the CRC of what was actually written, so a host sees
-; what the chip computed. Accepted: hand over and RUN 0. Rejected: go back to
-; waiting for 0xA5. A failed image is never run.
+; N is 1..256. The third byte is the count's ones' complement (issue #211,
+; DR 0013 finding F8): the count is outside the CRC, so it gets its own
+; check, made BEFORE any payload word is committed. A count and complement
+; that are not each other's complement are answered 0x15 at once, followed
+; by PM_CRC = 0x0000 (nothing was committed), and the loader goes back to
+; waiting for 0xA5, as after a CRC mismatch: the image is never run. Each
+; payload word is written through PM_DATA_HI / PM_DATA_LO, so PM_CRC covers
+; exactly the words written. The trailer is compared with PM_CRC. The reply
+; is 0x06 (accepted) or 0x15 (rejected) followed by PM_CRC, high byte first
+; -- the CRC of what was actually written, so a host sees what the chip
+; computed. Accepted: hand over and RUN 0. Rejected: go back to waiting for
+; 0xA5. A failed image is never run.
 ;
 ; No subroutines exist in this ISA, so the receiver is one block, entered
 ; at rx_next, followed by a dispatch on a phase number kept in R3:
 ;
 ;   P0  waiting for 0xA5 (any other byte is ignored: that is the resync)
-;   P1  the count byte N-1
+;   P1  the count byte N-1              P5  its complement ~(N-1)
 ;   P2  a payload word's high byte      P3  its low byte (commits the word)
-;   P5  the trailer's high byte         P4  the trailer's low byte
+;   P6  the trailer's high byte         P4  the trailer's low byte
 ;
 ; The count is kept as N-1 in UIO_DIR and tested for 0 after each commit, so
 ; N = 256 (count byte 0xFF) needs no ninth bit.
@@ -178,7 +184,9 @@ rx_bit:
         BZ    h_lo                  ; P3
         SUB   R3, R1
         BZ    h_trail_lo            ; P4
-        ; P5: the trailer's high byte. Keep its difference from PM_CRC's.
+        SUB   R3, R1
+        BZ    h_comp                ; P5
+        ; P6: the trailer's high byte. Keep its difference from PM_CRC's.
         RCTL  R1, PM_CRC_HI
         XOR   R0, R1
         WCTL  UIO_DIR, R0           ; zero <=> the high byte matches
@@ -265,6 +273,14 @@ h_count:
         LDI   R1, 0
         WCTL  PM_ADDR, R1
         WCTL  PM_CRC_LO, R1         ; PM_CRC covers this frame's words only
+        LDI   R3, 5                 ; the count's complement is next
+        JMP   rx_next
+h_comp:
+        RCTL  R2, UIO_DIR           ; the count byte, N-1
+        XOR   R0, R2                ; 0xFF <=> this byte is ~(N-1)
+        ADD   R0, R1                ; R1 = 1 (the dispatch's): Z <=> 0xFF + 1 wraps to 0
+        LDI   R0, 0x15
+        BNZ   reply                 ; mismatch: 0x15 + PM_CRC (0x0000), nothing committed, back to P0
         LDI   R3, 2
         JMP   rx_next
 h_hi:
@@ -275,7 +291,7 @@ h_lo:
         WCTL  PM_DATA_LO, R0        ; 2 cycles: commit the word -> PM_CRC; PM_ADDR++
         RCTL  R1, UIO_DIR
         OR    R1, R1                ; Z <=> no words were left after this one
-        LDI   R3, 5                 ; (so the trailer's high byte is next)
+        LDI   R3, 6                 ; (so the trailer's high byte is next)
         BZ    rx_next
         LDI   R2, 1
         SUB   R1, R2

@@ -80,6 +80,16 @@
       "sha256_after": "00522c704bebb93c24ebb746944c528c0504feaa06411eee1b502ee21234adf3",
       "ref": "#234",
       "summary": "dated 2026-10-10 note recording the #166 ruling for #218 (loadseq refuses all-zero images, readout load roles moved to DR 0010); no RTL, timing or interface change"
+    },
+    {
+      "path": "spec/decision-records/0013-program-loading.md",
+      "op": "modify",
+      "kind": "no-behaviour-change",
+      "invalidates_row13_evidence": false,
+      "sha256_before": "00522c704bebb93c24ebb746944c528c0504feaa06411eee1b502ee21234adf3",
+      "sha256_after": "d0942f5c12d7404f8a818934b07b8ce3ae72c3996cb091bb12b278910cd530aa",
+      "ref": "#211",
+      "summary": "dated 2026-10-11 entry: the UART boot frame gains a count-complement byte that the boot ROM checks before committing any word (F8 resolved); boot ROM firmware and host wire format only, no change to the ISA or to the pinned boot interface (BOOT_STATUS, ROM fetch until RUN, hand-over state, layer-1 PM_CRC readout)"
     }
   ],
   "row13_excluded_protocols": {

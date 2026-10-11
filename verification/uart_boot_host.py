@@ -63,11 +63,20 @@ def image_bytes(words):
 
 
 def frame(words):
-    """`0xA5`, `N-1`, `2N` bytes, CRC-16 high byte first."""
+    """`0xA5`, `N-1`, `~(N-1)`, `2N` bytes, CRC-16 high byte first. The third
+    byte is the count's ones' complement (DR 0013, issue #211); the CRC still
+    covers the `2N` image bytes only."""
     assert 1 <= len(words) <= 256, len(words)
     body = image_bytes(words)
     crc = crc16_xmodem(body)
-    return bytes((MAGIC, len(words) - 1)) + body + bytes((crc >> 8, crc & 0xFF))
+    count = len(words) - 1
+    return bytes((MAGIC, count, 0xFF - count)) + body + bytes((crc >> 8, crc & 0xFF))
+
+
+def header_reject_reply():
+    """What the chip answers when the count's complement does not match: the
+    verdict 0x15, then `PM_CRC` with nothing committed, 0x0000."""
+    return bytes((NAK, 0x00, 0x00))
 
 
 def expected_reply(words, accepted=True):

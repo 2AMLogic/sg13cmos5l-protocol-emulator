@@ -48,7 +48,9 @@ ROM = "rtl/protocol_boot_rom.v"
 REQUEST = "verification/request-boot-rom.json"
 
 # The warm-start words moved to 0x95.. when the UART load (issue #139) was
-# placed ahead of them; the strap dispatch at 0x00..0x08 did not move.
+# placed ahead of them, and to 0x9E.. when the UART load's count-complement
+# check (issue #211) added nine words; the strap dispatch at 0x00..0x08 did
+# not move.
 T_STUB = "test_stub_straps_idle_on_unwritten_memory"
 T_UNVERIFIED = "test_mode_low_never_runs_unverified_memory"
 T_WARM = "test_warm_start_runs_a_verified_image"
@@ -93,17 +95,17 @@ MUTANTS = [
     ("warm-start-skips-verdict",
      "boot program: the branch on the CRC verdict is a NOP, so every image is run",
      ROM,
-     [("      8'h9A: word = 16'hE009;", "      8'h9A: word = 16'h0000;", 1)],
+     [("      8'hA3: word = 16'hE009;", "      8'hA3: word = 16'h0000;", 1)],
      {T_UNVERIFIED, T_CORRUPT}),
     ("verdict-ignores-crc-high-byte",
      "boot program: the verdict tests PM_CRC_LO only (OR R1, R1 for OR R0, R1)",
      ROM,
-     [("      8'h99: word = 16'h6100;", "      8'h99: word = 16'h6500;", 1)],
+     [("      8'hA2: word = 16'h6100;", "      8'hA2: word = 16'h6500;", 1)],
      {T_CORRUPT}),
     ("verdict-ignores-crc-low-byte",
      "boot program: the verdict tests PM_CRC_HI only (OR R0, R0 for OR R0, R1)",
      ROM,
-     [("      8'h99: word = 16'h6100;", "      8'h99: word = 16'h6000;", 1)],
+     [("      8'hA2: word = 16'h6100;", "      8'hA2: word = 16'h6000;", 1)],
      {T_CORRUPT}),
     ("straps-01-and-10-swapped",
      "boot program: strap 01 warm-starts and strap 10 goes to the SPI-flash boot",
@@ -115,25 +117,25 @@ MUTANTS = [
      "boot program: the handover does not restore Z (OR R3, R3 is a NOP), so the image starts "
      "with Z = 1 instead of the reset value",
      ROM,
-     [("      8'h9B: word = 16'h6F00;", "      8'h9B: word = 16'h0000;", 1)],
+     [("      8'hA4: word = 16'h6F00;", "      8'hA4: word = 16'h0000;", 1)],
      {T_WARM}),
     ("warm-start-accepts-zero-signature",
      "boot program: the branch on the signature word is a NOP, so a zero signature that passes "
      "the CRC is run (DR 0013 Finding F1 reopened: the all-zero image warm-starts)",
      ROM,
-     [("      8'h96: word = 16'hD009;", "      8'h96: word = 16'h0000;", 1)],
+     [("      8'h9F: word = 16'hD009;", "      8'h9F: word = 16'h0000;", 1)],
      {T_ZERO_SIG}),
     ("zero-signature-tests-high-byte-only",
      "boot program: the signature test ORs the high byte with itself (OR R0, R0 for OR R0, R1), "
      "so every signature 0x00nn is refused",
      ROM,
-     [("      8'h95: word = 16'h6100;", "      8'h95: word = 16'h6000;", 1)],
+     [("      8'h9E: word = 16'h6100;", "      8'h9E: word = 16'h6000;", 1)],
      {T_ZERO_PAD}),
     ("zero-signature-tests-low-byte-only",
      "boot program: the signature test ORs the low byte with itself (OR R1, R1 for OR R0, R1), "
      "so every signature 0xnn00 is refused",
      ROM,
-     [("      8'h95: word = 16'h6100;", "      8'h95: word = 16'h6500;", 1)],
+     [("      8'h9E: word = 16'h6100;", "      8'h9E: word = 16'h6500;", 1)],
      {T_ZERO_PAD}),
 ]
 

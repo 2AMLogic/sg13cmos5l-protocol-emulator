@@ -40,13 +40,15 @@ transport: instead of the pin sequence, the bytes a PC sends to the boot ROM's
 UART load (`firmware/asm/boot/boot_rom.asm`, block `uart_load`) over the demo
 board's USB-UART bridge, Tiny Tapeout option B (RX `ui_in[1]`, TX `uo_out[0]`):
 
-    0xA5   N-1   2N image bytes, each word high byte first   CRC-16/XMODEM
+    0xA5   N-1   ~(N-1)   2N image bytes, each word high byte first   CRC-16/XMODEM
 
-The CRC covers the 2N image bytes only (not the `0xA5`, not the count);
-polynomial 0x1021, initial value 0x0000, no reflection, no final XOR; sent
-high byte first. The chip answers `0x06` (accepted) or `0x15` (rejected) and
-its own CRC of what it wrote, high byte first, and runs the image only on
-`0x06`. Line settings: 8N1, 434 core cycles per bit (115,200 baud at the 50 MHz
+The third byte is the count's ones' complement, `0xFF - (N-1)` (issue #211,
+DR 0013 finding F8): the chip checks it before it commits any word and answers
+a mismatch `0x15 00 00` at once, without running anything. The CRC covers the
+2N image bytes only (not the `0xA5`, the count or its complement); polynomial
+0x1021, initial value 0x0000, no reflection, no final XOR; sent high byte
+first. The chip answers `0x06` (accepted) or `0x15` (rejected) and its own CRC
+of what it wrote, high byte first, and runs the image only on `0x06`. Line settings: 8N1, 434 core cycles per bit (115,200 baud at the 50 MHz
 row-4 clock, which is unconfirmed; 50e6 / 434 = 115,207 baud), no flow control.
 The first byte may be sent as soon as the chip is out of reset and bytes may
 go back to back. Formats with `--uart`: `bin` (the raw frame, the default),
@@ -188,7 +190,9 @@ def uart_frame(words):
             raise LoadSeqError("word %r out of 16-bit range" % (w,))
     body = b"".join(bytes(((w >> 8) & 0xFF, w & 0xFF)) for w in words)
     crc = crc16_xmodem(body)
-    return bytes((UART_MAGIC, len(words) - 1)) + body + bytes((crc >> 8, crc & 0xFF))
+    count = len(words) - 1
+    return (bytes((UART_MAGIC, count, count ^ 0xFF)) + body
+            + bytes((crc >> 8, crc & 0xFF)))
 
 
 def render_uart(frame, fmt):
@@ -227,8 +231,8 @@ def check_image(path):
     except LoadSeqError as exc:
         problems.append("model replay: %s" % exc)
     frame = uart_frame(words)
-    if (len(frame) != 2 * len(words) + 4 or frame[0] != UART_MAGIC or frame[1] != len(words) - 1
-            or crc16_xmodem(frame[2:]) != 0):
+    if (len(frame) != 2 * len(words) + 5 or frame[0] != UART_MAGIC or frame[1] != len(words) - 1
+            or frame[1] ^ frame[2] != 0xFF or crc16_xmodem(frame[3:]) != 0):
         problems.append("UART frame has the wrong shape or a nonzero CRC residue")
     return problems
 

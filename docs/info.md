@@ -102,8 +102,8 @@ before. The remaining pins (`ui_in[6:2]`, `uio`) are untouched by loading.
 boot ROM** (`spec/decision-records/0013-program-loading.md` layer 2,
 Proposed). After a power-up or a reselect the SRAM holds nothing a host put
 there, so the core fetches from a small on-chip ROM instead. The ROM is
-synthesized logic, 223 words (DR 0013 proposed a cap of 128; the UART
-load alone is 129 words and does not fit it, finding F4, so the cap is the
+synthesized logic, 232 words (DR 0013 proposed a cap of 128; the UART
+load alone is 138 words and does not fit it, finding F4, so the cap is the
 256-word fetch address space until the record decides), and its contents
 are a program in this same instruction set
 ([`firmware/asm/boot/boot_rom.asm`](../firmware/asm/boot/boot_rom.asm));
@@ -130,22 +130,28 @@ flash: [spi-flash-boot.md](spi-flash-boot.md).
 **UART load (strap `00`).** The demo board's USB-UART bridge, Tiny Tapeout
 "option B": RX `ui_in[1]`, TX `uo_out[0]`, 8N1, 434 core cycles per bit (115,200
 baud if the core clock is the 50 MHz of target-spec row 4, which is unconfirmed;
-the cycle count is the claim). Send `0xA5`, `N-1` (N is 1 to 256), `2N` image
-bytes with the high byte of each word first, then the image's CRC-16/XMODEM
-(high byte first). The chip writes the words, checks its CRC against yours, and
-answers `0x06` plus its CRC (high byte first) and runs the image from address
-0, or answers `0x15` plus its CRC and waits for the next `0xA5`. It never
-runs an image that failed. `python3 firmware/tools/loadseq.py IMAGE.hex --uart -o
+the cycle count is the claim). Send `0xA5`, `N-1` (N is 1 to 256), the
+count's complement `~(N-1)` (that is, `0xFF - (N-1)`), `2N` image bytes with
+the high byte of each word first, then the CRC-16/XMODEM of the image bytes
+(high byte first; the CRC does not cover the first three bytes). The chip
+checks the complement first: if it does not match it answers `0x15 00 00` at
+once, while you are still sending, writes nothing, and waits for the next
+`0xA5`, so read the reply as it arrives and, on `0x15`, finish or abandon the
+frame and pulse `rst_n` before resending. Otherwise the chip writes the
+words, checks its CRC against yours, and answers `0x06` plus its CRC (high
+byte first) and runs the image from address 0, or answers `0x15` plus its CRC
+and waits for the next `0xA5`. It never runs an image that failed. `python3 firmware/tools/loadseq.py IMAGE.hex --uart -o
 FRAME` writes the frame. TX idles high from the first instruction of the
 loader; no `uio` pin is driven, though `uio_out` reads `0xFF` while the loader
 waits (it uses `UIO_DIR` as storage under a guard, DR 0013 finding F5). A
 loader that has lost sync (a wrong length) reads stray bytes as a frame
 whenever one is `0xA5`: pulse `rst_n`, or send non-zero filler until it answers
-`0x15` (zero filler is read as a valid, longer image). The CRC covers the
-words and not the count byte, so a wrong length is rejected unless the
-CRC of the shorter prefix equals the two bytes after it (about 1 in 65,536 for
-an arbitrary image; a constructed image can make it certain, DR 0013 finding
-F8): then the truncated image is accepted and run. The loaded program starts
+`0x15` (zero filler is read as a valid, longer image). A corrupted count
+byte, or a corrupted complement, is rejected before anything is written
+(every single-bit flip of either is in the RTL regression; DR 0013 finding
+F8, resolved by issue #211). Not ruled out: a corruption that changes the
+count and its complement consistently (at least two bit errors placed to
+match) and also makes the CRC of the shorter or longer stream match. The loaded program starts
 in the state a warm start leaves, with `PM_CRC` holding the image's CRC. In RTL
 simulation the loader accepted hosts up to 5 % slow and 4 % fast
 (`verification/records/boot-uart/`). 
