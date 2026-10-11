@@ -65,7 +65,7 @@
 ;
 ;   data-clock low phase   OUT(fall) + WAIT 67 (=68) + OR        = 70
 ;   data-clock high phase  OUT(rise) + SHF + WAIT 46 (=47)
-;                          + MOV + AND                          = 55
+;                          + MOV + 4x SHF + AND                  = 55
 ;   last bit's high phase  OUT(rise) + WAIT 52 (=53) + MOV       = 55
 ;                            (no SHF/AND: the ACK prep is one MOV)
 ;   ACK low phase          OUT(fall) + WAIT 67 (=68) + LDI       = 70
@@ -127,7 +127,7 @@
 .cyclesec i2c_abit1_high
         OUT   UIO_OUT, R3     ; SCL rises: bit 1 sampled on the line
         SHF   R0, LEFT        ; bit 2 into position
-        WAIT  46              ; 51 cycles
+        WAIT  46              ; 47 cycles
         MOV   R3, R0
         SHF   R3, RIGHT
         SHF   R3, RIGHT
@@ -439,12 +439,12 @@
 ; ---------- to from i2c_ack1_high's BNZ: same sequence, own copy, so the
 ; ---------- taken-branch path needs no extra JMP whose cycle would then
 ; ---------- have to be subtracted from a phase budget. LDI + WAIT 5 land
-; ---------- the SCL fall exactly 60 cycles after the ACK clock's rise.)
+; ---------- the SCL fall exactly 55 cycles after the ACK clock's rise.)
 stop_from_addr:
         LDI   R3, 0x08        ; SDA released, SCL still high
         WAIT  5               ; 6 cycles (the 4 the ACK path spends on SHFs)
 .cyclesec i2c_stop_addr_low
-        OUT   UIO_OUT, R3     ; SCL falls (at ACK-rise + 60 exactly)
+        OUT   UIO_OUT, R3     ; SCL falls (at ACK-rise + 55 exactly)
         LDI   R3, 0x00        ; SDA low during the low period
         OUT   UIO_OUT, R3
         WAIT  65

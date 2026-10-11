@@ -371,7 +371,7 @@ async def drive_peripheral(dut, pads, ack_falls: set) -> None:
     which bytes to acknowledge is the peripheral's own, and that is what
     `ack_falls` encodes (fall 9 = the address byte's ACK clock, fall 18 =
     the data byte's). The pull lands two cycles after the SCL fall it
-    answers, well inside the 70/235-cycle low phase and long before both
+    answers, well inside the 70/258-cycle low phase and long before both
     the controller's `IN` sample and the SCL rise the model samples on;
     the release lands on the next fall, i.e. inside the following low
     phase, which is the only place I2C lets SDA change.

@@ -23,7 +23,7 @@ byte. The sibling bench's peripheral answered one cycle after the fall,
 so nothing exercised it.
 
 The fix moves both ACK samples to the middle of the ninth SCL *high*
-(Fast: 30 cycles after the rise, 30 before the fall; Standard: 121 / 121)
+(Fast: 30 cycles after the rise, 25 before the fall; Standard: 121 / 121)
 and keeps every phase budget, on both address-ACK outcomes.
 
 What is checked

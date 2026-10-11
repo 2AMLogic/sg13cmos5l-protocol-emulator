@@ -327,9 +327,10 @@ klt functional-verification verification/request-firmware-uart-rx.json --format 
 The I2C third of issue #23's batch, implementing DR 0001's "Per-protocol
 cycle-budget sketch → I2C". `i2c_fast.asm` paces the Fast-mode budget
 (low = 70, high = 55 core cycles per SCL clock — the 125-cycle / 400 kHz
-period of the sketch; t_LOW 1.40 µs against UM10204 Table 10's 1.3 µs floor,
-+7.7 %, and t_HIGH 1.10 µs against 0.6 µs. DR 0001's sketch and the program
-until issue #272 had 65 / 60, t_LOW exactly on the floor with zero margin); `i2c_std.asm` is the same instruction stream on the
+period of the sketch; t_LOW 1.40 µs against UM10204 Table 10's 1.3 µs
+floor, +7.7 %, and t_HIGH 1.10 µs against 0.6 µs. DR 0001's sketch and
+the program until issue #272 had 65 / 60, t_LOW exactly on the floor
+with zero margin); `i2c_std.asm` is the same instruction stream on the
 Standard-mode budget (low = 258, high = 242 — a 500-cycle clock, i.e. no
 faster than the 100 kHz Standard-mode ceiling at the unconfirmed nominal
 50 MHz clock; both phases clear UM10204 Table 10's t_LOW / t_HIGH minima of
