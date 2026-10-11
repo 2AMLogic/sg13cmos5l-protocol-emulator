@@ -1,0 +1,5 @@
+WARNING: <scratch>/replay_tb.v:13: $readmemh(<scratch>/i2c_fast/mutants/leg1/missing_addr-replay.hex): Not enough words in the file for the requested range [0:1459].
+VCD info: dumpfile <scratch>/i2c_fast/mutants/leg1/missing_addr-cex.vcd opened for output.
+ERROR: verification/formal/i2c_ack_window.sv:256: 
+       Time: 14575000  Scope: replay_tb.dut.u_property
+<scratch>/replay_tb.v:21: $finish called at 14600000 (1ps)
