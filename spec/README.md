@@ -7,8 +7,8 @@ Specification and decision records.
 > records 0001–0004 are ratified by the two `RATIFY-KEY` reviews on pull
 > request #242; that PR's merge commit is the ratification record, and
 > [`decision-records/0009-two-key-ratification-act.md`](decision-records/0009-two-key-ratification-act.md)
-> records the act and exactly what it binds. DR 0001 is ratified with its
-> 2026-10-11 fetch-ahead amendment. Target-spec rows 13 and 14 and decision
+> records the act and exactly what it binds. DR 0001 is ratified with its two
+> 2026-10-11 amendments (fetch-ahead; run-time `uio` direction). Target-spec rows 13 and 14 and decision
 > records 0005, 0007, 0008 and 0010–0018 are **not** bound by it and stay
 > `Proposed`. The 2026-09-26 banner below is preserved as written: it was
 > true until that PR merged.

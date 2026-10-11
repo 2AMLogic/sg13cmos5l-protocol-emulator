@@ -107,7 +107,7 @@
       "kind": "no-behaviour-change",
       "invalidates_row13_evidence": false,
       "sha256_before": "6be6663553a705acd15d3a2562086afe0c4e601a7de5596a1c06841d4a71ae1a",
-      "sha256_after": "ccf545386f5fb8f25454c13efb940da57aaa304943ac917e9e934b9ec5d75484",
+      "sha256_after": "378d5aed80928c042241aaef41ce32282b15c124675cb94db1733be05f68ac08",
       "ref": "#242",
       "summary": "two-key act (issue #44): Status line flipped from Proposed to Ratified citing the carrying PR and DR 0009, with the 2026-09-26 status text preserved verbatim beneath it; the record's decided text, including its two 2026-10-11 amendments (fetch-ahead, run-time uio direction), is unchanged; no RTL, timing or interface change"
     }
