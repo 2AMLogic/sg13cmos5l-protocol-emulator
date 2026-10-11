@@ -49,6 +49,38 @@ re-hardening for a newer flow, are allowed after it.
 | D6 | Demo (optional) | A protocol the ISA was **not** designed for (for example 1-Wire, WS2812, DMX512 or Manchester), written as firmware after the fact with a bench: target-spec row 13. If possible, a video. | Nothing. Row 13 is "Proposed 2026-10-09 ... unmet, no firmware yet" (`spec/target-spec.md`). | **Blocked** on the frozen submission ISA (#135, with #130 deciding which protocol-neutral primitives exist). A physical-board demo also needs the host loader (#118). |
 | D7 | Required external parts | A parts list in the datasheet (`docs/info.md`) and the submission, aligned with TT-recommended Pmods | Nothing beyond DR 0008 item 1 (I2C needs external pull-ups). | **Parts list written** in `docs/info.md` (#133). Pins are not yet on the TT-recommended pinouts: DR 0010 records the target plan, and the moves are #155 (after #135). |
 
+### D2 dated update, 2026-10-11 (issue #230)
+
+Reviewed commit: `main` @ `16c0b2a`. The D2 row above is left as written;
+this update supersedes its "What exists today" and its reason for Partial.
+
+- **Artifact.** [`architecture.md`](architecture.md) now exists, linked from
+  the root `README.md`. It covers the datapath and a block diagram,
+  fetch-ahead and the fixed +1 run-entry cycle, `IN`/`OUT` pin timing, the
+  instruction table (encoding, operands, cycles, `Z`/`C`), the ports, the
+  full control map with per-direction latency, runtime direction and open
+  drain, P1/P2, the reserved encodings and `--allow-reserved`, the
+  boot/load path, what the ISA does not do, evidence links, and limitations.
+  It separates logical timing from electrical evidence.
+- **Checker.** [`scripts/check_architecture.py`](../../scripts/check_architecture.py)
+  compares the document's five marked tables with `firmware/tools/asm.py`
+  (mnemonics, opcodes, kinds, control indices, permissions, latencies,
+  ports, and assembled words and cycle counts for every operand form) and,
+  for flags, with the independent model `verification/reference_models/isa.py`.
+  Its self-test is [`scripts/test_check_architecture.py`](../../scripts/test_check_architecture.py).
+  Both run in `npm run lint`, which the CI `records` job runs.
+- **The "ISA is not frozen until #135 lands" reason is stale.** #135 and
+  #141 are closed, and DR 0017's freeze is on `main` with its lint.
+- **State: still Partial, not Ready.** The document is marked provisional,
+  and known changes would still make it refresh: open finding #244 (routed
+  open-drain release glitch; any fix changes the pinned top and the
+  open-drain text), open PR #248 for #211 (the boot ROM's UART frame, which
+  the load-path section describes), and #217 (no routed-SDF evidence for the
+  protocol firmware). The tracker's Ready definition needs a current
+  document with no known refresh left. DR 0001, 0005, 0012, 0013, 0015, 0016
+  and 0017 stay **Proposed**; ratification is #44. This update ratifies
+  nothing and marks no spec row met.
+
 ### D6 dated update, 2026-10-10 (issue #141 part 2)
 
 The D6 row above is left as written. Row 13's primary column now has
