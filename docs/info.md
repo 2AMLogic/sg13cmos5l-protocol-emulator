@@ -279,7 +279,8 @@ Notes, all from the cited records:
   `ws2812` was written **after** the ISA was frozen (DR 0017, freeze merge
   `1696045b`; the protocol was chosen by DR 0018 in a commit of its own,
   before any WS2812 file existed), and no ISA-defining file changed to build
-  it (`scripts/check_isa_freeze.py`: 0 amendments). An independent WS2812B
+  it (it added no freeze amendment; the one on `main`, #234's DR 0013 note,
+  is a `no-behaviour-change` that does not invalidate row-13 evidence). An independent WS2812B
   model measured every pulse on `uo_out[7]`: T0H 20, T1H 40, T0L 43 and T1L
   23 cycles, 63 per bit (400 / 800 / 860 / 460 / 1260 ns at the 20 ns
   target), each at least 140 ns inside its datasheet window, and a reset of
