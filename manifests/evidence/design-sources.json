@@ -3,7 +3,7 @@
   "kind": "generic",
   "status": "pass",
   "t1_item": 1,
-  "summary": "Design sources (Digital): the committed RTL under src/ and rtl/, the boot-ROM generator chain, the klt/Yosys synthesis request, and the two derived gate-level netlists of record (klt/Yosys: librelane-gds-signoff-check 20261011-040500-1c19c24; LibreLane post-route: gds run 38108543866 at f1b21df), each listed with its sha256. Audited 2026-10-10 against main 5669077 for issue #83; refreshed for issue #139 (the 223-word UART-load boot ROM) and for issue #208 (DR 0015's P1 and P2), and here for the merged design of both (PR #212). Refreshed for issue #137 (the load-phase CRC readout on uo_out). Refreshed for issue #211 (the 232-word boot ROM with the UART frame's count-complement check).",
+  "summary": "Design sources (Digital): the committed RTL under src/ and rtl/, the boot-ROM generator chain, the klt/Yosys synthesis request, and the two derived gate-level netlists of record (klt/Yosys: librelane-gds-signoff-check 20261011-144308-e5a0bae; LibreLane post-route: gds run 38136727636 at 6dd0e9d), each listed with its sha256. Audited 2026-10-10 against main 5669077 for issue #83; refreshed for issue #139 (the 223-word UART-load boot ROM) and for issue #208 (DR 0015's P1 and P2), and here for the merged design of both (PR #212). Refreshed for issue #137 (the load-phase CRC readout on uo_out). Refreshed for issue #211 (the 232-word boot ROM with the UART frame's count-complement check). Refreshed for issues #244 and #246 (DR 0020: an open-drain pin's pad data is tied to 0 in the top; five LibreLane timing-repair keys in src/config.json).",
   "source": "manifests/evidence/design-sources.txt",
   "provenance": {
     "klt_version": "0.7.0",
@@ -11,7 +11,7 @@
     "pdk": null,
     "deck": null,
     "input": {
-      "content_hash": "sha256:5246e00177de033bd352fade14e81095f24bd19a063b06e6077631752a8afacf",
+      "content_hash": "sha256:28cd062da1b590127bc6904c782323af9e9f7a31a7ab7d44baed14b2907b3423",
       "path": "design-sources.txt"
     }
   }

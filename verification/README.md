@@ -83,7 +83,10 @@ coverage.
   data-independence, no flag side effects, a program-memory
   write-then-read round trip, code written through the control space
   executed via `RUN`, `PM_CRC` against `binascii.crc_hqx`, and the I2C
-  images' open-drain preamble. Pin-observable except for two labelled
+  images' open-drain preamble, and DR 0020's open-drain pad data
+  (`uio_out[n] & UIO_OD[n]` is 0 on every edge, over all 8 pin-mode
+  combinations on every pin, so `uio_oe & uio_out & UIO_OD` is never 1;
+  issue #244). Pin-observable except for three labelled
   white-box reads, so it also runs on a gate-level netlist. Driven by
   `klt functional-verification` (see `request-control-space.json`);
   `control_space_mutants.py` is its negative-control runner.

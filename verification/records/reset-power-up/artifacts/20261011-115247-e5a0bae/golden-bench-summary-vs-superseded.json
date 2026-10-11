@@ -1,0 +1,26 @@
+{
+  "compared_with": "verification/records/reset-power-up/artifacts/20261011-052400-e62b5e8/golden-bench-summary.json",
+  "differing_leaf_fields": {
+    "flop_order[]": 264,
+    "path": 1,
+    "flop_trace_sha256": 44,
+    "control_trace_sha256": 42,
+    "pin_trace_sha256": 32
+  },
+  "identical_leaf_fields": [
+    "edges_after_mode_drop",
+    "edges_after_reset",
+    "firmware",
+    "flops",
+    "macros[]",
+    "pin_moves",
+    "pin_trace_sha256",
+    "seed",
+    "sram_reads",
+    "sram_x_words",
+    "straps",
+    "stub_pc"
+  ],
+  "total_leaves": 615,
+  "differing_leaves": 383
+}

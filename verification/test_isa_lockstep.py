@@ -7,7 +7,12 @@ program that the real design runs, and this bench compares them on
 EVERY clock edge of the run phase:
 
     pc, R0..R3, Z, C, halted      via hierarchy, `dut.u_core.*` (RTL only)
-    uo_out, uio_out, uio_oe       at the pins
+    uio_out (the port-11 register) via hierarchy, `dut.u_core.port_uio_out`
+    uo_out, uio_oe                at the pins
+    the `uio_out` pins            against `port 11 & ~UIO_OD` from the ISS
+                                  (DR 0020, issue #244: an open-drain pin's
+                                  pad data is 0; the ISS row's `uio_out` is
+                                  the register a program writes, unchanged)
 
 plus the clock-edge count (the ISS emits one row per edge, including every
 stall edge of `WAIT n` = n+1 edges, every two-cycle control access and the
@@ -106,6 +111,25 @@ def iss_run(prog):
     return isa.run(prog.image, prog.inputs, prog.max_edges, gen.IDLE_AFTER_HALT)
 
 
+def iss_uio_od(prog, rows):
+    """`UIO_OD` after each edge of `prog`'s ISS run, indexed like `rows`.
+
+    The ISS trace row carries the port-11 register (`uio_out`) and the
+    enables (`uio_oe`) but not `UIO_OD`, and the pad data the top puts on
+    the `uio_out` pins is `port 11 & ~UIO_OD` since DR 0020 (issue #244).
+    This steps a second `isa.Machine` over the same image and inputs and
+    reads its `uio_od` after every edge; the rows it produces must be the
+    rows `isa.run` returned, so the two cannot drift apart."""
+    m = isa.Machine(prog.image)
+    ods = [m.uio_od]
+    assert m.row == rows[0], "ISS replay diverged at edge 0"
+    for edge in range(1, len(rows)):
+        row = m.step(*prog.inputs(edge))
+        assert row == rows[edge], f"ISS replay diverged at edge {edge}"
+        ods.append(m.uio_od)
+    return ods
+
+
 # ---------------------------------------------------------------------------
 # DUT plumbing
 # ---------------------------------------------------------------------------
@@ -128,7 +152,10 @@ async def load_image(dut, words):
 
 
 async def sample(dut):
-    """State after the edge just taken, as an isa.Row-shaped tuple."""
+    """State after the edge just taken, as `(isa.Row-shaped tuple, pad
+    data)`. The row's `uio_out` is the core's port-11 register, which is
+    what the ISS row carries; the second value is the `uio_out` pins, which
+    differ from it on open-drain pins (DR 0020: their pad data is 0)."""
     await ReadOnly()
     c = dut.u_core
     row = isa.Row(
@@ -138,11 +165,12 @@ async def sample(dut):
         c=int(c.flag_c.value),
         halted=int(c.halted.value),
         uo_out=int(dut.uo_out.value),
-        uio_out=int(dut.uio_out.value),
+        uio_out=int(c.port_uio_out.value),
         uio_oe=int(dut.uio_oe.value),
     )
+    pad = int(dut.uio_out.value)
     await Timer(1, unit="ns")
-    return row
+    return row, pad
 
 
 def drive(dut, pins):
@@ -165,14 +193,24 @@ async def lockstep(dut, prog, digest):
     """Run `prog` on the DUT against its ISS trace.  Returns the number of
     edges compared; raises AssertionError on the first mismatch."""
     rows, machine = iss_run(prog)
+    ods = iss_uio_od(prog, rows)
     await load_image(dut, prog.image)
     for edge in range(0, len(rows)):
         if edge:
             await RisingEdge(dut.clk)
-        rtl = await sample(dut)
+        rtl, pad = await sample(dut)
         iss = rows[edge]
-        digest.update(repr((prog.index, edge, rtl)).encode())
+        digest.update(repr((prog.index, edge, rtl, pad)).encode())
         bad = diff(rtl, iss)
+        # The pins: DR 0020's pad data, from the ISS's own port-11 register
+        # and UIO_OD. An open-drain pin's pad data is 0 on every edge.
+        want_pad = iss.uio_out & ~ods[edge] & 0xFF
+        if not bad and pad != want_pad:
+            raise AssertionError(
+                f"ISA LOCKSTEP MISMATCH seed={SEED} program={prog.index} ({prog.name}) edge={edge}   "
+                f"[replay: ISA_LOCKSTEP_SEED={SEED} ISA_LOCKSTEP_ONLY={prog.index}]\n"
+                f"  uio_out pins (pad data): rtl={pad:#04x} want={want_pad:#04x} "
+                f"(ISS port 11 {iss.uio_out:#04x}, UIO_OD {ods[edge]:#04x}; DR 0020)")
         if bad:
             ctx = rows[edge - 1] if edge else iss
             ins = machine.pm.get(ctx.pc)
@@ -272,7 +310,7 @@ async def test_sub_carry_polarity_pin(dut):
     for edge in range(len(rows)):
         if edge:
             await RisingEdge(dut.clk)
-        rtl = await sample(dut)
+        rtl, _pad = await sample(dut)
         if edge < len(rows) - 1:
             drive(dut, prog.inputs(edge + 1))
         seen.append(rtl.c)

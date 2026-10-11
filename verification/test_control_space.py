@@ -32,7 +32,11 @@ program-memory round trip and CRC check:
   serial load, over `PM_DATA_LO` writes, over both together ("by any
   path"), and across both clear registers;
 - **the I2C preamble** the committed I2C images gained: after it, the two
-  open-drain pins only ever pull low or release.
+  open-drain pins only ever pull low or release;
+- **the open-drain pad data** (DR 0020, issue #244): `uio_out[n]` is 0
+  whenever `UIO_OD[n]` is set, on every edge and for all 8 pin-mode
+  combinations on every pin, so an open-drain pad cannot drive HIGH at any
+  relative delay of `uio_out` and `uio_oe`.
 
 How values are observed. Programs are real firmware, loaded over the real
 serial load phase and assembled by the DR 0003 assembler
@@ -44,7 +48,8 @@ file's **own** copy of the latency table (`cycles()` below, written from DR
 wrong latency would still fail here.
 
 White-box reads (`dut.u_core.flag_z` / `flag_c`, the reset-time register
-values before any program can run) are used only where no pin shows the
+values before any program can run, and the port-11 register behind an
+open-drain pin, DR 0020) are used only where no pin shows the
 fact, and only in an RTL run. Under the gate-level Makefile (`GATES=yes`,
 `flow/run-firmware-gate-level.sh`) the hierarchy is gone, those reads are
 skipped, and every other check still runs, because it is pin-only.
@@ -125,6 +130,19 @@ def pin_mode_oe(uio_out, uio_dir, uio_od):
             bit = 0                      # input
         oe |= bit << n
     return oe
+
+
+def pin_mode_out(uio_out, uio_od):
+    """DR 0020 (issue #244), bit by bit: the pad data of an open-drain pin
+    is the constant 0 (its `uio_oe` alone carries the port-11 bit); every
+    other pin's pad data is the port-11 register bit. `uio_out` here is
+    the value the program last wrote with `OUT UIO_OUT`."""
+    pad = 0
+    for n in range(8):
+        out_n, od_n = (uio_out >> n) & 1, (uio_od >> n) & 1
+        bit = 0 if od_n else out_n
+        pad |= bit << n
+    return pad
 
 
 class Prog:
@@ -328,6 +346,7 @@ async def test_readback_and_pin_mode_logic(dut):
     p = Prog()
     checks = []
     oe_checks = []
+    out_checks = []
     state = {"out": 0x00, "dir": 0x00, "od": 0x00}
 
     def step(kind, value):
@@ -340,6 +359,9 @@ async def test_readback_and_pin_mode_logic(dut):
         oe_checks.append((idx, pin_mode_oe(state["out"], state["dir"], state["od"]),
                           f"uio_oe after {kind}={value:#04x} "
                           f"(out={state['out']:#04x} dir={state['dir']:#04x} od={state['od']:#04x})"))
+        out_checks.append((idx, pin_mode_out(state["out"], state["od"]),
+                           f"uio_out pad data after {kind}={value:#04x} "
+                           f"(out={state['out']:#04x} od={state['od']:#04x})"))
         if kind != "out":
             checks.append((p.show(UIO_DIR if kind == "dir" else UIO_OD), value,
                            f"{'UIO_DIR' if kind == 'dir' else 'UIO_OD'} readback {value:#04x}"))
@@ -374,12 +396,127 @@ async def test_readback_and_pin_mode_logic(dut):
     trace = await run_trace(dut, p.words, p.end_edge() + 3)
     expect(trace, p, checks)
     expect(trace, p, oe_checks, pin="uio_oe")
+    # DR 0020: the pad data is the port-11 register with the open-drain
+    # pins' bits tied to 0, on the same edge.
+    expect(trace, p, out_checks, pin="uio_out")
     # ...and not one edge early: the enable is registered state.
     prev = 0x00
     for idx, want, label in oe_checks:
         before = trace[p.edge(idx) - 1]["uio_oe"]
         assert before == prev, f"{label}: uio_oe moved before its write retired"
         prev = want
+    prev = 0x00
+    for idx, want, label in out_checks:
+        before = trace[p.edge(idx) - 1]["uio_out"]
+        assert before == prev, f"{label}: uio_out moved before its write retired"
+        prev = want
+
+
+#: Seed of `test_open_drain_pad_data_is_tied_low`'s write sequence.
+PAD_DATA_SEED = 20261011
+#: Random pin-mode / data writes in that test (2 words each; with the
+#: directed prefix the program stays under DR 0001's 256 words).
+PAD_DATA_STEPS = 96
+
+
+@cocotb.test()
+async def test_open_drain_pad_data_is_tied_low(dut):
+    """DR 0020 (issue #244): on every clock edge, for every pin n,
+    `uio_out[n] & UIO_OD[n]` is 0 -- an open-drain pin's pad data is the
+    constant 0 -- and therefore `uio_oe[n] & uio_out[n] & UIO_OD[n]` is
+    never 1: the pad cannot drive HIGH on an open-drain pin whatever the
+    relative delay of the two nets, because the data net never rises.
+
+    The pin-mode logic is combinational in three bits per pin (the port-11
+    register, UIO_DIR, UIO_OD) and the pins are independent, so its whole
+    input space is 8 combinations per pin. The test requires every one of
+    the 8 on every one of the 8 pins, and at least two open-drain releases
+    (the edge of issue #244) on every pin -- counted gates, not hopes -- and
+    checks `uio_out` and `uio_oe` against this file's own statement of the
+    rule on every edge of the run. `UIO_OD` is not on a pin: the value used
+    here is the one the program wrote, which `test_readback_and_pin_mode_logic`
+    reads back. Pin-only, so it also runs on a gate-level netlist.
+
+    Why the weaker `oe & out & od == 0` alone would not do: the pre-DR-0020
+    top (`uio_oe` derived from the pad data) also satisfies it at zero
+    delay, and breaks it only for the ~100 ps between the two nets'
+    arrivals on a routed netlist. `uio_out & od == 0` is the property that
+    holds at any delay, and the old wiring fails it here at RTL
+    (`control_space_mutants.py`, `od-pad-data-follows-register`)."""
+    start_clock(dut)
+    rng = random.Random(PAD_DATA_SEED)
+    p = Prog()
+    state = {"out": 0x00, "dir": 0x00, "od": 0x00}
+    steps = []  # (retire edge index, out, dir, od) after each write
+
+    def step(kind, value):
+        p.ldi(1, value)
+        if kind == "out":
+            idx = p.add("OUT UIO_OUT, R1")
+        else:
+            idx = p.wctl(UIO_DIR if kind == "dir" else UIO_OD, 1)
+        state[kind] = value
+        steps.append((idx, state["out"], state["dir"], state["od"]))
+
+    # Directed: the release edge of issue #244 on every pin (open-drain,
+    # data 0 -> 1 -> 0), then all-ones and walking patterns.
+    for kind, value in [("out", 0xFF), ("od", 0xFF), ("out", 0x00), ("out", 0xFF),
+                        ("out", 0x00), ("dir", 0xFF), ("out", 0xFF), ("od", 0x00),
+                        ("dir", 0x00), ("out", 0x00)]:
+        step(kind, value)
+    for _ in range(PAD_DATA_STEPS):
+        step(rng.choice(("out", "dir", "od")), rng.randrange(256))
+    p.add("HALT")
+    assert len(p.words) <= 256, len(p.words)
+
+    trace = await run_trace(dut, p.words, p.end_edge() + 3)
+    seen = [set() for _ in range(8)]
+    bounds = [(p.edge(idx), out, d, od) for idx, out, d, od in steps]
+    cur = (0x00, 0x00, 0x00)
+    k = 0
+    releases = [0] * 8
+    for e, sample in enumerate(trace):
+        prev_state = cur
+        while k < len(bounds) and bounds[k][0] <= e:
+            cur = bounds[k][1:]
+            k += 1
+        out, d, od = cur
+        got_out, got_oe = sample["uio_out"], sample["uio_oe"]
+        assert got_out & od == 0, (
+            f"edge {e}: uio_out {got_out:#04x} has a 1 on an open-drain pin (UIO_OD {od:#04x}); "
+            "the pad data of an open-drain pin must be the constant 0 (DR 0020)"
+        )
+        assert got_oe & got_out & od == 0, (
+            f"edge {e}: uio_oe {got_oe:#04x} & uio_out {got_out:#04x} & UIO_OD {od:#04x} != 0: "
+            "an open-drain pad is driven HIGH"
+        )
+        assert got_out == pin_mode_out(out, od), (
+            f"edge {e}: uio_out {got_out:#04x}, want {pin_mode_out(out, od):#04x} "
+            f"(port 11 {out:#04x}, UIO_OD {od:#04x})"
+        )
+        assert got_oe == pin_mode_oe(out, d, od), (
+            f"edge {e}: uio_oe {got_oe:#04x}, want {pin_mode_oe(out, d, od):#04x} "
+            f"(port 11 {out:#04x}, UIO_DIR {d:#04x}, UIO_OD {od:#04x})"
+        )
+        for n in range(8):
+            seen[n].add(((out >> n) & 1, (d >> n) & 1, (od >> n) & 1))
+        # an open-drain release: the port-11 bit rises on a pin that is
+        # open-drain before and after (the edge issue #244 is about)
+        rose = ~prev_state[0] & out & prev_state[2] & od & 0xFF
+        for n in range(8):
+            releases[n] += (rose >> n) & 1
+    for n in range(8):
+        assert len(seen[n]) == 8, (
+            f"uio[{n}]: only {len(seen[n])} of the 8 (port 11, UIO_DIR, UIO_OD) "
+            f"combinations were exercised: {sorted(seen[n])}"
+        )
+    assert min(releases) >= 2, (
+        f"open-drain releases per pin {releases}: every pin needs at least 2 (vacuous otherwise)"
+    )
+    dut._log.info(
+        f"pad data: {len(trace)} edges, all 8 pin-mode combinations on all 8 pins, "
+        f"open-drain releases per pin {releases}, uio_out & UIO_OD == 0 throughout"
+    )
 
 
 @cocotb.test()
@@ -794,8 +931,8 @@ async def test_i2c_images_open_drain_preamble(dut):
     #155). Run each
     with no peripheral (the bus reads released) and check, at the logic
     level, what a wired-AND bus needs: no uio pin is enabled before the
-    preamble; after it uio_oe is exactly `~uio_out & 0x0C` on every edge,
-    so SCL and SDA are only ever pulled low or released, never driven
+    preamble; after it the pad data of SCL and SDA is 0 on every edge
+    (DR 0020), so they are only ever pulled low or released, never driven
     high; no other uio pin is ever enabled; and the preamble itself does
     not pull a line low (the OUT of 0x0C precedes it). This is not a pad
     model -- that, and the I2C evidence re-run on it, are issue #136."""
@@ -810,7 +947,24 @@ async def test_i2c_images_open_drain_preamble(dut):
         assert all(cycles(w) == 1 for w in words[:pre]), f"{name}: preamble arithmetic"
         e_pre = RUN_ENTRY_EDGES + pre
         n = e_pre + 2600
-        trace = await run_trace(dut, words, n, uio_in=0xFF)
+        c = core(dut)
+        whitebox = {"edges": 0}
+
+        def port11_drives_oe(e, name=name, e_pre=e_pre, c=c, whitebox=whitebox):
+            # White-box (RTL only): from the preamble on, the enable is the
+            # complement of the core's port-11 register on the open-drain
+            # pins. No pin shows that register for an open-drain pin since
+            # DR 0020, so this is read through the hierarchy, 1 ns after
+            # the edge, on every edge.
+            if c is None or e < e_pre:
+                return
+            reg, oe = int(c.port_uio_out.value), int(dut.uio_oe.value)
+            assert oe == (~reg & I2C_OD), (
+                f"{name}: uio_oe {oe:#04x} with port 11 {reg:#04x} at edge {e}"
+            )
+            whitebox["edges"] += 1
+
+        trace = await run_trace(dut, words, n, uio_in=0xFF, per_edge=port11_drives_oe)
         for e in range(0, e_pre):
             assert trace[e]["uio_oe"] == 0, f"{name}: a uio pin enabled before the preamble"
         assert trace[e_pre - 1]["uio_out"] == I2C_OD, f"{name}: lines not released before UIO_OD"
@@ -818,8 +972,16 @@ async def test_i2c_images_open_drain_preamble(dut):
         pulled = False
         for e in range(e_pre, n + 1):
             s = trace[e]
-            assert s["uio_oe"] == (~s["uio_out"] & I2C_OD), (
-                f"{name}: uio_oe {s['uio_oe']:#04x} with uio_out {s['uio_out']:#04x} at edge {e}"
+            # DR 0020 (issue #244): once the pins are open-drain their pad
+            # data is 0, so the lines are pulled low or released and never
+            # driven high, at any relative delay of uio_out and uio_oe.
+            assert s["uio_out"] & I2C_OD == 0, (
+                f"{name}: uio_out {s['uio_out']:#04x} has a 1 on an open-drain pin at edge {e}"
+            )
+            assert s["uio_oe"] & ~I2C_OD & 0xFF == 0, (
+                f"{name}: uio_oe {s['uio_oe']:#04x} enables a pin outside SCL|SDA at edge {e}"
             )
             pulled = pulled or s["uio_oe"] != 0
         assert pulled, f"{name}: the program never pulled a line low (vacuous)"
+        if c is not None:
+            assert whitebox["edges"] == n - e_pre + 1, whitebox
