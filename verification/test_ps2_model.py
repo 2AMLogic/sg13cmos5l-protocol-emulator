@@ -369,6 +369,32 @@ class HostToDevice(unittest.TestCase):
         host_rts(w, 10 * US, 0xED, release_data=False)
         self.assertIn("ack-release", kinds(run(w, end=2000 * US)))
 
+    def _late_release(self, delay_us):
+        # DATA held low after the 11th clock, then released with no other
+        # bus activity in between
+        w = Wave()
+        last_rise = host_rts(w, 10 * US, 0xED, release_data=False)
+        w.set(last_rise + delay_us * US, "ddata", 0)
+        return run(w, end=last_rise + (delay_us + 1) * US)
+
+    def test_release_at_the_limit_is_accepted(self):
+        r = self._late_release(50)
+        self.assertEqual(r.violations, [])
+        self.assertEqual(len(r.complete()), 1)
+
+    def test_overdue_release_edge_is_caught_without_other_snapshots(self):
+        for delay in (51, 100, 1000):
+            with self.subTest(delay=delay):
+                self.assertIn("ack-release", kinds(self._late_release(delay)))
+
+    def test_host_held_data_exempts_a_late_release(self):
+        w = Wave()
+        last_rise = host_rts(w, 10 * US, 0xED, release_data=False)
+        w.set(last_rise + 20 * US, "hdata", 1)
+        w.set(last_rise + 200 * US, "ddata", 0)
+        w.set(last_rise + 300 * US, "hdata", 0)
+        self.assertNotIn("ack-release", kinds(run(w, end=last_rise + 400 * US)))
+
     def test_slow_response(self):
         w = Wave()
         host_rts(w, 10 * US, 0xED, response=15_001 * US)

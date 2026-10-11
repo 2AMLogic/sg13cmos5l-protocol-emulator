@@ -221,10 +221,13 @@ class Ps2Monitor:
         t = c.t
         # a pending DATA release after an ACK
         if self.release_deadline is not None:
-            if c.data == 1:
-                self.release_deadline = None
-            elif t > self.release_deadline and not c.hdata:
+            # the previous snapshot's level holds until this one, so an
+            # overdue release edge still means DATA was low through the deadline
+            held_low = (p.data == 0 and not p.hdata) or (c.data == 0 and not c.hdata)
+            if t > self.release_deadline and held_low:
                 self._v(self.release_deadline, "ack-release", "DATA still held low more than 50 us after the 11th clock")
+                self.release_deadline = None
+            elif c.data == 1:
                 self.release_deadline = None
         # ---- host side
         if c.hdata != p.hdata and self.mode == "rx" and c.clk == 1 and not c.hclk:
