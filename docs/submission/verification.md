@@ -4,24 +4,31 @@ Status: **current report, written before ratification.** The submission ISA is
 frozen mechanically (DR 0017) but not ratified (#44). Deliverable D4
 of [`docs/submission/README.md`](README.md). Issue #214.
 
-- **Reviewed commit:** `main` @ `ceaebe02` (2026-10-11). Every record cited below
-  is a file at that commit. Nothing here is a new measurement: this document
-  reads the existing evidence, it does not run anything.
+- **Reviewed:** `main` as of 2026-10-11, at `3dc87926` (this PR's
+  merge-base; the newest cited record, `signoff-baseline`
+  `20261011-171506-56ebaf9`, landed in `ca439b03`). Every record cited below
+  is a file on `main` at `3dc87926`, and issue and PR states are as of that
+  date. Nothing here is a new measurement: this
+  document reads the existing evidence, it does not run anything.
 - **Frozen, not ratified.** The submission ISA is frozen mechanically by
   [DR 0017](../../spec/decision-records/0017-submission-isa-freeze.md): it
   pins the 11 ISA-defining files in `spec/isa-freeze.json`, and
   `scripts/check_isa_freeze.py` (part of `npm run lint`) refuses any change to
   them that does not carry an amendment. DR 0017, like DR 0012 (control
   space) and DR 0013 (program loading), is **Proposed, not ratified** (#44).
-  DR 0013's UART load still has an open finding (F8, #211); DR 0017 classes
-  that as a boot-ROM change, which is not pinned, but any edit it makes to a
-  pinned file (DR 0013 itself, for instance) needs a freeze amendment. A
-  change to the RTL makes the records for it stale, and they are then
-  re-minted, not edited.
+  DR 0013's UART-load finding F8 was resolved by #211 (closed 2026-10-11,
+  PR #248 merged): a boot-ROM change, which DR 0017 does not pin, plus a
+  dated DR 0013 entry carried by a `no-behaviour-change` freeze amendment
+  (section 3.4). A change to the RTL makes the records for it stale, and they
+  are then re-minted, not edited.
 - **Provisional governance.** The target spec and DRs 0001-0004 are **Proposed,
-  not ratified**: the two-key ratification never ran
-  ([DR 0006](../../spec/decision-records/0006-two-key-ratification-never-ran.md),
-  #44). Every "pass" below is evidence against a proposed contract. No spec
+  not ratified**. The first claimed ratification never happened
+  ([DR 0006](../../spec/decision-records/0006-two-key-ratification-never-ran.md));
+  the first real two-key act, PR #84, ended with both keys requesting changes
+  (closed unmerged 2026-10-11); the second, draft PR #242, is open, with the
+  market key's approval and the EE key's request for changes, whose findings
+  were addressed on its branch. #44 is open. Every "pass" below is evidence
+  against a proposed contract. No spec
   row was relaxed to obtain a result, and no row's grade is changed by this
   document (see [Spec grades](#spec-grades-are-unchanged)).
 - **No silicon.** Nothing has been taped out or measured. Every figure is a
@@ -42,7 +49,7 @@ that core, produces waveforms that an *independent* checker accepts.
 | Timing contract | No data-dependent latency; pin writes land one cycle after the `OUT` | Formal monitors (SVA) written from DR 0001's text, checked with Yosys/ABC/Z3 |
 | Protocol level | Committed firmware drives pins; a model grades the waveform | `verification/reference_models/{uart,spi,i2c,spi_flash}.py`, validated on their own (13/13, `protocol-reference-models`) |
 | Load and boot | Serial load, boot ROM, SPI-flash and UART boot, reset/power-up | An independent UART host (`uart_boot_host.py`), SPI-flash model, CRC-16/XMODEM from `binascii`, and a reset-coverage listing |
-| Netlist level | The same benches on the LibreLane routed netlist | The same oracles; zero-delay, then SDF-annotated for the core bench |
+| Netlist level | The same benches on the LibreLane routed netlist | The same oracles; zero-delay, then SDF-annotated for the core bench and the UART TX, SPI and I2C repeated-START firmware |
 
 Two rules make a pass worth citing:
 
@@ -69,7 +76,7 @@ not interchangeable, so the matrix in section 3 names one for every row.
 | **RTL simulation** | Icarus 13.0 + cocotb 2.1.0, via `klt functional-verification` | none | Function and cycle counts. No synthesis or timing information. |
 | **Formal** | Yosys + `yosys-smtbmc`/Z3, and `yosys-abc` (`scorr` + `pdr`) | none | Proofs hold for the *harness model* only (section 4). |
 | **Zero-delay gate level** | Icarus + cocotb on the **LibreLane** routed netlist (`flow/run-firmware-gate-level.sh`, `flow/run-reset-power-up-gate-level.sh`) | none | Catches synthesis divergence (X-propagation, inferred state). Says nothing about timing. |
-| **SDF-annotated routed simulation** | Same netlist with the LibreLane post-route SDF, three PVT corners (`flow/run-post-layout-sdf.sh`) | back-annotated, with omissions (section 5) | Does the core bench's outcome change with real delay. Core bench only. |
+| **SDF-annotated routed simulation** | Same netlist with the LibreLane post-route SDF, three PVT corners (`flow/run-post-layout-sdf.sh`) | back-annotated, with omissions (section 5) | Does a bench's outcome change with real delay. The core bench and three protocol benches only (section 5). |
 | **STA** | **LibreLane** post-route OpenSTA, 20 ns clock, three corners | n/a | LibreLane numbers only. The klt STA leg is blocked by klayout-tools#2635 and claims nothing. |
 | **Physical signoff** | The Tiny Tapeout `gds`/`precheck` workflow (LibreLane); klt DRC/extract/LVS as a second opinion | n/a | See section 6. |
 | **Synthesis area** | **klt/Yosys** flow (`synthesis-baseline`) and, separately, LibreLane's own synthesis | n/a | Two flows, two numbers, never merged. |
@@ -82,7 +89,7 @@ pull-up rise time or pad drive strength.
 
 ## 3. Claim matrix
 
-Records are the latest live ones at `ceaebe02`. "Repro" is the exact command from
+Records are the live ones on `main` at `3dc87926`. "Repro" is the exact command from
 the record's *Run configuration*; the one-line cold start for the RTL benches is
 `scripts/run-rtl-benches.sh` after `./scripts/setup-env.sh`. The index of every
 command, bench and pinned tool is
@@ -117,7 +124,7 @@ independent model.
 
 | Claim | Oracle | Record | Repro | Limits |
 |---|---|---|---|---|
-| One recorded seed, `20261009`: 20 generated programs per family for UART TX, SPI, I2C write, I2C write/Sr/read with seeded stretching, and UART RX, each assembled with the DR 0003 assembler and graded by the independent models | `reference_models/{uart,spi,i2c}.py` | [random-regression 20261011-165751](../../verification/records/random-regression/records/20261011-165751-56ebaf9.md): PASS 10/10 (one of six live re-mints of one run; see the note below) | `klt functional-verification verification/request-random-regression.json --format json` | RTL only. **Not run on gates or with SDF.** 20 cases per family is the shared-host default; `RANDOM_REGRESSION_CASES=<n>` appends more. |
+| One recorded seed, `20261009`: 20 generated programs per family for UART TX, SPI, I2C write, I2C write/Sr/read with seeded stretching, and UART RX, each assembled with the DR 0003 assembler and graded by the independent models | `reference_models/{uart,spi,i2c}.py` | [random-regression 20261011-165751](../../verification/records/random-regression/records/20261011-165751-56ebaf9.md): PASS 10/10 (one of 24 live re-mints of one run, all PASS 10/10; see the note below) | `klt functional-verification verification/request-random-regression.json --format json` | RTL only. **Not run on gates or with SDF.** 20 cases per family is the shared-host default; `RANDOM_REGRESSION_CASES=<n>` appends more. |
 
 Note on the record text: the *Claim* prose of that record was carried forward
 from before the UART RX family (#192) and does not name it, while its *Result*
@@ -126,7 +133,7 @@ and `test_uart_rx_negative_controls`. The family is in the bench
 (`verification/test_random_regression.py`) and was introduced by the re-mint at
 #192, whose *Supersedes* note describes it. It is not claimed beyond that. Its
 *Run configuration* still says "chain 1 of 3", carried over; the experiment has
-six live records from one run. Claims are not edited; this paragraph is the
+24 live records, all re-mints of one run at `fb86d71`. Claims are not edited; this paragraph is the
 correction.
 
 **Deterministic seed replay.** `RECORDED_SEED` is mirrored into the request's
@@ -153,7 +160,8 @@ failing `.asm` byte for byte.
 | Claim | Oracle | Level / flow | Record | Repro | Limits |
 |---|---|---|---|---|---|
 | The directed firmware benches (UART TX 3, UART RX 10, SPI 3, I2C 4, I2C Sr 5), control space (10), boot ROM (7), SPI boot (6), primitives (11), UART boot (8, pin-only) and load integrity (9, pin-only) pass on the routed netlist; each of the eleven modules fails on its own stuck-at fault (and the SPI/I2C modules on a `uio_oe[3]` stuck-at-0) | The same oracles as RTL | **Zero-delay**, LibreLane netlist of gds run 38136727636 (`6dd0e9d`) | [firmware-gate-level 20261011-125000](../../verification/records/firmware-gate-level/records/20261011-125000-e5a0bae.md): 25 rows, `as_required` on every row | `PDK_ROOT=<pdk> ./flow/run-firmware-gate-level.sh --full --control-space --boot-rom --boot-spi --primitives --boot-uart --load-integrity` | `test_boot_uart` is pin-only on gates (white-box reads and two long runs are skipped). No SDF, no SRAM timing, no pad characterization. Not the constrained-random regression. |
-| The core bench (12 pin-observing tests, 1 skipped) passes at all three corners with real post-route delay | Same bench file, drive/sample aligned to the SDC (`verification/sdf_alignment.py`) | **SDF-annotated**, LibreLane netlist + SDF | [post-layout-sdf-regression 20261011-114802](../../verification/records/post-layout-sdf-regression/records/20261011-114802-e5a0bae.md): 12 passed, 0 failed, 1 skipped at each corner | `KLT_BIN=<klt> PDK_ROOT=<pdk> ./flow/run-post-layout-sdf.sh --run-id 38083802720` (the record ran `--from` a download of that run) | Section 5. The skipped test is white-box and is *skipped, not passed*. |
+| The core bench (12 pin-observing tests, 1 skipped) passes at all three corners with real post-route delay | Same bench file, drive/sample aligned to the SDC (`verification/sdf_alignment.py`) | **SDF-annotated**, LibreLane netlist + SDF | [post-layout-sdf-regression 20261011-114802](../../verification/records/post-layout-sdf-regression/records/20261011-114802-e5a0bae.md): 12 passed, 0 failed, 1 skipped at each corner | `KLT_BIN=<klt> PDK_ROOT=<pdk> ./flow/run-post-layout-sdf.sh --from <download>`, where `<download>` is the `GDS_logs` and `tt_submission` artifacts of gds run 38136727636 | Section 5. The skipped test is white-box and is *skipped, not passed*. |
+| UART TX, SPI modes 0-3 and I2C write / repeated START / read / clock stretch pass in all nine (corner, protocol) cells with real post-route delay; the SPI timing negative control fails as required; the I2C repeated-START run fails on the pre-DR 0020 netlist (#244) | `reference_models/{uart,spi,i2c}.py` through the SDF wrappers | **SDF-annotated**, LibreLane netlist + SDF of gds run 38136727636 | [post-layout-sdf-regression 20261011-114800](../../verification/records/post-layout-sdf-regression/records/20261011-114800-e5a0bae.md): runner exit 0, nine of nine cells pass | `KLT_BIN=<klt> PDK_ROOT=<pdk> ./flow/run-post-layout-sdf.sh --suite protocols --from <download>` | Section 5. Boot programs, UART RX, PS/2, WS2812 and the random regression have no SDF run. |
 
 The `6dd0e9d` netlist is current for the design (gds run 38136727636, the
 DR 0020 open-drain fix and the #246 timing-repair config): `git diff
@@ -227,9 +235,11 @@ and the header of `flow/run-post-layout-sdf.sh`:
 
 - The Tiny Tapeout `gds` workflow (LibreLane) is the flow of record for the
   submitted GDS (DR 0002). All four jobs (`gds`, `precheck`, `gl_test`,
-  `viewer`) were green on the final top's run 38136727636 at `6dd0e9d`, as
-  cited by the records above. D1 in the tracker still has to be re-linked to
-  that run.
+  `viewer`) were green on the final top's run 38136727636 at `6dd0e9d` (a
+  run of the PR branch that became PR #260), as cited by the records above.
+  `main`'s own `gds` runs since PR #260 merged build the same design files
+  and are green too, for example run 38166393534 at `cd47c724`. D1 stays Partial until that run is linked as
+  the run of record from the tracker's D1 row and the root `README.md`.
 - The klt DRC is `clean` on that GDS; the klt-flow LVS check against the
   klt/Yosys reference is `unmet / check_errored` (klayout-tools#2941); the
   compare against the run's own post-route netlist is `match`
@@ -252,25 +262,39 @@ and the header of `flow/run-post-layout-sdf.sh`:
   a *nominal* 50 MHz that target-spec row 4 does not confirm.
 - The constrained-random regression is RTL-only. Gate-level and SDF runs use
   the directed benches.
-- Firmware benches have no SDF-annotated run, and the SRAM macro is simulated
+- Only three firmware benches (UART TX, SPI, I2C repeated START) have an
+  SDF-annotated run; the boot programs, UART RX, PS/2, WS2812 and the
+  constrained-random regression do not, and the SRAM macro is simulated
   without its timing.
 - The bounded versus unbounded split in section 4. Neither formal property
   covers a protocol.
-- The UART load can be fooled by a one-bit count flip on a constructed image
-  (F8, #211). The zero-filler recovery behaviour (F6) is an exact consequence
-  of the CRC, documented in DR 0013.
+- The UART load rejects every single-bit flip of the count and its
+  complement (F8, resolved by #211, closed), but a coordinated corruption
+  that changes count and complement consistently and also aliases the CRC is
+  not rejected (section 3.4). The zero-filler recovery behaviour (F6) is an
+  exact consequence of the CRC, documented in DR 0013.
 - Row 14 is graded **unmet** in `spec/target-spec.md`; its dated notes pre-date
   the gate-level reset bench. The records show (a), (b) and the reselect cycle
   passing on the routed netlist, but this document does not upgrade the row.
 - Standard-mode I2C runs at 500 cycles per data/ACK clock (#125, ruled `enforce_500`); the kHz figure is arithmetic at an unconfirmed 50 MHz.
-- Row 13 (D6) has firmware and evidence, but the row is still graded partial:
-  WS2812 ([`row13-ws2812.md`](row13-ws2812.md)) passes an independent WS2812B
+- Row 13 (D6) has firmware and evidence, but the row is still **Proposed and
+  unmet** in `spec/target-spec.md`. Primary column, WS2812 ([`row13-ws2812.md`](row13-ws2812.md)) passes an independent WS2812B
   model at RTL ([firmware-ws2812 20261011-104241](../../verification/records/firmware-ws2812/records/20261011-104241-d81097f.md): 6/6)
   and on the LibreLane netlist, zero-delay
   ([firmware-ws2812-gate-level 20261011-115014](../../verification/records/firmware-ws2812-gate-level/records/20261011-115014-e5a0bae.md): 6/6, wait-counter stuck-at fails 5 of 6).
-  There is no SDF run of it, no board and no video, and the row is Proposed.
-- No stretch protocol (low-speed USB, 10BASE-T) is designed or tested.
-- The specification is Proposed (DR 0006). Two-key ratification never ran.
+  There is no SDF run of it, no board and no video. Stretch column, a PS/2
+  device on two open-drain lines (#235, closed; [`row13-ps2.md`](row13-ps2.md)),
+  passes an independent host model at RTL
+  ([firmware-ps2 20261011-104232](../../verification/records/firmware-ps2/records/20261011-104232-d81097f.md): 18/18)
+  and on the LibreLane netlist, zero-delay
+  ([firmware-ps2-gate-level 20261011-120015](../../verification/records/firmware-ps2-gate-level/records/20261011-120015-e5a0bae.md));
+  the pad model has zero delay, and there is no SDF run and no board.
+- Target-spec row 2's stretch protocols (low-speed USB, 10BASE-T; DR 0015)
+  are not designed or tested. This is separate from row 13's stretch column
+  above.
+- The specification is Proposed (DR 0006). No two-key act has released it:
+  PR #84 was refused and closed unmerged, and the second act, draft PR #242,
+  is open (#44 is open).
 - The STA and die-area legs of the klt flow are blocked
   (klayout-tools#2635) and claim nothing.
 
@@ -300,15 +324,15 @@ do not occur in this document's evidence: nothing here is a SPICE result.
 
 ## Outstanding work
 
-- Close or accept DR 0013 F8 (#211). Any edit to a file DR 0017 pins goes
-  through a freeze amendment in `spec/isa-freeze.json`; then re-run and
-  re-mint the affected records.
 - Re-link the final `gds` run (D1).
-- SDF-annotated protocol waveforms on the routed corners (#217).
+- SDF-annotated runs for the boot programs, UART RX, PS/2, WS2812 and the
+  constrained-random regression (UART TX, SPI and I2C repeated START have
+  them; #217 closed 2026-10-11).
 - Run the constrained-random regression at gate level.
-- Row 13: an SDF-annotated run of the WS2812 bench, and the stretch column
-  (a new role or pin direction, #235).
-- Ratification (#44).
+- Row 13: an SDF-annotated run of the WS2812 and PS/2 benches, a board, and a
+  video. Both columns have firmware and evidence; the row stays Proposed and
+  unmet.
+- Ratification (#44, open; the second two-key act is draft PR #242).
 - `spec/verification-plan.md` still says "None of the artifacts described below
   exist yet"; its dated notes are the history, and this document is the
   current reading of them.

@@ -1,7 +1,9 @@
 # How AI was used to build this design
 
-Status: written 2026-10-10 for issue #213 (submission deliverable D5). It
-describes the repository as of `main` @ `ceaebe02`. Every claim below links to
+Status: written 2026-10-10 for issue #213 (submission deliverable D5),
+against `main` @ `9fb7815`. Refreshed 2026-10-11 for issue #238: the record
+citations, the counts and the ratification history describe `main` as of
+`3dc87926`, and issue and PR states are as of that date. Every claim below links to
 a file in this repository, a pull request, or an issue. Where the text
 describes how the process is *meant* to work rather than what the forge
 record shows, it says so.
@@ -18,7 +20,10 @@ make, and held the credentials they did not have.
 The specification is **not ratified**. The two-key ratification this
 repository requires did not happen when it was first claimed
 ([DR 0006](../../spec/decision-records/0006-two-key-ratification-never-ran.md)).
-When it was finally run, both keys withheld release (PR #84). Every `Status:`
+When it was finally run, both keys withheld release (PR #84). A second act,
+draft PR #242, is open: the market key approved it and the EE key requested
+changes, which its branch has since addressed; it has not been released.
+Every `Status:`
 line under `spec/` therefore reads `DRAFT`, `Proposed` or `Recorded`. Every
 verdict graded against the spec is provisional.
 
@@ -26,16 +31,16 @@ verdict graded against the spec is provisional.
 
 | Actor | What the record shows |
 |---|---|
-| `loom-fleet-dispatch[bot]` (GitHub App) | Opened 78 of the 100 merged PRs, and posts the Loom role comments (Curator, Champion, Judge, Doctor) on issues and PRs. |
-| `rjwalters` (the operator's account) | Opened the other 22 merged PRs. Their bodies carry the Claude Code footer (for example #160, #163, #198, #207), so agent sessions run under the operator's account also open PRs. The forge record does not separate which actions under this account were typed by the human. |
-| `2am-ee-key[bot]`, `2am-market-key[bot]` | Separate GitHub Apps that hold the two ratification keys. They have posted reviews on exactly one PR, #84. |
+| `loom-fleet-dispatch[bot]` (GitHub App) | Opened 97 of the 127 merged PRs, and posts the Loom role comments (Curator, Champion, Judge, Doctor) on issues and PRs. |
+| `rjwalters` (the operator's account) | Opened the other 30 merged PRs. Their bodies carry the Claude Code footer (for example #160, #163, #198, #207), so agent sessions run under the operator's account also open PRs. The forge record does not separate which actions under this account were typed by the human. |
+| `2am-ee-key[bot]`, `2am-market-key[bot]` | Separate GitHub Apps that hold the two ratification keys. They have posted formal reviews on two PRs: #84 (both requested changes) and #242 (the market key approved, the EE key requested changes). |
 | Git commit author names | These come from host git configuration (`Robb Walters`, `Loom CI`, `Loom Auditor`, and others). They do not record which role, or whether a human, produced a commit. |
 
 Two things follow. First, one App identity both authors and approves most
 work, so "reviewed by a different agent" means a different session and role
-prompt, not a different forge principal. Second, PR #84 is the only PR in the
-repository's history with a formal GitHub review. Judge verdicts are posted
-as PR comments.
+prompt, not a different forge principal. Second, PRs #84 and #242, the two two-key acts, are the only
+PRs in the repository's history with a formal GitHub review, and only the
+key Apps posted them. Judge verdicts are posted as PR comments.
 
 ## The development loop
 
@@ -96,7 +101,7 @@ reports but is not a required check on `main`.
 
 ## How evidence is kept honest
 
-- **No claim without a recorded run.** There are 34 record kinds under
+- **No claim without a recorded run.** There are 36 record kinds under
   [`verification/records/`](../../verification/records/), indexed in
   [`manifests/evidence/testbenches.txt`](../../manifests/evidence/testbenches.txt).
   Each record names its command, tool versions and input hashes.
@@ -142,7 +147,8 @@ history is the case where this mattered.
 | 2026-09-30 | PR #48 added the two-key gate, so that the next attempt would fail CI rather than rely on a PR comment (issue #45). |
 | 2026-10-02 | A comment on #44 under the operator's account recorded that the independence question had been settled at fleet level: keys are held by dedicated GitHub Apps, not the dispatch identity. That ruling lives outside this repository. |
 | 2026-10-08 | The ceremony ran on PR #84. The EE key answered `request-changes`; it had written its own Icarus testbench and found statements in DR 0001 that the RTL contradicts. The market key answered `uncompetitive`, because row 10's cited source does not support the row. **Release was refused.** |
-| 2026-10-10 | PR #198 fixed six of the findings. Issue #85, which lists all eight, is still open, and PR #84 is unmerged. No second ceremony has run. |
+| 2026-10-10 | PR #198 fixed six of the findings. Issue #85 lists all eight. |
+| 2026-10-11 | Issue #85 closed (03:24Z). The second act opened as draft PR #242 (03:31Z). PR #84 was closed unmerged (06:02Z). On #242 the market key approved (07:29Z) and the EE key requested changes (07:33Z); its branch addressed the EE findings (`080e6be8`, 18:13Z). As of `3dc87926`, #242 is open and a draft, #44 is open, and nothing is ratified. |
 
 As of this writing the key reviewers are agent skills
 ([`ratification/ee-key/SKILL.md`](../../ratification/ee-key/SKILL.md),
