@@ -405,6 +405,64 @@ def _(fx):
     expect_fail(fx, "firmware/asm/ws2812.asm", "concrete-firmware-bench")
 
 
+@case("PS/2 released-bus image mutated")
+def _(fx):
+    fx.mutate("firmware/asm/ps2_device.asm", "LDI   R3, 0x0C\n        OUT   UIO_OUT, R3      ; both lines released ...",
+              "LDI   R3, 0x0D\n        OUT   UIO_OUT, R3      ; both lines released ...")
+    expect_fail(fx, "released-bus image 0x0D", "concrete-firmware-bench")
+
+
+@case("PS/2 CLK mask mutated")
+def _(fx):
+    fx.mutate("firmware/asm/ps2_device.asm", "LDI   R3, 0x04\n        OR    R3, R1\n        OUT   UIO_OUT, R3      ; CLK stays",
+              "LDI   R3, 0x02\n        OR    R3, R1\n        OUT   UIO_OUT, R3      ; CLK stays")
+    expect_fail(fx, "CLK mask 0x02", "concrete-firmware-bench")
+
+
+@case("PS/2 stop-bit image is not the DATA mask")
+def _(fx):
+    fx.mutate("firmware/asm/ps2_device.asm", "LDI   R1, 8            ; stop bit", "LDI   R1, 0            ; stop bit")
+    expect_fail(fx, "the pure pin images in LDI R1 are [0]", "concrete-firmware-bench")
+
+
+@case("PS/2 data bit moved by the wrong number of doublings")
+def _(fx):
+    fx.mutate("firmware/asm/ps2_device.asm", "        ADD   R3, R3\n        ADD   R3, R3\n        ADD   R3, R3\n",
+              "        ADD   R3, R3\n        ADD   R3, R3\n")
+    expect_fail(fx, "a bit is moved by 2 doubling(s)", "concrete-firmware-bench")
+
+
+@case("PS/2 bit-isolation shifts do not match the table's pin")
+def _(fx):
+    fx.mutate("firmware/asm/ps2_device.asm", "        SHF   R3, LEFT         ; CLK (bit 2) -> bit 7\n",
+              "        SHF   R3, LEFT\n        SHF   R3, LEFT         ; CLK (bit 2) -> bit 7\n")
+    expect_fail(fx, "which is none of the recipes", "concrete-firmware-bench")
+
+
+@case("PS/2 bench pin constants moved")
+def _(fx):
+    fx.mutate("verification/test_firmware_ps2.py", "CLK_BIT, DATA_BIT = 2, 3", "CLK_BIT, DATA_BIT = 2, 4")
+    expect_fail(fx, "DATA_BIT is uio[4]", "concrete-firmware-bench")
+
+
+@case("PS/2 pins moved in the table alone")
+def _(fx):
+    def mv(t):
+        pin(t, "uio[2]")["protocol_roles"]["ps2"] = "unused"
+        pin(t, "uio[0]")["protocol_roles"]["ps2"] = "PS2_CLK"
+        pin(t, "uio[0]")["shared_pin_rationale"] = "moved for the test"
+        t["pin_modes"]["ps2"]["uio_od"] = "0x09"
+    fx.mutate_table(mv)
+    expect_fail(fx, "firmware/asm/ps2_device.asm", "concrete-firmware-bench")
+
+
+@case("PS/2 program does not write the table's UIO_OD value")
+def _(fx):
+    fx.mutate("firmware/asm/ps2_device.asm", "WCTL  UIO_OD, R3       ; ... then", "NOP                    ; ... then")
+    code, out = fx.run("--require-implemented")
+    assert code == 1 and "ps2_device.asm" in out and "UIO_OD" in out, out
+
+
 @case("UART RX mask LDI mutated in each RX program")
 def _(fx):
     for stem in ("uart_rx", "uart_rx_115200", "uart_rx_9600"):
