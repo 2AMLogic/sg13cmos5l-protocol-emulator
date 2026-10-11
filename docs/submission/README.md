@@ -345,8 +345,13 @@ tt_submission/*.gds* --tech ihp-sg13cmos5l"` in `tt/precheck`. For this tech,
   and `PRECHECK_DRC=false`, which keeps the rules that the deck's reduced mode
   skips (for example M1.e/f and Mn.e/f wide-metal spacing, Vn enclosure). Any
   violation in the report database fails the job (`report.num_items() > 0`).
-  The deck loads the GDS flat from its top cell, so the SRAM macro is checked
-  too.
+  No `run_mode` is passed either, and the deck's `setup_run_mode` uses `flat`
+  only when `run_mode` is `flat` (or tiles when it is `tiling`), otherwise
+  `deep`. So precheck runs in **deep (hierarchical) mode from the top cell**.
+  Run 38174354943's log confirms this with an empty `" mode is enabled."` line.
+  Deep mode still processes the whole hierarchy under the top cell, so the SRAM
+  macro is included. (Precheck's `thr=1` is not read by this deck, which reads
+  `$threads`. Nothing here relies on it.)
 - **Not run on CMOS5L:** `Magic DRC` (its `techs` list is sky130A and gf180mcuD
   only), the KLayout FEOL/BEOL/offgrid decks (sky130A only) and the urpm/nwell
   check (sky130A only).
@@ -368,7 +373,8 @@ violations, because the gate only reports zero.
 config (`libs.tech/librelane/config.tcl` at `2bbec755`) sets
 `KLAYOUT_DRC_RUNSET` to `ihp-sg13cmos5l.drc` with
 `KLAYOUT_DRC_OPTIONS` `no_recommended=true`, `run_mode=deep`. So `RUN_KLAYOUT_DRC=1`
-would run the same rules as precheck, minus the RECOMMENDED group, at
+would run the same rules as precheck, in the same deep mode, minus the
+RECOMMENDED group (`no_recommended` is the only option that differs), at
 the LibreLane step position (which GDS it would read there was not checked). Precheck is a superset for this
 tech. The same config exports `KLAYOUT_DENSITY_RUNSET` (`density.drc`) and
 `KLAYOUT_ANTENNA_RUNSET` (`antenna.drc`) as separate runsets. Neither is included
@@ -380,30 +386,34 @@ by `ihp-sg13cmos5l.drc`, and neither is a precheck step.
 |---|---|---|
 | `gds` action (`action.yml` runs `install_sg13cmos5l.sh`) | `2bbec755dc67ca3db0261c3d6163e15735d66710` | `IHP_PDK_REV` in the script at the pinned SHA; run 38136727636's `pdk.json` records `PDK_VERSION 2bbec755dc67…` (`verification/records/librelane-gds-signoff-check/artifacts/20261011-144308-e5a0bae/pdk.json`) |
 | `precheck` action (`precheck/action.yml` runs `${{ github.action_path }}/../install_sg13cmos5l.sh`) | `2bbec755dc67ca3db0261c3d6163e15735d66710` | the same script file, at the same action SHA |
-| `layout/toolchain.json` | **no PDK commit recorded** | it pins `klt` (`0e2362bd…`) and a command list only |
+| `layout/toolchain.json` (klt flow) | `2bbec755` (prose only; **matches**) | no machine-readable PDK pin field. The append-only `_comment` paragraph for the current `0e2362bd` klt pin (issue #83, 2026-10-10) says that pin was "Verified live at 0e2362bd … IHP-Open-PDK 2bbec755 (scratch checkout)" |
 | Repo-level statement | `2bbec755dc67` | `README.md` ("Legs that need the PDK"), `manifests/evidence/layout-gds.json`; `docs/environment.md` says klt resolves the PDK path via `klt pdk find` and records no commit |
 
 Finding 1: the `gds` and `precheck` actions provision **the same PDK commit**,
 because both call one script. No mismatch between them.
-Finding 2: `layout/toolchain.json` records **no PDK commit**, so nothing in that
-file can disagree. The klt DRC report's `provenance.pdk` is `None`
-(`klt-drc.json`, klt 0.7.0, KLayout 0.30.12). The klt flow's PDK revision is
-therefore **unknown from the record**; `README.md` says `2bbec755dc67` but
-nothing machine-checks that the local `PDK_ROOT` matches. The klt DRC deck is
+Finding 2: `layout/toolchain.json` has no PDK pin field, but the `_comment` for
+the `0e2362bd` klt pin records verification against IHP-Open-PDK `2bbec755`,
+which **matches** the commit both actions install. No mismatch. What is still
+missing is a per-run record: the klt DRC report's `provenance.pdk` is `null`
+(`verification/records/librelane-gds-signoff-check/artifacts/20261011-144308-e5a0bae/klt-drc.json`,
+klt 0.7.0, KLayout 0.30.12), so the PDK a given klt run used is not
+machine-recorded, and nothing machine-checks that the local `PDK_ROOT` is
+`2bbec755`. The klt DRC deck is
 klt's own `sg13cmos5l` deck (content hash `sha256:db9f44fa…`), not the IHP file
 precheck runs, so the two DRC results are different evidence.
 
 ### Coverage
 
 "Precheck" below means `ihp-sg13cmos5l.drc` plus the structural checks above
-(TT/LibreLane CI). klt evidence is the klt flow's `klt drc` report on the CI GDS
+(TT/LibreLane CI). klt evidence is the klt flow's `klt drc` report on the CI GDS,
+`verification/records/librelane-gds-signoff-check/artifacts/20261011-144308-e5a0bae/klt-drc.json`
 (21 rules checked, 0 violations, 6 inapplicable, `status: clean`).
 
 | Layout we draw | Checked by precheck | Absent from precheck | Evidence |
 |---|---|---|---|
 | **PDN bridges** (fixed Metal4 stripes from `src/pdn_cfg.tcl`, plus the Via1-3 stacks pdngen adds) | Metal4 width, space, wide-metal spacing; Via1/2/3 size, space, enclosure; Metal1-3 rails; offgrid and angle on all those layers; `TopMetal1.drawing` forbidden (the reason the bridges are Metal4-only). | **Opposite-net shorts and opens**: DRC is net-agnostic, so a merged opposite-net overlap is not a rule violation. Antenna. Metal density. | Deck source: `rule_decks/beol/5_17_metaln.drc`, `5_20_vian.drc`; run 38174354943 log. Net-level checks are on record from **TT/LibreLane CI** only: PSM "all shapes connected", `design__power_grid_violation__count` 0, LVS 0 (`librelane-pdn-bridge` record `20261011-145000-e5a0bae`). klt also reports Metal4 width and space clean on the same layout. |
 | **Signal routing** (Metal1-4, Via1-3, stdcell Cont/Activ/GatPoly) | The same width, space, enclosure, offgrid and angle rules, plus Cont, Activ, GatPoly, NWell, PWell-block, latch-up. | Antenna, density, and connectivity (LVS). | Same as above. In-flow antenna and LVS results are TT/LibreLane CI and klt records, not precheck. |
-| **Macro halo and boundary** (SRAM macro `RM_IHPSG13_1P_256x16_c2_bm_bist`; no `FP_MACRO_HORIZONTAL_HALO` or `ROUTING_OBSTRUCTIONS` set) | The macro polygons are inside the flat GDS the deck reads, so macro-internal and macro-to-stdcell geometry (spacing, width) is checked by the same rules. Boundary check, `prBoundary` present, layer allowlist, pin check against the template DEF. | The halo is a placement keep-out, not a DRC rule, so it is **not covered**: a missing halo is only visible as a geometry violation. Macro-vs-Magic mismatch below. | `precheck.py` `boundary_check`, `layer_check`, `pin_check`. The macro is part of the 419.52 x 313.74 um design the deck read. |
+| **Macro halo and boundary** (SRAM macro `RM_IHPSG13_1P_256x16_c2_bm_bist`; no `FP_MACRO_HORIZONTAL_HALO` or `ROUTING_OBSTRUCTIONS` set) | The macro is inside the hierarchy the deck processes in deep mode from the top cell, so macro-internal and macro-to-stdcell geometry (spacing, width) is checked by the same rules. Boundary check, `prBoundary` present, layer allowlist, pin check against the template DEF. | The halo is a placement keep-out, not a DRC rule, so it is **not covered**: a missing halo is only visible as a geometry violation. Macro-vs-Magic mismatch below. | `precheck.py` `boundary_check`, `layer_check`, `pin_check`. The macro is part of the 419.52 x 313.74 um design the deck read. |
 
 **Open point, not resolved here: the Magic count.** The in-flow Magic DRC
 (TT/LibreLane CI) reported **29,296** errors on run 38174354943 (the R3 row
@@ -422,10 +432,12 @@ may stay off.** The reasons are the deck source and the in-flow config, not the
 green run:
 
 1. Precheck runs the PDK's own full KLayout deck (`ihp-sg13cmos5l.drc`, default
-   `main` tables, `PRECHECK_DRC=false`) over the whole flat final GDS, and any
-   violation fails the job.
-2. `RUN_KLAYOUT_DRC=1` would run the same file with fewer rule groups
-   (`no_recommended=true`), so enabling it adds no coverage and costs wall time.
+   `main` tables, `PRECHECK_DRC=false`) in deep (hierarchical) mode from the top
+   cell of the final GDS, so the macro is included, and any violation fails the
+   job.
+2. `RUN_KLAYOUT_DRC=1` would run the same file, also in deep mode, with fewer
+   rule groups (`no_recommended=true` is the only difference), so enabling it
+   adds no coverage and costs wall time.
    The `gds` job already takes about 17 minutes (20:57:28Z to 21:14:29Z on run
    38174354943).
 3. `ERROR_ON_MAGIC_DRC` stays 0 because Magic is not a CMOS5L-capable DRC engine
@@ -435,7 +447,9 @@ Residual gaps that neither the in-flow gate nor precheck covers, and that this
 recommendation does **not** claim are closed: metal density and the KLayout
 antenna runset (separate decks, not included by `ihp-sg13cmos5l.drc`), net-level
 shorts in the PDN bridges (covered only by the TT/LibreLane CI LVS and PSM
-records), and the missing halo (no rule exists). The klt PDK commit is unknown
+records), and the missing halo (no rule exists). Separately, the klt flow's PDK
+commit is recorded only in prose (`layout/toolchain.json` `_comment`, `2bbec755`,
+matching both actions); its per-run DRC report carries `provenance.pdk: null`
 (Finding 2). None of these changes the choice between precheck and the in-flow
 KLayout gate, so no follow-on issue is filed. Re-check this section when the
 `tt-gds-action` pin or `tt-support-tools` tip moves; the latter is not pinned by
