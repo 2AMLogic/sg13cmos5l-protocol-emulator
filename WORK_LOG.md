@@ -2,8 +2,21 @@
 
 Chronological record of merged pull requests and closed issues, newest first.
 
+### 2026-10-11
+
+- **PR #236**: Row 13: WS2812 chosen after the ISA freeze (DR 0018), firmware + independent WS2812B model at RTL and gate level (#141)
+- **PR #234**: DR 0013 layer 1 after the #166 ruling: loadseq zero refusal, readout load roles (#218)
+- **Issue #218** (closed): DR 0013 layer 1 after the #166 ruling: loadseq refuses all-zero images, record the CRC-0 gap, findings 3 and 4
+- **Issue #141** (closed): Row 13: freeze the submission ISA, then demonstrate a protocol the chip was not designed for (WS2812 / 1-Wire / DMX512)
+
 ### 2026-10-10
 
+- **PR #233**: spec: freeze the submission ISA (DR 0017) with a sha256 check (#141 part 1)
+- **PR #232**: Buffer all SRAM macro inputs in the LibreLane flow (#201)
+- **PR #228**: Gate gl_test on repository-owned GL results validation
+- **PR #221**: Submission D4: judge-facing verification write-up
+- **PR #212**: Build DR 0015's P1 (CRC/LFSR step) and P2 (NRZI + bit-stuff) in control space 0x10-0x19 (#208)
+- **PR #167**: feat: show PM_CRC on uo_out during the serial load so the host can verify before running (DR 0013 layer 1)
 - **PR #224**: CI: cancel in-progress only for pull_request events
 - **PR #222**: docs: judge-facing AI-use narrative (submission D5)
 - **PR #220**: Reject contradictory and empty JUnit results in check_test_results.py
@@ -13,6 +26,12 @@ Chronological record of merged pull requests and closed issues, newest first.
 - **PR #206**: Bind T1 items 1, 2, 9 and 10 to audited artifacts; klt pin to v0.7.0 (#83)
 - **PR #172**: feat: fail lint on a new file with an absolute home-directory path
 - **Issue #223** (closed): CI: preserve started main verification runs during merge bursts
+- **Issue #219** (closed): Re-mint stale evidence records and signoff baseline for PR #212 after #139 merge
+- **Issue #216** (closed): Gate the Tiny Tapeout gl_test job on repository-owned XML result validation
+- **Issue #214** (closed): Submission D4: distill current verification evidence into a judge-facing write-up
+- **Issue #208** (closed): Build DR 0015's admitted primitives P1 (CRC/LFSR step) and P2 (NRZI + bit-stuff) in control space 0x10–0x1F
+- **Issue #201** (closed): LibreLane max-slew violation on an SRAM macro input pin (A_DIN[0], then A_WEN) after the UART-load ROM re-roll
+- **Issue #137** (closed): DR 0013 layer 1: expose PM_CRC on uo_out during serial load so the host can verify before running
 - **Issue #215** (closed): Reject contradictory and empty JUnit results in check_test_results.py
 - **Issue #213** (closed): Submission D5: write the judge-facing AI-use narrative
 - **Issue #203** (closed): Spec: DR 0001 leaves SUB's C polarity (an RTL pin) and three SHF/logic flag details open; ratify or mark unspecified
