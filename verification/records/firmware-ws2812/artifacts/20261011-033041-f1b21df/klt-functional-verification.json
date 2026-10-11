@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "engine": "icarus",
+  "hdl_toplevel": "tt_um_2amlogic_protocol_emulator",
+  "testbench": "test_firmware_ws2812",
+  "status": "pass",
+  "test_count": 6,
+  "passed_count": 6,
+  "failed_count": 0,
+  "skipped_count": 0,
+  "tests": [
+    {
+      "name": "test_committed_image_is_fresh",
+      "status": "passed",
+      "sim_time_ns": 0.0,
+      "real_time_s": 0.002
+    },
+    {
+      "name": "test_committed_frame",
+      "status": "passed",
+      "sim_time_ns": 1428221.0,
+      "real_time_s": 1.236
+    },
+    {
+      "name": "test_random_frames",
+      "status": "passed",
+      "sim_time_ns": 10704721.0,
+      "real_time_s": 9.521
+    },
+    {
+      "name": "test_negative_short_t1h",
+      "status": "passed",
+      "sim_time_ns": 1374761.0,
+      "real_time_s": 1.197
+    },
+    {
+      "name": "test_negative_dropped_bit",
+      "status": "passed",
+      "sim_time_ns": 1428241.0,
+      "real_time_s": 1.247
+    },
+    {
+      "name": "test_negative_short_reset",
+      "status": "passed",
+      "sim_time_ns": 514921.0,
+      "real_time_s": 0.472
+    }
+  ],
+  "coverage": null,
+  "trace": null,
+  "environment": {
+    "engine": "icarus",
+    "engine_version": "13.0",
+    "cocotb_version": "2.1.0",
+    "results_xml": "<repo>/verification/.klt/functional-verification/results_icarus.xml",
+    "random_seed": 1,
+    "sdf": null
+  }
+}
