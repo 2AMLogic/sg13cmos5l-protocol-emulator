@@ -1,0 +1,54 @@
+== toolchain ==
+Yosys 0.67+post (git sha1 b8e7da6f40ae8f552c116bf6c359b07c6533e159, Release, GNU /usr/bin/c++ 13.3.0)
+Z3 version 5.1.0 - 64 bit
+yosys-abc: UC Berkeley, ABC 1.01 (compiled Oct  5 2026 18:35:18)
+yosys-smtbmc: <home>/.cache/yosys-0.67/bin/yosys-smtbmc (ships with the Yosys distribution above; no version flag)
+Python 3.13.16
+Linux 7.0.0-1013-aws #13~24.04.1-Ubuntu SMP PREEMPT Sat Sep  5 01:10:01 UTC 2026 x86_64
+
+== input hashes (monitor of record, harness, DUT, mutant generator, runner) ==
+76a5bbed2b569b7f6a521b7fca1f0aa4f4249a11d5026897479b28395b5c096e  verification/formal/pin_write_latency.sv
+73f52315db4f834e406d71c5e02b2a0444004e3aed0c4de2d0dfd974b02bd1cb  verification/formal/formal_top_pin_write.v
+d4bab243a80af56a41b8ef730bc0ecbee889f2c02f4587311d6f9f694636437a  rtl/protocol_core.v
+8b1b23f628232ef50ace46c2ce4da1ab22ec2d1132e00e5031fca0ac3de11c21  verification/formal/pin_write_mutants.py
+f2d79b5f8bf3d4ae568787e469d5a50ba15b2860bdc5f44d2a817710f6086a05  verification/formal/run-pin-write-latency.sh
+
+== [0/6] structural: output ports are direct rising-edge flop outputs on clk ==
+core: PASS (16/16 output bits are Q pins of rising-edge flops on clk, no logic in between)
+== [1/6] real core: elaboration (EDGE and FINE models) ==
+core-edge.aig header: aig 34370 1283 624 0 32463 6 0 0 0
+core-fine.aig header: aig 37802 1309 1214 0 35279 8 0 0 0
+== [2/6] real core: proof (ABC scorr + pdr -a; expect every property PROVED) ==
+EDGE (A1/A2 once per cycle): PROVED (unbounded, harness model) -- Properties:  All = 6. Proved = 6. Disproved = 0. Undecided = 0.   Time =    30.87 sec
+FINE (A1/A2 every sample + F1): PROVED (unbounded, harness model) -- Properties:  All = 8. Proved = 8. Disproved = 0. Undecided = 0.   Time =    45.03 sec
+== [3/6] real core: scorr-independent bounded cross-check (informational, 120s each) ==
+EDGE: raw bmc3 (informational, no scorr): No output asserted in 9 frames. Resource limit reached (timeout 120 sec). Time =   120.03 sec
+FINE: raw bmc3 (informational, no scorr): No output asserted in 14 frames. Resource limit reached (timeout 120 sec). Time =   120.01 sec
+== [4/6] real core: covers (non-vacuity, z3) ==
+EDGE covers: all 23 covers reached (max step 9)
+FINE covers: all 25 covers reached (max step 17)
+
+== [5/6] mutants of the real core (scratch copies; rtl/ is never edited) ==
+wrong_destination [edge]: REJECTED -- ABC frame 6 (pin_write_latency.sv:473); z3 step 6 (pin_write_latency.sv:473 ...); VCD wrong_destination-edge-cex.vcd
+wrong_value [edge]: REJECTED -- ABC frame 6 (pin_write_latency.sv:473); z3 step 6 (pin_write_latency.sv:473 ...); VCD wrong_value-edge-cex.vcd
+readonly_port_writes [edge]: REJECTED -- ABC frame 6 (pin_write_latency.sv:472); z3 step 6 (pin_write_latency.sv:472 ...); VCD readonly_port_writes-edge-cex.vcd
+wctl_writes_pin [edge]: REJECTED -- ABC frame 6 (pin_write_latency.sv:472); z3 step 6 (pin_write_latency.sv:472 ...); VCD wctl_writes_pin-edge-cex.vcd
+rctl_wrong_value [edge]: REJECTED -- ABC frame 6 (pin_write_latency.sv:473); z3 step 6 (pin_write_latency.sv:472 ...); VCD rctl_wrong_value-edge-cex.vcd
+pm_read_wrong_byte [edge]: REJECTED -- ABC frame 7 (pin_write_latency.sv:473); z3 step 7 (pin_write_latency.sv:472 ...); VCD pm_read_wrong_byte-edge-cex.vcd
+fetch_source_ignores_rom [edge]: REJECTED -- ABC frame 6 (pin_write_latency.sv:473); z3 step 6 (pin_write_latency.sv:472 ...); VCD fetch_source_ignores_rom-edge-cex.vcd
+run_does_not_leave_rom [edge]: REJECTED -- ABC frame 8 (pin_write_latency.sv:473); z3 step 8 (pin_write_latency.sv:472 ...); VCD run_does_not_leave_rom-edge-cex.vcd
+boot_status_bit1_wrong [edge]: REJECTED -- ABC frame 6 (pin_write_latency.sv:473); z3 step 6 (pin_write_latency.sv:473 ...); VCD boot_status_bit1_wrong-edge-cex.vcd
+rom_decode_split [edge]: REJECTED -- ABC frame 6 (pin_write_latency.sv:473); z3 step 6 (pin_write_latency.sv:472 ...); VCD rom_decode_split-edge-cex.vcd
+late_one_cycle [edge]: REJECTED -- ABC frame 6 (pin_write_latency.sv:472); z3 step 6 (pin_write_latency.sv:472 ...); VCD late_one_cycle-edge-cex.vcd
+comb_early_visibility [edge]: REJECTED -- ABC frame 5 (pin_write_latency.sv:473); z3 step 5 (pin_write_latency.sv:473 ...); VCD comb_early_visibility-edge-cex.vcd
+executes_in_priming_cycle [edge]: REJECTED -- ABC frame 5 (pin_write_latency.sv:473); z3 step 5 (pin_write_latency.sv:472 ...); VCD executes_in_priming_cycle-edge-cex.vcd
+negedge_half_cycle_early [fine]: REJECTED -- ABC frame 8 (formal_top_pin_write.v:237); z3 step 8 (formal_top_pin_write.v:237 ...); VCD negedge_half_cycle_early-fine-cex.vcd
+load_phase_leak [edge]: REJECTED -- ABC frame 5 (pin_write_latency.sv:472); z3 step 5 (pin_write_latency.sv:472 ...); VCD load_phase_leak-edge-cex.vcd
+-- structural check negative controls (must FAIL on the two mutants that break registration) --
+structural check rejects comb_early_visibility as required
+structural check rejects negedge_half_cycle_early as required
+== [6/6] observability control (informational): the half-cycle-early mutant on the EDGE model ==
+EDGE model on negedge_half_cycle_early: Properties:  All = 6. Proved = 6. Disproved = 0. Undecided = 0.   Time =    52.70 sec
+
+RESULT: all expectations met (EDGE+FINE proofs closed on the harness model, every cover reached, every mutant rejected by ABC and z3)
+exit 0

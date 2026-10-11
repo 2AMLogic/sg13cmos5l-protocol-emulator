@@ -245,6 +245,60 @@ capture, PVT corner sweeps, or Monte Carlo.
   Item 9 (`evidence/testbenches.txt`) gains the `boot-uart` bench and the
   `--boot-uart` gate-level command. Baseline: `signoff-baseline` record
   `20261010-133500-a0f91e3`, **5 of 11**, unchanged.
+- **Items 1, 2, 3, 4, 7 and 9, state as of 2026-10-10 (issue #208).** Append-only;
+  the bullets above are the earlier state. DR 0015's P1 and P2 and the
+  LibreLane-only drive buffers on every SRAM macro input changed the design,
+  so every cited artifact was re-made and re-pointed: items 2, 3 and 4 cite
+  `librelane-gds-signoff-check` record `20261010-160200-9d62f29` (the GDS of
+  gds run 38055685598, `sha256:830eaba1…`); item 7 cites
+  `post-layout-sdf-regression` record `20261010-160000-9d62f29`, whose routed
+  netlist is byte-identical to that run's; item 1's inventory carries the new
+  RTL hashes and the two new derived netlists; item 9's inventory gains the
+  `primitives` experiment line. **Verdicts are unchanged: items 1, 2, 3, 9
+  and 10 `met`; item 4 `unmet`/`check_errored`** (klayout-tools#2941, the
+  converter now stopping at the sized constant `1'h1` on the klt/Yosys
+  reference, a later shape of the same issue; the compare against the
+  post-route reference is `match` and is not cited); **item 7 stays
+  `unmet`/`unverifiable_provenance`**. Baseline: `signoff-baseline` record
+  `20261010-161100-9d62f29`, 5 of 11.
+- **Items 1, 2, 3, 4, 7 and 9, state as of 2026-10-10 (PR #212, issue #208
+  merged with `main`'s issue #139).** Append-only; the two bullets above are
+  the two parents' states. The merged design carries both DR 0015's P1/P2
+  and the 223-word UART-load boot ROM, so it had its own gds run
+  (38071502150 at `f8428aa`) and every citation that names design bytes
+  moved: items 2, 3 and 4 cite `librelane-gds-signoff-check` record
+  `20261010-175000-f8428aa` (GDS `sha256:7cc02425…`); item 7 cites
+  `post-layout-sdf-regression` record `20261010-174900-f8428aa` (12 passed,
+  0 failed, 1 skipped at all three corners, annotated), whose routed netlist
+  is byte-identical to that run's; item 1's inventory carries the merged RTL
+  hashes and both new derived netlists; item 9's inventory lists both the
+  `primitives` and `boot-uart` benches and the gate-level command with
+  `--primitives --boot-uart`. **Verdicts are unchanged: items 1, 2, 3, 9 and
+  10 `met`; item 4 `unmet`/`check_errored`** (klayout-tools#2941, the
+  converter stopping at `1'h1` on the klt/Yosys reference; the compare against
+  the post-route reference is `match` and is not cited); **item 7 stays
+  `unmet`/`unverifiable_provenance`**. Baseline: `signoff-baseline` record
+  `20261010-185501-f8428aa` (twin `20261010-185500-f8428aa` closes `main`'s
+  fork), 5 of 11.
+- **Items 1, 2, 3, 4, 7 and 9, state as of 2026-10-10 (issue #137, PR #167).** Append-only;
+  the bullets above are the earlier states. DR 0013 layer 1's load-phase CRC
+  readout put a `run_phase` mux on `uo_out` in the top of the merged #208/#139
+  design, so the design and the layout changed (target-spec row 14(b) now
+  excepts the serial-load phase, operator ruling on #166). Item 1
+  (`evidence/design-sources.txt`: the top's hash and both netlists) and item
+  2 (the routed GDS of gds run 38083802720 at `bce5bf4`, `sha256:2eeb61ea…`,
+  via `evidence/layout-gds.json`) are `met` against the new bytes. Items 3 and
+  4 cite record `20261010-205400-af36071` (`librelane-gds-signoff-check/`):
+  **item 3 stays `met`**, **item 4 stays `unmet`/`check_errored`** at the same
+  converter shape (`1'h1`, klayout-tools#2941); the post-route compare is
+  `match` with `power_connectivity` `match`, not cited. Item 7 cites
+  `post-layout-sdf-regression` record `20261010-205119-af36071` (12 passed,
+  0 failed, 1 skipped at all three corners, annotated):
+  **`unmet`/`unverifiable_provenance`**, as before. Item 9
+  (`evidence/testbenches.txt`) gains the `load-integrity` bench and
+  `--load-integrity` on the gate-level command. Baselines: `signoff-baseline`
+  records `20261010-213101-af36071` and `20261010-213102-af36071` (one per
+  live head), **5 of 11**, unchanged.
 - **Every citation pins a `content_hash`**, and what it is the hash of
   depends on the cited envelope (clarified 2026-10-10, issue #168; the
   manifests on `main` have always followed this, the sentence here did

@@ -94,12 +94,18 @@ PHASES = (
     "spi_result",
     "i2c_transfer",
     "i2c_result",
+    "ws2812",
 )
 UNUSED = "unused"
-LOAD_ROLES = ("PROG_SER", "PROG_MODE", "none")
+# PROG_SER / PROG_MODE are the serial program-load inputs. CRC_BYTE_SEL (an
+# input) and CRC_READOUT (the eight outputs) are DR 0013 layer 1's load-phase
+# CRC readout (issue #137, table roles added by #218).
+LOAD_ROLES = ("PROG_SER", "PROG_MODE", "CRC_BYTE_SEL", "CRC_READOUT", "none")
+LOAD_ROLE_PORT = {"PROG_SER": "ui_in", "PROG_MODE": "ui_in",
+                  "CRC_BYTE_SEL": "ui_in", "CRC_READOUT": "uo_out"}
 
 # Role classes (what the role does electrically).
-DRIVE_PP = {"TX", "CS", "SCLK", "MOSI"} | {f"RESULT[{i}]" for i in range(8)}
+DRIVE_PP = {"TX", "CS", "SCLK", "MOSI", "DIN"} | {f"RESULT[{i}]" for i in range(8)}
 DRIVE_OD = {"SCL", "SDA"}
 SAMPLE = {"MISO", "RX"}
 ALL_ROLES = DRIVE_PP | DRIVE_OD | SAMPLE
@@ -113,6 +119,8 @@ PHASE_VOCAB = {
     "spi_result": {f"RESULT[{i}]" for i in range(8)},
     "i2c_transfer": {"SCL", "SDA"},
     "i2c_result": {f"RESULT[{i}]" for i in range(8)},
+    # Row 13 (DR 0018, issue #141): the WS2812 data line, an output only.
+    "ws2812": {"DIN"},
 }
 
 # Extraction patterns this script implements. An inventory entry naming any
@@ -129,14 +137,17 @@ PATTERNS = {
     "i2c_in_masks",         # IN UIO_IN ... AND Rx, Ry nearest-LDI mask
     "i2c_poll_mask",        # `LDI R3, imm` before `pollN: IN`
     "gen_strings",          # instruction string literals of gen_i2c_sr.py
+    "ws2812_din",           # first `LDI R2, imm` == DIN pin image; every OUT UO_OUT from R1/R2
     "bench_uart_tx",        # TX_PIN, TX_BIT = "port", n
+    "bench_ws2812",         # DIN_PIN, DIN_BIT = "port", n
     "bench_spi_consts",     # CS/SCLK/MOSI/MISO constants and capture ports
     "bench_i2c_consts",     # SCL/SDA constants, LINE_PIN, CAPTURE_SPECS, i2c_board(scl=, sda=), pad calls
     "bench_i2c_sr_consts",  # imports from test_firmware_i2c, pad calls by named bit, no uio_in write
     "bench_load_pins",      # load_program ui_in MODE / serial assignments
     "top_load_wiring",      # .mode_pin(ui_in[n]) / .serial_in(ui_in[n])
     "top_uio_oe",           # assign uio_oe = <literal | DR 0008 mask | DR 0012 pin-mode rule>;
-    "top_port_passthrough", # .port_*(whole-port) connections
+    "top_port_passthrough", # .port_*(whole-port) connections; uo_out may pass through
+                            # DR 0013's `run_phase ? <core net> : <load CRC>` mux
     "core_uio_out_reset",   # port_uio_out reset literal
     "isa_port_table",       # firmware/tools/asm.py PORTS codes
     "info_pinout",          # info.yaml pinout block
@@ -354,8 +365,9 @@ class Checker:
             if len(kinds) > 1 and runtime and not str(pin["shared_pin_rationale"]).strip():
                 s.err(f"{label}: runtime pin is {' and '.join(sorted(kinds))} in different "
                       f"phases but has no shared_pin_rationale")
-            if pin["load_role"] != "none" and port != "ui_in":
-                s.err(f"{label}: load role {pin['load_role']} must be on ui_in")
+            if pin["load_role"] != "none" and port != LOAD_ROLE_PORT[pin["load_role"]]:
+                s.err(f"{label}: load role {pin['load_role']} must be on "
+                      f"{LOAD_ROLE_PORT[pin['load_role']]}")
             sampled = any(r in SAMPLE for r in pin["protocol_roles"].values())
             if sampled and el != "input" and not driving and not runtime:
                 s.err(f"{label}: sampled-only role needs electrical_role input, table says {el}")
@@ -380,9 +392,22 @@ class Checker:
             for r, where in placed.items():
                 if r.startswith("RESULT[") and where != [f"uo_out[{r[7]}]"]:
                     s.err(f"phase {ph}: {r} must sit on uo_out[{r[7]}], found {where}")
-        loads = {p["load_role"]: f"{k[0]}[{k[1]}]" for k, p in self.pins.items() if p["load_role"] != "none"}
-        if set(loads) != {"PROG_SER", "PROG_MODE"}:
-            s.err(f"load roles placed: {sorted(loads)}; need exactly PROG_SER and PROG_MODE once each")
+        placed_loads: dict[str, list[str]] = {}
+        for k, p in self.pins.items():
+            if p["load_role"] != "none":
+                placed_loads.setdefault(p["load_role"], []).append(f"{k[0]}[{k[1]}]")
+        for role in ("PROG_SER", "PROG_MODE"):
+            if len(placed_loads.get(role, [])) != 1:
+                s.err(f"load role {role} placed on {placed_loads.get(role) or 'no pin'}; "
+                      f"need exactly one pin")
+        # the readout is all-or-nothing: one byte-select pin and the whole uo_out bus
+        readout = sorted(placed_loads.get("CRC_READOUT", []))
+        sel = placed_loads.get("CRC_BYTE_SEL", [])
+        if readout != sorted(f"uo_out[{b}]" for b in range(8)) and readout:
+            s.err(f"load role CRC_READOUT placed on {readout}; need all of uo_out[7:0] or none")
+        if bool(readout) != bool(sel) or len(sel) > 1:
+            s.err(f"load roles CRC_READOUT {readout or 'none'} and CRC_BYTE_SEL {sel or 'none'}; "
+                  f"need the whole readout with exactly one byte-select pin, or neither")
 
     def validate_masks(self) -> None:
         s = self.schema
@@ -934,6 +959,42 @@ class Checker:
         # generic ISA demo: whole-port use, no protocol pin roles asserted
         self.check_ports(rel, ins, {"UO_OUT"}, {"UI_IN"}, {"UO_OUT"}, {"UI_IN"})
 
+    # ------------------------------------------------------ profile: ws2812
+    def prof_ws2812(self, rel, ent):
+        """Row 13's WS2812 program (DR 0018, issue #141): DIN on the table's
+        pin, written only through `OUT UO_OUT` from the DIN pin image (R2)
+        or from R1, which holds that image ANDed with the data or zero."""
+        text = self.read(rel, self.concrete)
+        if text is None:
+            return
+        c = self.concrete
+        ins = self.asm_instrs(text)
+        outs, _ins, _ = self.out_in_ports([("ws2812", ["DIN"])], [], "spi_result")
+        self.check_ports(rel, ins, outs, set(), outs, set())
+        mask = self.mask_of("ws2812", "DIN")
+        first = next((i for i in ins if i["m"] == "LDI" and i["ops"][0] == "R2"), None)
+        if first is None:
+            c.err(f"{rel}: no `LDI R2, imm` DIN pin-image site found (pattern ws2812_din)")
+        else:
+            c.sites += 1
+            v = self.imm(first["ops"][1])
+            if v != mask:
+                c.err(f"{rel}:{first['no']}: DIN pin image LDI R2, {first['ops'][1]} but the table's "
+                      f"ws2812 DIN pin {self.role_pin('ws2812', 'DIN')} is 0x{mask:02X}")
+        if not any(i["m"] == "AND" and i["ops"][1] == "R2" for i in ins):
+            c.err(f"{rel}: no `AND Rx, R2` bit-isolation site found")
+        for i in ins:
+            if i["m"] == "OUT" and i["ops"][0].upper() == "UO_OUT":
+                c.sites += 1
+                if i["ops"][1].upper() not in ("R1", "R2"):
+                    c.err(f"{rel}:{i['no']}: OUT UO_OUT from {i['ops'][1]}; only R2 (the DIN image) "
+                          "or R1 (DIN image AND data, or 0) may drive DIN")
+            if i["m"] == "LDI" and i["ops"][0] == "R2" and i is not first:
+                c.err(f"{rel}:{i['no']}: R2 is reloaded; it must hold the DIN pin image throughout")
+        # R1 also carries loop counts and the table address. Which value an
+        # OUT from R1 drives is a dataflow question this text check does not
+        # answer; the bench grades every DIN level the program produces.
+
     # ------------------------------------------------------- profile: benches
     def need(self, text, pattern, rel, what, flags=re.M):
         m = re.search(pattern, text, flags)
@@ -962,6 +1023,14 @@ class Checker:
         m = self.need(text, r'^TX_PIN,\s*TX_BIT\s*=\s*"(\w+)",\s*(\d+)', rel, "TX_PIN, TX_BIT")
         if m:
             self.check_pb(rel, "TX_PIN/TX_BIT", m.group(1), int(m.group(2)), "uart_tx", "TX")
+
+    def prof_bench_ws2812(self, rel, ent):
+        text = self.read(rel, self.concrete)
+        if text is None:
+            return
+        m = self.need(text, r'^DIN_PIN,\s*DIN_BIT\s*=\s*"(\w+)",\s*(\d+)', rel, "DIN_PIN, DIN_BIT")
+        if m:
+            self.check_pb(rel, "DIN_PIN/DIN_BIT", m.group(1), int(m.group(2)), "ws2812", "DIN")
 
     def prof_bench_spi(self, rel, ent):
         text = self.read(rel, self.concrete)
@@ -1127,9 +1196,27 @@ class Checker:
             if m and want != ("ui_in", int(m.group(1))):
                 self.meta.err(f"{rel}: {role} wired to ui_in[{m.group(1)}] but the table says "
                               f"{want[0]}[{want[1]}]")
+        sel_pin = next((k for k, p in self.pins.items() if p["load_role"] == "CRC_BYTE_SEL"), None)
+        readout = any(p["load_role"] == "CRC_READOUT" for p in self.pins.values())
         for port in ("ui_in", "uio_in", "uo_out", "uio_out"):
             m = re.search(rf"\.port_{port}\s*\(\s*(\w+)\s*\)", text)
             self.meta.sites += 1
+            if m and port == "uo_out" and readout:
+                # The table gives uo_out the CRC_READOUT load role (DR 0013
+                # layer 1): outside the run phase uo_out shows the selected
+                # PM_CRC byte. The one accepted shape is a mux whose
+                # run-phase arm is the core's port, whole, and whose byte
+                # select is the table's CRC_BYTE_SEL pin:
+                #   assign uo_out = run_phase ? <core net> : ui_in[n] ? ... : ...;
+                mux = re.search(r"assign\s+uo_out\s*=\s*run_phase\s*\?\s*(\w+)\s*:"
+                                r"\s*ui_in\[(\d+)\]\s*\?", text)
+                if mux and mux.group(1) == m.group(1) and sel_pin == ("ui_in", int(mux.group(2))):
+                    continue
+                self.meta.err(f"{rel}: the table gives uo_out the CRC_READOUT load role, so the top "
+                              f"must have `assign uo_out = run_phase ? {m.group(1)} : "
+                              f"ui_in[{sel_pin[1]}] ? ... : ...;` (run-phase arm the core's whole "
+                              f"port, byte select the CRC_BYTE_SEL pin)")
+                continue
             if not m or m.group(1) != port:
                 self.meta.err(f"{rel}: core port_{port} is not connected to the whole {port} bus")
         m = re.search(r"assign\s+uio_oe\s*=\s*([^;]+);", text)

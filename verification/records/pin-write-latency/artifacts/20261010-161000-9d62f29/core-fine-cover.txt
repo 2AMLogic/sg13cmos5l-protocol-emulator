@@ -1,0 +1,54 @@
+##   0:00:00  Solver: z3
+##   0:00:00  Checking cover reachability in step 0..
+##   0:00:00  Checking cover reachability in step 1..
+##   0:00:00  Checking cover reachability in step 2..
+##   0:00:00  Checking cover reachability in step 3..
+##   0:00:00  Checking cover reachability in step 4..
+##   0:00:00  Checking cover reachability in step 5..
+##   0:00:00  Checking cover reachability in step 6..
+##   0:00:00  Checking cover reachability in step 7..
+##   0:00:00  Checking cover reachability in step 8..
+##   0:00:00  Checking cover reachability in step 9..
+##   0:00:01  Reached cover statement in step 9 at formal_top_pin_write: <repo>/verification/formal/formal_top_pin_write.v:246.7-246.32 ($cover$<repo>/verification/formal/formal_top_pin_write.v:246$883)
+##   0:00:01  Checking cover reachability in step 9..
+##   0:00:01  Reached cover statement in step 9 at formal_top_pin_write: <repo>/verification/formal/pin_write_latency.sv:505.7-505.23 ($flatten/u_property.$cover$<repo>/verification/formal/pin_write_latency.sv:505$614)
+##   0:00:01  Checking cover reachability in step 9..
+##   0:00:02  Checking cover reachability in step 10..
+##   0:00:04  Reached cover statement in step 10 at formal_top_pin_write: <repo>/verification/formal/formal_top_pin_write.v:243.7-243.71 ($cover$<repo>/verification/formal/formal_top_pin_write.v:243$875)
+##   0:00:04  Checking cover reachability in step 10..
+##   0:00:05  Checking cover reachability in step 11..
+##   0:00:07  Reached cover statement in step 11 at formal_top_pin_write: <repo>/verification/formal/pin_write_latency.sv:501.7-501.96 ($flatten/u_property.$cover$<repo>/verification/formal/pin_write_latency.sv:501$603)
+##   0:00:07  Reached cover statement in step 11 at formal_top_pin_write: <repo>/verification/formal/pin_write_latency.sv:498.7-498.66 ($flatten/u_property.$cover$<repo>/verification/formal/pin_write_latency.sv:498$598)
+##   0:00:07  Reached cover statement in step 11 at formal_top_pin_write: <repo>/verification/formal/pin_write_latency.sv:527.7-528.81 ($flatten/u_property.$cover$<repo>/verification/formal/pin_write_latency.sv:527$678)
+##   0:00:07  Reached cover statement in step 11 at formal_top_pin_write: <repo>/verification/formal/pin_write_latency.sv:518.7-520.68 ($flatten/u_property.$cover$<repo>/verification/formal/pin_write_latency.sv:518$647)
+##   0:00:07  Reached cover statement in step 11 at formal_top_pin_write: <repo>/verification/formal/pin_write_latency.sv:488.11-488.98 ($flatten/u_property.$cover$<repo>/verification/formal/pin_write_latency.sv:488$778)
+##   0:00:07  Checking cover reachability in step 11..
+##   0:00:09  Reached cover statement in step 11 at formal_top_pin_write: <repo>/verification/formal/pin_write_latency.sv:503.7-503.54 ($flatten/u_property.$cover$<repo>/verification/formal/pin_write_latency.sv:503$611)
+##   0:00:09  Checking cover reachability in step 11..
+##   0:00:10  Reached cover statement in step 11 at formal_top_pin_write: <repo>/verification/formal/pin_write_latency.sv:489.11-489.99 ($flatten/u_property.$cover$<repo>/verification/formal/pin_write_latency.sv:489$747)
+##   0:00:10  Checking cover reachability in step 11..
+##   0:00:12  Reached cover statement in step 11 at formal_top_pin_write: <repo>/verification/formal/pin_write_latency.sv:488.11-488.98 ($flatten/u_property.$cover$<repo>/verification/formal/pin_write_latency.sv:488$718)
+##   0:00:12  Checking cover reachability in step 11..
+##   0:00:14  Reached cover statement in step 11 at formal_top_pin_write: <repo>/verification/formal/pin_write_latency.sv:488.11-488.98 ($flatten/u_property.$cover$<repo>/verification/formal/pin_write_latency.sv:488$758)
+##   0:00:14  Checking cover reachability in step 11..
+##   0:00:14  Reached cover statement in step 11 at formal_top_pin_write: <repo>/verification/formal/pin_write_latency.sv:488.11-488.98 ($flatten/u_property.$cover$<repo>/verification/formal/pin_write_latency.sv:488$738)
+##   0:00:14  Checking cover reachability in step 11..
+##   0:00:16  Reached cover statement in step 11 at formal_top_pin_write: <repo>/verification/formal/pin_write_latency.sv:489.11-489.99 ($flatten/u_property.$cover$<repo>/verification/formal/pin_write_latency.sv:489$787)
+##   0:00:16  Checking cover reachability in step 11..
+##   0:00:18  Reached cover statement in step 11 at formal_top_pin_write: <repo>/verification/formal/pin_write_latency.sv:489.11-489.99 ($flatten/u_property.$cover$<repo>/verification/formal/pin_write_latency.sv:489$767)
+##   0:00:18  Checking cover reachability in step 11..
+##   0:00:20  Reached cover statement in step 11 at formal_top_pin_write: <repo>/verification/formal/pin_write_latency.sv:489.11-489.99 ($flatten/u_property.$cover$<repo>/verification/formal/pin_write_latency.sv:489$727)
+##   0:00:20  Checking cover reachability in step 11..
+##   0:00:22  Checking cover reachability in step 12..
+##   0:00:31  Reached cover statement in step 13 at formal_top_pin_write: <repo>/verification/formal/pin_write_latency.sv:530.7-530.64 ($flatten/u_property.$cover$<repo>/verification/formal/pin_write_latency.sv:530$688)
+##   0:00:31  Checking cover reachability in step 13..
+##   0:00:35  Checking cover reachability in step 13..
+##   0:00:41  Checking cover reachability in step 13..
+##   0:00:44  Checking cover reachability in step 13..
+##   0:00:47  Checking cover reachability in step 13..
+##   0:00:51  Checking cover reachability in step 13..
+##   0:00:51  Checking cover reachability in step 14..
+##   0:00:52  Checking cover reachability in step 15..
+##   0:00:52  Checking cover reachability in step 16..
+##   0:00:54  Checking cover reachability in step 17..
+##   0:01:02  Status: PASSED

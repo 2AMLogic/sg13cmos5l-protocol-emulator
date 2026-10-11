@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "engine": "icarus",
+  "hdl_toplevel": "tt_um_2amlogic_protocol_emulator",
+  "testbench": "test_load_integrity",
+  "status": "pass",
+  "test_count": 9,
+  "passed_count": 9,
+  "failed_count": 0,
+  "skipped_count": 0,
+  "tests": [
+    {
+      "name": "test_readout_equals_crc_hqx_for_random_images",
+      "status": "passed",
+      "sim_time_ns": 181072.0,
+      "real_time_s": 0.251
+    },
+    {
+      "name": "test_readout_is_the_running_crc_and_only_moves_on_a_commit",
+      "status": "passed",
+      "sim_time_ns": 3903.0,
+      "real_time_s": 0.008
+    },
+    {
+      "name": "test_byte_select_is_ui_in_1_alone_and_needs_no_clock",
+      "status": "passed",
+      "sim_time_ns": 1350.6000000000058,
+      "real_time_s": 0.003
+    },
+    {
+      "name": "test_truncated_load_mismatches",
+      "status": "passed",
+      "sim_time_ns": 46652.0,
+      "real_time_s": 0.065
+    },
+    {
+      "name": "test_dropped_clock_edge_mismatches",
+      "status": "passed",
+      "sim_time_ns": 239522.0,
+      "real_time_s": 0.333
+    },
+    {
+      "name": "test_doubled_clock_edge_mismatches",
+      "status": "passed",
+      "sim_time_ns": 363572.0,
+      "real_time_s": 0.499
+    },
+    {
+      "name": "test_load_protocol_unchanged_by_the_readout",
+      "status": "passed",
+      "sim_time_ns": 8401.0,
+      "real_time_s": 0.013
+    },
+    {
+      "name": "test_no_readout_outside_the_load_phase",
+      "status": "passed",
+      "sim_time_ns": 1433.0,
+      "real_time_s": 0.002
+    },
+    {
+      "name": "test_readout_holds_at_saturation",
+      "status": "passed",
+      "sim_time_ns": 41343.0,
+      "real_time_s": 0.056
+    }
+  ],
+  "coverage": null,
+  "trace": null,
+  "environment": {
+    "engine": "icarus",
+    "engine_version": "13.0",
+    "cocotb_version": "2.1.0",
+    "results_xml": "<repo>/verification/.klt/functional-verification/results_icarus.xml",
+    "random_seed": 1,
+    "sdf": null
+  }
+}

@@ -1,0 +1,12 @@
+8845c8845
+<     .C(\u_core.rom_exit ),
+---
+>     .C(1'b0),
+8860c8860
+<     .C(\u_core.rom_exit ),
+---
+>     .C(1'b0),
+16670c16670
+<  sg13cmos5l_buf_1 fanout205 (.A(\u_core.rom_exit ),
+---
+>  sg13cmos5l_buf_1 fanout205 (.A(1'b0),

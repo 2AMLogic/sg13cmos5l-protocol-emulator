@@ -29,6 +29,11 @@ firmware/
     spi_mode{0..3}.asm   bit-banged SPI controller, one program per
                          (CPOL, CPHA) mode (issue #72, the SPI third of
                          #23)
+    ws2812.asm           WS2812 LED-strip controller on uo_out[7]: N
+                         GRB pixels from a table in program memory, 63
+                         cycles per bit, refreshed with a >280 us reset
+                         (target-spec row 13, issue #141; protocol chosen
+                         by DR 0018 after DR 0017's ISA freeze)
     boot/boot_rom.asm    the on-chip boot ROM's program (issues #138 and
                          #139, DR 0013 layer 2: warm start and UART load).
                          Not loaded into program memory: the ROM in
@@ -517,9 +522,12 @@ trip count is the program's business, not the assembler's.
 and `RCTL Rd, <reg>` reads one. They are not new opcodes: `WCTL` is `OUT`
 to port `00` and `RCTL` is `IN` from port `10`, with the register index in
 `imm8`. `<reg>` is a name — `UIO_DIR`, `UIO_OD`, `PM_ADDR`, `PM_DATA_HI`,
-`PM_DATA_LO`, `RUN`, `PM_CRC_LO`, `PM_CRC_HI`, `BOOT_STATUS`, `HW_ID` — or a
-number. The cycle report costs them per DR 0012's table: 1 cycle, except
-`WCTL PM_DATA_LO`, `WCTL RUN` and `RCTL PM_DATA_HI`, which are a fixed 2. An
+`PM_DATA_LO`, `RUN`, `PM_CRC_LO`, `PM_CRC_HI`, `BOOT_STATUS`, `HW_ID`, and
+DR 0015's primitives `CRC_CFG`, `CRC_POLY`, `CRC_STATE`, `CRC_BIT`,
+`CRC_BYTE`, `CRC_NEXT`, `LINE_CFG`, `LINE_PUT`, `LINE_OUT`, `LINE_STUF`
+(0x10–0x19, issue #208) — or a number. The cycle report costs them per the
+table: 1 cycle, except `WCTL PM_DATA_LO`, `WCTL RUN` and `RCTL PM_DATA_HI`,
+which are a fixed 2, and `WCTL CRC_BYTE`, a fixed 9. An
 index the record does not assign in that direction (an unassigned number,
 a write to `BOOT_STATUS`/`HW_ID`, a read of `RUN`) is an error unless the
 assembler is run with `--allow-reserved`. `OUT` to port `01` and `IN` from
@@ -552,6 +560,8 @@ does on each access.
 | `PM_DATA_HI`, `PM_DATA_LO` | always. These return a program-memory word (`PM_DATA_HI` reads `PM[PM_ADDR]` and latches its low byte for `PM_DATA_LO`), not the `WCTL PM_DATA_HI` latch, and the assembler cannot establish what a memory word holds: it depends on every commit ever made to it. |
 | `PM_CRC_LO`, `PM_CRC_HI` | a tainted word has been committed since the last clear: a `WCTL PM_DATA_LO` of a tainted register, or one following a tainted `WCTL PM_DATA_HI`. A later constant commit does not clean the sum. Any `WCTL` to either CRC index clears it, whatever the register holds. A tainted `PM_ADDR` does not taint it (the CRC covers data, not addresses). |
 | `BOOT_STATUS`, `HW_ID` | never: a load-time status bit and a build-time constant. |
+| `CRC_CFG`, `CRC_POLY`, `CRC_STATE`, `CRC_NEXT` (DR 0015 P1) | any `WCTL` of a tainted register to a `CRC_*` index has happened. One taint covers the whole unit, and it stays (the CRC accumulates, and one clean byte does not clean the other three). |
+| `LINE_CFG`, `LINE_OUT`, `LINE_STUF` (DR 0015 P2) | the last `WCTL LINE_CFG` wrote a tainted register, or a tainted `WCTL LINE_PUT` came after it. |
 
 The scan is linear, so stored control state is known only along
 straight-line code from reset, where every control register and the CRC

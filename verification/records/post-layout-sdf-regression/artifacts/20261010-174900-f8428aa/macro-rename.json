@@ -1,0 +1,634 @@
+{
+  "renames": [
+    {
+      "kind": "macro",
+      "cell_type": "RM_IHPSG13_1P_256x16_c2_bm_bist",
+      "instance": "u_prog_mem.u_sram",
+      "sim_instance": "u_prog_mem_u_sram",
+      "netlist_occurrences": 1
+    },
+    {
+      "kind": "stdcell",
+      "cell_type": "sg13cmos5l_buf_4",
+      "instance": "u_prog_mem.u_addr_drv_0",
+      "sim_instance": "u_prog_mem_u_addr_drv_0",
+      "netlist_occurrences": 1
+    },
+    {
+      "kind": "stdcell",
+      "cell_type": "sg13cmos5l_buf_4",
+      "instance": "u_prog_mem.u_addr_drv_1",
+      "sim_instance": "u_prog_mem_u_addr_drv_1",
+      "netlist_occurrences": 1
+    },
+    {
+      "kind": "stdcell",
+      "cell_type": "sg13cmos5l_buf_4",
+      "instance": "u_prog_mem.u_addr_drv_2",
+      "sim_instance": "u_prog_mem_u_addr_drv_2",
+      "netlist_occurrences": 1
+    },
+    {
+      "kind": "stdcell",
+      "cell_type": "sg13cmos5l_buf_4",
+      "instance": "u_prog_mem.u_addr_drv_3",
+      "sim_instance": "u_prog_mem_u_addr_drv_3",
+      "netlist_occurrences": 1
+    },
+    {
+      "kind": "stdcell",
+      "cell_type": "sg13cmos5l_buf_4",
+      "instance": "u_prog_mem.u_addr_drv_4",
+      "sim_instance": "u_prog_mem_u_addr_drv_4",
+      "netlist_occurrences": 1
+    },
+    {
+      "kind": "stdcell",
+      "cell_type": "sg13cmos5l_buf_4",
+      "instance": "u_prog_mem.u_addr_drv_5",
+      "sim_instance": "u_prog_mem_u_addr_drv_5",
+      "netlist_occurrences": 1
+    },
+    {
+      "kind": "stdcell",
+      "cell_type": "sg13cmos5l_buf_4",
+      "instance": "u_prog_mem.u_addr_drv_6",
+      "sim_instance": "u_prog_mem_u_addr_drv_6",
+      "netlist_occurrences": 1
+    },
+    {
+      "kind": "stdcell",
+      "cell_type": "sg13cmos5l_buf_4",
+      "instance": "u_prog_mem.u_addr_drv_7",
+      "sim_instance": "u_prog_mem_u_addr_drv_7",
+      "netlist_occurrences": 1
+    },
+    {
+      "kind": "stdcell",
+      "cell_type": "sg13cmos5l_buf_4",
+      "instance": "u_prog_mem.u_din_drv_0",
+      "sim_instance": "u_prog_mem_u_din_drv_0",
+      "netlist_occurrences": 1
+    },
+    {
+      "kind": "stdcell",
+      "cell_type": "sg13cmos5l_buf_4",
+      "instance": "u_prog_mem.u_din_drv_1",
+      "sim_instance": "u_prog_mem_u_din_drv_1",
+      "netlist_occurrences": 1
+    },
+    {
+      "kind": "stdcell",
+      "cell_type": "sg13cmos5l_buf_4",
+      "instance": "u_prog_mem.u_din_drv_10",
+      "sim_instance": "u_prog_mem_u_din_drv_10",
+      "netlist_occurrences": 1
+    },
+    {
+      "kind": "stdcell",
+      "cell_type": "sg13cmos5l_buf_4",
+      "instance": "u_prog_mem.u_din_drv_11",
+      "sim_instance": "u_prog_mem_u_din_drv_11",
+      "netlist_occurrences": 1
+    },
+    {
+      "kind": "stdcell",
+      "cell_type": "sg13cmos5l_buf_4",
+      "instance": "u_prog_mem.u_din_drv_12",
+      "sim_instance": "u_prog_mem_u_din_drv_12",
+      "netlist_occurrences": 1
+    },
+    {
+      "kind": "stdcell",
+      "cell_type": "sg13cmos5l_buf_4",
+      "instance": "u_prog_mem.u_din_drv_13",
+      "sim_instance": "u_prog_mem_u_din_drv_13",
+      "netlist_occurrences": 1
+    },
+    {
+      "kind": "stdcell",
+      "cell_type": "sg13cmos5l_buf_4",
+      "instance": "u_prog_mem.u_din_drv_14",
+      "sim_instance": "u_prog_mem_u_din_drv_14",
+      "netlist_occurrences": 1
+    },
+    {
+      "kind": "stdcell",
+      "cell_type": "sg13cmos5l_buf_4",
+      "instance": "u_prog_mem.u_din_drv_15",
+      "sim_instance": "u_prog_mem_u_din_drv_15",
+      "netlist_occurrences": 1
+    },
+    {
+      "kind": "stdcell",
+      "cell_type": "sg13cmos5l_buf_4",
+      "instance": "u_prog_mem.u_din_drv_2",
+      "sim_instance": "u_prog_mem_u_din_drv_2",
+      "netlist_occurrences": 1
+    },
+    {
+      "kind": "stdcell",
+      "cell_type": "sg13cmos5l_buf_4",
+      "instance": "u_prog_mem.u_din_drv_3",
+      "sim_instance": "u_prog_mem_u_din_drv_3",
+      "netlist_occurrences": 1
+    },
+    {
+      "kind": "stdcell",
+      "cell_type": "sg13cmos5l_buf_4",
+      "instance": "u_prog_mem.u_din_drv_4",
+      "sim_instance": "u_prog_mem_u_din_drv_4",
+      "netlist_occurrences": 1
+    },
+    {
+      "kind": "stdcell",
+      "cell_type": "sg13cmos5l_buf_4",
+      "instance": "u_prog_mem.u_din_drv_5",
+      "sim_instance": "u_prog_mem_u_din_drv_5",
+      "netlist_occurrences": 1
+    },
+    {
+      "kind": "stdcell",
+      "cell_type": "sg13cmos5l_buf_4",
+      "instance": "u_prog_mem.u_din_drv_6",
+      "sim_instance": "u_prog_mem_u_din_drv_6",
+      "netlist_occurrences": 1
+    },
+    {
+      "kind": "stdcell",
+      "cell_type": "sg13cmos5l_buf_4",
+      "instance": "u_prog_mem.u_din_drv_7",
+      "sim_instance": "u_prog_mem_u_din_drv_7",
+      "netlist_occurrences": 1
+    },
+    {
+      "kind": "stdcell",
+      "cell_type": "sg13cmos5l_buf_4",
+      "instance": "u_prog_mem.u_din_drv_8",
+      "sim_instance": "u_prog_mem_u_din_drv_8",
+      "netlist_occurrences": 1
+    },
+    {
+      "kind": "stdcell",
+      "cell_type": "sg13cmos5l_buf_4",
+      "instance": "u_prog_mem.u_din_drv_9",
+      "sim_instance": "u_prog_mem_u_din_drv_9",
+      "netlist_occurrences": 1
+    },
+    {
+      "kind": "stdcell",
+      "cell_type": "sg13cmos5l_buf_4",
+      "instance": "u_prog_mem.u_men_drv",
+      "sim_instance": "u_prog_mem_u_men_drv",
+      "netlist_occurrences": 1
+    },
+    {
+      "kind": "stdcell",
+      "cell_type": "sg13cmos5l_buf_4",
+      "instance": "u_prog_mem.u_ren_drv",
+      "sim_instance": "u_prog_mem_u_ren_drv",
+      "netlist_occurrences": 1
+    },
+    {
+      "kind": "stdcell",
+      "cell_type": "sg13cmos5l_tielo",
+      "instance": "u_prog_mem.u_sram_346",
+      "sim_instance": "u_prog_mem_u_sram_346",
+      "netlist_occurrences": 1
+    },
+    {
+      "kind": "stdcell",
+      "cell_type": "sg13cmos5l_tielo",
+      "instance": "u_prog_mem.u_sram_347",
+      "sim_instance": "u_prog_mem_u_sram_347",
+      "netlist_occurrences": 1
+    },
+    {
+      "kind": "stdcell",
+      "cell_type": "sg13cmos5l_tielo",
+      "instance": "u_prog_mem.u_sram_348",
+      "sim_instance": "u_prog_mem_u_sram_348",
+      "netlist_occurrences": 1
+    },
+    {
+      "kind": "stdcell",
+      "cell_type": "sg13cmos5l_tielo",
+      "instance": "u_prog_mem.u_sram_349",
+      "sim_instance": "u_prog_mem_u_sram_349",
+      "netlist_occurrences": 1
+    },
+    {
+      "kind": "stdcell",
+      "cell_type": "sg13cmos5l_tielo",
+      "instance": "u_prog_mem.u_sram_350",
+      "sim_instance": "u_prog_mem_u_sram_350",
+      "netlist_occurrences": 1
+    },
+    {
+      "kind": "stdcell",
+      "cell_type": "sg13cmos5l_tielo",
+      "instance": "u_prog_mem.u_sram_351",
+      "sim_instance": "u_prog_mem_u_sram_351",
+      "netlist_occurrences": 1
+    },
+    {
+      "kind": "stdcell",
+      "cell_type": "sg13cmos5l_tielo",
+      "instance": "u_prog_mem.u_sram_352",
+      "sim_instance": "u_prog_mem_u_sram_352",
+      "netlist_occurrences": 1
+    },
+    {
+      "kind": "stdcell",
+      "cell_type": "sg13cmos5l_tielo",
+      "instance": "u_prog_mem.u_sram_353",
+      "sim_instance": "u_prog_mem_u_sram_353",
+      "netlist_occurrences": 1
+    },
+    {
+      "kind": "stdcell",
+      "cell_type": "sg13cmos5l_tielo",
+      "instance": "u_prog_mem.u_sram_354",
+      "sim_instance": "u_prog_mem_u_sram_354",
+      "netlist_occurrences": 1
+    },
+    {
+      "kind": "stdcell",
+      "cell_type": "sg13cmos5l_tielo",
+      "instance": "u_prog_mem.u_sram_355",
+      "sim_instance": "u_prog_mem_u_sram_355",
+      "netlist_occurrences": 1
+    },
+    {
+      "kind": "stdcell",
+      "cell_type": "sg13cmos5l_tielo",
+      "instance": "u_prog_mem.u_sram_356",
+      "sim_instance": "u_prog_mem_u_sram_356",
+      "netlist_occurrences": 1
+    },
+    {
+      "kind": "stdcell",
+      "cell_type": "sg13cmos5l_tielo",
+      "instance": "u_prog_mem.u_sram_357",
+      "sim_instance": "u_prog_mem_u_sram_357",
+      "netlist_occurrences": 1
+    },
+    {
+      "kind": "stdcell",
+      "cell_type": "sg13cmos5l_tielo",
+      "instance": "u_prog_mem.u_sram_358",
+      "sim_instance": "u_prog_mem_u_sram_358",
+      "netlist_occurrences": 1
+    },
+    {
+      "kind": "stdcell",
+      "cell_type": "sg13cmos5l_tielo",
+      "instance": "u_prog_mem.u_sram_359",
+      "sim_instance": "u_prog_mem_u_sram_359",
+      "netlist_occurrences": 1
+    },
+    {
+      "kind": "stdcell",
+      "cell_type": "sg13cmos5l_tielo",
+      "instance": "u_prog_mem.u_sram_360",
+      "sim_instance": "u_prog_mem_u_sram_360",
+      "netlist_occurrences": 1
+    },
+    {
+      "kind": "stdcell",
+      "cell_type": "sg13cmos5l_tielo",
+      "instance": "u_prog_mem.u_sram_361",
+      "sim_instance": "u_prog_mem_u_sram_361",
+      "netlist_occurrences": 1
+    },
+    {
+      "kind": "stdcell",
+      "cell_type": "sg13cmos5l_tielo",
+      "instance": "u_prog_mem.u_sram_362",
+      "sim_instance": "u_prog_mem_u_sram_362",
+      "netlist_occurrences": 1
+    },
+    {
+      "kind": "stdcell",
+      "cell_type": "sg13cmos5l_tielo",
+      "instance": "u_prog_mem.u_sram_363",
+      "sim_instance": "u_prog_mem_u_sram_363",
+      "netlist_occurrences": 1
+    },
+    {
+      "kind": "stdcell",
+      "cell_type": "sg13cmos5l_tielo",
+      "instance": "u_prog_mem.u_sram_364",
+      "sim_instance": "u_prog_mem_u_sram_364",
+      "netlist_occurrences": 1
+    },
+    {
+      "kind": "stdcell",
+      "cell_type": "sg13cmos5l_tielo",
+      "instance": "u_prog_mem.u_sram_365",
+      "sim_instance": "u_prog_mem_u_sram_365",
+      "netlist_occurrences": 1
+    },
+    {
+      "kind": "stdcell",
+      "cell_type": "sg13cmos5l_tielo",
+      "instance": "u_prog_mem.u_sram_366",
+      "sim_instance": "u_prog_mem_u_sram_366",
+      "netlist_occurrences": 1
+    },
+    {
+      "kind": "stdcell",
+      "cell_type": "sg13cmos5l_tielo",
+      "instance": "u_prog_mem.u_sram_367",
+      "sim_instance": "u_prog_mem_u_sram_367",
+      "netlist_occurrences": 1
+    },
+    {
+      "kind": "stdcell",
+      "cell_type": "sg13cmos5l_tielo",
+      "instance": "u_prog_mem.u_sram_368",
+      "sim_instance": "u_prog_mem_u_sram_368",
+      "netlist_occurrences": 1
+    },
+    {
+      "kind": "stdcell",
+      "cell_type": "sg13cmos5l_tielo",
+      "instance": "u_prog_mem.u_sram_369",
+      "sim_instance": "u_prog_mem_u_sram_369",
+      "netlist_occurrences": 1
+    },
+    {
+      "kind": "stdcell",
+      "cell_type": "sg13cmos5l_tielo",
+      "instance": "u_prog_mem.u_sram_370",
+      "sim_instance": "u_prog_mem_u_sram_370",
+      "netlist_occurrences": 1
+    },
+    {
+      "kind": "stdcell",
+      "cell_type": "sg13cmos5l_tielo",
+      "instance": "u_prog_mem.u_sram_371",
+      "sim_instance": "u_prog_mem_u_sram_371",
+      "netlist_occurrences": 1
+    },
+    {
+      "kind": "stdcell",
+      "cell_type": "sg13cmos5l_tielo",
+      "instance": "u_prog_mem.u_sram_372",
+      "sim_instance": "u_prog_mem_u_sram_372",
+      "netlist_occurrences": 1
+    },
+    {
+      "kind": "stdcell",
+      "cell_type": "sg13cmos5l_tielo",
+      "instance": "u_prog_mem.u_sram_373",
+      "sim_instance": "u_prog_mem_u_sram_373",
+      "netlist_occurrences": 1
+    },
+    {
+      "kind": "stdcell",
+      "cell_type": "sg13cmos5l_tielo",
+      "instance": "u_prog_mem.u_sram_374",
+      "sim_instance": "u_prog_mem_u_sram_374",
+      "netlist_occurrences": 1
+    },
+    {
+      "kind": "stdcell",
+      "cell_type": "sg13cmos5l_tielo",
+      "instance": "u_prog_mem.u_sram_375",
+      "sim_instance": "u_prog_mem_u_sram_375",
+      "netlist_occurrences": 1
+    },
+    {
+      "kind": "stdcell",
+      "cell_type": "sg13cmos5l_tielo",
+      "instance": "u_prog_mem.u_sram_376",
+      "sim_instance": "u_prog_mem_u_sram_376",
+      "netlist_occurrences": 1
+    },
+    {
+      "kind": "stdcell",
+      "cell_type": "sg13cmos5l_tielo",
+      "instance": "u_prog_mem.u_sram_377",
+      "sim_instance": "u_prog_mem_u_sram_377",
+      "netlist_occurrences": 1
+    },
+    {
+      "kind": "stdcell",
+      "cell_type": "sg13cmos5l_tielo",
+      "instance": "u_prog_mem.u_sram_378",
+      "sim_instance": "u_prog_mem_u_sram_378",
+      "netlist_occurrences": 1
+    },
+    {
+      "kind": "stdcell",
+      "cell_type": "sg13cmos5l_tielo",
+      "instance": "u_prog_mem.u_sram_379",
+      "sim_instance": "u_prog_mem_u_sram_379",
+      "netlist_occurrences": 1
+    },
+    {
+      "kind": "stdcell",
+      "cell_type": "sg13cmos5l_tielo",
+      "instance": "u_prog_mem.u_sram_380",
+      "sim_instance": "u_prog_mem_u_sram_380",
+      "netlist_occurrences": 1
+    },
+    {
+      "kind": "stdcell",
+      "cell_type": "sg13cmos5l_tielo",
+      "instance": "u_prog_mem.u_sram_381",
+      "sim_instance": "u_prog_mem_u_sram_381",
+      "netlist_occurrences": 1
+    },
+    {
+      "kind": "stdcell",
+      "cell_type": "sg13cmos5l_tielo",
+      "instance": "u_prog_mem.u_sram_382",
+      "sim_instance": "u_prog_mem_u_sram_382",
+      "netlist_occurrences": 1
+    },
+    {
+      "kind": "stdcell",
+      "cell_type": "sg13cmos5l_tielo",
+      "instance": "u_prog_mem.u_sram_383",
+      "sim_instance": "u_prog_mem_u_sram_383",
+      "netlist_occurrences": 1
+    },
+    {
+      "kind": "stdcell",
+      "cell_type": "sg13cmos5l_tielo",
+      "instance": "u_prog_mem.u_sram_384",
+      "sim_instance": "u_prog_mem_u_sram_384",
+      "netlist_occurrences": 1
+    },
+    {
+      "kind": "stdcell",
+      "cell_type": "sg13cmos5l_tielo",
+      "instance": "u_prog_mem.u_sram_385",
+      "sim_instance": "u_prog_mem_u_sram_385",
+      "netlist_occurrences": 1
+    },
+    {
+      "kind": "stdcell",
+      "cell_type": "sg13cmos5l_tielo",
+      "instance": "u_prog_mem.u_sram_386",
+      "sim_instance": "u_prog_mem_u_sram_386",
+      "netlist_occurrences": 1
+    },
+    {
+      "kind": "stdcell",
+      "cell_type": "sg13cmos5l_tielo",
+      "instance": "u_prog_mem.u_sram_387",
+      "sim_instance": "u_prog_mem_u_sram_387",
+      "netlist_occurrences": 1
+    },
+    {
+      "kind": "stdcell",
+      "cell_type": "sg13cmos5l_tielo",
+      "instance": "u_prog_mem.u_sram_388",
+      "sim_instance": "u_prog_mem_u_sram_388",
+      "netlist_occurrences": 1
+    },
+    {
+      "kind": "stdcell",
+      "cell_type": "sg13cmos5l_tielo",
+      "instance": "u_prog_mem.u_sram_389",
+      "sim_instance": "u_prog_mem_u_sram_389",
+      "netlist_occurrences": 1
+    },
+    {
+      "kind": "stdcell",
+      "cell_type": "sg13cmos5l_tielo",
+      "instance": "u_prog_mem.u_sram_390",
+      "sim_instance": "u_prog_mem_u_sram_390",
+      "netlist_occurrences": 1
+    },
+    {
+      "kind": "stdcell",
+      "cell_type": "sg13cmos5l_tiehi",
+      "instance": "u_prog_mem.u_sram_392",
+      "sim_instance": "u_prog_mem_u_sram_392",
+      "netlist_occurrences": 1
+    },
+    {
+      "kind": "stdcell",
+      "cell_type": "sg13cmos5l_tiehi",
+      "instance": "u_prog_mem.u_sram_393",
+      "sim_instance": "u_prog_mem_u_sram_393",
+      "netlist_occurrences": 1
+    },
+    {
+      "kind": "stdcell",
+      "cell_type": "sg13cmos5l_tiehi",
+      "instance": "u_prog_mem.u_sram_394",
+      "sim_instance": "u_prog_mem_u_sram_394",
+      "netlist_occurrences": 1
+    },
+    {
+      "kind": "stdcell",
+      "cell_type": "sg13cmos5l_tiehi",
+      "instance": "u_prog_mem.u_sram_395",
+      "sim_instance": "u_prog_mem_u_sram_395",
+      "netlist_occurrences": 1
+    },
+    {
+      "kind": "stdcell",
+      "cell_type": "sg13cmos5l_tiehi",
+      "instance": "u_prog_mem.u_sram_396",
+      "sim_instance": "u_prog_mem_u_sram_396",
+      "netlist_occurrences": 1
+    },
+    {
+      "kind": "stdcell",
+      "cell_type": "sg13cmos5l_tiehi",
+      "instance": "u_prog_mem.u_sram_397",
+      "sim_instance": "u_prog_mem_u_sram_397",
+      "netlist_occurrences": 1
+    },
+    {
+      "kind": "stdcell",
+      "cell_type": "sg13cmos5l_tiehi",
+      "instance": "u_prog_mem.u_sram_398",
+      "sim_instance": "u_prog_mem_u_sram_398",
+      "netlist_occurrences": 1
+    },
+    {
+      "kind": "stdcell",
+      "cell_type": "sg13cmos5l_tiehi",
+      "instance": "u_prog_mem.u_sram_399",
+      "sim_instance": "u_prog_mem_u_sram_399",
+      "netlist_occurrences": 1
+    },
+    {
+      "kind": "stdcell",
+      "cell_type": "sg13cmos5l_tiehi",
+      "instance": "u_prog_mem.u_sram_400",
+      "sim_instance": "u_prog_mem_u_sram_400",
+      "netlist_occurrences": 1
+    },
+    {
+      "kind": "stdcell",
+      "cell_type": "sg13cmos5l_tiehi",
+      "instance": "u_prog_mem.u_sram_401",
+      "sim_instance": "u_prog_mem_u_sram_401",
+      "netlist_occurrences": 1
+    },
+    {
+      "kind": "stdcell",
+      "cell_type": "sg13cmos5l_tiehi",
+      "instance": "u_prog_mem.u_sram_402",
+      "sim_instance": "u_prog_mem_u_sram_402",
+      "netlist_occurrences": 1
+    },
+    {
+      "kind": "stdcell",
+      "cell_type": "sg13cmos5l_tiehi",
+      "instance": "u_prog_mem.u_sram_403",
+      "sim_instance": "u_prog_mem_u_sram_403",
+      "netlist_occurrences": 1
+    },
+    {
+      "kind": "stdcell",
+      "cell_type": "sg13cmos5l_tiehi",
+      "instance": "u_prog_mem.u_sram_404",
+      "sim_instance": "u_prog_mem_u_sram_404",
+      "netlist_occurrences": 1
+    },
+    {
+      "kind": "stdcell",
+      "cell_type": "sg13cmos5l_tiehi",
+      "instance": "u_prog_mem.u_sram_405",
+      "sim_instance": "u_prog_mem_u_sram_405",
+      "netlist_occurrences": 1
+    },
+    {
+      "kind": "stdcell",
+      "cell_type": "sg13cmos5l_tiehi",
+      "instance": "u_prog_mem.u_sram_406",
+      "sim_instance": "u_prog_mem_u_sram_406",
+      "netlist_occurrences": 1
+    },
+    {
+      "kind": "stdcell",
+      "cell_type": "sg13cmos5l_tiehi",
+      "instance": "u_prog_mem.u_sram_407",
+      "sim_instance": "u_prog_mem_u_sram_407",
+      "netlist_occurrences": 1
+    },
+    {
+      "kind": "stdcell",
+      "cell_type": "sg13cmos5l_tiehi",
+      "instance": "u_prog_mem.u_sram_408",
+      "sim_instance": "u_prog_mem_u_sram_408",
+      "netlist_occurrences": 1
+    },
+    {
+      "kind": "stdcell",
+      "cell_type": "sg13cmos5l_buf_4",
+      "instance": "u_prog_mem.u_wen_drv",
+      "sim_instance": "u_prog_mem_u_wen_drv",
+      "netlist_occurrences": 1
+    }
+  ]
+}

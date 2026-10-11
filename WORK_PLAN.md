@@ -7,8 +7,7 @@ This roadmap is generated from the current GitHub label state.
 
 Judge-approved PRs stuck under a `loom:operator` merge-risk hold — implementation work is done, only a human merge decision is missing.
 
-- **#167**: feat: show PM_CRC on uo_out during the serial load so the host can verify before running (DR 0013 layer 1)
-- **#172**: feat: fail lint on a new file with an absolute home-directory path
+_None._
 
 ## Operator Priority
 
@@ -26,21 +25,21 @@ _None._
 
 Issues currently being built (`loom:building`).
 
-- **#83**: signoff: bind T1 items 1, 2, 9 and 10 to audited artifacts (klayout-tools#2718 landed)
-- **#139**: Boot firmware: UART load over the demo board's USB bridge (TT option B pins) with an independent host model
+- **#125**: I2C Standard-mode: reconcile the 435-cycle firmware clock with the proposed 100 kHz target
+- **#208**: Build DR 0015's admitted primitives P1 (CRC/LFSR step) and P2 (NRZI + bit-stuff) in control space 0x10–0x1F
+- **#214**: Submission D4: distill current verification evidence into a judge-facing write-up
 
 ## PRs Awaiting Review
 
 PRs waiting on Judge (`loom:review-requested`).
 
-_None._
+- **#221**: Submission D4: judge-facing verification write-up
 
 ## Approved (Awaiting Merge)
 
 PRs that passed review and are queued for Champion auto-merge (`loom:pr`).
 
-- **#167**: feat: show PM_CRC on uo_out during the serial load so the host can verify before running (DR 0013 layer 1)
-- **#172**: feat: fail lint on a new file with an absolute home-directory path
+_None._
 
 ## Proposed
 
@@ -48,15 +47,18 @@ Issues carrying `loom:curated`.
 
 - **#20**: T1 item 5: no timing evidence exists — both flows reported cell counts only, so >=50 MHz is unconfirmed (need a klt sta corner sweep) *(curated)*
 - **#44**: Two-key ratification has never run: zero RATIFY-KEY reviews exist, so target-spec + DRs 0001-0004 are 'Ratified' by assertion (DR 0004's own invalidation clause fires) *(curated)*
-- **#83**: signoff: bind T1 items 1, 2, 9 and 10 to audited artifacts (klayout-tools#2718 landed) *(curated)*
 - **#85**: spec: fix the eight findings that stopped the two-key ratification of PR #84 (fetch model, SPI sketch, row 10 source and four other citations) *(curated)*
-- **#86**: Two committed LVS error records contain an absolute home-directory path *(curated)*
 - **#100**: Auditor Capability Request: Python interpreter unavailable for tool-light validation *(curated)*
+- **#201**: LibreLane max-slew violation on an SRAM macro input pin (A_DIN[0], then A_WEN) after the UART-load ROM re-roll *(curated)*
+- **#208**: Build DR 0015's admitted primitives P1 (CRC/LFSR step) and P2 (NRZI + bit-stuff) in control space 0x10–0x1F *(curated)*
+- **#211**: UART load: count byte is outside the CRC; a one-bit count flip can ACK and RUN a truncated image (DR 0013 F8) *(curated)*
+- **#218**: DR 0013 layer 1 after the #166 ruling: loadseq refuses all-zero images, record the CRC-0 gap, findings 3 and 4 *(curated)*
 
 ## Proposed (Architect / Hermit)
 
-- **#125**: I2C Standard-mode: reconcile the 435-cycle firmware clock with the proposed 100 kHz target *(architect)*
-- **#192**: Verification: add UART RX to the constrained-random regression and gate-level firmware run *(architect)*
+- **#216**: Gate the Tiny Tapeout gl_test job on repository-owned XML result validation *(architect)*
+- **#217**: Run protocol firmware waveform checks on the routed SDF corner sweep *(architect)*
+- **#225**: Include independent host-load replay benches in the RTL CI gate *(architect)*
 
 ## Epics
 
@@ -66,13 +68,13 @@ _None._
 
 | Tier | Count |
 |------|-------|
-| Operator merge-risk holds | 2 |
+| Operator merge-risk holds | 0 |
 | Operator priority | 0 |
 | Ready (`loom:issue`) | 0 |
-| In Progress (`loom:building`) | 2 |
-| PRs awaiting review | 0 |
-| Approved PRs awaiting merge | 2 |
-| Curated | 6 |
-| Architect / Hermit proposals | 2 |
+| In Progress (`loom:building`) | 3 |
+| PRs awaiting review | 1 |
+| Approved PRs awaiting merge | 0 |
+| Curated | 8 |
+| Architect / Hermit proposals | 3 |
 | Active epics | 0 |
 <!-- guide:plan-body:end -->

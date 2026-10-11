@@ -88,7 +88,6 @@ test/gate_level_netlist.v
 .cargo-target*/
 .loom/state/*
 !.loom/state/detect-unlabeled-epics-dismissed
-.loom/concierge/
 .loom/stats/
 .loom/diagnostics/
 .loom/guide-docs-state.json
@@ -130,5 +129,6 @@ test/gate_level_netlist.v
 # <<< loom-managed <<<
 # gate-level firmware regression scratch (issue #108)
 flow/firmware-gate-level/
+flow/ws2812-gate-level/
 # reset / power-up / reselect gate-level regression scratch (issue #131)
 flow/reset-power-up/

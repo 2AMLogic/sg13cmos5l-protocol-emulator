@@ -1,0 +1,4 @@
+15319c15319
+<  sg13cmos5l_dfrbpq_1 _3863_ (.RESET_B(net276),
+---
+>  sg13cmos5l_dfrbpq_1 _3863_ (.RESET_B(1'b1),

@@ -44,7 +44,9 @@ PAD_WORDS = 8
 MAX_CODE_WORDS = 110
 IDLE_AFTER_HALT = 6          # edges checked after HALT retires: state must hold
 LOOP_MAX_ITERS = 6
-UNASSIGNED_K = [0x0A, 0x0B, 0x0F, 0x10, 0x11, 0x1F, 0x20, 0x7F, 0x80, 0xFE, 0xFF]
+UNASSIGNED_K = [0x0A, 0x0B, 0x0F, 0x1A, 0x1B, 0x1F, 0x20, 0x7F, 0x80, 0xFE, 0xFF]
+P1_K = [0x10, 0x11, 0x12, 0x13, 0x14, 0x15]   # DR 0015 P1 (issue #208)
+P2_K = [0x16, 0x17, 0x18, 0x19]               # DR 0015 P2
 PORT_NAME = {0: "UI_IN", 1: "UIO_IN", 2: "UO_OUT", 3: "UIO_OUT"}
 INTERESTING = [0x00, 0x01, 0x02, 0x7F, 0x80, 0x81, 0xFE, 0xFF]
 
@@ -220,13 +222,49 @@ class _Gen:
 
     def u_ctl_write(self, free):
         r = self.rng
+        # P1/P2 indices come with their own units (u_p1 / u_p2); here they
+        # are drawn a quarter of the time so DR 0012's buckets keep their share.
+        if r.random() < 0.25:
+            return [i_wctl(r.choice(P1_K + P2_K), r.randrange(4))]
         k = r.choice([0x00, 0x01, 0x02, 0x03, 0x06, 0x07, 0x08, 0x09] + UNASSIGNED_K)
         return [i_wctl(k, r.randrange(4))]
 
     def u_ctl_read(self, free):
         r = self.rng
+        if r.random() < 0.25:
+            return [i_rctl(r.choice(free), r.choice(P1_K + P2_K))]
         k = r.choice([0x00, 0x01, 0x02, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09] + UNASSIGNED_K)
         return [i_rctl(r.choice(free), k)]
+
+    def u_p1(self, free):
+        """DR 0015 P1 in use: a configuration, poly / state bytes, a few
+        steps (bit and byte), and reads into a register, so CRC reads
+        return live, non-zero values the lockstep compares."""
+        r = self.rng
+        t = r.choice(free)
+        items = [i_ldi(t, r.randrange(128)), i_wctl(0x10, t)]
+        for k in (0x11, 0x12):
+            for _ in range(r.choice([1, 2, 4])):
+                items += [i_ldi(t, self.value()), i_wctl(k, t)]
+        for _ in range(r.randrange(1, 4)):
+            items += [i_ldi(t, self.value()), i_wctl(r.choice([0x13, 0x14, 0x14]), t)]
+        for _ in range(r.randrange(1, 3)):
+            items.append(i_rctl(r.choice(free), r.choice([0x10, 0x11, 0x12, 0x15, 0x15])))
+        return items
+
+    def u_p2(self, free):
+        """DR 0015 P2 in use: a configuration (stuffing usually on, small
+        N so stuff slots happen), several LINE_PUTs, reads."""
+        r = self.rng
+        t = r.choice(free)
+        cfg = r.randrange(4) | r.choice([1, 2, 2, 0]) << 2 | r.randrange(4) << 4 | r.randrange(2) << 7
+        items = [i_ldi(t, cfg), i_wctl(0x16, t)]
+        for _ in range(r.randrange(2, 9)):
+            items += [i_ldi(t, r.choice([0x00, 0x01, 0xFF, 0xFE])), i_wctl(0x17, t)]
+            if r.random() < 0.4:
+                items.append(i_rctl(r.choice(free), r.choice([0x18, 0x19])))
+        items.append(i_rctl(r.choice(free), r.choice([0x16, 0x18, 0x19, 0x19])))
+        return items
 
     def u_pm_write(self, free):
         r = self.rng
@@ -265,8 +303,8 @@ class _Gen:
         r = self.rng
         items = []
         kinds = ["alu"] * 24 + ["ldi"] * 12 + ["mov"] * 9 + ["shf"] * 10 + ["in"] * 7 + ["out"] * 6 \
-            + ["wait"] * 5 + ["nop"] * 10 + ["cw"] * 6 + ["cr"] * 7 + ["pmw"] * 2 + ["pmr"] * 2 \
-            + ["crc"] * 2 + ["br"] * 14
+            + ["wait"] * 5 + ["nop"] * 10 + ["cw"] * 8 + ["cr"] * 10 + ["pmw"] * 2 + ["pmr"] * 2 \
+            + ["crc"] * 2 + ["p1"] * 3 + ["p2"] * 3 + ["br"] * 14
         if allow_loop:
             kinds += ["loop"] * 4 + ["runfwd"] * 1 + ["jmp"] * 14
         for i in range(n):
@@ -298,6 +336,10 @@ class _Gen:
                 items += self.u_pm_read(free)
             elif k == "crc":
                 items += self.u_crc(free)
+            elif k == "p1":
+                items += self.u_p1(free)
+            elif k == "p2":
+                items += self.u_p2(free)
             elif k == "br":
                 # a flag-setting instruction right before the branch, so both
                 # outcomes are common; target a later boundary (or the end).
@@ -441,6 +483,17 @@ def _directed(seed):
         tail, k = g.run_written_tail()
         pre = [i_ldi(0, 0x42), i_rr("ADD", 0, 0)] if variant else []
         add(f"run-written-{variant}", pre + tail + [i_halt()], False, extra=6 * k + 8)
+    # DR 0015 P1 / P2 (issue #208): CRC-16/USB-style reflected setup, byte
+    # and bit steps, every read; then USB-style NRZI + stuffing over a run
+    # of 1s long enough to stuff.
+    add("primitives", [
+        i_ldi(0, 0x6F), i_wctl(0x10, 0), i_ldi(1, 0x01), i_wctl(0x11, 1), i_ldi(1, 0xA0),
+        i_wctl(0x11, 1), i_ldi(1, 0xFF), i_wctl(0x12, 1), i_wctl(0x12, 1), i_wctl(0x10, 0),
+        i_ldi(2, 0x31), i_wctl(0x14, 2), i_wctl(0x13, 2), i_wctl(0x14, 2), i_rctl(3, 0x15),
+        i_rctl(3, 0x15), i_rctl(1, 0x12), i_rctl(2, 0x11), i_rctl(0, 0x10), i_rctl(1, 0x13),
+        i_ldi(0, 0x95), i_wctl(0x16, 0), i_ldi(1, 1), i_wctl(0x17, 1), i_wctl(0x17, 1),
+        i_wctl(0x17, 1), i_wctl(0x17, 1), i_wctl(0x17, 1), i_rctl(2, 0x19), i_rctl(3, 0x18),
+        i_rctl(0, 0x16), i_rctl(2, 0x17), i_halt()], True)
     return out
 
 
@@ -478,6 +531,7 @@ def _random_program(seed, index, shrink):
         for _ in range(n):
             u = rng.choice([g.u_alu, g.u_alu, g.u_ldi, g.u_mov, g.u_shf, g.u_in, g.u_out,
                             g.u_ctl_write, g.u_ctl_read, g.u_pm_write, g.u_pm_read, g.u_crc,
+                            g.u_p1, g.u_p2,
                             lambda f: g.u_wait(f, small=False)])
             items += u(free)
         items.append(i_halt())

@@ -21,10 +21,12 @@ cd "$REPO_ROOT" || exit 1
 BENCHES=(
   protocol-emulator
   control-space
+  primitives
   boot-rom
   boot-spi
   boot-uart
   boot-uart-count-alias
+  load-integrity
   program-memory
   protocol-models
   firmware-uart
@@ -34,6 +36,7 @@ BENCHES=(
   firmware-i2c
   firmware-i2c-sr
   firmware-roundtrip
+  firmware-ws2812
   random-regression
   isa-lockstep
 )

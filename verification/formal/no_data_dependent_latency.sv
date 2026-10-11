@@ -21,6 +21,8 @@
  *                           k = imm8 == 0x04 (PM_DATA_LO) or 0x05 (RUN)
  *   L(instr) = 2         if RCTL (IN 4'b1001, port [9:8] == 10) with
  *                           k = imm8 == 0x03 (PM_DATA_HI)
+ *   L(instr) = 9         if WCTL with k = imm8 == 0x14 (CRC_BYTE, DR 0015
+ *                           P1, issue #208: 1 + 8 stall cycles)
  *   L(instr) = 1         for everything else: every other opcode, every
  *                        other WCTL/RCTL index (assigned or reserved), and
  *                        the two reserved no-op encodings (OUT port 01,
@@ -90,6 +92,12 @@
  * assertions bind at every cycle and simply re-run deeper given a faster
  * solver.
  *
+ * Issue #208 (DR 0015) added one row: WCTL CRC_BYTE occupies a fixed 9
+ * (`is_crcb`, latched as `occ_crcb` like the other multi-cycle occupants,
+ * allowed by (P3), retired straight-line by (P4)'s default arm), and cover
+ * c10. Every other P1/P2 index (0x10-0x19) is a 1-cycle access and needs no
+ * new row: the table's default already pins it to 1.
+ *
  * Issue #135 (DR 0012) changed this file: the latency table gained the
  * three 2-cycle control accesses, the occupant decode became latched (see
  * above), `WCTL RUN` got its own retirement rule, and covers c6-c9 were
@@ -128,6 +136,8 @@ module no_data_dependent_latency (
   localparam [7:0] K_PM_DATA_HI = 8'h03;
   localparam [7:0] K_PM_DATA_LO = 8'h04;
   localparam [7:0] K_RUN        = 8'h05;
+  // DR 0015 (issue #208): the one primitive access that is not 1 cycle.
+  localparam [7:0] K_CRC_BYTE   = 8'h14;
 
   wire [1:0] port = instr[9:8];
 
@@ -140,11 +150,13 @@ module no_data_dependent_latency (
   wire is_pm_wr  = is_wctl && (imm == K_PM_DATA_LO);
   wire is_pm_rd  = is_rctl && (imm == K_PM_DATA_HI);
   wire is_ctl2   = is_run || is_pm_wr || is_pm_rd;
+  wire is_crcb   = is_wctl && (imm == K_CRC_BYTE);
 
   // The latency table (DR 0001 + DR 0012): the ONLY legal per-instruction
   // occupancy, as a function of the encoded fields alone.
   wire [8:0] tbl_lat = is_wait ? (9'd1 + {1'b0, imm})
                      : is_ctl2 ? 9'd2
+                     : is_crcb ? 9'd9
                      :           9'd1;
 
   wire [7:0] pc_p1 = pc + 8'd1; // 8-bit wraparound at 255 -> 0 (8-bit PC)
@@ -177,7 +189,7 @@ module no_data_dependent_latency (
   // The occupant's decode, taken on its first cycle and held for the rest
   // of its occupancy (see the header: `instr` is not the occupant's own
   // word during the second cycle of a 2-cycle control access).
-  reg        q_wait, q_br, q_halt, q_run, q_ctl2, q_pm_wr, q_pm_rd;
+  reg        q_wait, q_br, q_halt, q_run, q_ctl2, q_pm_wr, q_pm_rd, q_crcb;
   reg [7:0]  q_imm;
   wire       occ_wait  = boundary ? is_wait   : q_wait;
   wire       occ_br    = boundary ? is_branch : q_br;
@@ -186,6 +198,7 @@ module no_data_dependent_latency (
   wire       occ_ctl2  = boundary ? is_ctl2   : q_ctl2;
   wire       occ_pm_wr = boundary ? is_pm_wr  : q_pm_wr;
   wire       occ_pm_rd = boundary ? is_pm_rd  : q_pm_rd;
+  wire       occ_crcb  = boundary ? is_crcb   : q_crcb;
   wire [7:0] occ_imm   = boundary ? imm       : q_imm;
 
   always @(posedge clk or negedge rst_n) begin
@@ -200,6 +213,7 @@ module no_data_dependent_latency (
       q_ctl2   <= 1'b0;
       q_pm_wr  <= 1'b0;
       q_pm_rd  <= 1'b0;
+      q_crcb   <= 1'b0;
       q_imm    <= 8'd0;
     end else begin
       prev_run <= run_phase;
@@ -213,6 +227,7 @@ module no_data_dependent_latency (
       q_ctl2   <= occ_ctl2;
       q_pm_wr  <= occ_pm_wr;
       q_pm_rd  <= occ_pm_rd;
+      q_crcb   <= occ_crcb;
       q_imm    <= occ_imm;
     end
   end
@@ -229,7 +244,7 @@ module no_data_dependent_latency (
   reg [7:0]  f_imm;
   reg [8:0]  f_rem_r;
   reg        f_wait_r, f_br_r, f_halt_r, f_entry_r;
-  reg        f_run_r, f_ctl2_r, f_pm_wr_r, f_pm_rd_r, f_wctl1_r;
+  reg        f_run_r, f_ctl2_r, f_pm_wr_r, f_pm_rd_r, f_wctl1_r, f_crcb_r;
 
   always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
@@ -247,6 +262,7 @@ module no_data_dependent_latency (
       f_pm_wr_r <= 1'b0;
       f_pm_rd_r <= 1'b0;
       f_wctl1_r <= 1'b0;
+      f_crcb_r  <= 1'b0;
     end else begin
       f_valid   <= 1'b1;
       f_run     <= run_phase;
@@ -262,7 +278,8 @@ module no_data_dependent_latency (
       f_pm_wr_r <= occ_pm_wr;
       f_pm_rd_r <= occ_pm_rd;
       // a 1-cycle control write, decoded on its (only) cycle -- cover c9
-      f_wctl1_r <= boundary && is_wctl && !is_ctl2;
+      f_wctl1_r <= boundary && is_wctl && !is_ctl2 && !is_crcb;
+      f_crcb_r  <= occ_crcb;
     end
   end
 
@@ -293,7 +310,7 @@ module no_data_dependent_latency (
           // data-dependent early exit or stretch of a stall violates
           // this -- the mutant fixtures exist to prove it.
           assert (pc == f_pc);
-          assert (f_wait_r || f_ctl2_r);
+          assert (f_wait_r || f_ctl2_r || f_crcb_r);
         end else begin
           // (P4) Retirement cycle: the occupant retires now, so the next
           // pc is a function of the encoded fields alone.
@@ -359,6 +376,8 @@ module no_data_dependent_latency (
       cover (f_run_r && (f_rem_r == 9'd1) && (pc != f_pc + 8'd1) && (pc != f_pc));
       // (c9) A 1-cycle control write (any other WCTL index) retired in one cycle.
       cover (f_wctl1_r && (f_rem_r == 9'd1) && (pc == f_pc + 8'd1));
+      // (c10) A WCTL CRC_BYTE (DR 0015) ran its full 9 cycles and advanced.
+      cover (f_crcb_r && (f_rem_r == 9'd1) && (pc == f_pc + 8'd1));
     end
   end
 

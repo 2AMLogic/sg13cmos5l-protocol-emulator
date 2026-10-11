@@ -21,9 +21,19 @@ on:
     branches: [main]
   workflow_dispatch:
 
+# Concurrency follows .loom/docs/ci-principles.md rule 2: never cancel
+# verification of a distinct commit once it has started.
+#  - pull_request: a newer push supersedes the older run (its result is
+#    worthless), so cancel-in-progress is true.
+#  - push (main) and workflow_dispatch: cancel-in-progress is false. The ref
+#    group still bounds the queue to one active run plus one pending run; a
+#    newer push replaces only the *pending* run (superseded, no verdict, no
+#    jobs started), never a run whose benches have started.
+# The group is workflow-prefixed and ref-based, so PR refs, main, and other
+# workflows never share a group.
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read

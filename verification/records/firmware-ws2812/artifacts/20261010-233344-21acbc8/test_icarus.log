@@ -1,0 +1,46 @@
+     -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:242  in gpi_load_users                  Loaded entry library: '/opt/homebrew/Cellar/python@3.13/3.13.16/Frameworks/Python.framework/Versions/3.13/Python'
+     -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:234  in gpi_load_users                  Running entry func 'initialize' from loaded library '<venv>/lib/python3.13/site-packages/cocotb/simulator.cpython-313-darwin.so'
+     -.--ns INFO     pygpi                              ..ib/pygpi/embed.cpp:115  in initialize                      Using Python 3.13.14 interpreter at <venv>/bin/python3
+     -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:74   in gpi_print_registered_impl       GPI: VPI support registered
+     0.00ns INFO     cocotb.initialize                  Seeding Python random module with 1
+     0.00ns INFO     cocotb.initialize                  Initialized cocotb v2.1.0 from <venv>/lib/python3.13/site-packages/cocotb
+     0.00ns INFO     cocotb.initialize                  Running on Icarus Verilog version 13.0 (stable)
+     0.00ns INFO     cocotb.regression                  Running tests
+     0.00ns INFO     cocotb.regression                  running test_firmware_ws2812.test_committed_image_is_fresh (1/6)
+                                                            The committed image and report match the source, both paths through a
+     0.00ns INFO     ..tt_um_2amlogic_protocol_emulator 60 words (35 code + 25 table), bit 63 cycles, T0H 20, T1H 40, latch loop x60, up to 73 pixels
+     0.00ns INFO     cocotb.regression                  test_firmware_ws2812.test_committed_image_is_fresh passed
+     0.00ns INFO     cocotb.regression                  running test_firmware_ws2812.test_committed_frame (2/6)
+                                                            The committed image, unchanged: two frames of its 8-pixel table,
+1428221.00ns INFO     ..tt_um_2amlogic_protocol_emulator committed frame: margins to the window edges (ns) {'T0H': 150.0, 'T1H': 150.0, 'T0L': 140.0, 'T1L': 140.0, 'bit': 590.0}; resets [310380, 306420] ns
+1428221.00ns INFO     ..tt_um_2amlogic_protocol_emulator capture-path control x1.2: 382 violation(s), as required
+1428221.00ns INFO     cocotb.regression                  test_firmware_ws2812.test_committed_frame passed
+1428221.00ns INFO     cocotb.regression                  running test_firmware_ws2812.test_random_frames (3/6)
+                                                            Seeded random tables, from 1 pixel to the 73 that fill program memory,
+2426382.00ns INFO     ..tt_um_2amlogic_protocol_emulator [random 1 px] 1 px x 2 frames OK; ns (min, max, count): {'T0H': (400.0, 400.0, 24), 'T1H': (800.0, 800.0, 24), 'T0L': (860.0, 860.0, 22), 'T1L': (460.0, 460.0, 24), 'bit': (1260.0, 1260.0, 46), 'reset': (306420.0, 310380.0, 2)}; leading low 309880 ns
+3485982.00ns INFO     ..tt_um_2amlogic_protocol_emulator [random 2 px] 2 px x 2 frames OK; ns (min, max, count): {'T0H': (400.0, 400.0, 46), 'T1H': (800.0, 800.0, 50), 'T0L': (860.0, 860.0, 44), 'T1L': (460.0, 460.0, 50), 'bit': (1260.0, 1260.0, 94), 'reset': (306420.0, 310380.0, 2)}; leading low 309880 ns
+4729902.00ns INFO     ..tt_um_2amlogic_protocol_emulator [random 5 px] 5 px x 2 frames OK; ns (min, max, count): {'T0H': (400.0, 400.0, 112), 'T1H': (800.0, 800.0, 128), 'T0L': (860.0, 860.0, 110), 'T1L': (460.0, 460.0, 128), 'bit': (1260.0, 1260.0, 238), 'reset': (306420.0, 310380.0, 2)}; leading low 309880 ns
+6711102.00ns INFO     ..tt_um_2amlogic_protocol_emulator [random 17 px] 17 px x 2 frames OK; ns (min, max, count): {'T0H': (400.0, 400.0, 398), 'T1H': (800.0, 800.0, 418), 'T0L': (860.0, 860.0, 398), 'T1L': (460.0, 460.0, 416), 'bit': (1260.0, 1260.0, 814), 'reset': (306020.0, 309980.0, 2)}; leading low 309880 ns
+12132942.00ns INFO     ..tt_um_2amlogic_protocol_emulator [random 73 px] 73 px x 2 frames OK; ns (min, max, count): {'T0H': (400.0, 400.0, 1716), 'T1H': (800.0, 800.0, 1788), 'T0L': (860.0, 860.0, 1714), 'T1L': (460.0, 460.0, 1788), 'bit': (1260.0, 1260.0, 3502), 'reset': (306420.0, 310380.0, 2)}; leading low 309880 ns
+12132942.00ns INFO     cocotb.regression                  test_firmware_ws2812.test_random_frames passed
+12132942.00ns INFO     cocotb.regression                  running test_firmware_ws2812.test_negative_short_t1h (4/6)
+13507703.00ns INFO     ..tt_um_2amlogic_protocol_emulator mutant short-T1H: 154 violation(s), kinds ['high']; first: Violation(t=12489142.003, kind='high', detail='high 640 ns is in neither T0H (250.0, 550.0) nor T1H (650.0, 950.0)')
+13507703.00ns INFO     cocotb.regression                  test_firmware_ws2812.test_negative_short_t1h passed
+13507703.00ns INFO     cocotb.regression                  running test_firmware_ws2812.test_negative_dropped_bit (5/6)
+14935944.00ns INFO     ..tt_um_2amlogic_protocol_emulator mutant dropped-bit: 2 violation(s), kinds ['partial-pixel']; first: Violation(t=13837023.004, kind='partial-pixel', detail='frame of 191 bits is not a whole number of 24-bit pixels')
+14935944.00ns INFO     cocotb.regression                  test_firmware_ws2812.test_negative_dropped_bit passed
+14935944.00ns INFO     cocotb.regression                  running test_firmware_ws2812.test_negative_short_reset (6/6)
+15450865.01ns INFO     ..tt_um_2amlogic_protocol_emulator mutant short-reset: 3 violation(s), kinds ['leading-reset', 'low', 'period']; first: Violation(t=14955384.005, kind='leading-reset', detail='first rise after 5440 ns of low, below RES 50000 ns')
+15450865.01ns INFO     cocotb.regression                  test_firmware_ws2812.test_negative_short_reset passed
+15450865.01ns INFO     cocotb.regression                  ************************************************************************************************************
+                                                        ** TEST                                                STATUS  SIM TIME (ns)  REAL TIME (s)  RATIO (ns/s) **
+                                                        ************************************************************************************************************
+                                                        ** test_firmware_ws2812.test_committed_image_is_fresh   PASS           0.00           0.00          0.00  **
+                                                        ** test_firmware_ws2812.test_committed_frame            PASS     1428221.00           1.30    1099197.48  **
+                                                        ** test_firmware_ws2812.test_random_frames              PASS    10704721.00           9.98    1072451.17  **
+                                                        ** test_firmware_ws2812.test_negative_short_t1h         PASS     1374761.00           1.25    1097339.16  **
+                                                        ** test_firmware_ws2812.test_negative_dropped_bit       PASS     1428241.00           1.29    1105821.54  **
+                                                        ** test_firmware_ws2812.test_negative_short_reset       PASS      514921.00           0.49    1049714.05  **
+                                                        ************************************************************************************************************
+                                                        ** TESTS=6 PASS=6 FAIL=0 SKIP=0                                 15450865.01          14.32    1079124.87  **
+                                                        ************************************************************************************************************

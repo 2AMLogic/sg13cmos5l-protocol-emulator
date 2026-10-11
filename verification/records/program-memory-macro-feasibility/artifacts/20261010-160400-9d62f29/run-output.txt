@@ -1,0 +1,6 @@
+PDK:            ihp-sg13cmos5l at <PDK_ROOT>/ihp-sg13cmos5l
+SRAM library:   <PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_sram -> ../../ihp-sg13g2/libs.ref/sg13g2_sram
+Macro:          RM_IHPSG13_1P_256x16_c2_bm_bist  236.8 x 118.78 um = 28127.104 um^2
+Precheck layers: pass (27 layer/datatype pairs checked)
+Ratified 2x2 core: 413.76 x 306.18 um = 126685.0368 um^2; macro uses 22.2% of it (fits=True)
+Wrote <scratch>/feas.json

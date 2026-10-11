@@ -254,6 +254,18 @@ else
   run_elab_core "$ART_DIR/core-mutant-ctl.smt2" "$ART_DIR/protocol_core_mutant_ctl.v" || fail=1
   expect_cex "core control-space mutant" "$ART_DIR/core-mutant-ctl.smt2" "$ART_DIR/core-mutant-ctl-cex.vcd"
 fi
+
+echo "== [8c/8] real-core P1 mutant (WCTL CRC_BYTE stall cut to 1 cycle when ui_in == 0xA5, DR 0015): BMC depth $BMC_DEPTH (expect CEX) =="
+sed "s/wait_cnt <= 8'd8;/wait_cnt <= (port_ui_in == 8'hA5) ? 8'd1 : 8'd8;/" \
+  "$REPO_ROOT/rtl/protocol_core.v" >"$ART_DIR/protocol_core_mutant_crcb.v"
+changed="$(diff "$REPO_ROOT/rtl/protocol_core.v" "$ART_DIR/protocol_core_mutant_crcb.v" | grep -c '^>')"
+if [ "$changed" -ne 1 ]; then
+  echo "ERROR: core P1 mutant substitution applied to $changed line(s), expected 1" >&2
+  fail=1
+else
+  run_elab_core "$ART_DIR/core-mutant-crcb.smt2" "$ART_DIR/protocol_core_mutant_crcb.v" || fail=1
+  expect_cex "core P1 mutant" "$ART_DIR/core-mutant-crcb.smt2" "$ART_DIR/core-mutant-crcb-cex.vcd"
+fi
 fi  # real-core legs
 
 echo

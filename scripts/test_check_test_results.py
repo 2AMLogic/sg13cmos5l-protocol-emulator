@@ -7,7 +7,9 @@ from a failing one -- exactly the property the line it replaced
 (`! grep -q failure results.xml`) never had, in either direction (see the
 script's own docstring and the issue it closes). Each fixture case below is
 one required distinction from the issue's minimum test list: a genuine
-failure, a genuine pass, and a missing file.
+failure, a genuine pass, and a missing file -- plus the fail-closed cases
+from issue #215: a zero summary attribute contradicting a nested
+failure/error, a zero-test or fully skipped run, and a negative counter.
 
 Method (the same shape as `verification/test_check_records.py` and
 `scripts/test_check_ratification_gate.py`): write a fixture `results.xml` to
@@ -110,6 +112,62 @@ EMPTY_TESTSUITES = """<testsuites name="results">
 </testsuites>
 """
 
+#: Contradictory summary: errors="0" on the suite, but the testcase carries a
+#: nested <error>. The nested signal must not be hidden by the zero attribute.
+CONTRADICTORY_ERRORS_ATTR = """<testsuite tests="1" failures="0" errors="0"><testcase name="crashed"><error message="crash"/></testcase></testsuite>
+"""
+
+#: Same contradiction on the failures axis.
+CONTRADICTORY_FAILURES_ATTR = """<testsuites name="results">
+  <testsuite name="all" tests="2" failures="0" errors="0" skipped="0">
+    <testcase name="a" classname="test" time="0.01" />
+    <testcase name="b" classname="test" time="0.01">
+      <failure error_type="AssertionError" error_msg="boom" />
+    </testcase>
+  </testsuite>
+</testsuites>
+"""
+
+#: A zero-test suite: all counters zero, no testcases. Nothing ran.
+ZERO_TEST_SUITE = """<testsuite tests="0" failures="0" errors="0"/>
+"""
+
+#: Every testcase skipped: nothing was executed, so nothing was demonstrated.
+ALL_SKIPPED = """<testsuites name="results">
+  <testsuite name="all" tests="2" failures="0" errors="0" skipped="2">
+    <testcase name="a" classname="test" time="0.0"><skipped /></testcase>
+    <testcase name="b" classname="test" time="0.0"><skipped /></testcase>
+  </testsuite>
+</testsuites>
+"""
+
+#: A negative counter is malformed and must fail, not be summed into a total
+#: that could cancel a real failure elsewhere.
+NEGATIVE_FAILURES = """<testsuites name="results">
+  <testsuite name="all" tests="1" failures="-1" errors="0">
+    <testcase name="a" classname="test" time="0.01" />
+  </testsuite>
+</testsuites>
+"""
+
+NEGATIVE_TESTS = """<testsuites name="results">
+  <testsuite name="all" tests="-1" failures="0" errors="0">
+    <testcase name="a" classname="test" time="0.01" />
+  </testsuite>
+</testsuites>
+"""
+
+#: An empty auxiliary suite alongside a suite with an executed, passing case
+#: (and one skipped case) is a legitimate pass.
+MULTI_SUITE_WITH_EMPTY_AUXILIARY = """<testsuites name="results">
+  <testsuite name="aux" tests="0" failures="0" errors="0" />
+  <testsuite name="all" tests="2" failures="0" errors="0" skipped="1">
+    <testcase name="a" classname="test" time="0.01" />
+    <testcase name="b" classname="test" time="0.0"><skipped /></testcase>
+  </testsuite>
+</testsuites>
+"""
+
 
 def _run(results_xml: str | None, *, missing: bool = False, args: tuple[str, ...] = ()):
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -203,6 +261,47 @@ def case_empty_testsuites_root() -> tuple[bool, str]:
     return (code == 1 and "FAIL" in out and "no <testsuite>" in out), out
 
 
+def case_contradictory_errors_attr_fails() -> tuple[bool, str]:
+    """errors="0" cannot hide a nested <error> element (issue #215)."""
+    code, out = _run(CONTRADICTORY_ERRORS_ATTR)
+    return (code == 1 and "FAIL" in out and "total: failures=0 errors=1" in out), out
+
+
+def case_contradictory_failures_attr_fails() -> tuple[bool, str]:
+    """failures="0" cannot hide a nested <failure> element (issue #215)."""
+    code, out = _run(CONTRADICTORY_FAILURES_ATTR)
+    return (code == 1 and "FAIL" in out and "total: failures=1 errors=0" in out), out
+
+
+def case_zero_test_suite_fails() -> tuple[bool, str]:
+    """A suite with zero counters and no testcases ran nothing (issue #215)."""
+    code, out = _run(ZERO_TEST_SUITE)
+    return (code == 1 and "FAIL" in out and "no executed" in out), out
+
+
+def case_all_skipped_fails() -> tuple[bool, str]:
+    """A run whose every testcase was skipped demonstrates nothing."""
+    code, out = _run(ALL_SKIPPED)
+    return (code == 1 and "FAIL" in out and "no executed" in out), out
+
+
+def case_negative_failures_counter_fails() -> tuple[bool, str]:
+    code, out = _run(NEGATIVE_FAILURES)
+    return (code == 1 and "FAIL" in out and "negative" in out), out
+
+
+def case_negative_tests_counter_fails() -> tuple[bool, str]:
+    code, out = _run(NEGATIVE_TESTS)
+    return (code == 1 and "FAIL" in out and "negative" in out), out
+
+
+def case_multi_suite_with_empty_auxiliary_passes() -> tuple[bool, str]:
+    """An empty auxiliary suite is fine when another suite executed a
+    passing testcase; skipped cases do not count as executed."""
+    code, out = _run(MULTI_SUITE_WITH_EMPTY_AUXILIARY)
+    return (code == 0 and "PASS" in out and "executed=1" in out), out
+
+
 def case_too_many_arguments_is_a_usage_error() -> tuple[bool, str]:
     """More than one positional argument is a usage error (exit 2), distinct
     from a check failure (exit 1)."""
@@ -236,6 +335,89 @@ def case_default_path_resolves_to_repo_root() -> tuple[bool, str]:
     return (expected_path in result.stdout), result.stdout + result.stderr
 
 
+# ------------------------------------------- gds.yaml gl_test integration (#216)
+
+GDS_WORKFLOW = SCRIPT_DIR.parent / ".github" / "workflows" / "gds.yaml"
+GL_RESULTS_PATH = "test/results.xml"
+
+
+def _gl_job_text() -> str:
+    text = GDS_WORKFLOW.read_text(encoding="utf-8")
+    start = text.index("\n  gl_test:")
+    end = text.find("\n  viewer:", start)
+    return text[start:end if end != -1 else len(text)]
+
+
+def _run_in_workspace(results_xml: str | None) -> tuple[int, str]:
+    """Run the exact workflow command (relative path, cwd = workspace root)."""
+    with tempfile.TemporaryDirectory() as ws:
+        (Path(ws) / "test").mkdir()
+        if results_xml is not None:
+            (Path(ws) / GL_RESULTS_PATH).write_text(results_xml, encoding="utf-8")
+        result = subprocess.run(
+            [sys.executable, str(CHECKER), GL_RESULTS_PATH],
+            capture_output=True, text=True, check=False, cwd=ws,
+        )
+        return result.returncode, result.stdout + result.stderr
+
+
+def case_gl_workflow_path_matrix() -> tuple[bool, str]:
+    """The workflow's exact invocation (relative test/results.xml) passes a
+    good run and fails error-only, failure, contradictory, malformed, empty,
+    all-skipped and missing results."""
+    expect = (
+        (PASSING_ATTRIBUTE_SHAPE, 0), (PASSING_NO_ATTRIBUTE_SHAPE, 0),
+        (ERROR_ONLY_SHAPE, 1), (FAILING_ATTRIBUTE_SHAPE, 1),
+        (CONTRADICTORY_ERRORS_ATTR, 1), (NEGATIVE_TESTS, 1),
+        ("<testsuites><testsuite", 1), ("", 1), (ALL_SKIPPED, 1), (None, 1),
+    )
+    bad = []
+    for xml, want in expect:
+        code, out = _run_in_workspace(xml)
+        if code != want:
+            bad.append(f"want {want} got {code} for {xml!r}: {out}")
+    return (not bad), "\n".join(bad)
+
+
+def case_gl_workflow_stale_result_cannot_satisfy_gate() -> tuple[bool, str]:
+    """A stale passing results.xml passes the checker (it cannot know), so the
+    workflow must delete it before simulation; once deleted, the gate fails."""
+    job = _gl_job_text()
+    rm_at = job.find("rm -f test/results.xml")
+    sim_at = job.find("tt-gds-action/gl_test@")
+    if not (0 <= rm_at < sim_at):
+        return False, "gl_test must `rm -f test/results.xml` before the action step"
+    with tempfile.TemporaryDirectory() as ws:
+        (Path(ws) / "test").mkdir()
+        stale = Path(ws) / GL_RESULTS_PATH
+        stale.write_text(PASSING_ATTRIBUTE_SHAPE, encoding="utf-8")
+        stale.unlink()  # what the workflow's first step does
+        result = subprocess.run(
+            [sys.executable, str(CHECKER), GL_RESULTS_PATH],
+            capture_output=True, text=True, check=False, cwd=ws,
+        )
+    return (result.returncode == 1), result.stdout + result.stderr
+
+
+def case_gl_workflow_step_conditions_preserve_sim_verdict() -> tuple[bool, str]:
+    """Structural checks on the gl_test job text (no YAML dependency)."""
+    job = _gl_job_text()
+    problems = []
+    if "continue-on-error" in job:
+        problems.append("continue-on-error must not appear in gl_test")
+    if "id: gl_sim" not in job:
+        problems.append("simulation step needs `id: gl_sim`")
+    if "check_test_results.py test/results.xml" not in job:
+        problems.append("checker must be invoked with explicit test/results.xml")
+    if "!cancelled()" not in job:
+        problems.append("validation step must use !cancelled()")
+    if "steps.gl_sim.outcome == 'success'" not in job or "steps.gl_sim.outcome == 'failure'" not in job:
+        problems.append("validation must run on gl_sim success or failure only")
+    if "always()" in job.split("Validate GL results")[1]:
+        problems.append("validation must not use always() (would run when cancelled)")
+    return (not problems), "; ".join(problems)
+
+
 CASES = (
     case_passing_attribute_shape,
     case_failing_attribute_shape,
@@ -248,8 +430,18 @@ CASES = (
     case_truncated_xml,
     case_no_testsuite_element,
     case_empty_testsuites_root,
+    case_contradictory_errors_attr_fails,
+    case_contradictory_failures_attr_fails,
+    case_zero_test_suite_fails,
+    case_all_skipped_fails,
+    case_negative_failures_counter_fails,
+    case_negative_tests_counter_fails,
+    case_multi_suite_with_empty_auxiliary_passes,
     case_too_many_arguments_is_a_usage_error,
     case_default_path_resolves_to_repo_root,
+    case_gl_workflow_path_matrix,
+    case_gl_workflow_stale_result_cannot_satisfy_gate,
+    case_gl_workflow_step_conditions_preserve_sim_verdict,
 )
 
 

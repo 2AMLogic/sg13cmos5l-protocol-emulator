@@ -1,0 +1,16 @@
+ok   golden (unmodified copy): 11/11 passed
+ok   crc-byte-latency-data-dependent: 1/11 tests failed -- WCTL CRC_BYTE stalls 1 cycle instead of 8 when Rs is 0x00 (data-dependent latency)
+ok   crc-byte-seven-bits: 3/11 tests failed -- WCTL CRC_BYTE stalls (and steps) 7 cycles instead of 8
+ok   crc-byte-bit-order-fixed: 2/11 tests failed -- CRC_BYTE feeds Rs MSB first in reflected mode too
+ok   crc-tap-ignores-width: 4/11 tests failed -- the normal-mode feedback taps bit 31 instead of bit W-1
+ok   crc-reflected-shift-unmasked: 1/11 tests failed -- the reflected step shifts state bits from above the width into bit W-1
+ok   crc-next-not-inverted: 4/11 tests failed -- CRC_NEXT ignores the read-out inversion bit
+ok   crc-cfg-keeps-pointer: 2/11 tests failed -- a CRC_CFG write does not rewind the byte pointer
+ok   crc-bit-reads-bit7: 2/11 tests failed -- CRC_BIT takes its data bit from Rs[7] instead of Rs[0]
+ok   crc-state-reset-nonzero: 1/11 tests failed -- CRC_STATE resets to 0x00000001 instead of 0
+ok   line-stuff-one-late: 4/11 tests failed -- P2 stuffs after N+1 bits instead of N
+ok   line-stuff-slot-emits-data: 4/11 tests failed -- a stuff slot emits Rs[0] (and still flags LINE_STUF) instead of the stuff bit
+ok   line-nrzi-wrong-polarity: 2/11 tests failed -- NRZI mode 01 toggles on a 1 instead of a 0
+ok   line-equal-run-restarts-at-zero: 1/11 tests failed -- the equal-bits rule restarts its run at 0 instead of 1 on a change
+ok   line-put-writes-z: 1/11 tests failed -- WCTL LINE_PUT writes the Z flag from the emitted bit
+RESULT: golden passes and every mutant is caught by its target test

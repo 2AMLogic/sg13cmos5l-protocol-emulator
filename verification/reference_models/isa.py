@@ -15,7 +15,13 @@ from two records, and from nothing else:
   costs, "Pin mode, per `uio[n]`", "Program-memory timing", reset values)
   and the table of "Points the first RTL build had to choose" (HW_ID
   0x01, CRC byte order, what clears the CRC, read-only / write-only /
-  unassigned behaviour, the `BOOT_STATUS` value after a serial load).
+  unassigned behaviour, the `BOOT_STATUS` value after a serial load);
+* DR 0015, `spec/decision-records/0015-stretch-protocols-with-neutral-primitives.md`,
+  with the index map and step equations its 2026-10-10 dated note (issue
+  #208) records for P1 (CRC / LFSR step, 0x10-0x15) and P2 (NRZI + bit
+  stuffing, 0x16-0x19).  The CRC and line state are internal: no trace
+  field shows them, so the lockstep sees them only through `RCTL` reads
+  into a register, which it compares on every edge.
 
 It imports nothing from `rtl/`, `firmware/tools/asm.py` or any other
 `verification/*.py` bench, and no Verilog was transcribed: decoding and
@@ -153,7 +159,7 @@ def crc16_words(words, crc: int = 0) -> int:
 # updates applied at the end of the instruction's last edge.
 #   ("reg", i, v) ("pc", v) ("z", v) ("c", v, tag) ("uo", v) ("uio", v)
 #   ("dir", v) ("od", v) ("pm_addr", v) ("pm_hi", v) ("pm_lo", v)
-#   ("pm", addr, word) ("crc_clear",) ("halt",)
+#   ("pm", addr, word) ("crc_clear",) ("halt",) ("set", attr, value)
 # `ins` is an Ins (decoded fields).  No effect touches state directly.
 # ---------------------------------------------------------------------------
 Ins = namedtuple("Ins", "word op rd rs imm")
@@ -320,6 +326,107 @@ def _w_run(m, v):
     return [("pc", v)]
 
 
+# ---------------------------------------------------------------------------
+# DR 0015 P1 and P2, restated from the 2026-10-10 dated note.
+#   P1: W = CRC_CFG[4:0] + 1, M = 2^W - 1, all registers 32 bits.
+#     normal:    fb = d ^ STATE[W-1]; STATE <- (STATE << 1) ^ (fb ? POLY : 0)
+#     reflected: fb = d ^ STATE[0];   STATE <- ((STATE & M) >> 1) ^ (fb ? POLY : 0)
+#     CRC_BYTE = eight steps, Rs LSB first if reflected, else MSB first.
+#     CRC_STATE reads (STATE & M), CRC_NEXT reads ((STATE ^ inv) & M), each at
+#     the byte pointer; POLY / STATE / NEXT accesses advance the pointer, a
+#     CRC_CFG write rewinds it.
+#   P2: LINE_CFG [1:0] NRZI (01 toggle on 0, 10 toggle on 1, else NRZ),
+#     [3:2] stuff rule (01 after N ones -> a 0; 10 after N equal -> the
+#     complement of the last bit; else off), [6:4] N, [7] loads the level.
+# ---------------------------------------------------------------------------
+CRC_BYTE_COST = 9
+MASK32 = 0xFFFFFFFF
+
+
+def crc_step(state, poly, wm1, refl, d):
+    width_mask = (1 << (wm1 + 1)) - 1
+    if refl:
+        fb = (d ^ state) & 1
+        new = (state & width_mask) >> 1
+    else:
+        fb = (d ^ (state >> wm1)) & 1
+        new = (state << 1) & MASK32
+    return new ^ (poly if fb else 0)
+
+
+def _byte_at(value, ptr):
+    return (value >> (8 * ptr)) & 0xFF
+
+
+def _r_crc_cfg(m):
+    return m.crc_wm1 | (m.crc_refl << 5) | (m.crc_inv << 6), []
+
+
+def _r_crc(which):
+    def rd(m):
+        width_mask = (1 << (m.crc_wm1 + 1)) - 1
+        if which == "poly":
+            v = m.crc_poly
+        elif which == "state":
+            v = m.crc_state & width_mask
+        else:
+            v = (m.crc_state ^ (MASK32 if m.crc_inv else 0)) & width_mask
+        return _byte_at(v, m.crc_ptr), [("set", "crc_ptr", (m.crc_ptr + 1) & 3)]
+    return rd
+
+
+def _w_crc_cfg(m, v):
+    return [("set", "crc_wm1", v & 0x1F), ("set", "crc_refl", v >> 5 & 1),
+            ("set", "crc_inv", v >> 6 & 1), ("set", "crc_ptr", 0)]
+
+
+def _w_crc_byte_reg(attr):
+    def wr(m, v):
+        shift = 8 * m.crc_ptr
+        cur = getattr(m, attr)
+        new = (cur & ~(0xFF << shift) & MASK32) | ((v & 0xFF) << shift)
+        return [("set", attr, new), ("set", "crc_ptr", (m.crc_ptr + 1) & 3)]
+    return wr
+
+
+def _w_crc_bit(m, v):
+    return [("set", "crc_state", crc_step(m.crc_state, m.crc_poly, m.crc_wm1, m.crc_refl, v & 1))]
+
+
+def _w_crc_byte(m, v):
+    order = range(8) if m.crc_refl else range(7, -1, -1)
+    s = m.crc_state
+    for i in order:
+        s = crc_step(s, m.crc_poly, m.crc_wm1, m.crc_refl, v >> i & 1)
+    return [("set", "crc_state", s)]
+
+
+def _w_line_cfg(m, v):
+    return [("set", "line_cfg", v & 0x7F), ("set", "line_lvl", v >> 7 & 1),
+            ("set", "line_cnt", 0), ("set", "line_stuf", 0)]
+
+
+def _w_line_put(m, v):
+    mode, rule, n = m.line_cfg & 3, m.line_cfg >> 2 & 3, m.line_cfg >> 4 & 7
+    due = rule in (1, 2) and m.line_cnt == n
+    if due:
+        e = 0 if rule == 1 else 1 - m.line_prev
+    else:
+        e = v & 1
+    if rule == 1:
+        cnt = m.line_cnt + 1 if e else 0
+    else:
+        cnt = m.line_cnt + 1 if e == m.line_prev else 1
+    if mode == 1:
+        lvl = m.line_lvl if e else 1 - m.line_lvl
+    elif mode == 2:
+        lvl = 1 - m.line_lvl if e else m.line_lvl
+    else:
+        lvl = e
+    return [("set", "line_lvl", lvl), ("set", "line_prev", e),
+            ("set", "line_cnt", cnt & 7), ("set", "line_stuf", int(due))]
+
+
 CONTROL = {c.k: c for c in (
     Ctl(0x00, "UIO_DIR", True, True, 1, 1, _r_attr("uio_dir"), _w_attr("dir")),
     Ctl(0x01, "UIO_OD", True, True, 1, 1, _r_attr("uio_od"), _w_attr("od")),
@@ -333,9 +440,22 @@ CONTROL = {c.k: c for c in (
         lambda m, v: [("crc_clear",)]),
     Ctl(0x08, "BOOT_STATUS", True, False, 1, 1, lambda m: (BOOT_STATUS_SERIAL, []), None),
     Ctl(0x09, "HW_ID", True, False, 1, 1, lambda m: (HW_ID_VALUE, []), None),
+    # DR 0015 P1 (2026-10-10 note): CRC / LFSR step.
+    Ctl(0x10, "CRC_CFG", True, True, 1, 1, _r_crc_cfg, _w_crc_cfg),
+    Ctl(0x11, "CRC_POLY", True, True, 1, 1, _r_crc("poly"), _w_crc_byte_reg("crc_poly")),
+    Ctl(0x12, "CRC_STATE", True, True, 1, 1, _r_crc("state"), _w_crc_byte_reg("crc_state")),
+    Ctl(0x13, "CRC_BIT", False, True, 1, 1, None, _w_crc_bit),
+    Ctl(0x14, "CRC_BYTE", False, True, 1, CRC_BYTE_COST, None, _w_crc_byte),
+    Ctl(0x15, "CRC_NEXT", True, False, 1, 1, _r_crc("next"), None),
+    # DR 0015 P2: NRZI + bit stuffing.
+    Ctl(0x16, "LINE_CFG", True, True, 1, 1, lambda m: (m.line_cfg, []), _w_line_cfg),
+    Ctl(0x17, "LINE_PUT", False, True, 1, 1, None, _w_line_put),
+    Ctl(0x18, "LINE_OUT", True, False, 1, 1,
+        lambda m: (((1 - m.line_lvl) << 1) | m.line_lvl, []), None),
+    Ctl(0x19, "LINE_STUF", True, False, 1, 1, lambda m: (m.line_stuf, []), None),
 )}
-# 0x10-0x1F are reserved for future primitives (DR 0012) and unassigned today;
-# every k not in CONTROL is unassigned: write = 1-cycle no-op, read = 0x00 in 1 cycle.
+# 0x1A-0x1F stay reserved (DR 0015: held for P3/P4) and unassigned; every k
+# not in CONTROL is unassigned: write = 1-cycle no-op, read = 0x00 in 1 cycle.
 
 
 def _wctl(m, i):
@@ -450,6 +570,10 @@ class Machine:
         self.pm_hi = 0
         self.pm_lo = 0
         self.crc = crc16_words(image)  # DR 0012: CRC covers every committed word, load included
+        # DR 0015 P1 / P2: every register clears at reset.
+        self.crc_wm1 = self.crc_refl = self.crc_inv = self.crc_ptr = 0
+        self.crc_poly = self.crc_state = 0
+        self.line_cfg = self.line_lvl = self.line_prev = self.line_cnt = self.line_stuf = 0
         self.primed = False
         self.edge = 0
         self._remaining = 0
@@ -500,6 +624,8 @@ class Machine:
                 self.crc = 0
             elif kind == "halt":
                 self.halted = True
+            elif kind == "set":
+                setattr(self, w[1], w[2])
             else:
                 raise ModelError(f"unknown write {w!r}")
 

@@ -332,7 +332,10 @@ auditable rather than a bare assertion:
   transmit with protocol-neutral primitives (10BASE-T deferred there); if it
   is ratified, a bench per admitted primitive and a USB TX-only firmware
   bench (independent decoder, timing checked) are added here.
-  Nothing is added until then.
+  Nothing is added until then. (Dated note, 2026-10-10, issue #208: the P1
+  and P2 benches, mutants and latency checks DR 0015 requires exist now, on
+  the Proposed record; the USB firmware bench does not. See DR 0015's dated
+  note.)
 - Exact tooling choices (which formal tool, which cocotb/Icarus versions,
   which specific open-source UART/SPI/I2C reference-model libraries) are
   deferred to the harness-bootstrap issue (#2) and the firmware/RTL issues
@@ -354,6 +357,31 @@ auditable rather than a bare assertion:
   frozen, and the record states the freeze commit, so the evidence cannot have
   shaped the ISA. Its stretch (a role or pin direction the core protocols
   never use) runs on the silicon-true pad model below.
+
+  *Dated note 2026-10-10 (issue #141, part 1). Nothing above is changed.*
+  The freeze is DR 0017
+  ([`decision-records/0017-submission-isa-freeze.md`](decision-records/0017-submission-isa-freeze.md),
+  Proposed). It takes effect at the merge of its PR, whose base is
+  `e74d2b656de35e492e6f7b3e34cbe2266b4aeff3`, and pins the ISA-defining
+  files by sha256 in `spec/isa-freeze.json`. `scripts/check_isa_freeze.py`
+  (`npm run lint`) fails on any change to them that no amendment accounts
+  for. An ISA change or conformance fix needs a record numbered 0018 or
+  later that says whether it invalidates row-13 evidence; a change nothing
+  can observe cites its issue or PR. The row-13 record must cite the freeze's merge commit, and
+  its protocol must be outside DR 0017's exclusion list (DR 0015's tables,
+  and the protocols DRs 0012 and 0013 were designed around). No row-13
+  protocol is chosen yet.
+
+  *Dated note 2026-10-10 (issue #141, part 2). Nothing above is changed.*
+  DR 0017 merged as `1696045bfa1a33f93c95a5bf6c29b05f4ea0d734`. DR 0018
+  ([`decision-records/0018-row13-protocol-choice.md`](decision-records/0018-row13-protocol-choice.md),
+  Proposed) chose WS2812 in the next commit. The bench is
+  `verification/test_firmware_ws2812.py`, graded by
+  `verification/reference_models/ws2812.py` (a WS2812B receiver written
+  from the datasheet). It runs at RTL (`klt functional-verification`) and
+  on the gate-level netlist (`flow/run-ws2812-gate-level.sh`), with three
+  mutant programs and a WAIT-counter stuck-at fault as negative controls.
+  The stretch, which runs on the silicon-true pad model, is issue #235.
 - **Control-register bench (DR 0012).** It checks:
   - reset values, readback, and reserved-index behaviour (no-op write, read
     returns 0)
@@ -370,7 +398,12 @@ auditable rather than a bare assertion:
 - **Load integrity (DR 0013 layer 1).** The `PM_CRC` exposed on `uo_out`
   during load, and through `RCTL`, matches an independent CRC-16/XMODEM
   (`binascii.crc_hqx`) for random images, including truncated loads and loads
-  with a dropped or doubled clock edge, which must produce a mismatch.
+  with a dropped clock edge, which must produce a mismatch, and with a
+  doubled clock edge, where every doubled edge *that changes what memory
+  holds* must mismatch (a repeat of the last bit, or of a bit in a run of
+  equal bits reaching the end of the image, leaves every committed word
+  intact and is correctly not flagged: the bench finds 3 of 83 doubled edges
+  harmless; DR 0013, finding 3; wording changed 2026-10-10, issue #218).
 - **Boot programs (DR 0013 layer 2).** Each boot ROM program is tested
   against an independent host:
   - a UART host model that frames, sends and checks the reply, at nominal

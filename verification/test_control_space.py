@@ -400,7 +400,7 @@ async def test_reserved_indices_and_remaining_noops(dut):
     checks.append((marker, 0x5A, "marker before the reserved writes"))
 
     p.ldi(1, 0xFF)
-    reserved_w = [BOOT_STATUS, HW_ID, 0x0A, 0x0F, 0x10, 0x1F, 0x20, 0x7F, 0x80, 0xFF]
+    reserved_w = [BOOT_STATUS, HW_ID, 0x0A, 0x0F, 0x1A, 0x1F, 0x20, 0x7F, 0x80, 0xFF]
     last_w = None
     for k in reserved_w:
         last_w = p.wctl(k, 1)
@@ -414,7 +414,7 @@ async def test_reserved_indices_and_remaining_noops(dut):
     checks.append((p.show(BOOT_STATUS), 0x01, "BOOT_STATUS unchanged by a write"))
     checks.append((p.show(HW_ID), HW_ID_VALUE, "HW_ID unchanged by a write"))
 
-    for k in (RUN, 0x0A, 0x0F, 0x10, 0x1F, 0x20, 0x7F, 0x80, 0xFF):
+    for k in (RUN, 0x0A, 0x0F, 0x1A, 0x1F, 0x20, 0x7F, 0x80, 0xFF):
         checks.append((p.show(k, poison=0x77), 0x00, f"read of reserved index {k:#04x}"))
 
     # IN from port 11 (reserved no-op): the destination keeps its value.
@@ -537,10 +537,10 @@ async def test_no_flag_side_effects(dut):
         p.wctl(PM_CRC_LO, 1)
         p.wctl(PM_CRC_HI, 1)
         p.wctl(BOOT_STATUS, 1)
-        p.wctl(0x10, 1)
+        p.wctl(0x1A, 1)
         p.wctl(PM_ADDR, 1)
         for k in (UIO_DIR, UIO_OD, PM_ADDR, PM_DATA_HI, PM_DATA_LO, PM_CRC_LO,
-                  PM_CRC_HI, BOOT_STATUS, HW_ID, RUN, 0x10, 0xFF):
+                  PM_CRC_HI, BOOT_STATUS, HW_ID, RUN, 0x1A, 0xFF):
             p.rctl(2, k)             # some return 0x00, some non-zero
         run_ldi = p.ldi(1, 0)
         run_idx = p.wctl(RUN, 1)

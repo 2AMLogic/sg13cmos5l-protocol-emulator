@@ -332,6 +332,56 @@ def test_crc16_xmodem_check_value():
     assert isa.crc16_words(words) == binascii.crc_hqx(b"".join(w.to_bytes(2, "big") for w in words), 0)
 
 
+# --------------------------------------------------------------------------
+# DR 0015 P1 / P2 (issue #208)
+# --------------------------------------------------------------------------
+def _prog_crc32_check():
+    """Firmware for CRC-32 over "123456789": reflected, width 32, inversion."""
+    w = [enc("LDI", rd=0, imm=0x7F), isa.wctl(0x10, 0)]
+    for b in (0x20, 0x83, 0xB8, 0xED):                 # 0xEDB88320, byte 0 first
+        w += [enc("LDI", rd=0, imm=b), isa.wctl(0x11, 0)]
+    w += [enc("LDI", rd=0, imm=0xFF)] + [isa.wctl(0x12, 0)] * 4
+    for ch in b"123456789":
+        w += [enc("LDI", rd=1, imm=ch), isa.wctl(0x14, 1)]
+    w += [isa.rctl(0, 0x15), isa.rctl(1, 0x15), isa.rctl(2, 0x15), isa.rctl(3, 0x15), enc("HALT")]
+    return w
+
+
+def test_p1_crc32_check_value_and_crc_byte_cost():
+    words = _prog_crc32_check()
+    rows, m = rows_of(words, 400)
+    assert m.halted
+    regs = rows[-1].regs
+    assert regs[0] | regs[1] << 8 | regs[2] << 16 | regs[3] << 24 == 0xCBF43926
+    assert isa.static_cost(isa.wctl(0x14, 0)) == 9
+    assert [isa.static_cost(isa.wctl(k, 0)) for k in range(0x10, 0x1A) if k != 0x14] == [1] * 9
+    assert all(isa.static_cost(isa.rctl(0, k)) == 1 for k in range(0x10, 0x20))
+    # CRC_BYTE occupies 9 edges: the PC holds for 8 of them.
+    m = isa.Machine([enc("LDI", rd=0, imm=1), isa.wctl(0x14, 0), enc("HALT")])
+    pcs = [m.step().pc for _ in range(12)]
+    assert pcs == [0, 1] + [1] * 8 + [2, 2]
+
+
+def test_p1_step_equations_by_hand():
+    # normal, width 4, poly 0x3 (x^4 + x + 1): state 0x8, d = 0 -> fb = 1:
+    # (0x8 << 1) ^ 0x3 = 0x13 (bit 4 is above the width and stays).
+    assert isa.crc_step(0x8, 0x3, 3, 0, 0) == 0x13
+    # reflected, width 4, poly 0xC: state 0x1, d = 0 -> fb = 1: (1 & 0xF) >> 1 ^ 0xC
+    assert isa.crc_step(0x1, 0xC, 3, 1, 0) == 0xC
+    # reflected masks bits above the width before shifting
+    assert isa.crc_step(0xFFFFFFF8, 0, 3, 1, 0) == 0x4
+
+
+def test_p2_usb_stuffing_by_hand():
+    # zero-toggles, stuff after 6 ones, level 1: seven 1s -> six data bits,
+    # then a stuff slot (a 0: the level toggles), LINE_STUF = 1.
+    w = [enc("LDI", rd=0, imm=0x01 | 1 << 2 | 6 << 4 | 1 << 7), isa.wctl(0x16, 0),
+         enc("LDI", rd=1, imm=1)] + [isa.wctl(0x17, 1)] * 7 + \
+        [isa.rctl(2, 0x19), isa.rctl(3, 0x18), isa.rctl(0, 0x16), enc("HALT")]
+    rows, m = rows_of(w, 30)
+    assert rows[-1].regs[2] == 1 and rows[-1].regs[3] == 0b10 and rows[-1].regs[0] == 0x65
+
+
 def test_pin_mode_rule():
     # DR 0012: OD set -> oe = ~out; else DIR set -> 1; else 0.  OD wins over DIR.
     assert isa.pin_mode_oe(0x00, 0x00, 0x00) == 0x00

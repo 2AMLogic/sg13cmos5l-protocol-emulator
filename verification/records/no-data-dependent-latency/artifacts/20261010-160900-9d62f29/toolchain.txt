@@ -1,0 +1,6 @@
+Yosys 0.67+post (git sha1 b8e7da6f40ae8f552c116bf6c359b07c6533e159, Release, GNU c++ 13.3.0)
+Z3 version 5.1.0 - 64 bit
+yosys-smtbmc: ships with the Yosys distribution above (no version flag)
+Linux 7.0.0-1013-aws x86_64 (Ubuntu 24.04), Python 3.13
+run: DUT=all ./verification/formal/run-no-data-dependent-latency.sh <artifacts-dir>, BMC_DEPTH=30 (default), started 2026-10-10T15:45:07Z, ended 2026-10-10T16:10:26Z (25 min 19 s, one job), exit 0
+The committed *.smt2 models had the producing checkout's absolute path prefix removed from embedded source locations (a consistent textual substitution, issue #86).

@@ -173,6 +173,62 @@ here.
   possible without re-synthesis. That revision is made: DR 0010's "Target pin
   plan" puts the profile RX on `ui_in[1]` too, and the move is #155.
 
+## Findings from building layer 1 (issue #137)
+
+*Added 2026-10-09 by the layer-1 build. These are findings, not decisions.
+The design above was built as written. Evidence:
+`verification/records/load-integrity/`. They are numbered 1–5, as issue #166
+cites them; they are not the F-numbered findings of the layer-2 notes
+below.*
+
+1. **`uo_out` during a serial load conflicts with target-spec row 14(b) as
+   worded.** Row 14(b) says `uo_out` "holds its documented reset value until
+   a program writes" it. Under layer 1 `uo_out` carries `PM_CRC` bytes from
+   the first committed word until `MODE` drops, and no program has written
+   anything. Whatever is wired to `uo_out` sees that: a UART peer on
+   `uo_out[0]` sees the line move, and an SPI peripheral sees its CS, SCLK
+   and MOSI pins (`uo_out[0..2]`) move. In reset, and from the `MODE`-drop
+   edge until the program's first `OUT`, `uo_out` is 0 as before. One of the
+   two texts needs a sentence: either row 14(b) excepts the load-phase
+   readout, or the readout moves off `uo_out`.
+
+   *Ruled 2026-10-10 (operator, issue #166, option 1): row 14(b) excepts the
+   serial-load phase.* From `rst_n` release with `MODE` high until the edge
+   that takes `MODE` low, `uo_out` presents `PM_CRC` as layer 1 above says;
+   everywhere else row 14(b) holds as written. The amendment is a dated note
+   on row 14 of `spec/target-spec.md`; that row's Status is unchanged. The
+   readout stays on `uo_out` and is not gated by a host select. So a
+   peripheral wired to `uo_out` (a UART peer on `uo_out[0]`, an SPI
+   peripheral on `uo_out[0..2]`) must tolerate the bytes or be held off
+   during a serial load. The boot ROM's paths never show the readout: with
+   `MODE` low at reset the run phase begins on the first edge, so the UART
+   load's TX on `uo_out[0]` and its RX on `ui_in[1]` belong to the core from
+   then on. Finding 2 was ruled in the same comment (`PM_CRC` stays
+   `0x0000`); recording that ruling here, and findings 3 and 4, are
+   issue #218.
+2. **A CRC that starts at 0 cannot see an all-zero image.** `PM_CRC` resets
+   to `0x0000` (DR 0012), and zero words leave a zero CRC at zero, so an
+   image of all zero words reads `0x0000` at any length, including no load
+   at all. No truncation or edge fault of such an image is detectable. A
+   non-zero initial value would close this. It would also change DR 0012's
+   `PM_CRC` and the host-side reference, so it is not done here.
+3. **One doubled clock edge is undetectable because it is harmless.** A
+   repeat of the last bit of the image, or of any bit in a run of equal bits
+   that reaches the end of the image, leaves every committed word intact.
+   The spare bit is a partial word, discarded when `MODE` drops. The readout
+   matches, correctly. "A doubled clock edge must mismatch"
+   (verification-plan §7) holds for every doubled edge that changes what
+   memory holds, which is what the bench checks.
+4. **DR 0010's pin table still gives `ui_in[1]` and `uo_out[7:0]`
+   `load_role: none`.** Layer 1 gives both a load-phase role. The table was
+   not edited in this issue; `scripts/check_protocol_pin_roles.py` was taught
+   the readout mux instead, so it still checks that the core's port is the
+   whole of `uo_out` in run phase.
+5. **Area**, each number with its flow, is in
+   `verification/records/synthesis-baseline/` (klt/Yosys) and
+   `verification/records/librelane-corner-timing/` (LibreLane) at the
+   records minted for issue #137.
+
 ## Open items
 
 1. **Image signature format for warm start (strap `10`).** Proposed: the last
@@ -818,3 +874,85 @@ fall-through from a failed warm start. The host's frame bytes equal
 `loadseq.py`'s for every committed image, and both equal `binascii.crc_hqx`'s
 CRC. `verification/boot_uart_mutants.py` injects seven ROM defects, each
 caught by a test meant to catch it.
+
+## Implementation notes and findings (issue #201, 2026-10-10)
+
+> Added when the larger-ROM layout was re-measured for issue #201. The
+> Decision above is left as written, and this note changes nothing in it. It
+> supersedes the max-slew finding in the issue #139 notes above, the
+> `A_WEN` slew of run 38054423540.
+
+**The `A_WEN` max-slew violation is gone. Each figure below is from the
+LibreLane flow** (`TinyTapeout/tt-gds-action@ihp-cmos5l`, LibreLane
+3.1.0.dev3, post-route OpenSTA, 20 ns). Issue #208 (PR #212) gave every
+functional SRAM input an explicit LibreLane-only `sg13cmos5l_buf_4` (`A_ADDR`,
+`A_DIN`, `A_WEN`, `A_MEN`), and #173's `A_REN` buffer stays. Simulation and
+the klt/Yosys flow take plain wires. With those buffers, `gds` run 38082820606
+on PR #232's head measured the 223-word UART-load ROM (with #208's P1/P2).
+The results:
+
+| | #139 notes above (run 38054423540, `A_REN` buffer only) | Now (run 38082820606, all 27 inputs buffered) |
+|---|---|---|
+| Max-slew violations (slow / typ / fast) | 1 / 1 / 1 (`A_WEN`, 0.909 ns slow) | **0 / 0 / 0** (`A_WEN` 0.057 ns slow; worst input `A_DIN[2]` 0.275 ns) |
+| Max-cap violations, SRAM `A_DOUT` | 3 / 3 / 4 (`A_DOUT[12..15]`) | 1 / 1 / 1 (`A_DOUT[7]`) |
+| Worst setup slack (slow / typ / fast) | +3.631 / +9.863 / +13.454 ns | +4.807 / +10.561 / +13.865 ns |
+| Worst hold slack (slow / typ / fast) | +0.6076 / +0.2940 / +0.1043 ns | +0.6495 / +0.3143 / +0.1232 ns |
+| Placed standard cells / utilization with macro | 30,745.0 µm² / 46.47 % | 44,294.9 µm² / 57.17 % |
+| Hand-instantiated `buffer` cells | 1 | 27 (+26, +377.4 µm²) |
+
+Setup and hold violations are 0 at all three corners in both runs. The area
+and slack changes between the two columns include #208's P1/P2 logic and the
+placement re-roll, so they are not attributed to the buffers. Only the
+`buffer` row is the buffers' own. On the klt/Yosys flow (cell area only, no
+timing) the netlist has no `buf` cell, at 2,392 instances and 34,670.58 µm².
+This run reproduces gds run 38071502150 byte for byte: same `metrics.json`,
+same LibreLane netlist, and same GDS apart from its timestamps. Record:
+`verification/records/librelane-corner-timing/records/20261010-204000-8a73b84.md`.
+
+## 2026-10-10 (issue #218): layer 1 after the #166 ruling, findings 2 to 4
+
+> A dated entry. The Decision and the findings above are unchanged. This
+> record's Status line is not flipped, and DR 0012's `PM_CRC` row is not
+> edited.
+
+**Finding 2, ruled (operator, issue #166): `PM_CRC` stays `0x0000`.** No
+non-zero seed. What this leaves, and what was done about it:
+
+- *The gap that remains.* A never-clocked chip and a layer-1 load of an
+  all-zero image read the same `PM_CRC`, `0x0000` in both bytes. A host that
+  reads the readout after loading zeros cannot tell the load from no load,
+  and no truncation or edge fault of such an image is detectable.
+- *Host tool.* `firmware/tools/loadseq.py` now refuses an all-zero image
+  (every word `0000`), for the direct-load sequence and for `--uart`, with
+  exit status 2 and an error naming the file and this reason, before anything
+  is emitted. Before #218 it accepted one. `firmware/tools/test_loadseq.py`
+  tests the refusal (`Parse.test_all_zero_image_refused`, and an all-zero file
+  in `Cli.test_rejected_inputs_exit_nonzero_no_output`). The refusal is in the
+  tool only: it does not change what the chip does with a frame or a pin
+  sequence that some other host sends.
+- *Warm start (#200, strap `10`) and SPI-flash boot (strap `01`).* Both
+  refuse a signature word of `0x0000` before their CRC verdict, so an
+  all-zero SRAM or flash image does not run (closed by #168 and #140).
+- *UART boot (#210, strap `00`): it does not refuse.* The UART load's verdict
+  is the trailer against `PM_CRC` (`h_trail_lo` in
+  `firmware/asm/boot/boot_rom.asm`) and nothing else, with no zero-signature
+  check. A frame of N zero words followed by the trailer `0x0000` therefore
+  matches, is answered `0x06` and runs: N `NOP`s, then the unwritten words of
+  program memory. A frame the chip should have refused is accepted only
+  because its CRC is also zero. The ROM was not changed here (this issue is docs and
+  host tooling only), and the case needs a deliberate frame
+  (`loadseq.py --uart` no longer builds one). This is a
+  recorded gap, not a closed one. The bench does not exercise it; no
+  evidence in `verification/records/boot-uart/` claims it.
+
+**Finding 3, wording.** `spec/verification-plan.md` §7 now says every doubled
+edge *that changes what memory holds* must mismatch (the bench finds 3 of 83
+doubled edges harmless, as finding 3 describes).
+
+**Finding 4, done.** DR 0010's pin-role table and schema now give `ui_in[1]`
+the load role `CRC_BYTE_SEL` and `uo_out[7:0]` the load role `CRC_READOUT`.
+`scripts/check_protocol_pin_roles.py` no longer special-cases the mux: with
+the table declaring those roles it requires the top's
+`assign uo_out = run_phase ? <core net> : ui_in[n] ? ... : ...;` with `n` the
+`CRC_BYTE_SEL` pin, and the schema requires the readout to cover all of
+`uo_out[7:0]` with exactly one byte-select pin.

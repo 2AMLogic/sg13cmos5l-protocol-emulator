@@ -12,7 +12,8 @@
  * clock cycle except `WAIT`, whose duration is fixed by its own
  * immediate, and DR 0012's three control accesses that take a fixed 2
  * cycles (`WCTL PM_DATA_LO`, `WCTL RUN`, `RCTL PM_DATA_HI`; the k that
- * selects them is an immediate too), so the cycle count of any program is
+ * selects them is an immediate too) and DR 0015's `WCTL CRC_BYTE`, a fixed
+ * 9 (1 + 8 stall), so the cycle count of any program is
  * computable from the instruction stream alone (DR 0001's timing-determinism guarantee,
  * target-spec row 3).
  *
@@ -152,6 +153,9 @@
  *                                                 bit1 fetching from the
  *                                                 boot ROM (DR 0013)
  *   0x09  HW_ID        (no-op)                    the HW_ID parameter    1
+ *   0x10-0x19          DR 0015's primitives P1 and P2 (issue #208; see
+ *                      PROTOCOL-NEUTRAL PRIMITIVES below). All 1 cycle
+ *                      except WCTL CRC_BYTE: 1 + 8 stall = 9, fixed.
  *   other              1-cycle no-op              0x00 in 1 cycle        1
  *
  * Every latency is a function of the opcode, the port field and the
@@ -179,6 +183,72 @@
  * module that sees both commit paths; the core reads it and requests its
  * clear. `uio_dir` / `uio_od` leave the core for the top level's pin-mode
  * logic (open-drain wins, then push-pull, else input).
+ *
+ * ---------------------------------------------------------------------
+ * PROTOCOL-NEUTRAL PRIMITIVES P1 and P2 (DR 0015, issue #208)
+ * ---------------------------------------------------------------------
+ *
+ * `spec/decision-records/0015-stretch-protocols-with-neutral-primitives.md`
+ * admits two primitives in DR 0012's reserved range 0x10-0x1F. Neither
+ * knows a frame; neither touches Z or C; every access has the latency its
+ * index fixes. Indices 0x1A-0x1F stay unassigned (held for P3/P4 or their
+ * replacements, DR 0015 Consequences).
+ *
+ *   k     name       W                              R                       cyc
+ *   0x10  CRC_CFG    [4:0] width-1, [5] reflected,  the same 7 bits         1
+ *                    [6] read-out inversion; also
+ *                    rewinds the byte pointer to 0
+ *   0x11  CRC_POLY   POLY byte[ptr] <- Rs, ptr++    POLY byte[ptr], ptr++   1
+ *   0x12  CRC_STATE  STATE byte[ptr] <- Rs, ptr++   (STATE & M) byte[ptr],  1
+ *                                                   ptr++
+ *   0x13  CRC_BIT    one step with d = Rs[0]        (unassigned: 0x00)      1
+ *   0x14  CRC_BYTE   eight steps with the bits of   (unassigned: 0x00)      9
+ *                    Rs (LSB first if reflected,
+ *                    else MSB first)
+ *   0x15  CRC_NEXT   (no-op)                        ((STATE ^ inv) & M)     1
+ *                                                   byte[ptr], ptr++
+ *   0x16  LINE_CFG   [1:0] NRZI mode, [3:2] stuff   the same 7 bits         1
+ *                    rule, [6:4] N; [7] loads the   ([7] reads 0)
+ *                    line level; clears the run
+ *                    count and the stuffed flag
+ *   0x17  LINE_PUT   present data bit Rs[0]         (unassigned: 0x00)      1
+ *   0x18  LINE_OUT   (no-op)                        {~level, level}         1
+ *   0x19  LINE_STUF  (no-op)                        bit 0: the last         1
+ *                                                   LINE_PUT was a stuff
+ *                                                   slot (Rs not consumed)
+ *
+ * P1, the CRC / LFSR step. W = CRC_CFG[4:0] + 1 (1..32), M = 2^W - 1.
+ * One step with data bit d:
+ *   normal (MSB first):    fb = d ^ STATE[W-1];  STATE <- (STATE << 1) ^ (fb ? POLY : 0)
+ *   reflected (LSB first): fb = d ^ STATE[0];    STATE <- ((STATE & M) >> 1) ^ (fb ? POLY : 0)
+ * all 32 bits wide. Bits of STATE above W never reach the low W bits (in
+ * normal mode they only move up; in reflected mode the AND with M blocks
+ * them), and every read masks with M, so what firmware sees is a W-bit
+ * Galois register. POLY is written in the form the direction uses: the
+ * normal polynomial (x^W implicit) for normal mode, its W-bit bit-reversal
+ * for reflected mode. With d = 0 and a non-zero seed the same step is a
+ * Galois LFSR (PRBS, scramblers, whitening). The read-out inversion
+ * complements the low W bits on CRC_NEXT only, so the catalogue XorOut of
+ * 0 or all-ones is a CRC_CFG bit. One 2-bit byte pointer serves CRC_POLY,
+ * CRC_STATE and CRC_NEXT, in both directions (byte 0 = bits [7:0] first),
+ * like DR 0012's PM_DATA_LO auto-increment; a CRC_CFG write rewinds it.
+ *
+ * CRC_BYTE reuses the bit step: it is a WAIT 8 in all but name. Its own
+ * cycle loads the stall counter (`waiting`/`wait_cnt`, shared with WAIT)
+ * and holds the fetch address, so `exec_word` -- and with it Rs -- is the
+ * same word through the 8 stall cycles; each stall cycle steps one bit of
+ * Rs, picked by the counter. Its latency is 9 by construction: nothing in
+ * the CRC datapath feeds back into `waiting`.
+ *
+ * P2, NRZI + bit stuffing. NRZI mode 01 toggles the level on a 0 (USB),
+ * 10 toggles on a 1, 00/11 drive the bit itself (NRZ). Stuff rule 01:
+ * after N consecutive 1s (USB N=6, HDLC N=5) the next slot carries a 0;
+ * rule 10: after N consecutive equal bits (CAN N=5) the next slot carries
+ * the complement of the last bit; 00/11: off. A LINE_PUT that lands on a
+ * stuff slot emits the stuff bit instead of Rs[0] and sets LINE_STUF; the
+ * firmware presents the same data bit again. The stuff bit counts as a
+ * transmitted bit (a run of one for the equal-bits rule, a run reset for
+ * the ones rule). The unit decides nothing about frames.
  *
  * ---------------------------------------------------------------------
  * BOOT ROM FETCH SOURCE (DR 0013 layer 2, issue #138)
@@ -299,6 +369,17 @@ module protocol_core #(
   localparam [7:0] CTL_PM_CRC_HI   = 8'h07;
   localparam [7:0] CTL_BOOT_STATUS = 8'h08;
   localparam [7:0] CTL_HW_ID       = 8'h09;
+  // DR 0015 primitives (issue #208): P1 CRC / LFSR step, P2 NRZI + stuffing.
+  localparam [7:0] CTL_CRC_CFG     = 8'h10;
+  localparam [7:0] CTL_CRC_POLY    = 8'h11;
+  localparam [7:0] CTL_CRC_STATE   = 8'h12;
+  localparam [7:0] CTL_CRC_BIT     = 8'h13;
+  localparam [7:0] CTL_CRC_BYTE    = 8'h14;
+  localparam [7:0] CTL_CRC_NEXT    = 8'h15;
+  localparam [7:0] CTL_LINE_CFG    = 8'h16;
+  localparam [7:0] CTL_LINE_PUT    = 8'h17;
+  localparam [7:0] CTL_LINE_OUT    = 8'h18;
+  localparam [7:0] CTL_LINE_STUF   = 8'h19;
 
   // Architectural state.
   reg [7:0] regs [0:3];   // R0-R3
@@ -327,6 +408,21 @@ module protocol_core #(
   reg       stall_pmrd;   // ...and it completes an RCTL PM_DATA_HI (instr_word = PM data)
   reg       stall_run;    // ...and it completes a WCTL RUN (next fetch from run_target)
   reg [1:0] stall_rd;     // RCTL PM_DATA_HI destination register
+
+  // DR 0015 P1 state (CRC / LFSR step).
+  reg [4:0]  crc_wm1;     // CRC_CFG[4:0]: width - 1
+  reg        crc_refl;    // CRC_CFG[5]: reflected (LSB-first, right-shifting)
+  reg        crc_inv;     // CRC_CFG[6]: CRC_NEXT complements the low W bits
+  reg [1:0]  crc_ptr;     // byte pointer for CRC_POLY / CRC_STATE / CRC_NEXT
+  reg [31:0] crc_poly;    // CRC_POLY
+  reg [31:0] crc_state;   // CRC_STATE
+
+  // DR 0015 P2 state (NRZI + bit stuffing).
+  reg [6:0]  line_cfg;    // LINE_CFG[6:0]: {N, stuff rule, NRZI mode}
+  reg        line_lvl;    // line level (LINE_OUT bit 0)
+  reg        line_prev;   // the last bit emitted (data or stuff)
+  reg [2:0]  line_cnt;    // run count toward N
+  reg        line_stuf;   // LINE_STUF: the last LINE_PUT was a stuff slot
 
   // DR 0013 layer 2 fetch source (see BOOT ROM FETCH SOURCE in the header).
   // `rom_exit` is the only state: both terms of `fetch_rom` are monotonic
@@ -389,6 +485,57 @@ module protocol_core #(
   // word after it is PM[Rs], whichever source RUN itself came from).
   assign pm_fetch   = !fetch_rom || (ctl_stall && stall_run);
 
+  // ------------------------------------------------------------------
+  // DR 0015 P1: the CRC / LFSR step (see the header for the equations).
+  // ------------------------------------------------------------------
+  wire       wctl_crcbyte = is_wctl && (imm8 == CTL_CRC_BYTE);
+  // A stall cycle is a CRC_BYTE's when the held word is a CRC_BYTE (a WAIT
+  // stall holds a WAIT word): no extra state.
+  wire       crc_busy     = waiting && wctl_crcbyte;
+  // M = 2^W - 1, bit by bit: bit i is in the register iff i <= W - 1.
+  wire [31:0] crc_mask;
+  assign crc_mask[0] = 1'b1;  // W >= 1
+  genvar gi;
+  generate
+    for (gi = 1; gi < 32; gi = gi + 1) begin : g_crc_mask
+      assign crc_mask[gi] = (crc_wm1 >= gi);
+    end
+  endgenerate
+  // The data bit. A CRC_BYTE stall cycle takes bit j of Rs (still the
+  // CRC_BYTE's own Rs: the stall holds the word), j counted down from the
+  // stall counter (8..1): MSB first in normal mode, LSB first reflected.
+  wire [2:0] crc_j0   = wait_cnt[2:0] - 3'd1;            // 7 .. 0
+  wire [2:0] crc_j    = crc_refl ? ~crc_j0 : crc_j0;
+  wire       crc_d    = crc_busy ? rd_val[crc_j] : rd_val[0];
+  wire       crc_fb   = crc_d ^ (crc_refl ? crc_state[0] : crc_state[crc_wm1]);
+  wire [31:0] crc_sh  = crc_refl ? ((crc_state & crc_mask) >> 1) : (crc_state << 1);
+  wire [31:0] crc_stepped = crc_sh ^ (crc_poly & {32{crc_fb}});
+  // A step happens on a CRC_BIT's cycle or on each CRC_BYTE stall cycle.
+  wire       crc_step = (executing && is_wctl && (imm8 == CTL_CRC_BIT)) ||
+                        (run_phase && fetch_valid && !halted && crc_busy);
+  // Byte lanes at the pointer.
+  wire [7:0] crc_poly_b  = crc_poly[{crc_ptr, 3'b000} +: 8];
+  wire [7:0] crc_state_b = crc_state[{crc_ptr, 3'b000} +: 8];
+  wire [7:0] crc_mask_b  = crc_mask[{crc_ptr, 3'b000} +: 8];
+  // Every pointer access (W or R of CRC_POLY / CRC_STATE, R of CRC_NEXT).
+  wire       crc_ptr_adv = executing && (
+                 (is_wctl && ((imm8 == CTL_CRC_POLY) || (imm8 == CTL_CRC_STATE))) ||
+                 (is_rctl && ((imm8 == CTL_CRC_POLY) || (imm8 == CTL_CRC_STATE) ||
+                              (imm8 == CTL_CRC_NEXT))));
+
+  // ------------------------------------------------------------------
+  // DR 0015 P2: NRZI + bit stuffing, for one LINE_PUT of Rs[0].
+  // ------------------------------------------------------------------
+  wire       line_ones  = (line_cfg[3:2] == 2'b01);           // stuff after N ones
+  wire       line_equal = (line_cfg[3:2] == 2'b10);           // stuff after N equal bits
+  wire       line_due   = (line_ones || line_equal) && (line_cnt == line_cfg[6:4]);
+  wire       line_e     = line_due ? (line_equal & ~line_prev) : rd_val[0];  // emitted bit
+  wire       line_run   = line_ones ? line_e : (line_e == line_prev);        // run continues
+  wire [2:0] line_cnt_n = line_run ? (line_cnt + 3'd1) : {2'b00, ~line_ones};
+  wire       line_lvl_n = (line_cfg[1:0] == 2'b01) ? (line_lvl ^ ~line_e) :  // toggle on 0
+                          (line_cfg[1:0] == 2'b10) ? (line_lvl ^ line_e)  :  // toggle on 1
+                          line_e;                                            // NRZ
+
   // RCTL read mux for every 1-cycle readable index (PM_DATA_HI is read in
   // its stall cycle, from instr_word, below).
   reg [7:0] rctl_val;
@@ -403,7 +550,15 @@ module protocol_core #(
       // bit 1: this RCTL was fetched from the boot ROM (DR 0013 layer 2).
       CTL_BOOT_STATUS: rctl_val = {6'b000000, fetch_rom, serial_loaded};
       CTL_HW_ID:       rctl_val = HW_ID;
-      default:         rctl_val = 8'h00;  // unassigned (and write-only RUN)
+      CTL_CRC_CFG:     rctl_val = {1'b0, crc_inv, crc_refl, crc_wm1};
+      CTL_CRC_POLY:    rctl_val = crc_poly_b;
+      CTL_CRC_STATE:   rctl_val = crc_state_b & crc_mask_b;
+      CTL_CRC_NEXT:    rctl_val = (crc_state_b ^ {8{crc_inv}}) & crc_mask_b;
+      CTL_LINE_CFG:    rctl_val = {1'b0, line_cfg};
+      CTL_LINE_OUT:    rctl_val = {6'b000000, ~line_lvl, line_lvl};
+      CTL_LINE_STUF:   rctl_val = {7'b0000000, line_stuf};
+      // unassigned, and the write-only RUN, CRC_BIT, CRC_BYTE, LINE_PUT
+      default:         rctl_val = 8'h00;
     endcase
   end
 
@@ -449,8 +604,10 @@ module protocol_core #(
         // 2-cycle control accesses hold the address for their own cycle
         // (the macro's single port is busy with the PM access, or -- for
         // RUN -- the target is fetched from the stall cycle).
+        // WCTL CRC_BYTE holds it too and enters the WAIT-style stall
+        // (8 cycles, released by the `waiting` branch above).
         OP_OUT,
-        OP_IN:   next_addr = ctl_two ? pc : pc_next;
+        OP_IN:   next_addr = (ctl_two || wctl_crcbyte) ? pc : pc_next;
         default: next_addr = pc_next;
       endcase
     end
@@ -483,6 +640,17 @@ module protocol_core #(
       stall_run    <= 1'b0;
       stall_rd     <= 2'd0;
       rom_exit     <= 1'b0;  // DR 0013: fetch from the boot ROM after reset
+      crc_wm1      <= 5'd0;  // DR 0015 P1/P2: every primitive register clears
+      crc_refl     <= 1'b0;
+      crc_inv      <= 1'b0;
+      crc_ptr      <= 2'd0;
+      crc_poly     <= 32'h0000_0000;
+      crc_state    <= 32'h0000_0000;
+      line_cfg     <= 7'd0;
+      line_lvl     <= 1'b0;
+      line_prev    <= 1'b0;
+      line_cnt     <= 3'd0;
+      line_stuf    <= 1'b0;
     end else if (!run_phase) begin
       // Load phase (or the pre-sampling cycle): hold the PC at 0 and keep
       // the fetched word marked invalid. No architectural state changes --
@@ -495,6 +663,16 @@ module protocol_core #(
       // edges (next_addr == pc there).
       pc          <= next_addr;
       fetch_valid <= 1'b1;
+
+      // DR 0015 P1: the step (a CRC_BIT's cycle, or a CRC_BYTE stall
+      // cycle) and the pointer. Their enables are decoded above from the
+      // instruction word and the stall state only.
+      if (crc_step) begin
+        crc_state <= crc_stepped;
+      end
+      if (crc_ptr_adv) begin
+        crc_ptr <= crc_ptr + 2'd1;
+      end
 
       if (fetch_valid && !halted) begin
         if (ctl_stall) begin
@@ -600,6 +778,50 @@ module protocol_core #(
                       // The jump itself is next_addr in the stall cycle.
                       ctl_stall <= 1'b1;
                       stall_run <= 1'b1;
+                    end
+                    // DR 0015 P1. CRC_POLY / CRC_STATE write the byte at
+                    // the pointer (which advances above); CRC_BIT steps
+                    // above, in this cycle.
+                    CTL_CRC_CFG: begin
+                      crc_wm1  <= rd_val[4:0];
+                      crc_refl <= rd_val[5];
+                      crc_inv  <= rd_val[6];
+                      crc_ptr  <= 2'd0;
+                    end
+                    CTL_CRC_POLY: begin
+                      case (crc_ptr)
+                        2'd0: crc_poly[7:0]   <= rd_val;
+                        2'd1: crc_poly[15:8]  <= rd_val;
+                        2'd2: crc_poly[23:16] <= rd_val;
+                        2'd3: crc_poly[31:24] <= rd_val;
+                      endcase
+                    end
+                    CTL_CRC_STATE: begin
+                      case (crc_ptr)
+                        2'd0: crc_state[7:0]   <= rd_val;
+                        2'd1: crc_state[15:8]  <= rd_val;
+                        2'd2: crc_state[23:16] <= rd_val;
+                        2'd3: crc_state[31:24] <= rd_val;
+                      endcase
+                    end
+                    CTL_CRC_BYTE: begin
+                      // WAIT 8 in all but name: the 8 stall cycles step
+                      // the CRC, one bit of Rs each.
+                      waiting  <= 1'b1;
+                      wait_cnt <= 8'd8;
+                    end
+                    // DR 0015 P2.
+                    CTL_LINE_CFG: begin
+                      line_cfg  <= rd_val[6:0];
+                      line_lvl  <= rd_val[7];
+                      line_cnt  <= 3'd0;
+                      line_stuf <= 1'b0;
+                    end
+                    CTL_LINE_PUT: begin
+                      line_lvl  <= line_lvl_n;
+                      line_prev <= line_e;
+                      line_cnt  <= line_cnt_n;
+                      line_stuf <= line_due;
                     end
                     // PM_CRC_LO/HI: the clear is pm_crc_clr this cycle.
                     // BOOT_STATUS, HW_ID and unassigned k: no-op.

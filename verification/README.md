@@ -74,6 +74,40 @@ coverage.
   white-box reads, so it also runs on a gate-level netlist. Driven by
   `klt functional-verification` (see `request-control-space.json`);
   `control_space_mutants.py` is its negative-control runner.
+- `test_load_integrity.py` — cocotb bench for the load-phase CRC readout
+  (issue #137, DR 0013 layer 1; verification-plan §7 "Load integrity") on
+  the top: during the serial load `uo_out` reads the running `PM_CRC`,
+  low byte or high byte by `ui_in[1]`, equal to `binascii.crc_hqx` for
+  random images of 1 to 256 words; a truncated load and a load with one
+  clock edge dropped or doubled read a different CRC (every position of a
+  4-word image, seeded positions in larger ones); the readout is gone
+  outside the load phase; and a host that performs the readout gets the
+  program running on the same edges as one that does not. Pin-only, so it
+  also runs on a gate-level netlist. Driven by
+  `klt functional-verification` (see `request-load-integrity.json`);
+  `load_integrity_mutants.py` is its negative-control runner.
+- `test_primitives.py` — cocotb bench for DR 0015's protocol-neutral
+  primitives (issue #208) on the top: **P1**, the CRC / LFSR step at
+  0x10–0x15, against an independent Rocksoft-model CRC written from the
+  catalogue parameters (cross-checked against `zlib.crc32` and
+  `binascii.crc_hqx`) and graded on the published check values of
+  CRC-5/USB, CRC-16/USB, CRC-32, CRC-8/MAXIM-DOW, CRC-15/CAN and
+  CRC-16/XMODEM, on random messages and on odd bit lengths through
+  `CRC_BIT`; the LFSR use against polynomial arithmetic over GF(2) (PRBS7's
+  full 127-state period, a 16-bit LFSR); and the register file (pointer,
+  rewind, width masking, inversion, reset). **P2**, NRZI + bit stuffing at
+  0x16–0x19, against an independent line decoder for USB (zero-toggles,
+  a 0 after six 1s), HDLC (a 0 after five 1s, NRZ and NRZI) and CAN (the
+  complement after five equal bits): decoded bits equal the data, the
+  decoder's stuff slots equal the slots `LINE_STUF` flagged, no rule
+  violation; plus a stuff slot ignoring `Rs`. Also the fixed latency of every
+  new index (9 for `WCTL CRC_BYTE`, 1 otherwise) over four data sets, no
+  flag side effects, and 0x1A–0x1F unassigned. Pin-observable except for
+  labelled white-box reads, so it also runs on a gate-level netlist. Driven
+  by `klt functional-verification` (`request-primitives.json`);
+  `primitives_mutants.py` is its negative-control runner (fourteen single
+  RTL defects, each caught by a test meant to catch it). Evidence in
+  `records/protocol-primitives/`.
 - `uio_pads.py` — the **silicon-true `uio` pad model** (issue #136, DR
   0012): per pin it resolves the design's `uio_oe` / `uio_out`, an
   optional pull-up or pull-down and an optional external driver (the
@@ -171,7 +205,8 @@ coverage.
   of a residue, not a pass of an unconditional bad-length guarantee. A
   separate module so the gate-level records that hash `test_boot_uart.py`
   stay live. Driven by `request-boot-uart-count-alias.json`; evidence in
-  `records/boot-uart/ (record 20261010-164351-57c5c8c)`.
+  `records/boot-uart/ (record 20261010-164351-57c5c8c)`; re-minted on the
+  tree merged with issue #208 as record `20261010-172329-f8428aa`.
 - `test_reset_power_up.py` — **gate-level only** cocotb bench for
   target-spec row 14 / `spec/verification-plan.md` section 8 (issue #131):
   reset, power-up and reselect on the LibreLane netlist. Every flop of the
@@ -356,7 +391,7 @@ gates. The host-side loader is issue #118.
   `test_isa_model.py`, `isa_lockstep_mutants.py`, `request-isa-lockstep.json`
   — the **ISA reference simulator and lockstep co-simulation** (issue #152;
   verification-plan §4.1). `reference_models/isa.py` is a table-driven
-  instruction-set simulator written from DR 0001 and DR 0012 alone (it
+  instruction-set simulator written from DR 0001, DR 0012 and DR 0015 alone (it
   imports nothing from `rtl/`, `firmware/tools/asm.py` or any bench); it
   emits one trace row per clock edge. `isa_lockstep_gen.py` draws seeded,
   terminating-by-construction programs (forward-only branches plus bounded
@@ -393,6 +428,27 @@ gates. The host-side loader is issue #118.
   negative controls included. Driven by `klt functional-verification` (see
   `request-firmware-uart-rx.json`); evidence in
   `records/firmware-uart-rx/`.
+- `test_firmware_ws2812.py` — the **row-13** bench (issue #141 part 2; the
+  protocol choice is DR 0018, made after DR 0017's ISA freeze): the committed
+  `firmware/asm/ws2812.asm` drives a WS2812 data line on `uo_out[7]`, and
+  `reference_models/ws2812.py`, a WS2812B receiver written from the datasheet
+  alone, measures every high and low pulse in ns (20 ns clock = row 4's
+  unconfirmed target), classifies each bit, grades every pulse against the
+  datasheet windows (T0H/T1H/T0L/T1L ±150 ns, bit period 1.25 µs ±600 ns,
+  reset above 50 µs), splits frames at resets, rebuilds the GRB pixels and
+  compares them with the table the test loaded: the committed 8-pixel frame,
+  and seeded random tables of 1 to 73 pixels (73 fills program memory). Pulse
+  widths are also asserted in cycles against the committed cycle report.
+  Negative controls: three mutant programs assembled in memory (T1H 32
+  cycles = 640 ns, a dropped bit, a 5.5 µs reset), each rejected for its own
+  reason, and the golden capture stretched ×1.2. `test_ws2812_model.py` is the
+  model's simulator-free self-test (`npm run lint`). Pin-only, so it also runs
+  on the gate-level netlist with `flow/run-ws2812-gate-level.sh` (its own
+  runner, so the live `firmware-gate-level` records that hash
+  `flow/run-firmware-gate-level.sh` stay live), whose negative control is the
+  `\u_core.wait_cnt[0]` stuck-at fault. Driven by `klt
+  functional-verification` (`request-firmware-ws2812.json`); evidence in
+  `records/firmware-ws2812/` and `records/firmware-ws2812-gate-level/`.
 - `formal/` — the §2 formal-properties leg (issue #24, distinct from the
   cocotb legs above: no `klt`, no PDK, no simulator — a Yosys+SMTBMC model
   checking harness). `formal/no_data_dependent_latency.sv` is
@@ -461,15 +517,17 @@ carry sources, defines and recorded seeds), provisioned by
 `scripts/run-rtl-benches.sh` (about 7 min serial, most of it `boot-uart`, whose host plays 2.2 million cycles of frames, plus about a minute for `test_boot_spi`).
 
 CI-covered (RTL, Icarus, no PDK): `test_protocol_emulator`,
-`test_control_space`, `test_boot_rom`, `test_boot_spi`, `test_boot_uart`,
+`test_control_space`, `test_primitives`, `test_boot_rom`, `test_boot_spi`,
+`test_boot_uart`,
 `test_program_memory`, `test_protocol_models`, `test_firmware_uart`,
 `test_firmware_spi`, `test_uio_pads`, `test_firmware_i2c`,
 `test_firmware_i2c_sr`, `test_firmware_roundtrip`,
-`test_random_regression`, `test_isa_lockstep`.
+`test_random_regression`, `test_isa_lockstep`, `test_load_integrity`,
+`test_firmware_ws2812`.
 
 Covered elsewhere in CI: `test_check_records.py`,
-`test_firmware_templates.py` and `test_uio_pad_resolution.py` (`npm run
-lint`).
+`test_firmware_templates.py`, `test_uio_pad_resolution.py` and
+`test_ws2812_model.py` (`npm run lint`).
 
 Local-only (per PR): the formal leg (`formal/`, needs yosys +
 yosys-smtbmc + yosys-abc + z3), and everything needing the PDK or a

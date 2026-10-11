@@ -126,6 +126,20 @@
  *     is clock-synchronised by the harness, so asynchronous reset assertion
  *     between edges is not explored.
  *
+ * DR 0015 P1 / P2 (issue #208). The CRC and line units live inside the core,
+ * so unlike PM_CRC they cannot be a free input shared with the monitor, and
+ * the shadow does not re-implement them: their VALUES are graded by the
+ * cocotb bench verification/test_primitives.py against independent oracles
+ * and by the ISA lockstep. The shadow models what this property is about:
+ * WCTL CRC_BYTE stalls exactly 8 cycles (as a WAIT 8; every other P1/P2
+ * access is 1 cycle), and a register loaded by a P1/P2 RCTL -- or computed
+ * from one, or stored through UIO_DIR / UIO_OD / PM_ADDR and read back -- is
+ * marked "value not modelled" (`s_unk`). An OUT of such a register is still
+ * checked for timing and destination by A2's hold arm (the pin may change
+ * only on the edge retiring an OUT to that port), but A1/A2's equality to
+ * the shadow value is waived for that write. Every value not derived from
+ * a P1/P2 read is checked exactly as before.
+ *
  * ASSERTIONS
  *   A1  out of reset, at every sampling point: uo_out == exp_uo and
  *       uio_out == exp_uio. Value, destination and timing at once: a late,
@@ -177,6 +191,11 @@ module pin_write_latency (
                    K_PM_DATA_HI = 8'h03, K_PM_DATA_LO = 8'h04, K_RUN = 8'h05,
                    K_PM_CRC_LO = 8'h06, K_PM_CRC_HI = 8'h07,
                    K_BOOT_STATUS = 8'h08, K_HW_ID = 8'h09;
+  // DR 0015 P1 / P2 (issue #208). The readable indices; their VALUES are
+  // not modelled here (see "DR 0015" in the header); CRC_BYTE's latency is.
+  localparam [7:0] K_CRC_CFG = 8'h10, K_CRC_POLY = 8'h11, K_CRC_STATE = 8'h12,
+                   K_CRC_BYTE = 8'h14, K_CRC_NEXT = 8'h15, K_LINE_CFG = 8'h16,
+                   K_LINE_OUT = 8'h18, K_LINE_STUF = 8'h19;
   localparam [7:0] HW_ID_VALUE = 8'h01;
 
   // DR 0001 "Encoding": [15:12] opcode, [11:10] Rd (for OUT: the SOURCE
@@ -203,6 +222,12 @@ module pin_write_latency (
   reg       s_stall;       // second cycle of a 2-cycle control access
   reg       s_stall_pmrd;  // ...of an RCTL PM_DATA_HI (instr = read data now)
   reg [1:0] s_stall_rd;    // ...whose high byte lands in this register
+  // DR 0015: "value not modelled" bits. A register (or stored control
+  // register) holding a value derived from a P1/P2 read is unknown to the
+  // shadow; an OUT of it is still checked for WHEN and WHERE, not WHAT.
+  reg [3:0] s_unk;
+  reg       s_dir_unk, s_od_unk, s_pmaddr_unk;
+  reg       exp_uo_unk, exp_uio_unk;
 
   function [7:0] rdreg(input [1:0] i, input [7:0] a, input [7:0] b, input [7:0] c, input [7:0] d);
     case (i) 2'd0: rdreg = a; 2'd1: rdreg = b; 2'd2: rdreg = c; default: rdreg = d; endcase
@@ -218,6 +243,11 @@ module pin_write_latency (
   wire is_wctl  = (op == 4'hA) && (rs == 2'd0);
   wire is_rctl  = (op == 4'h9) && (rs == 2'd2);
   wire rctl_two = is_rctl && (imm == K_PM_DATA_HI);                        // R 2 cycles
+  wire rctl_prim = is_rctl && (imm == K_CRC_CFG || imm == K_CRC_POLY || imm == K_CRC_STATE ||
+                               imm == K_CRC_NEXT || imm == K_LINE_CFG || imm == K_LINE_OUT ||
+                               imm == K_LINE_STUF);                        // DR 0015 readable
+  wire u_rd = s_unk[rd];
+  wire u_rs = s_unk[rs];
   wire wctl_two = is_wctl && (imm == K_PM_DATA_LO || imm == K_RUN);        // W 2 cycles
 
   // RCTL value for every 1-cycle index (DR 0012 register map; unassigned
@@ -265,6 +295,24 @@ module pin_write_latency (
     endcase
   end
 
+  // Unknown-ness of the Rd write above (DR 0015 abstraction).
+  reg wr_unk;
+  always @* begin
+    case (op)
+      4'h2:                   wr_unk = u_rs;                    // MOV
+      4'h3, 4'h4, 4'h5, 4'h6, 4'h7: wr_unk = u_rd | u_rs;       // ALU
+      4'h8:                   wr_unk = u_rd;                    // SHF
+      4'h9: begin
+              if (rs == 2'd2 && rctl_prim)          wr_unk = 1'b1;
+              else if (rs == 2'd2 && imm == K_UIO_DIR) wr_unk = s_dir_unk;
+              else if (rs == 2'd2 && imm == K_UIO_OD)  wr_unk = s_od_unk;
+              else if (rs == 2'd2 && imm == K_PM_ADDR) wr_unk = s_pmaddr_unk;
+              else                                  wr_unk = 1'b0;
+            end
+      default:                wr_unk = 1'b0;                    // LDI and the rest
+    endcase
+  end
+
   wire is_out  = executing && (op == 4'hA);
   wire out_uo  = is_out && (rs == 2'd2);   // OUT to port 10 (uo_out)
   wire out_uio = is_out && (rs == 2'd3);   // OUT to port 11 (uio_out)
@@ -281,6 +329,8 @@ module pin_write_latency (
       s_dir <= 8'h00; s_od <= 8'h00; s_pmaddr <= 8'h00; s_pmlo <= 8'h00;  // DR 0012 reset values
       s_stall <= 1'b0; s_stall_pmrd <= 1'b0; s_stall_rd <= 2'd0;
       s_rom_exit <= 1'b0; s_stall_run <= 1'b0;   // DR 0013: the boot ROM is the source after reset
+      s_unk <= 4'b0000; s_dir_unk <= 1'b0; s_od_unk <= 1'b0; s_pmaddr_unk <= 1'b0;
+      exp_uo_unk <= 1'b0; exp_uio_unk <= 1'b0;
     end else begin
       if (stalling) s_wait_rem <= s_wait_rem - 8'd1;
       if (ctl_stalling) begin
@@ -293,6 +343,7 @@ module pin_write_latency (
         // program memory, and so does every word after it until reset.
         if (s_stall_run) s_rom_exit <= 1'b1;
         if (s_stall_pmrd) begin
+          s_unk[s_stall_rd] <= 1'b0;
           case (s_stall_rd)
             2'd0: s_r0 <= instr[15:8];
             2'd1: s_r1 <= instr[15:8];
@@ -306,10 +357,12 @@ module pin_write_latency (
         // DR 0012 control accesses (no pin is written by any of them).
         if (is_wctl) begin
           case (imm)
-            K_UIO_DIR:    s_dir    <= v_rd;
-            K_UIO_OD:     s_od     <= v_rd;
-            K_PM_ADDR:    s_pmaddr <= v_rd;
+            K_UIO_DIR:    begin s_dir    <= v_rd; s_dir_unk    <= u_rd; end
+            K_UIO_OD:     begin s_od     <= v_rd; s_od_unk     <= u_rd; end
+            K_PM_ADDR:    begin s_pmaddr <= v_rd; s_pmaddr_unk <= u_rd; end
             K_PM_DATA_LO: s_pmaddr <= s_pmaddr + 8'd1;   // commit, then PM_ADDR++
+            // DR 0015 CRC_BYTE: a fixed 8 stall cycles, as a WAIT 8.
+            K_CRC_BYTE:   s_wait_rem <= 8'd8;
             default: ;
           endcase
           if (wctl_two) s_stall <= 1'b1;
@@ -325,6 +378,7 @@ module pin_write_latency (
           end
         end
         if (wr_rd) begin
+          s_unk[rd] <= wr_unk;
           case (rd)
             2'd0: s_r0 <= wr_val;
             2'd1: s_r1 <= wr_val;
@@ -334,8 +388,8 @@ module pin_write_latency (
         end
         if (op == 4'hB) s_wait_rem <= imm;     // WAIT imm8: imm8 stall cycles follow (0 = none)
         if (op == 4'hF) s_halted   <= 1'b1;    // HALT: idle until reset
-        if (out_uo)  exp_uo  <= v_rd;          // pre-edge source value, captured at the retiring edge
-        if (out_uio) exp_uio <= v_rd;
+        if (out_uo)  begin exp_uo  <= v_rd; exp_uo_unk  <= u_rd; end  // pre-edge source value
+        if (out_uio) begin exp_uio <= v_rd; exp_uio_unk <= u_rd; end
       end
     end
   end
@@ -348,6 +402,7 @@ module pin_write_latency (
   reg [7:0] f_uo, f_uio;
   reg       f_out_uo, f_out_uio, f_out_ro, f_out_any;
   reg [7:0] f_src;
+  reg       f_src_unk;
   reg [1:0] f_rd;
   reg       f_stalled_before;  // a WAIT stall has been observed since reset
   reg       f_out_ctl;         // previous cycle executed a WCTL
@@ -364,7 +419,7 @@ module pin_write_latency (
     if (!rst_n) begin
       f_valid   <= 1'b0; f_uo <= 8'h00; f_uio <= 8'h00;
       f_out_uo  <= 1'b0; f_out_uio <= 1'b0; f_out_ro <= 1'b0; f_out_any <= 1'b0;
-      f_src     <= 8'h00; f_rd <= 2'd0; f_stalled_before <= 1'b0;
+      f_src     <= 8'h00; f_src_unk <= 1'b0; f_rd <= 2'd0; f_stalled_before <= 1'b0;
       f_out_ctl <= 1'b0; c_from_rctl1 <= 4'b0000; c_from_pmrd <= 4'b0000;
       c_from_boot1 <= 4'b0000; f_from_rom <= 1'b0;
       c_rom_out_seen <= 1'b0; c_left_by_run <= 1'b0;
@@ -391,6 +446,7 @@ module pin_write_latency (
       f_out_ro  <= out_ro;
       f_out_any <= out_uo || out_uio;
       f_src     <= v_rd;
+      f_src_unk <= u_rd;
       f_rd      <= rd;
       if (stalling) f_stalled_before <= 1'b1;
     end
@@ -408,13 +464,13 @@ module pin_write_latency (
 `endif
     if (rst_n) begin
       // A1: output registers equal the independently derived expectation.
-      assert (uo_out  == exp_uo);
-      assert (uio_out == exp_uio);
+      assert (exp_uo_unk  || uo_out  == exp_uo);
+      assert (exp_uio_unk || uio_out == exp_uio);
       if (f_valid) begin
         // A2: update iff the previous cycle executed an OUT to THIS port,
         // and then to exactly that OUT's source value; else hold.
-        if (f_out_uo)  assert (uo_out  == f_src); else assert (uo_out  == f_uo);
-        if (f_out_uio) assert (uio_out == f_src); else assert (uio_out == f_uio);
+        if (f_out_uo)  assert (f_src_unk || uo_out  == f_src); else assert (uo_out  == f_uo);
+        if (f_out_uio) assert (f_src_unk || uio_out == f_src); else assert (uio_out == f_uio);
       end
     end
   end
