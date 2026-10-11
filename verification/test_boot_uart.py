@@ -45,7 +45,7 @@ What is checked (verification-plan section 7, "Boot programs"):
   runs (the loader keeps a byte in `UIO_DIR` under `UIO_OD`/`uio_out` guards,
   see the boot source), and `uio_out` is 0x00 or the guard's 0xFF (the
   0xFF shows only between the guard's `OUT` and its `WCTL UIO_OD`: an
-  open-drain pin's pad data is 0, DR 0019).
+  open-drain pin's pad data is 0, DR 0020).
 
 Timing is in core cycles. The 20 ns clock period only names the unconfirmed
 50 MHz of target-spec row 4 for the ns-based reference model; every claim
@@ -335,7 +335,7 @@ class RomWatch:
 # ---------------------------------------------------------------------------
 def assert_pins_quiet(session, t_from, t_to, label):
     """While the boot program runs: no uio pin drives; uio_out is 0xFF only
-    for the guard's own data, before UIO_OD ties the pad data to 0 (DR 0019;
+    for the guard's own data, before UIO_OD ties the pad data to 0 (DR 0020;
     it is never anything else but 0)."""
     for t, v in session.values("uio_oe", t_from, t_to):
         assert v == 0, f"{label}: uio_oe={v:#04x} at {t} ns"

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Negative controls for the pad path of the I2C benches (issue #136,
 DR 0012): defects in how the top turns `UIO_OD` / `UIO_DIR` and the
-core's port-11 register (`core_uio_out`; DR 0019, issue #244) into
+core's port-11 register (`core_uio_out`; DR 0020, issue #244) into
 `uio_oe`.
 
 Why this exists. Until #136 the I2C benches composed the bus as `uio_out
@@ -69,8 +69,8 @@ MUTANTS = [
      "assign uio_oe = 8'h00;"),
     ("open-drain-never-releases",
      "an open-drain pin is enabled whatever the port-11 bit is. Its pad data is "
-     "0 (DR 0019), so the line is held low and writing 1 never releases it. "
-     "(Before DR 0019 this same defect drove the line high: the pad data was "
+     "0 (DR 0020), so the line is held low and writing 1 never releases it. "
+     "(Before DR 0020 this same defect drove the line high: the pad data was "
      "the register bit, and the mutant was named open-drain-drives-high.)",
      "assign uio_oe = uio_od | uio_dir;"),
     ("open-drain-polarity-inverted",

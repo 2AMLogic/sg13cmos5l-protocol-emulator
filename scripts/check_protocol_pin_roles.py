@@ -1334,17 +1334,17 @@ class Checker:
                               f"port, byte select the CRC_BYTE_SEL pin)")
                 continue
             if m and port == "uio_out" and m.group(1) == "core_uio_out":
-                # DR 0019 (issue #244): the core's port-11 register reaches
+                # DR 0020 (issue #244): the core's port-11 register reaches
                 # the pads through the open-drain pad-data mask, not directly.
                 # The one accepted shape masks the whole port with ~uio_od;
                 # runtime_pin_mode() checks that uio_oe is built from the
                 # same net.
                 pad = re.search(r"assign\s+uio_out\s*=\s*([^;]+);", text)
                 self.uio_out_expr = pad.group(1).strip() if pad else None
-                if pad and re.sub(r"\s+", "", pad.group(1)) == self.DR0019_UIO_OUT:
+                if pad and re.sub(r"\s+", "", pad.group(1)) == self.DR0020_UIO_OUT:
                     continue
                 self.meta.err(f"{rel}: core port_uio_out is on `core_uio_out`, so the top must have "
-                              f"`assign uio_out = core_uio_out & ~uio_od;` (DR 0019: the whole port, "
+                              f"`assign uio_out = core_uio_out & ~uio_od;` (DR 0020: the whole port, "
                               f"open-drain pins' pad data tied to 0)")
                 continue
             if not m or m.group(1) != port:
@@ -1503,14 +1503,14 @@ class Checker:
                 f"debug writes, or make the mask per-image (DR 0012), before the uio_oe wiring lands"
             )
 
-    #: DR 0012's pin-mode rule as the top builds it since DR 0019 (issue
+    #: DR 0012's pin-mode rule as the top builds it since DR 0020 (issue
     #: #244): from the core's port-11 register `core_uio_out`, with the pad
-    #: data `uio_out` masked to 0 on open-drain pins. The pre-DR-0019 form,
+    #: data `uio_out` masked to 0 on open-drain pins. The pre-DR-0020 form,
     #: which derived `uio_oe` from the pad data itself and let an open-drain
     #: pad see oe=1 with out=1 under routed delays, is refused by name.
     DR0012_UIO_OE = "(uio_od&~core_uio_out)|(~uio_od&uio_dir)"
-    DR0019_UIO_OUT = "core_uio_out&~uio_od"
-    PRE_DR0019_UIO_OE = "(uio_od&~uio_out)|(~uio_od&uio_dir)"
+    DR0020_UIO_OUT = "core_uio_out&~uio_od"
+    PRE_DR0020_UIO_OE = "(uio_od&~uio_out)|(~uio_od&uio_dir)"
 
     def runtime_pin_mode(self, expr: str) -> None:
         """DR 0012 (issue #135): `uio_oe` is driven by the core's `UIO_OD` /
@@ -1519,7 +1519,7 @@ class Checker:
 
         - the top-level expression is DR 0012's pin-mode rule (open-drain
           wins, then push-pull, else input) -- anything else is an error;
-        - the pad data is DR 0019's (issue #244): `uio_out` is the core's
+        - the pad data is DR 0020's (issue #244): `uio_out` is the core's
           port-11 register with every open-drain pin's bit tied to 0, so
           no relative delay of `uio_out` and `uio_oe` can make an
           open-drain pad drive high;
@@ -1540,11 +1540,11 @@ class Checker:
         apply in this shape: the pins are inputs at reset whatever
         `uio_out` holds."""
         flat = re.sub(r"\s+", "", expr)
-        if flat == self.PRE_DR0019_UIO_OE:
+        if flat == self.PRE_DR0020_UIO_OE:
             self.concrete.err(
-                f"top-level `uio_oe = {expr}` is the pre-DR-0019 wiring: it derives the "
+                f"top-level `uio_oe = {expr}` is the pre-DR-0020 wiring: it derives the "
                 "open-drain enable from the pad data, so an open-drain pad can see oe=1 with "
-                "out=1 under routed delays (issue #244). DR 0019 requires "
+                "out=1 under routed delays (issue #244). DR 0020 requires "
                 "`uio_out = core_uio_out & ~uio_od` and "
                 "`uio_oe = (uio_od & ~core_uio_out) | (~uio_od & uio_dir)`")
         elif flat != self.DR0012_UIO_OE:
@@ -1553,9 +1553,9 @@ class Checker:
                 "`(uio_od & ~core_uio_out) | (~uio_od & uio_dir)`")
         self.concrete.sites += 1
         pad = getattr(self, "uio_out_expr", None)
-        if pad is None or re.sub(r"\s+", "", pad) != self.DR0019_UIO_OUT:
+        if pad is None or re.sub(r"\s+", "", pad) != self.DR0020_UIO_OUT:
             self.concrete.err(
-                f"top-level `uio_out = {pad}` is not DR 0019's pad data "
+                f"top-level `uio_out = {pad}` is not DR 0020's pad data "
                 "`core_uio_out & ~uio_od` (an open-drain pin's pad data must be the constant 0)")
         core = getattr(self, "core_text", None) or ""
         for reg in ("uio_dir", "uio_od"):

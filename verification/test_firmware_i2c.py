@@ -194,7 +194,7 @@ DATA_BYTE = 0x5A
 #: grades is read on `uio_in` (`LINE_PIN`). While a pin is not open-drain
 #: its pad data is the core's port-11 register, the controller's *intent*
 #: -- which is what the `UIO_OD` negative control composes a bus from.
-#: Once `UIO_OD` is set the pad data is 0 (DR 0019, issue #244) and the
+#: Once `UIO_OD` is set the pad data is 0 (DR 0020, issue #244) and the
 #: intent is carried by the pad enable alone (`OE_PIN`).
 SCL_PIN, SCL_BIT = "uio_out", 2
 SDA_PIN, SDA_BIT = "uio_out", 3
@@ -584,7 +584,7 @@ async def test_i2c_both_grades_pass_independent_reference_model(dut):
         # nobody but the controller moves SCL in these runs (the
         # peripheral never stretches), so the SCL line must be the
         # controller's SCL exactly: low while the pad is enabled, restored
-        # by the pull-up while it is not. Since DR 0019 (issue #244) the
+        # by the pull-up while it is not. Since DR 0020 (issue #244) the
         # enable alone carries the controller's bit on an open-drain pin.
         oe = caps["oe_scl"].signal
         assert oe.initial == 0 and oe.transitions, f"{mode.name} run A: SCL pad never enabled"

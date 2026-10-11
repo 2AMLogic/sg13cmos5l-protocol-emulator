@@ -83,7 +83,7 @@ coverage.
   data-independence, no flag side effects, a program-memory
   write-then-read round trip, code written through the control space
   executed via `RUN`, `PM_CRC` against `binascii.crc_hqx`, and the I2C
-  images' open-drain preamble, and DR 0019's open-drain pad data
+  images' open-drain preamble, and DR 0020's open-drain pad data
   (`uio_out[n] & UIO_OD[n]` is 0 on every edge, over all 8 pin-mode
   combinations on every pin, so `uio_oe & uio_out & UIO_OD` is never 1;
   issue #244). Pin-observable except for three labelled

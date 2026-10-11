@@ -104,7 +104,7 @@ MUTANTS = [
        "assign uio_oe  = (uio_od & ~core_uio_out) | uio_dir;", 1)],
      {T_PINMODE, T_PAD}),
     ("od-pad-data-follows-register",
-     "the pre-DR-0019 wiring (issue #244): an open-drain pin's pad data is the port-11 "
+     "the pre-DR-0020 wiring (issue #244): an open-drain pin's pad data is the port-11 "
      "register, not 0. uio_oe is unchanged and at zero delay oe & out is still never 1 on "
      "an open-drain pin; under routed delays the pad drove HIGH for ~100 ps on every release",
      TOP,

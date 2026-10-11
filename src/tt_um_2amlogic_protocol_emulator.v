@@ -46,7 +46,7 @@
  *                          tied to 0, so the pad can only ever pull low
  *       else UIO_DIR[n] -> push-pull:  uio_oe[n] = 1, uio_out[n] = R[n]
  *       else            -> input:      uio_oe[n] = 0, uio_out[n] = R[n]
- *     (DR 0019, issue #244: until then an open-drain pin's pad data was
+ *     (DR 0020, issue #244: until then an open-drain pin's pad data was
  *     R[n] itself, and under routed delays the pad saw oe=1 with out=1
  *     for about 100 ps on every release.)
  *     Both registers reset to 0, so after `rst_n` every bidirectional pin
@@ -191,7 +191,7 @@ module tt_um_2amlogic_protocol_emulator (
   // of 0 this is 8'h00 -- every bidirectional pin an input.
   //
   // An open-drain pin's pad data is the constant 0 and `uio_oe` alone
-  // carries the port-11 bit (DR 0019, issue #244). The pad therefore never
+  // carries the port-11 bit (DR 0020, issue #244). The pad therefore never
   // sees oe=1 with out=1 on an open-drain pin, whatever the relative delay
   // of the two nets: `uio_out[n]` can only be 1 where `uio_od[n]` is 0.
   // Readback is through `uio_in` and is unchanged; push-pull and input
@@ -199,7 +199,7 @@ module tt_um_2amlogic_protocol_emulator (
   // to firmware is a write to UIO_OD itself on a pin that is push-pull and
   // high at that moment: both nets fall and their order is not fixed, so
   // set UIO_OD on a pin that is still an input, as every committed image
-  // does (DR 0019, "Limits").
+  // does (DR 0020, "Limits").
   assign uio_out = core_uio_out & ~uio_od;
   assign uio_oe  = (uio_od & ~core_uio_out) | (~uio_od & uio_dir);
 

@@ -10,7 +10,7 @@ EVERY clock edge of the run phase:
     uio_out (the port-11 register) via hierarchy, `dut.u_core.port_uio_out`
     uo_out, uio_oe                at the pins
     the `uio_out` pins            against `port 11 & ~UIO_OD` from the ISS
-                                  (DR 0019, issue #244: an open-drain pin's
+                                  (DR 0020, issue #244: an open-drain pin's
                                   pad data is 0; the ISS row's `uio_out` is
                                   the register a program writes, unchanged)
 
@@ -116,7 +116,7 @@ def iss_uio_od(prog, rows):
 
     The ISS trace row carries the port-11 register (`uio_out`) and the
     enables (`uio_oe`) but not `UIO_OD`, and the pad data the top puts on
-    the `uio_out` pins is `port 11 & ~UIO_OD` since DR 0019 (issue #244).
+    the `uio_out` pins is `port 11 & ~UIO_OD` since DR 0020 (issue #244).
     This steps a second `isa.Machine` over the same image and inputs and
     reads its `uio_od` after every edge; the rows it produces must be the
     rows `isa.run` returned, so the two cannot drift apart."""
@@ -155,7 +155,7 @@ async def sample(dut):
     """State after the edge just taken, as `(isa.Row-shaped tuple, pad
     data)`. The row's `uio_out` is the core's port-11 register, which is
     what the ISS row carries; the second value is the `uio_out` pins, which
-    differ from it on open-drain pins (DR 0019: their pad data is 0)."""
+    differ from it on open-drain pins (DR 0020: their pad data is 0)."""
     await ReadOnly()
     c = dut.u_core
     row = isa.Row(
@@ -202,7 +202,7 @@ async def lockstep(dut, prog, digest):
         iss = rows[edge]
         digest.update(repr((prog.index, edge, rtl, pad)).encode())
         bad = diff(rtl, iss)
-        # The pins: DR 0019's pad data, from the ISS's own port-11 register
+        # The pins: DR 0020's pad data, from the ISS's own port-11 register
         # and UIO_OD. An open-drain pin's pad data is 0 on every edge.
         want_pad = iss.uio_out & ~ods[edge] & 0xFF
         if not bad and pad != want_pad:
@@ -210,7 +210,7 @@ async def lockstep(dut, prog, digest):
                 f"ISA LOCKSTEP MISMATCH seed={SEED} program={prog.index} ({prog.name}) edge={edge}   "
                 f"[replay: ISA_LOCKSTEP_SEED={SEED} ISA_LOCKSTEP_ONLY={prog.index}]\n"
                 f"  uio_out pins (pad data): rtl={pad:#04x} want={want_pad:#04x} "
-                f"(ISS port 11 {iss.uio_out:#04x}, UIO_OD {ods[edge]:#04x}; DR 0019)")
+                f"(ISS port 11 {iss.uio_out:#04x}, UIO_OD {ods[edge]:#04x}; DR 0020)")
         if bad:
             ctx = rows[edge - 1] if edge else iss
             ins = machine.pm.get(ctx.pc)

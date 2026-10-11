@@ -1,4 +1,4 @@
-# 0019: An Open-Drain Pin's Pad Data Is Tied Low — RTL Conformance Fix to DR 0012's Pin-Mode Rule
+# 0020: An Open-Drain Pin's Pad Data Is Tied Low — RTL Conformance Fix to DR 0012's Pin-Mode Rule
 
 Status: **Proposed 2026-10-11.** Like DRs 0001–0005, 0007, 0008 and 0010–0018,
 this record is a proposal. The two-key (`RATIFY-KEY`) mechanism has not bound
@@ -13,8 +13,13 @@ Issues: #244 (the finding and its triage); #217 (the routed-SDF protocol
 harness that found it); #135 (DR 0012's build); #44 (ratification).
 
 **Numbering note.** When this record was numbered (2026-10-11), `origin/main`
-had DRs 0001–0008 and 0010–0018, and open PR #242 carries 0009. No other open
-PR carries a decision record, so this record is 0019.
+had DRs 0001–0008 and 0010–0018. Open PR #242 carries 0009, and two open PRs
+each carry a record numbered 0019: #254 (an accept-and-watch record for issue
+#246) and #256 (another build of this same fix for issue #244, opened while
+this one was being measured). This record is **0020** so that it collides
+with neither, as earlier records stepped over 0009 and 0011. Which of the
+overlapping PRs merge is for their reviewers; this record does not depend on
+either.
 
 ## Context
 

@@ -117,8 +117,8 @@
       "kind": "conformance-fix",
       "invalidates_row13_evidence": false,
       "sha256_before": "3ac55ab264ff4c859b8f9aa852b31eb303d57327bed49e63bb12a68c5680975a",
-      "sha256_after": "d5fca97af3c03aee2defdd5a4871df638ec41116d3f0d099661ac0b0d74ca8cf",
-      "dr": 19,
+      "sha256_after": "8c380b9165a09a60e6be8d8546eac360a733317253f152c15faaa13489e94a29",
+      "dr": 20,
       "ref": "#244",
       "summary": "RTL conformance fix to DR 0012's open-drain rule (register map row 0x01, 'Pin mode, per uio[n]'): an open-drain pin's pad data is tied to 0 (uio_out = core_uio_out & ~uio_od) and uio_oe alone carries the port-11 bit, so the pad cannot drive HIGH at any relative delay of the two nets; uio_oe is the same function of port 11, UIO_DIR and UIO_OD; no instruction, control index, latency, reset value or readback changes; row 13's WS2812 program drives uo_out only"
     }

@@ -33,7 +33,7 @@ program-memory round trip and CRC check:
   path"), and across both clear registers;
 - **the I2C preamble** the committed I2C images gained: after it, the two
   open-drain pins only ever pull low or release;
-- **the open-drain pad data** (DR 0019, issue #244): `uio_out[n]` is 0
+- **the open-drain pad data** (DR 0020, issue #244): `uio_out[n]` is 0
   whenever `UIO_OD[n]` is set, on every edge and for all 8 pin-mode
   combinations on every pin, so an open-drain pad cannot drive HIGH at any
   relative delay of `uio_out` and `uio_oe`.
@@ -49,7 +49,7 @@ wrong latency would still fail here.
 
 White-box reads (`dut.u_core.flag_z` / `flag_c`, the reset-time register
 values before any program can run, and the port-11 register behind an
-open-drain pin, DR 0019) are used only where no pin shows the
+open-drain pin, DR 0020) are used only where no pin shows the
 fact, and only in an RTL run. Under the gate-level Makefile (`GATES=yes`,
 `flow/run-firmware-gate-level.sh`) the hierarchy is gone, those reads are
 skipped, and every other check still runs, because it is pin-only.
@@ -133,7 +133,7 @@ def pin_mode_oe(uio_out, uio_dir, uio_od):
 
 
 def pin_mode_out(uio_out, uio_od):
-    """DR 0019 (issue #244), bit by bit: the pad data of an open-drain pin
+    """DR 0020 (issue #244), bit by bit: the pad data of an open-drain pin
     is the constant 0 (its `uio_oe` alone carries the port-11 bit); every
     other pin's pad data is the port-11 register bit. `uio_out` here is
     the value the program last wrote with `OUT UIO_OUT`."""
@@ -396,7 +396,7 @@ async def test_readback_and_pin_mode_logic(dut):
     trace = await run_trace(dut, p.words, p.end_edge() + 3)
     expect(trace, p, checks)
     expect(trace, p, oe_checks, pin="uio_oe")
-    # DR 0019: the pad data is the port-11 register with the open-drain
+    # DR 0020: the pad data is the port-11 register with the open-drain
     # pins' bits tied to 0, on the same edge.
     expect(trace, p, out_checks, pin="uio_out")
     # ...and not one edge early: the enable is registered state.
@@ -421,7 +421,7 @@ PAD_DATA_STEPS = 96
 
 @cocotb.test()
 async def test_open_drain_pad_data_is_tied_low(dut):
-    """DR 0019 (issue #244): on every clock edge, for every pin n,
+    """DR 0020 (issue #244): on every clock edge, for every pin n,
     `uio_out[n] & UIO_OD[n]` is 0 -- an open-drain pin's pad data is the
     constant 0 -- and therefore `uio_oe[n] & uio_out[n] & UIO_OD[n]` is
     never 1: the pad cannot drive HIGH on an open-drain pin whatever the
@@ -437,7 +437,7 @@ async def test_open_drain_pad_data_is_tied_low(dut):
     here is the one the program wrote, which `test_readback_and_pin_mode_logic`
     reads back. Pin-only, so it also runs on a gate-level netlist.
 
-    Why the weaker `oe & out & od == 0` alone would not do: the pre-DR-0019
+    Why the weaker `oe & out & od == 0` alone would not do: the pre-DR-0020
     top (`uio_oe` derived from the pad data) also satisfies it at zero
     delay, and breaks it only for the ~100 ps between the two nets'
     arrivals on a routed netlist. `uio_out & od == 0` is the property that
@@ -484,7 +484,7 @@ async def test_open_drain_pad_data_is_tied_low(dut):
         got_out, got_oe = sample["uio_out"], sample["uio_oe"]
         assert got_out & od == 0, (
             f"edge {e}: uio_out {got_out:#04x} has a 1 on an open-drain pin (UIO_OD {od:#04x}); "
-            "the pad data of an open-drain pin must be the constant 0 (DR 0019)"
+            "the pad data of an open-drain pin must be the constant 0 (DR 0020)"
         )
         assert got_oe & got_out & od == 0, (
             f"edge {e}: uio_oe {got_oe:#04x} & uio_out {got_out:#04x} & UIO_OD {od:#04x} != 0: "
@@ -932,7 +932,7 @@ async def test_i2c_images_open_drain_preamble(dut):
     with no peripheral (the bus reads released) and check, at the logic
     level, what a wired-AND bus needs: no uio pin is enabled before the
     preamble; after it the pad data of SCL and SDA is 0 on every edge
-    (DR 0019), so they are only ever pulled low or released, never driven
+    (DR 0020), so they are only ever pulled low or released, never driven
     high; no other uio pin is ever enabled; and the preamble itself does
     not pull a line low (the OUT of 0x0C precedes it). This is not a pad
     model -- that, and the I2C evidence re-run on it, are issue #136."""
@@ -954,7 +954,7 @@ async def test_i2c_images_open_drain_preamble(dut):
             # White-box (RTL only): from the preamble on, the enable is the
             # complement of the core's port-11 register on the open-drain
             # pins. No pin shows that register for an open-drain pin since
-            # DR 0019, so this is read through the hierarchy, 1 ns after
+            # DR 0020, so this is read through the hierarchy, 1 ns after
             # the edge, on every edge.
             if c is None or e < e_pre:
                 return
@@ -972,7 +972,7 @@ async def test_i2c_images_open_drain_preamble(dut):
         pulled = False
         for e in range(e_pre, n + 1):
             s = trace[e]
-            # DR 0019 (issue #244): once the pins are open-drain their pad
+            # DR 0020 (issue #244): once the pins are open-drain their pad
             # data is 0, so the lines are pulled low or released and never
             # driven high, at any relative delay of uio_out and uio_oe.
             assert s["uio_out"] & I2C_OD == 0, (

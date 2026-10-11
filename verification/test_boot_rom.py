@@ -13,7 +13,7 @@ owns, and target-spec row 14 (c) / `spec/verification-plan.md` section 8's
   been written (all X in simulation) never read it. They reach the UART
   loader (issue #139), which idles with TX (`uo_out[0]`) high, `uio_out` 0
   behind its guard (port 11 = 0xFF under UIO_OD = 0xFF, whose pad data is 0
-  since DR 0019) and `uio_oe` 0, all free of X;
+  since DR 0020) and `uio_oe` 0, all free of X;
 - **`MODE` low never runs unverified memory**: with program memory holding
   a canary image -- one that visibly drives `uo_out` and every `uio` pin
   within five instructions from *any* entry address, and is shown doing so
@@ -408,14 +408,14 @@ def assert_quiet(trace, label, waiting_at=None):
     loader's poll, the loader's own state is allowed and checked instead: TX
     (uo_out[0]) idles high, `uio_out` is 0 until the loader's guard writes
     0xFF to port 11 and 0 again once the guard sets UIO_OD = 0xFF (an
-    open-drain pin's pad data is 0, DR 0019), and `uio_oe` is 0 at every
+    open-drain pin's pad data is 0, DR 0020), and `uio_oe` is 0 at every
     edge -- no uio pin ever drives."""
     if waiting_at is not None and waiting_at == stub_addresses()["uart_load"]:
         for e, s in enumerate(trace):
             assert s["uio_oe"] == 0, f"{label}: a uio pin drove at edge {e}: {s['uio_oe']:#04x}"
             assert s["uo_out"] in (0x00, 0x01), f"{label}: uo_out={s['uo_out']:#04x} at edge {e}"
             assert s["uio_out"] in (0x00, 0xFF), f"{label}: uio_out={s['uio_out']:#04x} at edge {e}"
-        # DR 0019 (issue #244): the guard's second half, UIO_OD = 0xFF,
+        # DR 0020 (issue #244): the guard's second half, UIO_OD = 0xFF,
         # ties every pad data bit to 0, so `uio_out` shows the 0xFF the
         # loader wrote only until that write retires, and 0x00 after it.
         assert trace[-1] == {"uo_out": 0x01, "uio_out": 0x00, "uio_oe": 0}, (
