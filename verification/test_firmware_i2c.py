@@ -22,10 +22,11 @@ come from the model.
 What is measured, and in what units
 -----------------------------------
 **Cycles.** The phase budgets these programs implement are exactly
-**65/60 core cycles** (Fast) and **258/242 core cycles** (Standard) per
+**70/55 core cycles** (Fast) and **258/242 core cycles** (Standard) per
 SCL clock, which is what the model's ns measurements map onto at the
-nominal 20 ns simulation clock: 1300/1200 ns and 5160/4840 ns. Fast sits
-exactly on Table 10's t_LOW floor; Standard's low and high both clear
+nominal 20 ns simulation clock: 1400/1100 ns and 5160/4840 ns. Fast clears
+Table 10's t_LOW floor (1300 ns) by 100 ns (issue #272; it was 65/60,
+exactly on the floor); Standard's low and high both clear
 their floors (4700/4000 ns), and each grade's complete clock is exactly the
 f_SCL period -- 125 cycles = 2500 ns (400 kHz) and 500 cycles = 10000 ns
 (100 kHz) at the nominal clock (issue #125; Standard was 235/200 = 435
@@ -83,7 +84,7 @@ Negative controls (a suite that cannot fail cannot cite its passes)
    the only one flagged.
 2. The **DUT's own captured waveforms**, time-compressed by 0.9, must
    also FAIL `check_transfer` in both modes: a uniform 0.9x compression
-   drives t_LOW under its floor (Fast paces it exactly at 1300 ns;
+   drives t_LOW under its floor (Fast paces it at 1400 ns, 1260 ns compressed;
    Standard's 5160 ns becomes 4644 ns < 4700 ns) and the period under
    f_SCL, while leaving the transfer's structure -- and therefore the
    model's decode -- intact. This is the stronger control: it proves this
@@ -169,9 +170,10 @@ class _Mode:
         return (self.t_low + self.t_high) * CLK_PERIOD_NS
 
 
-#: Fast-mode (400 kHz class): DR 0001's 65/60 allocation. Both floors of
-#: UM10204 Table 10's Fast column are met (t_LOW exactly, t_HIGH 2x).
-FAST = _Mode("i2c_fast", True, t_low=65, t_high=60, t_hd_sta=65, t_su_sto=60)
+#: Fast-mode (400 kHz class): 70/55 (issue #272; DR 0001's sketch had 65/60). Both
+#: floors of UM10204 Table 10's Fast column are met: t_LOW 1400 ns vs 1300
+#: (+7.7 %), t_HIGH 1100 ns vs 600 (1.8x). The 125-cycle period is kept.
+FAST = _Mode("i2c_fast", True, t_low=70, t_high=55, t_hd_sta=65, t_su_sto=60)
 
 #: Standard-mode (100 kHz class): 258/242 (issue #125), so the complete
 #: clock is the 500-cycle f_SCL period; both phases clear the floors of
@@ -369,7 +371,7 @@ async def drive_peripheral(dut, pads, ack_falls: set) -> None:
     which bytes to acknowledge is the peripheral's own, and that is what
     `ack_falls` encodes (fall 9 = the address byte's ACK clock, fall 18 =
     the data byte's). The pull lands two cycles after the SCL fall it
-    answers, well inside the 65/235-cycle low phase and long before both
+    answers, well inside the 70/235-cycle low phase and long before both
     the controller's `IN` sample and the SCL rise the model samples on;
     the release lands on the next fall, i.e. inside the following low
     phase, which is the only place I2C lets SDA change.
@@ -548,7 +550,7 @@ async def test_i2c_both_grades_pass_independent_reference_model(dut):
     load-phase pins and executed by the core, drives a write transfer to
     0x50 that the independent `check_transfer` decodes byte-exactly and
     grades inside every UM10204 Table 10 minimum for its speed grade,
-    with the phase budgets measuring exactly 65/60 (Fast) and 258/242
+    with the phase budgets measuring exactly 70/55 (Fast) and 258/242
     (Standard) core cycles -- complete clocks of 125 and 500 cycles, the
     f_SCL periods at the nominal clock. The address-ACK branch is exercised in both
     directions: run A (ACK -> data byte transmitted) and run B (NACK ->

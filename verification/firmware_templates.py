@@ -473,7 +473,7 @@ def render_i2c(name, seed, index, params) -> str:
     )
     delta = params.get("mistime_low_delta", 0)
     if delta:  # negative control: shorten every data/ACK clock low phase
-        low_wait = {"i2c_fast": 62, "i2c_std": 255}[grade]
+        low_wait = {"i2c_fast": 67, "i2c_std": 255}[grade]
         # Standard's low WAIT is 255, the same literal as the two idle-bus
         # holds, which carry a trailing comment; the low-phase WAITs do not.
         end = r"\b" if grade == "i2c_fast" else r"[ \t]*$"
