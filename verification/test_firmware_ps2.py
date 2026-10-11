@@ -570,8 +570,17 @@ async def test_unused_pins_are_never_driven(dut):
     oe = int(dut.uio_oe.value)
     out = int(dut.uio_out.value)
     assert oe & ~OD_MASK == 0, f"uio_oe = {oe:#04x}: a pin outside CLK|DATA is enabled"
-    assert (out & OD_MASK) == OD_MASK and (oe & OD_MASK) == 0, (
-        f"idle bus: uio_out {out:#04x} uio_oe {oe:#04x}; both lines should be released"
+    # Released: neither pad is enabled. The pad data of an open-drain pin
+    # is 0 (DR 0019, issue #244), so `uio_out` shows 0 on both lines whether
+    # they are pulled low or released -- the enable alone carries the bit.
+    assert (oe & OD_MASK) == 0, (
+        f"idle bus: uio_oe {oe:#04x}; both lines should be released"
+    )
+    assert (out & OD_MASK) == 0, (
+        f"idle bus: uio_out {out:#04x}; an open-drain pin's pad data must be 0"
+    )
+    assert int(dut.uio_in.value) & OD_MASK == OD_MASK, (
+        f"idle bus: uio_in {int(dut.uio_in.value):#04x}; the pull-ups should hold both lines high"
     )
     finish(host, pads, "pins")
 

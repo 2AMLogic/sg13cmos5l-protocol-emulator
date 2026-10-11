@@ -50,6 +50,7 @@ T_ROUNDTRIP = "test_program_memory_write_read_roundtrip"
 T_RUN = "test_written_code_executes_and_run_jumps"
 T_CRC = "test_pm_crc_matches_binascii_crc_hqx"
 T_I2C = "test_i2c_images_open_drain_preamble"
+T_PAD = "test_open_drain_pad_data_is_tied_low"
 
 # (name, what the defect is, file, [(old, new, count)], tests that must catch it)
 MUTANTS = [
@@ -99,9 +100,30 @@ MUTANTS = [
     ("od-does-not-win",
      "pin mode: UIO_DIR drives a pin push-pull even when UIO_OD selects open-drain",
      TOP,
-     [("assign uio_oe = (uio_od & ~uio_out) | (~uio_od & uio_dir);",
-       "assign uio_oe = (uio_od & ~uio_out) | uio_dir;", 1)],
-     {T_PINMODE}),
+     [("assign uio_oe  = (uio_od & ~core_uio_out) | (~uio_od & uio_dir);",
+       "assign uio_oe  = (uio_od & ~core_uio_out) | uio_dir;", 1)],
+     {T_PINMODE, T_PAD}),
+    ("od-pad-data-follows-register",
+     "the pre-DR-0019 wiring (issue #244): an open-drain pin's pad data is the port-11 "
+     "register, not 0. uio_oe is unchanged and at zero delay oe & out is still never 1 on "
+     "an open-drain pin; under routed delays the pad drove HIGH for ~100 ps on every release",
+     TOP,
+     [("assign uio_out = core_uio_out & ~uio_od;",
+       "assign uio_out = core_uio_out;", 1)],
+     {T_PINMODE, T_PAD, T_I2C}),
+    ("od-pad-data-masked-on-i2c-pins-only",
+     "the pad data is tied to 0 on uio[3:2] only: any other pin put in open-drain mode "
+     "still carries the port-11 register on its pad data",
+     TOP,
+     [("assign uio_out = core_uio_out & ~uio_od;",
+       "assign uio_out = core_uio_out & ~(uio_od & 8'h0C);", 1)],
+     {T_PINMODE, T_PAD}),
+    ("od-pad-data-inverted-mask",
+     "the pad data is masked by UIO_OD instead of ~UIO_OD: push-pull pins lose their data",
+     TOP,
+     [("assign uio_out = core_uio_out & ~uio_od;",
+       "assign uio_out = core_uio_out & uio_od;", 1)],
+     {T_PINMODE, T_PAD}),
     ("crc-wrong-polynomial",
      "PM_CRC uses polynomial 0x8005 (CRC-16/ARC family) instead of 0x1021",
      PMEM,

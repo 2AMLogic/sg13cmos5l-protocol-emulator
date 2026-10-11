@@ -473,8 +473,8 @@ Fixed by the RTL (`src/tt_um_2amlogic_protocol_emulator.v`), not provisional:
 | `ui_in[0]` | serial program data in load phase, MSB first (no run-phase role; UART RX is `ui_in[1]`) |
 | `ui_in[1]` | serial-load phase (MODE high at reset, until it drops): selects which `PM_CRC` byte `uo_out` shows (0 = low, 1 = high). Otherwise an ordinary input read by `IN`; the boot ROM's UART load (strap `00`) uses it as RX |
 | `uo_out[7:0]` | serial-load phase: the selected `PM_CRC` byte. Run phase (including the boot ROM, whose UART TX is `uo_out[0]`): written by `OUT`. 0 in reset |
-| `uio_oe[7:0]` | set by firmware: `UIO_OD[n]` → open-drain (`uio_oe[n] = ~uio_out[n]`), else `UIO_DIR[n]` → push-pull, else input. **0 after reset**: every bidirectional pin is an input until a program writes `UIO_DIR` or `UIO_OD` |
-| `uio_out[7:0]` | written by `OUT`; reaches a pin only where `uio_oe` enables it |
+| `uio_oe[7:0]` | set by firmware: `UIO_OD[n]` → open-drain (`uio_oe[n]` is the complement of the port-11 bit a program wrote with `OUT`), else `UIO_DIR[n]` → push-pull, else input. **0 after reset**: every bidirectional pin is an input until a program writes `UIO_DIR` or `UIO_OD` |
+| `uio_out[7:0]` | the pad data: the port-11 register written by `OUT`, except on an open-drain pin, where it is tied to 0 so the pad can only pull low or release ([DR 0019](../spec/decision-records/0019-open-drain-pad-data-tied-low.md)). Reaches a pin only where `uio_oe` enables it |
 
 Observed in committed firmware (provisional, per image family):
 

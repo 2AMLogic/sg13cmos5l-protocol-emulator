@@ -11,8 +11,9 @@ owns, and target-spec row 14 (c) / `spec/verification-plan.md` section 8's
   UART load and the reserved value; strap 01 is the SPI-flash boot since
   issue #140 and is test_boot_spi.py's) on a program memory that has never
   been written (all X in simulation) never read it. They reach the UART
-  loader (issue #139), which idles with TX (`uo_out[0]`) high, `uio_out` at
-  its 0xFF guard and `uio_oe` 0, all free of X;
+  loader (issue #139), which idles with TX (`uo_out[0]`) high, `uio_out` 0
+  behind its guard (port 11 = 0xFF under UIO_OD = 0xFF, whose pad data is 0
+  since DR 0019) and `uio_oe` 0, all free of X;
 - **`MODE` low never runs unverified memory**: with program memory holding
   a canary image -- one that visibly drives `uo_out` and every `uio` pin
   within five instructions from *any* entry address, and is shown doing so
@@ -405,15 +406,27 @@ def assert_quiet(trace, label, waiting_at=None):
 
     `waiting_at` is the address the boot program ends in. When it is the UART
     loader's poll, the loader's own state is allowed and checked instead: TX
-    (uo_out[0]) idles high, `uio_out` is 0 until the loader's guard sets it
-    to 0xFF, and `uio_oe` is 0 at every edge -- no uio pin ever drives."""
+    (uo_out[0]) idles high, `uio_out` is 0 until the loader's guard writes
+    0xFF to port 11 and 0 again once the guard sets UIO_OD = 0xFF (an
+    open-drain pin's pad data is 0, DR 0019), and `uio_oe` is 0 at every
+    edge -- no uio pin ever drives."""
     if waiting_at is not None and waiting_at == stub_addresses()["uart_load"]:
         for e, s in enumerate(trace):
             assert s["uio_oe"] == 0, f"{label}: a uio pin drove at edge {e}: {s['uio_oe']:#04x}"
             assert s["uo_out"] in (0x00, 0x01), f"{label}: uo_out={s['uo_out']:#04x} at edge {e}"
             assert s["uio_out"] in (0x00, 0xFF), f"{label}: uio_out={s['uio_out']:#04x} at edge {e}"
-        assert trace[-1] == {"uo_out": 0x01, "uio_out": 0xFF, "uio_oe": 0}, (
+        # DR 0019 (issue #244): the guard's second half, UIO_OD = 0xFF,
+        # ties every pad data bit to 0, so `uio_out` shows the 0xFF the
+        # loader wrote only until that write retires, and 0x00 after it.
+        assert trace[-1] == {"uo_out": 0x01, "uio_out": 0x00, "uio_oe": 0}, (
             f"{label}: the loader is not idling with TX high: {trace[-1]}"
+        )
+        seen = [s["uio_out"] for s in trace]
+        assert 0xFF in seen, f"{label}: the guard's OUT 0xFF never reached uio_out"
+        first = seen.index(0xFF)
+        last = len(seen) - 1 - seen[::-1].index(0xFF)
+        assert all(v == 0xFF for v in seen[first:last + 1]) and last < len(seen) - 1, (
+            f"{label}: uio_out is not 0x00, then 0xFF (guard data), then 0x00 (UIO_OD set)"
         )
         return
     for e, s in enumerate(trace):
@@ -835,8 +848,8 @@ async def test_warm_start_refuses_a_zero_signature(dut):
     does, and falls through to the UART load. The same rule refuses a real
     image whose CRC happens to be 0x0000; here that is the probe program,
     which drives pins within a few instructions if it runs. No pin moves
-    beyond the loader's own (TX idle high, the 0xFF guard on uio_out, no uio
-    driven). White-box (RTL): the core never leaves the ROM and waits in the
+    beyond the loader's own (TX idle high, the guard's 0xFF on uio_out until
+    UIO_OD is set, no uio driven). White-box (RTL): the core never leaves the ROM and waits in the
     UART loader's start-edge poll."""
     start_clock(dut)
     p, _ = probe_program()

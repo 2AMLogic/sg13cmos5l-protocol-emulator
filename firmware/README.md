@@ -346,7 +346,9 @@ upper row; issue #155): SCL = `UIO_OUT` bit 2, SDA = `UIO_OUT` bit 3,
 open-drain convention (1 = released, 0 = asserted).
 Each I2C program makes that convention real on the pins with one
 instruction in its setup, `WCTL UIO_OD, R3` with `R3 = 0x0C` (DR 0012:
-SCL and SDA become open-drain, `uio_oe[n] = ~uio_out[n]`). It comes
+SCL and SDA become open-drain, `uio_oe[n] = ~uio_out[n]`, where `uio_out`
+is the port-11 register; the pad data of an open-drain pin is tied to 0,
+DR 0019). It comes
 **after** the `OUT UIO_OUT` of `0x0C`, because `uio_out` resets to 0 and
 enabling open-drain first would pull both lines low for a cycle. It sits in
 the idle setup, outside every `.cyclesec`, so no phase length changed.
@@ -398,7 +400,8 @@ stance as `uart_tx.asm`).
 **Open-drain, and what the bench does about it.** The programs' first
 instructions release both lines (`OUT` of `0x0C`) and then write `0x0C`
 to DR 0012's `UIO_OD` control register, so SCL (`uio[2]`) and SDA
-(`uio[3]`) are open-drain pads: `uio_oe[n] = ~uio_out[n]`. The
+(`uio[3]`) are open-drain pads: `uio_oe[n]` is the complement of the
+port-11 bit and the pad data is 0 (DR 0019). The
 DUT-facing benches run on a pad model (`verification/uio_pads.py`, issue
 #136) that resolves each line from the design's `uio_oe` / `uio_out`, a
 pull-up, and the peripheral as an external open-drain driver, and feeds

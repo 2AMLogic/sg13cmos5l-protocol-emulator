@@ -190,11 +190,16 @@ DATA_BYTE = 0x5A
 
 #: Pin plan of both programs: SCL on uio bit 2, SDA on uio bit 3 -- DR
 #: 0010's target plan, the standard Tiny Tapeout I2C Pmod (issue #155).
-#: `SCL_PIN` / `SDA_PIN` name the controller's *intent* (`uio_out`); the
-#: line the model grades is read on `uio_in` (`LINE_PIN`).
+#: `SCL_PIN` / `SDA_PIN` name the pad data (`uio_out`); the line the model
+#: grades is read on `uio_in` (`LINE_PIN`). While a pin is not open-drain
+#: its pad data is the core's port-11 register, the controller's *intent*
+#: -- which is what the `UIO_OD` negative control composes a bus from.
+#: Once `UIO_OD` is set the pad data is 0 (DR 0019, issue #244) and the
+#: intent is carried by the pad enable alone (`OE_PIN`).
 SCL_PIN, SCL_BIT = "uio_out", 2
 SDA_PIN, SDA_BIT = "uio_out", 3
 LINE_PIN = "uio_in"
+OE_PIN = "uio_oe"
 
 #: What every I2C run captures, per clock edge: the two bus lines as the
 #: pads resolve them (graded), and the controller's intent (kept for the
@@ -204,6 +209,8 @@ CAPTURE_SPECS = {
     "sda": (LINE_PIN, SDA_BIT),
     "ctl_scl": (SCL_PIN, SCL_BIT),
     "ctl_sda": (SDA_PIN, SDA_BIT),
+    "oe_scl": (OE_PIN, SCL_BIT),
+    "oe_sda": (OE_PIN, SDA_BIT),
 }
 
 
@@ -576,17 +583,29 @@ async def test_i2c_both_grades_pass_independent_reference_model(dut):
         assert_measured_budgets(dut, mode, report, scl)
         # nobody but the controller moves SCL in these runs (the
         # peripheral never stretches), so the SCL line must be the
-        # controller's intent exactly -- which it only can be if the pad
-        # pulls low on a 0 and the pull-up restores the line on a 1.
-        # (`uio_out` resets to 0 while the pad is still an input, so the
-        # intent starts with one rise the line never sees: the program's
-        # `OUT 0x0C` that precedes `WCTL UIO_OD`.)
-        intent = caps["ctl_scl"].signal
-        assert intent.initial == 0 and intent.transitions[0][1] == 1
+        # controller's SCL exactly: low while the pad is enabled, restored
+        # by the pull-up while it is not. Since DR 0019 (issue #244) the
+        # enable alone carries the controller's bit on an open-drain pin.
+        oe = caps["oe_scl"].signal
+        assert oe.initial == 0 and oe.transitions, f"{mode.name} run A: SCL pad never enabled"
         assert (
             caps["scl"].signal.initial == 1
-            and caps["scl"].signal.transitions == intent.transitions[1:]
+            and caps["scl"].signal.transitions == [(t, 1 - v) for (t, v) in oe.transitions]
         ), f"{mode.name} run A: the SCL line is not the controller's SCL"
+        # ...and the pad data: `uio_out` resets to 0 while the pad is still
+        # an input, rises once with the program's `OUT 0x0C` (the idle
+        # image, written before the pins are open-drain) and falls once
+        # with `WCTL UIO_OD`, which ties it to 0. It never rises again, so
+        # there is no instant at which the pad could drive SCL or SDA high.
+        for pin in ("ctl_scl", "ctl_sda"):
+            data = caps[pin].signal
+            assert data.initial == 0 and [v for (_t, v) in data.transitions] == [1, 0], (
+                f"{mode.name} run A: {pin} pad data moved after UIO_OD was set: "
+                f"{data.transitions[:6]}"
+            )
+            assert data.transitions[1][0] <= caps["oe_scl"].signal.transitions[0][0], (
+                f"{mode.name} run A: {pin} pad data fell after the first pull-low"
+            )
 
         # ---- run B: peripheral NACKs the address -> the branch is taken,
         # the data byte is never transmitted, the transfer is shorter.

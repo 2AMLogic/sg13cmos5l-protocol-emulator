@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Negative controls for the pad path of the I2C benches (issue #136,
-DR 0012): defects in how the top turns `UIO_OD` / `UIO_DIR` / `uio_out`
-into `uio_oe`.
+DR 0012): defects in how the top turns `UIO_OD` / `UIO_DIR` and the
+core's port-11 register (`core_uio_out`; DR 0019, issue #244) into
+`uio_oe`.
 
 Why this exists. Until #136 the I2C benches composed the bus as `uio_out
 AND uio_in` and never read `uio_oe`, so **none** of the defects below
@@ -46,7 +47,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from control_space_mutants import TOP, copy_tree  # noqa: E402
 
-PIN_MODE = "assign uio_oe = (uio_od & ~uio_out) | (~uio_od & uio_dir);"
+PIN_MODE = "assign uio_oe  = (uio_od & ~core_uio_out) | (~uio_od & uio_dir);"
 
 #: request -> the tests that run committed programs on the pads and must
 #: therefore notice a broken pad path.
@@ -66,20 +67,22 @@ MUTANTS = [
      "the pre-DR-0012 top: uio_oe = 8'h00, no pad ever drives (the design the "
      "bench-composed evidence was minted on)",
      "assign uio_oe = 8'h00;"),
-    ("open-drain-drives-high",
-     "an open-drain pin is enabled whatever uio_out is, so writing 1 drives "
-     "the line high instead of releasing it (push-pull on an I2C bus)",
+    ("open-drain-never-releases",
+     "an open-drain pin is enabled whatever the port-11 bit is. Its pad data is "
+     "0 (DR 0019), so the line is held low and writing 1 never releases it. "
+     "(Before DR 0019 this same defect drove the line high: the pad data was "
+     "the register bit, and the mutant was named open-drain-drives-high.)",
      "assign uio_oe = uio_od | uio_dir;"),
     ("open-drain-polarity-inverted",
      "an open-drain pin is enabled on a 1 and released on a 0: it can never "
      "pull a line low",
-     "assign uio_oe = (uio_od & uio_out) | (~uio_od & uio_dir);"),
+     "assign uio_oe = (uio_od & core_uio_out) | (~uio_od & uio_dir);"),
     ("sda-pad-never-enabled",
      "uio_oe[3] stuck at 0: SCL toggles, SDA is never driven",
-     "assign uio_oe = ((uio_od & ~uio_out) | (~uio_od & uio_dir)) & 8'hF7;"),
+     "assign uio_oe = ((uio_od & ~core_uio_out) | (~uio_od & uio_dir)) & 8'hF7;"),
     ("scl-pad-never-enabled",
      "uio_oe[2] stuck at 0: SDA moves, SCL is never driven",
-     "assign uio_oe = ((uio_od & ~uio_out) | (~uio_od & uio_dir)) & 8'hFB;"),
+     "assign uio_oe = ((uio_od & ~core_uio_out) | (~uio_od & uio_dir)) & 8'hFB;"),
 ]
 
 

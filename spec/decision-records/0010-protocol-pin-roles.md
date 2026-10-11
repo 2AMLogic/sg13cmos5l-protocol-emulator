@@ -481,7 +481,10 @@ pin-mode register, so neither pin is driven while it runs.
 
 **These writes drive no pad (#154, resolved by DR 0012).** The top level is
 [DR 0012](0012-control-space-and-runtime-pin-direction.md)'s pin-mode rule
-since #135: `uio_oe = (uio_od & ~uio_out) | (~uio_od & uio_dir)`. `UIO_OD` and
+since #135: `uio_oe = (uio_od & ~uio_out) | (~uio_od & uio_dir)` (since
+[DR 0019](0019-open-drain-pad-data-tied-low.md), issue #244, the same rule is
+built from the core's port-11 register `core_uio_out`, and an open-drain pin's
+pad data is tied to 0). `UIO_OD` and
 `UIO_DIR` both reset to `0x00`, so every `uio` pin is an input until a program
 writes one of them. The three RX programs execute no `WCTL`, so their
 `uio_out` values never reach a pad, whatever bits they hold.
