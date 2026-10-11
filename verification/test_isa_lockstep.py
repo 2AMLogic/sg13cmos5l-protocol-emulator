@@ -103,7 +103,25 @@ def programs():
 
 
 def iss_run(prog):
-    return isa.run(prog.image, prog.inputs, prog.max_edges, gen.IDLE_AFTER_HALT)
+    """`isa.run`, with each row's `uio_out` taken at the PAD (DR 0019, issue
+    #244): the top holds an open-drain pin's pad data low, so the pad value is
+    `port11 & ~UIO_OD`. `uio_oe` is unchanged (`~port11` on an open-drain
+    pin, already in the ISS row). The per-edge UIO_OD is read off the ISS
+    machine as it steps -- the frozen ISS row carries port 11, not the pad."""
+    m = isa.Machine(prog.image)
+    rows, ods = [m.row], [m.uio_od]
+    halted_at = None
+    while True:
+        if m.edge >= prog.max_edges:
+            raise isa.ModelError(f"no HALT within {prog.max_edges} edges (pc={m.pc:#04x})")
+        rows.append(m.step(*prog.inputs(m.edge + 1)))
+        ods.append(m.uio_od)
+        if m.halted and halted_at is None:
+            halted_at = m.edge
+        if halted_at is not None and m.edge >= halted_at + gen.IDLE_AFTER_HALT:
+            break
+    rows = [r._replace(uio_out=r.uio_out & ~od & 0xFF) for r, od in zip(rows, ods)]
+    return rows, m
 
 
 # ---------------------------------------------------------------------------
