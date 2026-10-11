@@ -58,6 +58,15 @@ Removing the cause costs one AND per `uio` bit and needs no tolerance.
 - When `UIO_OD[n]` itself changes, pad data and enable still change on the
   same edge from registers; the preamble rule of DR 0012 (release before
   `WCTL UIO_OD`) is unchanged.
+- One case is not clean, and is named here rather than claimed away: on a
+  push-pull-high pin (`UIO_DIR[n]=1`, `port11[n]=1`), switching `UIO_OD[n]` in
+  either direction now changes both `uio_out[n]` and `uio_oe[n]` on the same
+  register edge, so a skew can briefly give `oe = 1, out = 0` (a short low
+  drive). The previous top held `out = 1` throughout. The ordering rule that
+  avoids it is DR 0012's: clear `UIO_DIR[n]` (release the pin) before changing
+  `UIO_OD[n]` on a high pin. No committed firmware does otherwise: I2C and PS/2
+  run with `UIO_DIR = 0` on their lines, SPI never sets `UIO_OD`, and the boot
+  ROM clears `UIO_DIR` before `UIO_OD`.
 
 What changes is only the pad-visible `uio_out` of an open-drain pin (now 0).
 Benches that read `uio_out` as the firmware's intent on an open-drain pin read

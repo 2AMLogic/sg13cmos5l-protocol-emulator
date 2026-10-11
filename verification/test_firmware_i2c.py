@@ -59,6 +59,12 @@ the peripheral did. After each run the bench also checks what the pads
 were seen doing: the design drove exactly SCL and SDA, only ever low,
 with no contention.
 
+Coverage gap (DR 0019, issue #244): since the top holds an open-drain pin's
+pad data low, run A takes the controller's intent as `~uio_oe`, so this bench
+no longer checks how port 11 becomes `uio_oe`. `test_control_space` checks that
+mapping white-box in RTL, but its gate-level variant skips the `port11` check;
+end-to-end protocol grading on `uio_in` is what covers the behaviour there.
+
 The pad model is zero-delay and purely logical: it says nothing about
 pull-up rise time, pad delay or drive strength (`uio_pads.py`, "Timing").
 
