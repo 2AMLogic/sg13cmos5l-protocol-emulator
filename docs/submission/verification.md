@@ -302,8 +302,10 @@ and the header of `flow/run-post-layout-sdf.sh`:
   are not designed or tested. This is separate from row 13's stretch column
   above.
 - Ratification binds targets, not results: rows 1-12 and DRs 0001-0004 are
-  Ratified (PR #242, DR 0009), and rows 1, 3, 4 and 8 are still graded
-  unmet or partially realized against them. Rows 13 and 14 and DRs 0005,
+  Ratified (PR #242, DR 0009). Against those targets, rows 1, 3, 4, 6, 7,
+  10, 11 and 12 are still graded unmet, row 8 partially realized, row 9 on
+  track and row 5 met at the stub level (the State column of
+  `spec/target-spec.md` is the source). Rows 13 and 14 and DRs 0005,
   0007, 0008, 0010-0018 and 0020 are Proposed. The two keys are agent skills
   under separate forge identities, both dispatched by one coordinating
   session (DR 0009's recorded limit on independence); no independent human
