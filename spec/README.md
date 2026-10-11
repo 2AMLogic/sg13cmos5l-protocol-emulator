@@ -53,6 +53,19 @@ Proposed specification and decision records.
   leaves open, each as the RTL already behaves: `SUB` sets `C` as a borrow,
   `SHF` leaves `Z` unchanged, `AND`/`OR`/`XOR` leave `C` unchanged, and `SHF`
   fills with 0. No RTL change.
+- `decision-records/0017-submission-isa-freeze.md` — **Proposed
+  2026-10-10** (not ratified), issue #141 part 1. Freezes the submission ISA
+  at the merge of its PR (base `e74d2b656de35e492e6f7b3e34cbe2266b4aeff3`):
+  it pins by sha256 the eleven files that define the ISA a programmer sees
+  (DRs 0001, 0005, 0012, 0013, 0015, 0016, the core, program-memory and top
+  RTL, the assembler and the ISA reference model), says what is left out and
+  why. An ISA change or conformance fix to them needs a later record (0018
+  or above) stating whether it invalidates row-13 evidence; a change nothing
+  can observe (a dated note, a Status line) cites its issue or PR. It also
+  sets which
+  protocols row 13 may not choose. The pins are machine-readable in
+  `isa-freeze.json` and checked by `scripts/check_isa_freeze.py`
+  (`npm run lint`). Row 13's protocol is chosen in a later commit.
 - `verification-plan.md` — what is verified and how, including the formal
   properties, constrained-random suites, and reference models.
 - `gap-to-submission.md` — every spec row and template checklist item
