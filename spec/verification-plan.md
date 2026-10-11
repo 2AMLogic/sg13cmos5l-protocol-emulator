@@ -398,7 +398,12 @@ auditable rather than a bare assertion:
 - **Load integrity (DR 0013 layer 1).** The `PM_CRC` exposed on `uo_out`
   during load, and through `RCTL`, matches an independent CRC-16/XMODEM
   (`binascii.crc_hqx`) for random images, including truncated loads and loads
-  with a dropped or doubled clock edge, which must produce a mismatch.
+  with a dropped clock edge, which must produce a mismatch, and with a
+  doubled clock edge, where every doubled edge *that changes what memory
+  holds* must mismatch (a repeat of the last bit, or of a bit in a run of
+  equal bits reaching the end of the image, leaves every committed word
+  intact and is correctly not flagged: the bench finds 3 of 83 doubled edges
+  harmless; DR 0013, finding 3; wording changed 2026-10-10, issue #218).
 - **Boot programs (DR 0013 layer 2).** Each boot ROM program is tested
   against an independent host:
   - a UART host model that frames, sends and checks the reply, at nominal
