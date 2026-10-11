@@ -148,8 +148,9 @@ def _quiet_kill_warning() -> None:
     warning line carries its own `<path>:<line>:`, so a benign TIMINGCHECK
     warning spliced with it still has the diagnostic shape and is reported
     as a failed annotation (observed on the first routed SPI run of this
-    harness). The warning is a deprecation notice about the bench's own
-    stop call, not a simulation event; silencing it changes no behaviour.
+    harness; klayout-tools#2996). The warning is a deprecation notice about
+    the bench's own stop call, not a simulation event; silencing it changes
+    no behaviour.
     """
     import warnings
 
