@@ -315,9 +315,9 @@ stays reachable from `main`.
    with `ref` `#84` (section 4, item 4). It is a draft and conflicts with
    `main` today.
    *Dated note 2026-10-11 (issue #44):* PR #84 is superseded by pull
-   request #241, a fresh act PR from `main` that carries the refreshed
+   request #242, a fresh act PR from `main` that carries the refreshed
    DR 0009. That PR flips DR 0001's Status line and appends the
-   `no-behaviour-change` amendment with `ref` `#241`, as section 4, item 4
+   `no-behaviour-change` amendment with `ref` `#242`, as section 4, item 4
    requires. PR #84 does not merge. The item is otherwise unchanged.
 2. **DR 0013 notes from issue #218, and issue #211 (DR 0013 finding F8).**
    Dated notes added to DR 0013 are `no-behaviour-change` amendments citing

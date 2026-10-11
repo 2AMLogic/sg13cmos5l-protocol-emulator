@@ -2,10 +2,10 @@
 
 Status: **Ratified** — by the two `RATIFY-KEY` reviews (one EE key, one
 market key, neither held by the carrying PR's author or the design's author)
-on pull request #241 (issue #44). That PR's merge commit is the ratification
+on pull request #242 (issue #44). That PR's merge commit is the ratification
 record, and [`0009-two-key-ratification-act.md`](0009-two-key-ratification-act.md) is the record of the act and of what it binds.
 The carrying PR this record's body describes was #29, which enacted nothing
-(DR 0006); the act this record defines was performed on pull request #241
+(DR 0006); the act this record defines was performed on pull request #242
 instead, under the same requirements, none of them relaxed. **Everything
 below this header stands as written.** The per-row register is a
 2026-09-21 snapshot, as its own heading says: its "Evidence state at
@@ -117,10 +117,10 @@ assertion — see the next section.
 ## The binding process (two-key; merge commit = ratification record)
 
 > **2026-10-11 (issue #44) — this section's requirements have now been
-> carried out, on pull request #241.** The two banners below are preserved as
+> carried out, on pull request #242.** The two banners below are preserved as
 > written and describe PR #29, which is still the PR that enacted nothing.
 > "The carrying PR" in the bullets that follow is, for the act that actually
-> happened, pull request #241: two `RATIFY-KEY` reviews, neither held by that
+> happened, pull request #242: two `RATIFY-KEY` reviews, neither held by that
 > PR's author or the design's author, and its merge commit as the ratification
 > record. See [`0009-two-key-ratification-act.md`](0009-two-key-ratification-act.md).
 
@@ -263,7 +263,7 @@ records the retirement as follow-up work.
 ## Consequences
 
 > **2026-10-11 (issue #44) — the first bullet below holds from the merge of
-> pull request #241.** The spec-of-record exists by mechanism from that merge
+> pull request #242.** The spec-of-record exists by mechanism from that merge
 > commit, not from 2026-09-21. The banner below is preserved as written; it
 > was accurate from 2026-09-26 until that merge. What the first bullet
 > establishes is the *precondition* of T1 item 5 (a ratified spec to grade

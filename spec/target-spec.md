@@ -2,7 +2,7 @@
 
 Status: **RATIFIED** — by the two `RATIFY-KEY` reviews (one EE key, one
 market key, neither held by the carrying PR's author or the design's author)
-on pull request #241 (issue #44). That PR's merge commit is the ratification
+on pull request #242 (issue #44). That PR's merge commit is the ratification
 record, and
 [`decision-records/0009-two-key-ratification-act.md`](decision-records/0009-two-key-ratification-act.md)
 is the record of the act and of what it binds. Proposed 2026-09-14 in
@@ -344,7 +344,7 @@ the ratification act and are left to issue #44.
 ## Ratification
 
 > **2026-10-11 (issue #44) — the act described in this section has now been
-> performed, on pull request #241.** Two `RATIFY-KEY` reviews, one EE key and
+> performed, on pull request #242.** Two `RATIFY-KEY` reviews, one EE key and
 > one market key, neither held by that PR's author or the design's author,
 > are on that PR; its merge commit is the ratification record. The first
 > paragraph below still says "Ratified 2026-09-21" and names

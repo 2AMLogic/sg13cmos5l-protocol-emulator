@@ -91,7 +91,7 @@ targets; the per-row register is
 [`spec/decision-records/0004-target-spec-ratification.md`](spec/decision-records/0004-target-spec-ratification.md)).
 The table's rows 1–12 and decision records 0001–0004 are ratified by the program's
 two-key (`RATIFY-KEY`) mechanism: one EE-key review and one market-key
-review, neither held by the author, on pull request #241, whose merge commit
+review, neither held by the author, on pull request #242, whose merge commit
 is the ratification record
 ([`spec/decision-records/0009-two-key-ratification-act.md`](spec/decision-records/0009-two-key-ratification-act.md),
 issue #44). An earlier `RATIFIED` claim, dated 2026-09-21, was an assertion
