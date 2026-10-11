@@ -1,0 +1,226 @@
+{
+ "grade": "i2c_fast",
+ "params": {
+  "SU_CYC": 5,
+  "STOP_BOUND": 130,
+  "FORMER_AGE": 21,
+  "TOTAL_CYCLES": 3360
+ },
+ "original_rev": "b76ec6d4cce124c4a861166029c4707c00276978",
+ "committed_asm_sha256": "d9a21d1df0b6a331535d2985a92b911d1a8c7e1fdb5b65bb9cbf14cd0129411c",
+ "committed_hex_sha256": "5bae92595d134da5490d0650526eed60fdb8b30841bb577ff5a254e33567742d",
+ "images": {
+  "golden": {
+   "asm_sha256": "d9a21d1df0b6a331535d2985a92b911d1a8c7e1fdb5b65bb9cbf14cd0129411c",
+   "hex_sha256": "5bae92595d134da5490d0650526eed60fdb8b30841bb577ff5a254e33567742d",
+   "rom_sha256": "1132b7d2ce463146fad15fbbe4a928fd020f5abf582eb5c6c9e1caea4913a679",
+   "words": 245,
+   "total_cycles": 3360,
+   "kind": "golden"
+  },
+  "early_orig_addr": {
+   "asm_sha256": "5fa5c42bbf81a737764c84061520579b0550a3cb91d9d99575bce5c233991a5b",
+   "hex_sha256": "0bdd8ab8aab7901ce2fdb45b8ff53917745db667c371e47b58e289a6b6d15ae5",
+   "rom_sha256": "6e5781e97d2128e3839b31f6a078fa30817508fa19b991f371e7bbf520039679",
+   "words": 245,
+   "total_cycles": 3360,
+   "kind": "mutant",
+   "expect": [
+    "a2_in_window"
+   ],
+   "description": "original low-phase schedule, address slot (pre-#258 text from git)",
+   "legs": [
+    1,
+    0
+   ]
+  },
+  "early_orig_data": {
+   "asm_sha256": "1209aed0b257629913aa7bc3e68c2db8a9901b5e30a5d609f606d6b850c13c1d",
+   "hex_sha256": "431f47b1438b1db4e8c1c6fb0b9b70eb7e38ed17912a2fcd5738cc3daecd37d2",
+   "rom_sha256": "5880d9c1eeb37a02a061b1789e3449a9e4c857022f055b011dac7886b148ff2d",
+   "words": 246,
+   "total_cycles": 3360,
+   "kind": "mutant",
+   "expect": [
+    "a2_in_window"
+   ],
+   "description": "original low-phase schedule, data slot (pre-#258 text from git)",
+   "legs": [
+    1
+   ]
+  },
+  "at_rise_addr": {
+   "asm_sha256": "436b8febc29ac70d2c541ad4e753f1ec56a9e6673a2ccfbcb935f27e13a4ec5d",
+   "hex_sha256": "2c14b3109ff331128a8596b2612d2a8639c6357961d13974adce17cbfc6e8b6d",
+   "rom_sha256": "5d0673173a2739293ea0bc49d7965cf28412a534bf2d80d84f2e1b2ac3e37eff",
+   "words": 244,
+   "total_cycles": 3360,
+   "kind": "mutant",
+   "expect": [
+    "a2_in_window"
+   ],
+   "description": "address IN in the ninth rise cycle itself (not strictly after)",
+   "legs": [
+    1,
+    0
+   ]
+  },
+  "at_rise_data": {
+   "asm_sha256": "018f1d1cc8fe8e2349416864c8ee3150128f0cf10535b0e10503497c1ca9b8f2",
+   "hex_sha256": "ca36158c121b002104c99d2773ad7b3bbc862a50fb44e0d9989f575dd593664e",
+   "rom_sha256": "5aa0cd89c29a8b362245fd904a9200481134f0cb289e1413e45adf76b20f31e0",
+   "words": 244,
+   "total_cycles": 3360,
+   "kind": "mutant",
+   "expect": [
+    "a2_in_window"
+   ],
+   "description": "data IN in the ninth rise cycle itself (not strictly after)",
+   "legs": [
+    1
+   ]
+  },
+  "late_addr": {
+   "asm_sha256": "f9b55803c3dabf969fea57a1ae4b43da62212376ab246b10b41782f258b1c753",
+   "hex_sha256": "1bbcf25053ef03bed746ee11f9a32fc6b9ba679dcc2e2aedc0b1b3d9debe6806",
+   "rom_sha256": "96ed1224c552fdfdc38ff902a565f46d68629bdd5f3b5c2a5737896086141f5f",
+   "words": 246,
+   "total_cycles": 3362,
+   "kind": "mutant",
+   "expect": [
+    "a2_in_window",
+    "a3_missing_sample"
+   ],
+   "description": "address IN after the ninth fall",
+   "legs": [
+    1,
+    0
+   ]
+  },
+  "late_data": {
+   "asm_sha256": "d19e4f1192f9095ad26479495fc0250722ad20669fab5a239d75ab612c37fb07",
+   "hex_sha256": "891806f8679a9f8fc4685406d87d9aa853661b1aa5a061d51e7698501efd91a3",
+   "rom_sha256": "f1558e1b18f68462ddcf3501d83c9ff9b290d3f79bf165b9ef472ee2e14971c9",
+   "words": 245,
+   "total_cycles": 3360,
+   "kind": "mutant",
+   "expect": [
+    "a2_in_window",
+    "a3_missing_sample"
+   ],
+   "description": "data IN after the ninth fall",
+   "legs": [
+    1
+   ]
+  },
+  "missing_addr": {
+   "asm_sha256": "fd4ab119f29c4a077df00873dead69fde484cb5103d0e97da98095682a3a16cb",
+   "hex_sha256": "13ddaf9c8b449017a82887fb96bcc81c08d3166df5fa66cf558ec9bdd2caf6bf",
+   "rom_sha256": "96054d02cedbc3a245f3467e641d152e026798977473e947a1cf92f9a2cc32ba",
+   "words": 245,
+   "total_cycles": 3360,
+   "kind": "mutant",
+   "expect": [
+    "a3_missing_sample"
+   ],
+   "description": "no address-slot sample",
+   "legs": [
+    1,
+    0
+   ]
+  },
+  "missing_data": {
+   "asm_sha256": "ff5c1f385f1e3f4c42ae2468d07d47fdcaf086845ab00d51a1adf21d980423cc",
+   "hex_sha256": "e58475ff02631dbd544614f5d516363b1170c3eb454f4cb98d60ae0d67181bef",
+   "rom_sha256": "2321f70b34882e3a9c433143425d87ce53b6520720741032e416d02612b8fa17",
+   "words": 245,
+   "total_cycles": 3360,
+   "kind": "mutant",
+   "expect": [
+    "a3_missing_sample"
+   ],
+   "description": "no data-slot sample",
+   "legs": [
+    1
+   ]
+  },
+  "extra_addr": {
+   "asm_sha256": "baf753448874365a88eedc3e7f023438f9fb30b259548543ebfaf23a1b9e028f",
+   "hex_sha256": "a7df4759ead081106b686a06e0eaf4f78c11fe57dff37ac5acf7793e7666e499",
+   "rom_sha256": "8d1cb380cda0d00fe4ecb375538f2c547c815ac8dbc314f6f400a1d03d804858",
+   "words": 247,
+   "total_cycles": 3360,
+   "kind": "mutant",
+   "expect": [
+    "a3_extra_sample"
+   ],
+   "description": "two address-slot samples",
+   "legs": [
+    1,
+    0
+   ]
+  },
+  "extra_data": {
+   "asm_sha256": "46c5c16e473d665bab7a56b6d5b0cfc3e478492ef1b42970cd8e4a6f2cef16c4",
+   "hex_sha256": "567bf7ead3fa8cffe0c3ff0182b9e2b37e594c97ab3f69a4ac53960f5eadee2f",
+   "rom_sha256": "4da3c4541d46824a5f945552258fafc9ee160ec5dad09a5bb77da27d4984a63c",
+   "words": 247,
+   "total_cycles": 3360,
+   "kind": "mutant",
+   "expect": [
+    "a3_extra_sample"
+   ],
+   "description": "two data-slot samples",
+   "legs": [
+    1
+   ]
+  },
+  "sda_driven_addr": {
+   "asm_sha256": "a5251f57be85fe46802e25a7ad0cd05293bae9d1a55d0ebd29a424106098599c",
+   "hex_sha256": "cd3a241dddfeae845273e7485a2366c4f90b87fce13c429ff313bed260055e1e",
+   "rom_sha256": "acb9ecfa1664fca2ce768c8ef21b9df216f614a340fd3bd66d83b17bcf2aeaa7",
+   "words": 245,
+   "total_cycles": 3360,
+   "kind": "mutant",
+   "expect": [
+    "a1_sda_released"
+   ],
+   "description": "SDA driven low in the address ACK slot",
+   "legs": [
+    1,
+    0
+   ]
+  },
+  "sda_driven_data": {
+   "asm_sha256": "716eee1d5759fe42b210e01adf6023e23688b33087a93384540b399cf407ed46",
+   "hex_sha256": "609580388b4b16925a137b685c98bdfd78184a5eb01c200a643d51011d7587d1",
+   "rom_sha256": "92a1ce035764da167e092b5c7ac4335cc820fc07e27695940458fc1628522599",
+   "words": 245,
+   "total_cycles": 3360,
+   "kind": "mutant",
+   "expect": [
+    "a1_sda_released"
+   ],
+   "description": "SDA driven low in the data ACK slot",
+   "legs": [
+    1
+   ]
+  },
+  "nack_ignored": {
+   "asm_sha256": "8131b8c13e307ec6a86432f3770de842e131b3c7b76f9c2bf63b2bfcec49fcbf",
+   "hex_sha256": "ba1d15a20993a1e8f43d56f9790d5db8ae337ef5f3e968d01f6e15fdccf652b8",
+   "rom_sha256": "ce0b20f1c6450947de19eb7714c3267daca3f404578e0859fca0cb3b8cf3719c",
+   "words": 245,
+   "total_cycles": 3360,
+   "kind": "mutant",
+   "expect": [
+    "a4_no_data_after_nack",
+    "a6_stop_bound"
+   ],
+   "description": "address NACK does not branch to STOP (data byte sent)",
+   "legs": [
+    0
+   ]
+  }
+ }
+}
