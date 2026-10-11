@@ -1,15 +1,23 @@
 # How this design was verified
 
-Status: **current report, written before the final ISA freeze.** Deliverable D4
+Status: **current report, written before ratification.** The submission ISA is
+frozen mechanically (DR 0017) but not ratified (#44). Deliverable D4
 of [`docs/submission/README.md`](README.md). Issue #214.
 
 - **Reviewed commit:** `main` @ `ceaebe02` (2026-10-11). Every record cited below
   is a file at that commit. Nothing here is a new measurement: this document
   reads the existing evidence, it does not run anything.
-- **Not frozen.** DR 0012 (control space) and DR 0013 (program loading) are
-  implemented but **Proposed**; the submission ISA is not frozen (#135), and
-  DR 0013's UART load has an open finding (F8, #211). A change to the RTL
-  makes the records for it stale, and they are then re-minted, not edited.
+- **Frozen, not ratified.** The submission ISA is frozen mechanically by
+  [DR 0017](../../spec/decision-records/0017-submission-isa-freeze.md): it
+  pins the 11 ISA-defining files in `spec/isa-freeze.json`, and
+  `scripts/check_isa_freeze.py` (part of `npm run lint`) refuses any change to
+  them that does not carry an amendment. DR 0017, like DR 0012 (control
+  space) and DR 0013 (program loading), is **Proposed, not ratified** (#44).
+  DR 0013's UART load still has an open finding (F8, #211); DR 0017 classes
+  that as a boot-ROM change, which is not pinned, but any edit it makes to a
+  pinned file (DR 0013 itself, for instance) needs a freeze amendment. A
+  change to the RTL makes the records for it stale, and they are then
+  re-minted, not edited.
 - **Provisional governance.** The target spec and DRs 0001-0004 are **Proposed,
   not ratified**: the two-key ratification never ran
   ([DR 0006](../../spec/decision-records/0006-two-key-ratification-never-ran.md),
@@ -281,9 +289,10 @@ do not occur in this document's evidence: nothing here is a SPICE result.
 
 ## Outstanding work
 
-- Freeze the submission ISA (#135, DR 0012/0013), then re-run and re-mint the
-  affected records and re-link the final `gds` run (D1).
-- Close or accept DR 0013 F8 (#211).
+- Close or accept DR 0013 F8 (#211). Any edit to a file DR 0017 pins goes
+  through a freeze amendment in `spec/isa-freeze.json`; then re-run and
+  re-mint the affected records.
+- Re-link the final `gds` run (D1).
 - SDF-annotated protocol waveforms on the routed corners (#217).
 - Run the constrained-random regression at gate level.
 - Row 13: an SDF-annotated run of the WS2812 bench, and the stretch column
