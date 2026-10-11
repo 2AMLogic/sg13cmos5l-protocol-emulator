@@ -1,34 +1,43 @@
 # How this design was verified
 
-Status: **current report, written before ratification.** The submission ISA is
-frozen mechanically (DR 0017) but not ratified (#44). Deliverable D4
+Status: **current report.** First written before ratification; refreshed
+after the two-key act of 2026-10-11 (PR #242), which ratified the target
+spec's rows 1-12 and DRs 0001-0004. The submission ISA is frozen
+mechanically (DR 0017, itself still Proposed). Deliverable D4
 of [`docs/submission/README.md`](README.md). Issue #214.
 
-- **Reviewed:** `main` as of 2026-10-11, at `3dc87926` (this PR's
-  merge-base; the newest cited record, `signoff-baseline`
-  `20261011-171506-56ebaf9`, landed in `ca439b03`). Every record cited below
-  is a file on `main` at `3dc87926`, and issue and PR states are as of that
+- **Reviewed:** `main` as of 2026-10-11, at `72f48153` (the merge of PR #242
+  and this PR's merge-base; the newest cited record, `isa-lockstep`
+  `20261011-182004-080e6be`, landed with it). Every record cited below is a
+  file on `main` at `72f48153`, and issue and PR states are as of that
   date. Nothing here is a new measurement: this
   document reads the existing evidence, it does not run anything.
-- **Frozen, not ratified.** The submission ISA is frozen mechanically by
+- **Frozen; partly ratified.** The submission ISA is frozen mechanically by
   [DR 0017](../../spec/decision-records/0017-submission-isa-freeze.md): it
   pins the 11 ISA-defining files in `spec/isa-freeze.json`, and
   `scripts/check_isa_freeze.py` (part of `npm run lint`) refuses any change to
-  them that does not carry an amendment. DR 0017, like DR 0012 (control
-  space) and DR 0013 (program loading), is **Proposed, not ratified** (#44).
+  them that does not carry an amendment. DR 0001 (the ISA) is **Ratified**
+  by the two-key act; DR 0017 itself, DR 0012 (control space), DR 0013
+  (program loading) and DR 0016 (flag and shift details) are still
+  **Proposed**.
   DR 0013's UART-load finding F8 was resolved by #211 (closed 2026-10-11,
   PR #248 merged): a boot-ROM change, which DR 0017 does not pin, plus a
   dated DR 0013 entry carried by a `no-behaviour-change` freeze amendment
   (section 3.4). A change to the RTL makes the records for it stale, and they
   are then re-minted, not edited.
-- **Provisional governance.** The target spec and DRs 0001-0004 are **Proposed,
-  not ratified**. The first claimed ratification never happened
-  ([DR 0006](../../spec/decision-records/0006-two-key-ratification-never-ran.md));
-  the first real two-key act, PR #84, ended with both keys requesting changes
-  (closed unmerged 2026-10-11); the second, draft PR #242, is open, with the
-  market key's approval and the EE key's request for changes, whose findings
-  were addressed on its branch. #44 is open. Every "pass" below is evidence
-  against a proposed contract. No spec
+- **Governance.** The target spec's rows 1-12 (as DR 0004 registers them)
+  and DRs 0001-0004 are **Ratified** as targets by the two `RATIFY-KEY`
+  reviews on PR #242 (EE key `approve`, market key `adequate-for-catalog`,
+  both at the PR's head; merged 2026-10-11T20:57Z as `72f48153`; issue #44
+  closed), recorded in
+  [DR 0009](../../spec/decision-records/0009-two-key-ratification-act.md).
+  Earlier, the first claimed ratification never happened
+  ([DR 0006](../../spec/decision-records/0006-two-key-ratification-never-ran.md)),
+  and the first real act, PR #84, was refused and closed unmerged. Rows 13
+  and 14 and every other decision record (DR 0005, 0007, 0008, 0010-0018,
+  0020) stay **Proposed**, so a "pass" against them is evidence against a
+  proposed contract. Ratifying a row binds it as a target; it does not mark
+  it met. No spec
   row was relaxed to obtain a result, and no row's grade is changed by this
   document (see [Spec grades](#spec-grades-are-unchanged)).
 - **No silicon.** Nothing has been taped out or measured. Every figure is a
@@ -89,7 +98,7 @@ pull-up rise time or pad drive strength.
 
 ## 3. Claim matrix
 
-Records are the live ones on `main` at `3dc87926`. "Repro" is the exact command from
+Records are the live ones on `main` at `72f48153`. "Repro" is the exact command from
 the record's *Run configuration*; the one-line cold start for the RTL benches is
 `scripts/run-rtl-benches.sh` after `./scripts/setup-env.sh`. The index of every
 command, bench and pinned tool is
@@ -99,7 +108,7 @@ command, bench and pinned tool is
 
 | Claim | Oracle | Level / flow | Record | Repro | Limits |
 |---|---|---|---|---|---|
-| All 16 opcodes and the DR 0012 control space match the ISS on every edge of 400 seeded programs (32,471 edges); counted coverage gate met | `reference_models/isa.py` | RTL, Icarus | [isa-lockstep 20261011-104246](../../verification/records/isa-lockstep/records/20261011-104246-d81097f.md): PASS 4/4 | `klt functional-verification verification/request-isa-lockstep.json --format json` | Programs run from program memory after a serial load; boot-ROM fetch is not in scope. Reads RTL hierarchy, so no gate-level lockstep. The four details DR 0001 leaves open are ruled by DR 0016, which is **Proposed**. |
+| All 16 opcodes and the DR 0012 control space match the ISS on every edge of 400 seeded programs (32,471 edges); counted coverage gate met | `reference_models/isa.py` | RTL, Icarus | [isa-lockstep 20261011-182004](../../verification/records/isa-lockstep/records/20261011-182004-080e6be.md): PASS 4/4 | `klt functional-verification verification/request-isa-lockstep.json --format json` | Programs run from program memory after a serial load; boot-ROM fetch is not in scope. Reads RTL hierarchy, so no gate-level lockstep. The four details DR 0001 leaves open are ruled by DR 0016, which is **Proposed**. |
 | ISS lockstep catches single-defect cores | Ten mutant cores (`isa_lockstep_mutants.py`) | RTL | same record | `python3 verification/isa_lockstep_mutants.py --out <dir>` | The mutant list is the record's; a defect outside it is not claimed. |
 | Control space: reset values, readback, reserved indices, fixed stalls, I2C images use `UIO_OD` open-drain | Bench plus mutants | RTL | [control-space 20261011-165710](../../verification/records/control-space/records/20261011-165710-56ebaf9.md): PASS 10/10 | `klt functional-verification verification/request-control-space.json --format json`; `python3 verification/control_space_mutants.py --out <dir>` | Zero-delay; gate-level copy in 3.5. |
 | `no_data_dependent_latency` holds on the shipped core, from either instruction source | Independent SVA monitor over DR 0001's latency table | **Formal**, bounded (BMC depth 30) | [no-data-dependent-latency 20261010-160900](../../verification/records/no-data-dependent-latency/records/20261010-160900-9d62f29.md): PASS, 14 covers reached | `./verification/formal/run-no-data-dependent-latency.sh <dir>`; `verification/formal/test-mutant-gate.sh` | **Bounded, not unbounded**: k-induction did not close (the record says why). The harness quantifies over a free 8-word program table and an 8-word ROM table, with `serial_loaded` a constant per trace. |
@@ -292,9 +301,13 @@ and the header of `flow/run-post-layout-sdf.sh`:
 - Target-spec row 2's stretch protocols (low-speed USB, 10BASE-T; DR 0015)
   are not designed or tested. This is separate from row 13's stretch column
   above.
-- The specification is Proposed (DR 0006). No two-key act has released it:
-  PR #84 was refused and closed unmerged, and the second act, draft PR #242,
-  is open (#44 is open).
+- Ratification binds targets, not results: rows 1-12 and DRs 0001-0004 are
+  Ratified (PR #242, DR 0009), and rows 1, 3, 4 and 8 are still graded
+  unmet or partially realized against them. Rows 13 and 14 and DRs 0005,
+  0007, 0008, 0010-0018 and 0020 are Proposed. The two keys are agent skills
+  under separate forge identities, both dispatched by one coordinating
+  session (DR 0009's recorded limit on independence); no independent human
+  engineering review has taken place.
 - The STA and die-area legs of the klt flow are blocked
   (klayout-tools#2635) and claim nothing.
 
@@ -332,7 +345,9 @@ do not occur in this document's evidence: nothing here is a SPICE result.
 - Row 13: an SDF-annotated run of the WS2812 and PS/2 benches, a board, and a
   video. Both columns have firmware and evidence; the row stays Proposed and
   unmet.
-- Ratification (#44, open; the second two-key act is draft PR #242).
+- Ratification of what the 2026-10-11 act left unbound: rows 13 and 14, and
+  DRs 0005, 0007, 0008, 0010-0018 and 0020, which are Proposed (DR 0012, 0013, 0016
+  and 0017 define parts of the ISA and its load path).
 - `spec/verification-plan.md` still says "None of the artifacts described below
   exist yet"; its dated notes are the history, and this document is the
   current reading of them.

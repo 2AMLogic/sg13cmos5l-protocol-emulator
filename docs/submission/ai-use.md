@@ -3,7 +3,8 @@
 Status: written 2026-10-10 for issue #213 (submission deliverable D5),
 against `main` @ `9fb7815`. Refreshed 2026-10-11 for issue #238: the record
 citations, the counts and the ratification history describe `main` as of
-`3dc87926`, and issue and PR states are as of that date. Every claim below links to
+`72f48153` (the merge of PR #242), and issue and PR states are as of that
+date. Every claim below links to
 a file in this repository, a pull request, or an issue. Where the text
 describes how the process is *meant* to work rather than what the forge
 record shows, it says so.
@@ -17,23 +18,25 @@ and the documentation, including this file. A human operator set the
 direction. The operator also made the decisions the agents were not allowed to
 make, and held the credentials they did not have.
 
-The specification is **not ratified**. The two-key ratification this
-repository requires did not happen when it was first claimed
-([DR 0006](../../spec/decision-records/0006-two-key-ratification-never-ran.md)).
-When it was finally run, both keys withheld release (PR #84). A second act,
-draft PR #242, is open: the market key approved it and the EE key requested
-changes, which its branch has since addressed; it has not been released.
-Every `Status:`
-line under `spec/` therefore reads `DRAFT`, `Proposed` or `Recorded`. Every
-verdict graded against the spec is provisional.
+The specification is **partly ratified**, and only recently. The two-key
+ratification this repository requires did not happen when it was first
+claimed ([DR 0006](../../spec/decision-records/0006-two-key-ratification-never-ran.md)).
+When it was first really run, both keys withheld release (PR #84). The
+second act, PR #242, merged on 2026-10-11 after the EE key's `approve` and
+the market key's `adequate-for-catalog` reviews at its head: it ratified the
+target spec's rows 1-12 (as DR 0004 registers them) and DRs 0001-0004
+([DR 0009](../../spec/decision-records/0009-two-key-ratification-act.md)).
+Rows 13 and 14 and the other decision records are still `Proposed` (DR 0006
+and DR 0009 read `Recorded`), so a verdict graded against them is
+provisional. Ratification binds a row as a target; it does not mark it met.
 
 ## Who acted, as the forge records it
 
 | Actor | What the record shows |
 |---|---|
-| `loom-fleet-dispatch[bot]` (GitHub App) | Opened 97 of the 127 merged PRs, and posts the Loom role comments (Curator, Champion, Judge, Doctor) on issues and PRs. |
-| `rjwalters` (the operator's account) | Opened the other 30 merged PRs. Their bodies carry the Claude Code footer (for example #160, #163, #198, #207), so agent sessions run under the operator's account also open PRs. The forge record does not separate which actions under this account were typed by the human. |
-| `2am-ee-key[bot]`, `2am-market-key[bot]` | Separate GitHub Apps that hold the two ratification keys. They have posted formal reviews on two PRs: #84 (both requested changes) and #242 (the market key approved, the EE key requested changes). |
+| `loom-fleet-dispatch[bot]` (GitHub App) | Opened 98 of the 129 merged PRs, and posts the Loom role comments (Curator, Champion, Judge, Doctor) on issues and PRs. |
+| `rjwalters` (the operator's account) | Opened the other 31 merged PRs. Their bodies carry the Claude Code footer (for example #160, #163, #198, #207), so agent sessions run under the operator's account also open PRs. The forge record does not separate which actions under this account were typed by the human. |
+| `2am-ee-key[bot]`, `2am-market-key[bot]` | Separate GitHub Apps that hold the two ratification keys. They have posted formal reviews on two PRs: #84 (both requested changes) and #242 (first the market key approved and the EE key requested changes; at the final head both approved, and it merged). |
 | Git commit author names | These come from host git configuration (`Robb Walters`, `Loom CI`, `Loom Auditor`, and others). They do not record which role, or whether a human, produced a commit. |
 
 Two things follow. First, one App identity both authors and approves most
@@ -81,7 +84,7 @@ key Apps posted them. Judge verdicts are posted as PR comments.
 
 Steps 1 to 4 are visible in issue and PR comments throughout the history. We
 have not audited every merged PR for a Judge verdict. Step 5's ratification
-half is the part that has not worked; see below.
+half is the part that did not work until 2026-10-11; see below.
 
 ## Checks that are mechanical
 
@@ -127,7 +130,7 @@ reports but is not a required check on `main`.
   ([record](../../verification/records/protocol-reference-models/records/20261010-180436-9fb7815.md)).
   The core is checked edge by edge against an independent instruction-set
   simulator written from the decision records (PR #204,
-  [record](../../verification/records/isa-lockstep/records/20261011-104246-d81097f.md)).
+  [record](../../verification/records/isa-lockstep/records/20261011-182004-080e6be.md)).
   The control space is checked with mutants
   ([record](../../verification/records/control-space/records/20261011-165710-56ebaf9.md)).
 - **Two flows, both named.** Every number is attributed either to the
@@ -145,10 +148,10 @@ history is the case where this mattered.
 | 2026-09-21 | PR #29 flipped five `Status:` lines to `Ratified` and merged with **zero** reviews. A sweep comment on the PR had just stood the merge down for lack of key reviews, and the PR merged 4 min 37 s later. The Judge's approval was the only gate, and it was treated as enough. |
 | 2026-09-26 | [DR 0006](../../spec/decision-records/0006-two-key-ratification-never-ran.md) (PR #46, issue #44) recorded that the act never happened, and reset every affected status to `Proposed`. The original text was kept in place. DR 0006 ratified nothing, and it routed the question of whether separate agent sessions count as independent key holders to the operator instead of answering it. |
 | 2026-09-30 | PR #48 added the two-key gate, so that the next attempt would fail CI rather than rely on a PR comment (issue #45). |
-| 2026-10-02 | A comment on #44 under the operator's account recorded that the independence question had been settled at fleet level: keys are held by dedicated GitHub Apps, not the dispatch identity. That ruling lives outside this repository. |
+| 2026-10-02 | A comment on #44 under the operator's account recorded that the independence question had been settled at fleet level: keys are held by dedicated GitHub Apps, not the dispatch identity. That ruling lived outside this repository until DR 0009 recorded it. |
 | 2026-10-08 | The ceremony ran on PR #84. The EE key answered `request-changes`; it had written its own Icarus testbench and found statements in DR 0001 that the RTL contradicts. The market key answered `uncompetitive`, because row 10's cited source does not support the row. **Release was refused.** |
 | 2026-10-10 | PR #198 fixed six of the findings. Issue #85 lists all eight. |
-| 2026-10-11 | Issue #85 closed (03:24Z). The second act opened as draft PR #242 (03:31Z). PR #84 was closed unmerged (06:02Z). On #242 the market key approved (07:29Z) and the EE key requested changes (07:33Z); its branch addressed the EE findings (`080e6be8`, 18:13Z). As of `3dc87926`, #242 is open and a draft, #44 is open, and nothing is ratified. |
+| 2026-10-11 | Issue #85 closed (03:24Z). The second act opened as draft PR #242 (03:31Z). PR #84 was closed unmerged (06:02Z). On #242 the market key approved (07:29Z) and the EE key requested changes (07:33Z); its branch addressed the EE findings (`080e6be8`, 18:13Z). At the head `26297b9e` the EE key answered `approve` (20:51Z) and the market key `adequate-for-catalog` (20:53Z); PR #242 merged as `72f48153` (20:57Z) and #44 closed. The target spec's rows 1-12 and DRs 0001-0004 are **Ratified**; [DR 0009](../../spec/decision-records/0009-two-key-ratification-act.md) records what binds, and that one coordinating session dispatched both key agents (a recorded limit on independence). |
 
 As of this writing the key reviewers are agent skills
 ([`ratification/ee-key/SKILL.md`](../../ratification/ee-key/SKILL.md),
@@ -208,7 +211,9 @@ design detail. Representative issues:
   [pad model](../../verification/records/uio-pad-model/records/20261011-104304-d81097f.md)
   is logical and zero-delay. Post-layout simulation runs the SRAM as a
   zero-delay functional model, so its read timing is evidenced only by STA.
-- **Unratified targets.** Pass and fail are graded against proposed rows.
+- **Partly unratified targets.** Rows 13 and 14, and the decision records
+  other than DR 0001-0004, are still Proposed; passes against them are
+  graded against proposed text.
 - **Review rigour varies.** Judge verdicts are prompts applied by agents, and
   the 2026-09-21 merge shows a pipeline can approve what its own rules forbid.
   The fix was a mechanical gate, not more prose.

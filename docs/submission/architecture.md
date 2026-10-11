@@ -3,14 +3,15 @@
 Status: **provisional draft**, written 2026-10-11 for issue #230 against
 `main` @ `16c0b2a`. It describes the ISA frozen by
 [DR 0017](../../spec/decision-records/0017-submission-isa-freeze.md) as the
-RTL builds it. Every decision record it draws on (DR 0001, 0005, 0012, 0013,
-0015, 0016, 0017) is **Proposed, not ratified**. The first claimed
-ratification never happened
-([DR 0006](../../spec/decision-records/0006-two-key-ratification-never-ran.md));
-the first two-key act, PR #84, was refused and closed unmerged; the second,
-draft PR #242, is open (issue #44 is open). Status claims in this document
-were refreshed on 2026-10-11 for issue #238, against `main` as of `3dc87926`.
-This document ratifies nothing and makes no target-spec row met. Where it and
+RTL builds it. Of the decision records it draws on, **DR 0001** (the ISA) is
+**Ratified**, by the two-key act on PR #242 (merged 2026-10-11, issue #44
+closed; recorded in
+[DR 0009](../../spec/decision-records/0009-two-key-ratification-act.md)).
+DR 0005, 0012, 0013, 0015, 0016 and 0017 are still **Proposed**: the control
+space, the load path, the primitives, the flag and shift details and the
+freeze itself are not bound. Status claims in this document were refreshed
+on 2026-10-11 for issue #238, against `main` as of `72f48153` (the merge of
+PR #242). This document ratifies nothing and makes no target-spec row met. Where it and
 a decision record disagree, the record wins and this document is wrong.
 
 The tables marked as checked below are compared with the assembler
@@ -466,16 +467,21 @@ record.
 
 ## Limitations and open items
 
-- **Proposed, not ratified.** DR 0001, 0005, 0012, 0013, 0015, 0016 and 0017
-  are Proposed; the two-key act is issue #44 (open PR #242). Ratifying them is
-  outside this document.
+- **Partly ratified.** DR 0001 is Ratified (PR #242, DR 0009). DR 0005,
+  0012, 0013, 0015, 0016 and 0017 are Proposed; DR 0001's 2026-10-11
+  amendment from the PR #242 EE-key review scopes its statements to the
+  instruction set it defines and leaves DRs 0012, 0013 and 0015 unbound. Ratifying them
+  is outside this document.
 - **Frozen, with amendments.** DR 0017 pins eleven ISA-defining files by hash.
   At the reviewed commit, `spec/isa-freeze.json` records three
   `no-behaviour-change` amendments (DR 0013 note, #234; DR 0001's fetch-ahead
   amendment, #85; DR 0001's runtime-direction amendment, #44). None changes
   what a program observes. Since then it has gained a fourth of that kind
-  (DR 0013's #211 entry) and one `conformance-fix` amendment, for the top
-  (DR 0020, #244), which also changes nothing a program observes.
+  (DR 0013's #211 entry), one `conformance-fix` amendment for the top
+  (DR 0020, #244), and, with PR #242, two more `no-behaviour-change`
+  amendments to DR 0001 (its Status flip to Ratified, and the EE-key scoping
+  note): seven in all as of `72f48153`. None changes what a program
+  observes.
 - **#244**, the routed open-drain release glitch (above): fixed by DR 0020.
 - **#211 / PR #248**, the boot ROM's UART frame (the count byte was outside
   the CRC, DR 0013 finding F8): resolved; #211 is closed and PR #248 merged.

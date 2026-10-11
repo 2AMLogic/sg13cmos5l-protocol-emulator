@@ -62,10 +62,10 @@ Two checks cover the documents in this directory:
 | # | Deliverable | Judge-facing artifact (target) | What exists today | State |
 |---|---|---|---|---|
 | D1 | Passing GDS + precheck, Tiny Tapeout flow | `gds` workflow (`.github/workflows/gds.yaml`) green on the **final** top, with the run linked from this file and from `README.md` | All four jobs (`gds`, `precheck`, `gl_test`, `viewer`) green on `main` @ `4193268`: [run 37974043486](https://github.com/2AMLogic/sg13cmos5l-protocol-emulator/actions/runs/37974043486), 2026-10-09. Sign-off evidence: `verification/records/librelane-gds-signoff-check/records/20261011-144308-e5a0bae.md`, `verification/records/librelane-pdn-bridge/records/20261011-145000-e5a0bae.md`. | **Partial.** It is green, but not on the final top. DR 0012 (control space, #135) and DR 0013 (program loading) still change the RTL, and #129 may change the tile count. Re-run and re-link after the last RTL change. **Updated 2026-10-11 (#238):** the sign-off records cited in this row are the live ones and describe gds run [38136727636](https://github.com/2AMLogic/sg13cmos5l-protocol-emulator/actions/runs/38136727636) at `6dd0e9d` (the PR #260 branch: DR 0020's open-drain fix and #246's timing repair, all four jobs green), not run 37974043486. #135 and #129 are closed, and `main`'s own `gds` runs since PR #260 merged are green on the same design files (for example run 38166393534 at `cd47c724`). Still **Partial**: no run is linked as the run of record from the root `README.md`. |
-| D2 | Architecture + ISA documentation | A standalone doc, `docs/submission/architecture.md` (to write), distilled from DR 0001. It must not be the decision record itself. | The content is spread across `spec/decision-records/0001-isa.md`, `rtl/README.md`, and the datasheet `docs/info.md` § How it works. DR 0012 and DR 0013 extend the ISA and the load path. | **Partial.** The material exists, but there is no judge-facing doc. The ISA is not frozen until #135 lands. DR 0001's Status is still **Proposed** (DR 0006, #44). **Superseded 2026-10-11 (#230, #251):** the judge-facing doc now exists and #135 is closed; see the D2 dated update below and [Judge quickstart](#judge-quickstart-d2-d3). The row text is kept as the 2026-10-09 record. |
+| D2 | Architecture + ISA documentation | A standalone doc, `docs/submission/architecture.md` (to write), distilled from DR 0001. It must not be the decision record itself. | The content is spread across `spec/decision-records/0001-isa.md`, `rtl/README.md`, and the datasheet `docs/info.md` § How it works. DR 0012 and DR 0013 extend the ISA and the load path. | **Partial.** The material exists, but there is no judge-facing doc. The ISA is not frozen until #135 lands. DR 0001's Status is still **Proposed** (DR 0006, #44). **Superseded 2026-10-11 (#230, #251):** the judge-facing doc now exists and #135 is closed; see the D2 dated update below and [Judge quickstart](#judge-quickstart-d2-d3). DR 0001 was ratified on 2026-10-11 (PR #242; see the [ratification update](#ratification-update-2026-10-11-pr-242-issue-44)). The row text is kept as the 2026-10-09 record. |
 | D3 | Assembler / toolchain + example programs | `firmware/` with a quickstart a judge can run from a fresh clone | `firmware/tools/asm.py` (the DR 0003 assembler) and its test `firmware/tools/test_asm.py`. 16 programs in `firmware/asm/` (UART TX/RX at three bauds, SPI modes 0–3, I2C Standard/Fast with repeated START and clock stretch, plus `demo_roundtrip.asm`) with committed images in `firmware/build/`. `firmware/README.md` § Cold-start invocation. | **Partial, close to ready.** The cold-start section is the quickstart, but nothing links it as the judge's entry point. The assembler has to gain the DR 0012 control-space mnemonics (#135). **Superseded 2026-10-11 (#251):** `WCTL`/`RCTL` are implemented (#135, closed); the quickstart is now linked from here. See the D3 dated update and [Judge quickstart](#judge-quickstart-d2-d3). |
 | D4 | Verification write-up | `docs/submission/verification.md` (to write), distilled from `spec/verification-plan.md` and the evidence records, and stating what is **not** covered | `spec/verification-plan.md` (Status DRAFT; its preamble line "None of the artifacts described below exist yet" is now stale). 21 record families under `verification/records/`, for example `firmware-uart`, `firmware-spi`, `firmware-i2c`, `firmware-gate-level`, `random-regression`, `no-data-dependent-latency` (formal), `post-layout-sdf-regression` and `sta-corner-sweep`. | **Partial.** The evidence is strong and append-only, but nothing reads it to a judge. Known holes that the write-up must state: #136 (I2C evidence does not run through the real `uio_oe`, so silicon cannot drive an I2C line today) and row 14 (reset/reselect, unmet). **Updated 2026-10-10 (issue #214): see the dated update below the table; the preceding text is the 2026-10-09 reading and is kept as written.** |
-| D5 | AI-use write-up | [`docs/submission/ai-use.md`](ai-use.md): how agents produced the spec, RTL, firmware and verification; the Loom Builder/Judge/Curator loop; the append-only evidence rule; the klayout-tools friction issues filed; and the ratification history told honestly | **2026-10-10 (#213):** [`ai-use.md`](ai-use.md) is written. It covers who acted as the forge records it, the development loop (intended vs observed, with PR #210 as a worked example), the mechanical CI checks and their limits, append-only evidence (including the failing-then-superseded post-layout record), agent verdict vs operator decision, the ratification history (DR 0006, PR #29, the PR #48 gate, the refused PR #84 ceremony, #85), klayout-tools friction, and the limits of AI-generated verification. Before 2026-10-10 only fragments existed: `README.md` § Built agent-native and `spec/verification-plan.md` § 5. | **Partial** (2026-10-10). The document is judge-facing and written against `main` @ `9fb7815`; on 2026-10-11 (#238) its record citations, counts and ratification history were refreshed to `main` as of `3dc87926`. It describes a history that is still moving. Before submission, refresh the PR counts, the ratification outcome (#44 is open; PR #84 was refused and closed unmerged; #85 is closed; the second two-key act, draft PR #242, is open, so the spec is still **Proposed**, and no independent human review has taken place), and the open klayout-tools issues. Then mark it Ready. |
+| D5 | AI-use write-up | [`docs/submission/ai-use.md`](ai-use.md): how agents produced the spec, RTL, firmware and verification; the Loom Builder/Judge/Curator loop; the append-only evidence rule; the klayout-tools friction issues filed; and the ratification history told honestly | **2026-10-10 (#213):** [`ai-use.md`](ai-use.md) is written. It covers who acted as the forge records it, the development loop (intended vs observed, with PR #210 as a worked example), the mechanical CI checks and their limits, append-only evidence (including the failing-then-superseded post-layout record), agent verdict vs operator decision, the ratification history (DR 0006, PR #29, the PR #48 gate, the refused PR #84 ceremony, #85), klayout-tools friction, and the limits of AI-generated verification. Before 2026-10-10 only fragments existed: `README.md` § Built agent-native and `spec/verification-plan.md` § 5. | **Partial** (2026-10-10). The document is judge-facing and written against `main` @ `9fb7815`; on 2026-10-11 (#238) its record citations, counts and ratification history were refreshed to `main` as of `72f48153` (the merge of PR #242). It describes a history that is still moving. Before submission, refresh the PR counts, the ratification history (PR #84 refused and closed unmerged; PR #242 merged 2026-10-11, ratifying target-spec rows 1-12 and DRs 0001-0004, #44 closed; rows 13-14 and the other DRs still **Proposed**; no independent human review has taken place), and the open klayout-tools issues. Then mark it Ready. |
 | D6 | Demo (optional) | A protocol the ISA was **not** designed for (for example 1-Wire, WS2812, DMX512 or Manchester), written as firmware after the fact with a bench: target-spec row 13. If possible, a video. | Nothing. Row 13 is "Proposed 2026-10-09 ... unmet, no firmware yet" (`spec/target-spec.md`). | **Blocked** on the frozen submission ISA (#135, with #130 deciding which protocol-neutral primitives exist). A physical-board demo also needs the host loader (#118). **Superseded 2026-10-10 and 2026-10-11:** #135, #141, #118 and #235 are closed; WS2812 (primary column) and a PS/2 device (stretch column) have firmware and evidence; the row stays Proposed and unmet. See the D6 dated updates below. |
 | D7 | Required external parts | A parts list in the datasheet (`docs/info.md`) and the submission, aligned with TT-recommended Pmods | Nothing beyond DR 0008 item 1 (I2C needs external pull-ups). | **Parts list written** in `docs/info.md` (#133). Pins are not yet on the TT-recommended pinouts: DR 0010 records the target plan, and the moves are #155 (after #135). **Updated 2026-10-11 (#238):** #155 closed on 2026-10-10: SPI and I2C moved to the Pmod `uio[0..3]` pins (PR #181, merged) and UART RX to `ui_in[1]` (PR #190, merged), DR 0010's target plan. |
 
@@ -101,7 +101,9 @@ this update supersedes its "What exists today" and its reason for Partial.
   (16:34Z); see the D3 update below. The tracker's Ready definition needs a current
   document with no known refresh left. DR 0001, 0005, 0012, 0013, 0015, 0016
   and 0017 stay **Proposed**; ratification is #44. This update ratifies
-  nothing and marks no spec row met.
+  nothing and marks no spec row met. (Since: #44 closed when PR #242 ratified
+  DR 0001 on 2026-10-11; the others stay Proposed. See the
+  [ratification update](#ratification-update-2026-10-11-pr-242-issue-44).)
 
 ### D3 dated update, 2026-10-11 (issue #251)
 
@@ -130,8 +132,9 @@ for Partial.
 - **State: still Partial, not Ready.** What is implemented: the assembler,
   its 53 unit tests, the 18 + 1 programs with committed images, the
   freshness check and the RTL round-trip bench. What remains: the ISA text
-  stays **Proposed** (DR 0001, 0012, 0013, 0017; ratification is #44, open),
-  so nothing here is ratified; #244 and #217, then not closed, could still
+  stays **Proposed** (DR 0001, 0012, 0013, 0017; ratification was then
+  pending on #44), so nothing here is ratified (DR 0001 has since been ratified, the
+  others have not; see the ratification update below); #244 and #217, then not closed, could still
   change the architecture document or its evidence (both have since closed,
   below); and D1 has to be re-run on the final top. Nothing in this update
   is a hardware or physical-signoff claim.
@@ -245,19 +248,46 @@ supersede its stale parts:
   count and complement that also aliases the CRC is still not rejected), no
   SDF run for the boot programs, UART RX, PS/2, WS2812 or the random
   regression, bounded versus unbounded formal scope, SRAM timing omitted from
-  SDF, a Proposed specification (DR 0006, #44 open), and no silicon.
+  SDF, decision records and rows 13-14 still Proposed (target-spec rows 1-12
+  and DRs 0001-0004 were ratified by PR #242 on 2026-10-11), and no silicon.
   Resolved since the first version and described as such: the PM_CRC readout
   (PR #167, merged 2026-10-10), the Standard-mode I2C allocation (#125,
   closed 2026-10-11, ruled `enforce_500`), and routed-SDF runs of UART TX,
   SPI and I2C repeated START (#217, closed 2026-10-11).
 - **State:** still **Partial**, not Ready. The ISA is frozen mechanically —
   DR 0017 pins the ISA-defining files in `spec/isa-freeze.json` and
-  `npm run lint` enforces the pins — but the specification is Proposed, not
-  ratified (#44). #211 has since closed DR 0013's F8 (its residue is listed
+  `npm run lint` enforces the pins — and target-spec rows 1-12 and DRs
+  0001-0004 are ratified (PR #242), but DR 0012, 0013, 0016 and 0017 and
+  rows 13-14 are Proposed. #211 has since closed DR 0013's F8 (its residue is listed
   above), and the design has changed under the report since (DR 0020's
   open-drain fix and #246's timing repair, gds run 38136727636). What remains
   before Ready: re-review the report against the current tree, and the final
   `gds` re-link (D1).
+
+### Ratification update, 2026-10-11 (PR #242, issue #44)
+
+Reviewed: `main` @ `72f48153`, the merge of PR #242. The rows and dated
+updates above that call the specification Proposed or ratification pending were true
+when written and are kept; this update supersedes them.
+
+- **The act.** PR #242 carried the five `Status:` flips and
+  [DR 0009](../../spec/decision-records/0009-two-key-ratification-act.md).
+  At its head `26297b9e` the EE key answered `approve` and the market key
+  `adequate-for-catalog` (forge reviews 5484904651 and 5484909288); the PR
+  merged at 2026-10-11T20:57Z as `72f48153` and #44 closed. Earlier on #242
+  the EE key had requested changes, and PR #84 had been refused and closed
+  unmerged.
+- **What is Ratified.** `spec/target-spec.md` rows 1-12, as targets and as
+  DR 0004 registers them, and DRs 0001-0004. Ratifying a row binds it; it
+  does not mark it met, and no `State` cell changed.
+- **What is not.** Rows 13 and 14; the DR 0013 clause in row 6; DRs 0005,
+  0007, 0008, 0010-0018 and 0020 (still Proposed); DR 0006 and DR 0009 are
+  `Recorded`. DR 0009 records a limit on independence: one coordinating
+  session dispatched both key agents.
+- **Effect on the deliverables.** D2's DR 0001 is now ratified, but the
+  control space, load path and freeze it relies on (DR 0012, 0013, 0017) are
+  not. D4, D5 and D6 are refreshed for this in `verification.md`,
+  `ai-use.md` and `row13-*.md`. No readiness state changes.
 
 ## Risks
 

@@ -2,7 +2,9 @@
 
 Status: **written 2026-10-11** for issue #134 (deliverable D6) from issue #235.
 It describes evidence that is in the repository. It does not mark target-spec
-row 13 met: the row is Proposed and outside DR 0004's register. Its primary
+row 13 met: the row is Proposed and outside DR 0004's register, so the
+2026-10-11 two-key act (PR #242), which ratified rows 1-12, did not bind it.
+Its primary
 column is [`row13-ws2812.md`](row13-ws2812.md).
 
 ## What the stretch column asks
@@ -33,7 +35,7 @@ file existed. It checked the choice against DR 0017's exclusion list and a
 The freeze held: when this work was done, `scripts/check_isa_freeze.py`
 reported the same eleven pinned files and the same two amendments as before
 it, and no RTL, assembler or ISA-model byte changed. `main` has gained
-amendments since (five as of 2026-10-11, each with
+amendments since (seven as of `main` @ `72f48153`, 2026-10-11, each with
 `invalidates_row13_evidence: false`).
 
 ## What was built
