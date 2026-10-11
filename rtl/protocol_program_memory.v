@@ -343,22 +343,22 @@ module protocol_program_memory (
   // side; only the macro's own pins carry `mem_dout`.
   wire [15:0] mem_dout;
 `ifdef __librelane__
-  sg13cmos5l_buf_4 u_dout_buf_0  (.A(mem_dout[0]), .X(instr_word[0]));
-  sg13cmos5l_buf_4 u_dout_buf_1  (.A(mem_dout[1]), .X(instr_word[1]));
-  sg13cmos5l_buf_4 u_dout_buf_2  (.A(mem_dout[2]), .X(instr_word[2]));
-  sg13cmos5l_buf_4 u_dout_buf_3  (.A(mem_dout[3]), .X(instr_word[3]));
-  sg13cmos5l_buf_4 u_dout_buf_4  (.A(mem_dout[4]), .X(instr_word[4]));
-  sg13cmos5l_buf_4 u_dout_buf_5  (.A(mem_dout[5]), .X(instr_word[5]));
-  sg13cmos5l_buf_4 u_dout_buf_6  (.A(mem_dout[6]), .X(instr_word[6]));
-  sg13cmos5l_buf_4 u_dout_buf_7  (.A(mem_dout[7]), .X(instr_word[7]));
-  sg13cmos5l_buf_4 u_dout_buf_8  (.A(mem_dout[8]), .X(instr_word[8]));
-  sg13cmos5l_buf_4 u_dout_buf_9  (.A(mem_dout[9]), .X(instr_word[9]));
-  sg13cmos5l_buf_4 u_dout_buf_10 (.A(mem_dout[10]), .X(instr_word[10]));
-  sg13cmos5l_buf_4 u_dout_buf_11 (.A(mem_dout[11]), .X(instr_word[11]));
-  sg13cmos5l_buf_4 u_dout_buf_12 (.A(mem_dout[12]), .X(instr_word[12]));
-  sg13cmos5l_buf_4 u_dout_buf_13 (.A(mem_dout[13]), .X(instr_word[13]));
-  sg13cmos5l_buf_4 u_dout_buf_14 (.A(mem_dout[14]), .X(instr_word[14]));
-  sg13cmos5l_buf_4 u_dout_buf_15 (.A(mem_dout[15]), .X(instr_word[15]));
+  sg13cmos5l_buf_2 u_dout_buf_0  (.A(mem_dout[0]), .X(instr_word[0]));
+  sg13cmos5l_buf_2 u_dout_buf_1  (.A(mem_dout[1]), .X(instr_word[1]));
+  sg13cmos5l_buf_2 u_dout_buf_2  (.A(mem_dout[2]), .X(instr_word[2]));
+  sg13cmos5l_buf_2 u_dout_buf_3  (.A(mem_dout[3]), .X(instr_word[3]));
+  sg13cmos5l_buf_2 u_dout_buf_4  (.A(mem_dout[4]), .X(instr_word[4]));
+  sg13cmos5l_buf_2 u_dout_buf_5  (.A(mem_dout[5]), .X(instr_word[5]));
+  sg13cmos5l_buf_2 u_dout_buf_6  (.A(mem_dout[6]), .X(instr_word[6]));
+  sg13cmos5l_buf_2 u_dout_buf_7  (.A(mem_dout[7]), .X(instr_word[7]));
+  sg13cmos5l_buf_2 u_dout_buf_8  (.A(mem_dout[8]), .X(instr_word[8]));
+  sg13cmos5l_buf_2 u_dout_buf_9  (.A(mem_dout[9]), .X(instr_word[9]));
+  sg13cmos5l_buf_2 u_dout_buf_10 (.A(mem_dout[10]), .X(instr_word[10]));
+  sg13cmos5l_buf_2 u_dout_buf_11 (.A(mem_dout[11]), .X(instr_word[11]));
+  sg13cmos5l_buf_2 u_dout_buf_12 (.A(mem_dout[12]), .X(instr_word[12]));
+  sg13cmos5l_buf_2 u_dout_buf_13 (.A(mem_dout[13]), .X(instr_word[13]));
+  sg13cmos5l_buf_2 u_dout_buf_14 (.A(mem_dout[14]), .X(instr_word[14]));
+  sg13cmos5l_buf_2 u_dout_buf_15 (.A(mem_dout[15]), .X(instr_word[15]));
 `else
   assign instr_word = mem_dout;
 `endif
