@@ -7,7 +7,7 @@ This roadmap is generated from the current GitHub label state.
 
 Judge-approved PRs stuck under a `loom:operator` merge-risk hold — implementation work is done, only a human merge decision is missing.
 
-_None._
+- **#229**: Include independent host-load replay benches in the RTL CI gate
 
 ## Operator Priority
 
@@ -19,27 +19,25 @@ _None._
 
 Human-approved issues ready for implementation (`loom:issue`).
 
-_None._
+- **#125**: I2C Standard-mode: reconcile the 435-cycle firmware clock with the proposed 100 kHz target
 
 ## In Progress
 
 Issues currently being built (`loom:building`).
 
-- **#125**: I2C Standard-mode: reconcile the 435-cycle firmware clock with the proposed 100 kHz target
-- **#208**: Build DR 0015's admitted primitives P1 (CRC/LFSR step) and P2 (NRZI + bit-stuff) in control space 0x10–0x1F
-- **#214**: Submission D4: distill current verification evidence into a judge-facing write-up
+- **#217**: Run protocol firmware waveform checks on the routed SDF corner sweep
 
 ## PRs Awaiting Review
 
 PRs waiting on Judge (`loom:review-requested`).
 
-- **#221**: Submission D4: judge-facing verification write-up
+_None._
 
 ## Approved (Awaiting Merge)
 
 PRs that passed review and are queued for Champion auto-merge (`loom:pr`).
 
-_None._
+- **#229**: Include independent host-load replay benches in the RTL CI gate
 
 ## Proposed
 
@@ -49,16 +47,15 @@ Issues carrying `loom:curated`.
 - **#44**: Two-key ratification has never run: zero RATIFY-KEY reviews exist, so target-spec + DRs 0001-0004 are 'Ratified' by assertion (DR 0004's own invalidation clause fires) *(curated)*
 - **#85**: spec: fix the eight findings that stopped the two-key ratification of PR #84 (fetch model, SPI sketch, row 10 source and four other citations) *(curated)*
 - **#100**: Auditor Capability Request: Python interpreter unavailable for tool-light validation *(curated)*
-- **#201**: LibreLane max-slew violation on an SRAM macro input pin (A_DIN[0], then A_WEN) after the UART-load ROM re-roll *(curated)*
-- **#208**: Build DR 0015's admitted primitives P1 (CRC/LFSR step) and P2 (NRZI + bit-stuff) in control space 0x10–0x1F *(curated)*
+- **#125**: I2C Standard-mode: reconcile the 435-cycle firmware clock with the proposed 100 kHz target *(curated)*
 - **#211**: UART load: count byte is outside the CRC; a one-bit count flip can ACK and RUN a truncated image (DR 0013 F8) *(curated)*
-- **#218**: DR 0013 layer 1 after the #166 ruling: loadseq refuses all-zero images, record the CRC-0 gap, findings 3 and 4 *(curated)*
+- **#217**: Run protocol firmware waveform checks on the routed SDF corner sweep *(curated)*
+- **#235**: Row 13 stretch: a protocol in a role or pin direction the core protocols never use (PS/2, SWD target, MDIO PHY side) *(curated)*
 
 ## Proposed (Architect / Hermit)
 
-- **#216**: Gate the Tiny Tapeout gl_test job on repository-owned XML result validation *(architect)*
-- **#217**: Run protocol firmware waveform checks on the routed SDF corner sweep *(architect)*
-- **#225**: Include independent host-load replay benches in the RTL CI gate *(architect)*
+- **#230**: Submission D2: write the judge-facing architecture and ISA document *(architect)*
+- **#231**: Pin tt-gds-action to a commit SHA and lint against floating refs (submission risk R2) *(architect)*
 
 ## Epics
 
@@ -68,13 +65,13 @@ _None._
 
 | Tier | Count |
 |------|-------|
-| Operator merge-risk holds | 0 |
+| Operator merge-risk holds | 1 |
 | Operator priority | 0 |
-| Ready (`loom:issue`) | 0 |
-| In Progress (`loom:building`) | 3 |
-| PRs awaiting review | 1 |
-| Approved PRs awaiting merge | 0 |
+| Ready (`loom:issue`) | 1 |
+| In Progress (`loom:building`) | 1 |
+| PRs awaiting review | 0 |
+| Approved PRs awaiting merge | 1 |
 | Curated | 8 |
-| Architect / Hermit proposals | 3 |
+| Architect / Hermit proposals | 2 |
 | Active epics | 0 |
 <!-- guide:plan-body:end -->
