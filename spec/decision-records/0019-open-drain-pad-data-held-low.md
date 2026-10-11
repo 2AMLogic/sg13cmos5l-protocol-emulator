@@ -57,14 +57,20 @@ Removing the cause costs one AND per `uio` bit and needs no tolerance.
   is 0, else it is released. Push-pull and input pins are untouched.
 - When `UIO_OD[n]` itself changes, pad data and enable still change on the
   same edge from registers; the preamble rule of DR 0012 (release before
-  `WCTL UIO_OD`) is unchanged.
+  `WCTL UIO_OD`) is unchanged. That rule alone does not cover the case in
+  the next bullet.
 - One case is not clean, and is named here rather than claimed away: on a
   push-pull-high pin (`UIO_DIR[n]=1`, `port11[n]=1`), switching `UIO_OD[n]` in
   either direction now changes both `uio_out[n]` and `uio_oe[n]` on the same
   register edge, so a skew can briefly give `oe = 1, out = 0` (a short low
   drive). The previous top held `out = 1` throughout. The ordering rule that
-  avoids it is DR 0012's: clear `UIO_DIR[n]` (release the pin) before changing
-  `UIO_OD[n]` on a high pin. No committed firmware does otherwise: I2C and PS/2
+  avoids it is stated here, in the style of DR 0012's preamble rule (DR 0012
+  itself does not state it): clear `UIO_DIR[n]` (release the pin) before
+  changing `UIO_OD[n]` on a high pin, and set `UIO_DIR[n]` again only after
+  the change if push-pull drive is wanted. With `UIO_DIR[n] = 0` and
+  `port11[n] = 1` the enable is 0 on both sides of the change, so no low
+  pulse can appear. `scripts/check_protocol_pin_roles.py` does not check
+  this rule. No committed firmware does otherwise: I2C and PS/2
   run with `UIO_DIR = 0` on their lines, SPI never sets `UIO_OD`, and the boot
   ROM clears `UIO_DIR` before `UIO_OD`.
 
