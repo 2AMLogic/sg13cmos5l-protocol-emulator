@@ -348,7 +348,8 @@ async def boot_reset(dut, straps):
 
 
 # DR 0013 UART load (issue #139): RX ui_in[1], TX uo_out[0], 434 cycles per
-# bit, 8N1; the frame is 0xA5, N-1, 2N bytes high first, CRC-16/XMODEM.
+# bit, 8N1; the frame is 0xA5, N-1, ~(N-1) (issue #211), 2N bytes high first,
+# CRC-16/XMODEM.
 UART_RX = 0x02
 UART_BIT = 434
 
@@ -458,7 +459,8 @@ async def test_boot_rom(dut):
     uart_image = [enc(OP_LDI, rd=R0, imm=0x3C), enc(OP_OUT, rd=R0, rs=PORT_UO_OUT), enc(OP_HALT)]
     body = b"".join(bytes((w >> 8, w & 0xFF)) for w in uart_image)
     crc = binascii.crc_hqx(body, 0)
-    frame = bytes((0xA5, len(uart_image) - 1)) + body + bytes((crc >> 8, crc & 0xFF))
+    count = len(uart_image) - 1
+    frame = bytes((0xA5, count, count ^ 0xFF)) + body + bytes((crc >> 8, crc & 0xFF))
     reply = cocotb.start_soon(uart_recv(dut, 3, "UART reply"))
     await uart_send(dut, frame)
     got = await reply

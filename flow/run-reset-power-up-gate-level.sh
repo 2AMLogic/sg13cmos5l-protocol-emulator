@@ -57,7 +57,7 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SCRATCH="${REPO_ROOT}/flow/reset-power-up"
-NETLIST="${REPO_ROOT}/verification/records/post-layout-sdf-regression/artifacts/20261010-205119-af36071/tt_um_2amlogic_protocol_emulator.v"
+NETLIST="${REPO_ROOT}/verification/records/post-layout-sdf-regression/artifacts/20261011-035358-1c19c24/tt_um_2amlogic_protocol_emulator.v"
 JUSTIFICATIONS="${REPO_ROOT}/verification/reset_coverage_justifications.json"
 MODULE=test_reset_power_up
 export PDK_ROOT="${PDK_ROOT:-$HOME/share/pdk}"

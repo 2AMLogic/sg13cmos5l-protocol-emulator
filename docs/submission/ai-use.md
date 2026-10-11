@@ -67,6 +67,12 @@ as PR comments.
 - The Doctor re-minted the
   [record](../../verification/records/boot-uart/records/20261010-164351-57c5c8c.md).
   The Judge checked the hashes byte for byte and approved, and the PR merged.
+- The fix went to the operator as a ranked decision (#211). The operator
+  chose a count-complement byte; the frame became `0xA5`, `N-1`, `~(N-1)`,
+  payload, CRC-16, the boot ROM checks the complement before it commits a
+  word, and the bench that had pinned the acceptance now asserts rejection of
+  every single-bit flip of the count and complement bytes (DR 0013, dated
+  entry 2026-10-11).
 
 Steps 1 to 4 are visible in issue and PR comments throughout the history. We
 have not audited every merged PR for a Judge verdict. Step 5's ratification

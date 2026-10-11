@@ -196,7 +196,8 @@ class Cli(unittest.TestCase):
 
 
 class UartFrame(unittest.TestCase):
-    """Issue #139: the DR 0013 UART boot frame. Checked against
+    """Issues #139 and #211: the DR 0013 UART boot frame, `0xA5`, `N-1`,
+    `~(N-1)`, payload, CRC-16. Checked against
     binascii.crc_hqx (the standard library's CRC-16/XMODEM), not against
     loadseq's own arithmetic."""
 
@@ -209,22 +210,39 @@ class UartFrame(unittest.TestCase):
     def test_frame_shape(self):
         import binascii
         frame = loadseq.uart_frame([0x1234, 0xABCD, 0x0001])
-        self.assertEqual(frame[:2], bytes((0xA5, 2)))
-        self.assertEqual(frame[2:8], bytes((0x12, 0x34, 0xAB, 0xCD, 0x00, 0x01)))
-        crc = binascii.crc_hqx(frame[2:8], 0)
-        self.assertEqual(frame[8:], bytes((crc >> 8, crc & 0xFF)))
-        self.assertEqual(len(frame), 10)
+        self.assertEqual(frame[:3], bytes((0xA5, 2, 0xFD)))
+        self.assertEqual(frame[3:9], bytes((0x12, 0x34, 0xAB, 0xCD, 0x00, 0x01)))
+        crc = binascii.crc_hqx(frame[3:9], 0)
+        self.assertEqual(frame[9:], bytes((crc >> 8, crc & 0xFF)))
+        self.assertEqual(len(frame), 11)
 
     def test_one_word_and_256_words(self):
-        self.assertEqual(len(loadseq.uart_frame([0x0000])), 6)
-        self.assertEqual(loadseq.uart_frame([0x0000])[1], 0)
+        one = loadseq.uart_frame([0x0001])
+        self.assertEqual((len(one), one[1], one[2]), (7, 0x00, 0xFF))
         full = loadseq.uart_frame([0xF000] * 256)
-        self.assertEqual((full[1], len(full)), (0xFF, 2 + 512 + 2))
+        self.assertEqual((full[1], full[2], len(full)), (0xFF, 0x00, 3 + 512 + 2))
+
+    def test_count_complement_for_every_count(self):
+        """Issue #211: the third byte is the count's ones' complement, for
+        every N in 1..256, and the CRC trailer does not cover it."""
+        import binascii
+        for n in range(1, 257):
+            frame = loadseq.uart_frame([0x1200 + i for i in range(n)])
+            self.assertEqual(frame[1], n - 1, n)
+            self.assertEqual(frame[2], 0xFF - (n - 1), n)
+            self.assertEqual(frame[1] ^ frame[2], 0xFF, n)
+            body = frame[3:-2]
+            self.assertEqual(len(body), 2 * n)
+            self.assertEqual(binascii.crc_hqx(body, 0), (frame[-2] << 8) | frame[-1], n)
+
+    def test_issue_211_counterexample_frame(self):
+        """DR 0013 F8's image, in the frame that replaced the two-byte header."""
+        self.assertEqual(loadseq.uart_frame([0xF000, 0x13C1]).hex(), "a501fef00013c10000")
 
     def test_message_plus_its_crc_has_zero_residue(self):
         import binascii
         frame = loadseq.uart_frame([0x9000, 0x1460, 0xD00B])
-        self.assertEqual(binascii.crc_hqx(frame[2:], 0), 0)
+        self.assertEqual(binascii.crc_hqx(frame[3:], 0), 0)
 
     def test_bad_sizes(self):
         for words in ([], [0] * 257, [0x10000], [-1]):

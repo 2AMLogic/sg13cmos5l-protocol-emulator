@@ -102,8 +102,8 @@ before. The remaining pins (`ui_in[6:2]`, `uio`) are untouched by loading.
 boot ROM** (`spec/decision-records/0013-program-loading.md` layer 2,
 Proposed). After a power-up or a reselect the SRAM holds nothing a host put
 there, so the core fetches from a small on-chip ROM instead. The ROM is
-synthesized logic, 223 words (DR 0013 proposed a cap of 128; the UART
-load alone is 129 words and does not fit it, finding F4, so the cap is the
+synthesized logic, 232 words (DR 0013 proposed a cap of 128; the UART
+load alone is 138 words and does not fit it, finding F4, so the cap is the
 256-word fetch address space until the record decides), and its contents
 are a program in this same instruction set
 ([`firmware/asm/boot/boot_rom.asm`](../firmware/asm/boot/boot_rom.asm));
@@ -130,22 +130,28 @@ flash: [spi-flash-boot.md](spi-flash-boot.md).
 **UART load (strap `00`).** The demo board's USB-UART bridge, Tiny Tapeout
 "option B": RX `ui_in[1]`, TX `uo_out[0]`, 8N1, 434 core cycles per bit (115,200
 baud if the core clock is the 50 MHz of target-spec row 4, which is unconfirmed;
-the cycle count is the claim). Send `0xA5`, `N-1` (N is 1 to 256), `2N` image
-bytes with the high byte of each word first, then the image's CRC-16/XMODEM
-(high byte first). The chip writes the words, checks its CRC against yours, and
-answers `0x06` plus its CRC (high byte first) and runs the image from address
-0, or answers `0x15` plus its CRC and waits for the next `0xA5`. It never
-runs an image that failed. `python3 firmware/tools/loadseq.py IMAGE.hex --uart -o
+the cycle count is the claim). Send `0xA5`, `N-1` (N is 1 to 256), the
+count's complement `~(N-1)` (that is, `0xFF - (N-1)`), `2N` image bytes with
+the high byte of each word first, then the CRC-16/XMODEM of the image bytes
+(high byte first; the CRC does not cover the first three bytes). The chip
+checks the complement first: if it does not match it answers `0x15 00 00` at
+once, while you are still sending, writes nothing, and waits for the next
+`0xA5`, so read the reply as it arrives and, on `0x15`, finish or abandon the
+frame and pulse `rst_n` before resending. Otherwise the chip writes the
+words, checks its CRC against yours, and answers `0x06` plus its CRC (high
+byte first) and runs the image from address 0, or answers `0x15` plus its CRC
+and waits for the next `0xA5`. It never runs an image that failed. `python3 firmware/tools/loadseq.py IMAGE.hex --uart -o
 FRAME` writes the frame. TX idles high from the first instruction of the
 loader; no `uio` pin is driven, though `uio_out` reads `0xFF` while the loader
 waits (it uses `UIO_DIR` as storage under a guard, DR 0013 finding F5). A
 loader that has lost sync (a wrong length) reads stray bytes as a frame
 whenever one is `0xA5`: pulse `rst_n`, or send non-zero filler until it answers
-`0x15` (zero filler is read as a valid, longer image). The CRC covers the
-words and not the count byte, so a wrong length is rejected unless the
-CRC of the shorter prefix equals the two bytes after it (about 1 in 65,536 for
-an arbitrary image; a constructed image can make it certain, DR 0013 finding
-F8): then the truncated image is accepted and run. The loaded program starts
+`0x15` (zero filler is read as a valid, longer image). A corrupted count
+byte, or a corrupted complement, is rejected before anything is written
+(every single-bit flip of either is in the RTL regression; DR 0013 finding
+F8, resolved by issue #211). Not ruled out: a corruption that changes the
+count and its complement consistently (at least two bit errors placed to
+match) and also makes the CRC of the shorter or longer stream match. The loaded program starts
 in the state a warm start leaves, with `PM_CRC` holding the image's CRC. In RTL
 simulation the loader accepted hosts up to 5 % slow and 4 % fast
 (`verification/records/boot-uart/`). 
@@ -505,8 +511,8 @@ No pin claim here is backed by silicon or by the LibreLane flow.
 ## Evidence not yet in hand
 
 - **Tiny Tapeout LibreLane flow.** The routed-netlist SDF regression of the
-  submitted core ([record](../verification/records/post-layout-sdf-regression/records/20261010-205119-af36071.md),
-  LibreLane run 38083802720, with DR 0015's P1 and P2, the UART-load boot ROM and the load check's readout) passes at all three corners: 12 of the core
+  submitted core ([record](../verification/records/post-layout-sdf-regression/records/20261011-042235-2f504f0.md),
+  LibreLane run 38108543866, with DR 0015's P1 and P2, the UART-load boot ROM with its count-complement check and the load check's readout) passes at all three corners: 12 of the core
   bench's 13 tests pass and the white-box flag test is skipped (it reads
   core internals a flattened netlist does not have), so the C flag has no
   post-layout evidence. One of the 12 grades the load check's readout every
@@ -520,10 +526,13 @@ No pin claim here is backed by silicon or by the LibreLane flow.
   and only the core bench ran, not the firmware above. The sign-off grader
   still renders T1 item 7 unmet, on provenance binding (see
   `manifests/README.md`). LibreLane timing and area evidence is in
-  [`librelane-corner-timing`](../verification/records/librelane-corner-timing/records/20261010-205300-af36071.md):
-  zero setup and hold violations at all three corners at 20 ns, and the placed standard-cell area
-  with P1, P2, the UART-load ROM and the load check's readout is 45,057 µm² (LibreLane flow), 57.8 %
-  of the core with the macro against the 60 % target (44,295 µm², 57.2 %, without the readout; P1 and P2 alone, before the merge with the UART load: 41,827 µm²,
+  [`librelane-corner-timing`](../verification/records/librelane-corner-timing/records/20261011-040000-1c19c24.md):
+  zero setup and hold violations at all three corners at 20 ns, with the worst setup slack +1.9 ns
+  at the slow corner (+3.5 ns before the 232-word boot ROM of issue #211; the binding path is an
+  SRAM read into instruction decode), and two max-slew violations on one internal net at that
+  corner (the flow does not fail on them; recorded, not fixed). The placed standard-cell area
+  with P1, P2, the UART-load ROM and the load check's readout is 44,965 µm² (LibreLane flow), 57.7 %
+  of the core with the macro against the 60 % target (45,057 µm² with the 223-word ROM; 44,295 µm², 57.2 %, without the readout; P1 and P2 alone, before the merge with the UART load: 41,827 µm²,
   55.2 %; 28,256 µm² without them). On the klt/Yosys flow P1 and P2 cost +10,848 µm²
   (synthesis only). DR 0015 estimated about 4,600 µm² for the two primitives; the measured cost is
   2.4 to 2.9 times that, which DR 0015's dated notes record. The load check's readout costs 16
@@ -531,7 +540,7 @@ No pin claim here is backed by silicon or by the LibreLane flow.
   `ui_in[1]`-to-`uo_out` path is 0.58 to 1.40 ns pin to pin in LibreLane's post-route analysis,
   under the flow's assumed 4 ns input and output delays; no pad has been measured.
   Firmware, the control-space, boot-ROM, SPI-flash-boot, UART-load, primitive and load-integrity benches on that netlist at zero delay:
-  [`firmware-gate-level`](../verification/records/firmware-gate-level/records/20261011-020000-428e12f.md).
+  [`firmware-gate-level`](../verification/records/firmware-gate-level/records/20261011-071709-6ea883e.md).
   Firmware with back-annotated delays: none.
 - **klt synthesis and timing.** `klt sta` does not yet support the SRAM
   macro, so the two flows do not agree on timing; per the project rule that

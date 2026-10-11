@@ -119,9 +119,11 @@ committed program fails CI at the link that went stale. The generator
 refuses an image over **256 words**, the fetch address space. DR 0013
 proposed a cap of 128; the UART load does not fit it (finding F4 in that
 record), so the cap is the address space until the record decides. The image
-is **223** words (the SPI-flash boot 64, the UART load 129, the strap
+is **232** words (the SPI-flash boot 64, the UART load 138, the strap
 dispatch and warm start the rest, which includes the two-word zero-signature
-refusal of issue #168).
+refusal of issue #168); 24 of the 256 are free. The UART load was 129 words
+until issue #211 added the count-complement check (+9: a seventh phase in the
+dispatch, 2, and its handler, 7).
 
 What the program does: its first instruction reads the straps `ui_in[6:5]`.
 Strap `10` is the **warm start**: it reads every word of program memory and
@@ -147,7 +149,7 @@ pin, and either takes the warm start's hand-over (`run_image`) or halts.
 putting one on the Pmod. Bench: `verification/test_boot_spi.py`
 (`verification/request-boot-spi.json`), negative controls
 `verification/boot_spi_mutants.py`, evidence in
-`verification/records/boot-spi/`. With the UART load the image is 223 words,
+`verification/records/boot-spi/`. With the UART load the image is 232 words,
 which is why the ROM's cap is the 256-word address space (DR 0013 finding F4).
 
 ### The UART load (issue #139, DR 0013 layer 2)
@@ -158,19 +160,25 @@ row-4 clock; the cycle count is the claim, the baud figure is arithmetic at
 that unconfirmed clock). The frame, built by `firmware/tools/loadseq.py`:
 
 ```
-0xA5   N-1   2N bytes, high byte of each word first   CRC-16/XMODEM, high byte first
+0xA5   N-1   ~(N-1)   2N bytes, high byte of each word first   CRC-16/XMODEM, high byte first
 ```
 
-N is 1 to 256. The loader writes each word through `PM_DATA_HI` /
-`PM_DATA_LO`, compares `PM_CRC` with the trailer, and answers `0x06` + `PM_CRC`
-(high byte first) and `RUN 0` on a match, or `0x15` + `PM_CRC` and a wait for
-the next `0xA5` on a mismatch. An image whose payload or trailer is
-corrupted is never run (CRC-16 over the words the loader took). The count
-byte is **not** covered by the CRC: a corrupted count is rejected unless the
-CRC of the shorter prefix happens to equal the two bytes that follow it, in
-which case the truncated image is accepted and run (DR 0013 finding F8; the
-frame `a5 00 f0 00 13 c1 00 00` is the RTL regression). TX idles high from
-the loader's start to the `RUN`, and no `uio` pin is ever driven.
+N is 1 to 256. The third byte is the count's ones' complement (issue #211,
+DR 0013 finding F8 resolved). The loader checks it before it commits any word;
+a count and complement that do not match are answered `0x15 00 00` at once
+(nothing committed) and the loader goes back to waiting for `0xA5`. Otherwise
+it writes each word through `PM_DATA_HI` / `PM_DATA_LO`, compares `PM_CRC`
+with the trailer, and answers `0x06` + `PM_CRC` (high byte first) and `RUN 0`
+on a match, or `0x15` + `PM_CRC` and a wait for the next `0xA5` on a
+mismatch. An image whose payload or trailer is corrupted is never run
+(CRC-16 over the words the loader took), and any corruption of the count
+byte alone, or of the complement alone, is rejected before a word is written
+(the old F8 counterexample, `a5 00 fe f0 00 13 c1 00 00` in the new frame,
+is the RTL regression). What is still not guaranteed: a corruption that
+changes the count and its complement consistently (two or more bit errors,
+placed to match) and also makes the shorter or longer stream's CRC match.
+TX idles high from the loader's start to the `RUN`, and no `uio` pin is ever
+driven.
 
 ```bash
 python3 firmware/tools/loadseq.py firmware/build/uart_tx.hex --uart -o uart_tx.frame
@@ -180,8 +188,8 @@ python3 firmware/tools/loadseq.py firmware/build/uart_tx.hex --uart -o uart_tx.f
 How it is built, because the ISA has no call and four registers:
 
 - one byte receiver (`rx_next`..`rx_bit`) is followed by a dispatch on a
-  phase number in `R3` (waiting for `0xA5`, count, payload high byte, payload
-  low byte, trailer high, trailer low). The receiver is a loop: the start
+  phase number in `R3` (waiting for `0xA5`, count, count complement, payload
+  high byte, payload low byte, trailer high, trailer low). The receiver is a loop: the start
   edge is found by a 3-cycle poll of `ui_in[1]` (the other `ui_in` bits are
   masked, not assumed constant), the first sample lands 1.5 bit periods after
   the edge, and the eight samples are exactly 434 cycles apart with no branch
@@ -202,16 +210,18 @@ How it is built, because the ISA has no call and four registers:
 
 If the host loses sync (a wrong length, a lost byte) the loader reads the
 stray bytes as a new frame whenever one of them is `0xA5`, and waits for the
-rest. There is no timeout. Recover by pulsing `rst_n`, or by sending non-zero
+rest; since issue #211 the two bytes after a stray `0xA5` must also be a
+count and its complement, so most false starts are answered `0x15 00 00`
+after two bytes instead. There is no timeout. Recover by pulsing `rst_n`, or by sending non-zero
 filler until the loader answers `0x15` (zero filler does not work: a message
 followed by its own CRC and then zeros still has CRC 0, so the loader reads it
 as a valid longer image). Auto-baud was not attempted.
 
-The assembler reports data-dependent-branch warnings for this program (12),
+The assembler reports data-dependent-branch warnings for this program (13),
 all intended: the two strap branches, the warm start's zero-signature and CRC
 verdicts, and in
 the UART load the start-edge poll, the phase dispatch, the handlers and the
-verdicts. None paces a pin: the samples and the transmitted bits are paced by
+verdicts (the count-complement check of issue #211 is the thirteenth). None paces a pin: the samples and the transmitted bits are paced by
 `WAIT` literals and a counter that never holds pin data.
 
 Zero signatures are refused (DR 0013 Finding F1, closed by issue #168): 256

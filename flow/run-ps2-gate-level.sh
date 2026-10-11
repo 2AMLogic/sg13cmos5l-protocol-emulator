@@ -42,7 +42,7 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SCRATCH="${REPO_ROOT}/flow/ps2-gate-level"
-NETLIST="${REPO_ROOT}/verification/records/post-layout-sdf-regression/artifacts/20261010-205119-af36071/tt_um_2amlogic_protocol_emulator.v"
+NETLIST="${REPO_ROOT}/verification/records/post-layout-sdf-regression/artifacts/20261011-035358-1c19c24/tt_um_2amlogic_protocol_emulator.v"
 MODULE=test_firmware_ps2
 export PDK_ROOT="${PDK_ROOT:-$HOME/share/pdk}"
 

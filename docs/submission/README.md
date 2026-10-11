@@ -97,8 +97,10 @@ supersede its stale parts:
   `reset-power-up` record `20261010-133700-a0f91e3` shows (a), (b), (c) and
   the reselect cycle on the routed netlist at zero delay; no grade is changed
   here.
-- **Open and visible in the narrative:** DR 0013 finding F8 (#211, the UART
-  load's count byte is outside the CRC), the PM_CRC readout (#167), the
+- **Open and visible in the narrative:** the residue of DR 0013 finding F8
+  (#211 added a count-complement byte that the UART load checks before it
+  commits a word; a coordinated corruption of count and complement that also
+  aliases the CRC is still not rejected), the PM_CRC readout (#167), the
   Standard-mode I2C allocation (#125), no SDF run for the firmware benches or
   the random regression (#217), bounded versus unbounded formal scope, SRAM
   timing omitted from SDF, a Proposed specification (DR 0006), and no

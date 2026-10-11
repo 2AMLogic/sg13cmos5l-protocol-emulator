@@ -445,6 +445,17 @@ auditable rather than a bare assertion:
   after a single count-bit flip (`verification/test_boot_uart_count_alias.py`).
   The requirement is not relaxed here; closing it is a protocol change tracked
   by the follow-up issue named in the DR.
+
+  *Status 2026-10-11 (issue #211, operator ruling option 1).* The frame is now
+  `0xA5`, `N-1`, `~(N-1)`, payload, CRC-16, and the loader checks the
+  complement before it commits a word. `test_boot_uart_count_alias.py` now
+  asserts that the F8 frame and every single-bit flip of the count byte and of
+  the complement byte (16 frames) are rejected (`15 00 00`, never `RUN`), and
+  that the valid frame still loads and runs; a mutant with the check removed
+  is caught (`boot_uart_mutants.py`, `complement-check-removed`). Residue, not
+  claimed closed: a corruption that changes the count and the complement
+  consistently (two or more bit errors placed to match) and also makes the
+  CRC of the shorter or longer stream match.
 - **Runtime swap.** A program loads a second program through `PM_*` and runs
   it with `RUN`. The second program's protocol is graded by its own reference
   model.

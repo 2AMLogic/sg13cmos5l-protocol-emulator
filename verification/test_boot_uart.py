@@ -28,7 +28,11 @@ What is checked (verification-plan section 7, "Boot programs"):
   where it stops working (a record, not a spec);
 - **never run a bad image**: one flipped payload bit, a bad CRC (high byte,
   low byte, both), a length that is too small, a length that is too large
-  (the chip stalls and the host recovers by padding), a wrong magic byte. In
+  (the chip stalls and the host recovers by padding), each with a matching
+  count complement so that the CRC is what rejects it; a count whose
+  complement does not match (issue #211; answered `15 00 00` before any word
+  is committed; every single-bit flip of both bytes is in
+  `test_boot_uart_count_alias.py`); a wrong magic byte. In
   each, the reply is `0x15` (or none), the core never leaves the boot ROM
   (white-box), `uio_oe` stays 0, and `uo_out` stays at its idle level; a
   correct frame sent afterwards is accepted;
@@ -406,10 +410,11 @@ async def test_boot_image_chain_and_host_agreement(dut):
     for words in images:
         a, b = host.frame(words), loadseq.uart_frame(words)
         assert a == b, f"host model and loadseq disagree on a {len(words)}-word frame"
-        body = a[2:-2]
+        body = a[3:-2]
         assert binascii.crc_hqx(body, 0) == (a[-2] << 8) | a[-1]
-        assert a[0] == 0xA5 and a[1] == len(words) - 1 and len(a) == 2 * len(words) + 4
-        assert binascii.crc_hqx(a[2:], 0) == 0
+        assert a[0] == 0xA5 and a[1] == len(words) - 1 and len(a) == 2 * len(words) + 5
+        assert a[2] == (~a[1]) & 0xFF, "the third byte is the count's complement (issue #211)"
+        assert binascii.crc_hqx(a[3:], 0) == 0
     # The host model's line levels are 8N1: start low, LSB first, stop high.
     assert host.edges(bytes([0x00]), 0) == [(0, 0), (9 * BIT, 1)]
     assert host.edges(bytes([0xFF]), 0) == [(0, 0), (BIT, 1)]
@@ -536,25 +541,55 @@ async def test_bad_images_never_run(dut):
     good = host.frame(words)
     n_body = 2 * len(words)
 
-    def with_count(count):          # a header lying about the length
-        return bytes((good[0], count)) + good[2:]
+    HEADER = 3                      # 0xA5, N-1, ~(N-1): the payload starts at offset 3
+    assert len(good) == HEADER + n_body + 2
 
+    def with_count(count):          # a header lying about the length, consistently
+        return bytes((good[0], count, count ^ 0xFF)) + good[HEADER:]
+
+    def nak_with_crc_of(body):
+        """The reply a CRC-rejected frame must get: 0x15, then the CRC of the
+        payload bytes the chip committed, computed here by the host model (not
+        read back from the chip). The header reject is `15 00 00`; requiring
+        this value instead means a header NAK cannot pass for a payload one."""
+        crc = host.crc16_xmodem(body)
+        reply = bytes((host.NAK, crc >> 8, crc & 0xFF))
+        assert reply != host.header_reject_reply(), "premise: this case's CRC is not 0x0000"
+        return reply
+
+    # (label, frame, kind, expected reply or None)
     cases = []
-    for name, index, bit in (("payload first byte", 2, 0), ("payload middle", 2 + n_body // 2, 5),
-                             ("payload last byte", 1 + n_body, 7)):
-        cases.append((f"flipped bit, {name}", flip_bit(good, index, bit), "nak"))
+    for name, index, bit in (("payload first byte", HEADER, 0),
+                             ("payload middle", HEADER + n_body // 2, 5),
+                             ("payload last byte", HEADER + n_body - 1, 7)):
+        data = flip_bit(good, index, bit)
+        # The corruption is in the payload and nowhere else: the three header
+        # bytes and the trailer are the good frame's.
+        assert HEADER <= index < HEADER + n_body, (name, index)
+        assert data[:HEADER] == good[:HEADER] and data[-2:] == good[-2:], name
+        assert data[1] ^ data[2] == 0xFF, name
+        cases.append((f"flipped bit, {name}", data, "nak", nak_with_crc_of(data[HEADER:-2])))
+    good_body = good[HEADER:-2]
+
+    def short(count):               # the chip commits count+1 words, then reads a trailer
+        return nak_with_crc_of(good[HEADER:HEADER + 2 * (count + 1)])
+
     cases += [
-        ("bad CRC, high byte", flip_bit(good, len(good) - 2, 3), "nak"),
-        ("bad CRC, low byte", flip_bit(good, len(good) - 1, 0), "nak"),
-        ("bad CRC, both bytes", good[:-2] + bytes((good[-2] ^ 0xFF, good[-1] ^ 0xFF)), "nak"),
-        ("length too small by one word", with_count(len(words) - 2), "nak+reset"),
-        ("length too small by half the image", with_count(len(words) // 2 - 1), "nak+reset"),
-        ("length 1 word", with_count(0), "nak+reset"),
-        ("length too large (stalls)", with_count(len(words) + 4), "stall"),
-        ("wrong magic", bytes((0xA4,)) + good[1:], "silent"),
-        ("magic only, then silence", good[:1], "stall+reset"),
+        ("bad CRC, high byte", flip_bit(good, len(good) - 2, 3), "nak", nak_with_crc_of(good_body)),
+        ("bad CRC, low byte", flip_bit(good, len(good) - 1, 0), "nak", nak_with_crc_of(good_body)),
+        ("bad CRC, both bytes", good[:-2] + bytes((good[-2] ^ 0xFF, good[-1] ^ 0xFF)), "nak",
+         nak_with_crc_of(good_body)),
+        ("length too small by one word", with_count(len(words) - 2), "nak+reset", short(len(words) - 2)),
+        ("length too small by half the image", with_count(len(words) // 2 - 1), "nak+reset",
+         short(len(words) // 2 - 1)),
+        ("length 1 word", with_count(0), "nak+reset", short(0)),
+        ("length too large (stalls)", with_count(len(words) + 4), "stall", None),
+        ("count complement mismatch", bytes((good[0], good[1], good[2] ^ 0x10)) + good[HEADER:], "header",
+         host.header_reject_reply()),
+        ("wrong magic", bytes((0xA4,)) + good[1:], "silent", None),
+        ("magic only, then silence", good[:1], "stall+reset", None),
     ]
-    for label, data, kind in cases:
+    for label, data, kind, expected in cases:
         session = Session(dut)
         await session.reset()
         watch = RomWatch(dut)
@@ -583,13 +618,27 @@ async def test_bad_images_never_run(dut):
             await session.idle(REPLY_WINDOW)
             got, reports = session.reply(t0)
             if kind in ("nak", "nak+reset"):
-                assert got is not None and len(got) == 3 and got[0] == host.NAK, f"{label}: reply {got!r}"
+                # Rejected by the CRC: the reply carries the CRC of exactly the
+                # payload bytes the chip committed, which the host computes
+                # itself. A header reject (`15 00 00`) does not satisfy this.
+                assert got == expected, f"{label}: reply {got!r}, want {expected.hex()}"
+                check_reply_timing(reports, label)
+            elif kind == "header":
+                # Rejected at the header, before any word was committed.
+                assert expected == host.header_reject_reply()
+                assert got == expected, f"{label}: reply {got!r}"
                 check_reply_timing(reports, label)
             else:
-                assert got == b"", f"{label}: replied {got!r} to a frame with no magic"
+                # No reply to the frame itself. Its payload may hold a 0xA5
+                # (this image's does), which the loader takes as a magic; the
+                # two bytes after it are then a header whose complement almost
+                # never matches (issue #211), so that false frame is answered
+                # `15 00 00` and nothing is committed. Either way: no ACK.
+                assert got in (b"", host.header_reject_reply()), (
+                    f"{label}: replied {got!r} to a frame with no magic")
         assert watch.left_rom() in (False, None), f"{label}: the core left the boot ROM"
         assert_pins_quiet(session, session.t_release, float("inf"), label)
-        if kind in ("nak+reset", "silent", "stall+reset"):
+        if kind in ("nak+reset", "header", "silent", "stall+reset"):
             # The bytes the loader did not take as part of the frame were
             # still sent, and any of them may be 0xA5 (this image has several):
             # the loader reads that as the start of a frame and waits for the
@@ -664,7 +713,7 @@ async def test_end_to_end_protocol_program_over_uart(dut):
 
 @cocotb.test()
 async def test_full_image_and_warm_start(dut):
-    """256 words: the largest frame (count byte 0xFF, 516 bytes). The image
+    """256 words: the largest frame (count byte 0xFF, complement 0x00, 517 bytes). The image
     is signed (word 255 = the CRC of words 0..254), so a warm start of the
     same program memory verifies and runs it too. A first byte-for-byte
     memory comparison is white-box (RTL)."""

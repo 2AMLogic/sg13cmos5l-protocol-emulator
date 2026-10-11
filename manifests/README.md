@@ -299,6 +299,23 @@ capture, PVT corner sweeps, or Monte Carlo.
   `--load-integrity` on the gate-level command. Baselines: `signoff-baseline`
   records `20261010-213101-af36071` and `20261010-213102-af36071` (one per
   live head), **5 of 11**, unchanged.
+- **Items 1, 2, 3, 4, 7 and 9, state as of 2026-10-11 (issue #211).** Append-only;
+  the bullets above are the earlier states. The UART load gained a
+  count-complement check, so the boot ROM grew from 223 to 232 words and the
+  design and the layout changed. Item 1 (`evidence/design-sources.txt`: the
+  boot ROM, its source and image, and both netlists) and item 2 (the routed
+  GDS of gds run 38108543866 at `f1b21df`, `sha256:fa416766…`, via
+  `evidence/layout-gds.json`) are `met` against the new bytes. Items 3 and 4
+  cite record `20261011-040500-1c19c24` (`librelane-gds-signoff-check/`):
+  **item 3 stays `met`**, **item 4 stays `unmet`/`check_errored`** at the same
+  converter shape (`1'h1`, klayout-tools#2941); the post-route compare is
+  `match` with `power_connectivity` `match`, not cited. Item 7 cites
+  `post-layout-sdf-regression` record `20261011-042235-2f504f0` (12 passed,
+  0 failed, 1 skipped at all three corners, annotated):
+  **`unmet`/`unverifiable_provenance`**, as before. Item 9
+  (`evidence/testbenches.txt`) names the count-alias bench and the new
+  gate-level netlist. Baselines: `signoff-baseline` records minted with this
+  change, **5 of 11**, unchanged.
 - **Every citation pins a `content_hash`**, and what it is the hash of
   depends on the cited envelope (clarified 2026-10-10, issue #168; the
   manifests on `main` have always followed this, the sentence here did

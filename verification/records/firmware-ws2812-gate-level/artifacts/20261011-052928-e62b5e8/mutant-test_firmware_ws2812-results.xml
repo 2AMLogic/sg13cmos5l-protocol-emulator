@@ -1,0 +1,34 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuites name="cocotb tests"><testsuite name="test_firmware_ws2812" errors="0" failures="5" skipped="0" tests="6" time="19.805" timestamp="2026-10-11T05:31:20.669524+00:00" hostname="robb-studio"><testcase classname="test_firmware_ws2812" name="test_committed_image_is_fresh" time="0.001"><properties><property name="cocotb" value="True" /><property name="random_seed" value="1791696680" /><property name="file" value="&lt;repo&gt;/verification/test_firmware_ws2812.py" /><property name="line" value="285" /><property name="sim_time_unit" value="ns" /><property name="sim_time_start" value="0.0" /><property name="sim_time_stop" value="0.0" /><property name="sim_time_duration" value="0.0" /><property name="sim_time_ratio" value="0.0" /></properties></testcase><testcase classname="test_firmware_ws2812" name="test_committed_frame" time="3.688"><failure message="assert [] == [[(0, 0, 0), (255, 255, 255), (255, 0, 0), (0, 255, 0), (0, 0, 255), (170, 85, 165), ...], [(0, 0, 0), (255, 255, 255), (255, 0, 0), (0, 255, 0), (0, 0, 255), (170, 85, 165), ...]]" type="AssertionError">Traceback (most recent call last):
+  File "&lt;repo&gt;/verification/test_firmware_ws2812.py", line 328, in test_committed_frame
+    assert [f.pixels() for f in result.latched_frames] == [pixels, pixels]
+AssertionError: assert [] == [[(0, 0, 0), (255, 255, 255), (255, 0, 0), (0, 255, 0), (0, 0, 255), (170, 85, 165), ...], [(0, 0, 0), (255, 255, 255), (255, 0, 0), (0, 255, 0), (0, 0, 255), (170, 85, 165), ...]]
+</failure><properties><property name="cocotb" value="True" /><property name="random_seed" value="1791696680" /><property name="file" value="&lt;repo&gt;/verification/test_firmware_ws2812.py" /><property name="line" value="315" /><property name="sim_time_unit" value="ns" /><property name="sim_time_start" value="0.001" /><property name="sim_time_stop" value="1428221.001" /><property name="sim_time_duration" value="1428221.0" /><property name="sim_time_ratio" value="387218.90492528444" /></properties><system-err>Test failed with COCOTB_RANDOM_SEED=1791696680
+</system-err></testcase><testcase classname="test_firmware_ws2812" name="test_random_frames" time="2.561"><failure message="[random 1 px] 0 latched frame(s), expected 2&#10;assert 0 == 2&#10; +  where 0 = len([])" type="AssertionError">Traceback (most recent call last):
+  File "&lt;repo&gt;/verification/test_firmware_ws2812.py", line 352, in test_random_frames
+    await grade(dut, layout, words, pixels, f"random {n} px")
+  File "&lt;repo&gt;/verification/test_firmware_ws2812.py", line 243, in grade
+    assert len(latched) == 2, f"[{label}] {len(latched)} latched frame(s), expected 2"
+AssertionError: [random 1 px] 0 latched frame(s), expected 2
+assert 0 == 2
+ +  where 0 = len([])
+</failure><properties><property name="cocotb" value="True" /><property name="random_seed" value="1791696680" /><property name="file" value="&lt;repo&gt;/verification/test_firmware_ws2812.py" /><property name="line" value="340" /><property name="sim_time_unit" value="ns" /><property name="sim_time_start" value="1428221.002" /><property name="sim_time_stop" value="2426382.002" /><property name="sim_time_duration" value="998160.9999999998" /><property name="sim_time_ratio" value="389778.63656107814" /></properties><system-err>Test failed with COCOTB_RANDOM_SEED=1791696680
+</system-err></testcase><testcase classname="test_firmware_ws2812" name="test_negative_short_t1h" time="8.590"><failure message="short T1H must fail on the high width only, got set()&#10;assert set() == {'high'}" type="AssertionError">Traceback (most recent call last):
+  File "&lt;repo&gt;/verification/test_firmware_ws2812.py", line 379, in test_negative_short_t1h
+    assert kinds == {"high"}, f"short T1H must fail on the high width only, got {kinds}"
+AssertionError: short T1H must fail on the high width only, got set()
+assert set() == {'high'}
+</failure><properties><property name="cocotb" value="True" /><property name="random_seed" value="1791696680" /><property name="file" value="&lt;repo&gt;/verification/test_firmware_ws2812.py" /><property name="line" value="371" /><property name="sim_time_unit" value="ns" /><property name="sim_time_start" value="2426382.003" /><property name="sim_time_stop" value="3801143.003" /><property name="sim_time_duration" value="1374761.0" /><property name="sim_time_ratio" value="160042.99054553028" /></properties><system-err>Test failed with COCOTB_RANDOM_SEED=1791696680
+</system-err></testcase><testcase classname="test_firmware_ws2812" name="test_negative_dropped_bit" time="3.669"><failure message="a dropped bit must fail as a partial pixel only, got set()&#10;assert set() == {'partial-pixel'}" type="AssertionError">Traceback (most recent call last):
+  File "&lt;repo&gt;/verification/test_firmware_ws2812.py", line 390, in test_negative_dropped_bit
+    assert kinds == {"partial-pixel"}, f"a dropped bit must fail as a partial pixel only, got {kinds}"
+AssertionError: a dropped bit must fail as a partial pixel only, got set()
+assert set() == {'partial-pixel'}
+</failure><properties><property name="cocotb" value="True" /><property name="random_seed" value="1791696680" /><property name="file" value="&lt;repo&gt;/verification/test_firmware_ws2812.py" /><property name="line" value="383" /><property name="sim_time_unit" value="ns" /><property name="sim_time_start" value="3801143.004" /><property name="sim_time_stop" value="5229384.004" /><property name="sim_time_duration" value="1428240.9999999995" /><property name="sim_time_ratio" value="389304.77041765896" /></properties><system-err>Test failed with COCOTB_RANDOM_SEED=1791696680
+</system-err></testcase><testcase classname="test_firmware_ws2812" name="test_negative_short_reset" time="1.296"><failure message="set()&#10;assert ('low' in set())" type="AssertionError">Traceback (most recent call last):
+  File "&lt;repo&gt;/verification/test_firmware_ws2812.py", line 400, in test_negative_short_reset
+    assert "low" in kinds and "leading-reset" in kinds, kinds
+AssertionError: set()
+assert ('low' in set())
+</failure><properties><property name="cocotb" value="True" /><property name="random_seed" value="1791696680" /><property name="file" value="&lt;repo&gt;/verification/test_firmware_ws2812.py" /><property name="line" value="394" /><property name="sim_time_unit" value="ns" /><property name="sim_time_start" value="5229384.005" /><property name="sim_time_stop" value="5744305.005" /><property name="sim_time_duration" value="514921.0" /><property name="sim_time_ratio" value="397398.82521940226" /></properties><system-err>Test failed with COCOTB_RANDOM_SEED=1791696680
+</system-err></testcase></testsuite></testsuites>
