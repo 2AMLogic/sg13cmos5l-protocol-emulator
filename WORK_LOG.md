@@ -4,6 +4,7 @@ Chronological record of merged pull requests and closed issues, newest first.
 
 ### 2026-10-11
 
+- **PR #264**: Sample I2C controller-write ACK inside the ninth SCL high
 - **PR #260**: Open-drain pad data tied low (DR 0020) and LibreLane timing repair: slow-corner margin +5.8 ns, no slew violations (#244, #246)
 - **PR #255**: docs(submission): reconcile D2/D3 and add judge quickstart (#251)
 - **PR #253**: fix: portable bench list read and README timing wording (#241)
@@ -15,6 +16,7 @@ Chronological record of merged pull requests and closed issues, newest first.
 - **PR #239**: spec: DR 0001 fetch-ahead amendment; DRs 0006/0007 agree with DR 0009 (#85 items 1, 4)
 - **PR #229**: Include independent host-load replay benches in the RTL CI gate
 - **PR #227**: Pace Standard-mode I2C at 500-cycle clocks and bound the full SCL period (#125)
+- **Issue #258** (closed): Move Standard/Fast controller-write ACK samples into ninth SCL high
 - **Issue #252** (closed): Review scoped shell-assignment resolution in worktree write guard
 - **Issue #251** (closed): Reconcile submission D2/D3 readiness and link the judge toolchain quickstart
 - **Issue #246** (closed): LibreLane: slow-corner setup margin fell to +1.9 ns and two max-slew violations appeared with the 232-word boot ROM (#211)
