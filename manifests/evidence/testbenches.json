@@ -3,7 +3,7 @@
   "kind": "generic",
   "status": "pass",
   "t1_item": 9,
-  "summary": "Testbenches shipped: every evidence directory under verification/records/ and every measured target-spec row is mapped to its committed bench and cold-start command, with the klt pin, cocotb pin, PDK revision (IHP-Open-PDK 2bbec755) and formal toolchain pin; rows with no measurement say so. Audited 2026-10-10 at klt v0.7.0, issue #83. Refreshed for issue #137 (the load-integrity bench). Refreshed for issue #141 (the row-13 WS2812 bench).",
+  "summary": "Testbenches shipped: every evidence directory under verification/records/ and every measured target-spec row is mapped to its committed bench and cold-start command, with the klt pin, cocotb pin, PDK revision (IHP-Open-PDK 2bbec755) and formal toolchain pin; rows with no measurement say so. Audited 2026-10-10 at klt v0.7.0, issue #83. Refreshed for issue #137 (the load-integrity bench). Refreshed for issue #141 (the row-13 WS2812 bench). Refreshed for issue #235 (the row-13 stretch PS/2 bench).",
   "source": "manifests/evidence/testbenches.txt",
   "provenance": {
     "klt_version": "0.7.0",
@@ -11,7 +11,7 @@
     "pdk": null,
     "deck": null,
     "input": {
-      "content_hash": "sha256:fdf406ecf74657b7051849d88a78ec95f644488285b5d951d7d4769cdaaa6a0d",
+      "content_hash": "sha256:b381885988b224113ddd1e10549e7bf6f06da1b0b395226250f6a515cc0625bc",
       "path": "testbenches.txt"
     }
   }

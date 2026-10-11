@@ -462,6 +462,32 @@ gates. The host-side loader is issue #118.
   `\u_core.wait_cnt[0]` stuck-at fault. Driven by `klt
   functional-verification` (`request-firmware-ws2812.json`); evidence in
   `records/firmware-ws2812/` and `records/firmware-ws2812-gate-level/`.
+- `test_firmware_ps2.py` — the **row-13 stretch** bench (issue #235; the
+  protocol choice is the dated note of 2026-10-11 in DR 0018, made after DR
+  0017's ISA freeze): the committed `firmware/asm/ps2_device.asm` plays a PS/2
+  keyboard/mouse device on `uio[2]` (CLK) and `uio[3]` (DATA), open-drain,
+  and the bench plays the host. `reference_models/ps2.py`, written from
+  Chapweske's description alone, is a passive bus monitor: it takes the
+  resolved line levels plus what the host is pulling, and grades the clock
+  widths (30 to 50 µs), data setup and hold against the clock, the 50 µs
+  hold-off, the inhibit-and-resend rule, the request-to-send response, the
+  ACK turnaround and the release after it, and the bench's host driver too.
+  The lines come from the silicon-true pad model (`uio_pads.py`, pull-ups on
+  both lines, the other six `uio` pins tied low), so the bench also asserts no
+  contention, only CLK and DATA enabled, and both only ever driven low.
+  Scenarios: the power-up BAT frame, eight echoed host bytes, bad parity and
+  stop bits answered 0xFE, inhibits after clock 1, 4, 10 and 11, a bus held
+  inhibited from reset, a request to send before the BAT code is out, and a
+  host that abandons its own transfer. Negative controls: seven mutant
+  programs (no inhibit check, a hold-off of 18 polls, no ACK, late and early
+  data, even parity, `UIO_DIR` instead of `UIO_OD`), an unchecked host parity
+  (caught by the byte comparison), and the golden log re-graded with its DATA
+  edges moved. `test_ps2_model.py` is the model's simulator-free self-test
+  (`npm run lint`). Pin-only, so it also runs on the gate-level netlist with
+  `flow/run-ps2-gate-level.sh` (its own runner), whose negative control is the
+  `\u_core.wait_cnt[0]` stuck-at fault. Driven by `klt
+  functional-verification` (`request-firmware-ps2.json`); evidence in
+  `records/firmware-ps2/` and `records/firmware-ps2-gate-level/`.
 - `formal/` — the §2 formal-properties leg (issue #24, distinct from the
   cocotb legs above: no `klt`, no PDK, no simulator — a Yosys+SMTBMC model
   checking harness). `formal/no_data_dependent_latency.sv` is
@@ -536,7 +562,7 @@ CI-covered (RTL, Icarus, no PDK): `test_protocol_emulator`,
 `test_firmware_spi`, `test_uio_pads`, `test_firmware_i2c`,
 `test_firmware_i2c_sr`, `test_firmware_roundtrip`,
 `test_random_regression`, `test_isa_lockstep`, `test_load_integrity`,
-`test_firmware_ws2812`, `test_loadseq` and
+`test_firmware_ws2812`, `test_firmware_ps2`, `test_loadseq` and
 `test_loadseq_top` (the independent host-load replay benches, issue #225).
 
 The bench list is `scripts/rtl-bench-inventory.txt`: every

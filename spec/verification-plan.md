@@ -382,6 +382,19 @@ auditable rather than a bare assertion:
   on the gate-level netlist (`flow/run-ws2812-gate-level.sh`), with three
   mutant programs and a WAIT-counter stuck-at fault as negative controls.
   The stretch, which runs on the silicon-true pad model, is issue #235.
+
+  *Dated note 2026-10-11 (issue #235). Nothing above is changed.* The stretch
+  column's protocol is the PS/2 device (a dated note in DR 0018, after the
+  freeze, before any PS/2 file). The bench is
+  `verification/test_firmware_ps2.py`; the independent model is
+  `verification/reference_models/ps2.py` (a host-side bus monitor written
+  from Chapweske's description, which also grades the bench's own host
+  driver). The lines are resolved by the silicon-true pad model with
+  pull-ups, and the design must never drive a line high or fight the host.
+  It runs at RTL (`klt functional-verification`, `verification/records/firmware-ps2/records/20261011-050536-b83b06d.md`) and on the
+  gate-level netlist (`flow/run-ps2-gate-level.sh`, `verification/records/firmware-ps2-gate-level/records/20261011-052507-b83b06d.md`), with eight
+  mutant programs, a log-path control and a WAIT-counter stuck-at fault as
+  negative controls.
 - **Control-register bench (DR 0012).** It checks:
   - reset values, readback, and reserved-index behaviour (no-op write, read
     returns 0)
