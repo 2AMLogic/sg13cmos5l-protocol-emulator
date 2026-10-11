@@ -1,32 +1,60 @@
 # Target Specification
 
-Status: **PROPOSED — not ratified.** Proposed 2026-09-14 in issue #1.
-Reconciled 2026-09-26 per
-[`decision-records/0006-two-key-ratification-never-ran.md`](decision-records/0006-two-key-ratification-never-ran.md):
-the 2026-09-21 `RATIFIED` claim below rested on an act that never happened.
-The PR carrying
-[`decision-records/0004`](decision-records/0004-target-spec-ratification.md)
-was **#29**, and it merged (merge commit `8be9d1e`) with **zero**
-`RATIFY-KEY` reviews — in fact with zero PR reviews of any kind. The
-§ "Ratification" section's own clause therefore fires: *"If this file's
-Status reads `RATIFIED` but the ratifying PR's record cannot show both key
-reviews, the ratification did not happen by mechanism, and this status is
-invalid until superseded by a later record that says so."* DR 0006 is that
-record.
+Status: **RATIFIED** — by the two `RATIFY-KEY` reviews (one EE key, one
+market key, neither held by the carrying PR's author or the design's author)
+on pull request #241 (issue #44). That PR's merge commit is the ratification
+record, and
+[`decision-records/0009-two-key-ratification-act.md`](decision-records/0009-two-key-ratification-act.md)
+is the record of the act and of what it binds. Proposed 2026-09-14 in
+issue #1.
 
-**Nothing in the table below changes.** Every row's target, stretch entry,
-citable source, checking artifact, and `State` reading stands exactly as
-written, and DR 0004's load-bearing separation — what a ratification *binds*
-versus whether the design has *met* it — is preserved intact: no row moves
-between target and met in either direction. What the reconciliation withdraws
-is only the claim that these rows *bind by mechanism*. They are this repo's
-proposed spec-of-record, unratified, and every verdict graded against them
-stays provisional by construction (T1 item 5) until two `RATIFY-KEY` reviews
-land on a carrying PR. The `[DR-4]` markers in the State column should be
-read as *"as DR 0004 proposes to bind it"*, not as a completed ratification.
-What made this a *spec* rather than a wishlist is unaffected: every row
-carries a citable source and a description of how the verification suite
-checks it, per `spec/verification-plan.md`.
+The ratification binds **rows 1–12 as targets**, exactly as
+[`decision-records/0004`](decision-records/0004-target-spec-ratification.md)
+registers them. **Rows 13 and 14 are not bound**: they were added on
+2026-10-09, after DR 0004's register, their `State` cells say so, and they
+stay `Proposed` until an act of their own binds them. **Nothing in the table
+below changes.** Every row's target,
+stretch entry, citable source, checking artifact and `State` reading stands
+as written, and DR 0004's separation of what a ratification *binds* from
+whether the design has *met* it is preserved: no row moves between target
+and met in either direction. The `State` column began as the one-line index of
+DR 0004's register, which is a 2026-09-21 snapshot; several cells have since
+had their evidence wording updated by dated notes (each says which issue and
+that the Target and the unmet reading are unchanged). Neither is the evidence
+state on the date of the act: the live met/unmet tracker is
+`spec/gap-to-submission.md`.
+A `[DR-4]` marker reads as *"as DR 0004 binds it"*.
+
+> **Status text as written 2026-09-26, preserved verbatim (superseded by the
+> text above, not deleted — DR 0009 records why):**
+>
+> Status: **PROPOSED — not ratified.** Proposed 2026-09-14 in issue #1.
+> Reconciled 2026-09-26 per
+> [`decision-records/0006-two-key-ratification-never-ran.md`](decision-records/0006-two-key-ratification-never-ran.md):
+> the 2026-09-21 `RATIFIED` claim below rested on an act that never happened.
+> The PR carrying
+> [`decision-records/0004`](decision-records/0004-target-spec-ratification.md)
+> was **#29**, and it merged (merge commit `8be9d1e`) with **zero**
+> `RATIFY-KEY` reviews — in fact with zero PR reviews of any kind. The
+> § "Ratification" section's own clause therefore fires: *"If this file's
+> Status reads `RATIFIED` but the ratifying PR's record cannot show both key
+> reviews, the ratification did not happen by mechanism, and this status is
+> invalid until superseded by a later record that says so."* DR 0006 is that
+> record.
+>
+> **Nothing in the table below changes.** Every row's target, stretch entry,
+> citable source, checking artifact, and `State` reading stands exactly as
+> written, and DR 0004's load-bearing separation — what a ratification *binds*
+> versus whether the design has *met* it — is preserved intact: no row moves
+> between target and met in either direction. What the reconciliation withdraws
+> is only the claim that these rows *bind by mechanism*. They are this repo's
+> proposed spec-of-record, unratified, and every verdict graded against them
+> stays provisional by construction (T1 item 5) until two `RATIFY-KEY` reviews
+> land on a carrying PR. The `[DR-4]` markers in the State column should be
+> read as *"as DR 0004 proposes to bind it"*, not as a completed ratification.
+> What made this a *spec* rather than a wishlist is unaffected: every row
+> carries a citable source and a description of how the verification suite
+> checks it, per `spec/verification-plan.md`.
 
 > **Status line as written 2026-09-21, preserved verbatim (superseded by the
 > text above, not deleted — DR 0006 records why):**
@@ -314,6 +342,18 @@ the ratification act and are left to issue #44.
   leg has no result.
 
 ## Ratification
+
+> **2026-10-11 (issue #44) — the act described in this section has now been
+> performed, on pull request #241.** Two `RATIFY-KEY` reviews, one EE key and
+> one market key, neither held by that PR's author or the design's author,
+> are on that PR; its merge commit is the ratification record. The first
+> paragraph below still says "Ratified 2026-09-21" and names
+> `loom:auto-merge-ok` as the release signal: both are preserved as written
+> and both are superseded. The date of the act is that PR's merge, and the
+> release signal is the two reviews themselves (`spec/README.md`, "How
+> ratification works here"). The banner immediately below is also preserved
+> as written; it describes PR #29. See
+> [`decision-records/0009-two-key-ratification-act.md`](decision-records/0009-two-key-ratification-act.md).
 
 > **2026-09-26 reconciliation — the act described in this section was not
 > performed.** The PR carrying DR 0004 was **#29**; it merged (merge commit

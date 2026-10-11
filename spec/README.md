@@ -1,6 +1,17 @@
 # spec
 
-Proposed specification and decision records.
+Specification and decision records.
+
+> **2026-10-11 (issue #44): the two-key mechanism has now run.**
+> `target-spec.md` (rows 1–12, as DR 0004 registers them) and decision
+> records 0001–0004 are ratified by the two `RATIFY-KEY` reviews on pull
+> request #241; that PR's merge commit is the ratification record, and
+> [`decision-records/0009-two-key-ratification-act.md`](decision-records/0009-two-key-ratification-act.md)
+> records the act and exactly what it binds. DR 0001 is ratified with its
+> 2026-10-11 fetch-ahead amendment. Target-spec rows 13 and 14 and decision
+> records 0005, 0007, 0008 and 0010–0018 are **not** bound by it and stay
+> `Proposed`. The 2026-09-26 banner below is preserved as written: it was
+> true until that PR merged.
 
 > **2026-09-26: nothing in this directory is ratified.** The two-key
 > (`RATIFY-KEY`) mechanism described below has never run — not on any PR in
@@ -14,15 +25,16 @@ Proposed specification and decision records.
 > see "How ratification works here" below and
 > [`docs/ratification-gate.md`](../docs/ratification-gate.md).
 
-- `target-spec.md` — the checkable target table (Status: **PROPOSED — not
-  ratified**; each row's proposed binding and its met/unmet evidence state
+- `target-spec.md` — the checkable target table (Status: **RATIFIED**, rows
+  1–12 as targets; rows 13 and 14 `Proposed`; each row's binding and its met/unmet evidence state
   are in the table's State column, registered per row in
   `decision-records/0004-target-spec-ratification.md`).
 - `decision-records/` — numbered decision records (0001-isa.md and up),
   including `0004-target-spec-ratification.md` — the per-row register and
-  *proposed* binding record of 2026-09-21, whose own invalidation clause
-  fired, and `0006-two-key-ratification-never-ran.md`, which records that it
-  did.
+  binding record of 2026-09-21, whose own invalidation clause
+  fired, `0006-two-key-ratification-never-ran.md`, which records that it
+  did, and `0009-two-key-ratification-act.md`, which records the act that was
+  then performed.
 - `decision-records/0010-protocol-pin-roles.md` — **Proposed** (not
   ratified) pin-role table for `ui_in` / `uo_out` / `uio` per firmware
   profile, the open-drain mask value DR 0008 defers to it, and the
@@ -107,7 +119,8 @@ surface still being written), `Proposed` (complete, awaiting the two-key act),
 cited with that PR's merge commit), or `Recorded` (a finding of fact plus the
 mechanical consequence another record already prescribed for it; decides and
 binds nothing, so nothing in it needs ratifying —
-`0006-two-key-ratification-never-ran.md` is the only such record). A record
+`0006-two-key-ratification-never-ran.md` and
+`0009-two-key-ratification-act.md` are the only such records). A record
 needs ratification when it **decides** something, not when it **observes**
 something. Nothing writes `Ratified` on the strength of a process description:
 the line must cite the carrying PR and its merge commit, and that PR's
@@ -130,5 +143,5 @@ is the authoritative description of what it checks, including the one question
 it deliberately leaves to an operator (DR 0006 § "Routed, not decided") and
 the operator step that makes the check *blocking* rather than merely red.
 
-See issue #1 for how this surface came to exist, and DR 0006 for why the act
-it describes had not happened as of 2026-09-26.
+See issue #1 for how this surface came to exist, DR 0006 for why the act
+it describes had not happened as of 2026-09-26, and DR 0009 for the act.

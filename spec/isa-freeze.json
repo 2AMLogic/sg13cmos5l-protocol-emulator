@@ -90,6 +90,16 @@
       "sha256_after": "b5d01e4c81a95932284ae28546f5c320f781cf33cb78cbc1a965460244f11d87",
       "ref": "#85",
       "summary": "dated 2026-10-11 amendment superseding the timing model's 'fetch and execute happen in the same cycle' with DR 0005's fetch-ahead text (fixed +1 cycle at run-phase entry), which the frozen RTL already implements; DR 0005 is not bound; no RTL, timing or interface change"
+    },
+    {
+      "path": "spec/decision-records/0001-isa.md",
+      "op": "modify",
+      "kind": "no-behaviour-change",
+      "invalidates_row13_evidence": false,
+      "sha256_before": "b5d01e4c81a95932284ae28546f5c320f781cf33cb78cbc1a965460244f11d87",
+      "sha256_after": "723a03c143a2cca71af81d033110e93b4ef18022edf4334e73aef936e9d33e67",
+      "ref": "#241",
+      "summary": "two-key act (issue #44): Status line flipped from Proposed to Ratified citing the carrying PR and DR 0009, with the 2026-09-26 status text preserved verbatim beneath it; the record's decided text, including its 2026-10-11 fetch-ahead amendment, is unchanged; no RTL, timing or interface change"
     }
   ],
   "row13_excluded_protocols": {

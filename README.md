@@ -86,18 +86,21 @@ verification.
 
 The full target-spec table — every commitment, its source citation, and
 what verification artifact checks it — lives in
-[`spec/target-spec.md`](spec/target-spec.md) (Status: **PROPOSED — not
-ratified**; the per-row register is
+[`spec/target-spec.md`](spec/target-spec.md) (Status: **RATIFIED**, as
+targets; the per-row register is
 [`spec/decision-records/0004-target-spec-ratification.md`](spec/decision-records/0004-target-spec-ratification.md)).
-**The two-key (`RATIFY-KEY`) ratification mechanism has never run in this
-repository** — no PR in its history carries a key review, so the 2026-09-21
-`RATIFIED` claim was an assertion rather than an act and has been reconciled
-to `Proposed` per DR 0004's own invalidation clause. The finding of fact, what
-it does and does not change, and what is required to close it out are in
-[`spec/decision-records/0006-two-key-ratification-never-ran.md`](spec/decision-records/0006-two-key-ratification-never-ran.md)
-(issue #44). No spec content changed — only the claim that it binds — but
-every verdict graded against these rows stays provisional by construction
-(T1 item 5) until the keys actually land.
+The table's rows 1–12 and decision records 0001–0004 are ratified by the program's
+two-key (`RATIFY-KEY`) mechanism: one EE-key review and one market-key
+review, neither held by the author, on pull request #241, whose merge commit
+is the ratification record
+([`spec/decision-records/0009-two-key-ratification-act.md`](spec/decision-records/0009-two-key-ratification-act.md),
+issue #44). An earlier `RATIFIED` claim, dated 2026-09-21, was an assertion
+rather than an act and was withdrawn; that history is in
+[`spec/decision-records/0006-two-key-ratification-never-ran.md`](spec/decision-records/0006-two-key-ratification-never-ran.md).
+Ratification binds those rows as targets. It does not make any row met.
+Rows 13 and 14 (added 2026-10-09, after DR 0004's register) and decision
+records 0005, 0007, 0008 and 0010–0018 are not bound by it and are still
+`Proposed`.
 Design decisions behind those targets (the ISA, which flow produces the submitted
 GDS, the firmware toolchain) are recorded in
 [`spec/decision-records/`](spec/decision-records/). What's judged and how
