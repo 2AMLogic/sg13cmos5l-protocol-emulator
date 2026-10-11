@@ -97,9 +97,19 @@
       "kind": "no-behaviour-change",
       "invalidates_row13_evidence": false,
       "sha256_before": "b5d01e4c81a95932284ae28546f5c320f781cf33cb78cbc1a965460244f11d87",
-      "sha256_after": "569a3a635aba3a52d58722e131cc1dfe62d8d2264ed4c0b6bcf50ae947f53a9f",
+      "sha256_after": "6be6663553a705acd15d3a2562086afe0c4e601a7de5596a1c06841d4a71ae1a",
+      "ref": "#44",
+      "summary": "dated 2026-10-11 amendment superseding the port table's 'uio_oe direction is fixed at synthesis time' with DR 0012's run-time pin-mode text (UIO_DIR/UIO_OD, reset = all inputs), which the frozen RTL already implements; DR 0012 is not bound; no RTL, timing or interface change"
+    },
+    {
+      "path": "spec/decision-records/0001-isa.md",
+      "op": "modify",
+      "kind": "no-behaviour-change",
+      "invalidates_row13_evidence": false,
+      "sha256_before": "6be6663553a705acd15d3a2562086afe0c4e601a7de5596a1c06841d4a71ae1a",
+      "sha256_after": "ccf545386f5fb8f25454c13efb940da57aaa304943ac917e9e934b9ec5d75484",
       "ref": "#242",
-      "summary": "two-key act (issue #44): Status line flipped from Proposed to Ratified citing the carrying PR and DR 0009, with the 2026-09-26 status text preserved verbatim beneath it; the record's decided text, including its 2026-10-11 fetch-ahead amendment, is unchanged; no RTL, timing or interface change"
+      "summary": "two-key act (issue #44): Status line flipped from Proposed to Ratified citing the carrying PR and DR 0009, with the 2026-09-26 status text preserved verbatim beneath it; the record's decided text, including its two 2026-10-11 amendments (fetch-ahead, run-time uio direction), is unchanged; no RTL, timing or interface change"
     }
   ],
   "row13_excluded_protocols": {
