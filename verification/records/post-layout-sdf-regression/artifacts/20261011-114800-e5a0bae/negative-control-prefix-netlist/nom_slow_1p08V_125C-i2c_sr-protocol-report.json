@@ -1,0 +1,36 @@
+{
+  "schema": "pe.sdf_protocol_report/1",
+  "protocol": "i2c_sr",
+  "bench_module": "test_firmware_i2c_sr",
+  "alignment_ps": {
+    "clock_period": 20000,
+    "drive_offset": 4000,
+    "sample_offset": 16000,
+    "observe_offset": 3000
+  },
+  "captures": 6,
+  "captured_cycles": 71980,
+  "pin_events": {
+    "uo_out": {
+      "count": 34,
+      "zero_delay": 0,
+      "min_delay_ps": 1280,
+      "max_delay_ps": 1420
+    },
+    "uio_out": {
+      "count": 546,
+      "zero_delay": 0,
+      "min_delay_ps": 1100,
+      "max_delay_ps": 1110
+    },
+    "uio_oe": {
+      "count": 196,
+      "zero_delay": 0,
+      "min_delay_ps": 1270,
+      "max_delay_ps": 1310
+    }
+  },
+  "contract_violation_count": 0,
+  "contract_violations": [],
+  "timing_controls": {}
+}

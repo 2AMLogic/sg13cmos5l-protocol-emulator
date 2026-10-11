@@ -1,0 +1,49 @@
+{
+  "corner": "nom_fast_1p32V_m40C",
+  "protocol": "i2c_sr",
+  "testbench_module": "sdf_protocol_i2c_sr",
+  "bench_module": "test_firmware_i2c_sr",
+  "run_rc": 3,
+  "elapsed_s": 19,
+  "sdf_annotated": true,
+  "status": "fail",
+  "tests": {
+    "test_sr_images_fresh": "passed",
+    "test_sr_exact_programs_pass_model_with_negative_controls": "failed",
+    "test_sr_poll_programs_stretch": "failed",
+    "test_sr_uio_od_left_at_reset_cannot_drive_the_bus": "passed",
+    "test_sr_model_nominal_repeated_start_passes": "passed"
+  },
+  "pin_delay_ps": {
+    "uo_out": {
+      "count": 26,
+      "zero_delay": 0,
+      "min_delay_ps": 560,
+      "max_delay_ps": 610
+    },
+    "uio_out": {
+      "count": 492,
+      "zero_delay": 0,
+      "min_delay_ps": 480,
+      "max_delay_ps": 490
+    },
+    "uio_oe": {
+      "count": 196,
+      "zero_delay": 0,
+      "min_delay_ps": 540,
+      "max_delay_ps": 570
+    }
+  },
+  "captures": 6,
+  "timing_controls": {},
+  "bench_timing_controls": "captured lines compressed 0.9x must fail t_LOW, f_SCL and t_SU;STA; firmware t_SU;STA WAIT 1 and SUSTA/2 cycles short must fail t_SU;STA alone",
+  "reasons": [
+    "klt exited 3",
+    "klt status 'fail', not 'pass'",
+    "test test_sr_exact_programs_pass_model_with_negative_controls failed",
+    "test test_sr_poll_programs_stretch failed",
+    "failed_count 2",
+    "6 capture(s), at least 16 required"
+  ],
+  "verdict": "fail"
+}

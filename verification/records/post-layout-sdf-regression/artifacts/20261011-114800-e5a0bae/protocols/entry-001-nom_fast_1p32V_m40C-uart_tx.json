@@ -1,0 +1,40 @@
+{
+  "corner": "nom_fast_1p32V_m40C",
+  "protocol": "uart_tx",
+  "testbench_module": "sdf_protocol_uart_tx",
+  "bench_module": "test_firmware_uart",
+  "run_rc": 0,
+  "elapsed_s": 6,
+  "sdf_annotated": true,
+  "status": "pass",
+  "tests": {
+    "test_committed_image_is_fresh": "passed",
+    "test_uart_frames_pass_independent_reference_model": "passed",
+    "test_reference_model_negative_control_still_fails": "passed"
+  },
+  "pin_delay_ps": {
+    "uo_out": {
+      "count": 17,
+      "zero_delay": 0,
+      "min_delay_ps": 650,
+      "max_delay_ps": 650
+    },
+    "uio_out": {
+      "count": 0,
+      "zero_delay": 0,
+      "min_delay_ps": null,
+      "max_delay_ps": null
+    },
+    "uio_oe": {
+      "count": 0,
+      "zero_delay": 0,
+      "min_delay_ps": null,
+      "max_delay_ps": null
+    }
+  },
+  "captures": 1,
+  "timing_controls": {},
+  "bench_timing_controls": "captured TX waveform stretched 1.025x must fail the row-10 drift bound",
+  "reasons": [],
+  "verdict": "pass"
+}

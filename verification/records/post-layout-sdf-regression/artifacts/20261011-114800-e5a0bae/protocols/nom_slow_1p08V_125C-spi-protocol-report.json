@@ -1,0 +1,42 @@
+{
+  "schema": "pe.sdf_protocol_report/1",
+  "protocol": "spi",
+  "bench_module": "test_firmware_spi",
+  "alignment_ps": {
+    "clock_period": 20000,
+    "drive_offset": 4000,
+    "sample_offset": 16000,
+    "observe_offset": 3000
+  },
+  "captures": 4,
+  "captured_cycles": 822,
+  "pin_events": {
+    "uo_out": {
+      "count": 16,
+      "zero_delay": 0,
+      "min_delay_ps": 1350,
+      "max_delay_ps": 1420
+    },
+    "uio_out": {
+      "count": 198,
+      "zero_delay": 0,
+      "min_delay_ps": 1210,
+      "max_delay_ps": 1360
+    },
+    "uio_oe": {
+      "count": 12,
+      "zero_delay": 0,
+      "min_delay_ps": 1490,
+      "max_delay_ps": 1630
+    }
+  },
+  "contract_violation_count": 0,
+  "contract_violations": [],
+  "timing_controls": {
+    "spi_ceiling_compressed": {
+      "run": 12,
+      "failed_as_required": 12,
+      "last": "mode 2: burst at 80.000 ns compressed x0.9000 -> 72.000 ns, violations ['SCLK period 72.000ns below f_clk/4 ceiling (80.000ns at f_clk=5e+07Hz)']"
+    }
+  }
+}

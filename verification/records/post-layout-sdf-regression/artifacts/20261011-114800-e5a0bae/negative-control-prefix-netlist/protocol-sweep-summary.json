@@ -1,0 +1,277 @@
+{
+  "schema": "pe.post_layout_sdf_protocols/1",
+  "suite": "protocols",
+  "flow": "routed netlist, SDF and SDC: Tiny Tapeout LibreLane gds workflow artifacts; simulation: Icarus + cocotb through klt functional-verification with options.sdf. No synthesis or STA number is produced by this harness.",
+  "corners": [
+    "nom_fast_1p32V_m40C",
+    "nom_slow_1p08V_125C",
+    "nom_typ_1p20V_25C"
+  ],
+  "protocols": [
+    "i2c_sr"
+  ],
+  "alignment": {
+    "source": "final/sdc/<top>.sdc of the gds run (frozen beside this file)",
+    "clock_period_ns": 20.0,
+    "input_delay_ns": 4.0,
+    "input_delay_ports": [
+      "ena",
+      "rst_n",
+      "ui_in[0]",
+      "ui_in[1]",
+      "ui_in[2]",
+      "ui_in[3]",
+      "ui_in[4]",
+      "ui_in[5]",
+      "ui_in[6]",
+      "ui_in[7]",
+      "uio_in[0]",
+      "uio_in[1]",
+      "uio_in[2]",
+      "uio_in[3]",
+      "uio_in[4]",
+      "uio_in[5]",
+      "uio_in[6]",
+      "uio_in[7]"
+    ],
+    "output_delay_ns": 4.0,
+    "output_delay_ports": [
+      "uio_oe[0]",
+      "uio_oe[1]",
+      "uio_oe[2]",
+      "uio_oe[3]",
+      "uio_oe[4]",
+      "uio_oe[5]",
+      "uio_oe[6]",
+      "uio_oe[7]",
+      "uio_out[0]",
+      "uio_out[1]",
+      "uio_out[2]",
+      "uio_out[3]",
+      "uio_out[4]",
+      "uio_out[5]",
+      "uio_out[6]",
+      "uio_out[7]",
+      "uo_out[0]",
+      "uo_out[1]",
+      "uo_out[2]",
+      "uo_out[3]",
+      "uo_out[4]",
+      "uo_out[5]",
+      "uo_out[6]",
+      "uo_out[7]"
+    ],
+    "drive_offset_ns": 4.0,
+    "sample_offset_ns": 16.0,
+    "rule": "drive = input delay; sample = period - output delay; tests start the clock at the SDC period"
+  },
+  "limitations": {
+    "sram": {
+      "present": true,
+      "macro_types": [
+        "RM_IHPSG13_1P_256x16_c2_bm_bist"
+      ],
+      "model": "zero-delay FUNCTIONAL behavioural model (rtl/vendor, `define FUNCTIONAL scoped to the macro files)",
+      "sdf": "macro CELL blocks removed by normalization; no SDF delay or timing check binds to the macro",
+      "dropped_per_corner": [
+        {
+          "normalization_report": "<repo>/flow/post-layout-sdf/sdf/nom_fast_1p32V_m40C.normalization.json",
+          "cell_type": "RM_IHPSG13_1P_256x16_c2_bm_bist",
+          "iopath_entries_dropped": 16,
+          "timingcheck_entries_dropped": 260
+        },
+        {
+          "normalization_report": "<repo>/flow/post-layout-sdf/sdf/nom_slow_1p08V_125C.normalization.json",
+          "cell_type": "RM_IHPSG13_1P_256x16_c2_bm_bist",
+          "iopath_entries_dropped": 16,
+          "timingcheck_entries_dropped": 260
+        },
+        {
+          "normalization_report": "<repo>/flow/post-layout-sdf/sdf/nom_typ_1p20V_25C.normalization.json",
+          "cell_type": "RM_IHPSG13_1P_256x16_c2_bm_bist",
+          "iopath_entries_dropped": 16,
+          "timingcheck_entries_dropped": 260
+        }
+      ],
+      "timing_covered_by": "LibreLane post-route STA (gds workflow), not this simulation",
+      "macro_instance_renames": [
+        {
+          "kind": "macro",
+          "cell_type": "RM_IHPSG13_1P_256x16_c2_bm_bist",
+          "instance": "u_prog_mem.u_sram",
+          "sim_instance": "u_prog_mem_u_sram",
+          "netlist_occurrences": 1
+        }
+      ]
+    },
+    "pads": {
+      "uio": "verification/uio_pads.py: zero-delay combinational pad resolution (pulls, open-drain, contention); no pad propagation delay, slew, RC rise or drive strength",
+      "io_cells": "outputs are observed at the tt_um_* macro boundary; Tiny Tapeout IO pad cells, mux and package are not in the netlist"
+    },
+    "observe_point": "captures and reactive peripherals read at drive offset - 1 ns after each clk pin edge (earlier than the SDC sample point); every uo_out/uio_out/uio_oe transition must reach the pin strictly before it",
+    "claim_scope": "standard-cell SDF annotation of the routed tt_um_* netlist only; no full-chip timing-closure claim"
+  },
+  "matrix": {
+    "i2c_sr": {
+      "nom_fast_1p32V_m40C": "fail",
+      "nom_slow_1p08V_125C": "fail",
+      "nom_typ_1p20V_25C": "fail"
+    }
+  },
+  "overall": "fail",
+  "problems": [],
+  "failures": [
+    "nom_fast_1p32V_m40C/i2c_sr: klt exited 3; klt status 'fail', not 'pass'; test test_sr_exact_programs_pass_model_with_negative_controls failed; test test_sr_poll_programs_stretch failed; failed_count 2; 6 capture(s), at least 16 required",
+    "nom_slow_1p08V_125C/i2c_sr: klt exited 3; klt status 'fail', not 'pass'; test test_sr_exact_programs_pass_model_with_negative_controls failed; test test_sr_poll_programs_stretch failed; failed_count 2; 6 capture(s), at least 16 required",
+    "nom_typ_1p20V_25C/i2c_sr: klt exited 3; klt status 'fail', not 'pass'; test test_sr_exact_programs_pass_model_with_negative_controls failed; test test_sr_poll_programs_stretch failed; failed_count 2; 6 capture(s), at least 16 required"
+  ],
+  "runs": [
+    {
+      "corner": "nom_fast_1p32V_m40C",
+      "protocol": "i2c_sr",
+      "testbench_module": "sdf_protocol_i2c_sr",
+      "bench_module": "test_firmware_i2c_sr",
+      "run_rc": 3,
+      "elapsed_s": 19,
+      "sdf_annotated": true,
+      "status": "fail",
+      "tests": {
+        "test_sr_images_fresh": "passed",
+        "test_sr_exact_programs_pass_model_with_negative_controls": "failed",
+        "test_sr_poll_programs_stretch": "failed",
+        "test_sr_uio_od_left_at_reset_cannot_drive_the_bus": "passed",
+        "test_sr_model_nominal_repeated_start_passes": "passed"
+      },
+      "pin_delay_ps": {
+        "uo_out": {
+          "count": 26,
+          "zero_delay": 0,
+          "min_delay_ps": 560,
+          "max_delay_ps": 610
+        },
+        "uio_out": {
+          "count": 492,
+          "zero_delay": 0,
+          "min_delay_ps": 480,
+          "max_delay_ps": 490
+        },
+        "uio_oe": {
+          "count": 196,
+          "zero_delay": 0,
+          "min_delay_ps": 540,
+          "max_delay_ps": 570
+        }
+      },
+      "captures": 6,
+      "timing_controls": {},
+      "bench_timing_controls": "captured lines compressed 0.9x must fail t_LOW, f_SCL and t_SU;STA; firmware t_SU;STA WAIT 1 and SUSTA/2 cycles short must fail t_SU;STA alone",
+      "reasons": [
+        "klt exited 3",
+        "klt status 'fail', not 'pass'",
+        "test test_sr_exact_programs_pass_model_with_negative_controls failed",
+        "test test_sr_poll_programs_stretch failed",
+        "failed_count 2",
+        "6 capture(s), at least 16 required"
+      ],
+      "verdict": "fail"
+    },
+    {
+      "corner": "nom_slow_1p08V_125C",
+      "protocol": "i2c_sr",
+      "testbench_module": "sdf_protocol_i2c_sr",
+      "bench_module": "test_firmware_i2c_sr",
+      "run_rc": 3,
+      "elapsed_s": 19,
+      "sdf_annotated": true,
+      "status": "fail",
+      "tests": {
+        "test_sr_images_fresh": "passed",
+        "test_sr_exact_programs_pass_model_with_negative_controls": "failed",
+        "test_sr_poll_programs_stretch": "failed",
+        "test_sr_uio_od_left_at_reset_cannot_drive_the_bus": "passed",
+        "test_sr_model_nominal_repeated_start_passes": "passed"
+      },
+      "pin_delay_ps": {
+        "uo_out": {
+          "count": 34,
+          "zero_delay": 0,
+          "min_delay_ps": 1280,
+          "max_delay_ps": 1420
+        },
+        "uio_out": {
+          "count": 546,
+          "zero_delay": 0,
+          "min_delay_ps": 1100,
+          "max_delay_ps": 1110
+        },
+        "uio_oe": {
+          "count": 196,
+          "zero_delay": 0,
+          "min_delay_ps": 1270,
+          "max_delay_ps": 1310
+        }
+      },
+      "captures": 6,
+      "timing_controls": {},
+      "bench_timing_controls": "captured lines compressed 0.9x must fail t_LOW, f_SCL and t_SU;STA; firmware t_SU;STA WAIT 1 and SUSTA/2 cycles short must fail t_SU;STA alone",
+      "reasons": [
+        "klt exited 3",
+        "klt status 'fail', not 'pass'",
+        "test test_sr_exact_programs_pass_model_with_negative_controls failed",
+        "test test_sr_poll_programs_stretch failed",
+        "failed_count 2",
+        "6 capture(s), at least 16 required"
+      ],
+      "verdict": "fail"
+    },
+    {
+      "corner": "nom_typ_1p20V_25C",
+      "protocol": "i2c_sr",
+      "testbench_module": "sdf_protocol_i2c_sr",
+      "bench_module": "test_firmware_i2c_sr",
+      "run_rc": 3,
+      "elapsed_s": 19,
+      "sdf_annotated": true,
+      "status": "fail",
+      "tests": {
+        "test_sr_images_fresh": "passed",
+        "test_sr_exact_programs_pass_model_with_negative_controls": "failed",
+        "test_sr_poll_programs_stretch": "failed",
+        "test_sr_uio_od_left_at_reset_cannot_drive_the_bus": "passed",
+        "test_sr_model_nominal_repeated_start_passes": "passed"
+      },
+      "pin_delay_ps": {
+        "uo_out": {
+          "count": 36,
+          "zero_delay": 0,
+          "min_delay_ps": 820,
+          "max_delay_ps": 910
+        },
+        "uio_out": {
+          "count": 546,
+          "zero_delay": 0,
+          "min_delay_ps": 710,
+          "max_delay_ps": 720
+        },
+        "uio_oe": {
+          "count": 196,
+          "zero_delay": 0,
+          "min_delay_ps": 820,
+          "max_delay_ps": 840
+        }
+      },
+      "captures": 6,
+      "timing_controls": {},
+      "bench_timing_controls": "captured lines compressed 0.9x must fail t_LOW, f_SCL and t_SU;STA; firmware t_SU;STA WAIT 1 and SUSTA/2 cycles short must fail t_SU;STA alone",
+      "reasons": [
+        "klt exited 3",
+        "klt status 'fail', not 'pass'",
+        "test test_sr_exact_programs_pass_model_with_negative_controls failed",
+        "test test_sr_poll_programs_stretch failed",
+        "failed_count 2",
+        "6 capture(s), at least 16 required"
+      ],
+      "verdict": "fail"
+    }
+  ]
+}

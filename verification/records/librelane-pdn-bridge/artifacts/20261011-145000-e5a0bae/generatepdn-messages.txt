@@ -1,0 +1,5 @@
+# every PSM-/PDN-/ERROR/WARNING line of GDS_logs/runs/wokwi/21-openroad-generatepdn, unmodified
+[WARNING ORD-0032] Invalid thread number specification: None.
+[INFO PDN-0001] Inserting grid: stdcell_grid
+[INFO PSM-0040] All shapes on net VPWR are connected.
+[INFO PSM-0040] All shapes on net VGND are connected.

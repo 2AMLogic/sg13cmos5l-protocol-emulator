@@ -1,0 +1,20 @@
+{
+  "netlist": "<repo>/verification/records/post-layout-sdf-regression/artifacts/20261011-114800-e5a0bae/tt_um_2amlogic_protocol_emulator.v",
+  "netlist_sha256": "fbc7bc30a4987aaa47ea2633df46993ebe1ee42171edc54173e25ff343e085ba",
+  "flow": "LibreLane (Tiny Tapeout gds workflow) netlist; Icarus+cocotb zero-delay simulation",
+  "runs": [
+    {
+      "kind": "golden",
+      "module": "test_firmware_ps2",
+      "result": "tests=18 failed=0 unparsed=0 rc=0",
+      "as_required": true
+    },
+    {
+      "kind": "negative-control",
+      "fault": "\\u_core.wait_cnt[0] stuck at 0",
+      "module": "test_firmware_ps2",
+      "result": "tests=18 failed=14 unparsed=0 rc=2",
+      "as_required": true
+    }
+  ]
+}
