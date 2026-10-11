@@ -1,0 +1,1315 @@
+{
+  "schema": "pe.librelane_trials/1",
+  "flow": "LibreLane 3.1.0.dev3 (tt-gds-action@ihp-cmos5l), post-route OpenSTA, CLOCK_PERIOD 20 ns",
+  "corner_order": [
+    "nom_slow_1p08V_125C",
+    "nom_typ_1p20V_25C",
+    "nom_fast_1p32V_m40C"
+  ],
+  "utilization": "design__instance__utilization: placed standard cells plus the SRAM macro over the core area",
+  "trials": [
+    {
+      "trial": "main",
+      "design": "main (pre-#244)",
+      "gds_run": 38108543866,
+      "commit": "f1b21df923d12210580b6cb061a85c8c492f4ce0",
+      "config_delta": "none (the run #246 was filed from)",
+      "setup_ws_ns": [
+        1.925,
+        8.796,
+        11.109
+      ],
+      "hold_ws_ns": [
+        0.667,
+        0.325,
+        0.129
+      ],
+      "setup_vio": [
+        0,
+        0,
+        0
+      ],
+      "hold_vio": [
+        0,
+        0,
+        0
+      ],
+      "max_slew": [
+        2,
+        0,
+        0
+      ],
+      "max_cap": [
+        0,
+        0,
+        0
+      ],
+      "stdcell_area_um2": 44964.5,
+      "utilization_pct": 57.7,
+      "stdcell_instances": 3382,
+      "macro_drive_buffers": 27
+    },
+    {
+      "trial": "t24",
+      "design": "main (pre-#244)",
+      "gds_run": 38131966596,
+      "commit": "fa804d235309f5dbe5085eb6705aa653518a0be5",
+      "config_delta": "RUN_POST_GRT_DESIGN_REPAIR 1",
+      "setup_ws_ns": [
+        1.887,
+        8.789,
+        11.095
+      ],
+      "hold_ws_ns": [
+        0.664,
+        0.321,
+        0.13
+      ],
+      "setup_vio": [
+        0,
+        0,
+        0
+      ],
+      "hold_vio": [
+        0,
+        0,
+        0
+      ],
+      "max_slew": [
+        2,
+        0,
+        0
+      ],
+      "max_cap": [
+        0,
+        0,
+        0
+      ],
+      "stdcell_area_um2": 44948.1,
+      "utilization_pct": 57.68,
+      "stdcell_instances": 3379,
+      "macro_drive_buffers": 27
+    },
+    {
+      "trial": "t25",
+      "design": "main (pre-#244)",
+      "gds_run": 38131969264,
+      "commit": "46b39044c02ba0385a2f296030f87dbfbebde5b7",
+      "config_delta": "post-GRT repair + resizer, PL and GRT setup margins 8",
+      "setup_ws_ns": [
+        5.778,
+        10.819,
+        11.138
+      ],
+      "hold_ws_ns": [
+        0.639,
+        0.313,
+        0.12
+      ],
+      "setup_vio": [
+        0,
+        0,
+        0
+      ],
+      "hold_vio": [
+        0,
+        0,
+        0
+      ],
+      "max_slew": [
+        5,
+        0,
+        0
+      ],
+      "max_cap": [
+        1,
+        1,
+        1
+      ],
+      "stdcell_area_um2": 45472.5,
+      "utilization_pct": 58.1,
+      "stdcell_instances": 3417,
+      "macro_drive_buffers": 27
+    },
+    {
+      "trial": "t26",
+      "design": "main (pre-#244)",
+      "gds_run": 38133391079,
+      "commit": "6dbe92475698dae83601fa2a890748fb5903f984",
+      "config_delta": "t25 + slew and cap repair margins 40 % (post-GPL and post-GRT)",
+      "setup_ws_ns": [
+        5.778,
+        10.819,
+        11.138
+      ],
+      "hold_ws_ns": [
+        0.639,
+        0.313,
+        0.12
+      ],
+      "setup_vio": [
+        0,
+        0,
+        0
+      ],
+      "hold_vio": [
+        0,
+        0,
+        0
+      ],
+      "max_slew": [
+        5,
+        0,
+        0
+      ],
+      "max_cap": [
+        1,
+        1,
+        1
+      ],
+      "stdcell_area_um2": 45472.5,
+      "utilization_pct": 58.1,
+      "stdcell_instances": 3417,
+      "macro_drive_buffers": 27
+    },
+    {
+      "trial": "t27",
+      "design": "main (pre-#244)",
+      "gds_run": 38133392956,
+      "commit": "945193727f7596f9196c6678ad8db220dc7c4622",
+      "config_delta": "t25 + RSZ_CORNERS slow, typ, fast",
+      "setup_ws_ns": [
+        5.778,
+        10.819,
+        11.138
+      ],
+      "hold_ws_ns": [
+        0.639,
+        0.313,
+        0.12
+      ],
+      "setup_vio": [
+        0,
+        0,
+        0
+      ],
+      "hold_vio": [
+        0,
+        0,
+        0
+      ],
+      "max_slew": [
+        5,
+        0,
+        0
+      ],
+      "max_cap": [
+        1,
+        1,
+        1
+      ],
+      "stdcell_area_um2": 45472.5,
+      "utilization_pct": 58.1,
+      "stdcell_instances": 3417,
+      "macro_drive_buffers": 27
+    },
+    {
+      "trial": "t34",
+      "design": "main (pre-#244)",
+      "gds_run": 38135058264,
+      "commit": "07525ca9d2e7713ef592d7998c8d33d09c4e42ac",
+      "config_delta": "post-GRT resizer only (no post-GRT design repair), margins 8",
+      "setup_ws_ns": [
+        5.996,
+        10.807,
+        11.13
+      ],
+      "hold_ws_ns": [
+        0.639,
+        0.313,
+        0.119
+      ],
+      "setup_vio": [
+        0,
+        0,
+        0
+      ],
+      "hold_vio": [
+        0,
+        0,
+        0
+      ],
+      "max_slew": [
+        2,
+        0,
+        0
+      ],
+      "max_cap": [
+        0,
+        0,
+        0
+      ],
+      "stdcell_area_um2": 45468.9,
+      "utilization_pct": 58.09,
+      "stdcell_instances": 3407,
+      "macro_drive_buffers": 27
+    },
+    {
+      "trial": "t30",
+      "design": "main (pre-#244)",
+      "gds_run": 38135049645,
+      "commit": "938d27303ac9b748b84fa8b9af0c4ecb89d1f437",
+      "config_delta": "t25 + GRT_DESIGN_REPAIR_MAX_WIRE_LENGTH 300 (the final config)",
+      "setup_ws_ns": [
+        6.565,
+        10.772,
+        11.109
+      ],
+      "hold_ws_ns": [
+        0.573,
+        0.265,
+        0.089
+      ],
+      "setup_vio": [
+        0,
+        0,
+        0
+      ],
+      "hold_vio": [
+        0,
+        0,
+        0
+      ],
+      "max_slew": [
+        0,
+        0,
+        0
+      ],
+      "max_cap": [
+        2,
+        2,
+        2
+      ],
+      "stdcell_area_um2": 46194.6,
+      "utilization_pct": 58.67,
+      "stdcell_instances": 3481,
+      "macro_drive_buffers": 27
+    },
+    {
+      "trial": "t33",
+      "design": "main (pre-#244)",
+      "gds_run": 38135055914,
+      "commit": "c4be2088f16126e3df6b98bff5223185e41914e4",
+      "config_delta": "t25 + GRT_DESIGN_REPAIR_MAX_WIRE_LENGTH 150",
+      "setup_ws_ns": [
+        6.867,
+        10.694,
+        11.061
+      ],
+      "hold_ws_ns": [
+        0.57,
+        0.264,
+        0.087
+      ],
+      "setup_vio": [
+        0,
+        0,
+        0
+      ],
+      "hold_vio": [
+        0,
+        0,
+        0
+      ],
+      "max_slew": [
+        0,
+        0,
+        0
+      ],
+      "max_cap": [
+        0,
+        0,
+        0
+      ],
+      "stdcell_area_um2": 48099.7,
+      "utilization_pct": 60.17,
+      "stdcell_instances": 3735,
+      "macro_drive_buffers": 27
+    },
+    {
+      "trial": "t0",
+      "design": "#244 top",
+      "gds_run": 38124425108,
+      "commit": "061f4caa469ec842a69abdce2d5751ccb5272e5a",
+      "config_delta": "none",
+      "setup_ws_ns": [
+        3.716,
+        9.926,
+        11.07
+      ],
+      "hold_ws_ns": [
+        0.666,
+        0.323,
+        0.13
+      ],
+      "setup_vio": [
+        0,
+        0,
+        0
+      ],
+      "hold_vio": [
+        0,
+        0,
+        0
+      ],
+      "max_slew": [
+        0,
+        0,
+        0
+      ],
+      "max_cap": [
+        0,
+        0,
+        0
+      ],
+      "stdcell_area_um2": 45251.1,
+      "utilization_pct": 57.92,
+      "stdcell_instances": 3360,
+      "macro_drive_buffers": 27
+    },
+    {
+      "trial": "t5",
+      "design": "#244 top",
+      "gds_run": 38124446324,
+      "commit": "a5d26c87948c222aeb19647f5d18fe55f28904bd",
+      "config_delta": "SYNTH_SIZING 1",
+      "setup_ws_ns": [
+        3.716,
+        9.926,
+        11.07
+      ],
+      "hold_ws_ns": [
+        0.666,
+        0.323,
+        0.13
+      ],
+      "setup_vio": [
+        0,
+        0,
+        0
+      ],
+      "hold_vio": [
+        0,
+        0,
+        0
+      ],
+      "max_slew": [
+        0,
+        0,
+        0
+      ],
+      "max_cap": [
+        0,
+        0,
+        0
+      ],
+      "stdcell_area_um2": 45251.1,
+      "utilization_pct": 57.92,
+      "stdcell_instances": 3360,
+      "macro_drive_buffers": 27
+    },
+    {
+      "trial": "t7",
+      "design": "#244 top",
+      "gds_run": 38124451107,
+      "commit": "f0a63f64b2d14748b55837cf690fc70d1798fc04",
+      "config_delta": "PL_RESIZER_SETUP_SLACK_MARGIN 4",
+      "setup_ws_ns": [
+        3.716,
+        9.926,
+        11.07
+      ],
+      "hold_ws_ns": [
+        0.666,
+        0.323,
+        0.13
+      ],
+      "setup_vio": [
+        0,
+        0,
+        0
+      ],
+      "hold_vio": [
+        0,
+        0,
+        0
+      ],
+      "max_slew": [
+        0,
+        0,
+        0
+      ],
+      "max_cap": [
+        0,
+        0,
+        0
+      ],
+      "stdcell_area_um2": 45251.1,
+      "utilization_pct": 57.92,
+      "stdcell_instances": 3360,
+      "macro_drive_buffers": 27
+    },
+    {
+      "trial": "t11",
+      "design": "#244 top",
+      "gds_run": 38127917674,
+      "commit": "4d634f1f7afd1cf5de6e864755ea493006787b54",
+      "config_delta": "PL_RESIZER_SETUP_SLACK_MARGIN 8",
+      "setup_ws_ns": [
+        5.309,
+        10.713,
+        11.073
+      ],
+      "hold_ws_ns": [
+        0.652,
+        0.317,
+        0.124
+      ],
+      "setup_vio": [
+        0,
+        0,
+        0
+      ],
+      "hold_vio": [
+        0,
+        0,
+        0
+      ],
+      "max_slew": [
+        0,
+        0,
+        0
+      ],
+      "max_cap": [
+        0,
+        0,
+        0
+      ],
+      "stdcell_area_um2": 45325.5,
+      "utilization_pct": 57.98,
+      "stdcell_instances": 3364,
+      "macro_drive_buffers": 27
+    },
+    {
+      "trial": "t6",
+      "design": "#244 top",
+      "gds_run": 38124449056,
+      "commit": "86820a3c88d544686ab4587de5a81521d3239766",
+      "config_delta": "MAX_TRANSITION_CONSTRAINT 1.0",
+      "setup_ws_ns": [
+        3.928,
+        10.096,
+        11.064
+      ],
+      "hold_ws_ns": [
+        0.691,
+        0.333,
+        0.135
+      ],
+      "setup_vio": [
+        0,
+        0,
+        0
+      ],
+      "hold_vio": [
+        0,
+        0,
+        0
+      ],
+      "max_slew": [
+        64,
+        0,
+        0
+      ],
+      "max_cap": [
+        0,
+        0,
+        0
+      ],
+      "stdcell_area_um2": 45287.4,
+      "utilization_pct": 57.95,
+      "stdcell_instances": 3364,
+      "macro_drive_buffers": 27
+    },
+    {
+      "trial": "t1",
+      "design": "#244 top",
+      "gds_run": 38124436483,
+      "commit": "062a1b75fb0a32a124911e3060945f615b5dd51a",
+      "config_delta": "post-GRT repair + resizer, template margins",
+      "setup_ws_ns": [
+        4.258,
+        10.313,
+        11.048
+      ],
+      "hold_ws_ns": [
+        0.664,
+        0.319,
+        0.125
+      ],
+      "setup_vio": [
+        0,
+        0,
+        0
+      ],
+      "hold_vio": [
+        0,
+        0,
+        0
+      ],
+      "max_slew": [
+        0,
+        0,
+        0
+      ],
+      "max_cap": [
+        0,
+        0,
+        0
+      ],
+      "stdcell_area_um2": 45262,
+      "utilization_pct": 57.93,
+      "stdcell_instances": 3362,
+      "macro_drive_buffers": 27
+    },
+    {
+      "trial": "t2",
+      "design": "#244 top",
+      "gds_run": 38124438959,
+      "commit": "8331120a2edf76ab3ea984380a7e8bbb5808bb96",
+      "config_delta": "post-GRT repair + resizer, margins 4",
+      "setup_ws_ns": [
+        4.258,
+        10.313,
+        11.048
+      ],
+      "hold_ws_ns": [
+        0.664,
+        0.319,
+        0.125
+      ],
+      "setup_vio": [
+        0,
+        0,
+        0
+      ],
+      "hold_vio": [
+        0,
+        0,
+        0
+      ],
+      "max_slew": [
+        0,
+        0,
+        0
+      ],
+      "max_cap": [
+        0,
+        0,
+        0
+      ],
+      "stdcell_area_um2": 45262,
+      "utilization_pct": 57.93,
+      "stdcell_instances": 3362,
+      "macro_drive_buffers": 27
+    },
+    {
+      "trial": "t22",
+      "design": "#244 top",
+      "gds_run": 38129405884,
+      "commit": "7b9b88d0f94b7144d7bb55acbc7ebc41195ef28c",
+      "config_delta": "post-GRT repair + resizer, margins 6",
+      "setup_ws_ns": [
+        4.258,
+        10.313,
+        11.048
+      ],
+      "hold_ws_ns": [
+        0.664,
+        0.319,
+        0.125
+      ],
+      "setup_vio": [
+        0,
+        0,
+        0
+      ],
+      "hold_vio": [
+        0,
+        0,
+        0
+      ],
+      "max_slew": [
+        0,
+        0,
+        0
+      ],
+      "max_cap": [
+        0,
+        0,
+        0
+      ],
+      "stdcell_area_um2": 45262,
+      "utilization_pct": 57.93,
+      "stdcell_instances": 3362,
+      "macro_drive_buffers": 27
+    },
+    {
+      "trial": "t9",
+      "design": "#244 top",
+      "gds_run": 38127913495,
+      "commit": "29a011fb30117e439f4a628561a8c24486536f95",
+      "config_delta": "post-GRT repair + resizer, margins 8",
+      "setup_ws_ns": [
+        5.92,
+        10.704,
+        11.067
+      ],
+      "hold_ws_ns": [
+        0.635,
+        0.306,
+        0.118
+      ],
+      "setup_vio": [
+        0,
+        0,
+        0
+      ],
+      "hold_vio": [
+        0,
+        0,
+        0
+      ],
+      "max_slew": [
+        0,
+        0,
+        0
+      ],
+      "max_cap": [
+        0,
+        0,
+        0
+      ],
+      "stdcell_area_um2": 45508.8,
+      "utilization_pct": 58.13,
+      "stdcell_instances": 3371,
+      "macro_drive_buffers": 27
+    },
+    {
+      "trial": "t23",
+      "design": "#244 top",
+      "gds_run": 38131964648,
+      "commit": "28f4ff1c612dbd3fb4c7d18dd64a146970f21066",
+      "config_delta": "post-GRT repair + resizer, margins 9",
+      "setup_ws_ns": [
+        7.289,
+        10.712,
+        11.073
+      ],
+      "hold_ws_ns": [
+        0.663,
+        0.322,
+        0.129
+      ],
+      "setup_vio": [
+        0,
+        0,
+        0
+      ],
+      "hold_vio": [
+        0,
+        0,
+        0
+      ],
+      "max_slew": [
+        0,
+        0,
+        0
+      ],
+      "max_cap": [
+        0,
+        0,
+        0
+      ],
+      "stdcell_area_um2": 46308.9,
+      "utilization_pct": 58.76,
+      "stdcell_instances": 3422,
+      "macro_drive_buffers": 27
+    },
+    {
+      "trial": "t21",
+      "design": "#244 top",
+      "gds_run": 38129404043,
+      "commit": "1731b739f118752693559eb397ae044b302e9beb",
+      "config_delta": "post-GRT repair + resizer, margins 10",
+      "setup_ws_ns": [
+        8.382,
+        10.73,
+        11.084
+      ],
+      "hold_ws_ns": [
+        0.483,
+        0.231,
+        0.077
+      ],
+      "setup_vio": [
+        0,
+        0,
+        0
+      ],
+      "hold_vio": [
+        0,
+        0,
+        0
+      ],
+      "max_slew": [
+        0,
+        0,
+        0
+      ],
+      "max_cap": [
+        0,
+        0,
+        0
+      ],
+      "stdcell_area_um2": 50278.8,
+      "utilization_pct": 61.89,
+      "stdcell_instances": 3637,
+      "macro_drive_buffers": 27
+    },
+    {
+      "trial": "t28",
+      "design": "#244 top",
+      "gds_run": 38133394998,
+      "commit": "43fa9288dccac796b6b49ae8a9fb8c25e9ecdc26",
+      "config_delta": "t9 + slew and cap repair margins 40 % (post-GPL and post-GRT)",
+      "setup_ws_ns": [
+        5.92,
+        10.704,
+        11.067
+      ],
+      "hold_ws_ns": [
+        0.635,
+        0.306,
+        0.118
+      ],
+      "setup_vio": [
+        0,
+        0,
+        0
+      ],
+      "hold_vio": [
+        0,
+        0,
+        0
+      ],
+      "max_slew": [
+        0,
+        0,
+        0
+      ],
+      "max_cap": [
+        0,
+        0,
+        0
+      ],
+      "stdcell_area_um2": 45508.8,
+      "utilization_pct": 58.13,
+      "stdcell_instances": 3371,
+      "macro_drive_buffers": 27
+    },
+    {
+      "trial": "t29",
+      "design": "#244 top",
+      "gds_run": 38133396810,
+      "commit": "6241551d48978ea0a4365cdba74741296a295217",
+      "config_delta": "t9 + RSZ_CORNERS slow, typ, fast",
+      "setup_ws_ns": [
+        5.92,
+        10.704,
+        11.067
+      ],
+      "hold_ws_ns": [
+        0.635,
+        0.306,
+        0.118
+      ],
+      "setup_vio": [
+        0,
+        0,
+        0
+      ],
+      "hold_vio": [
+        0,
+        0,
+        0
+      ],
+      "max_slew": [
+        0,
+        0,
+        0
+      ],
+      "max_cap": [
+        0,
+        0,
+        0
+      ],
+      "stdcell_area_um2": 45508.8,
+      "utilization_pct": 58.13,
+      "stdcell_instances": 3371,
+      "macro_drive_buffers": 27
+    },
+    {
+      "trial": "t32",
+      "design": "#244 top",
+      "gds_run": 38135053878,
+      "commit": "85a8af55aa48fc88584e6f6f0b850dcbf4c49c0a",
+      "config_delta": "post-GRT resizer only (no post-GRT design repair), margins 8",
+      "setup_ws_ns": [
+        6.374,
+        10.743,
+        11.093
+      ],
+      "hold_ws_ns": [
+        0.642,
+        0.31,
+        0.12
+      ],
+      "setup_vio": [
+        0,
+        0,
+        0
+      ],
+      "hold_vio": [
+        0,
+        0,
+        0
+      ],
+      "max_slew": [
+        0,
+        0,
+        0
+      ],
+      "max_cap": [
+        0,
+        0,
+        0
+      ],
+      "stdcell_area_um2": 45548.7,
+      "utilization_pct": 58.16,
+      "stdcell_instances": 3378,
+      "macro_drive_buffers": 27
+    },
+    {
+      "trial": "t31",
+      "design": "#244 top",
+      "gds_run": 38135051500,
+      "commit": "89cb9966cf9b4e34f3566ba493b3d693a6a134a3",
+      "config_delta": "t9 + GRT_DESIGN_REPAIR_MAX_WIRE_LENGTH 300 (the final config)",
+      "setup_ws_ns": [
+        5.785,
+        10.714,
+        11.074
+      ],
+      "hold_ws_ns": [
+        0.56,
+        0.261,
+        0.083
+      ],
+      "setup_vio": [
+        0,
+        0,
+        0
+      ],
+      "hold_vio": [
+        0,
+        0,
+        0
+      ],
+      "max_slew": [
+        0,
+        0,
+        0
+      ],
+      "max_cap": [
+        0,
+        0,
+        0
+      ],
+      "stdcell_area_um2": 46047.7,
+      "utilization_pct": 58.55,
+      "stdcell_instances": 3414,
+      "macro_drive_buffers": 27
+    },
+    {
+      "trial": "t3",
+      "design": "#244 top",
+      "gds_run": 38124441537,
+      "commit": "a81d8e5bbbf948022a465f58e2d5b62a1382616d",
+      "config_delta": "PL_TIMING_DRIVEN 1",
+      "setup_ws_ns": [
+        5.778,
+        10.719,
+        11.077
+      ],
+      "hold_ws_ns": [
+        0.652,
+        0.314,
+        0.122
+      ],
+      "setup_vio": [
+        0,
+        0,
+        0
+      ],
+      "hold_vio": [
+        0,
+        0,
+        0
+      ],
+      "max_slew": [
+        1,
+        0,
+        0
+      ],
+      "max_cap": [
+        0,
+        0,
+        0
+      ],
+      "stdcell_area_um2": 44420.1,
+      "utilization_pct": 57.27,
+      "stdcell_instances": 3265,
+      "macro_drive_buffers": 0
+    },
+    {
+      "trial": "t12",
+      "design": "#244 top",
+      "gds_run": 38127919533,
+      "commit": "5798af3695f39e0919b7b5f8559884b402a40d1a",
+      "config_delta": "PL_TIMING_DRIVEN 1, PL margin 8",
+      "setup_ws_ns": [
+        5.778,
+        10.719,
+        11.077
+      ],
+      "hold_ws_ns": [
+        0.652,
+        0.314,
+        0.122
+      ],
+      "setup_vio": [
+        0,
+        0,
+        0
+      ],
+      "hold_vio": [
+        0,
+        0,
+        0
+      ],
+      "max_slew": [
+        1,
+        0,
+        0
+      ],
+      "max_cap": [
+        0,
+        0,
+        0
+      ],
+      "stdcell_area_um2": 44420.1,
+      "utilization_pct": 57.27,
+      "stdcell_instances": 3265,
+      "macro_drive_buffers": 0
+    },
+    {
+      "trial": "t14",
+      "design": "#244 top",
+      "gds_run": 38127923704,
+      "commit": "cd7dcf60a511004f84beb308bf12185e40a10667",
+      "config_delta": "PL_TIMING_DRIVEN 1, RUN_POST_GRT_DESIGN_REPAIR 1",
+      "setup_ws_ns": [
+        5.657,
+        10.733,
+        11.086
+      ],
+      "hold_ws_ns": [
+        0.653,
+        0.314,
+        0.123
+      ],
+      "setup_vio": [
+        0,
+        0,
+        0
+      ],
+      "hold_vio": [
+        0,
+        0,
+        0
+      ],
+      "max_slew": [
+        1,
+        0,
+        0
+      ],
+      "max_cap": [
+        0,
+        0,
+        0
+      ],
+      "stdcell_area_um2": 44425.6,
+      "utilization_pct": 57.27,
+      "stdcell_instances": 3266,
+      "macro_drive_buffers": 0
+    },
+    {
+      "trial": "t16",
+      "design": "#244 top",
+      "gds_run": 38129236778,
+      "commit": "bc01c22e593dfeece77b78c3d1bbefc4bf78bbe5",
+      "config_delta": "PL_TIMING_DRIVEN 1, DESIGN_REPAIR_MAX_WIRE_LENGTH 200",
+      "setup_ws_ns": [
+        5.56,
+        10.776,
+        11.114
+      ],
+      "hold_ws_ns": [
+        0.653,
+        0.314,
+        0.122
+      ],
+      "setup_vio": [
+        0,
+        0,
+        0
+      ],
+      "hold_vio": [
+        0,
+        0,
+        0
+      ],
+      "max_slew": [
+        0,
+        0,
+        0
+      ],
+      "max_cap": [
+        0,
+        0,
+        0
+      ],
+      "stdcell_area_um2": 45303.8,
+      "utilization_pct": 57.96,
+      "stdcell_instances": 3354,
+      "macro_drive_buffers": 0
+    },
+    {
+      "trial": "t13",
+      "design": "#244 top",
+      "gds_run": 38127921256,
+      "commit": "3f97acba48f4ad94f4a4147f75050baf9fbafe2e",
+      "config_delta": "PL_TIMING_DRIVEN 1, DESIGN_REPAIR_MAX_WIRE_LENGTH 300",
+      "setup_ws_ns": [
+        6.018,
+        10.735,
+        11.087
+      ],
+      "hold_ws_ns": [
+        0.661,
+        0.318,
+        0.124
+      ],
+      "setup_vio": [
+        0,
+        0,
+        0
+      ],
+      "hold_vio": [
+        0,
+        0,
+        0
+      ],
+      "max_slew": [
+        0,
+        0,
+        0
+      ],
+      "max_cap": [
+        0,
+        0,
+        0
+      ],
+      "stdcell_area_um2": 44714.1,
+      "utilization_pct": 57.5,
+      "stdcell_instances": 3287,
+      "macro_drive_buffers": 0
+    },
+    {
+      "trial": "t17",
+      "design": "#244 top",
+      "gds_run": 38129238657,
+      "commit": "5be691b963b535b9cac4b62d5d537bc8a551e889",
+      "config_delta": "PL_TIMING_DRIVEN 1, DESIGN_REPAIR_MAX_WIRE_LENGTH 400",
+      "setup_ws_ns": [
+        5.852,
+        10.732,
+        11.086
+      ],
+      "hold_ws_ns": [
+        0.652,
+        0.314,
+        0.121
+      ],
+      "setup_vio": [
+        0,
+        0,
+        0
+      ],
+      "hold_vio": [
+        0,
+        0,
+        0
+      ],
+      "max_slew": [
+        0,
+        0,
+        0
+      ],
+      "max_cap": [
+        0,
+        0,
+        0
+      ],
+      "stdcell_area_um2": 44507.2,
+      "utilization_pct": 57.33,
+      "stdcell_instances": 3271,
+      "macro_drive_buffers": 0
+    },
+    {
+      "trial": "t10",
+      "design": "#244 top",
+      "gds_run": 38127915568,
+      "commit": "282c5d4fecc9af13dde50d6ede3bf7db59bfe6e4",
+      "config_delta": "PL_TIMING_DRIVEN 1, post-GRT repair + resizer, margins 8",
+      "setup_ws_ns": [
+        6.523,
+        10.728,
+        11.083
+      ],
+      "hold_ws_ns": [
+        0.641,
+        0.307,
+        0.119
+      ],
+      "setup_vio": [
+        0,
+        0,
+        0
+      ],
+      "hold_vio": [
+        0,
+        0,
+        0
+      ],
+      "max_slew": [
+        1,
+        0,
+        0
+      ],
+      "max_cap": [
+        0,
+        0,
+        0
+      ],
+      "stdcell_area_um2": 44490.9,
+      "utilization_pct": 57.32,
+      "stdcell_instances": 3272,
+      "macro_drive_buffers": 0
+    },
+    {
+      "trial": "t15",
+      "design": "#244 top",
+      "gds_run": 38129234907,
+      "commit": "7488ddf2eb9c4eba08674d2a7f79f301039eb8a8",
+      "config_delta": "PL_TIMING_DRIVEN 1, max wire 300, post-GRT repair + resizer, GRT margin 8",
+      "setup_ws_ns": [
+        6.512,
+        10.698,
+        11.064
+      ],
+      "hold_ws_ns": [
+        0.655,
+        0.316,
+        0.122
+      ],
+      "setup_vio": [
+        0,
+        0,
+        0
+      ],
+      "hold_vio": [
+        0,
+        0,
+        0
+      ],
+      "max_slew": [
+        0,
+        0,
+        0
+      ],
+      "max_cap": [
+        0,
+        0,
+        0
+      ],
+      "stdcell_area_um2": 44766.7,
+      "utilization_pct": 57.54,
+      "stdcell_instances": 3290,
+      "macro_drive_buffers": 0
+    },
+    {
+      "trial": "t18",
+      "design": "#244 top",
+      "gds_run": 38129321789,
+      "commit": "58d04353f7fc15cf90372f165e1dc8769f714f4f",
+      "config_delta": "PL_TIMING_DRIVEN 1, RSZ_DONT_TOUCH_RX on the 27 macro drive buffers",
+      "result": "flow failed: post-CTS hold repair, RSZ-3009 insert_buffer failed on drvr_pin"
+    },
+    {
+      "trial": "t19",
+      "design": "#244 top",
+      "gds_run": 38129324759,
+      "commit": "31825f2b3b7dd303bb8a500f7c1c681b4971f8ee",
+      "config_delta": "t18 + DESIGN_REPAIR_MAX_WIRE_LENGTH 300",
+      "result": "flow failed: post-CTS hold repair, RSZ-3009 insert_buffer failed on drvr_pin"
+    },
+    {
+      "trial": "t20",
+      "design": "#244 top",
+      "gds_run": 38129326490,
+      "commit": "084fa6a8e1d21ecc86cb43d022d5d312982f2029",
+      "config_delta": "t18 + post-GRT repair + resizer, GRT margin 8",
+      "result": "flow failed: post-CTS hold repair, RSZ-3009 insert_buffer failed on drvr_pin"
+    },
+    {
+      "trial": "t4",
+      "design": "#244 top",
+      "gds_run": 38124443632,
+      "commit": "412f505e11e8b862ab481eaf9c3f924de4142f8f",
+      "config_delta": "SYNTH_STRATEGY DELAY 1",
+      "result": "flow failed after 4 h 16 min in the gds job: 40 Magic illegal-overlap errors, harden failed"
+    }
+  ]
+}

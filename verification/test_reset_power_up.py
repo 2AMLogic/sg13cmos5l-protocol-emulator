@@ -72,7 +72,10 @@ loader's start-edge poll instead of a `HALT`, with RX idling high. The loader
 is a program, so it writes pins: it sets `uio_out` to its 0xFF guard and TX
 (`uo_out[0]`) high. What stays checked for it is the part of [row14-b] that
 is about driving: `uio_oe` is 0 at every sample, `uo_out` carries only TX,
-`uio_out` is 0x00 or 0xFF, and the window ends in exactly (TX high, 0xFF, 0).
+`uio_out` is 0x00 or 0xFF, and the window ends in exactly (TX high, 0x00, 0):
+the guard's 0xFF shows on `uio_out` for one contiguous stretch, between the
+loader's `OUT` and its `WCTL UIO_OD`, after which the pad data of every
+(open-drain) pin is 0 (DR 0020, issue #244).
 Reset itself is strict: every pin is 0x00 in reset. Strap 01 is the SPI-flash
 boot (issue #140).
 
@@ -374,14 +377,25 @@ async def reset_and_observe(dut, h, straps, label):
     if uart_loader:
         # Waiting in the loader's start-edge poll, not halted, with TX idle
         # high and the guard set: the one state DR 0013's UART path ends in.
+        # (The guard itself, port 11 and UIO_OD both 0xFF, is state; what the
+        # pins show of it is below.)
         final = pins_trace[-1]
         assert halted == "0" and pc is not None and stub <= pc <= stub + 3, (
             f"{label}: [row14-c] the boot program is not in the UART loader's poll at "
             f"{stub:#04x}: halted={halted} pc={pc}"
         )
-        assert final == "01ff00", (
-            f"{label}: [row14-b] the UART loader is not idling with TX high, the 0xFF guard and "
-            f"no uio pin driven: uo_out/uio_out/uio_oe = {final}"
+        # DR 0020 (issue #244): the guard is port 11 = 0xFF under UIO_OD =
+        # 0xFF, and an open-drain pin's pad data is 0. So the `uio_out` pins
+        # show the guard's 0xFF only between its `OUT` and its `WCTL UIO_OD`,
+        # and 0x00 from then on; `uio_oe` is 0 throughout (checked per sample).
+        assert final == "010000", (
+            f"{label}: [row14-b] the UART loader is not idling with TX high, pad data 0 behind "
+            f"its guard and no uio pin driven: uo_out/uio_out/uio_oe = {final}"
+        )
+        guard = [i for i, p in enumerate(pins_trace) if p[2:4] == "ff"]
+        assert guard and guard == list(range(guard[0], guard[-1] + 1)), (
+            f"{label}: [row14-b] the loader's 0xFF guard never reached uio_out, or reached it "
+            f"more than once: samples {guard[:8]}"
         )
     else:
         assert halted == "1" and pc == stub, (

@@ -196,9 +196,12 @@ and the header of `flow/run-post-layout-sdf.sh`:
 - **Timing checks are not applied.** Icarus does not apply SDF `TIMINGCHECK`
   entries (`partial: true`, 178 dropped per corner), so the cell models'
   `$setuphold` checks run against their 0 ns placeholders.
-- **Only the core bench runs.** The firmware benches, boot programs and the
-  constrained-random regression have no SDF run (#217 asks for the protocol
-  waveforms on the routed corners).
+- **The core bench and three protocol benches run.** Since 2026-10-11 the
+  UART TX, SPI and I2C repeated-START firmware benches run on the routed
+  netlist with SDF delays at all three corners
+  ([record](../../verification/records/post-layout-sdf-regression/records/20261011-114800-e5a0bae.md),
+  #217's harness). The boot programs, UART RX, PS/2, WS2812 and the
+  constrained-random regression have no SDF run.
 - **C-flag semantics** have no post-layout evidence: the white-box test is
   skipped.
 - **Stimulus alignment.** The bench is not run raw; it is re-timed to the SDC's

@@ -1,0 +1,51 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuites name="cocotb tests"><testsuite name="test_control_space" errors="0" failures="5" skipped="0" tests="10" time="2.804" timestamp="2026-10-11T12:28:48.845182+00:00" hostname="robb-studio"><testcase classname="test_control_space" name="test_reset_values_and_identity" time="0.056"><properties><property name="cocotb" value="True" /><property name="random_seed" value="1791721728" /><property name="file" value="&lt;repo&gt;/verification/test_control_space.py" /><property name="line" value="290" /><property name="sim_time_unit" value="ns" /><property name="sim_time_start" value="0.0" /><property name="sim_time_stop" value="4411.0" /><property name="sim_time_duration" value="4411.0" /><property name="sim_time_ratio" value="78317.70517051851" /></properties></testcase><testcase classname="test_control_space" name="test_readback_and_pin_mode_logic" time="0.097"><properties><property name="cocotb" value="True" /><property name="random_seed" value="1791721728" /><property name="file" value="&lt;repo&gt;/verification/test_control_space.py" /><property name="line" value="339" /><property name="sim_time_unit" value="ns" /><property name="sim_time_start" value="4411.001" /><property name="sim_time_stop" value="19032.001" /><property name="sim_time_duration" value="14621.0" /><property name="sim_time_ratio" value="150659.21833241306" /></properties></testcase><testcase classname="test_control_space" name="test_open_drain_pad_data_is_tied_low" time="0.231"><properties><property name="cocotb" value="True" /><property name="random_seed" value="1791721728" /><property name="file" value="&lt;repo&gt;/verification/test_control_space.py" /><property name="line" value="422" /><property name="sim_time_unit" value="ns" /><property name="sim_time_start" value="19032.002" /><property name="sim_time_stop" value="55413.002" /><property name="sim_time_duration" value="36381.0" /><property name="sim_time_ratio" value="157272.00962874838" /></properties></testcase><testcase classname="test_control_space" name="test_reserved_indices_and_remaining_noops" time="0.079"><properties><property name="cocotb" value="True" /><property name="random_seed" value="1791721728" /><property name="file" value="&lt;repo&gt;/verification/test_control_space.py" /><property name="line" value="522" /><property name="sim_time_unit" value="ns" /><property name="sim_time_start" value="55413.003" /><property name="sim_time_stop" value="68334.003" /><property name="sim_time_duration" value="12921.0" /><property name="sim_time_ratio" value="163675.40292815643" /></properties></testcase><testcase classname="test_control_space" name="test_fixed_stall_is_exact_and_data_independent" time="0.038"><failure message="data {'addr': 240, 'hi': 0, 'lo': 0, 'misc': 0}: marker 0x02 not on edge 12 (got 0x01)&#10;assert 1 == 2" type="AssertionError">Traceback (most recent call last):
+  File "&lt;repo&gt;/verification/test_control_space.py", line 638, in test_fixed_stall_is_exact_and_data_independent
+    assert trace[e]["uo_out"] == value, (
+    ...&lt;2 lines&gt;...
+    )
+AssertionError: data {'addr': 240, 'hi': 0, 'lo': 0, 'misc': 0}: marker 0x02 not on edge 12 (got 0x01)
+assert 1 == 2
+</failure><properties><property name="cocotb" value="True" /><property name="random_seed" value="1791721728" /><property name="file" value="&lt;repo&gt;/verification/test_control_space.py" /><property name="line" value="617" /><property name="sim_time_unit" value="ns" /><property name="sim_time_start" value="68334.004" /><property name="sim_time_stop" value="75335.004" /><property name="sim_time_duration" value="7001.0" /><property name="sim_time_ratio" value="185966.82301273" /></properties><system-err>Test failed with COCOTB_RANDOM_SEED=1791721728
+</system-err></testcase><testcase classname="test_control_space" name="test_no_flag_side_effects" time="0.034"><failure message="Z=1 before the control block: branch marker 0x00, want 0xf0 (a control access changed Z)&#10;assert 0 == 240" type="AssertionError">Traceback (most recent call last):
+  File "&lt;repo&gt;/verification/test_control_space.py", line 718, in test_no_flag_side_effects
+    assert got == want, (
+    ...&lt;2 lines&gt;...
+    )
+AssertionError: Z=1 before the control block: branch marker 0x00, want 0xf0 (a control access changed Z)
+assert 0 == 240
+</failure><properties><property name="cocotb" value="True" /><property name="random_seed" value="1791721728" /><property name="file" value="&lt;repo&gt;/verification/test_control_space.py" /><property name="line" value="658" /><property name="sim_time_unit" value="ns" /><property name="sim_time_start" value="75335.005" /><property name="sim_time_stop" value="81446.005" /><property name="sim_time_duration" value="6111.0" /><property name="sim_time_ratio" value="181208.0518891521" /></properties><system-err>Test failed with COCOTB_RANDOM_SEED=1791721728
+</system-err></testcase><testcase classname="test_control_space" name="test_program_memory_write_read_roundtrip" time="0.229"><failure message="PM_ADDR after the writes: uo_out after edge 56 (instruction 44) is 0x00, want 0x9a&#10;assert 0 == 154" type="AssertionError">Traceback (most recent call last):
+  File "&lt;repo&gt;/verification/test_control_space.py", line 791, in test_program_memory_write_read_roundtrip
+    expect(trace, p, checks)
+    ~~~~~~^^^^^^^^^^^^^^^^^^
+  File "&lt;repo&gt;/verification/test_control_space.py", line 271, in expect
+    assert got == want, (
+    ...&lt;2 lines&gt;...
+    )
+AssertionError: PM_ADDR after the writes: uo_out after edge 56 (instruction 44) is 0x00, want 0x9a
+assert 0 == 154
+</failure><properties><property name="cocotb" value="True" /><property name="random_seed" value="1791721728" /><property name="file" value="&lt;repo&gt;/verification/test_control_space.py" /><property name="line" value="728" /><property name="sim_time_unit" value="ns" /><property name="sim_time_start" value="81446.006" /><property name="sim_time_stop" value="123987.006" /><property name="sim_time_duration" value="42541.0" /><property name="sim_time_ratio" value="185539.84180552544" /></properties><system-err>Test failed with COCOTB_RANDOM_SEED=1791721728
+</system-err></testcase><testcase classname="test_control_space" name="test_written_code_executes_and_run_jumps" time="0.034"><failure message="the rewritten next word executed: uo_out after edge 10 (instruction 7) is 0x00, want 0x22&#10;assert 0 == 34" type="AssertionError">Traceback (most recent call last):
+  File "&lt;repo&gt;/verification/test_control_space.py", line 834, in test_written_code_executes_and_run_jumps
+    expect(trace, p, [(patched_out, 0x22, "the rewritten next word executed")])
+    ~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "&lt;repo&gt;/verification/test_control_space.py", line 271, in expect
+    assert got == want, (
+    ...&lt;2 lines&gt;...
+    )
+AssertionError: the rewritten next word executed: uo_out after edge 10 (instruction 7) is 0x00, want 0x22
+assert 0 == 34
+</failure><properties><property name="cocotb" value="True" /><property name="random_seed" value="1791721728" /><property name="file" value="&lt;repo&gt;/verification/test_control_space.py" /><property name="line" value="794" /><property name="sim_time_unit" value="ns" /><property name="sim_time_start" value="123987.007" /><property name="sim_time_stop" value="130218.007" /><property name="sim_time_duration" value="6231.0" /><property name="sim_time_ratio" value="185032.95157899844" /></properties><system-err>Test failed with COCOTB_RANDOM_SEED=1791721728
+</system-err></testcase><testcase classname="test_control_space" name="test_pm_crc_matches_binascii_crc_hqx" time="0.106"><failure message="seed 0xc2c1: PM_CRC_LO [serial+a]: uo_out after edge 37 (instruction 30) is 0x97, want 0x9d&#10;assert 151 == 157" type="AssertionError">Traceback (most recent call last):
+  File "&lt;repo&gt;/verification/test_control_space.py", line 920, in test_pm_crc_matches_binascii_crc_hqx
+    expect(trace, p, checks)
+    ~~~~~~^^^^^^^^^^^^^^^^^^
+  File "&lt;repo&gt;/verification/test_control_space.py", line 271, in expect
+    assert got == want, (
+    ...&lt;2 lines&gt;...
+    )
+AssertionError: seed 0xc2c1: PM_CRC_LO [serial+a]: uo_out after edge 37 (instruction 30) is 0x97, want 0x9d
+assert 151 == 157
+</failure><properties><property name="cocotb" value="True" /><property name="random_seed" value="1791721728" /><property name="file" value="&lt;repo&gt;/verification/test_control_space.py" /><property name="line" value="848" /><property name="sim_time_unit" value="ns" /><property name="sim_time_start" value="130218.008" /><property name="sim_time_stop" value="149919.008" /><property name="sim_time_duration" value="19701.0" /><property name="sim_time_ratio" value="186017.6725498523" /></properties><system-err>Test failed with COCOTB_RANDOM_SEED=1791721728
+</system-err></testcase><testcase classname="test_control_space" name="test_i2c_images_open_drain_preamble" time="1.900"><properties><property name="cocotb" value="True" /><property name="random_seed" value="1791721728" /><property name="file" value="&lt;repo&gt;/verification/test_control_space.py" /><property name="line" value="927" /><property name="sim_time_unit" value="ns" /><property name="sim_time_start" value="149919.009" /><property name="sim_time_stop" value="495720.009" /><property name="sim_time_duration" value="345801.0" /><property name="sim_time_ratio" value="181979.55077782302" /></properties></testcase></testsuite></testsuites>

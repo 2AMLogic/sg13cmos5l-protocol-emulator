@@ -1,0 +1,46 @@
+{
+  "corner": "nom_slow_1p08V_125C",
+  "protocol": "spi",
+  "testbench_module": "sdf_protocol_spi",
+  "bench_module": "test_firmware_spi",
+  "run_rc": 0,
+  "elapsed_s": 8,
+  "sdf_annotated": true,
+  "status": "pass",
+  "tests": {
+    "test_committed_images_are_fresh": "passed",
+    "test_all_four_modes_pass_independent_reference_model": "passed",
+    "test_reference_model_negative_controls_still_fail": "passed"
+  },
+  "pin_delay_ps": {
+    "uo_out": {
+      "count": 16,
+      "zero_delay": 0,
+      "min_delay_ps": 1350,
+      "max_delay_ps": 1420
+    },
+    "uio_out": {
+      "count": 198,
+      "zero_delay": 0,
+      "min_delay_ps": 1210,
+      "max_delay_ps": 1360
+    },
+    "uio_oe": {
+      "count": 12,
+      "zero_delay": 0,
+      "min_delay_ps": 1490,
+      "max_delay_ps": 1630
+    }
+  },
+  "captures": 4,
+  "timing_controls": {
+    "spi_ceiling_compressed": {
+      "run": 12,
+      "failed_as_required": 12,
+      "last": "mode 2: burst at 80.000 ns compressed x0.9000 -> 72.000 ns, violations ['SCLK period 72.000ns below f_clk/4 ceiling (80.000ns at f_clk=5e+07Hz)']"
+    }
+  },
+  "bench_timing_controls": "captured ceiling burst under each wrong mode must not round-trip",
+  "reasons": [],
+  "verdict": "pass"
+}

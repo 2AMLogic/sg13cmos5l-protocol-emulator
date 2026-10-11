@@ -112,6 +112,17 @@ for Partial.
   architecture document or its evidence; and D1 has to be re-run on the
   final top. Nothing in this update is a hardware or physical-signoff
   claim.
+- **Update 2026-10-11 (issues #244 and #246).** #244 is fixed in the top by
+  DR 0020 (an open-drain pin's pad data is tied to 0), with the routed-SDF
+  I2C repeated-START run passing at all three corners and failing on the
+  pre-fix netlist; `architecture.md`'s open-drain text is refreshed for it.
+  #246's slow-corner margin is +5.8 ns on the LibreLane flow (it was +1.9 ns),
+  with no max-slew or max-capacitance violation, from five repair settings
+  in `src/config.json`. Both are in the records of gds run 38136727636
+  (`librelane-corner-timing` `20261011-144900-e5a0bae`,
+  `post-layout-sdf-regression` `20261011-114800-e5a0bae`). #217 is still
+  open; three of its protocols now have routed-SDF runs. D1 still has to be
+  re-linked to the final top's run. Nothing here is a silicon claim.
 
 ## Judge quickstart (D2, D3)
 

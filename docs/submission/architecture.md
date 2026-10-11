@@ -265,7 +265,7 @@ firmware at run time:
 
 | `UIO_OD[n]` | `UIO_DIR[n]` | Mode | `uio_oe[n]` |
 |---|---|---|---|
-| 1 | any | open drain: drives low on `uio_out[n] = 0`, releases on 1 | `~uio_out[n]` |
+| 1 | any | open drain: drives low on `uio_out[n] = 0`, releases on 1 | `~uio_out[n]` (`uio_out` here is port 11, the register `OUT` writes; the pad data of the pin is tied to 0) |
 | 0 | 1 | push-pull output | 1 |
 | 0 | 0 | input | 0 |
 
@@ -278,9 +278,17 @@ open-drain program writes `OUT UIO_OUT` (release the lines) **before**
 that do it the other way round. `RCTL` of `UIO_DIR`/`UIO_OD` returns the
 register, not the effective `uio_oe` (DR 0012 open item 1, frozen as built).
 
-The logic is one assignment in the top,
-`uio_oe = (uio_od & ~uio_out) | (~uio_od & uio_dir)`. Its logical behaviour
-is what the benches check. Its routed behaviour has an open finding, below.
+The logic is two assignments in the top, from the core's port-11 register
+`core_uio_out`: `uio_out = core_uio_out & ~uio_od` and
+`uio_oe = (uio_od & ~core_uio_out) | (~uio_od & uio_dir)`. An open-drain
+pin's pad data is the constant 0 and `uio_oe` alone carries the bit, so the
+pad cannot drive high whatever the relative delay of the two nets
+([DR 0020](../../spec/decision-records/0020-open-drain-pad-data-tied-low.md),
+a conformance fix to DR 0012; issue #244). `uio_oe` is the same function of
+port 11, `UIO_DIR` and `UIO_OD` as before, and no program can read the
+`uio_out` pins, so nothing in this document's instruction or control tables
+moved. The benches check the logical behaviour; the routed behaviour is
+below.
 
 ### Program-memory access from firmware
 
@@ -395,19 +403,28 @@ measurement:
 - The routed-netlist SDF regression (LibreLane netlist and SDF, Icarus and
   cocotb through `klt functional-verification`) runs the core test program at
   three corners: [`post-layout-sdf-regression`](../../verification/records/post-layout-sdf-regression/).
-  The protocol firmware has no routed-SDF record yet (#217).
+  Since 2026-10-11 the same records carry the UART TX, SPI and I2C
+  repeated-START firmware benches on the routed netlist with SDF delays, at
+  the same three corners (#217's harness; whether that closes #217 is not
+  decided here). The boot programs, UART RX, PS/2 and WS2812 have no routed-SDF
+  run.
 - The `uio` pad model the protocol benches run on is logical and
   zero-delay: [`uio-pad-model`](../../verification/records/uio-pad-model/).
   It resolves the design's `uio_oe`/`uio_out`; it is not a characterization
   of the Tiny Tapeout IO cells.
-- **Open finding #244.** On the routed netlist with SDF delays, an open-drain
-  pin is driven HIGH for about 100 ps on each release edge, because
-  `uio_oe[n]` is derived from `uio_out[n]` and the two arrive at different
-  times. It was seen in a development run of the #217 harness, at one corner;
-  no record was minted. It is **not accepted**: the bench's open-drain check
-  is unchanged, and the issue lists a fix and a decision-record route as
-  options. Any fix changes the top, a file DR 0017 pins, so it would come with
-  a freeze amendment and would refresh the open-drain text above.
+- **Finding #244, fixed by DR 0020.** On the routed netlist with SDF delays,
+  the top as first built drove an open-drain pin HIGH for part of a cycle on
+  each release edge: `uio_oe[n]` was derived from `uio_out[n]` and the two
+  reached the pins 50 to 210 ps apart. The pad data of an open-drain pin is
+  now tied to 0. The routed-SDF I2C repeated-START run passes at all three
+  corners on the fixed netlist, and the same run on the pre-fix netlist fails
+  at all three with the pads driven high; both are in
+  [`post-layout-sdf-regression`](../../verification/records/post-layout-sdf-regression/)
+  (records `20261011-114800-e5a0bae` and its three siblings). The Tiny Tapeout
+  IO cell and mux are outside the netlist, so this is the design's boundary,
+  not a pad waveform. One case is left to firmware: writing `UIO_OD` on a pin
+  that is push-pull and high at that moment (DR 0020, "Limits"); no committed
+  program does.
 - No synthesis, area or timing figure is quoted in this document. Those
   figures and the flow that produced each are in
   [`verification.md`](verification.md) and the records it cites.
@@ -451,11 +468,14 @@ record.
   At the reviewed commit, `spec/isa-freeze.json` records three
   `no-behaviour-change` amendments (DR 0013 note, #234; DR 0001's fetch-ahead
   amendment, #85; DR 0001's runtime-direction amendment, #44). None changes
-  what a program observes.
-- **#244**, the routed open-drain release glitch (above). Open, not accepted.
+  what a program observes. Since then it has gained a fourth of that kind
+  (DR 0013's #211 entry) and one `conformance-fix` amendment, for the top
+  (DR 0020, #244), which also changes nothing a program observes.
+- **#244**, the routed open-drain release glitch (above): fixed by DR 0020.
 - **#211 / PR #248**, the boot ROM's UART frame (the count byte is outside the
   CRC, DR 0013 finding F8). Open; it changes the boot firmware, not the ISA.
-- **#217**, no routed-SDF record for the protocol firmware.
+- **#217**, routed-SDF evidence for the protocol firmware: UART TX, SPI and
+  I2C repeated START now have it (above); the issue is still open.
 - **DR 0012's open items** (`RCTL UIO_*` returns the register; `RUN` is
   allowed outside the boot ROM) are frozen as built, still Proposed.
 - **No silicon.** Every statement here is from simulation, formal or static

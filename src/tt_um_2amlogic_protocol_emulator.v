@@ -39,12 +39,16 @@
  *     `spec/decision-records/0012-control-space-and-runtime-pin-direction.md`
  *     (issue #135): the core's control registers `UIO_DIR` and `UIO_OD`
  *     select each pin's mode, and the pin-mode logic at the bottom of
- *     this file turns them into `uio_oe` --
- *       UIO_OD[n] set   -> open-drain: uio_oe[n] = ~uio_out[n] (drive low
- *                          on a 0, release on a 1; uio_out[n] is 0 when
- *                          driving, so the pad only ever pulls low)
- *       else UIO_DIR[n] -> push-pull:  uio_oe[n] = 1
- *       else            -> input:      uio_oe[n] = 0
+ *     this file turns them into `uio_oe` and the pad data `uio_out` --
+ *       UIO_OD[n] set   -> open-drain: uio_oe[n] = ~R[n], where R is the
+ *                          core's port-11 register (drive low on a 0,
+ *                          release on a 1); the pad data uio_out[n] is
+ *                          tied to 0, so the pad can only ever pull low
+ *       else UIO_DIR[n] -> push-pull:  uio_oe[n] = 1, uio_out[n] = R[n]
+ *       else            -> input:      uio_oe[n] = 0, uio_out[n] = R[n]
+ *     (DR 0020, issue #244: until then an open-drain pin's pad data was
+ *     R[n] itself, and under routed delays the pad saw oe=1 with out=1
+ *     for about 100 ps on every release.)
  *     Both registers reset to 0, so after `rst_n` every bidirectional pin
  *     is an input until a program configures it (`WCTL UIO_DIR` /
  *     `WCTL UIO_OD`). This supersedes the synthesis-time direction of DR
@@ -121,6 +125,7 @@ module tt_um_2amlogic_protocol_emulator (
   wire [15:0] pm_crc;
   wire        serial_loaded;
   wire [7:0]  core_uo_out;  // the core's port-10 register (run-phase uo_out)
+  wire [7:0]  core_uio_out; // the core's port-11 register (pad data of the non-open-drain pins)
 
   // DR 0013 layer 2 boot ROM (issue #138): the second fetch source.
   wire [15:0] rom_word;
@@ -169,7 +174,7 @@ module tt_um_2amlogic_protocol_emulator (
       .port_ui_in  (ui_in),
       .port_uio_in (uio_in),
       .port_uo_out (core_uo_out),
-      .port_uio_out(uio_out),
+      .port_uio_out(core_uio_out),
       .uio_dir      (uio_dir),
       .uio_od       (uio_od),
       .pm_we        (pm_we),
@@ -184,7 +189,19 @@ module tt_um_2amlogic_protocol_emulator (
   // Pin-mode logic (DR 0012 "Pin mode, per uio[n]"): open-drain wins,
   // then push-pull, else input. With both registers at their reset value
   // of 0 this is 8'h00 -- every bidirectional pin an input.
-  assign uio_oe = (uio_od & ~uio_out) | (~uio_od & uio_dir);
+  //
+  // An open-drain pin's pad data is the constant 0 and `uio_oe` alone
+  // carries the port-11 bit (DR 0020, issue #244). The pad therefore never
+  // sees oe=1 with out=1 on an open-drain pin, whatever the relative delay
+  // of the two nets: `uio_out[n]` can only be 1 where `uio_od[n]` is 0.
+  // Readback is through `uio_in` and is unchanged; push-pull and input
+  // pins still see the port-11 register on `uio_out`. The one case left
+  // to firmware is a write to UIO_OD itself on a pin that is push-pull and
+  // high at that moment: both nets fall and their order is not fixed, so
+  // set UIO_OD on a pin that is still an input, as every committed image
+  // does (DR 0020, "Limits").
+  assign uio_out = core_uio_out & ~uio_od;
+  assign uio_oe  = (uio_od & ~core_uio_out) | (~uio_od & uio_dir);
 
   // Load-phase CRC readout (DR 0013 layer 1, issue #137). `run_phase` is
   // low in exactly three situations, and PM_CRC is the right thing to show
