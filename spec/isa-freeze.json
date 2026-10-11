@@ -121,6 +121,16 @@
       "dr": 20,
       "ref": "#244",
       "summary": "RTL conformance fix to DR 0012's open-drain rule (register map row 0x01, 'Pin mode, per uio[n]'): an open-drain pin's pad data is tied to 0 (uio_out = core_uio_out & ~uio_od) and uio_oe alone carries the port-11 bit, so the pad cannot drive HIGH at any relative delay of the two nets; uio_oe is the same function of port 11, UIO_DIR and UIO_OD; no instruction, control index, latency, reset value or readback changes; row 13's WS2812 program drives uo_out only"
+    },
+    {
+      "path": "rtl/protocol_program_memory.v",
+      "op": "modify",
+      "kind": "no-behaviour-change",
+      "invalidates_row13_evidence": false,
+      "sha256_before": "2b08865ab24d6bac84b390dfa76bab6686b572ba8f19124130bfc34e93dff637",
+      "sha256_after": "d8d32e0b8b26745a77ce2a30024243c8cccb06d6ffa91d38d8cec303b2e33892",
+      "ref": "#261",
+      "summary": "LibreLane-flow-only (`ifdef __librelane__`) x4 buffer between each SRAM macro A_DOUT pin and instr_word, so a macro output always drives exactly one standard-cell input (the macro liberty's 64 fF max-capacitance limit); simulation and the klt/Yosys flow take the plain `assign instr_word = mem_dout`, a wire; no instruction, control index, latency, flag, reset value or readback changes, and a word appears on instr_word in the same cycle as before; plus the comment that says so"
     }
   ],
   "row13_excluded_protocols": {
