@@ -6,11 +6,11 @@ spec's rows 1-12 and DRs 0001-0004. The submission ISA is frozen
 mechanically (DR 0017, itself still Proposed). Deliverable D4
 of [`docs/submission/README.md`](README.md). Issue #214.
 
-- **Reviewed:** `main` as of 2026-10-11, at `72f48153` (the merge of PR #242
-  and this PR's merge-base; the newest cited record, `isa-lockstep`
-  `20261011-182004-080e6be`, landed with it). Every record cited below is a
-  file on `main` at `72f48153`, and issue and PR states are as of that
-  date. Nothing here is a new measurement: this
+- **Reviewed:** `main` as of 2026-10-11, at `a9ac6940` (this PR's
+  merge-base; the newest cited record, `isa-lockstep`
+  `20261011-182004-080e6be`, landed with PR #242's merge `72f48153`). Every
+  record cited below is a file on `main` at `a9ac6940`, and issue and PR
+  states are as of that date. Nothing here is a new measurement: this
   document reads the existing evidence, it does not run anything.
 - **Frozen; partly ratified.** The submission ISA is frozen mechanically by
   [DR 0017](../../spec/decision-records/0017-submission-isa-freeze.md): it
@@ -98,7 +98,7 @@ pull-up rise time or pad drive strength.
 
 ## 3. Claim matrix
 
-Records are the live ones on `main` at `72f48153`. "Repro" is the exact command from
+Records are the live ones on `main` at `a9ac6940`. "Repro" is the exact command from
 the record's *Run configuration*; the one-line cold start for the RTL benches is
 `scripts/run-rtl-benches.sh` after `./scripts/setup-env.sh`. The index of every
 command, bench and pinned tool is

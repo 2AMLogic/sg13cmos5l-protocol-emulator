@@ -3,7 +3,7 @@
 Status: written 2026-10-10 for issue #213 (submission deliverable D5),
 against `main` @ `9fb7815`. Refreshed 2026-10-11 for issue #238: the record
 citations, the counts and the ratification history describe `main` as of
-`72f48153` (the merge of PR #242), and issue and PR states are as of that
+`a9ac6940` (after PR #242's merge `72f48153`), and issue and PR states are as of that
 date. Every claim below links to
 a file in this repository, a pull request, or an issue. Where the text
 describes how the process is *meant* to work rather than what the forge
@@ -34,7 +34,7 @@ provisional. Ratification binds a row as a target; it does not mark it met.
 
 | Actor | What the record shows |
 |---|---|
-| `loom-fleet-dispatch[bot]` (GitHub App) | Opened 98 of the 129 merged PRs, and posts the Loom role comments (Curator, Champion, Judge, Doctor) on issues and PRs. |
+| `loom-fleet-dispatch[bot]` (GitHub App) | Opened 99 of the 130 merged PRs, and posts the Loom role comments (Curator, Champion, Judge, Doctor) on issues and PRs. |
 | `rjwalters` (the operator's account) | Opened the other 31 merged PRs. Their bodies carry the Claude Code footer (for example #160, #163, #198, #207), so agent sessions run under the operator's account also open PRs. The forge record does not separate which actions under this account were typed by the human. |
 | `2am-ee-key[bot]`, `2am-market-key[bot]` | Separate GitHub Apps that hold the two ratification keys. They have posted formal reviews on two PRs: #84 (both requested changes) and #242 (first the market key approved and the EE key requested changes; at the final head both approved, and it merged). |
 | Git commit author names | These come from host git configuration (`Robb Walters`, `Loom CI`, `Loom Auditor`, and others). They do not record which role, or whether a human, produced a commit. |

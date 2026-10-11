@@ -35,7 +35,7 @@ file existed. It checked the choice against DR 0017's exclusion list and a
 The freeze held: when this work was done, `scripts/check_isa_freeze.py`
 reported the same eleven pinned files and the same two amendments as before
 it, and no RTL, assembler or ISA-model byte changed. `main` has gained
-amendments since (seven as of `main` @ `72f48153`, 2026-10-11, each with
+amendments since (seven as of `main` @ `a9ac6940`, 2026-10-11, each with
 `invalidates_row13_evidence: false`).
 
 ## What was built
