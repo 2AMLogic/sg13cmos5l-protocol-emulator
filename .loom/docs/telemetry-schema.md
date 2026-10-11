@@ -1630,8 +1630,7 @@ Each name fixes its OTLP kind. `loom.dispatch.decisions` is a monotonic
 `pr_open_backoff`, `noop_cooldown`, `declined`, `prless_retry`,
 `already_landed` (#11429: the issue's work already landed),
 `already_closed` (#11429: the issue is closed as not planned),
-`recheck_interval`, `host_constraint`, `host_class` (#9034: a `loom:heavy`
-candidate refused on a `local-dev` host), `capacity`, `ramp_cap`, `saturation`,
+`recheck_interval`, `host_constraint`, `capacity`, `ramp_cap`, `saturation`,
 `build_backoff` (#9410: the build back-off held an unstarred issue build),
 `out_of_slice`, `repo_cap` (#9090: the candidate's own repo was at
 `maxConcurrentPerRepo`), `error`, plus the typed dispatch refusals (#8907):
@@ -1639,8 +1638,7 @@ candidate refused on a `local-dev` host), `capacity`, `ramp_cap`, `saturation`,
 (empty or fully bad-marked token pool), `claim_collision` (cross-host collision
 enforcement) and `claim_lock_held` (the local claim lock already existed).
 These are the same buckets as the `work_finder: tick` log line
-(`loom-daemon health`'s last-tick summary omits `prless_retry` and
-`host_class`), except that
+(`loom-daemon health`'s last-tick summary omits `prless_retry`), except that
 the log line and `health` still fold `lease_order_lost` into `backoff` and the
 other three into `error`. The exported `backoff` and `error` are net of them,
 so each candidate is counted under exactly one reason. There is no
@@ -1872,7 +1870,7 @@ refresh (`LOOM_DISPATCH_DISPOSITION_REFRESH_SECS`, default 600s), or once as a
 terminal record when it leaves a successfully-listed repo's queue. Unlike
 `loom.dispatch.admission`, this covers every candidate the tick evaluated —
 including one filtered out before `dispatch()` was ever attempted
-(`workspace_halted`, `parked`, `deferred_saturation`, `host_class_refused`,
+(`workspace_halted`, `parked`, `deferred_saturation`, `host_constraint`,
 …) — so a per-issue "why" is answerable for the entire `QueueDisposition`
 vocabulary, not just the subset that reached an admission attempt.
 
@@ -1888,7 +1886,7 @@ tick; otherwise a root of its own. Attributes:
 | `loom.repo` | forge `owner/repo`. Rows whose root never resolved to a slug are dropped and counted, never exported as a local path |
 | `loom.repo.visibility` | `public` / `private` |
 | `loom.issue` | the issue number |
-| `loom.queue.disposition` | the `QueueDisposition` wire name (`deferred_saturation`, `parked`, `workspace_halted`, `host_class_refused`, …) |
+| `loom.queue.disposition` | the `QueueDisposition` wire name (`deferred_saturation`, `parked`, `workspace_halted`, `host_constraint`, …) |
 | `loom.queue.state` | `running` / `ready` / `blocked` |
 | `loom.queue.rank` | 1-based dispatch-order rank over every row the tick ranked; absent on a `left_queue` span (the row is no longer ranked) |
 | `loom.queue.candidate_rank` | 1-based queue position at the sampled tick (Issue #9669): the dispatch-plan `position` in the shaped pass-2 candidate order when the row has one, else the comparator `rank` — a blocked row's would-be position once unblocked. Absent on a `left_queue` span |
@@ -2055,7 +2053,7 @@ The work finder's ranked ready queue as of its last tick (Issue #8852, phase
 dispatch comparator (#9244): starred (`loom:operator-priority`) first, starred
 issues by starred-at, then red-main fixes while their repo's `main` is verified
 red, then workspace priority, then oldest `createdAt`, then issue number.
-`loom:urgent` and `tier:*` labels do not affect the order.
+`tier:*` labels do not affect the order.
 Envelopes carry `schema_version: 11`. **Native-HTTPS only**: the OTLP
 exporter never receives it (the mirror of `metric.points`).
 
@@ -2090,12 +2088,12 @@ Each row:
 | `visibility` | `public` / `private` | per row; missing or unknown decodes to `private` |
 | `issue` | integer | issue number |
 | `workspace_priority` | integer | lower dispatches first |
-| `urgent` | bool | **deprecated (#9244): always `false`**. `loom:urgent` no longer orders dispatch; the field stays on the wire for one release, then goes |
+| `urgent` | bool | **deprecated (#9244): always `false`**. Its label was deleted (#11105); the field stays on the wire only for compatibility |
 | `operator_priority` | bool | starred: carries `loom:operator-priority`, which sorts it ahead of all other work (#9244). Absent on older daemons, which decodes as `false` |
 | `operator_priority_at` | RFC 3339, optional | when it was starred (the `labeled` timeline event), when known. Omitted for an unstarred issue, or a starred one ordered by its `created_at` fallback |
 | `created_at` | RFC 3339, optional | issue creation time (the age ordering key) |
 | `tier` | string, optional | the `tier:*` label, informational only |
-| `disposition` | string | `dispatched`, `in_flight`, `deferred_capacity`, `deferred_ramp_cap`, `deferred_saturation`, `deferred_build_backoff`, `deferred_out_of_slice`, `deferred_repo_cap`, `deferred_file_overlap`, `workspace_halted`, `workspace_commands_missing`, `host_constraint`, `host_class_refused`, `parked`, `hard_exclusion`, `recheck_interval`, `quarantined`, `dispatch_backoff`, `open_pr_backoff`, `noop_cooldown`, `declined`, `prless_retry`, `peer_claim`, `open_pr`, `dispatch_error`, `already_landed`, `already_closed`, `labelled_blocked` (unknown values are forward-compatible) |
+| `disposition` | string | `dispatched`, `in_flight`, `deferred_capacity`, `deferred_ramp_cap`, `deferred_saturation`, `deferred_build_backoff`, `deferred_out_of_slice`, `deferred_repo_cap`, `deferred_file_overlap`, `workspace_halted`, `workspace_commands_missing`, `host_constraint`, `parked`, `hard_exclusion`, `recheck_interval`, `quarantined`, `dispatch_backoff`, `open_pr_backoff`, `noop_cooldown`, `declined`, `prless_retry`, `peer_claim`, `open_pr`, `dispatch_error`, `already_landed`, `already_closed`, `labelled_blocked` (unknown values are forward-compatible) |
 | `state` | string | `running` / `ready` / `blocked`, derived by the daemon so clients never keep a copy of the mapping |
 | `reason` | string | human-readable reason, also daemon-derived |
 | `detail` | string, optional | only for `parked` (the park label), `open_pr` (`open PR #N`), `deferred_file_overlap` (`file overlap: <paths>`, the shared `## Affected Files` paths, #9781), `already_landed` (`forge_closed` or `journal_landed`, #11429) and `labelled_blocked` (the hold labels it also carries, from `loom:operator`, `loom:operator-only`, `loom:operator-mechanical`, `loom:needs-capability`). Free-form dispatch-error and comment text is never exported |
@@ -2337,10 +2335,51 @@ two consecutive `fleet.state` views of the same host (held sweeps, review
 PRs, ready queue). A row whose stage changed gives one record (`next_stage`
 is the new stage). A row that left the view gives one record with no
 `next_stage`: `landed` when its PR merged, `cut_short` when it closed or is
-still open without review labels, `unknown` otherwise (a sweep that ended).
+still open without review labels. A row with no resolved PR (a sweep stage)
+reads its issue instead (#11398): `landed` at the issue's `closed_at` when its
+latest `closed` event carries a `commit_id`, or a PR referencing the issue
+merged within 120s of `closed_at` (a `Closes #N` merge leaves `commit_id`
+null, so the timeline's merged PR is the evidence), `abandoned`
+at `closed_at` when neither holds (a hand close, whatever its
+`state_reason`), `unknown` at `closed_at` when no `closed` event is found, and
+`unknown` with no forge instant while it is still open. Every close keeps its
+`closed_at` as `forge_transition_at`, so it has a `loom.fact_id`. A failed issue read emits nothing and is retried each pass; after
+`PENDING_ISSUE_MAX_PASSES` (12) failed retries it is one `unknown` stamped at
+the pass that first saw the row gone, with no forge instant, and is never
+emitted again. A transferred or deleted issue answers 404 to that read, so
+it takes this path: no forge instant is knowable for it.
 A `ready_wait` row that left the view is not a record until a repo's ready
-listing is known whole (#11139), and a row of a repo no longer managed is not
-a record. **Every host that observes a transition emits it**; nothing is
+listing is known whole (#11139). A `ready_wait` departure whose history is
+the issue's `closed` event takes the same classification at that event's
+instant (#11398; before, it was `cut_short`); a claim or unlabel is still
+`advance` / `cut_short`, and a failed issue read waits like a departure the
+forge does not show yet (`PENDING_READY_MAX_PASSES`, then `unknown`).
+
+**Pre-ready closes (#11398).** The producer also lists each managed repo's
+open `loom:triage` issues (one ETag-cached listing, like `loom:curated`). An
+issue gone from a repo's complete `loom:triage` or `loom:curated` listing,
+in neither listing and no row now, is read once (`issues/{n}`): a close ends
+the pre-ready stay its history shows open at the close (`triage_wait` from the
+latest reopen or creation until a curated / ready label, else
+`approval_wait` from the latest `loom:curated` label) with the
+classification above, `next_stage` empty, `left_at` / `forge_transition_at`
+the close, and `dwell_sec`. An open issue was relabelled (no record); an
+approved one is the ready path's. A failed read is retried up to 12 passes,
+then is `unknown` at the pass that first saw it gone. A triage stay never
+labelled `loom:triage`, `loom:curated` or `loom:issue` is never listed, so no
+host can observe its close.
+
+**Fleet removal (#11398).** A repo in the previous pass's managed set and not
+in this one keeps its stays (vanished rows, pending reads, its last curated /
+triage listings). An **empty** managed set is a failed enumeration, never a
+removal, and a repo back within `REPO_REMOVAL_CONFIRM_PASSES` (3) passes was a
+blip: its stays return to the ordinary diff. Once the removal holds, each stay
+ends exactly once: its issue is read (from any checkout; the path names the
+repo) and a close takes the classification above at `closed_at`; an open
+issue or a failed read is
+`unknown` at the pass that first saw the stay gone, with no forge instant
+(keyed per #11401 below when it has a sweep id or forge-dated entry). A row
+of the removed repo that vanishes later ends the same way, at once. **Every host that observes a transition emits it**; nothing is
 elected. `loom.eta.authority` is still emitted, and now names the emitting
 host, not an elected authority.
 
@@ -2352,7 +2391,8 @@ nanoseconds). `forge_transition_at` is the forge's own instant: the new review
 label's `labeled` event (one paginated issue-events read per actual move,
 with no per-pass limit, every page of the history, and only when it falls
 inside the pass window), or the PR's
-`merged_at` / `closed_at`, or for a hold release (`merge_hold` →
+`merged_at` / `closed_at`, or (a row with no PR) the issue's `closed_at`
+(#11398), or for a hold release (`merge_hold` →
 `merge_wait`) the hold label's `unlabeled` event (#11401). Every part is the
 same on every host, whatever its polling time.
 
@@ -2404,7 +2444,7 @@ pass interval. `forge_transition_at` is new (additive).
 | `entered_at` | RFC3339? | present only when the entry has an exact source: a sweep's own checkpoint timestamp. Absent for a polled (review or ready) row, whose entry fell between two passes, and for a stage first seen mid-way |
 | `left_at` | RFC3339 | the event time: `forge_transition_at` when known, else the observing pass |
 | `dwell_sec` | integer? | `left_at − entered_at`, only when the stage completed with an exact entry; never a lower bound |
-| `exit` | string | `advance`, `pass` (`review_wait` → `merge_wait`), `rework` (into `doctor`), `hold`, `released`, `landed`, `cut_short` (closed unmerged, or ended without completing), `unknown`. `judged` is no longer produced |
+| `exit` | string | `advance`, `pass` (`review_wait` → `merge_wait`), `rework` (into `doctor`), `hold`, `released`, `landed`, `cut_short` (PR closed unmerged, or ended without completing), `abandoned` (#11398: the issue was closed with no commit closing it, whatever its `state_reason`, ending a stay with no resolved PR: a sweep stage, `ready_wait`, `triage_wait`, `approval_wait`, or a stay of a repo removed from the fleet; `left_at` is the close instant, `dwell_sec` and `loom.fact_id` are set. A merge-closed issue is `landed`; a close with no `closed` event is `unknown` at `closed_at`; an open, transferred/404 or never-readable issue is `unknown` — see the producer notes above), `unknown`. `judged` is no longer produced |
 | `next_stage` | string? | the stage entered next; absent when the item left the view |
 | `event` | string | the observing source: `fleet.state` |
 | `observed_at` | RFC3339 | when this daemon observed it (knowable-at) |

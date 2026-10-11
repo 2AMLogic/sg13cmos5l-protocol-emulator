@@ -270,3 +270,35 @@ supersede its stale parts:
   `if:` expression has not been exercised by the Actions runner. The R2
   state stays **Open** until a run on this change is green and linked here.
   Re-check the branch tip and tags before submission.
+
+## R2 update, 2026-10-11 (#231): tt-gds-action pinned to a commit SHA
+
+- **Pin.** All six `TinyTapeout/tt-gds-action` references (four in
+  `gds.yaml`, one each in `fpga.yaml` and `docs.yaml`) now use
+  `3412659307918422f3f0727917cf9b499aaca588` with the trailing comment
+  `# ihp-cmos5l`. Resolved on 2026-10-11 with
+  `gh api repos/TinyTapeout/tt-gds-action/commits/ihp-cmos5l --jq .sha`. The tip
+  subject is *"fix: install ihp-sg13cmos5l from the merged IHP-Open-PDK tree
+  #52"*, the same commit inspected on 2026-10-09 and 2026-10-10, so the pin does
+  not change the flow itself.
+- **Lint.** `scripts/check_action_pins.py` (self-test
+  `scripts/test_check_action_pins.py`, both in `npm run lint`) fails if any
+  such ref is not a lowercase 40-hex SHA, if the refs do not all share one SHA,
+  or if none are found.
+- **Bump procedure.** Bumping is allowed and expected near 2027-01-18, as a
+  deliberate, recorded change. (1) Resolve the new tip with the `gh api`
+  command above. (2) Edit all six refs together. (3) Run
+  `python3 scripts/check_action_pins.py`. (4) Re-run all four `gds.yaml` jobs
+  plus `fpga` and `docs` on the new SHA. (5) Add a dated entry here with the old
+  SHA, the new SHA, the `git log old..new` subjects and the run link. The lint
+  validates only the end state, not this procedure.
+- **Limit.** Only our reference is immutable. The composite actions at that SHA
+  call floating refs of their own (`actions/checkout@v6`,
+  `actions/setup-python@v6`, `actions/upload-artifact@v7`,
+  `TinyTapeout/ciel-action@v1`, `test-summary/action@v2.6`,
+  `YosysHQ/setup-oss-cad-suite@v4`). Pinning does not freeze those; they are
+  upstream's and out of scope.
+- **Not verified.** No GitHub Actions run on the pinned SHA has been seen, so no
+  green run is claimed. The run log's "Download action repository ... @<sha>"
+  lines are unchecked. R2 stays **Open** until a `gds` run on this SHA is green
+  and linked here.

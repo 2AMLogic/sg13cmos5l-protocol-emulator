@@ -51,7 +51,9 @@
 ; data-dependent-latency lint reports it as a WARNING -- exactly one per
 ; program, expected, and asserted by the bench. The data byte's ACK slot
 ; samples the same way but does not branch: the transfer ends after one
-; byte either way, so a branch there would be decorative.
+; byte either way, so a branch there would be decorative. Both ACK samples
+; are taken in the middle of the ninth SCL HIGH phase (issue #258), where
+; I2C guarantees SDA is stable; the ACK low phases carry no sample.
 ;
 ; Cycle accounting (DR 0001's opcode table: every instruction is 1 cycle
 ; except WAIT imm8 = imm8 + 1). Each measured window is the span between
@@ -66,8 +68,17 @@
 ;                          + MOV + AND                          = 60
 ;   last bit's high phase  OUT(rise) + WAIT 57 (=58) + MOV       = 60
 ;                            (no SHF/AND: the ACK prep is one MOV)
-;   ACK low phase          OUT(fall) + WAIT 20 (=21) + IN + WAIT 39
-;                          (=40) + AND + LDI                    = 65
+;   ACK low phase          OUT(fall) + WAIT 62 (=63) + LDI       = 65
+;                            (no sample in the low phase, issue #258)
+;   address ACK high       OUT(rise) + WAIT 28 (=29) + IN + AND
+;                          + WAIT 19 (=20) + BNZ, then either
+;                          LDI + MOV + 4x SHF + AND (ACK, falls
+;                          through)                               = 60
+;                          or LDI + WAIT 5 (=6) at stop_from_addr
+;                          (NACK, branch taken)                   = 60
+;                            (IN at high offset 30 on both paths)
+;   data ACK high          OUT(rise) + WAIT 28 (=29) + IN + AND
+;                          + WAIT 26 (=27) + LDI                  = 60
 ;   START hold             OUT(START) + WAIT 60 (=61) + LDI
 ;                          + MOV + AND                           = 65
 ;                            (UM10204 t_HD;STA minimum: 30 cycles)
@@ -224,23 +235,30 @@
         MOV   R3, R1          ; 0x08: SDA released for the ACK slot
 .endcyclesec                   ; t_HIGH = 60
 ; ------------------------------------- address ACK slot (the branch point)
+; Issue #258: the ACK bit is sampled INSIDE the ninth SCL high, never in
+; its low phase. The peripheral may put its ACK on SDA anywhere in the low
+; phase (UM10204 only asks for t_SU;DAT before the rise), so a sample
+; taken in the low phase can read a legal but late ACK as a NACK. Until
+; #258 the IN sat 22 cycles into this low phase.
 .cyclesec i2c_ack1_low
-        OUT   UIO_OUT, R3     ; SCL falls; SDA released
-        WAIT  20              ; 21 cycles: the bench's peripheral pulls
-                               ; SDA low two cycles after seeing this
-                               ; fall, well before the sample below
-        IN    R3, UIO_IN      ; sample the bus (taints R3)
-        WAIT  39              ; 40 cycles
-        AND   R3, R1          ; isolate SDA (bit 3); sets Z -- and the
-                               ; flags must survive to the BNZ, so the rise
-                               ; pins are built with LDI (not flag-setting),
-                               ; never MOV/OR which would clobber Z
+        OUT   UIO_OUT, R3     ; SCL falls; SDA released for the peripheral
+        WAIT  62              ; 63 cycles, no sample: the peripheral may
+                               ; answer anywhere in this low phase
         LDI   R3, 0x0C        ; SCL high, SDA released
 .endcyclesec                   ; t_LOW = 65
 .cyclesec i2c_ack1_high
-        OUT   UIO_OUT, R3     ; SCL rises: ACK/NACK is the line level AT
-                               ; this edge; sampled above at IN
-        WAIT  50              ; 55 cycles
+        OUT   UIO_OUT, R3     ; SCL rises: ACK/NACK must now hold on SDA
+                               ; for the whole high phase
+        WAIT  28              ; 29 cycles
+        IN    R3, UIO_IN      ; sample the bus at high offset 30: 30
+                               ; cycles after the rise, 30 before the
+                               ; fall (taints R3; the rise pins in R3 are
+                               ; already on the pads)
+        AND   R3, R1          ; isolate SDA (bit 3); sets Z. Nothing from
+                               ; here to the BNZ writes the flags (WAIT
+                               ; does not)
+        WAIT  19              ; 20 cycles: the BNZ keeps its offset (52),
+                               ; so both branch paths below are unchanged
         BNZ   stop_from_addr  ; SDA read 1 = NACK -> STOP. The one
                                ; sanctioned data-dependent branch; the
                                ; assembler warns about exactly this line
@@ -380,18 +398,18 @@
 ; ------------------------------- way -- the branch lives on the address
 ; ------------------------------- ACK, where its outcome changes the rest)
 .cyclesec i2c_ack2_low
-        OUT   UIO_OUT, R3     ; SCL falls; SDA released
-        WAIT  20              ; 21 cycles
-        IN    R3, UIO_IN      ; sample the bus (taints R3)
-        WAIT  39              ; 40 cycles
-        AND   R3, R1          ; isolate SDA; sets Z (no branch reads it)
-        LDI   R3, 0x0C
+        OUT   UIO_OUT, R3     ; SCL falls; SDA released for the peripheral
+        WAIT  62              ; 63 cycles, no sample (as i2c_ack1_low)
+        LDI   R3, 0x0C        ; SCL high, SDA released
 .endcyclesec                   ; t_LOW = 65
 .cyclesec i2c_ack2_high
         OUT   UIO_OUT, R3     ; SCL rises
-        WAIT  56              ; 57 cycles
+        WAIT  28              ; 29 cycles
+        IN    R3, UIO_IN      ; sample at high offset 30, as the address ACK
+        AND   R3, R1          ; isolate SDA; sets Z (no branch reads it: the
+                               ; Z flag holds this reading to HALT)
+        WAIT  26              ; 27 cycles
         LDI   R3, 0x08        ; SDA released, SCL still high
-        WAIT  0               ; 1 cycle: pads the SCL fall to exactly 60
 .endcyclesec                   ; t_HIGH = 60
 ; ------------------------------------------------- STOP from the data ACK
 .cyclesec i2c_stop_data_low

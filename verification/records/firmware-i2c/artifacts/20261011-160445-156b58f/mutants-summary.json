@@ -1,0 +1,292 @@
+{
+ "benches": [
+  "verification/request-firmware-i2c-ack.json",
+  "verification/request-firmware-i2c.json"
+ ],
+ "original_rev": "b76ec6d4cce124c4a861166029c4707c00276978",
+ "runs": [
+  {
+   "kind": "golden",
+   "ack_bench": {
+    "parsed": true,
+    "rc": 0,
+    "tests": {
+     "test_ack_samples_sit_inside_ninth_high": {
+      "status": "passed",
+      "error_type": null,
+      "error_message": null
+     },
+     "test_both_address_outcomes_early_response": {
+      "status": "passed",
+      "error_type": null,
+      "error_message": null
+     },
+     "test_late_ack_responses_are_read_as_ack": {
+      "status": "passed",
+      "error_type": null,
+      "error_message": null
+     }
+    }
+   },
+   "sibling_bench": {
+    "parsed": true,
+    "rc": 0,
+    "tests": {
+     "test_committed_images_are_fresh": {
+      "status": "passed",
+      "error_type": null,
+      "error_message": null
+     },
+     "test_i2c_both_grades_pass_independent_reference_model": {
+      "status": "passed",
+      "error_type": null,
+      "error_message": null
+     },
+     "test_uio_od_left_at_reset_cannot_drive_the_bus": {
+      "status": "passed",
+      "error_type": null,
+      "error_message": null
+     },
+     "test_reference_model_negative_control_still_fails": {
+      "status": "passed",
+      "error_type": null,
+      "error_message": null
+     }
+    }
+   },
+   "as_required": true
+  },
+  {
+   "kind": "mutant",
+   "name": "fast-addr-ack-low-phase",
+   "program": "firmware/asm/i2c_fast.asm",
+   "slot": "addr",
+   "original_low_phase_in_offsets": [
+    22
+   ],
+   "bench_former_offset": 22,
+   "ack_bench": {
+    "parsed": true,
+    "rc": 3,
+    "tests": {
+     "test_ack_samples_sit_inside_ninth_high": {
+      "status": "failed",
+      "error_type": "AssertionError",
+      "error_message": "i2c_fast i2c_ack1: IN in the ACK low phase at offset(s) [22] -- sampled before the SCL rise"
+     },
+     "test_both_address_outcomes_early_response": {
+      "status": "passed",
+      "error_type": null,
+      "error_message": null
+     },
+     "test_late_ack_responses_are_read_as_ack": {
+      "status": "failed",
+      "error_type": "AssertionError",
+      "error_message": "i2c_fast late ACK (after-former-IN, delay 22): a late but legal address ACK must be followed by the data byte; decoded data [] acks [True] -- the controller read a NACK"
+     }
+    }
+   },
+   "sibling_bench": {
+    "parsed": true,
+    "rc": 0,
+    "tests": {
+     "test_committed_images_are_fresh": {
+      "status": "passed",
+      "error_type": null,
+      "error_message": null
+     },
+     "test_i2c_both_grades_pass_independent_reference_model": {
+      "status": "passed",
+      "error_type": null,
+      "error_message": null
+     },
+     "test_uio_od_left_at_reset_cannot_drive_the_bus": {
+      "status": "passed",
+      "error_type": null,
+      "error_message": null
+     },
+     "test_reference_model_negative_control_still_fails": {
+      "status": "passed",
+      "error_type": null,
+      "error_message": null
+     }
+    }
+   },
+   "as_required": true
+  },
+  {
+   "kind": "mutant",
+   "name": "fast-data-ack-low-phase",
+   "program": "firmware/asm/i2c_fast.asm",
+   "slot": "data",
+   "original_low_phase_in_offsets": [
+    22
+   ],
+   "bench_former_offset": 22,
+   "ack_bench": {
+    "parsed": true,
+    "rc": 3,
+    "tests": {
+     "test_ack_samples_sit_inside_ninth_high": {
+      "status": "failed",
+      "error_type": "AssertionError",
+      "error_message": "i2c_fast i2c_ack2: IN in the ACK low phase at offset(s) [22] -- sampled before the SCL rise"
+     },
+     "test_both_address_outcomes_early_response": {
+      "status": "passed",
+      "error_type": null,
+      "error_message": null
+     },
+     "test_late_ack_responses_are_read_as_ack": {
+      "status": "failed",
+      "error_type": "AssertionError",
+      "error_message": "i2c_fast late ACK (after-former-IN, delay 22): the controller's last ACK sample (Z flag) read NACK, the line carried ACK at the SCL rise"
+     }
+    }
+   },
+   "sibling_bench": {
+    "parsed": true,
+    "rc": 0,
+    "tests": {
+     "test_committed_images_are_fresh": {
+      "status": "passed",
+      "error_type": null,
+      "error_message": null
+     },
+     "test_i2c_both_grades_pass_independent_reference_model": {
+      "status": "passed",
+      "error_type": null,
+      "error_message": null
+     },
+     "test_uio_od_left_at_reset_cannot_drive_the_bus": {
+      "status": "passed",
+      "error_type": null,
+      "error_message": null
+     },
+     "test_reference_model_negative_control_still_fails": {
+      "status": "passed",
+      "error_type": null,
+      "error_message": null
+     }
+    }
+   },
+   "as_required": true
+  },
+  {
+   "kind": "mutant",
+   "name": "std-addr-ack-low-phase",
+   "program": "firmware/asm/i2c_std.asm",
+   "slot": "addr",
+   "original_low_phase_in_offsets": [
+    32
+   ],
+   "bench_former_offset": 32,
+   "ack_bench": {
+    "parsed": true,
+    "rc": 3,
+    "tests": {
+     "test_ack_samples_sit_inside_ninth_high": {
+      "status": "failed",
+      "error_type": "AssertionError",
+      "error_message": "i2c_std i2c_ack1: IN in the ACK low phase at offset(s) [32] -- sampled before the SCL rise"
+     },
+     "test_both_address_outcomes_early_response": {
+      "status": "passed",
+      "error_type": null,
+      "error_message": null
+     },
+     "test_late_ack_responses_are_read_as_ack": {
+      "status": "failed",
+      "error_type": "AssertionError",
+      "error_message": "i2c_std late ACK (after-former-IN, delay 32): a late but legal address ACK must be followed by the data byte; decoded data [] acks [True] -- the controller read a NACK"
+     }
+    }
+   },
+   "sibling_bench": {
+    "parsed": true,
+    "rc": 0,
+    "tests": {
+     "test_committed_images_are_fresh": {
+      "status": "passed",
+      "error_type": null,
+      "error_message": null
+     },
+     "test_i2c_both_grades_pass_independent_reference_model": {
+      "status": "passed",
+      "error_type": null,
+      "error_message": null
+     },
+     "test_uio_od_left_at_reset_cannot_drive_the_bus": {
+      "status": "passed",
+      "error_type": null,
+      "error_message": null
+     },
+     "test_reference_model_negative_control_still_fails": {
+      "status": "passed",
+      "error_type": null,
+      "error_message": null
+     }
+    }
+   },
+   "as_required": true
+  },
+  {
+   "kind": "mutant",
+   "name": "std-data-ack-low-phase",
+   "program": "firmware/asm/i2c_std.asm",
+   "slot": "data",
+   "original_low_phase_in_offsets": [
+    32
+   ],
+   "bench_former_offset": 32,
+   "ack_bench": {
+    "parsed": true,
+    "rc": 3,
+    "tests": {
+     "test_ack_samples_sit_inside_ninth_high": {
+      "status": "failed",
+      "error_type": "AssertionError",
+      "error_message": "i2c_std i2c_ack2: IN in the ACK low phase at offset(s) [32] -- sampled before the SCL rise"
+     },
+     "test_both_address_outcomes_early_response": {
+      "status": "passed",
+      "error_type": null,
+      "error_message": null
+     },
+     "test_late_ack_responses_are_read_as_ack": {
+      "status": "failed",
+      "error_type": "AssertionError",
+      "error_message": "i2c_std late ACK (after-former-IN, delay 32): the controller's last ACK sample (Z flag) read NACK, the line carried ACK at the SCL rise"
+     }
+    }
+   },
+   "sibling_bench": {
+    "parsed": true,
+    "rc": 0,
+    "tests": {
+     "test_committed_images_are_fresh": {
+      "status": "passed",
+      "error_type": null,
+      "error_message": null
+     },
+     "test_i2c_both_grades_pass_independent_reference_model": {
+      "status": "passed",
+      "error_type": null,
+      "error_message": null
+     },
+     "test_uio_od_left_at_reset_cannot_drive_the_bus": {
+      "status": "passed",
+      "error_type": null,
+      "error_message": null
+     },
+     "test_reference_model_negative_control_still_fails": {
+      "status": "passed",
+      "error_type": null,
+      "error_message": null
+     }
+    }
+   },
+   "as_required": true
+  }
+ ]
+}

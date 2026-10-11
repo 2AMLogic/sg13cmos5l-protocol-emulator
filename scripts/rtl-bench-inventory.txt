@@ -24,6 +24,7 @@ include firmware-spi
 include uio-pads
 include firmware-i2c
 include firmware-i2c-sr
+include firmware-i2c-ack
 include firmware-roundtrip
 include firmware-ws2812
 include firmware-ps2

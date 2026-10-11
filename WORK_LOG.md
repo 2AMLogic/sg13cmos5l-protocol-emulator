@@ -4,6 +4,31 @@ Chronological record of merged pull requests and closed issues, newest first.
 
 ### 2026-10-11
 
+- **PR #264**: Sample I2C controller-write ACK inside the ninth SCL high
+- **PR #260**: Open-drain pad data tied low (DR 0020) and LibreLane timing repair: slow-corner margin +5.8 ns, no slew violations (#244, #246)
+- **PR #255**: docs(submission): reconcile D2/D3 and add judge quickstart (#251)
+- **PR #253**: fix: portable bench list read and README timing wording (#241)
+- **PR #250**: docs: judge-facing architecture and ISA document with a drift checker (#230)
+- **PR #249**: spec: DR 0001 dated amendment for run-time uio direction (#44, ruling 3)
+- **PR #248**: boot: UART frame carries a count-complement byte checked before any word is committed (#211, DR 0013 F8)
+- **PR #247**: firmware: PS/2 device on open-drain CLK/DATA for row 13's stretch column (#235)
+- **PR #245**: Opt-in protocol suite for the routed SDF runner (harness increment of #217)
+- **PR #239**: spec: DR 0001 fetch-ahead amendment; DRs 0006/0007 agree with DR 0009 (#85 items 1, 4)
+- **PR #229**: Include independent host-load replay benches in the RTL CI gate
+- **PR #227**: Pace Standard-mode I2C at 500-cycle clocks and bound the full SCL period (#125)
+- **Issue #258** (closed): Move Standard/Fast controller-write ACK samples into ninth SCL high
+- **Issue #252** (closed): Review scoped shell-assignment resolution in worktree write guard
+- **Issue #251** (closed): Reconcile submission D2/D3 readiness and link the judge toolchain quickstart
+- **Issue #246** (closed): LibreLane: slow-corner setup margin fell to +1.9 ns and two max-slew violations appeared with the 232-word boot ROM (#211)
+- **Issue #244** (closed): Open-drain uio pins drive HIGH for ~100 ps on release under routed delay (uio_oe derived from uio_out)
+- **Issue #241** (closed): run-rtl-benches.sh uses mapfile (bash ≥4): breaks local runs under macOS's bash 3.2; README wording nit
+- **Issue #235** (closed): Row 13 stretch: a protocol in a role or pin direction the core protocols never use (PS/2, SWD target, MDIO PHY side)
+- **Issue #230** (closed): Submission D2: write the judge-facing architecture and ISA document
+- **Issue #225** (closed): Include independent host-load replay benches in the RTL CI gate
+- **Issue #217** (closed): Run protocol firmware waveform checks on the routed SDF corner sweep
+- **Issue #211** (closed): UART load: count byte is outside the CRC; a one-bit count flip can ACK and RUN a truncated image (DR 0013 F8)
+- **Issue #125** (closed): I2C Standard-mode: reconcile the 435-cycle firmware clock with the proposed 100 kHz target
+- **Issue #85** (closed): spec: fix the eight findings that stopped the two-key ratification of PR #84 (fetch model, SPI sketch, row 10 source and four other citations)
 - **PR #236**: Row 13: WS2812 chosen after the ISA freeze (DR 0018), firmware + independent WS2812B model at RTL and gate level (#141)
 - **PR #234**: DR 0013 layer 1 after the #166 ruling: loadseq zero refusal, readout load roles (#218)
 - **Issue #218** (closed): DR 0013 layer 1 after the #166 ruling: loadseq refuses all-zero images, record the CRC-0 gap, findings 3 and 4

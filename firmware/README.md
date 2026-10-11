@@ -369,11 +369,35 @@ budget), and each program therefore carries exactly one assembler
 themselves never branch on pin data: every phase is straight-line code
 with assemble-time `WAIT` literals.
 
+**Where the ACK is sampled (issue #258).** Both ACK slots are sampled in
+the middle of the ninth SCL **high** phase — the `IN` is 30 cycles after
+the rise and 30 before the fall on Fast, 121 / 121 on Standard — where
+UM10204 requires SDA to be stable. The ACK low phases carry no sample: a
+peripheral may answer anywhere in them, up to t_SU;DAT before the rise.
+Until #258 the `IN` sat in the ACK *low* phase, 22 (Fast) / 32
+(Standard) cycles after the SCL fall, so a legal but late ACK was read as
+a NACK (the address branch then sent STOP instead of the data byte); the
+benches' peripheral answered one cycle after the fall and never showed
+it. The address `BNZ` keeps its place in the high phase, so both branch
+paths keep the ninth high at exactly 60 / 242 cycles. Rederiving that
+for #258 found that Standard's NACK path had held it 284 cycles since
+issue #125 (a `WAIT 47` where `WAIT 5` belonged): legal, since UM10204
+sets no t_HIGH maximum, but not the stated budget, and invisible to the
+fall-through `.cyclesec` count and to the model's t_HIGH(min). It is 242
+now. The data ACK is sampled the same way and not branched on; the
+core's Z flag holds that reading to `HALT`.
+`verification/test_firmware_i2c_ack.py` checks the schedule statically,
+runs early and late responders (the latest one exactly t_SU;DAT ahead
+of the rise) on both address outcomes, and
+`verification/i2c_ack_schedule_mutants.py` shows the original schedule,
+assembled into scratch images, failing its late-response test.
+
 **The eight clocks per byte are unrolled, not looped.** DR 0001's
 blessed constant-trip-count loop needs five live values (byte, mask,
 SCL constant, temp, loop counter) and the ISA has four registers — so
 each byte is 65 instructions of straight-line phases (97 since issue
-#155's SDA-alignment shifts), and a whole program is 246 words. That fits DR 0001's 256-word memory for one
+#155's SDA-alignment shifts), and a whole program is 246 words (245
+since issue #258 moved the ACK samples). That fits DR 0001's 256-word memory for one
 protocol with headroom, but it challenges the sketch's "all three core
 protocols coexist with room for a dispatch table" sizing narrative —
 recorded as an ISA finding in the evidence record, not a spec change.
@@ -385,7 +409,9 @@ state each phase's exact length — the bench cross-checks all 41):
 |---|---|---|
 | data-clock low | `OUT`+`WAIT 62`/`255`+`OR` | **65 / 258** |
 | data-clock high | `OUT`+`SHF`+`WAIT 51`/`233`+`MOV`+4x`SHF`+`AND` | **60 / 242** |
-| ACK low (incl. the `IN` sample) | `OUT`+`WAIT`+`IN`+`WAIT`+`AND`+`LDI` | **65 / 258** |
+| ACK low (no sample since issue #258) | `OUT`+`WAIT 62`/`255`+`LDI` | **65 / 258** |
+| address ACK high (incl. the `IN` sample), either branch path | `OUT`+`WAIT`+`IN`+`AND`+`WAIT`+`BNZ`, then `LDI`+`MOV`+4x`SHF`+`AND` (ACK) or `LDI`+`WAIT 5` (NACK) | **60 / 242** |
+| data ACK high (incl. the `IN` sample) | `OUT`+`WAIT`+`IN`+`AND`+`WAIT`+`LDI` | **60 / 242** |
 | START hold (t_HD;STA) | `OUT`+`WAIT`+`LDI`+`MOV`+4x`SHF`+`AND` | **65 / 205** |
 | STOP setup (t_SU;STO) | `OUT`+`WAIT`+`LDI` | **60 / 205** |
 
@@ -495,7 +521,7 @@ is published on `UO_OUT`. t_SU;STA is paced exactly at the Table 10
 minimum (30 cycles Fast, 235 Standard). Standard data/ACK clocks are 500
 cycles (low 258 + high 242; polled rise phases +2), Fast 125 (issue #125). The bit loops keep a counter, so
 the programs are 152 words (`_sr`) and 192 words (`_sr_poll`) of the
-256-word store, against 246 words for the unrolled write-only programs
+256-word store, against 246 words (245 since issue #258) for the unrolled write-only programs
 (131 / 171 / 181 before issue #155's SDA-alignment shifts; SCL is
 `uio[2]`, SDA `uio[3]`, `UIO_OD` = `0x0C`).
 `_sr` has no pin-dependent branch; `_sr_poll` polls the peripheral's SCL
