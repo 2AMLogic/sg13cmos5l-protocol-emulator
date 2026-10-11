@@ -3,7 +3,7 @@
   "kind": "generic",
   "status": "pass",
   "t1_item": 9,
-  "summary": "Testbenches shipped: every evidence directory under verification/records/ and every measured target-spec row is mapped to its committed bench and cold-start command, with the klt pin, cocotb pin, PDK revision (IHP-Open-PDK 2bbec755) and formal toolchain pin; rows with no measurement say so. Audited 2026-10-10 at klt v0.7.0, issue #83. Refreshed for issue #137 (the load-integrity bench). Refreshed for issue #141 (the row-13 WS2812 bench). Refreshed for issue #235 (the row-13 stretch PS/2 bench). Refreshed for issue #211 (the count-alias bench now asserts rejection; the gate-level netlist of gds run 38108543866).",
+  "summary": "Testbenches shipped: every evidence directory under verification/records/ and every measured target-spec row is mapped to its committed bench and cold-start command, with the klt pin, cocotb pin, PDK revision (IHP-Open-PDK 2bbec755) and formal toolchain pin; rows with no measurement say so. Audited 2026-10-10 at klt v0.7.0, issue #83. Refreshed for issue #137 (the load-integrity bench). Refreshed for issue #141 (the row-13 WS2812 bench). Refreshed for issue #235 (the row-13 stretch PS/2 bench). Refreshed for issue #211 (the count-alias bench now asserts rejection; the gate-level netlist of gds run 38108543866). Refreshed for issue #258 (the I2C ACK-schedule bench and its mutant runner on the firmware-i2c line).",
   "source": "manifests/evidence/testbenches.txt",
   "provenance": {
     "klt_version": "0.7.0",
@@ -11,7 +11,7 @@
     "pdk": null,
     "deck": null,
     "input": {
-      "content_hash": "sha256:7c414d88276bd5eb6a48686b1ed312bb036cdad570f6d013b4986241af676ae6",
+      "content_hash": "sha256:73b71aa6a838f0dc61dfdb41c195178c198f4d2a24d9c1c864c2c78c88eee0c6",
       "path": "testbenches.txt"
     }
   }

@@ -2,6 +2,12 @@
 # committed, with a cold-start invocation a third party can run, and the PDK
 # revision is pinned.
 #
+# Refreshed 2026-10-11 for issue #258 (I2C ACK sampled inside the ninth SCL
+# high): the `firmware-i2c` line names the new ACK-schedule bench
+# (test_firmware_i2c_ack.py, its request) and its negative-control runner
+# (i2c_ack_schedule_mutants.py). The gate-level lines are unchanged: they
+# were not re-run on the new I2C images. The PDK revision is unchanged.
+#
 # Refreshed 2026-10-11 for issue #211 (the UART frame's count complement),
 # merged with issue #235: the boot-uart line names the count-alias bench, which
 # now asserts that a corrupted count is rejected, and all three gate-level
