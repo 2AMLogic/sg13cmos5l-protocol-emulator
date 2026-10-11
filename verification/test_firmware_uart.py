@@ -277,7 +277,10 @@ async def capture_pin_bits(dut, specs: dict, cycles: int) -> dict:
     """Sample the given pin bits after each of the next `cycles` rising
     edges, returning `{name: CapturedPin}`.
 
-    `specs` maps a capture name to `(top-level output name, bit index)`.
+    `specs` maps a capture name to `(top-level output name, bit index)`,
+    or `(name, bit, True)` to capture the bit inverted (an open-drain pin's
+    *intent* is `~uio_oe`: since DR 0019 the pad's `uio_out` is held low on
+    an open-drain pin, so the intent no longer shows on it).
     Sampling is **every** clock edge -- never a coarser poll that could
     step over a bit boundary -- and each sample is taken in the `ReadOnly`
     region so the edge's nonblocking assignments have settled (the same
@@ -287,8 +290,9 @@ async def capture_pin_bits(dut, specs: dict, cycles: int) -> dict:
     """
     await ReadOnly()
     caps = {
-        name: CapturedPin(name, (int(getattr(dut, pin).value) >> bit) & 1)
-        for name, (pin, bit) in specs.items()
+        name: CapturedPin(name, ((int(getattr(dut, pin).value) >> bit) & 1) ^ int(len(spec) > 2 and spec[2]))
+        for name, spec in specs.items()
+        for pin, bit in [spec[:2]]
     }
     await Timer(1, unit="ns")  # leave the read-only region
 
@@ -297,8 +301,8 @@ async def capture_pin_bits(dut, specs: dict, cycles: int) -> dict:
         await ReadOnly()
         t_ns = float(get_sim_time("ns"))
         samples = {
-            name: (int(getattr(dut, pin).value) >> bit) & 1
-            for name, (pin, bit) in specs.items()
+            name: ((int(getattr(dut, spec[0]).value) >> spec[1]) & 1) ^ int(len(spec) > 2 and spec[2])
+            for name, spec in specs.items()
         }
         await Timer(1, unit="ns")  # leave the read-only region
         for name, value in samples.items():

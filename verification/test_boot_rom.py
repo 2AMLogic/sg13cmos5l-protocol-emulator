@@ -406,13 +406,16 @@ def assert_quiet(trace, label, waiting_at=None):
     `waiting_at` is the address the boot program ends in. When it is the UART
     loader's poll, the loader's own state is allowed and checked instead: TX
     (uo_out[0]) idles high, `uio_out` is 0 until the loader's guard sets it
-    to 0xFF, and `uio_oe` is 0 at every edge -- no uio pin ever drives."""
+    to 0xFF (and 0 again once UIO_OD holds the pad's data low, DR 0019), and `uio_oe` is 0 at every edge -- no uio pin ever drives."""
     if waiting_at is not None and waiting_at == stub_addresses()["uart_load"]:
         for e, s in enumerate(trace):
             assert s["uio_oe"] == 0, f"{label}: a uio pin drove at edge {e}: {s['uio_oe']:#04x}"
             assert s["uo_out"] in (0x00, 0x01), f"{label}: uo_out={s['uo_out']:#04x} at edge {e}"
             assert s["uio_out"] in (0x00, 0xFF), f"{label}: uio_out={s['uio_out']:#04x} at edge {e}"
-        assert trace[-1] == {"uo_out": 0x01, "uio_out": 0xFF, "uio_oe": 0}, (
+        # DR 0019: once the loader sets UIO_OD = 0xFF the pad's data bit is
+        # held low, so the final pad state is uio_out 0x00 with uio_oe 0
+        # (every pin open-drain and released).
+        assert trace[-1] == {"uo_out": 0x01, "uio_out": 0x00, "uio_oe": 0}, (
             f"{label}: the loader is not idling with TX high: {trace[-1]}"
         )
         return

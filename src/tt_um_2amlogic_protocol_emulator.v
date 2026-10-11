@@ -40,9 +40,10 @@
  *     (issue #135): the core's control registers `UIO_DIR` and `UIO_OD`
  *     select each pin's mode, and the pin-mode logic at the bottom of
  *     this file turns them into `uio_oe` --
- *       UIO_OD[n] set   -> open-drain: uio_oe[n] = ~uio_out[n] (drive low
- *                          on a 0, release on a 1; uio_out[n] is 0 when
- *                          driving, so the pad only ever pulls low)
+ *       UIO_OD[n] set   -> open-drain: uio_oe[n] = ~port11[n] (drive low
+ *                          on a 0, release on a 1); the pad's uio_out[n]
+ *                          is held at 0 (DR 0019), so the pad only ever
+ *                          pulls low, whatever the relative net delays
  *       else UIO_DIR[n] -> push-pull:  uio_oe[n] = 1
  *       else            -> input:      uio_oe[n] = 0
  *     Both registers reset to 0, so after `rst_n` every bidirectional pin
@@ -121,6 +122,7 @@ module tt_um_2amlogic_protocol_emulator (
   wire [15:0] pm_crc;
   wire        serial_loaded;
   wire [7:0]  core_uo_out;  // the core's port-10 register (run-phase uo_out)
+  wire [7:0]  core_uio_out; // the core's port-11 register (firmware's intent)
 
   // DR 0013 layer 2 boot ROM (issue #138): the second fetch source.
   wire [15:0] rom_word;
@@ -169,7 +171,7 @@ module tt_um_2amlogic_protocol_emulator (
       .port_ui_in  (ui_in),
       .port_uio_in (uio_in),
       .port_uo_out (core_uo_out),
-      .port_uio_out(uio_out),
+      .port_uio_out(core_uio_out),
       .uio_dir      (uio_dir),
       .uio_od       (uio_od),
       .pm_we        (pm_we),
@@ -184,7 +186,14 @@ module tt_um_2amlogic_protocol_emulator (
   // Pin-mode logic (DR 0012 "Pin mode, per uio[n]"): open-drain wins,
   // then push-pull, else input. With both registers at their reset value
   // of 0 this is 8'h00 -- every bidirectional pin an input.
-  assign uio_oe = (uio_od & ~uio_out) | (~uio_od & uio_dir);
+  //
+  // Issue #244 / DR 0019: the pad's data bit is held at 0 on an open-drain
+  // pin and only `uio_oe` toggles, so the pad never sees oe=1, out=1 -- not
+  // even for the skew between the two nets under routed delays. `uio_oe`
+  // is still computed from the core's register (the firmware's intent), so
+  // the pad-visible behaviour is DR 0012's: drive low on a 0, release on 1.
+  assign uio_out = core_uio_out & ~uio_od;
+  assign uio_oe = (uio_od & ~core_uio_out) | (~uio_od & uio_dir);
 
   // Load-phase CRC readout (DR 0013 layer 1, issue #137). `run_phase` is
   // low in exactly three situations, and PM_CRC is the right thing to show

@@ -110,6 +110,15 @@
       "sha256_after": "7285193c87ba9efd79e0a8c2f39ffee1351da9dd5876d030f4c319ed8fbf3994",
       "ref": "#211",
       "summary": "dated 2026-10-11 entry: the UART boot frame gains a count-complement byte that the boot ROM checks before committing any word (F8 resolved); boot ROM firmware and host wire format only, no change to the ISA or to the pinned boot interface (BOOT_STATUS, ROM fetch until RUN, hand-over state, layer-1 PM_CRC readout)"
+    },
+    {
+      "path": "src/tt_um_2amlogic_protocol_emulator.v",
+      "op": "modify",
+      "kind": "conformance-fix",
+      "dr": 19,
+      "invalidates_row13_evidence": false,
+      "sha256_before": "3ac55ab264ff4c859b8f9aa852b31eb303d57327bed49e63bb12a68c5680975a",
+      "sha256_after": "299aba7fccb4267998fd426e8113ccb8eed7a8458758cfc1a3a99373ae507348"
     }
   ],
   "row13_excluded_protocols": {

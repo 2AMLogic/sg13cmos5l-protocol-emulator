@@ -66,7 +66,7 @@ from pathlib import Path
 
 import cocotb
 from cocotb.clock import Clock
-from cocotb.triggers import ClockCycles, ReadOnly, RisingEdge, Timer
+from cocotb.triggers import ClockCycles, Edge, First, ReadOnly, RisingEdge, Timer
 
 try:
     from repo_root import find_repo_root
@@ -110,6 +110,13 @@ def crc_of_words(words, crc=0):
     standard library -- the independent reference DR 0012 names."""
     data = b"".join(bytes(((w >> 8) & 0xFF, w & 0xFF)) for w in words)
     return binascii.crc_hqx(data, crc)
+
+
+def pin_mode_pad_out(port11, uio_od):
+    """DR 0019: the data the pad sees. An open-drain pin's data bit is held
+    at 0 (only `uio_oe` toggles), so the pad never sees oe=1, out=1; every
+    other pin shows the port-11 register."""
+    return port11 & ~uio_od & 0xFF
 
 
 def pin_mode_oe(uio_out, uio_dir, uio_od):
@@ -204,6 +211,10 @@ async def settle(dut):
         "uio_out": int(dut.uio_out.value),
         "uio_oe": int(dut.uio_oe.value),
     }
+    if not GATE_LEVEL:
+        # White-box: the firmware's intent (ISA port 11), which the pad's
+        # `uio_out` no longer shows on an open-drain pin (DR 0019).
+        sample["port11"] = int(dut.u_core.port_uio_out.value)
     await Timer(1, unit="ns")
     return sample
 
@@ -328,6 +339,7 @@ async def test_readback_and_pin_mode_logic(dut):
     p = Prog()
     checks = []
     oe_checks = []
+    pad_checks = []
     state = {"out": 0x00, "dir": 0x00, "od": 0x00}
 
     def step(kind, value):
@@ -340,6 +352,9 @@ async def test_readback_and_pin_mode_logic(dut):
         oe_checks.append((idx, pin_mode_oe(state["out"], state["dir"], state["od"]),
                           f"uio_oe after {kind}={value:#04x} "
                           f"(out={state['out']:#04x} dir={state['dir']:#04x} od={state['od']:#04x})"))
+        pad_checks.append((idx, pin_mode_pad_out(state["out"], state["od"]),
+                           f"uio_out (pad data) after {kind}={value:#04x} "
+                           f"(out={state['out']:#04x} od={state['od']:#04x})"))
         if kind != "out":
             checks.append((p.show(UIO_DIR if kind == "dir" else UIO_OD), value,
                            f"{'UIO_DIR' if kind == 'dir' else 'UIO_OD'} readback {value:#04x}"))
@@ -374,6 +389,9 @@ async def test_readback_and_pin_mode_logic(dut):
     trace = await run_trace(dut, p.words, p.end_edge() + 3)
     expect(trace, p, checks)
     expect(trace, p, oe_checks, pin="uio_oe")
+    # DR 0019: the pad's data bit on an open-drain pin is held at 0.
+    assert pin_mode_pad_out(0xFF, 0x0F) == 0xF0 and pin_mode_pad_out(0xA5, 0x00) == 0xA5
+    expect(trace, p, pad_checks, pin="uio_out")
     # ...and not one edge early: the enable is registered state.
     prev = 0x00
     for idx, want, label in oe_checks:
@@ -818,8 +836,51 @@ async def test_i2c_images_open_drain_preamble(dut):
         pulled = False
         for e in range(e_pre, n + 1):
             s = trace[e]
-            assert s["uio_oe"] == (~s["uio_out"] & I2C_OD), (
-                f"{name}: uio_oe {s['uio_oe']:#04x} with uio_out {s['uio_out']:#04x} at edge {e}"
+            # DR 0019: the pad's data bit is held at 0 on an open-drain pin,
+            # so the pad is only ever driven low, never high.
+            assert s["uio_out"] & I2C_OD == 0, (
+                f"{name}: pad data {s['uio_out']:#04x} drives an open-drain line high at edge {e}"
             )
+            if "port11" in s:  # RTL only: the firmware's intent
+                assert s["uio_oe"] == (~s["port11"] & I2C_OD), (
+                    f"{name}: uio_oe {s['uio_oe']:#04x} with port 11 {s['port11']:#04x} at edge {e}"
+                )
             pulled = pulled or s["uio_oe"] != 0
         assert pulled, f"{name}: the program never pulled a line low (vacuous)"
+
+
+@cocotb.test()
+async def test_open_drain_pad_never_sees_oe_high_with_data_high(dut):
+    """Issue #244 / DR 0019: an open-drain pad is never driven HIGH, not
+    even for a delta cycle. The pad's data bit is held at 0 and only
+    `uio_oe` toggles, so `uio_oe[n] & uio_out[n]` is 0 at every value
+    change of either net -- not only at the settled sample after a clock
+    edge. (Under routed SDF delays `uio_out` and `uio_oe` settle at
+    different times; before the fix, `uio_oe` followed the data bit one
+    net later and the pad saw oe=1, out=1 on every release. With zero
+    delay the same skew shows as a delta-cycle glitch, which this
+    monitor sees.) Run on the I2C image, which releases and pulls SCL
+    and SDA many times."""
+    start_clock(dut)
+    seen = {"changes": 0, "glitch": [], "pulled": 0}
+
+    async def monitor():
+        while True:
+            await First(Edge(dut.uio_out), Edge(dut.uio_oe))
+            try:
+                both = int(dut.uio_out.value) & int(dut.uio_oe.value)
+            except ValueError:  # x/z before reset settles
+                continue
+            seen["changes"] += 1
+            seen["pulled"] += int(dut.uio_oe.value) != 0
+            if both & I2C_OD:
+                seen["glitch"].append(both)
+
+    text = (REPO_ROOT / "firmware" / "build" / "i2c_fast.hex").read_text()
+    words = [int(line, 16) for line in text.split()]
+    cocotb.start_soon(monitor())
+    await run_trace(dut, words, 2600, uio_in=0xFF)
+    assert seen["changes"] > 0 and seen["pulled"] > 0, "the monitor saw no pad activity (vacuous)"
+    assert not seen["glitch"], (
+        f"an open-drain pad saw oe=1 with data=1 ({len(seen['glitch'])} times, first {seen['glitch'][0]:#04x})"
+    )

@@ -128,7 +128,7 @@ def expect_fail(fx: Fixture, needle: str, layer: str | None = None, *extra: str)
 # is implementation-COMPLETE, and the cases that used to start from
 # `assign uio_oe = 8'h00;` first put that synthesis-time shape back.
 TOP = "src/tt_um_2amlogic_protocol_emulator.v"
-RUNTIME_OE = "assign uio_oe = (uio_od & ~uio_out) | (~uio_od & uio_dir);"
+RUNTIME_OE = "assign uio_oe = (uio_od & ~core_uio_out) | (~uio_od & uio_dir);"
 
 
 @case("committed tree: consistency passes, runtime pin mode is complete")
@@ -164,7 +164,7 @@ def _(fx):
 @case("runtime pin mode: a top-level uio_oe that is not DR 0012's rule fails")
 def _(fx):
     # open-drain no longer wins over push-pull
-    fx.mutate(TOP, RUNTIME_OE, "assign uio_oe = (uio_od & ~uio_out) | uio_dir;")
+    fx.mutate(TOP, RUNTIME_OE, "assign uio_oe = (uio_od & ~core_uio_out) | uio_dir;")
     expect_fail(fx, "is not DR 0012's pin-mode rule", "concrete-firmware-bench")
 
 

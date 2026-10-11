@@ -190,8 +190,11 @@ DATA_BYTE = 0x5A
 
 #: Pin plan of both programs: SCL on uio bit 2, SDA on uio bit 3 -- DR
 #: 0010's target plan, the standard Tiny Tapeout I2C Pmod (issue #155).
-#: `SCL_PIN` / `SDA_PIN` name the controller's *intent* (`uio_out`); the
-#: line the model grades is read on `uio_in` (`LINE_PIN`).
+#: `SCL_PIN` / `SDA_PIN` name the controller's raw `uio_out` -- its intent
+#: only while the pad is push-pull (the UIO_OD negative controls, where
+#: `WCTL UIO_OD` is mutated away). With `UIO_OD` set (DR 0019) the pad's
+#: `uio_out` is held low, and the intent is `~uio_oe` (`int_scl` /
+#: `int_sda`). The line the model grades is read on `uio_in` (`LINE_PIN`).
 SCL_PIN, SCL_BIT = "uio_out", 2
 SDA_PIN, SDA_BIT = "uio_out", 3
 LINE_PIN = "uio_in"
@@ -204,6 +207,8 @@ CAPTURE_SPECS = {
     "sda": (LINE_PIN, SDA_BIT),
     "ctl_scl": (SCL_PIN, SCL_BIT),
     "ctl_sda": (SDA_PIN, SDA_BIT),
+    "int_scl": ("uio_oe", SCL_BIT, True),
+    "int_sda": ("uio_oe", SDA_BIT, True),
 }
 
 
@@ -578,14 +583,13 @@ async def test_i2c_both_grades_pass_independent_reference_model(dut):
         # peripheral never stretches), so the SCL line must be the
         # controller's intent exactly -- which it only can be if the pad
         # pulls low on a 0 and the pull-up restores the line on a 1.
-        # (`uio_out` resets to 0 while the pad is still an input, so the
-        # intent starts with one rise the line never sees: the program's
-        # `OUT 0x0C` that precedes `WCTL UIO_OD`.)
-        intent = caps["ctl_scl"].signal
-        assert intent.initial == 0 and intent.transitions[0][1] == 1
+        # (The intent is `~uio_oe`: released from reset, so unlike the old
+        # `uio_out` capture it has no pre-`WCTL UIO_OD` rise.)
+        intent = caps["int_scl"].signal
+        assert intent.initial == 1 and intent.transitions[0][1] == 0
         assert (
             caps["scl"].signal.initial == 1
-            and caps["scl"].signal.transitions == intent.transitions[1:]
+            and caps["scl"].signal.transitions == intent.transitions
         ), f"{mode.name} run A: the SCL line is not the controller's SCL"
 
         # ---- run B: peripheral NACKs the address -> the branch is taken,

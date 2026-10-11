@@ -568,9 +568,9 @@ async def test_unused_pins_are_never_driven(dut):
     assert await host.wait_device_frame()
     await Timer(500 * US, "ns")
     oe = int(dut.uio_oe.value)
-    out = int(dut.uio_out.value)
+    out = int(dut.uio_out.value)  # DR 0019: held low on open-drain pins
     assert oe & ~OD_MASK == 0, f"uio_oe = {oe:#04x}: a pin outside CLK|DATA is enabled"
-    assert (out & OD_MASK) == OD_MASK and (oe & OD_MASK) == 0, (
+    assert (out & OD_MASK) == 0 and (oe & OD_MASK) == 0, (
         f"idle bus: uio_out {out:#04x} uio_oe {oe:#04x}; both lines should be released"
     )
     finish(host, pads, "pins")

@@ -1333,6 +1333,16 @@ class Checker:
                               f"ui_in[{sel_pin[1]}] ? ... : ...;` (run-phase arm the core's whole "
                               f"port, byte select the CRC_BYTE_SEL pin)")
                 continue
+            if m and port == "uio_out":
+                # DR 0019 (issue #244): the core's whole port-11 register
+                # feeds the pad through the open-drain gate
+                #   assign uio_out = <core net> & ~uio_od;
+                gate = re.search(r"assign\s+uio_out\s*=\s*(\w+)\s*&\s*~\s*uio_od\s*;", text)
+                if gate and gate.group(1) == m.group(1):
+                    continue
+                self.meta.err(f"{rel}: the core's port_uio_out ({m.group(1)}) must reach the pad as "
+                              f"`assign uio_out = {m.group(1)} & ~uio_od;` (DR 0019)")
+                continue
             if not m or m.group(1) != port:
                 self.meta.err(f"{rel}: core port_{port} is not connected to the whole {port} bus")
         m = re.search(r"assign\s+uio_oe\s*=\s*([^;]+);", text)
@@ -1514,10 +1524,19 @@ class Checker:
         The DR 0008 prerequisite "uio_out must reset released" does not
         apply in this shape: the pins are inputs at reset whatever
         `uio_out` holds."""
-        if re.sub(r"\s+", "", expr) != self.DR0012_UIO_OE:
+        # DR 0019 (issue #244): the rule is written over the core's port-11
+        # register (`core_uio_out`); the pad's `uio_out` is that register
+        # with open-drain pins held low, so the pad never sees oe=1, out=1.
+        if re.sub(r"\s+", "", expr).replace("core_uio_out", "uio_out") != self.DR0012_UIO_OE:
             self.concrete.err(
                 f"top-level `uio_oe = {expr}` is not DR 0012's pin-mode rule "
-                "`(uio_od & ~uio_out) | (~uio_od & uio_dir)`")
+                "`(uio_od & ~core_uio_out) | (~uio_od & uio_dir)`")
+        self.concrete.sites += 1
+        top = re.sub(r"\s+", "", getattr(self, "top_text", "") or "")
+        if "assignuio_out=core_uio_out&~uio_od;" not in top:
+            self.concrete.err(
+                "top level: no `assign uio_out = core_uio_out & ~uio_od;` "
+                "(DR 0019: an open-drain pad's data bit is held low)")
         core = getattr(self, "core_text", None) or ""
         for reg in ("uio_dir", "uio_od"):
             self.concrete.sites += 1
