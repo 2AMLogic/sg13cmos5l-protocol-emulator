@@ -55,7 +55,7 @@
 
 sha256:8c380b9165a09a60e6be8d8546eac360a733317253f152c15faaa13489e94a29  src/tt_um_2amlogic_protocol_emulator.v
 sha256:d4bab243a80af56a41b8ef730bc0ecbee889f2c02f4587311d6f9f694636437a  rtl/protocol_core.v
-sha256:2b08865ab24d6bac84b390dfa76bab6686b572ba8f19124130bfc34e93dff637  rtl/protocol_program_memory.v
+sha256:d8d32e0b8b26745a77ce2a30024243c8cccb06d6ffa91d38d8cec303b2e33892  rtl/protocol_program_memory.v
 sha256:329ed189d457010b259349e5d59e36db09d67422b4909320253929c3e0fdbebe  rtl/protocol_boot_rom.v
 
 # The template's "sources live in src/" rule is met by symlinks, so there is
