@@ -2,6 +2,13 @@
 # committed, with a cold-start invocation a third party can run, and the PDK
 # revision is pinned.
 #
+# Refreshed 2026-10-11 for issue #259 (the I2C ACK-window formal property): an
+# `i2c-ack-window` experiment line is added (the runner
+# verification/formal/run-i2c-ack-window.sh, formal toolchain plus Icarus), and
+# row 12 gains it. The property is bounded and covers the two committed
+# controller-write images; no unbounded proof is claimed. The PDK revision is
+# unchanged.
+#
 # Refreshed 2026-10-11 for issue #258 (I2C ACK sampled inside the ninth SCL
 # high): the `firmware-i2c` line names the new ACK-schedule bench
 # (test_firmware_i2c_ack.py, its request) and its negative-control runner
@@ -136,8 +143,10 @@ file  .github/workflows/gds.yaml
 #   (isa-lockstep) and the control space (control-space).
 # Row 9, submission: a date, not a measurement.
 # Rows 10-12, UART drift, SPI ceiling and modes, I2C timing: as row 1 (the
-#   same benches grade these bounds). The ACK-window formal property named in
-#   row 12's Checked by does not exist and nothing claims it.
+#   same benches grade these bounds). Row 12's ACK-window formal property named
+#   in Checked by: experiment i2c-ack-window (issue #259), bounded, the two
+#   committed controller-write images only; it is not an unbounded proof and
+#   makes no electrical claim.
 # Row 13, reprogrammability: no firmware yet, nothing measured, no bench.
 # Row 14, reset, power-up, reselect: experiments reset-power-up [PDK] (gate
 #   level, random and X initial state), reset-pin-through, boot-rom,
@@ -168,6 +177,7 @@ experiment  firmware-ws2812-gate-level  `PDK_ROOT=<pdk> ./flow/run-ws2812-gate-l
 experiment  firmware-ps2  verification/test_firmware_ps2.py + reference_models/ps2.py; `klt functional-verification verification/request-firmware-ps2.json --format json`; model self-test `python3 verification/test_ps2_model.py` (in `npm run lint`); mutant programs are tests in the bench
 experiment  firmware-ps2-gate-level  `PDK_ROOT=<pdk> ./flow/run-ps2-gate-level.sh` [PDK]; default netlist frozen in post-layout-sdf-regression/artifacts/20261011-114800-e5a0bae/
 experiment  firmware-uart-rx  verification/test_firmware_uart_rx.py; `klt functional-verification verification/request-firmware-uart-rx.json --format json`
+experiment  i2c-ack-window  `./verification/formal/run-i2c-ack-window.sh <dir>` (formal toolchain: yosys, yosys-abc, iverilog/vvp, python3, git history; no PDK, no z3); bounded ABC bmc3 on the actual core running the committed i2c_fast/i2c_std images, covers, and 13 firmware mutants per grade each replayed in Icarus (issue #259)
 experiment  isa-lockstep  verification/test_isa_lockstep.py + reference_models/isa.py; `klt functional-verification verification/request-isa-lockstep.json --format json`; controls `python3 verification/isa_lockstep_mutants.py --out <dir>`
 experiment  librelane-corner-timing  [LL] gds workflow; `gh run download <run-id>`; the figures are GDS_logs runs/wokwi/final/metrics.json, projected as the records describe
 experiment  librelane-gds-signoff-check  [PDK] from flow/: `klt synthesize synthesize-protocol-emulator.json`, `klt drc drc-librelane-gds.json`, `klt extract extract-librelane-gds.json`, `klt lvs lvs-librelane-gds-asrouted.json`, `klt lvs lvs-librelane-gds-klt-netlist.json` (each `--format json`)

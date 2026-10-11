@@ -1,0 +1,6 @@
+Yosys 0.67+post (git sha1 b8e7da6f40ae8f552c116bf6c359b07c6533e159, Release, GNU /usr/bin/c++ 13.3.0)
+yosys-abc: UC Berkeley, ABC 1.01 (compiled Oct  5 2026 18:35:18)
+Icarus Verilog version 13.0 (stable) (v13_0)
+Python 3.12.3
+git version 2.43.0
+Linux 7.0.0-1013-aws #13~24.04.1-Ubuntu SMP PREEMPT Sat Sep  5 01:10:01 UTC 2026 x86_64

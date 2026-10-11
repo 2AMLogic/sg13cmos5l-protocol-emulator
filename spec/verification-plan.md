@@ -188,6 +188,61 @@ program says") ultimately reduces to.
 > the proposed contract, not ratification. The original text above is left
 > as written.
 
+### 2.3 `i2c_ack_window` (issue #259, part of #243; target-spec row 12)
+
+**Statement**: for the committed I2C controller-write images
+(`firmware/build/i2c_fast.hex`, `firmware/build/i2c_std.hex`) running on
+`rtl/protocol_core.v`, in each of the two ACK slots (clock 9 = address, clock
+18 = data), derived from the SCL/SDA lines and not from the core: SDA is
+released from the clock-8 fall through the ninth high; exactly one `IN` of
+`uio_in` executes, strictly after the ninth rise and before the ninth fall;
+an address NACK leads to STOP with no data clock, an address ACK to the data
+byte; after the data slot, ACKed or NACKed, there is no further clock and STOP
+follows (a data NACK needs no branch); each STOP arrives within the bound the
+image's own cycle report gives. The peripheral may change its answer in any
+cycle of the ACK low phase (including after the pre-#258 sample instant),
+must be stable `t_SU;DAT` (5 / 13 core cycles at the bench's nominal 20 ns
+clock) before the ninth rise and through the high; nothing requires it to
+answer early or to agree with any earlier `IN`.
+
+*Why this is separate from §2.2.* `pin_write_latency` and
+`no_data_dependent_latency` quantify over abstract instruction tables; they say
+nothing about where the committed firmware samples its ACK. #258 moved both
+samples into the ninth high (the previous low-phase sample misread a legal late
+ACK as a NACK); this property is the formal obligation that the committed images
+keep it there.
+
+> **2026-10-11 (issue #259): written and run, bounded.** Property
+> `verification/formal/i2c_ack_window.sv`, harness
+> `verification/formal/formal_top_i2c_ack.v` (the actual core, a constant image
+> behind a registered fetch port, pins from the real `uio_oe` formula, a free
+> legal peripheral), runner `verification/formal/run-i2c-ack-window.sh`,
+> image and mutant generator `verification/formal/i2c_ack_images.py`. Cold
+> start: `./verification/formal/run-i2c-ack-window.sh [artifacts-dir]`.
+> Evidence: `verification/records/i2c-ack-window/records/20261011-220500-39aee71.md`
+> (Yosys 0.67 + ABC 1.01 `bmc3` + Icarus 13.0; RTL only, no synthesis or
+> timing flow).
+>
+> *Bounded, not unbounded.* No assertion fails in 3650 (Fast) / 11216
+> (Standard) one-clock frames on either address outcome (TOTAL-CYCLES + 300).
+> The images end in `HALT`, which holds until reset, so this covers everything
+> the harness model can reach; that is an argument, not a proof. ABC
+> `scorr; pdr` did not converge in 60 s per leg and no unbounded proof is
+> claimed. Model assumptions, all zero-delay and logical: image already in
+> program memory (the serial load is not modelled), one reset, no mid-run reset,
+> no clock stretching, EDGE clocking only (no between-edge model), `ui_in`
+> free but unused, the address outcome case-split (ACK / NACK, exhaustive).
+>
+> *Qualification.* All 12 covers reached by a legal peripheral on some leg for
+> both grades. 13 firmware mutants per grade (the original pre-#258 scheduling
+> read from git, a sample in the rise cycle, after the fall, missing, extra, SDA
+> driven low in the slot, an ignored address NACK), each assembled to its own
+> hashed image: all rejected by an ABC assertion counterexample on the expected
+> assertion and reproduced by an Icarus replay of the witness. Z3 via
+> `yosys-smtbmc`, the second engine of §2.2, was measured and not used: it did
+> not reach the Fast data slot in 8 minutes. No routed or electrical claim
+> follows. The statement above is not relaxed.
+
 ## 3. Gate-level regression
 
 A cocotb gate-level regression run against the flow-of-record's synthesized

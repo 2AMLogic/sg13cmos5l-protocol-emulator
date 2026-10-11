@@ -1,0 +1,164 @@
+== toolchain ==
+Yosys 0.67+post (git sha1 b8e7da6f40ae8f552c116bf6c359b07c6533e159, Release, GNU /usr/bin/c++ 13.3.0)
+yosys-abc: UC Berkeley, ABC 1.01 (compiled Oct  5 2026 18:35:18)
+Icarus Verilog version 13.0 (stable) (v13_0)
+Python 3.12.3
+git version 2.43.0
+Linux 7.0.0-1013-aws #13~24.04.1-Ubuntu SMP PREEMPT Sat Sep  5 01:10:01 UTC 2026 x86_64
+
+== input hashes (monitor, harness, DUT, image generator, runner, committed firmware) ==
+fb41d6c52fee9807e27db0f7eda03d439f6016e761341f49a7f47752ec2a02ee  verification/formal/i2c_ack_window.sv
+864e9074ef210badc26da9e5c78ba04a724dceaa3501f163a338b144089ac7b4  verification/formal/formal_top_i2c_ack.v
+d4bab243a80af56a41b8ef730bc0ecbee889f2c02f4587311d6f9f694636437a  rtl/protocol_core.v
+bfc1fcd1a2d410943e9f251f073f2249c75ccd982ca496f8d864493952396cbc  verification/formal/i2c_ack_images.py
+d32260e4be54bd6fa4309d4629c07ed71eca2545324b0b52f6e324fabf23f2ac  verification/formal/run-i2c-ack-window.sh
+3bc1297519a216f73e7e1e4ff55babcff14c9361dfaa0c24a1dc0b54f8367ac3  firmware/asm/i2c_fast.asm
+51cf83e9a22ecee6aa0f4721ab7918a522d5a9d73be0d1d01802be96f0e0a724  firmware/build/i2c_fast.hex
+03699c1ddd08119b0fb1f1fac21362af767fbdfd5d33eb8d918d4a5f4ba2e458  firmware/build/i2c_fast.cycles.txt
+9f2369532b4c2dfb44abc6646f0feec2890107ad0d3cfecffae30a476df20936  firmware/asm/i2c_std.asm
+86fc084e5f5dbb4c94872e7f1602904f46601b9565d7387f8cd9a704694ce6fb  firmware/build/i2c_std.hex
+aca3dd7b2d1f72282a04ea4d52bc23c2e0c4c56b20ee7a5dd76da6e072e2e286  firmware/build/i2c_std.cycles.txt
+
+================ i2c_fast ================
+monitor flags: -D SU_CYC=5 -D STOP_BOUND=125 -D FORMER_AGE=21 ; depth 3650 frames (TOTAL-CYCLES + 300 post-HALT idle frames)
+  image golden             hex 51cf83e9a22ecee6 rom 2ee27048e46168ba words 245
+  image early_orig_addr    hex 49a9098162c1cc52 rom d77dbf86cf1ea63d words 245
+  image early_orig_data    hex d9d1a4c44b7ed3f2 rom d0139c1aaa0d04a8 words 246
+  image at_rise_addr       hex e6aa8035d4421021 rom 8602fe445f69a59d words 244
+  image at_rise_data       hex 8fe542f086e81e81 rom 94ab3cb33076cb5a words 244
+  image late_addr          hex e38142500bb43294 rom 6d884f2771eeba51 words 246
+  image late_data          hex 712d044f2fb044ea rom d1be34cab54147f6 words 245
+  image missing_addr       hex 9d7dac7b0aa9c318 rom 4dfca584c12e4832 words 245
+  image missing_data       hex 9c9cc6fa95404eaf rom 4648dd42378363c2 words 245
+  image extra_addr         hex f8feefba10253f74 rom 4b4a2fc66763718c words 247
+  image extra_data         hex 702176dd1c728a64 rom fa095661c52a7578 words 247
+  image sda_driven_addr    hex 40f69e89485219b0 rom 06a91cb79903b682 words 245
+  image sda_driven_data    hex d9b8d1038c300755 rom 54a492b470cedba1 words 245
+  image nack_ignored       hex 39a4b63bd750cecc rom 1a099248414f1cfd words 245
+-- [i2c_fast address ACK leg] prove (real core, committed image, ABC bmc3 to 3650 frames) --
+i2c_fast ACK: no assertion fails in 3650 frames
+i2c_fast ACK: pdr (60 s, informational; NOT the guarantee): Properties:  All = 10. Proved = 2. Disproved = 0. Undecided = 8.   Time =    60.13 sec
+-- [i2c_fast address ACK leg] covers --
+  cover addr_ack_sampled: reached at frame 1427 (Icarus replay: sim posedge 1426 cover:addr_ack_sampled)
+  cover addr_nack_sampled: unreachable on this leg
+  cover data_ack_sampled: reached at frame 2552 (Icarus replay: sim posedge 2551 cover:data_ack_sampled)
+  cover data_nack_sampled: reached at frame 2552 (Icarus replay: sim posedge 2551 cover:data_nack_sampled)
+  cover addr_nack_stop_no_data: unreachable on this leg
+  cover data_ack_stop: reached at frame 2708 (Icarus replay: sim posedge 2707 cover:data_ack_stop)
+  cover data_nack_stop: reached at frame 2708 (Icarus replay: sim posedge 2707 cover:data_nack_stop)
+  cover addr_ack_after_former_sample: reached at frame 1427 (Icarus replay: sim posedge 1426 cover:addr_ack_after_former_sample)
+  cover addr_ack_withdrawn_after_former_sample: unreachable on this leg
+  cover data_ack_after_former_sample: reached at frame 2552 (Icarus replay: sim posedge 2551 cover:data_ack_after_former_sample)
+  cover data_ack_withdrawn_after_former_sample: reached at frame 2552 (Icarus replay: sim posedge 2551 cover:data_ack_withdrawn_after_former_sample)
+  cover addr_ack_low_phase_changes_3plus: reached at frame 1398 (Icarus replay: sim posedge 1397 cover:addr_ack_low_phase_changes_3plus)
+-- [i2c_fast address NACK leg] prove (real core, committed image, ABC bmc3 to 3650 frames) --
+i2c_fast NACK: no assertion fails in 3650 frames
+i2c_fast NACK: pdr (60 s, informational; NOT the guarantee): Properties:  All = 10. Proved = 2. Disproved = 0. Undecided = 8.   Time =    60.16 sec
+-- [i2c_fast address NACK leg] covers --
+  cover addr_ack_sampled: unreachable on this leg
+  cover addr_nack_sampled: reached at frame 1427 (Icarus replay: sim posedge 1426 cover:addr_nack_sampled)
+  cover data_ack_sampled: unreachable on this leg
+  cover data_nack_sampled: unreachable on this leg
+  cover addr_nack_stop_no_data: reached at frame 1583 (Icarus replay: sim posedge 1582 cover:addr_nack_stop_no_data)
+  cover data_ack_stop: unreachable on this leg
+  cover data_nack_stop: unreachable on this leg
+  cover addr_ack_after_former_sample: unreachable on this leg
+  cover addr_ack_withdrawn_after_former_sample: reached at frame 1427 (Icarus replay: sim posedge 1426 cover:addr_ack_withdrawn_after_former_sample)
+  cover data_ack_after_former_sample: unreachable on this leg
+  cover data_ack_withdrawn_after_former_sample: unreachable on this leg
+  cover addr_ack_low_phase_changes_3plus: reached at frame 1398 (Icarus replay: sim posedge 1397 cover:addr_ack_low_phase_changes_3plus)
+-- [i2c_fast] mutants (firmware images; ABC assertion counterexample + Icarus replay) --
+i2c_fast early_orig_addr [ACK] (hex 49a9098162c1cc52): REJECTED -- ABC frame 1354 a2_in_window; Icarus replay: sim posedge 1353 a2_in_window; VCD early_orig_addr-cex.vcd
+i2c_fast early_orig_addr [NACK] (hex 49a9098162c1cc52): REJECTED -- ABC frame 1354 a2_in_window; Icarus replay: sim posedge 1353 a2_in_window; VCD early_orig_addr-cex.vcd
+i2c_fast early_orig_data [ACK] (hex d9d1a4c44b7ed3f2): REJECTED -- ABC frame 2479 a2_in_window; Icarus replay: sim posedge 2478 a2_in_window; VCD early_orig_data-cex.vcd
+i2c_fast at_rise_addr [ACK] (hex e6aa8035d4421021): REJECTED -- ABC frame 1398 a2_in_window; Icarus replay: sim posedge 1397 a2_in_window; VCD at_rise_addr-cex.vcd
+i2c_fast at_rise_addr [NACK] (hex e6aa8035d4421021): REJECTED -- ABC frame 1398 a2_in_window; Icarus replay: sim posedge 1397 a2_in_window; VCD at_rise_addr-cex.vcd
+i2c_fast at_rise_data [ACK] (hex 8fe542f086e81e81): REJECTED -- ABC frame 2523 a2_in_window; Icarus replay: sim posedge 2522 a2_in_window; VCD at_rise_data-cex.vcd
+i2c_fast late_addr [ACK] (hex e38142500bb43294): REJECTED -- ABC frame 1449 a3_missing_sample; Icarus replay: sim posedge 1448 a2_in_window; VCD late_addr-cex.vcd
+i2c_fast late_addr [NACK] (hex e38142500bb43294): REJECTED -- ABC frame 1449 a3_missing_sample; Icarus replay: sim posedge 1448 a2_in_window; VCD late_addr-cex.vcd
+i2c_fast late_data [ACK] (hex 712d044f2fb044ea): REJECTED -- ABC frame 2581 a3_missing_sample; Icarus replay: sim posedge 2580 a2_in_window; VCD late_data-cex.vcd
+i2c_fast missing_addr [ACK] (hex 9d7dac7b0aa9c318): REJECTED -- ABC frame 1458 a3_missing_sample; Icarus replay: sim posedge 1457 a3_missing_sample; VCD missing_addr-cex.vcd
+i2c_fast missing_addr [NACK] (hex 9d7dac7b0aa9c318): REJECTED -- ABC frame 1458 a3_missing_sample; Icarus replay: sim posedge 1457 a3_missing_sample; VCD missing_addr-cex.vcd
+i2c_fast missing_data [ACK] (hex 9c9cc6fa95404eaf): REJECTED -- ABC frame 2583 a3_missing_sample; Icarus replay: sim posedge 2582 a3_missing_sample; VCD missing_data-cex.vcd
+i2c_fast extra_addr [ACK] (hex f8feefba10253f74): REJECTED -- ABC frame 1427 a3_extra_sample; Icarus replay: sim posedge 1426 a3_extra_sample; VCD extra_addr-cex.vcd
+i2c_fast extra_addr [NACK] (hex f8feefba10253f74): REJECTED -- ABC frame 1427 a3_extra_sample; Icarus replay: sim posedge 1426 a3_extra_sample; VCD extra_addr-cex.vcd
+i2c_fast extra_data [ACK] (hex 702176dd1c728a64): REJECTED -- ABC frame 2552 a3_extra_sample; Icarus replay: sim posedge 2551 a3_extra_sample; VCD extra_data-cex.vcd
+i2c_fast sda_driven_addr [ACK] (hex 40f69e89485219b0): REJECTED -- ABC frame 1333 a1_sda_released; Icarus replay: sim posedge 1332 a1_sda_released; VCD sda_driven_addr-cex.vcd
+i2c_fast sda_driven_addr [NACK] (hex 40f69e89485219b0): REJECTED -- ABC frame 1333 a1_sda_released; Icarus replay: sim posedge 1332 a1_sda_released; VCD sda_driven_addr-cex.vcd
+i2c_fast sda_driven_data [ACK] (hex d9b8d1038c300755): REJECTED -- ABC frame 2458 a1_sda_released; Icarus replay: sim posedge 2457 a1_sda_released; VCD sda_driven_data-cex.vcd
+i2c_fast nack_ignored [NACK] (hex 39a4b63bd750cecc): REJECTED -- ABC frame 1583 a4_no_data_after_nack; Icarus replay: sim posedge 1582 a4_no_data_after_nack; VCD nack_ignored-cex.vcd
+
+================ i2c_std ================
+monitor flags: -D SU_CYC=13 -D STOP_BOUND=463 -D FORMER_AGE=31 ; depth 11216 frames (TOTAL-CYCLES + 300 post-HALT idle frames)
+  image golden             hex 86fc084e5f5dbb4c rom ec77cb0d20238e14 words 245
+  image early_orig_addr    hex b23a2fcf5dec8a8e rom 25109dd67e819d83 words 245
+  image early_orig_data    hex 18eb35fc297f5316 rom a8048af76f636915 words 246
+  image at_rise_addr       hex 35965f8c3ed9c35c rom 27955490a9373f91 words 244
+  image at_rise_data       hex 8697c9fe489bb4e2 rom eb7e92df9af7365e words 244
+  image late_addr          hex 0d0debef924c974c rom 8ceab57f6ae0e6a6 words 246
+  image late_data          hex 5a26b3a4d4adcb92 rom cffa7af8a353b666 words 245
+  image missing_addr       hex 52351550cf67c4e5 rom 4c28f98e25bb48ab words 245
+  image missing_data       hex 1efbfb1425aa14f2 rom f876d567f5b08b82 words 245
+  image extra_addr         hex 943a256b1af06c42 rom 92d2a9b2334bafd7 words 247
+  image extra_data         hex 1d8cb003a2f552af rom f296d6b2deff9065 words 247
+  image sda_driven_addr    hex 60cf1609f8dd287d rom fec89008a52ec51e words 245
+  image sda_driven_data    hex 05d660bd8db541f6 rom 869489d77bf7155a words 245
+  image nack_ignored       hex 9232b9dc64755c05 rom 0588f0f0895f730a words 245
+-- [i2c_std address ACK leg] prove (real core, committed image, ABC bmc3 to 11216 frames) --
+i2c_std ACK: no assertion fails in 11216 frames
+i2c_std ACK: pdr (60 s, informational; NOT the guarantee): Properties:  All = 10. Proved = 2. Disproved = 0. Undecided = 8.   Time =    60.19 sec
+-- [i2c_std address ACK leg] covers --
+  cover addr_ack_sampled: reached at frame 4851 (Icarus replay: sim posedge 4850 cover:addr_ack_sampled)
+  cover addr_nack_sampled: unreachable on this leg
+  cover data_ack_sampled: reached at frame 9351 (Icarus replay: sim posedge 9350 cover:data_ack_sampled)
+  cover data_nack_sampled: reached at frame 9351 (Icarus replay: sim posedge 9350 cover:data_nack_sampled)
+  cover addr_nack_stop_no_data: unreachable on this leg
+  cover data_ack_stop: reached at frame 9936 (Icarus replay: sim posedge 9935 cover:data_ack_stop)
+  cover data_nack_stop: reached at frame 9936 (Icarus replay: sim posedge 9935 cover:data_nack_stop)
+  cover addr_ack_after_former_sample: reached at frame 4851 (Icarus replay: sim posedge 4850 cover:addr_ack_after_former_sample)
+  cover addr_ack_withdrawn_after_former_sample: unreachable on this leg
+  cover data_ack_after_former_sample: reached at frame 9351 (Icarus replay: sim posedge 9350 cover:data_ack_after_former_sample)
+  cover data_ack_withdrawn_after_former_sample: reached at frame 9351 (Icarus replay: sim posedge 9350 cover:data_ack_withdrawn_after_former_sample)
+  cover addr_ack_low_phase_changes_3plus: reached at frame 4731 (Icarus replay: sim posedge 4730 cover:addr_ack_low_phase_changes_3plus)
+-- [i2c_std address NACK leg] prove (real core, committed image, ABC bmc3 to 11216 frames) --
+i2c_std NACK: no assertion fails in 11216 frames
+i2c_std NACK: pdr (60 s, informational; NOT the guarantee): Properties:  All = 10. Proved = 2. Disproved = 0. Undecided = 8.   Time =    60.19 sec
+-- [i2c_std address NACK leg] covers --
+  cover addr_ack_sampled: unreachable on this leg
+  cover addr_nack_sampled: reached at frame 4851 (Icarus replay: sim posedge 4850 cover:addr_nack_sampled)
+  cover data_ack_sampled: unreachable on this leg
+  cover data_nack_sampled: unreachable on this leg
+  cover addr_nack_stop_no_data: reached at frame 5436 (Icarus replay: sim posedge 5435 cover:addr_nack_stop_no_data)
+  cover data_ack_stop: unreachable on this leg
+  cover data_nack_stop: unreachable on this leg
+  cover addr_ack_after_former_sample: unreachable on this leg
+  cover addr_ack_withdrawn_after_former_sample: reached at frame 4851 (Icarus replay: sim posedge 4850 cover:addr_ack_withdrawn_after_former_sample)
+  cover data_ack_after_former_sample: unreachable on this leg
+  cover data_ack_withdrawn_after_former_sample: unreachable on this leg
+  cover addr_ack_low_phase_changes_3plus: reached at frame 4731 (Icarus replay: sim posedge 4730 cover:addr_ack_low_phase_changes_3plus)
+-- [i2c_std] mutants (firmware images; ABC assertion counterexample + Icarus replay) --
+i2c_std early_orig_addr [ACK] (hex b23a2fcf5dec8a8e): REJECTED -- ABC frame 4504 a2_in_window; Icarus replay: sim posedge 4503 a2_in_window; VCD early_orig_addr-cex.vcd
+i2c_std early_orig_addr [NACK] (hex b23a2fcf5dec8a8e): REJECTED -- ABC frame 4504 a2_in_window; Icarus replay: sim posedge 4503 a2_in_window; VCD early_orig_addr-cex.vcd
+i2c_std early_orig_data [ACK] (hex 18eb35fc297f5316): REJECTED -- ABC frame 9004 a2_in_window; Icarus replay: sim posedge 9003 a2_in_window; VCD early_orig_data-cex.vcd
+i2c_std at_rise_addr [ACK] (hex 35965f8c3ed9c35c): REJECTED -- ABC frame 4731 a2_in_window; Icarus replay: sim posedge 4730 a2_in_window; VCD at_rise_addr-cex.vcd
+i2c_std at_rise_addr [NACK] (hex 35965f8c3ed9c35c): REJECTED -- ABC frame 4731 a2_in_window; Icarus replay: sim posedge 4730 a2_in_window; VCD at_rise_addr-cex.vcd
+i2c_std at_rise_data [ACK] (hex 8697c9fe489bb4e2): REJECTED -- ABC frame 9231 a2_in_window; Icarus replay: sim posedge 9230 a2_in_window; VCD at_rise_data-cex.vcd
+i2c_std late_addr [ACK] (hex 0d0debef924c974c): REJECTED -- ABC frame 4964 a3_missing_sample; Icarus replay: sim posedge 4963 a2_in_window; VCD late_addr-cex.vcd
+i2c_std late_addr [NACK] (hex 0d0debef924c974c): REJECTED -- ABC frame 4964 a3_missing_sample; Icarus replay: sim posedge 4963 a2_in_window; VCD late_addr-cex.vcd
+i2c_std late_data [ACK] (hex 5a26b3a4d4adcb92): REJECTED -- ABC frame 9471 a3_missing_sample; Icarus replay: sim posedge 9470 a2_in_window; VCD late_data-cex.vcd
+i2c_std missing_addr [ACK] (hex 52351550cf67c4e5): REJECTED -- ABC frame 4973 a3_missing_sample; Icarus replay: sim posedge 4972 a3_missing_sample; VCD missing_addr-cex.vcd
+i2c_std missing_addr [NACK] (hex 52351550cf67c4e5): REJECTED -- ABC frame 4973 a3_missing_sample; Icarus replay: sim posedge 4972 a3_missing_sample; VCD missing_addr-cex.vcd
+i2c_std missing_data [ACK] (hex 1efbfb1425aa14f2): REJECTED -- ABC frame 9473 a3_missing_sample; Icarus replay: sim posedge 9472 a3_missing_sample; VCD missing_data-cex.vcd
+i2c_std extra_addr [ACK] (hex 943a256b1af06c42): REJECTED -- ABC frame 4851 a3_extra_sample; Icarus replay: sim posedge 4850 a3_extra_sample; VCD extra_addr-cex.vcd
+i2c_std extra_addr [NACK] (hex 943a256b1af06c42): REJECTED -- ABC frame 4851 a3_extra_sample; Icarus replay: sim posedge 4850 a3_extra_sample; VCD extra_addr-cex.vcd
+i2c_std extra_data [ACK] (hex 1d8cb003a2f552af): REJECTED -- ABC frame 9351 a3_extra_sample; Icarus replay: sim posedge 9350 a3_extra_sample; VCD extra_data-cex.vcd
+i2c_std sda_driven_addr [ACK] (hex 60cf1609f8dd287d): REJECTED -- ABC frame 4473 a1_sda_released; Icarus replay: sim posedge 4472 a1_sda_released; VCD sda_driven_addr-cex.vcd
+i2c_std sda_driven_addr [NACK] (hex 60cf1609f8dd287d): REJECTED -- ABC frame 4473 a1_sda_released; Icarus replay: sim posedge 4472 a1_sda_released; VCD sda_driven_addr-cex.vcd
+i2c_std sda_driven_data [ACK] (hex 05d660bd8db541f6): REJECTED -- ABC frame 8973 a1_sda_released; Icarus replay: sim posedge 8972 a1_sda_released; VCD sda_driven_data-cex.vcd
+i2c_std nack_ignored [NACK] (hex 9232b9dc64755c05): REJECTED -- ABC frame 5438 a6_stop_bound; Icarus replay: sim posedge 5437 a6_stop_bound; VCD nack_ignored-cex.vcd
+
+== cover union over the address-outcome legs ==
+i2c_fast: 12/12 covers reached on some leg
+i2c_std: 12/12 covers reached on some leg
+
+RESULT: all expectations met (no assertion fails on either committed image within the stated depth, every cover reached, every mutant rejected by ABC and reproduced by the Icarus replay)
