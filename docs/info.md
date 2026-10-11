@@ -540,7 +540,7 @@ No pin claim here is backed by silicon or by the LibreLane flow.
   `ui_in[1]`-to-`uo_out` path is 0.58 to 1.40 ns pin to pin in LibreLane's post-route analysis,
   under the flow's assumed 4 ns input and output delays; no pad has been measured.
   Firmware, the control-space, boot-ROM, SPI-flash-boot, UART-load, primitive and load-integrity benches on that netlist at zero delay:
-  [`firmware-gate-level`](../verification/records/firmware-gate-level/records/20261011-052352-e62b5e8.md).
+  [`firmware-gate-level`](../verification/records/firmware-gate-level/records/20261011-071709-6ea883e.md).
   Firmware with back-annotated delays: none.
 - **klt synthesis and timing.** `klt sta` does not yet support the SRAM
   macro, so the two flows do not agree on timing; per the project rule that
