@@ -2,7 +2,7 @@
 
 Status: **Ratified** — carried into force with `spec/target-spec.md` by the
 two `RATIFY-KEY` reviews (one EE key, one market key, neither held by the
-carrying PR's author or the design's author) on pull request #241
+carrying PR's author or the design's author) on pull request #242
 (issue #44). That PR's merge commit is the ratification record, and
 [`0009-two-key-ratification-act.md`](0009-two-key-ratification-act.md) is
 the record of the act and of what it binds.

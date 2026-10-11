@@ -5,7 +5,7 @@ Specification and decision records.
 > **2026-10-11 (issue #44): the two-key mechanism has now run.**
 > `target-spec.md` (rows 1–12, as DR 0004 registers them) and decision
 > records 0001–0004 are ratified by the two `RATIFY-KEY` reviews on pull
-> request #241; that PR's merge commit is the ratification record, and
+> request #242; that PR's merge commit is the ratification record, and
 > [`decision-records/0009-two-key-ratification-act.md`](decision-records/0009-two-key-ratification-act.md)
 > records the act and exactly what it binds. DR 0001 is ratified with its
 > 2026-10-11 fetch-ahead amendment. Target-spec rows 13 and 14 and decision

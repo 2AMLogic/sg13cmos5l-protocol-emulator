@@ -1,7 +1,7 @@
 # 0009: The Two-Key Ratification Act — Target Spec and DRs 0001–0004
 
 Status: **Recorded 2026-10-11** — a record of an act, not a decision. The act
-is the two `RATIFY-KEY` reviews on pull request #241; this record states what
+is the two `RATIFY-KEY` reviews on pull request #242; this record states what
 that act binds and what it leaves unbound, and it decides no design question
 of its own. It is the record
 [`0006-two-key-ratification-never-ran.md`](0006-two-key-ratification-never-ran.md)
@@ -22,7 +22,7 @@ out five steps to close the gap. Their state:
 |---|---|
 | 1. Ruling on the independence question | Recorded on issue #44 on 2026-10-02: the keys are held by two dedicated forge identities, one per key, and the shared identity that authored this repository's earlier pull requests satisfies neither key. That is the *distinct forge principals* reading of DR 0006 § "Routed, not decided". |
 | 2. The second identity | Provided as part of that ruling: one forge identity for the EE key and another for the market key. |
-| 3. Two `RATIFY-KEY` reviews on a carrying PR | Pull request #241. |
+| 3. Two `RATIFY-KEY` reviews on a carrying PR | Pull request #242. |
 | 4. A record reporting the act | This record. |
 | 5. `Status:` lines move to `Ratified`, citing that record | Done by the same pull request, for the five files in "What the act binds" below. |
 
@@ -32,17 +32,17 @@ and the market key returned `uncompetitive`, so that PR did not merge and
 nothing in `spec/` changed. Issue #85 lists what the two keys required. Its
 items 2, 3 and 5–8 were fixed by pull request #198, and items 1 and 4 by
 pull request #239 under the operator's rulings on issue #85 of 2026-10-11.
-None of those changes moved a `Status:` line. Pull request #241 is a fresh
+None of those changes moved a `Status:` line. Pull request #242 is a fresh
 carrying PR from `main` with those fixes in place, and it supersedes #84.
-A review posted on #84 is not a review on #241 and counts for nothing here.
+A review posted on #84 is not a review on #242 and counts for nothing here.
 
 ## The act
 
-The carrying PR is **pull request #241**. It flips five `Status:` lines under
+The carrying PR is **pull request #242**. It flips five `Status:` lines under
 `spec/` and adds this record, so it is subject to the
 `two-key gate (spec Status flips)` check
 ([`docs/ratification-gate.md`](../../docs/ratification-gate.md)): one `ee`
-and one `market` marker in its own `/pulls/241/reviews`, well-formed, with
+and one `market` marker in its own `/pulls/242/reviews`, well-formed, with
 releasing verdicts, distinct `reviewer=` values, and neither attributable to
 the PR's author.
 
@@ -53,14 +53,14 @@ file, and no file can contain the hash of the commit that merges it. Those
 three facts are read from the forge:
 
 ```
-gh api repos/2AMLogic/sg13cmos5l-protocol-emulator/pulls/241/reviews \
+gh api repos/2AMLogic/sg13cmos5l-protocol-emulator/pulls/242/reviews \
   --jq '.[] | select(.body | test("RATIFY-KEY")) | {user: .user.login, state, html_url, marker: (.body | split("\n")[0])}'
-gh api repos/2AMLogic/sg13cmos5l-protocol-emulator/pulls/241 --jq '{merged, merge_commit_sha, merged_at}'
+gh api repos/2AMLogic/sg13cmos5l-protocol-emulator/pulls/242 --jq '{merged, merge_commit_sha, merged_at}'
 ```
 
 A follow-up change appends them here as a dated note. Until it does, the
 forge is the record, and this file's presence on `main` means only that pull
-request #241 merged. If that pull request is closed without merging, this file
+request #242 merged. If that pull request is closed without merging, this file
 never reaches `main` and nothing in `spec/` changes.
 
 ## What the act binds
@@ -142,7 +142,7 @@ Three consequences follow, and each is a live gap rather than a formality:
   by mechanism.
 - **It changes nothing a program can observe.** DR 0001 is pinned by DR
   0017's ISA freeze, so its Status flip changes the file's hash; pull
-  request #241 appends the `no-behaviour-change` amendment citing itself to
+  request #242 appends the `no-behaviour-change` amendment citing itself to
   `spec/isa-freeze.json`, as DR 0017 section 4, item 4 requires.
 - **It does not weaken the two-key requirement or the non-author rule**, and
   it changes no file of the gate that enforces them.
@@ -151,7 +151,7 @@ Three consequences follow, and each is a live gap rather than a formality:
 ## Consequences
 
 - **The precondition of T1 item 5 is met from the merge of pull request
-  #241** for rows 1–12: there is a ratified spec to grade them against.
+  #242** for rows 1–12: there is a ratified spec to grade them against.
   Item 5 itself is full corner verification against that spec and is not
   met by this act.
 - **Issue #17's deliverable, the act, now exists**, for the five files above.
