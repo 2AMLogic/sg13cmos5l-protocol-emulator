@@ -30,6 +30,16 @@ class Parse(unittest.TestCase):
             with self.assertRaises(loadseq.LoadSeqError, msg=repr(bad)):
                 loadseq.parse_words(bad)
 
+    def test_all_zero_image_refused(self):
+        for text in ("0000\n", "0000\n" * 256, "0000\n\n0000\r\n"):
+            with self.assertRaises(loadseq.LoadSeqError, msg=repr(text)) as cm:
+                loadseq.parse_words(text, "z.hex")
+            self.assertIn("all zero", str(cm.exception))
+            self.assertIn("z.hex", str(cm.exception))
+        # one nonzero word anywhere is enough
+        self.assertEqual(loadseq.parse_words("0000\n0000\n0001\n"), [0, 0, 1])
+        self.assertEqual(loadseq.parse_words("8000\n0000\n"), [0x8000, 0])
+
     def test_257_words_rejected_256_accepted(self):
         self.assertEqual(len(loadseq.parse_words("0001\n" * 256)), 256)
         with self.assertRaises(loadseq.LoadSeqError):
@@ -148,7 +158,8 @@ class Cli(unittest.TestCase):
     def test_rejected_inputs_exit_nonzero_no_output(self):
         with tempfile.TemporaryDirectory() as d:
             for name, text in (("empty", ""), ("bad", "12g4\n"),
-                               ("big", "0001\n" * 257)):
+                               ("big", "0001\n" * 257),
+                               ("zero", "0000\n0000\n")):
                 f = Path(d) / (name + ".hex")
                 f.write_text(text)
                 out = Path(d) / (name + ".out")

@@ -25,6 +25,7 @@ include uio-pads
 include firmware-i2c
 include firmware-i2c-sr
 include firmware-roundtrip
+include firmware-ws2812
 include random-regression
 include isa-lockstep
 include loadseq

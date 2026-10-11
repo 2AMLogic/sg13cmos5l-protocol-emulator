@@ -49,6 +49,17 @@ re-hardening for a newer flow, are allowed after it.
 | D6 | Demo (optional) | A protocol the ISA was **not** designed for (for example 1-Wire, WS2812, DMX512 or Manchester), written as firmware after the fact with a bench: target-spec row 13. If possible, a video. | Nothing. Row 13 is "Proposed 2026-10-09 ... unmet, no firmware yet" (`spec/target-spec.md`). | **Blocked** on the frozen submission ISA (#135, with #130 deciding which protocol-neutral primitives exist). A physical-board demo also needs the host loader (#118). |
 | D7 | Required external parts | A parts list in the datasheet (`docs/info.md`) and the submission, aligned with TT-recommended Pmods | Nothing beyond DR 0008 item 1 (I2C needs external pull-ups). | **Parts list written** in `docs/info.md` (#133). Pins are not yet on the TT-recommended pinouts: DR 0010 records the target plan, and the moves are #155 (after #135). |
 
+### D6 dated update, 2026-10-10 (issue #141 part 2)
+
+The D6 row above is left as written. Row 13's primary column now has
+firmware and evidence. WS2812 was chosen by DR 0018 after DR 0017's ISA
+freeze (merge `1696045b`), and no ISA-defining file changed. The program
+passes an independent WS2812B model at RTL and on the gate-level netlist.
+The judge-facing write-up, including what the frozen ISA made easy and hard,
+is [`row13-ws2812.md`](row13-ws2812.md). **State: partial.** The row is
+Proposed and unmet. There is no SDF run, no board and no video. The stretch
+column (a new role or pin direction) is issue #235.
+
 ### D4 dated update, 2026-10-10 (issue #214)
 
 Reviewed commit: `main` @ `9fb7815`. The judge-facing narrative now exists:

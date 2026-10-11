@@ -371,6 +371,17 @@ auditable rather than a bare assertion:
   its protocol must be outside DR 0017's exclusion list (DR 0015's tables,
   and the protocols DRs 0012 and 0013 were designed around). No row-13
   protocol is chosen yet.
+
+  *Dated note 2026-10-10 (issue #141, part 2). Nothing above is changed.*
+  DR 0017 merged as `1696045bfa1a33f93c95a5bf6c29b05f4ea0d734`. DR 0018
+  ([`decision-records/0018-row13-protocol-choice.md`](decision-records/0018-row13-protocol-choice.md),
+  Proposed) chose WS2812 in the next commit. The bench is
+  `verification/test_firmware_ws2812.py`, graded by
+  `verification/reference_models/ws2812.py` (a WS2812B receiver written
+  from the datasheet). It runs at RTL (`klt functional-verification`) and
+  on the gate-level netlist (`flow/run-ws2812-gate-level.sh`), with three
+  mutant programs and a WAIT-counter stuck-at fault as negative controls.
+  The stretch, which runs on the silicon-true pad model, is issue #235.
 - **Control-register bench (DR 0012).** It checks:
   - reset values, readback, and reserved-index behaviour (no-op write, read
     returns 0)
@@ -387,7 +398,12 @@ auditable rather than a bare assertion:
 - **Load integrity (DR 0013 layer 1).** The `PM_CRC` exposed on `uo_out`
   during load, and through `RCTL`, matches an independent CRC-16/XMODEM
   (`binascii.crc_hqx`) for random images, including truncated loads and loads
-  with a dropped or doubled clock edge, which must produce a mismatch.
+  with a dropped clock edge, which must produce a mismatch, and with a
+  doubled clock edge, where every doubled edge *that changes what memory
+  holds* must mismatch (a repeat of the last bit, or of a bit in a run of
+  equal bits reaching the end of the image, leaves every committed word
+  intact and is correctly not flagged: the bench finds 3 of 83 doubled edges
+  harmless; DR 0013, finding 3; wording changed 2026-10-10, issue #218).
 - **Boot programs (DR 0013 layer 2).** Each boot ROM program is tested
   against an independent host:
   - a UART host model that frames, sends and checks the reply, at nominal

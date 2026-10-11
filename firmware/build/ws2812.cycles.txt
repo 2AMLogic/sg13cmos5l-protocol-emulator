@@ -1,0 +1,69 @@
+cycle-accounting report (DR 0003 firmware toolchain)
+program: ws2812
+source: firmware/asm/ws2812.asm
+WORDS 60
+TOTAL-CYCLES 377
+CYCLES name=ws2812_bit start=14 end=27 cycles=63 branches=true
+CYCLES name=ws2812_byte_tail start=28 end=34 cycles=19 branches=true
+WARNING line 76: BNZ branches on flags set by AND over IN-sampled (pin-derived) data -- a data-dependent-latency hazard if this loop produces protocol timing (DR 0001 'Timing model'; legitimate for protocol handshakes, e.g. an I2C ACK wait)
+WARNING line 104: BNZ branches on flags set by AND over IN-sampled (pin-derived) data -- a data-dependent-latency hazard if this loop produces protocol timing (DR 0001 'Timing model'; legitimate for protocol handshakes, e.g. an I2C ACK wait)
+ADDR 0x00 WORD 0x1880 LDI R2, 0x80 cycles=1
+ADDR 0x01 WORD 0x1400 LDI R1, 0x00 cycles=1
+ADDR 0x02 WORD 0xA600 OUT UO_OUT, R1 cycles=1
+ADDR 0x03 WORD 0x1C01 LDI R3, 0x01 cycles=1
+ADDR 0x04 WORD 0x143C LDI R1, 0x3c cycles=1
+ADDR 0x05 WORD 0xB0FF WAIT 255 cycles=256
+ADDR 0x06 WORD 0x4700 SUB R1, R3 cycles=1
+ADDR 0x07 WORD 0xE005 BNZ latch_loop cycles=1
+ADDR 0x08 WORD 0x1423 LDI R1, 0x23 cycles=1
+ADDR 0x09 WORD 0xA402 WCTL PM_ADDR, R1 cycles=1
+ADDR 0x0A WORD 0x9603 RCTL R1, PM_DATA_HI cycles=2
+ADDR 0x0B WORD 0x9204 RCTL R0, PM_DATA_LO cycles=1
+ADDR 0x0C WORD 0x5600 AND R1, R2 cycles=1
+ADDR 0x0D WORD 0xE003 BNZ latch cycles=1
+ADDR 0x0E WORD 0xAA00 OUT UO_OUT, R2 cycles=1
+ADDR 0x0F WORD 0x2400 MOV R1, R0 cycles=1
+ADDR 0x10 WORD 0x5600 AND R1, R2 cycles=1
+ADDR 0x11 WORD 0x8100 SHF R0, LEFT cycles=1
+ADDR 0x12 WORD 0xB00F WAIT 15 cycles=16
+ADDR 0x13 WORD 0xA600 OUT UO_OUT, R1 cycles=1
+ADDR 0x14 WORD 0x7500 XOR R1, R1 cycles=1
+ADDR 0x15 WORD 0xB011 WAIT 17 cycles=18
+ADDR 0x16 WORD 0xA600 OUT UO_OUT, R1 cycles=1
+ADDR 0x17 WORD 0x8D00 SHF R3, LEFT cycles=1
+ADDR 0x18 WORD 0x6F00 OR R3, R3 cycles=1
+ADDR 0x19 WORD 0xD01C BZ next_byte cycles=1
+ADDR 0x1A WORD 0xB011 WAIT 17 cycles=18
+ADDR 0x1B WORD 0xC00E JMP bit cycles=1
+ADDR 0x1C WORD 0x9603 RCTL R1, PM_DATA_HI cycles=2
+ADDR 0x1D WORD 0x9204 RCTL R0, PM_DATA_LO cycles=1
+ADDR 0x1E WORD 0x5600 AND R1, R2 cycles=1
+ADDR 0x1F WORD 0x1C01 LDI R3, 0x01 cycles=1
+ADDR 0x20 WORD 0xE003 BNZ latch cycles=1
+ADDR 0x21 WORD 0xB00B WAIT 11 cycles=12
+ADDR 0x22 WORD 0xC00E JMP bit cycles=1
+ADDR 0x23 WORD 0x1000 LDI R0, 0x00 cycles=1
+ADDR 0x24 WORD 0x1000 LDI R0, 0x00 cycles=1
+ADDR 0x25 WORD 0x1000 LDI R0, 0x00 cycles=1
+ADDR 0x26 WORD 0x10FF LDI R0, 0xff cycles=1
+ADDR 0x27 WORD 0x10FF LDI R0, 0xff cycles=1
+ADDR 0x28 WORD 0x10FF LDI R0, 0xff cycles=1
+ADDR 0x29 WORD 0x10FF LDI R0, 0xff cycles=1
+ADDR 0x2A WORD 0x1000 LDI R0, 0x00 cycles=1
+ADDR 0x2B WORD 0x1000 LDI R0, 0x00 cycles=1
+ADDR 0x2C WORD 0x1000 LDI R0, 0x00 cycles=1
+ADDR 0x2D WORD 0x10FF LDI R0, 0xff cycles=1
+ADDR 0x2E WORD 0x1000 LDI R0, 0x00 cycles=1
+ADDR 0x2F WORD 0x1000 LDI R0, 0x00 cycles=1
+ADDR 0x30 WORD 0x1000 LDI R0, 0x00 cycles=1
+ADDR 0x31 WORD 0x10FF LDI R0, 0xff cycles=1
+ADDR 0x32 WORD 0x10AA LDI R0, 0xaa cycles=1
+ADDR 0x33 WORD 0x1055 LDI R0, 0x55 cycles=1
+ADDR 0x34 WORD 0x10A5 LDI R0, 0xa5 cycles=1
+ADDR 0x35 WORD 0x1001 LDI R0, 0x01 cycles=1
+ADDR 0x36 WORD 0x1080 LDI R0, 0x80 cycles=1
+ADDR 0x37 WORD 0x107E LDI R0, 0x7e cycles=1
+ADDR 0x38 WORD 0x1012 LDI R0, 0x12 cycles=1
+ADDR 0x39 WORD 0x1034 LDI R0, 0x34 cycles=1
+ADDR 0x3A WORD 0x1056 LDI R0, 0x56 cycles=1
+ADDR 0x3B WORD 0xF000 HALT cycles=1

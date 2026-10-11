@@ -428,6 +428,27 @@ gates. The host-side loader is issue #118.
   negative controls included. Driven by `klt functional-verification` (see
   `request-firmware-uart-rx.json`); evidence in
   `records/firmware-uart-rx/`.
+- `test_firmware_ws2812.py` — the **row-13** bench (issue #141 part 2; the
+  protocol choice is DR 0018, made after DR 0017's ISA freeze): the committed
+  `firmware/asm/ws2812.asm` drives a WS2812 data line on `uo_out[7]`, and
+  `reference_models/ws2812.py`, a WS2812B receiver written from the datasheet
+  alone, measures every high and low pulse in ns (20 ns clock = row 4's
+  unconfirmed target), classifies each bit, grades every pulse against the
+  datasheet windows (T0H/T1H/T0L/T1L ±150 ns, bit period 1.25 µs ±600 ns,
+  reset above 50 µs), splits frames at resets, rebuilds the GRB pixels and
+  compares them with the table the test loaded: the committed 8-pixel frame,
+  and seeded random tables of 1 to 73 pixels (73 fills program memory). Pulse
+  widths are also asserted in cycles against the committed cycle report.
+  Negative controls: three mutant programs assembled in memory (T1H 32
+  cycles = 640 ns, a dropped bit, a 5.5 µs reset), each rejected for its own
+  reason, and the golden capture stretched ×1.2. `test_ws2812_model.py` is the
+  model's simulator-free self-test (`npm run lint`). Pin-only, so it also runs
+  on the gate-level netlist with `flow/run-ws2812-gate-level.sh` (its own
+  runner, so the live `firmware-gate-level` records that hash
+  `flow/run-firmware-gate-level.sh` stay live), whose negative control is the
+  `\u_core.wait_cnt[0]` stuck-at fault. Driven by `klt
+  functional-verification` (`request-firmware-ws2812.json`); evidence in
+  `records/firmware-ws2812/` and `records/firmware-ws2812-gate-level/`.
 - `formal/` — the §2 formal-properties leg (issue #24, distinct from the
   cocotb legs above: no `klt`, no PDK, no simulator — a Yosys+SMTBMC model
   checking harness). `formal/no_data_dependent_latency.sv` is
@@ -501,7 +522,8 @@ CI-covered (RTL, Icarus, no PDK): `test_protocol_emulator`,
 `test_program_memory`, `test_protocol_models`, `test_firmware_uart`,
 `test_firmware_spi`, `test_uio_pads`, `test_firmware_i2c`,
 `test_firmware_i2c_sr`, `test_firmware_roundtrip`,
-`test_random_regression`, `test_isa_lockstep`, `test_load_integrity`, `test_loadseq` and
+`test_random_regression`, `test_isa_lockstep`, `test_load_integrity`,
+`test_firmware_ws2812`, `test_loadseq` and
 `test_loadseq_top` (the independent host-load replay benches, issue #225).
 
 The bench list is `scripts/rtl-bench-inventory.txt`: every
@@ -511,8 +533,8 @@ and at the start of the runner) fails on an unclassified new request or a
 stale entry. Currently nothing is excluded.
 
 Covered elsewhere in CI: `test_check_records.py`,
-`test_firmware_templates.py` and `test_uio_pad_resolution.py` (`npm run
-lint`).
+`test_firmware_templates.py`, `test_uio_pad_resolution.py` and
+`test_ws2812_model.py` (`npm run lint`).
 
 Local-only (per PR): the formal leg (`formal/`, needs yosys +
 yosys-smtbmc + yosys-abc + z3), and everything needing the PDK or a

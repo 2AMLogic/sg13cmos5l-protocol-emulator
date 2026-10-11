@@ -10,7 +10,9 @@ Image format: one 4-hex-digit word per line, in file order. Blank (or
 whitespace-only) lines are skipped; nothing else is tolerated (no comments,
 no `0x`, no short or long words). 1..256 words; an empty, malformed or
 257-word input is rejected with exit status 2 before anything is emitted.
-No padding word is ever appended.
+No padding word is ever appended. An all-zero image (every word 0000) is also
+rejected with exit status 2: its CRC is 0x0000, indistinguishable from the
+`PM_CRC` of a chip that was never clocked (DR 0013, issue #218).
 
 Sequence (format VERSION 1), one step per clock cycle, each step is
 (ui_in, uio_in, rst_n, ena) held while clk is low, then one rising edge:
@@ -92,6 +94,11 @@ def parse_words(text, source="<input>"):
     if len(words) > MAX_WORDS:
         raise LoadSeqError("%s: %d words exceeds the %d-word program memory"
                            % (source, len(words), MAX_WORDS))
+    if not any(words):
+        raise LoadSeqError(
+            "%s: image is all zero words; its CRC-16/XMODEM is 0x0000, the same PM_CRC "
+            "a never-clocked chip reads, so a host could not tell a load from no load "
+            "(DR 0013, issue #218)" % source)
     return words
 
 

@@ -182,33 +182,69 @@ def _(fx):
     assert code == 0 and "[metadata-capability] PASS" in out, out
 
 
-@case("load CRC readout: a direct core-to-uo_out connection is still accepted")
+@case("load CRC readout: a direct core-to-uo_out connection fails while the table declares CRC_READOUT")
 def _(fx):
-    # the top as it was before issue #137: no mux, the port straight on the pins
+    # no special case for the readout: the table says uo_out is read out in load
     fx.mutate(TOP, ".port_uo_out (core_uo_out),", ".port_uo_out (uo_out),")
     fx.mutate(TOP, UO_MUX_HEAD, "wire [7:0] unused_readout = run_phase ? core_uo_out :")
+    expect_fail(fx, "the table gives uo_out the CRC_READOUT load role", "metadata-capability")
+
+
+@case("load CRC readout: a direct connection is accepted when the table has no readout roles")
+def _(fx):
+    fx.mutate(TOP, ".port_uo_out (core_uo_out),", ".port_uo_out (uo_out),")
+    fx.mutate(TOP, UO_MUX_HEAD, "wire [7:0] unused_readout = run_phase ? core_uo_out :")
+
+    def drop(t):
+        for k in ("ui_in[1]",) + tuple(f"uo_out[{b}]" for b in range(8)):
+            pin(t, k)["load_role"] = "none"
+    fx.mutate_table(drop)
     code, out = fx.run()
     assert code == 0 and "[metadata-capability] PASS" in out, out
+
+
+@case("load CRC readout: a byte select on a pin other than the table's CRC_BYTE_SEL fails")
+def _(fx):
+    fx.mutate(TOP, "ui_in[1]  ? pm_crc[15:8] :", "ui_in[2]  ? pm_crc[15:8] :")
+    expect_fail(fx, "the table gives uo_out the CRC_READOUT load role", "metadata-capability")
+
+
+@case("load CRC readout: CRC_READOUT on a partial uo_out bus fails the schema")
+def _(fx):
+    fx.mutate_table(lambda t: pin(t, "uo_out[7]").update(load_role="none"))
+    expect_fail(fx, "CRC_READOUT placed on", "schema")
+
+
+@case("load CRC readout: CRC_BYTE_SEL without the readout fails the schema")
+def _(fx):
+    fx.mutate_table(lambda t: [pin(t, f"uo_out[{b}]").update(load_role="none") for b in range(8)])
+    expect_fail(fx, "need the whole readout with exactly one byte-select pin", "schema")
+
+
+@case("load CRC readout: CRC_READOUT on an input pin fails the schema")
+def _(fx):
+    fx.mutate_table(lambda t: pin(t, "ui_in[3]").update(load_role="CRC_READOUT"))
+    expect_fail(fx, "load role CRC_READOUT must be on uo_out", "schema")
 
 
 @case("load CRC readout: a mux not selected by run_phase fails")
 def _(fx):
     fx.mutate(TOP, UO_MUX_HEAD, "assign uo_out = !ui_in[7] ? core_uo_out :")
-    expect_fail(fx, "core port_uo_out is not connected to the whole uo_out bus in run phase",
+    expect_fail(fx, "the table gives uo_out the CRC_READOUT load role",
                 "metadata-capability")
 
 
 @case("load CRC readout: a run-phase arm that is not the core's port fails")
 def _(fx):
     fx.mutate(TOP, UO_MUX_HEAD, "assign uo_out = run_phase ? (core_uo_out & 8'h7F) :")
-    expect_fail(fx, "core port_uo_out is not connected to the whole uo_out bus in run phase",
+    expect_fail(fx, "the table gives uo_out the CRC_READOUT load role",
                 "metadata-capability")
 
 
 @case("load CRC readout: the core's port left off uo_out altogether fails")
 def _(fx):
     fx.mutate(TOP, UO_MUX_HEAD, "assign uo_out = run_phase ? pm_crc[7:0] :")
-    expect_fail(fx, "core port_uo_out is not connected to the whole uo_out bus in run phase",
+    expect_fail(fx, "the table gives uo_out the CRC_READOUT load role",
                 "metadata-capability")
 
 
@@ -339,6 +375,34 @@ def _(fx):
     fx.mutate("firmware/asm/uart_tx.asm", "OUT   UO_OUT, R1       ; TX idles HIGH",
               "OUT   UIO_OUT, R1       ; TX idles HIGH")
     expect_fail(fx, "OUT to port UIO_OUT", "concrete-firmware-bench")
+
+
+@case("WS2812 DIN pin image LDI mutated")
+def _(fx):
+    fx.mutate("firmware/asm/ws2812.asm", "LDI   R2, 0x80 ", "LDI   R2, 0x40 ")
+    expect_fail(fx, "DIN pin image LDI R2, 0x40", "concrete-firmware-bench")
+
+
+@case("WS2812 program drives uo_out from another register")
+def _(fx):
+    fx.mutate("firmware/asm/ws2812.asm", "OUT   UO_OUT, R1       ; s20", "OUT   UO_OUT, R0       ; s20")
+    expect_fail(fx, "OUT UO_OUT from R0", "concrete-firmware-bench")
+
+
+@case("WS2812 bench DIN bit moved")
+def _(fx):
+    fx.mutate("verification/test_firmware_ws2812.py", 'DIN_PIN, DIN_BIT = "uo_out", 7',
+              'DIN_PIN, DIN_BIT = "uo_out", 6')
+    expect_fail(fx, "DIN_PIN/DIN_BIT is uo_out[6]", "concrete-firmware-bench")
+
+
+@case("WS2812 DIN moved in the table alone")
+def _(fx):
+    def mv(t):
+        pin(t, "uo_out[7]")["protocol_roles"]["ws2812"] = "unused"
+        pin(t, "uo_out[6]")["protocol_roles"]["ws2812"] = "DIN"
+    fx.mutate_table(mv)
+    expect_fail(fx, "firmware/asm/ws2812.asm", "concrete-firmware-bench")
 
 
 @case("UART RX mask LDI mutated in each RX program")

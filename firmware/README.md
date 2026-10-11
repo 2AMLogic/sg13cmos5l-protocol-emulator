@@ -29,6 +29,11 @@ firmware/
     spi_mode{0..3}.asm   bit-banged SPI controller, one program per
                          (CPOL, CPHA) mode (issue #72, the SPI third of
                          #23)
+    ws2812.asm           WS2812 LED-strip controller on uo_out[7]: N
+                         GRB pixels from a table in program memory, 63
+                         cycles per bit, refreshed with a >280 us reset
+                         (target-spec row 13, issue #141; protocol chosen
+                         by DR 0018 after DR 0017's ISA freeze)
     boot/boot_rom.asm    the on-chip boot ROM's program (issues #138 and
                          #139, DR 0013 layer 2: warm start and UART load).
                          Not loaded into program memory: the ROM in
