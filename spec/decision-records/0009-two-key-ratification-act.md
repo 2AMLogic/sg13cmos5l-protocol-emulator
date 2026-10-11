@@ -63,12 +63,31 @@ forge is the record, and this file's presence on `main` means only that pull
 request #242 merged. If that pull request is closed without merging, this file
 never reaches `main` and nothing in `spec/` changes.
 
+### How the keys are applied, and a known limit on independence
+
+The operator ruled on issue #44 on 2026-10-11 (ruling 1) on who applies
+the keys. The ruling is quoted here in full, because it records a limit on
+the independence of the two reviews that a reader of this act should know:
+
+> **Who applies the keys → option 2.** The coordinating session launches two
+> isolated review agents, one per key. Each is given only PR #242 and its own
+> key's instructions (the installed key skill), and none of the coordinating
+> session's conversation. Each agent applies its own key with
+> `ratify-key.sh apply`. This is recorded as a known limit on independence:
+> one coordinator dispatches both agents and relays their verdicts. The
+> coordinator does not edit, summarise or filter what a key agent posts.
+
+The two keys are still two distinct forge identities, neither the PR's
+author nor the design's author, and the gate checks that. What the gate
+cannot check is the limit above: both key agents are launched by one
+coordinating session. This record states it and does not resolve it.
+
 ## What the act binds
 
 | File | Status after the act | What binds |
 |---|---|---|
 | `spec/target-spec.md` | `RATIFIED` | Rows 1–12 **as targets**, exactly as DR 0004's per-row register states them: values, sources, stretch entries and checking artifacts, as corrected on `main` for issue #85 before this act. Row 2 is a stretch aim and binds nothing numeric. |
-| `0001-isa.md` | `Ratified` | As written, **including its dated amendment of 2026-10-11** under "Timing model" (issue #85, item 1), which supersedes the sentence "fetch and execute happen in the same cycle for every instruction" with the fetch-ahead model: instruction fetch one cycle ahead of execute, every instruction still 1 cycle (`WAIT imm8` in `imm8 + 1`), branch cost independent of data, and a fixed +1 cycle at run-phase entry. The amendment is part of DR 0001's text, so it is bound with it. |
+| `0001-isa.md` | `Ratified` | As written, **including its dated amendment of 2026-10-11** under "Timing model" (issue #85, item 1), which supersedes the sentence "fetch and execute happen in the same cycle for every instruction" with the fetch-ahead model: instruction fetch one cycle ahead of execute, every instruction still 1 cycle (`WAIT imm8` in `imm8 + 1`), branch cost independent of data, and a fixed +1 cycle at run-phase entry. Also **including its dated amendment of 2026-10-11 under the port table** (issue #44, operator ruling 3, pull request #249), which supersedes "direction (`uio_oe`) is fixed at synthesis time" with run-time direction per pin from `UIO_DIR` and `UIO_OD`, reset to all inputs. Both amendments are part of DR 0001's text, so they are bound with it. |
 | `0002-flow-of-record.md` | `Ratified` | As written. |
 | `0003-firmware-toolchain.md` | `Ratified` | As written. |
 | `0004-target-spec-ratification.md` | `Ratified` | The register, the separation of what is bound from what is evidenced, and the binding process. |
@@ -86,8 +105,9 @@ it.
 | `0005-program-memory-implementation.md` | `Proposed`, unchanged | Operator ruling on issue #85, item 1 (2026-10-11): DR 0001 is amended instead, and DR 0005 is not bound. It is a separate question (which implementation holds the program bits, its integration and its area), and it goes to the keys on its own carrying PR. DR 0001's amendment quotes its fetch-ahead sentence, so that sentence binds as part of DR 0001; nothing else in DR 0005 does. |
 | `0007-row4-corner-set-under-the-macro.md` | `Proposed`, unchanged | Operator ruling on issue #85, item 4 (2026-10-11). DR 0007 decides how row 4 is graded, and its own § "New record, not an amendment to DR 0005" argues that it must stay separable, so that a key-holder can accept one question and reject another. It stays `Proposed`, and with it row 4's corner set, until the klt flow produces timing evidence for this design (`2AMLogic/klayout-tools#2635`). |
 | `0008-open-drain-uio-oe-wiring.md` | `Proposed`, unchanged | A separate design decision with its own carrying-PR requirement. |
-| DRs 0010–0018 | `Proposed`, unchanged | Each was written after DR 0004's register and states its own carrying-PR requirement. |
-| `spec/target-spec.md` rows 13 and 14 | `Proposed`, unchanged | Added on 2026-10-09, after DR 0004's register; their `State` cells say they are not in it. A row binds as DR 0004 registers it, so these two need an act of their own. |
+| DRs 0010, 0011 and 0013–0018 | `Proposed`, unchanged | Each was written after DR 0004's register and states its own carrying-PR requirement. |
+| `spec/target-spec.md` rows 13 and 14 | `Proposed`, unchanged | **Out of scope by operator ruling** (issue #44, 2026-10-11, ruling 2): "Act scope → rows 1–12 only, as drafted. Target-spec rows 13 and 14 are not bound by this act; they get their own act later." Both were added on 2026-10-09, after DR 0004's register, and their `State` cells say they are not in it. |
+| `0012-control-space-and-runtime-pin-direction.md` | `Proposed`, unchanged | Operator ruling on issue #44, ruling 3 (2026-10-11): DR 0001 is amended instead, and DR 0012 is not bound. DR 0001's amendment quotes its pin-mode and reset text, so that text binds as part of DR 0001; the rest of DR 0012's control space does not. |
 | `0006-two-key-ratification-never-ran.md` | `Recorded`, unchanged | A finding of fact; there is nothing in it to ratify. |
 | `spec/verification-plan.md`, `spec/gap-to-submission.md` | `DRAFT`, unchanged | Neither claims ratification. |
 
@@ -99,7 +119,7 @@ recording the operator's ruling that the act does not bind DR 0007. DRs
 0006, 0007 and this record now say the same thing, and the question is
 settled.
 
-Three consequences follow, and each is a live gap rather than a formality:
+Three consequences follow. Each says what is bound and what is still a proposal:
 
 - **DR 0001's fetch model is bound; DR 0005's other decisions are not.**
   The RTL on `main` fetches one cycle ahead of execute
@@ -113,19 +133,20 @@ Three consequences follow, and each is a live gap rather than a formality:
   closure on CMOS5L (flow of record per DR 0002)" and has never named a
   corner set. Which corners it is graded at is DR 0007's question and stays
   open.
-- **The `uio` direction model is bound as DR 0001 writes it, and the RTL
-  goes beyond it under proposed records.** DR 0001's port table says
-  `uio_oe` "is fixed at synthesis time per protocol pin plan, not
-  runtime-programmable in this ISA revision", and its § Consequences leaves
-  runtime direction as an open question. DR 0012 (runtime pin
-  direction and the control space, through DR 0001's two spare no-op
-  encodings) and DR 0013 (program loading) are built on `main` and frozen
-  by DR 0017, but they are `Proposed` and this act does not bind them; nor
-  does it bind DR 0008's open-drain wiring or DR 0016's flag and shift
-  details. Unlike the fetch model, DR 0001 carries no amendment for the
-  pin-direction change, so until DR 0012 is ratified the implementation
-  follows a proposed extension of a ratified record. The gap is recorded,
-  not hidden.
+- **DR 0001's `uio` direction model is bound; the rest of DR 0012 is
+  not.** DR 0001's port table said `uio_oe` "is fixed at synthesis time per
+  protocol pin plan, not runtime-programmable in this ISA revision", while
+  the design on `main` sets direction at run time. The operator ruled on
+  issue #44 (2026-10-11, ruling 3) to settle this with a dated amendment to
+  DR 0001 that points at DR 0012, landed on `main` by pull request #249
+  before any key review. DR 0001, as amended, now states the direction
+  model the RTL implements (`UIO_DIR` / `UIO_OD`, per pin, reset to all
+  inputs), and that is what this act binds. Under DR 0017 the amendment is
+  a `no-behaviour-change` amendment citing issue #44. DR 0012 is not bound:
+  its program-memory access, `PM_CRC`, `BOOT_STATUS`, `HW_ID`, `RUN` and
+  the remaining control indices are still its proposal, and so are DR
+  0013's loader, DR 0008's open-drain wiring and DR 0016's flag and shift
+  details. All of them are built on `main` and frozen by DR 0017.
 
 ## What the act does not do
 
