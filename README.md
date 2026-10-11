@@ -39,11 +39,11 @@ now resolves the bus through the design's own `uio_oe` and `uio_out`; it does
 not characterize electrical pad timing. The
 [DR 0013 boot ROM](verification/records/boot-rom/records/20261010-004726-197191d.md)
 is implemented, with UART and SPI-flash boot loaders
-([UART record](verification/records/boot-uart/records/20261011-033013-f1b21df.md);
+([UART record](verification/records/boot-uart/records/20261011-061439-6ea883e.md);
 the count-byte aliasing of
 [DR 0013 finding F8](verification/records/boot-uart/records/20261010-164351-57c5c8c.md)
 is now rejected by a count-complement byte,
-[record](verification/records/boot-uart/records/20261011-033014-f1b21df.md), #211;
+[record](verification/records/boot-uart/records/20261011-061440-6ea883e.md), #211;
 [SPI-flash record](verification/records/boot-spi/records/20261010-132616-8372c57.md);
 #139, #140). The serial-load CRC readout is still open (#167).
 
