@@ -486,7 +486,7 @@ Observed in committed firmware (provisional, per image family):
 | SPI | MISO | `uio[2]` (`uio_in[2]`) | yes (input) |
 | SPI | SCLK (Pmod SCK) | `uio[3]` | as CS |
 | SPI, I2C `_sr` | result byte echo | `uo_out[7:0]` after the transfer | yes |
-| I2C | SCL (1 = released) | `uio[2]` (`uio_out[2]`) | yes in RTL, open-drain (`UIO_OD` = `0x0C`); verified through a logical pad model at RTL and on the gate-level netlist, zero delay |
+| I2C | SCL (1 = released) | `uio[2]` (port 11 bit 2) | yes in RTL, open-drain (`UIO_OD` = `0x0C`; the pad data is tied to 0 and `uio_oe` carries the bit, DR 0020); verified through a logical pad model at RTL, on the gate-level netlist at zero delay, and on the routed netlist with SDF delays (the repeated-START programs) |
 | I2C | SDA (1 = released) | `uio[3]` (`uio_out[3]`) | as SCL |
 | I2C | SCL / SDA sampled | `uio_in[2]` / `uio_in[3]` | yes (input) |
 
@@ -511,8 +511,8 @@ No pin claim here is backed by silicon or by the LibreLane flow.
 ## Evidence not yet in hand
 
 - **Tiny Tapeout LibreLane flow.** The routed-netlist SDF regression of the
-  submitted core ([record](../verification/records/post-layout-sdf-regression/records/20261011-042235-2f504f0.md),
-  LibreLane run 38108543866, with DR 0015's P1 and P2, the UART-load boot ROM with its count-complement check and the load check's readout) passes at all three corners: 12 of the core
+  submitted core ([record](../verification/records/post-layout-sdf-regression/records/20261011-114800-e5a0bae.md),
+  LibreLane run 38136727636, with DR 0015's P1 and P2, the UART-load boot ROM with its count-complement check, the load check's readout and DR 0020's open-drain pad data) passes at all three corners: 12 of the core
   bench's 13 tests pass and the white-box flag test is skipped (it reads
   core internals a flattened netlist does not have), so the C flag has no
   post-layout evidence. One of the 12 grades the load check's readout every
@@ -522,17 +522,30 @@ No pin claim here is backed by silicon or by the LibreLane flow.
   before the next. The SRAM runs as a zero-delay model there (its read
   timing is LibreLane STA evidence only), setup/hold is checked only
   against the cell models' 0 ns placeholder limits, not the SDF's
-  characterised ones,
-  and only the core bench ran, not the firmware above. The sign-off grader
+  characterised ones.
+  Three firmware benches also run there with delays (same record): UART TX,
+  SPI modes 0-3 and the I2C write / repeated-START / read / clock-stretch
+  programs pass at all three corners, with every output transition measured
+  0.5 to 1.6 ns after the clock pin edge. On the I2C run the open-drain pads
+  only ever pull low. On the netlist before DR 0020 the same run fails at
+  every corner: `uio_out` reached the pins 50 to 210 ps before `uio_oe` and
+  the pads drove SCL and SDA high for that window on each release (issue
+  #244). The boot programs, UART RX, PS/2 and WS2812 have not been run with
+  delays, and no pad cell is in the simulation. The sign-off grader
   still renders T1 item 7 unmet, on provenance binding (see
   `manifests/README.md`). LibreLane timing and area evidence is in
-  [`librelane-corner-timing`](../verification/records/librelane-corner-timing/records/20261011-040000-1c19c24.md):
-  zero setup and hold violations at all three corners at 20 ns, with the worst setup slack +1.9 ns
-  at the slow corner (+3.5 ns before the 232-word boot ROM of issue #211; the binding path is an
-  SRAM read into instruction decode), and two max-slew violations on one internal net at that
-  corner (the flow does not fail on them; recorded, not fixed). The placed standard-cell area
-  with P1, P2, the UART-load ROM and the load check's readout is 44,965 µm² (LibreLane flow), 57.7 %
-  of the core with the macro against the 60 % target (45,057 µm² with the 223-word ROM; 44,295 µm², 57.2 %, without the readout; P1 and P2 alone, before the merge with the UART load: 41,827 µm²,
+  [`librelane-corner-timing`](../verification/records/librelane-corner-timing/records/20261011-144900-e5a0bae.md):
+  zero setup, hold, max-slew and max-capacitance violations at all three corners at 20 ns, with the
+  worst setup slack +5.8 ns at the slow corner (the binding path is an SRAM read into instruction
+  decode) and the worst hold slack +0.08 ns at the fast corner. Before issue #246 the slow-corner
+  margin was +1.9 ns with two max-slew violations on one internal net (+3.5 ns before the 232-word
+  boot ROM of issue #211). Five LibreLane repair settings in `src/config.json` account for most of
+  the change and a placement re-roll for the rest; the record's trial table separates the two. One
+  class is not repaired: on the pre-#244 design the same settings left max-capacitance violations
+  on two SRAM output pins, and the shipped design has none by placement, not by construction.
+  The placed standard-cell area with P1, P2, the UART-load ROM, the load check's readout and the
+  timing repair is 46,048 µm² (LibreLane flow), 58.5 %
+  of the core with the macro against the 60 % target (44,965 µm², 57.7 %, before the timing repair; 45,057 µm² with the 223-word ROM; 44,295 µm², 57.2 %, without the readout; P1 and P2 alone, before the merge with the UART load: 41,827 µm²,
   55.2 %; 28,256 µm² without them). On the klt/Yosys flow P1 and P2 cost +10,848 µm²
   (synthesis only). DR 0015 estimated about 4,600 µm² for the two primitives; the measured cost is
   2.4 to 2.9 times that, which DR 0015's dated notes record. The load check's readout costs 16
@@ -540,8 +553,8 @@ No pin claim here is backed by silicon or by the LibreLane flow.
   `ui_in[1]`-to-`uo_out` path is 0.58 to 1.40 ns pin to pin in LibreLane's post-route analysis,
   under the flow's assumed 4 ns input and output delays; no pad has been measured.
   Firmware, the control-space, boot-ROM, SPI-flash-boot, UART-load, primitive and load-integrity benches on that netlist at zero delay:
-  [`firmware-gate-level`](../verification/records/firmware-gate-level/records/20261011-071709-6ea883e.md).
-  Firmware with back-annotated delays: none.
+  [`firmware-gate-level`](../verification/records/firmware-gate-level/records/20261011-125000-e5a0bae.md).
+  Firmware with back-annotated delays: UART TX, SPI and I2C repeated START, as above; nothing else.
 - **klt synthesis and timing.** `klt sta` does not yet support the SRAM
   macro, so the two flows do not agree on timing; per the project rule that
   mismatch is a finding, not a number to pick from.
