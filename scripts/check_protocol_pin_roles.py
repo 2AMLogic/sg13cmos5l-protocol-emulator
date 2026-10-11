@@ -96,7 +96,12 @@ PHASES = (
     "i2c_result",
 )
 UNUSED = "unused"
-LOAD_ROLES = ("PROG_SER", "PROG_MODE", "none")
+# PROG_SER / PROG_MODE are the serial program-load inputs. CRC_BYTE_SEL (an
+# input) and CRC_READOUT (the eight outputs) are DR 0013 layer 1's load-phase
+# CRC readout (issue #137, table roles added by #218).
+LOAD_ROLES = ("PROG_SER", "PROG_MODE", "CRC_BYTE_SEL", "CRC_READOUT", "none")
+LOAD_ROLE_PORT = {"PROG_SER": "ui_in", "PROG_MODE": "ui_in",
+                  "CRC_BYTE_SEL": "ui_in", "CRC_READOUT": "uo_out"}
 
 # Role classes (what the role does electrically).
 DRIVE_PP = {"TX", "CS", "SCLK", "MOSI"} | {f"RESULT[{i}]" for i in range(8)}
@@ -355,8 +360,9 @@ class Checker:
             if len(kinds) > 1 and runtime and not str(pin["shared_pin_rationale"]).strip():
                 s.err(f"{label}: runtime pin is {' and '.join(sorted(kinds))} in different "
                       f"phases but has no shared_pin_rationale")
-            if pin["load_role"] != "none" and port != "ui_in":
-                s.err(f"{label}: load role {pin['load_role']} must be on ui_in")
+            if pin["load_role"] != "none" and port != LOAD_ROLE_PORT[pin["load_role"]]:
+                s.err(f"{label}: load role {pin['load_role']} must be on "
+                      f"{LOAD_ROLE_PORT[pin['load_role']]}")
             sampled = any(r in SAMPLE for r in pin["protocol_roles"].values())
             if sampled and el != "input" and not driving and not runtime:
                 s.err(f"{label}: sampled-only role needs electrical_role input, table says {el}")
@@ -381,9 +387,22 @@ class Checker:
             for r, where in placed.items():
                 if r.startswith("RESULT[") and where != [f"uo_out[{r[7]}]"]:
                     s.err(f"phase {ph}: {r} must sit on uo_out[{r[7]}], found {where}")
-        loads = {p["load_role"]: f"{k[0]}[{k[1]}]" for k, p in self.pins.items() if p["load_role"] != "none"}
-        if set(loads) != {"PROG_SER", "PROG_MODE"}:
-            s.err(f"load roles placed: {sorted(loads)}; need exactly PROG_SER and PROG_MODE once each")
+        placed_loads: dict[str, list[str]] = {}
+        for k, p in self.pins.items():
+            if p["load_role"] != "none":
+                placed_loads.setdefault(p["load_role"], []).append(f"{k[0]}[{k[1]}]")
+        for role in ("PROG_SER", "PROG_MODE"):
+            if len(placed_loads.get(role, [])) != 1:
+                s.err(f"load role {role} placed on {placed_loads.get(role) or 'no pin'}; "
+                      f"need exactly one pin")
+        # the readout is all-or-nothing: one byte-select pin and the whole uo_out bus
+        readout = sorted(placed_loads.get("CRC_READOUT", []))
+        sel = placed_loads.get("CRC_BYTE_SEL", [])
+        if readout != sorted(f"uo_out[{b}]" for b in range(8)) and readout:
+            s.err(f"load role CRC_READOUT placed on {readout}; need all of uo_out[7:0] or none")
+        if bool(readout) != bool(sel) or len(sel) > 1:
+            s.err(f"load roles CRC_READOUT {readout or 'none'} and CRC_BYTE_SEL {sel or 'none'}; "
+                  f"need the whole readout with exactly one byte-select pin, or neither")
 
     def validate_masks(self) -> None:
         s = self.schema
@@ -1128,22 +1147,26 @@ class Checker:
             if m and want != ("ui_in", int(m.group(1))):
                 self.meta.err(f"{rel}: {role} wired to ui_in[{m.group(1)}] but the table says "
                               f"{want[0]}[{want[1]}]")
+        sel_pin = next((k for k, p in self.pins.items() if p["load_role"] == "CRC_BYTE_SEL"), None)
+        readout = any(p["load_role"] == "CRC_READOUT" for p in self.pins.values())
         for port in ("ui_in", "uio_in", "uo_out", "uio_out"):
             m = re.search(rf"\.port_{port}\s*\(\s*(\w+)\s*\)", text)
             self.meta.sites += 1
-            if m and port == "uo_out" and m.group(1) != port:
-                # DR 0013 layer 1 (issue #137): outside the run phase uo_out
-                # shows the load CRC instead. The one accepted shape is a
-                # mux whose run-phase arm is the core's port, whole:
-                #   assign uo_out = run_phase ? <core net> : <anything>;
-                # so every protocol role the table gives a uo_out pin (all of
-                # them run-phase roles) is still the core's register.
-                mux = re.search(r"assign\s+uo_out\s*=\s*run_phase\s*\?\s*(\w+)\s*:", text)
-                if mux and mux.group(1) == m.group(1):
+            if m and port == "uo_out" and readout:
+                # The table gives uo_out the CRC_READOUT load role (DR 0013
+                # layer 1): outside the run phase uo_out shows the selected
+                # PM_CRC byte. The one accepted shape is a mux whose
+                # run-phase arm is the core's port, whole, and whose byte
+                # select is the table's CRC_BYTE_SEL pin:
+                #   assign uo_out = run_phase ? <core net> : ui_in[n] ? ... : ...;
+                mux = re.search(r"assign\s+uo_out\s*=\s*run_phase\s*\?\s*(\w+)\s*:"
+                                r"\s*ui_in\[(\d+)\]\s*\?", text)
+                if mux and mux.group(1) == m.group(1) and sel_pin == ("ui_in", int(mux.group(2))):
                     continue
-                self.meta.err(f"{rel}: core port_uo_out is not connected to the whole uo_out bus in "
-                              f"run phase (want `.port_uo_out(uo_out)`, or `assign uo_out = run_phase ? "
-                              f"{m.group(1)} : ...;`)")
+                self.meta.err(f"{rel}: the table gives uo_out the CRC_READOUT load role, so the top "
+                              f"must have `assign uo_out = run_phase ? {m.group(1)} : "
+                              f"ui_in[{sel_pin[1]}] ? ... : ...;` (run-phase arm the core's whole "
+                              f"port, byte select the CRC_BYTE_SEL pin)")
                 continue
             if not m or m.group(1) != port:
                 self.meta.err(f"{rel}: core port_{port} is not connected to the whole {port} bus")

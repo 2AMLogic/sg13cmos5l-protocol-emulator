@@ -908,3 +908,51 @@ timing) the netlist has no `buf` cell, at 2,392 instances and 34,670.58 µm².
 This run reproduces gds run 38071502150 byte for byte: same `metrics.json`,
 same LibreLane netlist, and same GDS apart from its timestamps. Record:
 `verification/records/librelane-corner-timing/records/20261010-204000-8a73b84.md`.
+
+## 2026-10-10 (issue #218): layer 1 after the #166 ruling, findings 2 to 4
+
+> A dated entry. The Decision and the findings above are unchanged. This
+> record's Status line is not flipped, and DR 0012's `PM_CRC` row is not
+> edited.
+
+**Finding 2, ruled (operator, issue #166): `PM_CRC` stays `0x0000`.** No
+non-zero seed. What this leaves, and what was done about it:
+
+- *The gap that remains.* A never-clocked chip and a layer-1 load of an
+  all-zero image read the same `PM_CRC`, `0x0000` in both bytes. A host that
+  reads the readout after loading zeros cannot tell the load from no load,
+  and no truncation or edge fault of such an image is detectable.
+- *Host tool.* `firmware/tools/loadseq.py` now refuses an all-zero image
+  (every word `0000`), for the direct-load sequence and for `--uart`, with
+  exit status 2 and an error naming the file and this reason, before anything
+  is emitted. Before #218 it accepted one. `firmware/tools/test_loadseq.py`
+  tests the refusal (`Parse.test_all_zero_image_refused`, and an all-zero file
+  in `Cli.test_rejected_inputs_exit_nonzero_no_output`). The refusal is in the
+  tool only: it does not change what the chip does with a frame or a pin
+  sequence that some other host sends.
+- *Warm start (#200, strap `10`) and SPI-flash boot (strap `01`).* Both
+  refuse a signature word of `0x0000` before their CRC verdict, so an
+  all-zero SRAM or flash image does not run (closed by #168 and #140).
+- *UART boot (#210, strap `00`): it does not refuse.* The UART load's verdict
+  is the trailer against `PM_CRC` (`h_trail_lo` in
+  `firmware/asm/boot/boot_rom.asm`) and nothing else, with no zero-signature
+  check. A frame of N zero words followed by the trailer `0x0000` therefore
+  matches, is answered `0x06` and runs: N `NOP`s, then the unwritten words of
+  program memory. A frame the chip should have refused is accepted only
+  because its CRC is also zero. The ROM was not changed here (this issue is docs and
+  host tooling only), and the case needs a deliberate frame
+  (`loadseq.py --uart` no longer builds one). This is a
+  recorded gap, not a closed one. The bench does not exercise it; no
+  evidence in `verification/records/boot-uart/` claims it.
+
+**Finding 3, wording.** `spec/verification-plan.md` §7 now says every doubled
+edge *that changes what memory holds* must mismatch (the bench finds 3 of 83
+doubled edges harmless, as finding 3 describes).
+
+**Finding 4, done.** DR 0010's pin-role table and schema now give `ui_in[1]`
+the load role `CRC_BYTE_SEL` and `uo_out[7:0]` the load role `CRC_READOUT`.
+`scripts/check_protocol_pin_roles.py` no longer special-cases the mux: with
+the table declaring those roles it requires the top's
+`assign uo_out = run_phase ? <core net> : ui_in[n] ? ... : ...;` with `n` the
+`CRC_BYTE_SEL` pin, and the schema requires the readout to cover all of
+`uo_out[7:0]` with exactly one byte-select pin.
