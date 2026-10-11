@@ -1,0 +1,186 @@
+rm -f results.xml
+mkdir -p <repo>/flow/ps2-gate-level/pass/sim_build
+/opt/homebrew/bin/iverilog -o <repo>/flow/ps2-gate-level/pass/sim_build/sim.vvp -s tb -g2012 -DGL_TEST -DFUNCTIONAL -DSIM -I<repo>/test/../src -f <repo>/flow/ps2-gate-level/pass/sim_build/cmds.f  <PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_io/verilog/sg13cmos5l_io.v <PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v <PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_udp.v <repo>/test/../rtl/vendor/RM_IHPSG13_1P_256x16_c2_bm_bist.v <repo>/test/../rtl/vendor/RM_IHPSG13_1P_core_behavioral_bm_bist.v <repo>/verification/records/post-layout-sdf-regression/artifacts/20261011-035358-1c19c24/tt_um_2amlogic_protocol_emulator.v <repo>/test/tb.v
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:42: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:44: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:50: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:52: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:66: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:68: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:103: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:105: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:111: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:113: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:127: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:129: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:177: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:179: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:227: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:229: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:274: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:276: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:290: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:292: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:306: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:308: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:322: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:324: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:346: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:348: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:385: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:387: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:393: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:395: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:405: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:407: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:417: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:419: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:1786: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:1788: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:1830: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:1832: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:1881: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:1883: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:1901: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:1903: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:2487: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:2489: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:2733: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:2735: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:2743: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:2745: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:2802: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:2804: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:2811: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:2813: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:2866: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:2868: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:2875: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:2877: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:2932: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:2934: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:2990: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:2992: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:3199: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:3201: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:3211: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:3213: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:3250: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:3252: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:3262: sorry: ifnone with an edge-sensitive path is not supported.
+<PDK_ROOT>/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v:3264: sorry: ifnone with an edge-sensitive path is not supported.
+rm -f results.xml
+COCOTB_TEST_MODULES=test_firmware_ps2 COCOTB_TESTCASE=  COCOTB_TOPLEVEL=tb TOPLEVEL_LANG=verilog       \
+		 /opt/homebrew/bin/vvp -m <scratch>/venv/lib/python3.13/site-packages/cocotb/libs/libcocotbvpi_icarus.so   <repo>/flow/ps2-gate-level/pass/sim_build/sim.vvp -fst   
+     -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:242  in gpi_load_users                  Loaded entry library: '/opt/homebrew/Cellar/python@3.13/3.13.16/Frameworks/Python.framework/Versions/3.13/Python'
+     -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:234  in gpi_load_users                  Running entry func 'initialize' from loaded library '<scratch>/venv/lib/python3.13/site-packages/cocotb/simulator.cpython-313-darwin.so'
+     -.--ns INFO     pygpi                              ..ib/pygpi/embed.cpp:115  in initialize                      Using Python 3.13.14 interpreter at <scratch>/venv/bin/python
+     -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:74   in gpi_print_registered_impl       GPI: VPI support registered
+     0.00ns INFO     cocotb.initialize                  Seeding Python random module with 1791703135
+     0.00ns INFO     cocotb.initialize                  Initialized cocotb v2.1.0 from <scratch>/venv/lib/python3.13/site-packages/cocotb
+     0.00ns INFO     cocotb.initialize                  Running on Icarus Verilog version 13.0 (stable)
+     0.00ns INFO     cocotb.regression                  Running tests
+     0.00ns INFO     cocotb.regression                  running test_firmware_ps2.test_committed_image_is_fresh (1/18)
+                                                            The committed image and report match the source; the program fits;
+     0.00ns INFO     cocotb.tb                          213 words, 10 documented lint warnings
+     0.00ns INFO     cocotb.regression                  test_firmware_ps2.test_committed_image_is_fresh passed
+     0.00ns INFO     cocotb.regression                  running test_firmware_ps2.test_power_up_frame (2/18)
+                                                            From reset the device sends the BAT code 0xAA once, no sooner than
+4020900.00ns WARNING  py.warnings                        <repo>/verification/test_firmware_ps2.py:188: DeprecationWarning: `task.kill()` is deprecated in favor of `task.cancel()`
+                                                          self._task.kill()
+4020900.00ns WARNING  py.warnings                        <repo>/verification/uio_pads.py:319: DeprecationWarning: `task.kill()` is deprecated in favor of `task.cancel()`
+                                                          task.kill()
+4020900.00ns INFO     cocotb.tb                          [power-up] frames [('dev->host', 170, True, False)]; margins (ns) {'CLK high': 8960, 'CLK low': 9860, 'data after rise': 15480, 'data setup': 4660, 'hold-off': 30360, 'start bit setup': 4660}; measured (min, max ns) {'CLK high': (40700, 41040), 'CLK low': (40120, 40140), 'data after rise': (20480, 20480), 'data setup': (20340, 20340), 'hold-off': (80360, 80360), 'start bit setup': (20340, 20340)}
+4020900.00ns INFO     cocotb.tb                          power-up: hold-off [80360] ns, margins {'CLK high': 8960, 'CLK low': 9860, 'data after rise': 15480, 'data setup': 4660, 'hold-off': 30360, 'start bit setup': 4660}
+4020900.00ns INFO     cocotb.regression                  test_firmware_ps2.test_power_up_frame passed
+4020900.00ns INFO     cocotb.regression                  running test_firmware_ps2.test_host_commands_are_acked_and_echoed (3/18)
+                                                            Request to send: the device clocks the byte in, pulls ACK, and then
+20448360.00ns INFO     cocotb.tb                          [echo] frames [('dev->host', 170, True, False), ('host->dev', 237, True, False), ('dev->host', 237, True, False), ('host->dev', 0, True, False), ('dev->host', 0, True, False), ('host->dev', 255, True, False), ('dev->host', 255, True, False), ('host->dev', 85, True, False), ('dev->host', 85, True, False), ('host->dev', 170, True, False), ('dev->host', 170, True, False), ('host->dev', 1, True, False), ('dev->host', 1, True, False), ('host->dev', 128, True, False), ('dev->host', 128, True, False), ('host->dev', 244, True, False), ('dev->host', 244, True, False)]; margins (ns) {'CLK high': 8340, 'CLK low': 9860, 'ack setup': 4660, 'data after rise': 15360, 'data setup': 4660, 'hold-off': 30320, 'host inhibit': 20000, 'start bit setup': 4660}; measured (min, max ns) {'CLK high': (40700, 41660), 'CLK low': (40120, 40140), 'ack setup': (20340, 20340), 'data after rise': (20360, 20700), 'data setup': (20340, 20340), 'hold-off': (80320, 80360), 'host inhibit': (120000, 120000), 'start bit setup': (20340, 20340)}
+20448360.00ns INFO     cocotb.tb                          echo: 8 commands, response [520, 520, 520, 520, 520, 520, 520, 520] ns, margins {'CLK high': 8340, 'CLK low': 9860, 'ack setup': 4660, 'data after rise': 15360, 'data setup': 4660, 'hold-off': 30320, 'host inhibit': 20000, 'start bit setup': 4660}
+20448360.00ns INFO     cocotb.regression                  test_firmware_ps2.test_host_commands_are_acked_and_echoed passed
+20448360.00ns INFO     cocotb.regression                  running test_firmware_ps2.test_bad_frames_get_resend (4/18)
+                                                            A host byte with wrong parity, and one with a 0 stop bit, are ACKed
+27246200.00ns INFO     cocotb.tb                          [resend] frames [('dev->host', 170, True, False), ('host->dev', 237, True, False), ('dev->host', 254, True, False), ('host->dev', 60, True, False), ('dev->host', 254, True, False), ('host->dev', 60, True, False), ('dev->host', 60, True, False)]; margins (ns) {'CLK high': 8340, 'CLK low': 9860, 'ack setup': 4660, 'data after rise': 15360, 'data setup': 4660, 'hold-off': 30320, 'host inhibit': 20000, 'start bit setup': 4660}; measured (min, max ns) {'CLK high': (40700, 41660), 'CLK low': (40120, 40140), 'ack setup': (20340, 20340), 'data after rise': (20360, 20700), 'data setup': (20340, 20340), 'hold-off': (80320, 80360), 'host inhibit': (120000, 120000), 'start bit setup': (20340, 20340)}
+27246200.00ns INFO     cocotb.regression                  test_firmware_ps2.test_bad_frames_get_resend passed
+27246200.00ns INFO     cocotb.regression                  running test_firmware_ps2.test_inhibit_mid_frame_abandons_and_resends (5/18)
+                                                            The host holds CLK low after the 1st, 4th, 10th and 11th clock. Before
+30047900.00ns INFO     cocotb.tb                          [inhibit-1] frames [('dev->host', None, False, True), ('dev->host', 170, True, False)]; margins (ns) {'CLK high': 8960, 'CLK low': 9860, 'data after rise': 15480, 'data setup': 4660, 'hold-off': 30320, 'host inhibit': 30000, 'start bit setup': 4660}; measured (min, max ns) {'CLK high': (40700, 41040), 'CLK low': (40120, 40140), 'data after rise': (20480, 40840), 'data setup': (20340, 20340), 'hold-off': (80320, 80360), 'host inhibit': (130000, 130000), 'start bit setup': (20340, 20340)}
+30047900.00ns INFO     cocotb.tb                          inhibit after clock 1: margins {'CLK high': 8960, 'CLK low': 9860, 'data after rise': 15480, 'data setup': 4660, 'hold-off': 30320, 'host inhibit': 30000, 'start bit setup': 4660}
+33092480.00ns INFO     cocotb.tb                          [inhibit-4] frames [('dev->host', None, False, True), ('dev->host', 170, True, False)]; margins (ns) {'CLK high': 8960, 'CLK low': 9860, 'data after rise': 15480, 'data setup': 4660, 'hold-off': 30320, 'host inhibit': 30000, 'start bit setup': 4660}; measured (min, max ns) {'CLK high': (40700, 41040), 'CLK low': (40120, 40140), 'data after rise': (20480, 20480), 'data setup': (20340, 20340), 'hold-off': (80320, 80360), 'host inhibit': (130000, 130000), 'start bit setup': (20340, 20340)}
+33092480.00ns INFO     cocotb.tb                          inhibit after clock 4: margins {'CLK high': 8960, 'CLK low': 9860, 'data after rise': 15480, 'data setup': 4660, 'hold-off': 30320, 'host inhibit': 30000, 'start bit setup': 4660}
+36623300.00ns INFO     cocotb.tb                          [inhibit-10] frames [('dev->host', 170, False, True), ('dev->host', 170, True, False)]; margins (ns) {'CLK high': 8960, 'CLK low': 9860, 'data after rise': 15480, 'data setup': 4660, 'hold-off': 30360, 'host inhibit': 30000, 'start bit setup': 4660}; measured (min, max ns) {'CLK high': (40700, 41040), 'CLK low': (40120, 40140), 'data after rise': (20480, 20480), 'data setup': (20340, 20340), 'hold-off': (80360, 80580), 'host inhibit': (130000, 130000), 'start bit setup': (20340, 20340)}
+36623300.00ns INFO     cocotb.tb                          inhibit after clock 10: margins {'CLK high': 8960, 'CLK low': 9860, 'data after rise': 15480, 'data setup': 4660, 'hold-off': 30360, 'host inhibit': 30000, 'start bit setup': 4660}
+39237080.00ns INFO     cocotb.tb                          [inhibit-11] frames [('dev->host', 170, True, False)]; margins (ns) {'CLK high': 8960, 'CLK low': 9860, 'data after rise': 15480, 'data setup': 4660, 'hold-off': 30360, 'host inhibit': 30000, 'start bit setup': 4660}; measured (min, max ns) {'CLK high': (40700, 41040), 'CLK low': (40140, 40140), 'data after rise': (20480, 20480), 'data setup': (20340, 20340), 'hold-off': (80360, 80360), 'host inhibit': (130000, 130000), 'start bit setup': (20340, 20340)}
+39237080.00ns INFO     cocotb.tb                          inhibit after clock 11: margins {'CLK high': 8960, 'CLK low': 9860, 'data after rise': 15480, 'data setup': 4660, 'hold-off': 30360, 'host inhibit': 30000, 'start bit setup': 4660}
+39237080.00ns INFO     cocotb.regression                  test_firmware_ps2.test_inhibit_mid_frame_abandons_and_resends passed
+39237080.00ns INFO     cocotb.regression                  running test_firmware_ps2.test_inhibited_bus_is_not_used (6/18)
+                                                            The host holds CLK low from reset for 400 us. The device sends
+41658120.01ns INFO     cocotb.tb                          [inhibited-start] frames [('dev->host', 170, True, False)]; margins (ns) {'CLK high': 8960, 'CLK low': 9860, 'data after rise': 15480, 'data setup': 4660, 'hold-off': 30500, 'host inhibit': 300000, 'start bit setup': 4660}; measured (min, max ns) {'CLK high': (40700, 41040), 'CLK low': (40120, 40140), 'data after rise': (20480, 20480), 'data setup': (20340, 20340), 'hold-off': (80500, 80500), 'host inhibit': (400000, 400000), 'start bit setup': (20340, 20340)}
+41658120.01ns INFO     cocotb.regression                  test_firmware_ps2.test_inhibited_bus_is_not_used passed
+41658120.01ns INFO     cocotb.regression                  running test_firmware_ps2.test_request_to_send_while_a_byte_is_pending (7/18)
+                                                            The host asks to send before the device has sent its BAT code. The
+45657460.01ns INFO     cocotb.tb                          [rts-early] frames [('host->dev', 242, True, False), ('dev->host', 242, True, False)]; margins (ns) {'CLK high': 8340, 'CLK low': 9860, 'ack setup': 4660, 'data after rise': 15360, 'data setup': 4660, 'hold-off': 30320, 'host inhibit': 20000, 'start bit setup': 4660}; measured (min, max ns) {'CLK high': (40700, 41660), 'CLK low': (40120, 40140), 'ack setup': (20340, 20340), 'data after rise': (20360, 20700), 'data setup': (20340, 20340), 'hold-off': (80320, 80320), 'host inhibit': (120000, 120000), 'start bit setup': (20340, 20340)}
+45657460.01ns INFO     cocotb.regression                  test_firmware_ps2.test_request_to_send_while_a_byte_is_pending passed
+45657460.01ns INFO     cocotb.regression                  running test_firmware_ps2.test_host_abort_then_recovery (8/18)
+                                                            The host abandons its own transfer after 5 clocks (CLK held low). The
+52214800.01ns INFO     cocotb.tb                          [host-abort] frames [('dev->host', 170, True, False), ('host->dev', None, False, True), ('host->dev', 244, True, False), ('dev->host', 244, True, False)]; margins (ns) {'CLK high': 8340, 'CLK low': 9860, 'ack setup': 4660, 'data after rise': 15360, 'data setup': 4660, 'hold-off': 30320, 'host inhibit': 20000, 'start bit setup': 4660}; measured (min, max ns) {'CLK high': (40700, 41660), 'CLK low': (40120, 40140), 'ack setup': (20340, 20340), 'data after rise': (20360, 20700), 'data setup': (20340, 20340), 'hold-off': (80320, 80360), 'host inhibit': (120000, 120000), 'start bit setup': (20340, 20340)}
+52214800.01ns INFO     cocotb.regression                  test_firmware_ps2.test_host_abort_then_recovery passed
+52214800.01ns INFO     cocotb.regression                  running test_firmware_ps2.test_unused_pins_are_never_driven (9/18)
+                                                            Across a run with commands and an inhibit, `uio_oe` stays 0 on every
+55661520.01ns INFO     cocotb.regression                  test_firmware_ps2.test_unused_pins_are_never_driven passed
+55661520.01ns INFO     cocotb.regression                  running test_firmware_ps2.test_negative_no_inhibit_check (10/18)
+57753620.01ns INFO     cocotb.tb                          mutant no-inhibit-check: 3 violation(s), kinds ['hold-off', 'inhibit-release', 'stray-clock']; 0 contention episode(s); first: 56253620 ns: inhibit-release: device still holds DATA low when the host releases CLK
+57753620.01ns INFO     cocotb.regression                  test_firmware_ps2.test_negative_no_inhibit_check passed
+57753620.01ns INFO     cocotb.regression                  running test_firmware_ps2.test_negative_short_hold_off (11/18)
+59322000.01ns INFO     cocotb.tb                          mutant short-hold-off: 1 violation(s), kinds ['hold-off']; 0 contention episode(s); first: 58129760 ns: hold-off: device began a frame after CLK was high only 7760 ns (>= 50 us)
+59322000.01ns INFO     cocotb.regression                  test_firmware_ps2.test_negative_short_hold_off passed
+59322000.01ns INFO     cocotb.regression                  running test_firmware_ps2.test_negative_no_ack (12/18)
+62666720.01ns INFO     cocotb.tb                          mutant no-ack: 1 violation(s), kinds ['no-ack']; 0 contention episode(s); first: 61276120 ns: no-ack: DATA is not pulled low by the device at the 11th clock
+62666720.01ns INFO     cocotb.regression                  test_firmware_ps2.test_negative_no_ack passed
+62666720.01ns INFO     cocotb.regression                  running test_firmware_ps2.test_negative_data_too_late (13/18)
+64407620.01ns INFO     cocotb.tb                          mutant data-too-late: 18 violation(s), kinds ['clk-high', 'data-setup']; 0 contention episode(s); first: 62855800 ns: data-setup: DATA changed 40340 ns before fall 1 (5..25 us)
+64407620.01ns INFO     cocotb.regression                  test_firmware_ps2.test_negative_data_too_late passed
+64407620.01ns INFO     cocotb.regression                  running test_firmware_ps2.test_negative_data_too_soon_after_rise (14/18)
+65749320.01ns INFO     cocotb.tb                          mutant data-too-soon: 17 violation(s), kinds ['clk-high', 'data-after-rise']; 0 contention episode(s); first: 64639740 ns: clk-high: CLK high 22900 ns before fall 2 (30..50 us)
+65749320.01ns INFO     cocotb.regression                  test_firmware_ps2.test_negative_data_too_soon_after_rise passed
+65749320.01ns INFO     cocotb.regression                  running test_firmware_ps2.test_negative_even_parity (15/18)
+67269880.01ns INFO     cocotb.tb                          mutant even-parity: 1 violation(s), kinds ['parity']; 0 contention episode(s); first: 66767880 ns: parity: frame [0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1] is not odd parity
+67269880.01ns INFO     cocotb.regression                  test_firmware_ps2.test_negative_even_parity passed
+67269880.01ns INFO     cocotb.regression                  running test_firmware_ps2.test_negative_push_pull_instead_of_open_drain (16/18)
+67731980.02ns ERROR    cocotb.tb                          pad model: uio[2] contention at 67731980.015 ns: design drives 1, external drives 0
+69361980.02ns INFO     cocotb.tb                          mutant push-pull: 0 violation(s), kinds []; 1 contention episode(s); first: None
+69361980.02ns INFO     cocotb.regression                  test_firmware_ps2.test_negative_push_pull_instead_of_open_drain passed
+69361980.02ns INFO     cocotb.regression                  running test_firmware_ps2.test_negative_parity_not_checked (17/18)
+                                                            Skipping the host-parity check is invisible to the bus model (the bus
+72308700.02ns INFO     cocotb.tb                          mutant parity-not-checked: bus violations []; answer 0xed (the golden answer is 0xFE)
+72308700.02ns INFO     cocotb.regression                  test_firmware_ps2.test_negative_parity_not_checked passed
+72308700.02ns INFO     cocotb.regression                  running test_firmware_ps2.test_negative_log_path_can_fail (18/18)
+                                                            Re-grade the golden power-up log with its DATA edges moved 30 us
+73529600.02ns INFO     cocotb.tb                          [log-control] frames [('dev->host', 170, True, False)]; margins (ns) {'CLK high': 8960, 'CLK low': 9860, 'data after rise': 15480, 'data setup': 4660, 'hold-off': 30360, 'start bit setup': 4660}; measured (min, max ns) {'CLK high': (40700, 41040), 'CLK low': (40120, 40140), 'data after rise': (20480, 20480), 'data setup': (20340, 20340), 'hold-off': (80360, 80360), 'start bit setup': (20340, 20340)}
+73529600.02ns INFO     cocotb.tb                          log control: 31 violation(s), kinds ['clk-high', 'data-after-rise', 'data-setup', 'data-while-clk-low', 'parity']
+73529600.02ns INFO     cocotb.regression                  test_firmware_ps2.test_negative_log_path_can_fail passed
+73529600.02ns INFO     cocotb.regression                  *************************************************************************************************************************
+                                                        ** TEST                                                             STATUS  SIM TIME (ns)  REAL TIME (s)  RATIO (ns/s) **
+                                                        *************************************************************************************************************************
+                                                        ** test_firmware_ps2.test_committed_image_is_fresh                   PASS           0.00           0.00          0.00  **
+                                                        ** test_firmware_ps2.test_power_up_frame                             PASS     4020900.00          37.17     108181.17  **
+                                                        ** test_firmware_ps2.test_host_commands_are_acked_and_echoed         PASS    16427460.00          67.47     243492.72  **
+                                                        ** test_firmware_ps2.test_bad_frames_get_resend                      PASS     6797840.00          28.10     241894.16  **
+                                                        ** test_firmware_ps2.test_inhibit_mid_frame_abandons_and_resends     PASS    11990880.00         105.77     113362.19  **
+                                                        ** test_firmware_ps2.test_inhibited_bus_is_not_used                  PASS     2421040.00          22.54     107394.45  **
+                                                        ** test_firmware_ps2.test_request_to_send_while_a_byte_is_pending    PASS     3999340.00          32.91     121516.15  **
+                                                        ** test_firmware_ps2.test_host_abort_then_recovery                   PASS     6557340.00          52.87     124031.73  **
+                                                        ** test_firmware_ps2.test_unused_pins_are_never_driven               PASS     3446720.00          18.23     189069.53  **
+                                                        ** test_firmware_ps2.test_negative_no_inhibit_check                  PASS     2092100.00          14.79     141424.00  **
+                                                        ** test_firmware_ps2.test_negative_short_hold_off                    PASS     1568380.00          11.34     138358.15  **
+                                                        ** test_firmware_ps2.test_negative_no_ack                            PASS     3344720.00          15.23     219632.24  **
+                                                        ** test_firmware_ps2.test_negative_data_too_late                     PASS     1740900.00          11.03     157877.56  **
+                                                        ** test_firmware_ps2.test_negative_data_too_soon_after_rise          PASS     1341700.00           8.28     162037.38  **
+                                                        ** test_firmware_ps2.test_negative_even_parity                       PASS     1520560.00          11.24     135270.64  **
+                                                        ** test_firmware_ps2.test_negative_push_pull_instead_of_open_drain   PASS     2092100.00           6.44     324888.55  **
+                                                        ** test_firmware_ps2.test_negative_parity_not_checked                PASS     2946720.00          10.82     272455.27  **
+                                                        ** test_firmware_ps2.test_negative_log_path_can_fail                 PASS     1220900.00           6.50     187851.52  **
+                                                        *************************************************************************************************************************
+                                                        ** TESTS=18 PASS=18 FAIL=0 SKIP=0                                            73529600.02         460.76     159584.42  **
+                                                        *************************************************************************************************************************
+FST info: dumpfile tb.fst opened for output.

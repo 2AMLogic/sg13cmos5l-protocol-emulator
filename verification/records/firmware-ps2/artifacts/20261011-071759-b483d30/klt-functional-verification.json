@@ -1,0 +1,131 @@
+{
+  "schema_version": 1,
+  "engine": "icarus",
+  "hdl_toplevel": "tt_um_2amlogic_protocol_emulator",
+  "testbench": "test_firmware_ps2",
+  "status": "pass",
+  "test_count": 18,
+  "passed_count": 18,
+  "failed_count": 0,
+  "skipped_count": 0,
+  "tests": [
+    {
+      "name": "test_committed_image_is_fresh",
+      "status": "passed",
+      "sim_time_ns": 0.0,
+      "real_time_s": 0.002
+    },
+    {
+      "name": "test_power_up_frame",
+      "status": "passed",
+      "sim_time_ns": 4020900.0,
+      "real_time_s": 3.374
+    },
+    {
+      "name": "test_host_commands_are_acked_and_echoed",
+      "status": "passed",
+      "sim_time_ns": 16427460.0,
+      "real_time_s": 8.724
+    },
+    {
+      "name": "test_bad_frames_get_resend",
+      "status": "passed",
+      "sim_time_ns": 6797840.0,
+      "real_time_s": 3.662
+    },
+    {
+      "name": "test_inhibit_mid_frame_abandons_and_resends",
+      "status": "passed",
+      "sim_time_ns": 11990500.0,
+      "real_time_s": 9.162
+    },
+    {
+      "name": "test_inhibited_bus_is_not_used",
+      "status": "passed",
+      "sim_time_ns": 2421040.0,
+      "real_time_s": 1.805
+    },
+    {
+      "name": "test_request_to_send_while_a_byte_is_pending",
+      "status": "passed",
+      "sim_time_ns": 3999340.0,
+      "real_time_s": 3.008
+    },
+    {
+      "name": "test_host_abort_then_recovery",
+      "status": "passed",
+      "sim_time_ns": 6557340.0,
+      "real_time_s": 4.859
+    },
+    {
+      "name": "test_unused_pins_are_never_driven",
+      "status": "passed",
+      "sim_time_ns": 3446720.0,
+      "real_time_s": 2.039
+    },
+    {
+      "name": "test_negative_no_inhibit_check",
+      "status": "passed",
+      "sim_time_ns": 2092100.0,
+      "real_time_s": 1.573
+    },
+    {
+      "name": "test_negative_short_hold_off",
+      "status": "passed",
+      "sim_time_ns": 1568380.0,
+      "real_time_s": 1.012
+    },
+    {
+      "name": "test_negative_no_ack",
+      "status": "passed",
+      "sim_time_ns": 3344720.0,
+      "real_time_s": 1.957
+    },
+    {
+      "name": "test_negative_data_too_late",
+      "status": "passed",
+      "sim_time_ns": 1740900.0,
+      "real_time_s": 1.127
+    },
+    {
+      "name": "test_negative_data_too_soon_after_rise",
+      "status": "passed",
+      "sim_time_ns": 1341700.0,
+      "real_time_s": 0.945
+    },
+    {
+      "name": "test_negative_even_parity",
+      "status": "passed",
+      "sim_time_ns": 1520560.0,
+      "real_time_s": 1.034
+    },
+    {
+      "name": "test_negative_push_pull_instead_of_open_drain",
+      "status": "passed",
+      "sim_time_ns": 2092100.0,
+      "real_time_s": 1.02
+    },
+    {
+      "name": "test_negative_parity_not_checked",
+      "status": "passed",
+      "sim_time_ns": 2946720.0,
+      "real_time_s": 1.562
+    },
+    {
+      "name": "test_negative_log_path_can_fail",
+      "status": "passed",
+      "sim_time_ns": 1220900.0,
+      "real_time_s": 0.728
+    }
+  ],
+  "coverage": null,
+  "trace": null,
+  "environment": {
+    "engine": "icarus",
+    "engine_version": "13.0",
+    "cocotb_version": "2.1.0",
+    "results_xml": "<repo>/verification/.klt/functional-verification/results_icarus.xml",
+    "random_seed": 1,
+    "sdf": null
+  }
+}
