@@ -437,6 +437,7 @@ Icarus, provisioned by `./scripts/setup-env.sh` (see
    against the independent reference model:
    - UART: `klt functional-verification verification/request-firmware-uart.json --format json`
    - SPI, all four modes: `klt functional-verification verification/request-firmware-spi.json --format json`
+   - SPI, three bytes under one CS (mode 0): `klt functional-verification verification/request-firmware-spi-burst.json --format json`
    - I2C write, Fast and Standard: `klt functional-verification verification/request-firmware-i2c.json --format json`
    - I2C write/repeated-START/read and clock stretch: `klt functional-verification verification/request-firmware-i2c-sr.json --format json`
    - Assembler/load round trip: `klt functional-verification verification/request-firmware-roundtrip.json --format json`
