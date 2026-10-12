@@ -460,7 +460,8 @@ gates. The host-side loader is issue #118.
   receivers (50 / 434 / 5,208 cycles per bit) driven by waveforms from
   `reference_models/uart.py` with bounded edge jitter and +-2 % rate
   error, byte and cycle-exact sample timing checked at the pins, plus the
-  nested-`WAIT` `uart_tx_9600.asm` transmitter judged by `UartDecoder`;
+  nested-`WAIT` `uart_tx_9600.asm` (5,208) and `uart_tx_115200.asm` (434,
+  issue #281) transmitters judged by `UartDecoder`;
   negative controls included. Driven by `klt functional-verification` (see
   `request-firmware-uart-rx.json`); evidence in
   `records/firmware-uart-rx/`.

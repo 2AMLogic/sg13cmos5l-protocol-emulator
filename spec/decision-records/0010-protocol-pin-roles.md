@@ -372,6 +372,7 @@ inventory is a hard failure.
   "inventory": [
     {"file": "firmware/asm/uart_tx.asm", "profile": "uart_tx", "patterns": ["asm_ports", "uart_tx_mask"]},
     {"file": "firmware/asm/uart_tx_9600.asm", "profile": "uart_tx", "patterns": ["asm_ports", "uart_tx_mask"]},
+    {"file": "firmware/asm/uart_tx_115200.asm", "profile": "uart_tx", "patterns": ["asm_ports", "uart_tx_mask"]},
     {"file": "firmware/asm/uart_rx.asm", "profile": "uart_rx", "patterns": ["asm_ports", "uart_rx_mask", "uart_rx_debug"]},
     {"file": "firmware/asm/uart_rx_115200.asm", "profile": "uart_rx", "patterns": ["asm_ports", "uart_rx_mask", "uart_rx_debug"]},
     {"file": "firmware/asm/uart_rx_9600.asm", "profile": "uart_rx", "patterns": ["asm_ports", "uart_rx_mask", "uart_rx_debug"]},
@@ -443,7 +444,8 @@ afterwards by #143 (see "UART receive" below). The checker runs in
 that as the `uart_rx` phase (`RX` on `ui_in[1]`, a sampled role) and the
 `uart_rx_result` phase (`RESULT[n]` on `uo_out[n]`), checked by the `uart_rx`
 profile. `uart_tx_9600.asm` is the low-baud transmitter and uses the existing
-`uart_tx` profile (TX on `uo_out[0]`).
+`uart_tx` profile (TX on `uo_out[0]`). `uart_tx_115200.asm` (issue #281, the
+115,200-class transmitter) is inventoried the same way.
 
 RX shares no pin with the `PROG_SER` load pin any more. #143 recorded RX on
 `ui_in[0]`, shared with `PROG_SER` (the two never overlapped in time: the

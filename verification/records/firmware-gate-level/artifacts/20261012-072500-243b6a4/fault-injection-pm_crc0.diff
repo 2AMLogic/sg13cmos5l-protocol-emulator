@@ -1,0 +1,16 @@
+9298c9298
+<     .A1(\pm_crc[0] ),
+---
+>     .A1(1'b0),
+13836c13836
+<  sg13cmos5l_a221oi_1 _3685_ (.B2(\pm_crc[0] ),
+---
+>  sg13cmos5l_a221oi_1 _3685_ (.B2(1'b0),
+15584c15584
+<     .A(\pm_crc[0] ),
+---
+>     .A(1'b0),
+19182c19182
+<  sg13cmos5l_dlygate4sd3_1 hold697 (.A(\pm_crc[0] ),
+---
+>  sg13cmos5l_dlygate4sd3_1 hold697 (.A(1'b0),

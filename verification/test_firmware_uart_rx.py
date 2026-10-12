@@ -124,6 +124,8 @@ BUILD_DIR = REPO_ROOT / "firmware" / "build"
 #: `; BIT-PERIOD-CYCLES n` line in each committed .asm).
 RX_PROGRAMS = {"uart_rx": 50, "uart_rx_115200": 434, "uart_rx_9600": 5208}
 TX_LOW = ("uart_tx_9600", 5208)
+#: Mid-range transmitter (issue #281): 434 cycles/bit, the 115,200-class point.
+TX_MID = ("uart_tx_115200", 434)
 #: The pin-dependent branches in an RX program: the `sync` and `poll`
 #: start-edge handshakes and the one post-stop-bit re-arm choice.
 RX_LINT_WARNINGS = 3
@@ -505,7 +507,7 @@ async def test_committed_images_are_fresh(dut):
     store, carry the bit period this bench grades, and the assembler's
     data-dependent-latency lint flags exactly the receivers' handshake
     branches (and nothing at all in the transmitter)."""
-    for stem, period in [*RX_PROGRAMS.items(), TX_LOW]:
+    for stem, period in [*RX_PROGRAMS.items(), TX_LOW, TX_MID]:
         program = asm.assemble_file(ASM_DIR / f"{stem}.asm")
         drift = asm.check_against(program, BUILD_DIR)
         assert not drift, f"{stem}: committed firmware/build/ artifacts drifted: {drift}"
@@ -674,7 +676,20 @@ async def test_uart_tx_9600_low_baud(dut):
     graded by the independent model at 5,208 cycles/bit, every TX edge on a
     whole multiple of the period; a 1.025x re-timing of the captured
     waveform must fail `check_frame`."""
-    stem, period = TX_LOW
+    await run_tx_program(dut, *TX_LOW)
+
+
+@cocotb.test()
+async def test_uart_tx_115200_class(dut):
+    """Mid-range transmit (issue #281): `uart_tx_115200` frames recovered and
+    graded by the independent model at 434 cycles/bit (one outer pass plus a
+    remainder WAIT), every TX edge on a whole multiple of the period, the
+    row-10 drift bound checked, and the 1.025x control must fail.  Core
+    cycles only: no baud is claimed (row 4's clock is unconfirmed)."""
+    await run_tx_program(dut, *TX_MID)
+
+
+async def run_tx_program(dut, stem, period):
     cocotb.start_soon(Clock(dut.clk, CLK_PERIOD_NS, unit="ns").start())
     words = load_image(stem)
     assert len(words) <= 256, f"{stem}: exceeds the program store"
