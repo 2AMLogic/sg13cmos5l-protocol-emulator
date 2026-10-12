@@ -184,9 +184,9 @@ cited gate-level records and the runner's `NETLIST` default
 | Figure | Flow | Record |
 |---|---|---|
 | 20 ns (50 MHz) closes at all three corners, 0 setup and 0 hold violations. Worst setup +5.785 ns (`nom_slow_1p08V_125C`), worst hold +0.0830 ns (`nom_fast_1p32V_m40C`). Max-slew and max-cap violations: 0 at every corner. | **LibreLane**, post-route OpenSTA | [librelane-corner-timing 20261011-144900](../../verification/records/librelane-corner-timing/records/20261011-144900-e5a0bae.md) |
-| Top: 2,526 instances, 35,224.3836 um^2 | **klt/Yosys** synthesis (typ corner deck, 20 ns recipe) | [synthesis-baseline 20261011-114659](../../verification/records/synthesis-baseline/records/20261011-114659-e5a0bae.md) |
+| Top: 2,526 instances, 35,224.3836 um^2 | **klt/Yosys** synthesis (typ corner deck, 20 ns recipe) | [synthesis-baseline 20261012-204120](../../verification/records/synthesis-baseline/records/20261012-204120-0af4491.md) |
 | Placed standard-cell area 46,047.7 um^2 (3,414 instances); LibreLane's own synthesis step reports 2,586 cells, 35,897.26 um^2 | **LibreLane** | the corner-timing record above |
-| klt STA over six corners | klt | [sta-corner-sweep 20261011-114702](../../verification/records/sta-corner-sweep/records/20261011-114702-e5a0bae.md): still **BLOCKED**, no result (`klt sta` fails on the OpenROAD container runtime; klayout-tools#2635). No number. |
+| klt STA over six corners | klt | [sta-corner-sweep 20261012-204122](../../verification/records/sta-corner-sweep/records/20261012-204122-0af4491.md): still **BLOCKED**, no result (`klt sta` fails on the OpenROAD container runtime; klayout-tools#2635). No number. |
 
 The two area numbers come from different synthesis tools and are reported side
 by side; a mismatch is a finding, not a figure to choose between.
@@ -252,7 +252,7 @@ and the header of `flow/run-post-layout-sdf.sh`:
 - The klt DRC is `clean` on that GDS; the klt-flow LVS check against the
   klt/Yosys reference is `unmet / check_errored` (klayout-tools#2941); the
   compare against the run's own post-route netlist is `match`
-  ([librelane-gds-signoff-check 20261011-144308](../../verification/records/librelane-gds-signoff-check/records/20261011-144308-e5a0bae.md)).
+  ([librelane-gds-signoff-check 20261012-204118](../../verification/records/librelane-gds-signoff-check/records/20261012-204118-0af4491.md)).
 - The T1 verdict of record is `tier: null`, **5 of 11 items met**
   ([signoff-baseline 20261011-224007](../../verification/records/signoff-baseline/records/20261011-224007-de4a99e.md)).
   This document does not move that.
