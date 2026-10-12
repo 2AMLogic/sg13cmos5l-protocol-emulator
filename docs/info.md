@@ -240,6 +240,7 @@ The table is mechanically checked against `firmware/asm/`,
 | [`uart_rx`](../firmware/asm/uart_rx.asm) | UART RX, 8N1 | 50 per bit | 132 | 488 | [`test_firmware_uart_rx.py`](../verification/test_firmware_uart_rx.py) | [firmware-uart-rx 20261010-202835-bce5bf4](../verification/records/firmware-uart-rx/records/20261010-202835-bce5bf4.md) |
 | [`uart_rx_115200`](../firmware/asm/uart_rx_115200.asm) | UART RX, 8N1, 115200-baud class | 434 per bit | 168 | 3878 | [`test_firmware_uart_rx.py`](../verification/test_firmware_uart_rx.py) | [firmware-uart-rx 20261010-202835-bce5bf4](../verification/records/firmware-uart-rx/records/20261010-202835-bce5bf4.md) |
 | [`uart_rx_9600`](../firmware/asm/uart_rx_9600.asm) | UART RX, 8N1, 9600-baud class (nested `WAIT`) | 5208 per bit | 168 | 2791 | [`test_firmware_uart_rx.py`](../verification/test_firmware_uart_rx.py) | [firmware-uart-rx 20261010-202835-bce5bf4](../verification/records/firmware-uart-rx/records/20261010-202835-bce5bf4.md) |
+| [`uart_tx_115200`](../firmware/asm/uart_tx_115200.asm) | UART TX, 8N1, 115,200-class (one outer pass + `WAIT`), frames 0x5A then 0xA5 | 434 per bit | 177 | 8882 | [`test_firmware_uart_rx.py`](../verification/test_firmware_uart_rx.py) | [firmware-uart-rx 20261012-054843-243b6a4](../verification/records/firmware-uart-rx/records/20261012-054843-243b6a4.md) |
 | [`uart_tx_9600`](../firmware/asm/uart_tx_9600.asm) | UART TX, 8N1, 9600-baud class (nested `WAIT`), frames 0x5A then 0xA5 | 5208 per bit | 177 | 6578 | [`test_firmware_uart_rx.py`](../verification/test_firmware_uart_rx.py) | [firmware-uart-rx 20261010-202835-bce5bf4](../verification/records/firmware-uart-rx/records/20261010-202835-bce5bf4.md) |
 | [`spi_mode0`](../firmware/asm/spi_mode0.asm) | SPI controller, CPOL 0 / CPHA 0 | 4 per SCLK period (ceiling burst), 10 per bit (functional burst) | 137 | 197 | [`test_firmware_spi.py`](../verification/test_firmware_spi.py) | [firmware-spi 20261011-012805-428e12f](../verification/records/firmware-spi/records/20261011-012805-428e12f.md) |
 | [`spi_mode1`](../firmware/asm/spi_mode1.asm) | SPI controller, CPOL 0 / CPHA 1 | 4 per SCLK period (ceiling burst), 10 per bit (functional burst) | 138 | 198 | [`test_firmware_spi.py`](../verification/test_firmware_spi.py) | [firmware-spi 20261011-012805-428e12f](../verification/records/firmware-spi/records/20261011-012805-428e12f.md) |
@@ -553,7 +554,7 @@ No pin claim here is backed by silicon or by the LibreLane flow.
   `ui_in[1]`-to-`uo_out` path is 0.58 to 1.40 ns pin to pin in LibreLane's post-route analysis,
   under the flow's assumed 4 ns input and output delays; no pad has been measured.
   Firmware, the control-space, boot-ROM, SPI-flash-boot, UART-load, primitive and load-integrity benches on that netlist at zero delay:
-  [`firmware-gate-level`](../verification/records/firmware-gate-level/records/20261011-125000-e5a0bae.md).
+  [`firmware-gate-level`](../verification/records/firmware-gate-level/records/20261012-072500-243b6a4.md).
   Firmware with back-annotated delays: UART TX, SPI and I2C repeated START, as above; nothing else.
 - **klt synthesis and timing.** `klt sta` does not yet support the SRAM
   macro, so the two flows do not agree on timing; per the project rule that

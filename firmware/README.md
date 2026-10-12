@@ -21,7 +21,9 @@ firmware/
                          (issue #91); uart_rx_115200.asm (434) and
                          uart_rx_9600.asm (5,208) are the same receiver
                          on nested-WAIT bit periods; uart_tx_9600.asm is
-                         the nested-WAIT transmitter
+                         the nested-WAIT transmitter, and
+                         uart_tx_115200.asm (434, issue #281) the same
+                         transmitter at the 115,200-class period
     i2c_fast.asm         bit-banged I2C controller, Fast-mode 400 kHz
                          phase budget (issue #73, the I2C third of #23)
     i2c_std.asm          the same controller on the Standard-mode
@@ -293,6 +295,7 @@ firmware, with no UART hardware:
 | `uart_rx_115200.asm` | 434 | 168 | nested `WAIT`, 1 outer pass |
 | `uart_rx_9600.asm` | 5,208 | 168 | nested `WAIT`, 20 outer passes |
 | `uart_tx_9600.asm` | 5,208 | 177 | nested `WAIT` transmitter |
+| `uart_tx_115200.asm` | 434 | 177 | nested `WAIT` transmitter, 1 outer pass (issue #281) |
 
 All fit DR 0001's 256-word program store. Baud figures are arithmetic at
 the unconfirmed 50 MHz clock (5,208 cycles x 20 ns = ~9,600 baud); the
@@ -313,6 +316,17 @@ decrement (outer counts are doubled) and each sample uses six `SHF LEFT` and
 a `NOP`: word and cycle counts are unchanged.
 The assembler's data-dependent-latency lint reports exactly three warnings
 per receiver: the two start-edge handshakes and the post-stop re-arm.
+
+**`uart_tx_115200.asm` (issue #281).** The transmitter side of the
+115,200-class point (434 core cycles per bit), firmware only: the same
+shape as `uart_tx_9600.asm` with one outer pass (`LDI 1; WAIT 255; SUB;
+BNZ` = 259 cycles with the `LDI`) plus a remainder `WAIT` of 170 for a data
+bit (171 after the start bit, 173 before the stop bit), so 434 is hit
+exactly and the 256-word store is not stressed (177 words). Graded by
+`test_uart_tx_115200_class`: `UartDecoder` recovers both frames, every TX
+edge gap is a whole multiple of 434 cycles, and a 1.025x re-timed capture
+must fail `check_frame`. A core-cycle count; no baud is claimed (434 x 20 ns
+is ~115,200 baud only at row 4's unconfirmed 50 MHz).
 
 Bench: `verification/test_firmware_uart_rx.py`
 (`verification/request-firmware-uart-rx.json`), evidence in
