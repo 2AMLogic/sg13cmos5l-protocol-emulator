@@ -59,7 +59,7 @@ A short, hand-written view of the table below, added 2026-10-12 (issue #282). It
 | 7 | unmet | The flip-flop memory misses the budget; the SRAM-macro path is Proposed (DR 0005) and the klt place-and-route leg is blocked on klayout-tools#2635 | #273 | [row 7](#spec-rows-spectarget-specmd) |
 | 8 | unmet | SRAM timing is zero-delay in simulation and SDF setup/hold limits are not checked by Icarus; the gate-level evidence for the changed I2C images is stale | none | [row 8](#spec-rows-spectarget-specmd) |
 | 9 | met | Licence set, template pulled in and all four `gds`-workflow jobs green on the harness stub; the final design's sign-off run is still to come | none | [row 9](#spec-rows-spectarget-specmd) |
-| 10 | unmet | Cycles only, no measured baud; TX at 434 cycles/bit is unmeasured | #281 | [row 10](#spec-rows-spectarget-specmd) |
+| 10 | unmet | Cycles only, no measured baud; TX at 434 cycles/bit is unmeasured | none | [row 10](#spec-rows-spectarget-specmd) |
 | 11 | unmet | The f_clk/4 ceiling is a cycle ratio at row 4's unconfirmed clock; pad edge rates are uncharacterized and multi-byte bursts under one CS are untested | none | [row 11](#spec-rows-spectarget-specmd) |
 | 12 | unmet | Timing is in cycles at row 4's unconfirmed clock on a zero-delay pad model; gate-level and SDF records for the 70/55 Fast-mode images are stale | #262, #272, #275 | [row 12](#spec-rows-spectarget-specmd) |
 | 13 | proposed | Not in DR 0004's register; WS2812 and PS/2 pass their models at RTL and gate level, but the row is not ratified | none | [row 13](#spec-rows-spectarget-specmd) |

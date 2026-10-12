@@ -1,0 +1,27 @@
+name: digest-issue-state
+
+# Weekly + manual check that the issues named in docs are in the state the
+# text claims, and that every issue in the gap digest is still open
+# (issue #285). Deliberately NOT a pull_request/push gate: it needs the
+# network and its answer changes without any commit.
+on:
+  schedule:
+    - cron: "17 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: read
+
+jobs:
+  digest-issue-state:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Docs issue states
+        run: python3 scripts/check_docs_issue_states.py --repo "$GITHUB_REPOSITORY"
+      - name: Gap digest open issues
+        if: ${{ !cancelled() }}
+        run: python3 scripts/check_docs_issue_states.py --digest --repo "$GITHUB_REPOSITORY"
