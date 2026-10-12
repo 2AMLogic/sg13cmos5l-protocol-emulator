@@ -2,7 +2,9 @@
 
 Status: **written 2026-10-11** for issue #134 (deliverable D6) from issue #235.
 It describes evidence that is in the repository. It does not mark target-spec
-row 13 met: the row is Proposed and outside DR 0004's register. Its primary
+row 13 met: the row is Proposed and outside DR 0004's register, so the
+2026-10-11 two-key act (PR #242), which ratified rows 1-12, did not bind it.
+Its primary
 column is [`row13-ws2812.md`](row13-ws2812.md).
 
 ## What the stretch column asks
@@ -30,9 +32,11 @@ file existed. It checked the choice against DR 0017's exclusion list and a
    generates.** One program does both phase relationships (the host reads on the
    falling edge, the device on the rising edge).
 
-The freeze held: `scripts/check_isa_freeze.py` reports the same eleven pinned
-files and the same two amendments as before this work, and no RTL, assembler or
-ISA-model byte changed.
+The freeze held: when this work was done, `scripts/check_isa_freeze.py`
+reported the same eleven pinned files and the same two amendments as before
+it, and no RTL, assembler or ISA-model byte changed. `main` has gained
+amendments since (seven as of `main` @ `a9ac6940`, 2026-10-11, each with
+`invalidates_row13_evidence: false`).
 
 ## What was built
 
@@ -43,8 +47,8 @@ ISA-model byte changed.
 | Bench | [`verification/test_firmware_ps2.py`](../../verification/test_firmware_ps2.py) |
 | Pad model | [`verification/uio_pads.py`](../../verification/uio_pads.py): pull-ups on both lines, the other six `uio` pins tied low; the bench requires no contention and the design only ever driving CLK and DATA low |
 | Pin roles | `ps2` phase in [DR 0010](../../spec/decision-records/0010-protocol-pin-roles.md): CLK `uio[2]`, DATA `uio[3]`, the standard I2C Pmod row with its pull-ups |
-| RTL evidence | [`firmware-ps2` 20261011-054024-1623ac4](../../verification/records/firmware-ps2/records/20261011-054024-1623ac4.md) |
-| Gate-level evidence | [`firmware-ps2-gate-level` 20261011-061202-f90bef2](../../verification/records/firmware-ps2-gate-level/records/20261011-061202-f90bef2.md) (LibreLane netlist, zero-delay) |
+| RTL evidence | [`firmware-ps2` 20261011-104232-d81097f](../../verification/records/firmware-ps2/records/20261011-104232-d81097f.md) |
+| Gate-level evidence | [`firmware-ps2-gate-level` 20261011-120015-e5a0bae](../../verification/records/firmware-ps2-gate-level/records/20261011-120015-e5a0bae.md) (LibreLane netlist, zero-delay) |
 
 ## What was measured
 

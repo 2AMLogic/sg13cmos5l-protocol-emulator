@@ -1,19 +1,43 @@
 # How this design was verified
 
-Status: **current report, written before the final ISA freeze.** Deliverable D4
+Status: **current report.** First written before ratification; refreshed
+after the two-key act of 2026-10-11 (PR #242), which ratified the target
+spec's rows 1-12 and DRs 0001-0004. The submission ISA is frozen
+mechanically (DR 0017, itself still Proposed). Deliverable D4
 of [`docs/submission/README.md`](README.md). Issue #214.
 
-- **Reviewed commit:** `main` @ `9fb7815` (2026-10-10). Every record cited below
-  is a file at that commit. Nothing here is a new measurement: this document
-  reads the existing evidence, it does not run anything.
-- **Not frozen.** DR 0012 (control space) and DR 0013 (program loading) are
-  implemented but **Proposed**; the submission ISA is not frozen (#135), and
-  DR 0013's UART load has an open finding (F8, #211). A change to the RTL
-  makes the records for it stale, and they are then re-minted, not edited.
-- **Provisional governance.** The target spec and DRs 0001-0004 are **Proposed,
-  not ratified**: the two-key ratification never ran
-  ([DR 0006](../../spec/decision-records/0006-two-key-ratification-never-ran.md),
-  #44). Every "pass" below is evidence against a proposed contract. No spec
+- **Reviewed:** `main` as of 2026-10-11, at `a9ac6940` (this PR's
+  merge-base; the newest cited record, `isa-lockstep`
+  `20261011-182004-080e6be`, landed with PR #242's merge `72f48153`). Every
+  record cited below is a file on `main` at `a9ac6940`, and issue and PR
+  states are as of that date. Nothing here is a new measurement: this
+  document reads the existing evidence, it does not run anything.
+- **Frozen; partly ratified.** The submission ISA is frozen mechanically by
+  [DR 0017](../../spec/decision-records/0017-submission-isa-freeze.md): it
+  pins the 11 ISA-defining files in `spec/isa-freeze.json`, and
+  `scripts/check_isa_freeze.py` (part of `npm run lint`) refuses any change to
+  them that does not carry an amendment. DR 0001 (the ISA) is **Ratified**
+  by the two-key act; DR 0017 itself, DR 0012 (control space), DR 0013
+  (program loading) and DR 0016 (flag and shift details) are still
+  **Proposed**.
+  DR 0013's UART-load finding F8 was resolved by #211 (closed 2026-10-11,
+  PR #248 merged): a boot-ROM change, which DR 0017 does not pin, plus a
+  dated DR 0013 entry carried by a `no-behaviour-change` freeze amendment
+  (section 3.4). A change to the RTL makes the records for it stale, and they
+  are then re-minted, not edited.
+- **Governance.** The target spec's rows 1-12 (as DR 0004 registers them)
+  and DRs 0001-0004 are **Ratified** as targets by the two `RATIFY-KEY`
+  reviews on PR #242 (EE key `approve`, market key `adequate-for-catalog`,
+  both at the PR's head; merged 2026-10-11T20:57Z as `72f48153`; issue #44
+  closed), recorded in
+  [DR 0009](../../spec/decision-records/0009-two-key-ratification-act.md).
+  Earlier, the first claimed ratification never happened
+  ([DR 0006](../../spec/decision-records/0006-two-key-ratification-never-ran.md)),
+  and the first real act, PR #84, was refused and closed unmerged. Rows 13
+  and 14 and every other decision record (DR 0005, 0007, 0008, 0010-0018,
+  0020) stay **Proposed**, so a "pass" against them is evidence against a
+  proposed contract. Ratifying a row binds it as a target; it does not mark
+  it met. No spec
   row was relaxed to obtain a result, and no row's grade is changed by this
   document (see [Spec grades](#spec-grades-are-unchanged)).
 - **No silicon.** Nothing has been taped out or measured. Every figure is a
@@ -32,9 +56,9 @@ that core, produces waveforms that an *independent* checker accepts.
 |---|---|---|
 | Instruction level | Every opcode and control-space register, per clock edge | A table-driven ISA simulator written from DR 0001/0012 (`verification/reference_models/isa.py`), compared in lockstep |
 | Timing contract | No data-dependent latency; pin writes land one cycle after the `OUT` | Formal monitors (SVA) written from DR 0001's text, checked with Yosys/ABC/Z3 |
-| Protocol level | Committed firmware drives pins; a model grades the waveform | `verification/reference_models/{uart,spi,i2c,spi_flash}.py`, validated on their own (11/11, `protocol-reference-models`) |
+| Protocol level | Committed firmware drives pins; a model grades the waveform | `verification/reference_models/{uart,spi,i2c,spi_flash}.py`, validated on their own (13/13, `protocol-reference-models`) |
 | Load and boot | Serial load, boot ROM, SPI-flash and UART boot, reset/power-up | An independent UART host (`uart_boot_host.py`), SPI-flash model, CRC-16/XMODEM from `binascii`, and a reset-coverage listing |
-| Netlist level | The same benches on the LibreLane routed netlist | The same oracles; zero-delay, then SDF-annotated for the core bench |
+| Netlist level | The same benches on the LibreLane routed netlist | The same oracles; zero-delay, then SDF-annotated for the core bench and the UART TX, SPI and I2C repeated-START firmware |
 
 Two rules make a pass worth citing:
 
@@ -46,8 +70,10 @@ Two rules make a pass worth citing:
   says why, never edited. `python3 verification/check_records.py` (in
   `npm run lint`) enforces append-only against `origin/main` and recomputes
   the hash of every input cited by every live record, so a record whose
-  source has since changed fails the lint. At `9fb7815` it reports
-  `PASS: all records valid` (run for this document).
+  source has since changed fails the lint. `python3 verification/check_docs_records.py`
+  (also in `npm run lint`) applies the same rule to this directory: a document
+  under `docs/submission/` that cites a superseded record, or a record that does
+  not exist, fails it.
 
 ## 2. Which flow produced which evidence
 
@@ -59,7 +85,7 @@ not interchangeable, so the matrix in section 3 names one for every row.
 | **RTL simulation** | Icarus 13.0 + cocotb 2.1.0, via `klt functional-verification` | none | Function and cycle counts. No synthesis or timing information. |
 | **Formal** | Yosys + `yosys-smtbmc`/Z3, and `yosys-abc` (`scorr` + `pdr`) | none | Proofs hold for the *harness model* only (section 4). |
 | **Zero-delay gate level** | Icarus + cocotb on the **LibreLane** routed netlist (`flow/run-firmware-gate-level.sh`, `flow/run-reset-power-up-gate-level.sh`) | none | Catches synthesis divergence (X-propagation, inferred state). Says nothing about timing. |
-| **SDF-annotated routed simulation** | Same netlist with the LibreLane post-route SDF, three PVT corners (`flow/run-post-layout-sdf.sh`) | back-annotated, with omissions (section 5) | Does the core bench's outcome change with real delay. Core bench only. |
+| **SDF-annotated routed simulation** | Same netlist with the LibreLane post-route SDF, three PVT corners (`flow/run-post-layout-sdf.sh`) | back-annotated, with omissions (section 5) | Does a bench's outcome change with real delay. The core bench and three protocol benches only (section 5). |
 | **STA** | **LibreLane** post-route OpenSTA, 20 ns clock, three corners | n/a | LibreLane numbers only. The klt STA leg is blocked by klayout-tools#2635 and claims nothing. |
 | **Physical signoff** | The Tiny Tapeout `gds`/`precheck` workflow (LibreLane); klt DRC/extract/LVS as a second opinion | n/a | See section 6. |
 | **Synthesis area** | **klt/Yosys** flow (`synthesis-baseline`) and, separately, LibreLane's own synthesis | n/a | Two flows, two numbers, never merged. |
@@ -72,7 +98,7 @@ pull-up rise time or pad drive strength.
 
 ## 3. Claim matrix
 
-Records are the latest live ones at `9fb7815`. "Repro" is the exact command from
+Records are the live ones on `main` at `a9ac6940`. "Repro" is the exact command from
 the record's *Run configuration*; the one-line cold start for the RTL benches is
 `scripts/run-rtl-benches.sh` after `./scripts/setup-env.sh`. The index of every
 command, bench and pinned tool is
@@ -82,11 +108,11 @@ command, bench and pinned tool is
 
 | Claim | Oracle | Level / flow | Record | Repro | Limits |
 |---|---|---|---|---|---|
-| All 16 opcodes and the DR 0012 control space match the ISS on every edge of 400 seeded programs (27,983 edges); counted coverage gate met | `reference_models/isa.py` | RTL, Icarus | [isa-lockstep 20261010-132631](../../verification/records/isa-lockstep/records/20261010-132631-8372c57.md): PASS 4/4 | `klt functional-verification verification/request-isa-lockstep.json --format json` | Programs run from program memory after a serial load; boot-ROM fetch is not in scope. Reads RTL hierarchy, so no gate-level lockstep. The four details DR 0001 leaves open are ruled by DR 0016, which is **Proposed**. |
+| All 16 opcodes and the DR 0012 control space match the ISS on every edge of 400 seeded programs (32,471 edges); counted coverage gate met | `reference_models/isa.py` | RTL, Icarus | [isa-lockstep 20261011-182004](../../verification/records/isa-lockstep/records/20261011-182004-080e6be.md): PASS 4/4 | `klt functional-verification verification/request-isa-lockstep.json --format json` | Programs run from program memory after a serial load; boot-ROM fetch is not in scope. Reads RTL hierarchy, so no gate-level lockstep. The four details DR 0001 leaves open are ruled by DR 0016, which is **Proposed**. |
 | ISS lockstep catches single-defect cores | Ten mutant cores (`isa_lockstep_mutants.py`) | RTL | same record | `python3 verification/isa_lockstep_mutants.py --out <dir>` | The mutant list is the record's; a defect outside it is not claimed. |
-| Control space: reset values, readback, reserved indices, fixed stalls, I2C images use `UIO_OD` open-drain | Bench plus mutants | RTL | [control-space 20261010-132618](../../verification/records/control-space/records/20261010-132618-8372c57.md): PASS 9/9 | `klt functional-verification verification/request-control-space.json --format json`; `python3 verification/control_space_mutants.py --out <dir>` | Zero-delay; gate-level copy in 3.5. |
-| `no_data_dependent_latency` holds on the shipped core, from either instruction source | Independent SVA monitor over DR 0001's latency table | **Formal**, bounded (BMC depth 30) | [no-data-dependent-latency 20261009-215419](../../verification/records/no-data-dependent-latency/records/20261009-215419-1dc1842.md): PASS, 13 covers reached | `./verification/formal/run-no-data-dependent-latency.sh <dir>`; `verification/formal/test-mutant-gate.sh` | **Bounded, not unbounded**: k-induction did not close (the record says why). The harness quantifies over a free 8-word program table and an 8-word ROM table, with `serial_loaded` a constant per trace. |
-| `pin_write_latency`: an `OUT` is visible one cycle later, never earlier, nothing else moves an output | Independent shadow-ISA monitor | **Formal**, ABC `scorr`+`pdr` | [pin-write-latency 20261009-214736](../../verification/records/pin-write-latency/records/20261009-214736-1dc1842.md): 6/6 (EDGE) and 8/8 (FINE) proved; 15 of 15 mutants rejected | `./verification/formal/run-pin-write-latency.sh <dir>` | **Unbounded only within the harness model**, and resting on one engine; the scorr-independent bounded cross-check reached only 9 cycles (EDGE) and 14 samples (FINE). Serial shift-in is not modelled. |
+| Control space: reset values, readback, reserved indices, fixed stalls, I2C images use `UIO_OD` open-drain | Bench plus mutants | RTL | [control-space 20261011-165710](../../verification/records/control-space/records/20261011-165710-56ebaf9.md): PASS 10/10 | `klt functional-verification verification/request-control-space.json --format json`; `python3 verification/control_space_mutants.py --out <dir>` | Zero-delay; gate-level copy in 3.5. |
+| `no_data_dependent_latency` holds on the shipped core, from either instruction source | Independent SVA monitor over DR 0001's latency table | **Formal**, bounded (BMC depth 30) | [no-data-dependent-latency 20261010-160900](../../verification/records/no-data-dependent-latency/records/20261010-160900-9d62f29.md): PASS, 14 covers reached | `./verification/formal/run-no-data-dependent-latency.sh <dir>`; `verification/formal/test-mutant-gate.sh` | **Bounded, not unbounded**: k-induction did not close (the record says why). The harness quantifies over a free 8-word program table and an 8-word ROM table, with `serial_loaded` a constant per trace. |
+| `pin_write_latency`: an `OUT` is visible one cycle later, never earlier, nothing else moves an output | Independent shadow-ISA monitor | **Formal**, ABC `scorr`+`pdr` | [pin-write-latency 20261010-161000](../../verification/records/pin-write-latency/records/20261010-161000-9d62f29.md): 6/6 (EDGE) and 8/8 (FINE) proved; 15 of 15 mutants rejected | `./verification/formal/run-pin-write-latency.sh <dir>` | **Unbounded only within the harness model**, and resting on one engine; the scorr-independent bounded cross-check reached only 9 cycles (EDGE) and 14 samples (FINE). Serial shift-in is not modelled. |
 
 ### 3.2 Protocol firmware, directed benches
 
@@ -96,26 +122,27 @@ independent model.
 
 | Claim | Oracle | Record | Repro | Limits |
 |---|---|---|---|---|
-| UART TX (three rates) | `reference_models/uart.py` | [firmware-uart 20261010-132629](../../verification/records/firmware-uart/records/20261010-132629-8372c57.md): PASS 3/3 | `klt functional-verification verification/request-firmware-uart.json --format json` | Cycles, not baud: the clock is unconfirmed (row 4). |
-| UART RX (50 / 434 / 5,208 cycles per bit) on `ui_in[1]`, bounded jitter and ±2 % rate error, cycle-exact sample spacing; `ui_in[0]` has no effect | The model's encoder/decoder | [firmware-uart-rx 20261010-141633](../../verification/records/firmware-uart-rx/records/20261010-141633-5bd61ad.md): PASS 10/10 | `... request-firmware-uart-rx.json ...` | RTL, cycles not baud. |
-| SPI modes 0-3, CS/MOSI/SCLK on `uio[0]/[1]/[3]`, MISO `uio[2]` | `reference_models/spi.py` | [firmware-spi 20261010-132628](../../verification/records/firmware-spi/records/20261010-132628-8372c57.md): PASS 3/3 | `... request-firmware-spi.json ...` | Pad model is logical, zero-delay. |
-| I2C Standard and Fast, write; write / repeated START / read with clock stretching | `reference_models/i2c.py` (checks against NXP UM10204 AC limits) | [firmware-i2c 20261010-132625](../../verification/records/firmware-i2c/records/20261010-132625-8372c57.md): PASS 4/4; [Sr/stretch 20261010-132626](../../verification/records/firmware-i2c/records/20261010-132626-8372c57.md): PASS 5/5 | `... request-firmware-i2c.json ...`, `... request-firmware-i2c-sr.json ...` | Runs through the design's own `uio_oe` (issue #136). Standard mode uses 435 cycles per ordinary clock (about 114.9 kHz at a *nominal* 50 MHz) against the proposed 100 kHz target; the ruling is open (#125). |
-| Reference models are sound on their own, including a 2.5 %-slow UART negative control and frame-pitch grading | Self-validation with random stimulus | [protocol-reference-models 20261010-002540](../../verification/records/protocol-reference-models/records/20261010-002540-b63cb8f.md): PASS 11/11 | `... request-protocol-models.json ...` | UART model documents an isolated-frame blind spot, asserted by a test. |
-| Pad model resolves the real `uio_oe`/`uio_out`; five pad-path RTL defects are caught by both I2C benches | `verification/uio_pads.py` + `test_uio_pad_resolution.py` | [uio-pad-model 20261010-132636](../../verification/records/uio-pad-model/records/20261010-132636-8372c57.md): 5/5, 4/4, 5/5 | `... request-uio-pads.json ...`; `python3 verification/uio_pad_mutants.py --out <dir>` | **Logical, zero-delay pad model**: no electrical behaviour. |
+| UART TX (three rates) | `reference_models/uart.py` | [firmware-uart 20261011-104237](../../verification/records/firmware-uart/records/20261011-104237-d81097f.md): PASS 3/3 | `klt functional-verification verification/request-firmware-uart.json --format json` | Cycles, not baud: the clock is unconfirmed (row 4). |
+| UART RX (50 / 434 / 5,208 cycles per bit) on `ui_in[1]`, bounded jitter and ±2 % rate error, cycle-exact sample spacing; `ui_in[0]` has no effect | The model's encoder/decoder | [firmware-uart-rx 20261011-104239](../../verification/records/firmware-uart-rx/records/20261011-104239-d81097f.md): PASS 10/10 | `... request-firmware-uart-rx.json ...` | RTL, cycles not baud. |
+| SPI modes 0-3, CS/MOSI/SCLK on `uio[0]/[1]/[3]`, MISO `uio[2]` | `reference_models/spi.py` | [firmware-spi 20261011-104233](../../verification/records/firmware-spi/records/20261011-104233-d81097f.md): PASS 3/3 | `... request-firmware-spi.json ...` | Pad model is logical, zero-delay. |
+| I2C Standard and Fast, write; write / repeated START / read with clock stretching | `reference_models/i2c.py` (checks against NXP UM10204 AC limits) | [firmware-i2c 20261011-165726](../../verification/records/firmware-i2c/records/20261011-165726-56ebaf9.md): PASS 4/4; [Sr/stretch 20261011-104207](../../verification/records/firmware-i2c/records/20261011-104207-d81097f.md): PASS 5/5 | `... request-firmware-i2c.json ...`, `... request-firmware-i2c-sr.json ...` | Runs through the design's own `uio_oe` (issue #136). Standard mode uses 500 cycles per ordinary data/ACK clock (258 low / 242 high; 10 us, i.e. 100 kHz at a *nominal* 50 MHz, arithmetic only) so the UM10204 100 kHz f_SCL maximum is bounded by the model; ruled `enforce_500` on #125, 2026-10-10. Fast is 125 cycles. |
+| Reference models are sound on their own, including a 2.5 %-slow UART negative control and frame-pitch grading | Self-validation with random stimulus | [protocol-reference-models 20261010-180436](../../verification/records/protocol-reference-models/records/20261010-180436-9fb7815.md): PASS 13/13 | `... request-protocol-models.json ...` | UART model documents an isolated-frame blind spot, asserted by a test. |
+| Pad model resolves the real `uio_oe`/`uio_out`; five pad-path RTL defects are caught by both I2C benches | `verification/uio_pads.py` + `test_uio_pad_resolution.py` | [uio-pad-model 20261011-104304](../../verification/records/uio-pad-model/records/20261011-104304-d81097f.md): 5/5, 4/4, 5/5 | `... request-uio-pads.json ...`; `python3 verification/uio_pad_mutants.py --out <dir>` | **Logical, zero-delay pad model**: no electrical behaviour. |
 
 ### 3.3 Constrained-random regression
 
 | Claim | Oracle | Record | Repro | Limits |
 |---|---|---|---|---|
-| One recorded seed, `20261009`: 20 generated programs per family for UART TX, SPI, I2C write, I2C write/Sr/read with seeded stretching, and UART RX, each assembled with the DR 0003 assembler and graded by the independent models | `reference_models/{uart,spi,i2c}.py` | [random-regression 20261010-141815](../../verification/records/random-regression/records/20261010-141815-5bd61ad.md): PASS 10/10 (chain 1 of 3 identical re-mints; see the note below) | `klt functional-verification verification/request-random-regression.json --format json` | RTL only. **Not run on gates or with SDF.** 20 cases per family is the shared-host default; `RANDOM_REGRESSION_CASES=<n>` appends more. |
+| One recorded seed, `20261009`: 20 generated programs per family for UART TX, SPI, I2C write, I2C write/Sr/read with seeded stretching, and UART RX, each assembled with the DR 0003 assembler and graded by the independent models | `reference_models/{uart,spi,i2c}.py` | [random-regression 20261011-165751](../../verification/records/random-regression/records/20261011-165751-56ebaf9.md): PASS 10/10 (one of 24 live re-mints of one run, all PASS 10/10; see the note below) | `klt functional-verification verification/request-random-regression.json --format json` | RTL only. **Not run on gates or with SDF.** 20 cases per family is the shared-host default; `RANDOM_REGRESSION_CASES=<n>` appends more. |
 
 Note on the record text: the *Claim* prose of that record was carried forward
 from before the UART RX family (#192) and does not name it, while its *Result*
 (10 tests, listed in `results_icarus.xml`) includes `test_uart_rx_random_programs`
 and `test_uart_rx_negative_controls`. The family is in the bench
-(`verification/test_random_regression.py`) and was introduced by the earlier
-re-mint `20261010-122206-ff79ed0`, whose *Supersedes* note describes it. It is
-not claimed beyond that. Claims are not edited; this paragraph is the
+(`verification/test_random_regression.py`) and was introduced by the re-mint at
+#192, whose *Supersedes* note describes it. It is not claimed beyond that. Its
+*Run configuration* still says "chain 1 of 3", carried over; the experiment has
+24 live records, all re-mints of one run at `fb86d71`. Claims are not edited; this paragraph is the
 correction.
 
 **Deterministic seed replay.** `RECORDED_SEED` is mirrored into the request's
@@ -130,37 +157,36 @@ failing `.asm` byte for byte.
 
 | Claim | Oracle | Record | Repro | Limits |
 |---|---|---|---|---|
-| Serial program-load path and loader pin sequence | CRC-16/XMODEM from `binascii`; loader generator tests | [firmware-loadseq 20261010-132627](../../verification/records/firmware-loadseq/records/20261010-132627-8372c57.md): 6/6 and 3/3 | `... request-loadseq.json ...`, `... request-loadseq-top.json ...`; `python3 firmware/tools/test_loadseq.py` | The `PM_CRC` readout on `uo_out` (DR 0013 layer 1) is not built (#167 open). |
-| Boot ROM: with `MODE` low the core runs the ROM and never decodes program memory unless a boot program verified the image; warm start refuses signature `0x0000` | Independent ISA prediction of the idle state; ROM mutants | [boot-rom 20261010-132615](../../verification/records/boot-rom/records/20261010-132615-8372c57.md): PASS 7/7, 13 of 13 mutants caught | `... request-boot-rom.json ...`; `python3 verification/boot_rom_mutants.py --out <dir>` | RTL. DR 0013 is Proposed. |
-| SPI-flash boot reads one clean mode-0 `0x03` transaction, runs only a signed image, blank/zero/corrupt flash never reaches `RUN` | `reference_models/spi_flash.py` | [boot-spi 20261010-132616](../../verification/records/boot-spi/records/20261010-132616-8372c57.md): PASS 6/6, 12 of 12 mutants caught | `... request-boot-spi.json ...`; `python3 verification/boot_spi_mutants.py --out <dir>` | RTL. A model of one flash behaviour, not a part datasheet. |
-| UART load at nominal rate and ±2 %, corrupted payloads, bad CRCs, a count whose complement does not match (#211) and a wrong magic never reach `RUN`; a loaded `uart_tx` program is graded by its own model | `uart_boot_host.py` | [boot-uart 20261011-061439](../../verification/records/boot-uart/records/20261011-061439-6ea883e.md): PASS 8/8, 8 of 8 ROM mutants caught (earlier frame: [20261010-132617](../../verification/records/boot-uart/records/20261010-132617-8372c57.md), 8/8, 7 of 7) | `... request-boot-uart.json ...`; `python3 verification/boot_uart_mutants.py --out <dir>` | Finding F8 and its residue: next row. |
-| DR 0013 finding F8, resolved by #211: the frame carries `~(N-1)` after the count and the loader checks it before committing a word; F8's single count-bit flip and every other single-bit flip of the count and complement bytes are answered `15 00 00` and never reach `RUN`; the valid frame still loads and runs | The bench asserts rejection (before #211 it pinned the acceptance, [20261010-164351](../../verification/records/boot-uart/records/20261010-164351-57c5c8c.md)) | [boot-uart count alias 20261011-061440](../../verification/records/boot-uart/records/20261011-061440-6ea883e.md): PASS 1/1; the `complement-check-removed` ROM mutant makes it fail | `klt functional-verification verification/request-boot-uart-count-alias.json --format json` | RTL only, not on gates. Residue: a corruption that changes count and complement consistently (two or more bit errors placed to match) and also aliases the CRC is not rejected. No spec was relaxed. |
-| Reset and power-up (row 14 a, b, c) on the LibreLane netlist: every flop's `RESET_B` is `rst_n` alone (178 flops; one SRAM macro unreset, justified); X and seeded random power-up states agree; reselect reproduces the first run | Reset-coverage listing; the same bench across seeds | [reset-power-up 20261010-133700](../../verification/records/reset-power-up/records/20261010-133700-a0f91e3.md): 5/5, all three negative controls fail as required | `PDK_ROOT=<pdk> ./flow/run-reset-power-up-gate-level.sh` | Zero-delay. The host's reload obligation after deselect is in `verification/README.md`. |
+| Serial program-load path and loader pin sequence | CRC-16/XMODEM from `binascii`; loader generator tests | [firmware-loadseq 20261011-104230](../../verification/records/firmware-loadseq/records/20261011-104230-d81097f.md): 6/6 and 3/3 | `... request-loadseq.json ...`, `... request-loadseq-top.json ...`; `python3 firmware/tools/test_loadseq.py` | The `PM_CRC` readout on `uo_out` (DR 0013 layer 1, #167 merged) is built and graded against `binascii.crc_hqx` by [load-integrity 20261011-104248](../../verification/records/load-integrity/records/20261011-104248-d81097f.md): PASS 9/9, RTL (pin-only on gates in 3.5). |
+| Boot ROM: with `MODE` low the core runs the ROM and never decodes program memory unless a boot program verified the image; warm start refuses signature `0x0000` | Independent ISA prediction of the idle state; ROM mutants | [boot-rom 20261011-104154](../../verification/records/boot-rom/records/20261011-104154-d81097f.md): PASS 7/7, 13 of 13 mutants caught | `... request-boot-rom.json ...`; `python3 verification/boot_rom_mutants.py --out <dir>` | RTL. DR 0013 is Proposed. |
+| SPI-flash boot reads one clean mode-0 `0x03` transaction, runs only a signed image, blank/zero/corrupt flash never reaches `RUN` | `reference_models/spi_flash.py` | [boot-spi 20261011-104156](../../verification/records/boot-spi/records/20261011-104156-d81097f.md): PASS 6/6, 12 of 12 mutants caught | `... request-boot-spi.json ...`; `python3 verification/boot_spi_mutants.py --out <dir>` | RTL. A model of one flash behaviour, not a part datasheet. |
+| UART load at nominal rate and ±2 %, corrupted payloads, bad CRCs, a count whose complement does not match (#211) and a wrong magic never reach `RUN`; a loaded `uart_tx` program is graded by its own model | `uart_boot_host.py` | [boot-uart 20261011-165704](../../verification/records/boot-uart/records/20261011-165704-56ebaf9.md): PASS 8/8, 8 of 8 ROM mutants caught (earlier frame: [20261010-132617](../../verification/records/boot-uart/records/20261010-132617-8372c57.md), 8/8, 7 of 7 <!-- superseded-ok: the pre-#211 frame, kept as history -->) | `... request-boot-uart.json ...`; `python3 verification/boot_uart_mutants.py --out <dir>` | Finding F8 and its residue: next row. |
+| DR 0013 finding F8, resolved by #211: the frame carries `~(N-1)` after the count and the loader checks it before committing a word; F8's single count-bit flip and every other single-bit flip of the count and complement bytes are answered `15 00 00` and never reach `RUN`; the valid frame still loads and runs | The bench asserts rejection (before #211 it pinned the acceptance, [20261010-164351](../../verification/records/boot-uart/records/20261010-164351-57c5c8c.md) <!-- superseded-ok: the pre-#211 acceptance bench, cited as history -->) | [boot-uart count alias 20261011-165705](../../verification/records/boot-uart/records/20261011-165705-56ebaf9.md): PASS 1/1; the `complement-check-removed` ROM mutant makes it fail | `klt functional-verification verification/request-boot-uart-count-alias.json --format json` | RTL only, not on gates. Residue: a corruption that changes count and complement consistently (two or more bit errors placed to match) and also aliases the CRC is not rejected. No spec was relaxed. |
+| Reset and power-up (row 14 a, b, c) on the LibreLane netlist: every flop's `RESET_B` is `rst_n` alone (264 flops; one SRAM macro unreset, justified); X and seeded random power-up states agree; reselect reproduces the first run | Reset-coverage listing; the same bench across seeds | [reset-power-up 20261011-115248](../../verification/records/reset-power-up/records/20261011-115248-e5a0bae.md): 5/5, every negative control failing as required | `PDK_ROOT=<pdk> ./flow/run-reset-power-up-gate-level.sh` | Zero-delay. The host's reload obligation after deselect is in `verification/README.md`. |
 
 ### 3.5 Gate level and post-route
 
 | Claim | Oracle | Level / flow | Record | Repro | Limits |
 |---|---|---|---|---|---|
-| The directed firmware benches (UART TX 3, UART RX 10, SPI 3, I2C 4, I2C Sr 5), control space (9), boot ROM (7), SPI boot (6) and UART boot (8) pass on the routed netlist; each of nine modules fails on its own stuck-at fault (and the SPI/I2C modules on a `uio_oe[3]` stuck-at-0) | The same oracles as RTL | **Zero-delay**, LibreLane netlist of gds run 38054423540 (`a0f91e3`) | [firmware-gate-level 20261010-161300](../../verification/records/firmware-gate-level/records/20261010-161300-a0f91e3.md): 21 rows, `as_required` on every row | `PDK_ROOT=<pdk> ./flow/run-firmware-gate-level.sh --full --control-space --boot-rom --boot-spi --boot-uart` | `test_boot_uart` is pin-only on gates (white-box reads and two long runs are skipped). No SDF, no SRAM timing, no pad characterization. Not the constrained-random regression. |
-| The core bench (12 pin-observing tests) passes at all three corners with real post-route delay | Same bench file, drive/sample aligned to the SDC (`verification/sdf_alignment.py`) | **SDF-annotated**, LibreLane netlist + SDF | [post-layout-sdf-regression 20261010-133000](../../verification/records/post-layout-sdf-regression/records/20261010-133000-a0f91e3.md): 12 passed, 0 failed, 1 skipped at each corner | `KLT_BIN=<klt> PDK_ROOT=<pdk> ./flow/run-post-layout-sdf.sh --run-id 38054423540` (or `--from <dir>`) | Section 5. The skipped test is white-box and is *skipped, not passed*. |
+| The directed firmware benches (UART TX 3, UART RX 10, SPI 3, I2C 4, I2C Sr 5), control space (10), boot ROM (7), SPI boot (6), primitives (11), UART boot (8, pin-only) and load integrity (9, pin-only) pass on the routed netlist; each of the eleven modules fails on its own stuck-at fault (and the SPI/I2C modules on a `uio_oe[3]` stuck-at-0) | The same oracles as RTL | **Zero-delay**, LibreLane netlist of gds run 38136727636 (`6dd0e9d`) | [firmware-gate-level 20261011-125000](../../verification/records/firmware-gate-level/records/20261011-125000-e5a0bae.md): 25 rows, `as_required` on every row | `PDK_ROOT=<pdk> ./flow/run-firmware-gate-level.sh --full --control-space --boot-rom --boot-spi --primitives --boot-uart --load-integrity` | `test_boot_uart` is pin-only on gates (white-box reads and two long runs are skipped). No SDF, no SRAM timing, no pad characterization. Not the constrained-random regression. |
+| The core bench (12 pin-observing tests, 1 skipped) passes at all three corners with real post-route delay | Same bench file, drive/sample aligned to the SDC (`verification/sdf_alignment.py`) | **SDF-annotated**, LibreLane netlist + SDF | [post-layout-sdf-regression 20261011-114802](../../verification/records/post-layout-sdf-regression/records/20261011-114802-e5a0bae.md): 12 passed, 0 failed, 1 skipped at each corner | `KLT_BIN=<klt> PDK_ROOT=<pdk> ./flow/run-post-layout-sdf.sh --from <download>`, where `<download>` is the `GDS_logs` and `tt_submission` artifacts of gds run 38136727636 | Section 5. The skipped test is white-box and is *skipped, not passed*. |
+| UART TX, SPI modes 0-3 and I2C write / repeated START / read / clock stretch pass in all nine (corner, protocol) cells with real post-route delay; the SPI timing negative control fails as required; the I2C repeated-START run fails on the pre-DR 0020 netlist (#244) | `reference_models/{uart,spi,i2c}.py` through the SDF wrappers | **SDF-annotated**, LibreLane netlist + SDF of gds run 38136727636 | [post-layout-sdf-regression 20261011-114800](../../verification/records/post-layout-sdf-regression/records/20261011-114800-e5a0bae.md): runner exit 0, nine of nine cells pass | `KLT_BIN=<klt> PDK_ROOT=<pdk> ./flow/run-post-layout-sdf.sh --suite protocols --from <download>` | Section 5. Boot programs, UART RX, PS/2, WS2812 and the random regression have no SDF run. |
 
-The `a0f91e3` netlist is current for the design: `git diff a0f91e3..9fb7815 --
-src rtl info.yaml firmware/build/boot` is empty.
-
-One inconsistency inside the cited gate-level records is left visible rather
-than corrected: their *Design provenance* bullet names the older `704a3fb`
-netlist path, while their *Claim*, the runner's `NETLIST` default
-(`flow/run-firmware-gate-level.sh`) and `testbenches.txt` all name the
-`a0f91e3` frozen copy. The runner default is the authority for what ran.
+The `6dd0e9d` netlist is current for the design (gds run 38136727636, the
+DR 0020 open-drain fix and the #246 timing-repair config): `git diff
+6dd0e9d..origin/main -- src rtl info.yaml firmware/build/boot` is empty. The
+cited gate-level records and the runner's `NETLIST` default
+(`flow/run-firmware-gate-level.sh`) all name the same frozen copy
+(`post-layout-sdf-regression/artifacts/20261011-114800-e5a0bae/`).
 
 ### 3.6 Timing, area and signoff (numbers, by flow)
 
 | Figure | Flow | Record |
 |---|---|---|
-| 20 ns (50 MHz) closes at all three corners, 0 setup and 0 hold violations. Worst setup +3.631 ns (`nom_slow_1p08V_125C`), worst hold +0.1043 ns (`nom_fast_1p32V_m40C`). Max-slew violation on the SRAM macro's `A_WEN`: 1 per corner (#201). | **LibreLane**, post-route OpenSTA | [librelane-corner-timing 20261010-133200](../../verification/records/librelane-corner-timing/records/20261010-133200-a0f91e3.md) |
-| Top: 1,614 instances, 23,729.0 um^2 | **klt/Yosys** synthesis (typ corner deck, 20 ns recipe) | [synthesis-baseline 20261010-133300](../../verification/records/synthesis-baseline/records/20261010-133300-a0f91e3.md) |
-| Placed standard-cell area 30,745.0 um^2 (2,210 instances) | **LibreLane** | the corner-timing record above |
-| klt STA over six corners | klt | [sta-corner-sweep 20261010-133400](../../verification/records/sta-corner-sweep/records/20261010-133400-a0f91e3.md): **BLOCKED**, 0 of 6 corners, klayout-tools#2635. No number. |
+| 20 ns (50 MHz) closes at all three corners, 0 setup and 0 hold violations. Worst setup +5.785 ns (`nom_slow_1p08V_125C`), worst hold +0.0830 ns (`nom_fast_1p32V_m40C`). Max-slew and max-cap violations: 0 at every corner. | **LibreLane**, post-route OpenSTA | [librelane-corner-timing 20261011-144900](../../verification/records/librelane-corner-timing/records/20261011-144900-e5a0bae.md) |
+| Top: 2,526 instances, 35,224.3836 um^2 | **klt/Yosys** synthesis (typ corner deck, 20 ns recipe) | [synthesis-baseline 20261011-114659](../../verification/records/synthesis-baseline/records/20261011-114659-e5a0bae.md) |
+| Placed standard-cell area 46,047.7 um^2 (3,414 instances); LibreLane's own synthesis step reports 2,586 cells, 35,897.26 um^2 | **LibreLane** | the corner-timing record above |
+| klt STA over six corners | klt | [sta-corner-sweep 20261011-114702](../../verification/records/sta-corner-sweep/records/20261011-114702-e5a0bae.md): still **BLOCKED**, no result (`klt sta` fails on the OpenROAD container runtime; klayout-tools#2635). No number. |
 
 The two area numbers come from different synthesis tools and are reported side
 by side; a mismatch is a finding, not a figure to choose between.
@@ -187,15 +213,15 @@ by side; a mismatch is a finding, not a figure to choose between.
 
 ## 5. SDF-annotated run: what the annotation does and does not cover
 
-From [`post-layout-sdf-regression 20261010-133000`](../../verification/records/post-layout-sdf-regression/records/20261010-133000-a0f91e3.md)
+From [`post-layout-sdf-regression 20261011-114802`](../../verification/records/post-layout-sdf-regression/records/20261011-114802-e5a0bae.md)
 and the header of `flow/run-post-layout-sdf.sh`:
 
 - **SRAM timing is omitted.** The macro runs as a zero-delay `FUNCTIONAL`
   model; the runner removes its SDF `CELL` block. Its read timing is
   LibreLane STA evidence only.
-- **Timing checks are not applied.** Icarus does not apply SDF `TIMINGCHECK`
-  entries (`partial: true`, 178 dropped per corner), so the cell models'
-  `$setuphold` checks run against their 0 ns placeholders.
+- **Timing checks are not applied.** Icarus drops SDF `TIMINGCHECK` entries
+  (`partial: true`), so the cell models' `$setuphold` checks run against
+  their 0 ns placeholders.
 - **The core bench and three protocol benches run.** Since 2026-10-11 the
   UART TX, SPI and I2C repeated-START firmware benches run on the routed
   netlist with SDF delays at all three corners
@@ -208,7 +234,9 @@ and the header of `flow/run-post-layout-sdf.sh`:
   period and its input/output delays (4 ns each of a 20 ns period), derived from
   the run's own SDC.
 - **A tool workaround** (line-buffered simulator stdout, klayout-tools#2996) is
-  disclosed in the record and changes nothing in the simulation.
+  disclosed in the record that introduced it
+  ([20261010-205119-af36071](../../verification/records/post-layout-sdf-regression/records/20261010-205119-af36071.md) <!-- superseded-ok: the record that needed the workaround, cited as history -->),
+  and changes nothing in the simulation.
 - The grader still renders T1 item 7 unmet on a provenance-binding limit (see
   `manifests/README.md`), even though the regression passes.
 
@@ -216,19 +244,25 @@ and the header of `flow/run-post-layout-sdf.sh`:
 
 - The Tiny Tapeout `gds` workflow (LibreLane) is the flow of record for the
   submitted GDS (DR 0002). All four jobs (`gds`, `precheck`, `gl_test`,
-  `viewer`) were green on run 38054423540 at `a0f91e3`, as cited by the
-  records above. D1 in the tracker still says "not on the final top".
+  `viewer`) were green on the final top's run 38136727636 at `6dd0e9d` (a
+  run of the PR branch that became PR #260), as cited by the records above.
+  `main`'s own `gds` runs since PR #260 merged build the same design files
+  and are green too, for example run 38166393534 at `cd47c724`. D1 stays Partial until that run is linked as
+  the run of record from the tracker's D1 row and the root `README.md`.
 - The klt DRC is `clean` on that GDS; the klt-flow LVS check against the
   klt/Yosys reference is `unmet / check_errored` (klayout-tools#2941); the
   compare against the run's own post-route netlist is `match`
-  ([librelane-gds-signoff-check 20261010-133100](../../verification/records/librelane-gds-signoff-check/records/20261010-133100-a0f91e3.md)).
+  ([librelane-gds-signoff-check 20261011-144308](../../verification/records/librelane-gds-signoff-check/records/20261011-144308-e5a0bae.md)).
 - The T1 verdict of record is `tier: null`, **5 of 11 items met**
-  ([signoff-baseline 20261010-133500](../../verification/records/signoff-baseline/records/20261010-133500-a0f91e3.md)).
+  ([signoff-baseline 20261011-171506](../../verification/records/signoff-baseline/records/20261011-171506-56ebaf9.md)).
   This document does not move that.
 - The template's `gl_test` job checks results with `! grep failure results.xml`
-  on the `ihp-cmos5l` branch, which would not match an `<error>` element; the
-  repository-owned validation is tracked in #215 and #216 and is not yet in
-  that job (tracker risk R2).
+  on the `ihp-cmos5l` branch, which would not match an `<error>` element. The
+  repository-owned gate (#215, #216; `scripts/check_test_results.py
+  test/results.xml`) runs in that job after `gl_sim` and passed on the runs
+  cited above — first on run 38083802720, then on the final run 38136727636 —
+  closing tracker risk R2's caveat (b); see the tracker's 2026-10-11 R2
+  update.
 
 ## What this does not show
 
@@ -237,20 +271,45 @@ and the header of `flow/run-post-layout-sdf.sh`:
   a *nominal* 50 MHz that target-spec row 4 does not confirm.
 - The constrained-random regression is RTL-only. Gate-level and SDF runs use
   the directed benches.
-- Firmware benches have no SDF-annotated run, and the SRAM macro is simulated
+- Only three firmware benches (UART TX, SPI, I2C repeated START) have an
+  SDF-annotated run; the boot programs, UART RX, PS/2, WS2812 and the
+  constrained-random regression do not, and the SRAM macro is simulated
   without its timing.
 - The bounded versus unbounded split in section 4. Neither formal property
   covers a protocol.
-- The UART load can be fooled by a one-bit count flip on a constructed image
-  (F8, #211). The zero-filler recovery behaviour (F6) is an exact consequence
-  of the CRC, documented in DR 0013.
+- The UART load rejects every single-bit flip of the count and its
+  complement (F8, resolved by #211, closed), but a coordinated corruption
+  that changes count and complement consistently and also aliases the CRC is
+  not rejected (section 3.4). The zero-filler recovery behaviour (F6) is an
+  exact consequence of the CRC, documented in DR 0013.
 - Row 14 is graded **unmet** in `spec/target-spec.md`; its dated notes pre-date
   the gate-level reset bench. The records show (a), (b) and the reselect cycle
   passing on the routed netlist, but this document does not upgrade the row.
-- Standard-mode I2C runs at 435 cycles per clock (#125, open decision).
-- No unplanned-protocol firmware exists yet (row 13 / D6, blocked on #135).
-- No stretch protocol (low-speed USB, 10BASE-T) is designed or tested.
-- The specification is Proposed (DR 0006). Two-key ratification never ran.
+- Standard-mode I2C runs at 500 cycles per data/ACK clock (#125, ruled `enforce_500`); the kHz figure is arithmetic at an unconfirmed 50 MHz.
+- Row 13 (D6) has firmware and evidence, but the row is still **Proposed and
+  unmet** in `spec/target-spec.md`. Primary column, WS2812 ([`row13-ws2812.md`](row13-ws2812.md)) passes an independent WS2812B
+  model at RTL ([firmware-ws2812 20261011-104241](../../verification/records/firmware-ws2812/records/20261011-104241-d81097f.md): 6/6)
+  and on the LibreLane netlist, zero-delay
+  ([firmware-ws2812-gate-level 20261011-115014](../../verification/records/firmware-ws2812-gate-level/records/20261011-115014-e5a0bae.md): 6/6, wait-counter stuck-at fails 5 of 6).
+  There is no SDF run of it, no board and no video. Stretch column, a PS/2
+  device on two open-drain lines (#235, closed; [`row13-ps2.md`](row13-ps2.md)),
+  passes an independent host model at RTL
+  ([firmware-ps2 20261011-104232](../../verification/records/firmware-ps2/records/20261011-104232-d81097f.md): 18/18)
+  and on the LibreLane netlist, zero-delay
+  ([firmware-ps2-gate-level 20261011-120015](../../verification/records/firmware-ps2-gate-level/records/20261011-120015-e5a0bae.md));
+  the pad model has zero delay, and there is no SDF run and no board.
+- Target-spec row 2's stretch protocols (low-speed USB, 10BASE-T; DR 0015)
+  are not designed or tested. This is separate from row 13's stretch column
+  above.
+- Ratification binds targets, not results: rows 1-12 and DRs 0001-0004 are
+  Ratified (PR #242, DR 0009). Against those targets, rows 1, 3, 4, 6, 7,
+  10, 11 and 12 are still graded unmet, row 8 partially realized, row 9 on
+  track and row 5 met at the stub level (the State column of
+  `spec/target-spec.md` is the source). Rows 13 and 14 and DRs 0005,
+  0007, 0008, 0010-0018 and 0020 are Proposed. The two keys are agent skills
+  under separate forge identities, both dispatched by one coordinating
+  session (DR 0009's recorded limit on independence); no independent human
+  engineering review has taken place.
 - The STA and die-area legs of the klt flow are blocked
   (klayout-tools#2635) and claim nothing.
 
@@ -280,14 +339,17 @@ do not occur in this document's evidence: nothing here is a SPICE result.
 
 ## Outstanding work
 
-- Freeze the submission ISA (#135, DR 0012/0013), then re-run and re-mint the
-  affected records and re-link the final `gds` run (D1).
-- Close or accept DR 0013 F8 (#211) and the `PM_CRC` readout (#167).
-- SDF-annotated protocol waveforms on the routed corners (#217).
+- Re-link the final `gds` run (D1).
+- SDF-annotated runs for the boot programs, UART RX, PS/2, WS2812 and the
+  constrained-random regression (UART TX, SPI and I2C repeated START have
+  them; #217 closed 2026-10-11).
 - Run the constrained-random regression at gate level.
-- Decide the Standard-mode I2C allocation (#125).
-- Row 13 unplanned-protocol firmware (#141) with its own independent model.
-- Ratification (#44).
+- Row 13: an SDF-annotated run of the WS2812 and PS/2 benches, a board, and a
+  video. Both columns have firmware and evidence; the row stays Proposed and
+  unmet.
+- Ratification of what the 2026-10-11 act left unbound: rows 13 and 14, and
+  DRs 0005, 0007, 0008, 0010-0018 and 0020, which are Proposed (DR 0012, 0013, 0016
+  and 0017 define parts of the ISA and its load path).
 - `spec/verification-plan.md` still says "None of the artifacts described below
   exist yet"; its dated notes are the history, and this document is the
   current reading of them.

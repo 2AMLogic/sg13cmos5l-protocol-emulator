@@ -37,17 +37,37 @@ re-hardening for a newer flow, are allowed after it.
 | **Not started** | No judge-facing artifact exists. |
 | **Blocked** | The artifact cannot be finished until a named issue closes. |
 
+## Checking the documents before a push
+
+Two checks cover the documents in this directory:
+
+- **Record citations (offline, in `npm run lint`).**
+  `python3 verification/check_docs_records.py` fails if a document here cites
+  a record that does not exist or that a later record supersedes (#238).
+- **Issue and PR states (on demand, needs the network).**
+  `python3 scripts/check_docs_issue_states.py` finds each `#N` written next
+  to "open", "still open", "closed", "merged" or "unmerged", asks GitHub for
+  its live state through `gh`, and prints every mismatch (exit 1 if there is
+  one). It is not in lint or CI, because it needs an authenticated `gh` and
+  its answer changes whenever an issue moves; run it before pushing a change
+  to this directory. It is a heuristic: it reads a paragraph, list item or
+  table row at a time and takes the nearest state word, so it can misread a
+  sentence that lists several states, and it cannot see a state claim that
+  names no `#N`. Read each hit, and still read the prose. Dated text kept as written can carry
+  `<!-- state-ok: reason -->`; prefer a dated correction. Its offline
+  self-test is `python3 scripts/test_check_docs_issue_states.py`.
+
 ## Deliverables
 
 | # | Deliverable | Judge-facing artifact (target) | What exists today | State |
 |---|---|---|---|---|
-| D1 | Passing GDS + precheck, Tiny Tapeout flow | `gds` workflow (`.github/workflows/gds.yaml`) green on the **final** top, with the run linked from this file and from `README.md` | All four jobs (`gds`, `precheck`, `gl_test`, `viewer`) green on `main` @ `4193268`: [run 37974043486](https://github.com/2AMLogic/sg13cmos5l-protocol-emulator/actions/runs/37974043486), 2026-10-09. Sign-off evidence: `verification/records/librelane-gds-signoff-check/records/20261009-054750-676f8b2.md`, `verification/records/librelane-pdn-bridge/records/20261001-085017-21a2a63.md`. | **Partial.** It is green, but not on the final top. DR 0012 (control space, #135) and DR 0013 (program loading) still change the RTL, and #129 may change the tile count. Re-run and re-link after the last RTL change. |
-| D2 | Architecture + ISA documentation | A standalone doc, `docs/submission/architecture.md` (to write), distilled from DR 0001. It must not be the decision record itself. | The content is spread across `spec/decision-records/0001-isa.md`, `rtl/README.md`, and the datasheet `docs/info.md` § How it works. DR 0012 and DR 0013 extend the ISA and the load path. | **Partial.** The material exists, but there is no judge-facing doc. The ISA is not frozen until #135 lands. DR 0001's Status is still **Proposed** (DR 0006, #44). **Superseded 2026-10-11 (#230, #251):** the judge-facing doc now exists and #135 is closed; see the D2 dated update below and [Judge quickstart](#judge-quickstart-d2-d3). The row text is kept as the 2026-10-09 record. |
+| D1 | Passing GDS + precheck, Tiny Tapeout flow | `gds` workflow (`.github/workflows/gds.yaml`) green on the **final** top, with the run linked from this file and from `README.md` | All four jobs (`gds`, `precheck`, `gl_test`, `viewer`) green on `main` @ `4193268`: [run 37974043486](https://github.com/2AMLogic/sg13cmos5l-protocol-emulator/actions/runs/37974043486), 2026-10-09. Sign-off evidence: `verification/records/librelane-gds-signoff-check/records/20261011-144308-e5a0bae.md`, `verification/records/librelane-pdn-bridge/records/20261011-145000-e5a0bae.md`. | **Partial.** It is green, but not on the final top. DR 0012 (control space, #135) and DR 0013 (program loading) still change the RTL, and #129 may change the tile count. Re-run and re-link after the last RTL change. **Updated 2026-10-11 (#238):** the sign-off records cited in this row are the live ones and describe gds run [38136727636](https://github.com/2AMLogic/sg13cmos5l-protocol-emulator/actions/runs/38136727636) at `6dd0e9d` (the PR #260 branch: DR 0020's open-drain fix and #246's timing repair, all four jobs green), not run 37974043486. #135 and #129 are closed, and `main`'s own `gds` runs since PR #260 merged are green on the same design files (for example run 38166393534 at `cd47c724`). Still **Partial**: no run is linked as the run of record from the root `README.md`. |
+| D2 | Architecture + ISA documentation | A standalone doc, `docs/submission/architecture.md` (to write), distilled from DR 0001. It must not be the decision record itself. | The content is spread across `spec/decision-records/0001-isa.md`, `rtl/README.md`, and the datasheet `docs/info.md` § How it works. DR 0012 and DR 0013 extend the ISA and the load path. | **Partial.** The material exists, but there is no judge-facing doc. The ISA is not frozen until #135 lands. DR 0001's Status is still **Proposed** (DR 0006, #44). **Superseded 2026-10-11 (#230, #251):** the judge-facing doc now exists and #135 is closed; see the D2 dated update below and [Judge quickstart](#judge-quickstart-d2-d3). DR 0001 was ratified on 2026-10-11 (PR #242; see the [ratification update](#ratification-update-2026-10-11-pr-242-issue-44)). The row text is kept as the 2026-10-09 record. |
 | D3 | Assembler / toolchain + example programs | `firmware/` with a quickstart a judge can run from a fresh clone | `firmware/tools/asm.py` (the DR 0003 assembler) and its test `firmware/tools/test_asm.py`. 16 programs in `firmware/asm/` (UART TX/RX at three bauds, SPI modes 0–3, I2C Standard/Fast with repeated START and clock stretch, plus `demo_roundtrip.asm`) with committed images in `firmware/build/`. `firmware/README.md` § Cold-start invocation. | **Partial, close to ready.** The cold-start section is the quickstart, but nothing links it as the judge's entry point. The assembler has to gain the DR 0012 control-space mnemonics (#135). **Superseded 2026-10-11 (#251):** `WCTL`/`RCTL` are implemented (#135, closed); the quickstart is now linked from here. See the D3 dated update and [Judge quickstart](#judge-quickstart-d2-d3). |
 | D4 | Verification write-up | `docs/submission/verification.md` (to write), distilled from `spec/verification-plan.md` and the evidence records, and stating what is **not** covered | `spec/verification-plan.md` (Status DRAFT; its preamble line "None of the artifacts described below exist yet" is now stale). 21 record families under `verification/records/`, for example `firmware-uart`, `firmware-spi`, `firmware-i2c`, `firmware-gate-level`, `random-regression`, `no-data-dependent-latency` (formal), `post-layout-sdf-regression` and `sta-corner-sweep`. | **Partial.** The evidence is strong and append-only, but nothing reads it to a judge. Known holes that the write-up must state: #136 (I2C evidence does not run through the real `uio_oe`, so silicon cannot drive an I2C line today) and row 14 (reset/reselect, unmet). **Updated 2026-10-10 (issue #214): see the dated update below the table; the preceding text is the 2026-10-09 reading and is kept as written.** |
-| D5 | AI-use write-up | [`docs/submission/ai-use.md`](ai-use.md): how agents produced the spec, RTL, firmware and verification; the Loom Builder/Judge/Curator loop; the append-only evidence rule; the klayout-tools friction issues filed; and the ratification history told honestly | **2026-10-10 (#213):** [`ai-use.md`](ai-use.md) is written. It covers who acted as the forge records it, the development loop (intended vs observed, with PR #210 as a worked example), the mechanical CI checks and their limits, append-only evidence (including the failing-then-superseded post-layout record), agent verdict vs operator decision, the ratification history (DR 0006, PR #29, the PR #48 gate, the refused PR #84 ceremony, #85), klayout-tools friction, and the limits of AI-generated verification. Before 2026-10-10 only fragments existed: `README.md` § Built agent-native and `spec/verification-plan.md` § 5. | **Partial** (2026-10-10). The document is judge-facing and current as of `main` @ `9fb7815`, but it describes a history that is still moving. Before submission, refresh the PR counts, the ratification outcome (#44, #84, #85: the spec is still **Proposed**, and no independent human review has taken place), and the open klayout-tools issues. Then mark it Ready. |
-| D6 | Demo (optional) | A protocol the ISA was **not** designed for (for example 1-Wire, WS2812, DMX512 or Manchester), written as firmware after the fact with a bench: target-spec row 13. If possible, a video. | Nothing. Row 13 is "Proposed 2026-10-09 ... unmet, no firmware yet" (`spec/target-spec.md`). | **Blocked** on the frozen submission ISA (#135, with #130 deciding which protocol-neutral primitives exist). A physical-board demo also needs the host loader (#118). |
-| D7 | Required external parts | A parts list in the datasheet (`docs/info.md`) and the submission, aligned with TT-recommended Pmods | Nothing beyond DR 0008 item 1 (I2C needs external pull-ups). | **Parts list written** in `docs/info.md` (#133). Pins are not yet on the TT-recommended pinouts: DR 0010 records the target plan, and the moves are #155 (after #135). |
+| D5 | AI-use write-up | [`docs/submission/ai-use.md`](ai-use.md): how agents produced the spec, RTL, firmware and verification; the Loom Builder/Judge/Curator loop; the append-only evidence rule; the klayout-tools friction issues filed; and the ratification history told honestly | **2026-10-10 (#213):** [`ai-use.md`](ai-use.md) is written. It covers who acted as the forge records it, the development loop (intended vs observed, with PR #210 as a worked example), the mechanical CI checks and their limits, append-only evidence (including the failing-then-superseded post-layout record), agent verdict vs operator decision, the ratification history (DR 0006, PR #29, the PR #48 gate, the refused PR #84 ceremony, #85), klayout-tools friction, and the limits of AI-generated verification. Before 2026-10-10 only fragments existed: `README.md` § Built agent-native and `spec/verification-plan.md` § 5. | **Partial** (2026-10-10). The document is judge-facing and written against `main` @ `9fb7815`; on 2026-10-11 (#238) its record citations, counts and ratification history were refreshed to `main` as of `a9ac6940` (after PR #242's merge `72f48153`). It describes a history that is still moving. Before submission, refresh the PR counts, the ratification history (PR #84 refused and closed unmerged; PR #242 merged 2026-10-11, ratifying target-spec rows 1-12 and DRs 0001-0004, #44 closed; rows 13-14 and the other DRs still **Proposed**; no independent human review has taken place), and the open klayout-tools issues. Then mark it Ready. |
+| D6 | Demo (optional) | A protocol the ISA was **not** designed for (for example 1-Wire, WS2812, DMX512 or Manchester), written as firmware after the fact with a bench: target-spec row 13. If possible, a video. | Nothing. Row 13 is "Proposed 2026-10-09 ... unmet, no firmware yet" (`spec/target-spec.md`). | **Blocked** on the frozen submission ISA (#135, with #130 deciding which protocol-neutral primitives exist). A physical-board demo also needs the host loader (#118). **Superseded 2026-10-10 and 2026-10-11:** #135, #141, #118 and #235 are closed; WS2812 (primary column) and a PS/2 device (stretch column) have firmware and evidence; the row stays Proposed and unmet. See the D6 dated updates below. |
+| D7 | Required external parts | A parts list in the datasheet (`docs/info.md`) and the submission, aligned with TT-recommended Pmods | Nothing beyond DR 0008 item 1 (I2C needs external pull-ups). | **Parts list written** in `docs/info.md` (#133). Pins are not yet on the TT-recommended pinouts: DR 0010 records the target plan, and the moves are #155 (after #135). **Updated 2026-10-11 (#238):** #155 closed on 2026-10-10: SPI and I2C moved to the Pmod `uio[0..3]` pins (PR #181, merged) and UART RX to `ui_in[1]` (PR #190, merged), DR 0010's target plan. |
 
 ### D2 dated update, 2026-10-11 (issue #230)
 
@@ -72,14 +92,18 @@ this update supersedes its "What exists today" and its reason for Partial.
 - **The "ISA is not frozen until #135 lands" reason is stale.** #135 and
   #141 are closed, and DR 0017's freeze is on `main` with its lint.
 - **State: still Partial, not Ready.** The document is marked provisional,
-  and known changes would still make it refresh: open finding #244 (routed
-  open-drain release glitch; any fix changes the pinned top and the
-  open-drain text), open PR #248 for #211 (the boot ROM's UART frame, which
-  the load-path section describes), and #217 (no routed-SDF evidence for the
-  protocol firmware). The tracker's Ready definition needs a current
+  and, on this date, known changes would still make it refresh: finding #244
+  (routed open-drain release glitch; any fix changes the pinned top and the
+  open-drain text), PR #248 for #211 (the boot ROM's UART frame, which the
+  load-path section describes), and #217 (no routed-SDF evidence for the
+  protocol firmware). All three have since resolved: PR #248 merged and #211
+  closed (2026-10-11T08:09Z), #244 closed (16:08Z, DR 0020), #217 closed
+  (16:34Z); see the D3 update below. The tracker's Ready definition needs a current
   document with no known refresh left. DR 0001, 0005, 0012, 0013, 0015, 0016
   and 0017 stay **Proposed**; ratification is #44. This update ratifies
-  nothing and marks no spec row met.
+  nothing and marks no spec row met. (Since: #44 closed when PR #242 ratified
+  DR 0001 on 2026-10-11; the others stay Proposed. See the
+  [ratification update](#ratification-update-2026-10-11-pr-242-issue-44).)
 
 ### D3 dated update, 2026-10-11 (issue #251)
 
@@ -99,19 +123,21 @@ for Partial.
 - **Entry point.** The cold-start section is now linked from the
   [Judge quickstart](#judge-quickstart-d2-d3) below.
 - **Corrections to the D2 update above, from the live tracker on this date.**
-  That update lists open PR #248 for #211 and treats it as a pending
-  refresh. PR #248 is merged and #211 is closed; the 232-word boot ROM the
-  load-path section describes is on `main`. #244 (routed open-drain release
-  glitch) and #217 (no routed-SDF evidence for the protocol firmware) are
-  still open.
+  That update treats PR #248 for #211 as a pending refresh. PR #248 is
+  merged and #211 is closed; the 232-word boot ROM the load-path section
+  describes is on `main`. At this update's reviewed
+  commit, #244 (routed open-drain release glitch) and #217 (no routed-SDF
+  evidence for the protocol firmware) had not closed; both closed later the
+  same day (see the last bullet).
 - **State: still Partial, not Ready.** What is implemented: the assembler,
   its 53 unit tests, the 18 + 1 programs with committed images, the
   freshness check and the RTL round-trip bench. What remains: the ISA text
-  stays **Proposed** (DR 0001, 0012, 0013, 0017; ratification is #44, open),
-  so nothing here is ratified; open #244 and #217 may still change the
-  architecture document or its evidence; and D1 has to be re-run on the
-  final top. Nothing in this update is a hardware or physical-signoff
-  claim.
+  stays **Proposed** (DR 0001, 0012, 0013, 0017; ratification was then
+  pending on #44), so nothing here is ratified (DR 0001 has since been ratified, the
+  others have not; see the ratification update below); #244 and #217, then not closed, could still
+  change the architecture document or its evidence (both have since closed,
+  below); and D1 has to be re-run on the final top. Nothing in this update
+  is a hardware or physical-signoff claim.
 - **Update 2026-10-11 (issues #244 and #246).** #244 is fixed in the top by
   DR 0020 (an open-drain pin's pad data is tied to 0), with the routed-SDF
   I2C repeated-START run passing at all three corners and failing on the
@@ -120,8 +146,10 @@ for Partial.
   with no max-slew or max-capacitance violation, from five repair settings
   in `src/config.json`. Both are in the records of gds run 38136727636
   (`librelane-corner-timing` `20261011-144900-e5a0bae`,
-  `post-layout-sdf-regression` `20261011-114800-e5a0bae`). #217 is still
-  open; three of its protocols now have routed-SDF runs. D1 still has to be
+  `post-layout-sdf-regression` `20261011-114800-e5a0bae`). #217 closed at
+  2026-10-11T16:34Z on that evidence: UART TX, SPI and I2C repeated START
+  have routed-SDF runs at all three corners; the boot programs, UART RX,
+  PS/2, WS2812 and the random regression do not. D1 still has to be
   re-linked to the final top's run. Nothing here is a silicon claim.
 
 ## Judge quickstart (D2, D3)
@@ -166,7 +194,8 @@ passes an independent WS2812B model at RTL and on the gate-level netlist.
 The judge-facing write-up, including what the frozen ISA made easy and hard,
 is [`row13-ws2812.md`](row13-ws2812.md). **State: partial.** The row is
 Proposed and unmet. There is no SDF run, no board and no video. The stretch
-column (a new role or pin direction) is issue #235.
+column (a new role or pin direction) was then issue #235, closed 2026-10-11
+with the PS/2 device in the next update.
 
 ### D6 dated update, 2026-10-11 (issue #235)
 
@@ -181,18 +210,26 @@ video.
 
 ### D4 dated update, 2026-10-10 (issue #214)
 
-Reviewed commit: `main` @ `9fb7815`. The judge-facing narrative now exists:
+Reviewed commit: `main` @ `ceaebe02` (first written at `9fb7815`; its record
+citations were refreshed to `ceaebe02` on 2026-10-11 for #238). The
+judge-facing narrative now exists:
 [`docs/submission/verification.md`](verification.md), linked from the root
 `README.md`. It maps each claim to its independent oracle, tested design level
 and flow, evidence record, reproduction command and limits, and lists what is
-not shown. The 2026-10-09 row above is left as written; these corrections
+not shown. The 2026-10-09 row above is left as written, except that its record citations point to the live records; these corrections
 supersede its stale parts:
 
-- **Record families:** 30 directories under `verification/records/` at this
+- **Record families:** 34 directories under `verification/records/` at this
   commit, not 21.
+- **`gds` run the records name:** [38083802720](https://github.com/2AMLogic/sg13cmos5l-protocol-emulator/actions/runs/38083802720)
+  at `bce5bf4`, a PR-branch run (all four jobs green, as recorded in
+  `post-layout-sdf-regression` `20261010-205119-af36071` <!-- superseded-ok: live at ceaebe02, this update's reviewed commit; newer records and a newer gds run exist -->); the design files
+  (`src`, `rtl`, `info.yaml`, `firmware/build/boot`) are unchanged from there
+  to `ceaebe02`, whose own `gds` run, 38107612922, is green. D1 stays
+  **Partial** for the reasons in its row.
 - **#136 has landed.** The I2C and SPI evidence runs on the logical, zero-delay
   `uio` pad model, which resolves the design's own `uio_oe`/`uio_out`
-  (`uio-pad-model` record `20261010-132636-8372c57`). It is not an electrical
+  (`uio-pad-model` record `20261011-012812-428e12f` <!-- superseded-ok: live at ceaebe02, this update's reviewed commit -->). It is not an electrical
   pad characterization. The "does not run through the real `uio_oe`" hole is
   closed; the electrical hole is not.
 - **UART RX is covered**, directed (`firmware-uart-rx`) and in the seeded
@@ -202,27 +239,62 @@ supersede its stale parts:
   made for UART RX under constrained random predates #192 and is left as
   written.
 - **Row 14** still reads unmet in `spec/target-spec.md`. The
-  `reset-power-up` record `20261010-133700-a0f91e3` shows (a), (b), (c) and
+  `reset-power-up` record `20261010-205223-af36071` <!-- superseded-ok: live at ceaebe02, this update's reviewed commit --> shows (a), (b), (c) and
   the reselect cycle on the routed netlist at zero delay; no grade is changed
   here.
-- **Open and visible in the narrative:** the residue of DR 0013 finding F8
-  (#211 added a count-complement byte that the UART load checks before it
-  commits a word; a coordinated corruption of count and complement that also
-  aliases the CRC is still not rejected), the PM_CRC readout (#167), the
-  Standard-mode I2C allocation (#125), no SDF run for the firmware benches or
-  the random regression (#217), bounded versus unbounded formal scope, SRAM
-  timing omitted from SDF, a Proposed specification (DR 0006), and no
-  silicon.
-- **State:** still **Partial**, not Ready. The report describes the design
-  before the ISA freeze (#135), and its records go stale when the RTL
-  changes. Re-review it after the freeze and after the final `gds` run.
+- **Limits stated in the narrative** (as of 2026-10-11): the residue of
+  DR 0013 finding F8 (#211, closed, added a count-complement byte that the
+  UART load checks before it commits a word; a coordinated corruption of
+  count and complement that also aliases the CRC is still not rejected), no
+  SDF run for the boot programs, UART RX, PS/2, WS2812 or the random
+  regression, bounded versus unbounded formal scope, SRAM timing omitted from
+  SDF, decision records and rows 13-14 still Proposed (target-spec rows 1-12
+  and DRs 0001-0004 were ratified by PR #242 on 2026-10-11), and no silicon.
+  Resolved since the first version and described as such: the PM_CRC readout
+  (PR #167, merged 2026-10-10), the Standard-mode I2C allocation (#125,
+  closed 2026-10-11, ruled `enforce_500`), and routed-SDF runs of UART TX,
+  SPI and I2C repeated START (#217, closed 2026-10-11).
+- **State:** still **Partial**, not Ready. The ISA is frozen mechanically —
+  DR 0017 pins the ISA-defining files in `spec/isa-freeze.json` and
+  `npm run lint` enforces the pins — and target-spec rows 1-12 and DRs
+  0001-0004 are ratified (PR #242), but DR 0012, 0013, 0016 and 0017 and
+  rows 13-14 are Proposed. #211 has since closed DR 0013's F8 (its residue is listed
+  above), and the design has changed under the report since (DR 0020's
+  open-drain fix and #246's timing repair, gds run 38136727636). What remains
+  before Ready: re-review the report against the current tree, and the final
+  `gds` re-link (D1).
+
+### Ratification update, 2026-10-11 (PR #242, issue #44)
+
+Reviewed: `main` @ `a9ac6940` (PR #242 merged as `72f48153`). The rows and dated
+updates above that call the specification Proposed or ratification pending were true
+when written and are kept; this update supersedes them.
+
+- **The act.** PR #242 carried the five `Status:` flips and
+  [DR 0009](../../spec/decision-records/0009-two-key-ratification-act.md).
+  At its head `26297b9e` the EE key answered `approve` and the market key
+  `adequate-for-catalog` (forge reviews 5484904651 and 5484909288); the PR
+  merged at 2026-10-11T20:57Z as `72f48153` and #44 closed. Earlier on #242
+  the EE key had requested changes, and PR #84 had been refused and closed
+  unmerged.
+- **What is Ratified.** `spec/target-spec.md` rows 1-12, as targets and as
+  DR 0004 registers them, and DRs 0001-0004. Ratifying a row binds it; it
+  does not mark it met, and no `State` cell changed.
+- **What is not.** Rows 13 and 14; the DR 0013 clause in row 6; DRs 0005,
+  0007, 0008, 0010-0018 and 0020 (still Proposed); DR 0006 and DR 0009 are
+  `Recorded`. DR 0009 records a limit on independence: one coordinating
+  session dispatched both key agents.
+- **Effect on the deliverables.** D2's DR 0001 is now ratified, but the
+  control space, load path and freeze it relies on (DR 0012, 0013, 0017) are
+  not. D4, D5 and D6 are refreshed for this in `verification.md`,
+  `ai-use.md` and `row13-*.md`. No readiness state changes.
 
 ## Risks
 
 | # | Risk | Finding as of 2026-10-09 | State |
 |---|---|---|---|
-| R1 | **Flow runtime.** The 6-hour GitHub Actions limit could kill the `gds` job if #129 grows the design toward 6×4 or 8×4. The fallback is [local hardening](https://tinytapeout.com/guides/local-hardening/). | At 2×2 the `gds` job took **6 min 24 s** (run 37974043486: 18:32:55Z to 18:39:19Z), far from the limit. No larger floorplan has been hardened. Nobody has tried local hardening on any fleet host; there is no record of it in this repo. | **Open.** Before #129 commits to a larger tile count, harden it once in CI and record the wall time. Separately, prove local hardening on a fleet host and record it, before we depend on it. |
-| R2 | **tt-gds-action version.** The organizers ask for the latest tt-gds-action, which carries the CMOS5L install fix. | Checked against `TinyTapeout/tt-gds-action` on 2026-10-09. `gds.yaml` uses the **branch** ref `@ihp-cmos5l` for all four jobs. Its tip is `3412659` (2026-09-14), *"fix: install ihp-sg13cmos5l from the merged IHP-Open-PDK tree #52"*, which is the CMOS5L install fix. Upstream has **no CMOS5L release tag**: the newest tags are `ttsky26d` and `ttihp26b`, and `ttihp*` is SG13G2. So the workflow is already on the latest CMOS5L code, and no edit is needed. Two caveats follow. (a) A branch ref floats, so a later upstream push changes our flow silently. Evidence records should name the action SHA a run used. (b) `ihp-cmos5l` is 3 commits behind upstream `main`, and two of those commits fix `gl_test` result detection. On `ihp-cmos5l`, `gl_test/action.yml` checks with `! grep failure results.xml`. Our pinned `cocotb==2.0.1` marks a crashed test with an `<error>` element, which that grep does not match. So a gate-level test that **errors** rather than fails could still turn the job green. `main` uses `cocotb_tools.check_results` instead. The RTL leg is not exposed, because `test.yaml` uses `scripts/check_test_results.py`. | **Open, caveat (b) needs a follow-up.** Either add a post-step to the `gl_test` job that runs `scripts/check_test_results.py` on the GL `results.xml`, or ask upstream to merge `main`'s `gl_test` fixes into `ihp-cmos5l`. Re-check the branch tip and the tags before submission. |
+| R1 | **Flow runtime.** The 6-hour GitHub Actions limit could kill the `gds` job if #129 grows the design toward 6×4 or 8×4. The fallback is [local hardening](https://tinytapeout.com/guides/local-hardening/). | At 2×2 the `gds` job took **6 min 24 s** (run 37974043486: 18:32:55Z to 18:39:19Z), far from the limit. No larger floorplan has been hardened. Nobody has tried local hardening on any fleet host; there is no record of it in this repo. | **Open.** Before #129 commits to a larger tile count, harden it once in CI and record the wall time. Separately, prove local hardening on a fleet host and record it, before we depend on it. **Updated 2026-10-11 (#238):** #129 closed on 2026-10-09 without growing the tile count, so the CI-hardening half did not trigger; the local-hardening half stands. |
+| R2 | **tt-gds-action version.** The organizers ask for the latest tt-gds-action, which carries the CMOS5L install fix. | Checked against `TinyTapeout/tt-gds-action` on 2026-10-09. `gds.yaml` uses the **branch** ref `@ihp-cmos5l` for all four jobs. Its tip is `3412659` (2026-09-14), *"fix: install ihp-sg13cmos5l from the merged IHP-Open-PDK tree #52"*, which is the CMOS5L install fix. Upstream has **no CMOS5L release tag**: the newest tags are `ttsky26d` and `ttihp26b`, and `ttihp*` is SG13G2. So the workflow is already on the latest CMOS5L code, and no edit is needed. Two caveats follow. (a) A branch ref floats, so a later upstream push changes our flow silently. Evidence records should name the action SHA a run used. (b) `ihp-cmos5l` is 3 commits behind upstream `main`, and two of those commits fix `gl_test` result detection. On `ihp-cmos5l`, `gl_test/action.yml` checks with `! grep failure results.xml`. Our pinned `cocotb==2.0.1` marks a crashed test with an `<error>` element, which that grep does not match. So a gate-level test that **errors** rather than fails could still turn the job green. `main` uses `cocotb_tools.check_results` instead. The RTL leg is not exposed, because `test.yaml` uses `scripts/check_test_results.py`. | **Open.** (Caveat (b) is closed by the [GL-gate R2 update](#r2-update-2026-10-11-240-the-gl-results-gate-ran-in-ci) below. Caveat (a), the floating branch ref, is addressed by the [commit-SHA pin](#r2-update-2026-10-11-231-tt-gds-action-pinned-to-a-commit-sha), pending a green `gds` run on that SHA.) As first written: **caveat (b) needs a follow-up.** Either add a post-step to the `gl_test` job that runs `scripts/check_test_results.py` on the GL `results.xml`, or ask upstream to merge `main`'s `gl_test` fixes into `ihp-cmos5l`. Re-check the branch tip and the tags before submission. |
 | R3 | **SRAM integration cross-check** against Ken Pettit's walkthrough (<https://kdp1965.github.io/ihp-um-janestreet-prism/ihp_sram_macro.html>, written 2026-09-29 for a 512×32 macro; ours is `RM_IHPSG13_1P_256x16_c2_bm_bist`). | A desk comparison was done for this tracker; it is not a measurement. **Matches:** `A_DLY` is tied to 1 and BIST is tied off (`src/protocol_program_memory.v`). Behavioural models are compiled with `-DFUNCTIONAL` for both the RTL and GL legs (`test/Makefile`, `rtl/vendor/`). There are two `PDN_MACRO_CONNECTIONS` lines, one for `VDD!` and one for `VDDARRAY!`. The PDN is Metal4-only (`FP_PDN_MULTILAYER` 0, `FP_PDN_VWIDTH` 2.1, `FP_PDN_VPITCH` 44.96 = 4 × 11.24). Precheck layers 25/0 and 16/0 are not a problem, because precheck is green. **Differs, and why:** our bridges are drawn by `src/pdn_cfg.tcl` rather than by stripe-nudging; record `librelane-pdn-bridge` reports PSM-connected nets, LVS 0, antenna 0, and worst IR drop 2.68 mV (his is 0.46 mV, on a different macro and floorplan). We set no `FP_MACRO_HORIZONTAL_HALO` and no `ROUTING_OBSTRUCTIONS`, and nothing on record shows a problem from either. **Worth a second look:** his flow runs `RUN_KLAYOUT_DRC` 1 with the CMOS5L deck in place of Magic, whereas ours has `RUN_KLAYOUT_DRC` 0 **and** `ERROR_ON_MAGIC_DRC` 0 (29,297 Magic hits, all inside the macro GDS, per the PDN-bridge record). That leaves the TT precheck's DRC as our only DRC gate. That is likely sufficient, but nobody has confirmed it. | **Partially done.** Follow-up: confirm which DRC deck `precheck` runs on CMOS5L, or turn on `RUN_KLAYOUT_DRC` as the walkthrough does. Confirm also that the IHP-Open-PDK commit the action installs matches the one precheck pins. |
 | R4 | **Submission form.** It opens near the deadline. | It is not open. Watch the organizers' email and the competition blog post. | **Watch.** Re-check monthly, and weekly from 2026-12-15. |
 
@@ -241,8 +313,30 @@ supersede its stale parts:
    still unmet as such. (First version written 2026-10-10, #214; re-review
    after the ISA freeze.)
 5. Do D6, the row-13 unplanned-protocol firmware, on the frozen ISA.
+   (2026-10-11: #141 is closed — WS2812 and PS/2 firmware and evidence are
+   in; the rows stay partial per their dated updates and `row13-*.md`.)
 6. Do the final `gds` run on the final top (D1), link it, then update every
    row here to **Ready** with citations.
+   (2026-10-11: #129 is closed — the tile count did not grow, so R1's CI
+   hardening did not trigger. Item 6 is the remaining gate before Ready.)
+
+## R2 update, 2026-10-11 (#240): the GL results gate ran in CI
+
+The 2026-10-10 R2 update above is left as written; its **Not verified** bullet
+is superseded by this one.
+
+- **The gate is in the job and has passed.** [Run 38083802720](https://github.com/2AMLogic/sg13cmos5l-protocol-emulator/actions/runs/38083802720)
+  at `bce5bf4` — with the gate change (`15f112cc`, PR #228) already merged —
+  ran the modified `gds.yaml`: the `Validate GL results (repository-owned)`
+  step executed after `gl_sim`, the `if:` expression was exercised by the
+  Actions runner, and all four jobs are green. [Run 38136727636](https://github.com/2AMLogic/sg13cmos5l-protocol-emulator/actions/runs/38136727636)
+  at `6dd0e9d` (the final top, DR 0020 + #246) passed the same gate with all
+  four jobs green. Caveat (b) is closed by those runs.
+- **R2 state.** Still **Open** on caveat (a) when written: the `ihp-cmos5l`
+  branch ref floated, evidence records should keep naming the action SHA a
+  run used, and the branch tip and tags must be re-checked before
+  submission. Since then #231 (closed 2026-10-11) pinned every reference to
+  a commit SHA; see the #231 update at the end of this file.
 
 ## R2 update, 2026-10-10 (#216): repository-owned GL results gate
 
