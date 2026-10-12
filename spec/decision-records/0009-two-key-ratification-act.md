@@ -192,3 +192,13 @@ Three consequences follow. Each says what is bound and what is still a proposal:
   ratification to pull request #29, which DR 0006 showed was not an act, and
   it needs the same follow-up. Pinned records (DRs 0005, 0012, 0013, 0015,
   0016) need a `no-behaviour-change` amendment for that edit too.
+
+## Dated note 2026-10-12 (issue #271): DR 0020 is not bound either
+
+Pull request #242's EE-key review (N4) noted that DR 0020 is missing from
+the lists above. It is not bound by the act and stays `Proposed`: DR 0020
+(open-drain pad data tied low, a conformance fix to DR 0012) was numbered on
+2026-10-11, after the lists were written. Read "DRs 0010, 0011 and 0013-0018"
+in the table in "What the act does not bind", and the "DRs 0005, 0007, 0008
+and 0010-0018" list in Consequences, as also naming DR 0020. Nothing the act
+binds changes; this note restates the scope and binds no further record.

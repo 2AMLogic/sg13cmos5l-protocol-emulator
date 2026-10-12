@@ -130,9 +130,9 @@ reports but is not a required check on `main`.
   ([record](../../verification/records/protocol-reference-models/records/20261010-180436-9fb7815.md)).
   The core is checked edge by edge against an independent instruction-set
   simulator written from the decision records (PR #204,
-  [record](../../verification/records/isa-lockstep/records/20261011-182004-080e6be.md)).
+  [record](../../verification/records/isa-lockstep/records/20261011-182004-080e6be.md) <!-- superseded-ok: the record live at the main this page reviews; re-minted for issue #271 when DR 0001 gained dated notes -->).
   The control space is checked with mutants
-  ([record](../../verification/records/control-space/records/20261011-165710-56ebaf9.md)).
+  ([record](../../verification/records/control-space/records/20261011-230658-66d2731.md)).
 - **Two flows, both named.** Every number is attributed either to the
   competition's LibreLane flow or to this program's klt flow, per
   [DR 0002](../../spec/decision-records/0002-flow-of-record.md).
