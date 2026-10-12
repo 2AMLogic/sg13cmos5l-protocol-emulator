@@ -2,8 +2,23 @@
 
 Chronological record of merged pull requests and closed issues, newest first.
 
+### 2026-10-12
+
+- **PR #277**: Move the generated i2c_fast_sr* programs to the 70/55 Fast split (#276)
+- **PR #240**: docs: cite live evidence records in docs/submission; lint superseded citations (#238)
+- **Issue #276** (closed): Move the generated i2c_fast_sr* programs to the 70/55 Fast split (zero t_LOW margin at 65/60)
+- **Issue #238** (closed): docs/submission/verification.md cites superseded evidence records (§3.2/§3.3)
+
 ### 2026-10-11
 
+- **PR #270**: Prove corrected I2C controller-write ACK windows and address-NACK STOP (#259)
+- **PR #269**: docs: R3 update, what the precheck DRC covers (#257)
+- **PR #268**: ci: pin tt-gds-action to a commit SHA and lint it (R2)
+- **PR #242**: spec: two-key act — flip target spec and DRs 0001-0004 to Ratified (#44)
+- **Issue #259** (closed): Prove corrected I2C controller-write ACK windows and address-NACK STOP
+- **Issue #257** (closed): Confirm precheck is a sufficient DRC gate: in-flow Magic/KLayout DRC are both off (submission risk R3)
+- **Issue #231** (closed): Pin tt-gds-action to a commit SHA and lint against floating refs (submission risk R2)
+- **Issue #44** (closed): Two-key ratification has never run: zero RATIFY-KEY reviews exist, so target-spec + DRs 0001-0004 are 'Ratified' by assertion
 - **PR #264**: Sample I2C controller-write ACK inside the ninth SCL high
 - **PR #260**: Open-drain pad data tied low (DR 0020) and LibreLane timing repair: slow-corner margin +5.8 ns, no slew violations (#244, #246)
 - **PR #255**: docs(submission): reconcile D2/D3 and add judge quickstart (#251)
