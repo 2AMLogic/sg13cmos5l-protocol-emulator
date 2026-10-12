@@ -8,7 +8,7 @@ of [`docs/submission/README.md`](README.md). Issue #214.
 
 - **Reviewed:** `main` as of 2026-10-11, at `a9ac6940` (this PR's
   merge-base; the newest cited record, `isa-lockstep`
-  `20261011-182004-080e6be`, landed with PR #242's merge `72f48153`). Every
+  `20261011-182004-080e6be` <!-- superseded-ok: the record live at the main this page reviews; re-minted for issue #271 when DR 0001 gained dated notes -->, landed with PR #242's merge `72f48153`). Every
   record cited below is a file on `main` at `a9ac6940`, and issue and PR
   states are as of that date. Nothing here is a new measurement: this
   document reads the existing evidence, it does not run anything.
@@ -108,7 +108,7 @@ command, bench and pinned tool is
 
 | Claim | Oracle | Level / flow | Record | Repro | Limits |
 |---|---|---|---|---|---|
-| All 16 opcodes and the DR 0012 control space match the ISS on every edge of 400 seeded programs (32,471 edges); counted coverage gate met | `reference_models/isa.py` | RTL, Icarus | [isa-lockstep 20261011-182004](../../verification/records/isa-lockstep/records/20261011-182004-080e6be.md): PASS 4/4 | `klt functional-verification verification/request-isa-lockstep.json --format json` | Programs run from program memory after a serial load; boot-ROM fetch is not in scope. Reads RTL hierarchy, so no gate-level lockstep. The four details DR 0001 leaves open are ruled by DR 0016, which is **Proposed**. |
+| All 16 opcodes and the DR 0012 control space match the ISS on every edge of 400 seeded programs (32,471 edges); counted coverage gate met | `reference_models/isa.py` | RTL, Icarus | [isa-lockstep 20261011-182004](../../verification/records/isa-lockstep/records/20261011-182004-080e6be.md) <!-- superseded-ok: the record live at the main this page reviews; re-minted for issue #271 when DR 0001 gained dated notes -->: PASS 4/4 | `klt functional-verification verification/request-isa-lockstep.json --format json` | Programs run from program memory after a serial load; boot-ROM fetch is not in scope. Reads RTL hierarchy, so no gate-level lockstep. The four details DR 0001 leaves open are ruled by DR 0016, which is **Proposed**. |
 | ISS lockstep catches single-defect cores | Ten mutant cores (`isa_lockstep_mutants.py`) | RTL | same record | `python3 verification/isa_lockstep_mutants.py --out <dir>` | The mutant list is the record's; a defect outside it is not claimed. |
 | Control space: reset values, readback, reserved indices, fixed stalls, I2C images use `UIO_OD` open-drain | Bench plus mutants | RTL | [control-space 20261011-165710](../../verification/records/control-space/records/20261011-165710-56ebaf9.md): PASS 10/10 | `klt functional-verification verification/request-control-space.json --format json`; `python3 verification/control_space_mutants.py --out <dir>` | Zero-delay; gate-level copy in 3.5. |
 | `no_data_dependent_latency` holds on the shipped core, from either instruction source | Independent SVA monitor over DR 0001's latency table | **Formal**, bounded (BMC depth 30) | [no-data-dependent-latency 20261010-160900](../../verification/records/no-data-dependent-latency/records/20261010-160900-9d62f29.md): PASS, 14 covers reached | `./verification/formal/run-no-data-dependent-latency.sh <dir>`; `verification/formal/test-mutant-gate.sh` | **Bounded, not unbounded**: k-induction did not close (the record says why). The harness quantifies over a free 8-word program table and an 8-word ROM table, with `serial_loaded` a constant per trace. |
