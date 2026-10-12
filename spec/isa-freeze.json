@@ -141,6 +141,16 @@
       "sha256_after": "e12fc5d86d00a7c1e73a9db51e4362ed8011dafb8194c5231848d4df3483cce5",
       "ref": "#242",
       "summary": "dated 2026-10-11 amendment (EE-key review on PR #242; same finding as #85 item 1, on newer RTL) scoping the record's 1-cycle, no-op, control-transfer, program-memory and loading statements to the instruction set it defines: lists the frozen RTL's four fixed-latency control encodings (WCTL PM_DATA_LO 2, WCTL RUN 2, RCTL PM_DATA_HI 2, WCTL CRC_BYTE 9 cycles), the one computed transfer (WCTL RUN, PC <- Rs), the run-time PM_ADDR/PM_DATA_HI/PM_DATA_LO access, the load-phase uo_out PM_CRC readout and the boot-ROM fetch at MODE low; DRs 0012, 0013 and 0015 stay unbound; no RTL, timing or interface change"
+    },
+    {
+      "path": "spec/decision-records/0001-isa.md",
+      "op": "modify",
+      "kind": "no-behaviour-change",
+      "invalidates_row13_evidence": false,
+      "sha256_before": "e12fc5d86d00a7c1e73a9db51e4362ed8011dafb8194c5231848d4df3483cce5",
+      "sha256_after": "818ef8c44db135e3e52bbb9fa4671be4e53bb240e4e02f0cc12bfdb7b93aeadb",
+      "ref": "#271",
+      "summary": "two dated notes from the two-key reviews' non-blocking findings on PR #242 (issue #271): a gloss that `uio_out` in the port-11 amendment's 'OUT to port 11 still writes uio_out' is the ISA's port-11 register (as DR 0020 Consequences reads it), not necessarily the top's pad-data net, nothing observable differs; and a citation note that the I2C Fast-mode sketch's UM10204 Rev. 6 Table 10 is Table 11 in Rev. 7.0 with the same t_LOW/t_HIGH minimums. Existing text preserved verbatim; no instruction, control index, latency, flag, reset value or assembler rule changes."
     }
   ],
   "row13_excluded_protocols": {

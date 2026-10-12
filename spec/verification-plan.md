@@ -306,7 +306,7 @@ protocol requires.
 |---|---|---|
 | UART | baud rate (across the 9,600–1,000,000 range), byte values, frame timing jitter injected on the receive side | A software UART decoder independent of this repo's firmware/RTL (e.g. a well-established open-source UART bit-timing model, not hand-rolled to match this design's own assumptions) |
 | SPI | mode (0–3), transfer length, clock rate up to the f_clk/4 ceiling, MOSI/MISO data patterns | A software SPI controller/peripheral reference model checking mode-correct clock-edge/sample-edge alignment against Motorola/NXP SPI Block Guide conventions (`spec/target-spec.md` row 11) |
-| I2C | Standard vs. Fast mode, address values, ACK/NACK injection from the simulated peripheral, clock-stretching from the simulated peripheral | A reference I2C bus-functional model checking timing against NXP UM10204 Rev. 6's AC characteristics table (`spec/target-spec.md` row 12) directly, not against this repo's own DR 0001 cycle-budget arithmetic — the whole point of an *independent* reference is that it does not trust this repo's own math |
+| I2C | Standard vs. Fast mode, address values, ACK/NACK injection from the simulated peripheral, clock-stretching from the simulated peripheral | A reference I2C bus-functional model checking timing against NXP UM10204's AC characteristics table (Rev. 7.0 Table 11; Rev. 6 numbered it Table 10; `spec/target-spec.md` row 12; citation corrected 2026-10-12, issue #271) directly, not against this repo's own DR 0001 cycle-budget arithmetic — the whole point of an *independent* reference is that it does not trust this repo's own math |
 
 Each suite's pass/fail record is append-only per `CLAUDE.md`: a later run
 that fails does not retroactively erase an earlier recorded pass; it is
