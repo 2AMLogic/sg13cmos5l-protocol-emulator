@@ -1,6 +1,6 @@
 # sg13cmos5l-protocol-emulator
 
-A Protocol emulator ASIC on the [IHP SG13CMOS5L](https://github.com/IHP-GmbH/ihp-sg13cmos5l) open PDK,
+A Protocol emulator ASIC on the [IHP SG13CMOS5L](https://github.com/IHP-GmbH/IHP-Open-PDK/tree/dev/ihp-sg13cmos5l) open PDK,
 designed by AI agents driving
 [klayout-tools](https://github.com/2AMLogic/klayout-tools) and the open-source
 flow — cocotb + Icarus for verification, Yosys and OpenROAD for implementation.
@@ -152,7 +152,15 @@ Legs that need the PDK (synthesis, DRC/LVS, gate-level and post-layout
 simulation) take `PDK_ROOT` pointing at IHP-Open-PDK `2bbec755dc67`; the
 formal legs need the OSS CAD Suite release pinned in
 [`.github/workflows/ci.yml`](.github/workflows/ci.yml); the GDS and its
-timing come from the `gds` workflow. The environment record is
+timing come from the `gds` workflow. That `2bbec755dc67` is what the pinned
+`klt` (see [`layout/toolchain.json`](layout/toolchain.json)) currently
+materializes — but the two flows provision the PDK independently: the
+flow of record (the Tiny Tapeout CI `gds` workflow) fetches its own copy via
+`install_sg13cmos5l.sh`, so their revisions can drift apart. klayout-tools
+#2720 (merged 2026-10-12, not in the pinned `klt`) repoints the `klt` fetch at
+IHP-Open-PDK `dev` @ `f7bca326`; that lands with the klt pin bump (#289), and
+reconciling the two flows' PDK revisions (re-runs and re-stamp) is issue
+#290. The environment record is
 [`docs/environment.md`](docs/environment.md).
 
 ## Repo layout

@@ -487,7 +487,14 @@ Finding 1: the `gds` and `precheck` actions provision **the same PDK commit**,
 because both call one script. No mismatch between them.
 Finding 2: `layout/toolchain.json` has no PDK pin field, but the `_comment` for
 the `0e2362bd` klt pin records verification against IHP-Open-PDK `2bbec755`,
-which **matches** the commit both actions install. No mismatch. What is still
+which **matches** the commit both actions install. No mismatch. The match is a
+coincidence of the current pin, not a shared source: the two flows provision
+their PDK independently — the TT CI script fetches `2bbec755` itself, while
+the klt flow gets whatever klt's own fetch script materializes.
+klayout-tools#2720 (merged 2026-10-12, not in the pinned klt v0.7.0) repoints
+the klt fetch at IHP-Open-PDK `dev` @ `f7bca326`, so the klt flow's revision
+will diverge from the flow of record at the klt pin bump (issue #289);
+reconciling the two (evidence re-runs and re-stamp) is issue #290. What is still
 missing is a per-run record: the klt DRC report's `provenance.pdk` is `null`
 (`verification/records/librelane-gds-signoff-check/artifacts/20261011-144308-e5a0bae/klt-drc.json`,
 klt 0.7.0, KLayout 0.30.12), so the PDK a given klt run used is not
