@@ -38,9 +38,10 @@ Heuristics, stated plainly (it is a reading aid, not a proof):
 "Current reading" digest atop `spec/gap-to-submission.md` and flags every
 issue number in its `Open issues` column that is not an open issue (closed,
 a pull request, or nonexistent). Like the rest of this script it needs the
-network, so "every issue in the digest is open" is enforced on demand, not
-in CI; the offline shape check is `scripts/check_gap_digest.py`, which is in
-`npm run lint`.
+network, so "every issue in the digest is open" is enforced by the weekly
+scheduled `digest-issue-state` workflow (and on `workflow_dispatch`),
+deliberately not as a PR gate; the offline shape check is
+`scripts/check_gap_digest.py`, which is in `npm run lint`.
 
 Usage:
     python3 scripts/check_docs_issue_states.py [--docs DIR] [--repo OWNER/NAME]
