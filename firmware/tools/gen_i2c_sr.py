@@ -23,7 +23,7 @@ OUT_DIR = ROOT / "firmware" / "asm"
 
 # (name, L=t_LOW cycles, H=t_HIGH cycles, HD=t_HD;STA, SUSTA, SUSTO)
 MODES = {
-    "fast": dict(L=65, H=60, HD=65, SUSTA=30, SUSTO=60,
+    "fast": dict(L=70, H=55, HD=65, SUSTA=30, SUSTO=60,
                  table="Fast-mode (400 kHz class)"),
     # L + H = 500: every ordinary data/ACK clock is the 100 kHz period at the
     # nominal 50 MHz clock (issue #125). L=258 is as long as a single WAIT
