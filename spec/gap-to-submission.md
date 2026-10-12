@@ -44,6 +44,27 @@ folded into `rtl/` as a shortcut. Update this file (append a dated note per
 row, don't silently flip a status) whenever a gap closes or a new one is
 discovered.
 
+## Current reading
+
+A short, hand-written view of the table below, added 2026-10-12 (issue #282). It adds nothing to the record: the long cells below stay the append-only history and win on any disagreement. One line per row; `State` is `met`, `unmet` or `proposed` (a row carried as Proposed, or deferred), and for a `met` row the reason is the residual caveat. `Open issues` lists only issues that are open, or `none`. `scripts/check_gap_digest.py` (in `npm run lint`) checks the shape offline; `scripts/check_docs_issue_states.py --digest` checks on demand that every cited issue is still open.
+
+| # | State | Blocking reason | Open issues | Row |
+|---|---|---|---|---|
+| 1 | unmet | UART RX is outside the constrained-random suite; the I2C bus is a logical, zero-delay pad model with no pad cell, rise time or silicon | #20 | [row 1](#spec-rows-spectarget-specmd) |
+| 2 | proposed | Deferred: DR 0011 and DR 0015 are unratified and no schedule is assembled or simulated; the row commits to no value | none | [row 2](#spec-rows-spectarget-specmd) |
+| 3 | unmet | `no_data_dependent_latency` is proved only within the harness model, on a single engine; the serial-load shift-in is not modelled | none | [row 3](#spec-rows-spectarget-specmd) |
+| 4 | unmet | 50 MHz closes post-route on 3 of the 6 declared corners (LibreLane flow); the other 3 are unreachable for the macro-backed design and the klt leg is blocked on klayout-tools#2635 | #20 | [row 4](#spec-rows-spectarget-specmd) |
+| 5 | met | Pin budget is template-fixed and instantiated; runtime `uio` direction rests on DR 0012, still Proposed | none | [row 5](#spec-rows-spectarget-specmd) |
+| 6 | unmet | No silicon clock is demonstrated and DR 0005 (SRAM macro) remains unratified | none | [row 6](#spec-rows-spectarget-specmd) |
+| 7 | unmet | The flip-flop memory misses the budget; the SRAM-macro path is Proposed (DR 0005) and the klt place-and-route leg is blocked on klayout-tools#2635 | #273 | [row 7](#spec-rows-spectarget-specmd) |
+| 8 | unmet | SRAM timing is zero-delay in simulation and SDF setup/hold limits are not checked by Icarus; the gate-level evidence for the changed I2C images is stale | none | [row 8](#spec-rows-spectarget-specmd) |
+| 9 | met | Licence set, template pulled in and all four `gds`-workflow jobs green on the harness stub; the final design's sign-off run is still to come | none | [row 9](#spec-rows-spectarget-specmd) |
+| 10 | unmet | Cycles only, no measured baud; TX at 434 cycles/bit is unmeasured | #281 | [row 10](#spec-rows-spectarget-specmd) |
+| 11 | unmet | The f_clk/4 ceiling is a cycle ratio at row 4's unconfirmed clock; pad edge rates are uncharacterized and multi-byte bursts under one CS are untested | none | [row 11](#spec-rows-spectarget-specmd) |
+| 12 | unmet | Timing is in cycles at row 4's unconfirmed clock on a zero-delay pad model; gate-level and SDF records for the 70/55 Fast-mode images are stale | #262, #272, #275 | [row 12](#spec-rows-spectarget-specmd) |
+| 13 | proposed | Not in DR 0004's register; WS2812 and PS/2 pass their models at RTL and gate level, but the row is not ratified | none | [row 13](#spec-rows-spectarget-specmd) |
+| 14 | proposed | Not in DR 0004's register; reset release under real delays and the pads are not covered | none | [row 14](#spec-rows-spectarget-specmd) |
+
 ## Spec rows (`spec/target-spec.md`)
 
 | # | Parameter | Status | Gap |

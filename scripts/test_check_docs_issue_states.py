@@ -71,5 +71,29 @@ class Mismatch(unittest.TestCase):
         self.assertFalse(c.mismatch("merged", closed_issue))
 
 
+class Digest(unittest.TestCase):
+    TEXT = (
+        "## Current reading\n\n| # | State | Blocking reason | Open issues | Row |\n|---|---|---|---|---|\n"
+        "| 1 | unmet | r | #10, #11 | [row 1](#x) |\n"
+        "| 2 | unmet | r | #12, #13 | [row 2](#x) |\n"
+        "| 3 | met | r | none | [row 3](#x) |\n\n## Spec rows\n"
+    )
+
+    def test_flags_closed_pr_and_missing(self):
+        live = {
+            10: {"kind": "issue", "state": "open", "merged": False},
+            11: {"kind": "issue", "state": "closed", "merged": False},
+            12: {"kind": "pr", "state": "open", "merged": False},
+        }
+        self.assertEqual(
+            c.digest_problems(self.TEXT, live.get),
+            [(1, 11, "is closed"), (2, 12, "is a pull request"), (2, 13, "does not exist")],
+        )
+
+    def test_committed_digest_parses(self):
+        text = c.check_gap_digest.DEFAULT_PATH.read_text(encoding="utf-8")
+        self.assertTrue(c.check_gap_digest.digest_issues(text))
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=1)

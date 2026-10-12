@@ -34,8 +34,17 @@ Heuristics, stated plainly (it is a reading aid, not a proof):
   `<!-- state-ok: <reason> -->`; every reference in that paragraph, list item
   or table row is then skipped. Prefer fixing the sentence or adding a dated correction.
 
+`--digest [FILE]` is a second, separate mode (issue #282): it reads the
+"Current reading" digest atop `spec/gap-to-submission.md` and flags every
+issue number in its `Open issues` column that is not an open issue (closed,
+a pull request, or nonexistent). Like the rest of this script it needs the
+network, so "every issue in the digest is open" is enforced on demand, not
+in CI; the offline shape check is `scripts/check_gap_digest.py`, which is in
+`npm run lint`.
+
 Usage:
     python3 scripts/check_docs_issue_states.py [--docs DIR] [--repo OWNER/NAME]
+    python3 scripts/check_docs_issue_states.py --digest [FILE] [--repo OWNER/NAME]
 Exit codes: 0 no mismatch, 1 at least one mismatch, 2 `gh` failed.
 Standard library only (plus the `gh` CLI on PATH).
 """
@@ -48,6 +57,9 @@ import re
 import subprocess
 import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import check_gap_digest  # noqa: E402
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_DOCS = REPO_ROOT / "docs" / "submission"
@@ -194,11 +206,57 @@ def default_repo() -> str:
     return out.stdout.strip()
 
 
+def digest_problems(text: str, lookup) -> list[tuple[int, int, str]]:
+    """(row, number, what) for each digest-cited number that is not an open issue.
+
+    `lookup(num)` returns `live_state`'s dict, or None if the number does not exist.
+    """
+    bad = []
+    for row, num in check_gap_digest.digest_issues(text):
+        live = lookup(num)
+        if live is None:
+            bad.append((row, num, "does not exist"))
+        elif live["kind"] != "issue":
+            bad.append((row, num, "is a pull request"))
+        elif live["state"] != "open":
+            bad.append((row, num, f"is {live['state']}"))
+    return bad
+
+
+def gh_lookup(repo: str):
+    def lookup(num: int):
+        try:
+            return live_state(repo, num)
+        except subprocess.CalledProcessError as exc:
+            if "Not Found" in (exc.stderr or "") or "404" in (exc.stderr or ""):
+                return None
+            raise
+    return lookup
+
+
+def main_digest(path: Path, repo_arg: str | None) -> int:
+    try:
+        repo = repo_arg or default_repo()
+        bad = digest_problems(path.read_text(encoding="utf-8"), gh_lookup(repo))
+    except (subprocess.CalledProcessError, FileNotFoundError) as exc:
+        detail = getattr(exc, "stderr", "") or str(exc)
+        print(f"ERROR: gh failed: {detail.strip()}", file=sys.stderr)
+        return 2
+    for row, num, what in bad:
+        print(f"MISMATCH {path.name} digest row {row}: #{num} {what}, but the digest lists it as open")
+    print(f"\nchecked the digest in {path.name} against {repo}: {len(bad)} mismatch(es)")
+    return 1 if bad else 0
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--docs", type=Path, default=DEFAULT_DOCS)
     ap.add_argument("--repo", help="OWNER/NAME (default: this checkout's GitHub repository)")
+    ap.add_argument("--digest", nargs="?", type=Path, const=check_gap_digest.DEFAULT_PATH,
+                    metavar="FILE", help="check the gap-to-submission.md digest's issue numbers instead")
     args = ap.parse_args()
+    if args.digest:
+        return main_digest(args.digest, args.repo)
     try:
         repo = args.repo or default_repo()
         cache: dict = {}
