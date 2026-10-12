@@ -304,5 +304,15 @@ records the retirement as follow-up work.
   body). This changes nothing about the key's authority — only its
   starting point.
 
+## Dated note 2026-10-12 (issue #271): UM10204 revision in row 12's register entry
+
+The register's row 12 line above reads "UM10204 Rev. 6 Table 10 values". The
+current revision is Rev. 7.0 (1 October 2021), where the same table is
+Table 11 and the five minimums the row names have the same values;
+`spec/target-spec.md` row 12 already cites Rev. 7.0 Table 11 (dated note
+2026-10-10, issue #85, item 8). The register line is a ratification-time
+snapshot and is kept as written. The note changes no bound value (EE-key
+review N8 on pull request #242).
+
 [#1784]: https://github.com/2AMLogic/klayout-tools/issues/1784
 [#1786]: https://github.com/2AMLogic/klayout-tools/issues/1786

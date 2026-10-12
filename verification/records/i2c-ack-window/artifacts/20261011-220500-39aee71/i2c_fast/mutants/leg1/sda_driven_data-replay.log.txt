@@ -1,0 +1,9 @@
+WARNING: <scratch>/replay_tb.v:13: $readmemh(<scratch>/i2c_fast/mutants/leg1/sda_driven_data-replay.hex): Not enough words in the file for the requested range [0:2459].
+VCD info: dumpfile <scratch>/i2c_fast/mutants/leg1/sda_driven_data-cex.vcd opened for output.
+ERROR: verification/formal/i2c_ack_window.sv:251: 
+       Time: 24575000  Scope: replay_tb.dut.u_property
+ERROR: verification/formal/i2c_ack_window.sv:251: 
+       Time: 24585000  Scope: replay_tb.dut.u_property
+ERROR: verification/formal/i2c_ack_window.sv:251: 
+       Time: 24595000  Scope: replay_tb.dut.u_property
+<scratch>/replay_tb.v:21: $finish called at 24600000 (1ps)

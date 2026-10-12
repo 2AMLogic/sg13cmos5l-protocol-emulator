@@ -549,10 +549,49 @@ gates. The host-side loader is issue #118.
   second free program table next to program memory, so each result holds
   for every ROM image and across the fetch-source switch at `WCTL RUN`.
   `pin_write_latency`'s shadow model derives the fetch source itself.
+  Section 2.3's property, `formal/i2c_ack_window.sv` (issue #259), is the
+  firmware-specific ACK-window obligation for the two committed corrected
+  I2C controller-write images (`firmware/build/i2c_{fast,std}.hex`, issue
+  #258). It is a bus-level monitor: the address/data/ninth-clock windows come
+  from its own START / SCL-rise / STOP counters on the resolved SCL and SDA
+  lines, never from the core's branch decoder. `formal/formal_top_i2c_ack.v`
+  runs the actual `rtl/protocol_core.v` on a constant image (a generated
+  `i2c_image_rom` behind a registered fetch port), builds the lines from the
+  core's real `uio_out` / `uio_dir` / `uio_od` through the top level's
+  `uio_oe` formula, and adds a free, I2C-legal peripheral (ACK/NACK may change
+  at any cycle of the ACK low phase, `t_SU;DAT` before the ninth rise,
+  stable through the high). `formal/i2c_ack_images.py` assembles the images
+  and the firmware mutants with the repository assembler;
+  `formal/run-i2c-ack-window.sh` is the cold-start runner (requires `yosys`,
+  `yosys-abc`, `iverilog`, `vvp`, `python3` and `git` history on `$PATH` /
+  in the clone; no PDK, no z3):
+  ```bash
+  ./verification/formal/run-i2c-ack-window.sh [artifacts-dir]
+  ```
+  It runs ABC `bmc3` on the real assertions to the image's TOTAL-CYCLES + 300
+  frames for both grades and both address outcomes, an informational PDR
+  attempt, one run per cover, and 13 firmware mutants per grade (the original
+  pre-#258 scheduling, a sample in the rise cycle, after the fall, missing,
+  extra, SDA driven in the slot, an ignored address NACK). A mutant counts as
+  rejected only when ABC produces an assertion counterexample on the expected
+  assertion **and** an Icarus replay of the witness fails the same assertion;
+  no verdict, a crash or a survivor fails the run. **The result is a bounded
+  check, not an unbounded proof** (PDR does not converge); it is complete for
+  the harness model only by the argument that the image ends in `HALT`, which
+  holds until reset. Measured 6 min 23 s wall on one worker. It is **not** in
+  the manual `formal` CI job: the early-scheduling mutants read the pre-#258
+  slot text from git history, which that job's shallow checkout does not have,
+  and the hosted run was not exercised. Evidence lives in
+  `records/i2c-ack-window/`.
 - `check_records.py` — the evidence-record linter (see "Enforcement").
 - `test_check_records.py` — the linter's own self-test: one executable
   negative case per violation class named below, run against a throwaway
   fixture repo.
+- `check_docs_records.py` — fails when a document under `docs/submission/`
+  cites a superseded or nonexistent record id (#238). A deliberate historical
+  citation carries `<!-- superseded-ok: reason -->` on its line.
+- `test_check_docs_records.py` — its self-test (throwaway records tree; one
+  case per violation class, plus the shipped docs).
 - `_repo_utils.py` — shared `REPO_ROOT`/`run_git`/`sha256_of` helpers used by
   `check_records.py`.
 - `records/` — the append-only evidence records this convention produces.
