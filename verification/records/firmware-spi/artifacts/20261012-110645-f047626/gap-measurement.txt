@@ -1,0 +1,3 @@
+0.00ns INFO     ..tt_um_2amlogic_protocol_emulator spi_mode0_burst3: 110 words, 133 cycles to execute
+38241.00ns INFO     ..tt_um_2amlogic_protocol_emulator spi_mode0_burst3 burst: SpiReport(mosi=['0xa5', '0x3c', '0xd2'], miso=['0xc3', '0x5a', '0x96'], sclk_period=80.000ns, violations=[])
+38241.00ns INFO     ..tt_um_2amlogic_protocol_emulator spi_mode0_burst3: inter-byte SCLK gap (last trailing edge -> next leading edge) = [2, 2] cycles at the 2 byte boundaries; within-byte half-period = 2; across-boundary leading-to-leading periods = [4, 4]; asserted bound <= 2 cycles
