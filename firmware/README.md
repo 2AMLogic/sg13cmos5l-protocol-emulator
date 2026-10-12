@@ -547,6 +547,14 @@ in a poll loop. Bench: `verification/test_firmware_i2c_sr.py`
 klt functional-verification verification/request-firmware-spi.json --format json
 ```
 
+**Multi-byte burst under one CS (issue #286).** `spi_mode0_burst3.asm`
+clocks three bytes (MOSI `0xA5`, `0x3C`, `0xD2`) in one CS-low window at
+the 4-cycle/bit ceiling, mode 0 only, straight-line (a loop does not fit
+the 4-instruction-per-bit budget). Bench `verification/test_firmware_spi_burst.py`
+(`klt functional-verification verification/request-firmware-spi-burst.json
+--format json`) measures the SCLK gap at each byte boundary; mutants:
+`python3 verification/spi_burst_mutants.py --out <dir>`.
+
 
 The cocotb round-trip bench — assembling `demo_roundtrip.asm`, loading the
 image serially through `rtl/protocol_program_memory.v`'s DR 0001 load

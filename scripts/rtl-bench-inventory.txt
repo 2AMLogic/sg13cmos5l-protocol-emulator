@@ -21,6 +21,7 @@ include protocol-models
 include firmware-uart
 include firmware-uart-rx
 include firmware-spi
+include firmware-spi-burst
 include uio-pads
 include firmware-i2c
 include firmware-i2c-sr

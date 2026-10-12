@@ -1,0 +1,86 @@
+{
+ "bench": "verification/test_firmware_spi_burst.py",
+ "runs": [
+  {
+   "kind": "golden",
+   "tests": 2,
+   "failed": [],
+   "as_required": true
+  },
+  {
+   "kind": "mutant",
+   "name": "drop-bit-at-boundary-0-1",
+   "defect": "the last bit of byte 0 is not clocked: 23 SCLK periods, every later bit shifts one place",
+   "file": "firmware/asm/spi_mode0_burst3.asm",
+   "tests": 2,
+   "failed": [
+    "test_burst3_image_is_fresh",
+    "test_mode0_three_byte_burst_under_one_cs"
+   ],
+   "expected_catchers": [
+    "test_mode0_three_byte_burst_under_one_cs"
+   ],
+   "as_required": true
+  },
+  {
+   "kind": "mutant",
+   "name": "repeat-bit-at-boundary-0-1",
+   "defect": "the last bit of byte 0 is clocked twice: 25 SCLK periods, every later bit shifts one place",
+   "file": "firmware/asm/spi_mode0_burst3.asm",
+   "tests": 2,
+   "failed": [
+    "test_burst3_image_is_fresh",
+    "test_mode0_three_byte_burst_under_one_cs"
+   ],
+   "expected_catchers": [
+    "test_mode0_three_byte_burst_under_one_cs"
+   ],
+   "as_required": true
+  },
+  {
+   "kind": "mutant",
+   "name": "drop-bit-at-boundary-1-2",
+   "defect": "the last bit of byte 1 is not clocked",
+   "file": "firmware/asm/spi_mode0_burst3.asm",
+   "tests": 2,
+   "failed": [
+    "test_burst3_image_is_fresh",
+    "test_mode0_three_byte_burst_under_one_cs"
+   ],
+   "expected_catchers": [
+    "test_mode0_three_byte_burst_under_one_cs"
+   ],
+   "as_required": true
+  },
+  {
+   "kind": "mutant",
+   "name": "repeat-bit-at-boundary-1-2",
+   "defect": "the last bit of byte 1 is clocked twice",
+   "file": "firmware/asm/spi_mode0_burst3.asm",
+   "tests": 2,
+   "failed": [
+    "test_burst3_image_is_fresh",
+    "test_mode0_three_byte_burst_under_one_cs"
+   ],
+   "expected_catchers": [
+    "test_mode0_three_byte_burst_under_one_cs"
+   ],
+   "as_required": true
+  },
+  {
+   "kind": "mutant",
+   "name": "extra-cycle-between-bytes",
+   "defect": "one NOP between byte 0 and byte 1: the inter-byte SCLK gap is 3 cycles, not the 2-cycle half-period",
+   "file": "firmware/asm/spi_mode0_burst3.asm",
+   "tests": 2,
+   "failed": [
+    "test_burst3_image_is_fresh",
+    "test_mode0_three_byte_burst_under_one_cs"
+   ],
+   "expected_catchers": [
+    "test_mode0_three_byte_burst_under_one_cs"
+   ],
+   "as_required": true
+  }
+ ]
+}

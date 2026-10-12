@@ -826,7 +826,7 @@ class Checker:
         if text is None:
             return
         c = self.concrete
-        m = re.search(r"spi_mode([0-3])\.asm$", rel)
+        m = re.search(r"spi_mode([0-3])(?:_[a-z0-9]+)?\.asm$", rel)
         if not m:
             c.err(f"{rel}: SPI profile file name must be spi_modeN.asm")
             return
@@ -882,6 +882,12 @@ class Checker:
             c.err(f"{rel}: no image toggles the SCLK pin (table bit mask 0x{sclk:02X})")
         if not seen_mosi:
             c.err(f"{rel}: no image sets the MOSI pin (table bit mask 0x{mosi:02X})")
+        if "spi_miso_mask" not in ent["patterns"]:
+            # A ceiling-rate-only program (spi_mode0_burst3, issue #286)
+            # samples MISO with a bare IN and extracts nothing: there is no
+            # isolation AND to check, and the inventory says so by omitting
+            # the pattern. Every other SPI image keeps the check.
+            return
         miso = self.mask_of("spi_transfer", "MISO")
         self.in_and_sites(rel, ins, lambda i: (miso, "MISO pin mask"))
         if not any(i["m"] == "AND" for i in ins):
