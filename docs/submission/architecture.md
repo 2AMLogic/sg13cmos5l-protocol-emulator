@@ -448,7 +448,7 @@ each one shows, its oracle, its design level and its limits.
 |---|---|---|
 | Every opcode's result, on a numbered clock edge | [`test_protocol_emulator.py`](../../verification/test_protocol_emulator.py) | [`core-datapath`](../../verification/records/core-datapath/) |
 | RTL matches an independent ISA model on every edge | [`test_isa_lockstep.py`](../../verification/test_isa_lockstep.py), [`isa.py`](../../verification/reference_models/isa.py) | [`isa-lockstep`](../../verification/records/isa-lockstep/) |
-| No data-dependent latency (formal, bounded) | [`no_data_dependent_latency.sv`](../../verification/formal/no_data_dependent_latency.sv) | [`no-data-dependent-latency`](../../verification/records/no-data-dependent-latency/) |
+| No data-dependent latency (formal, unbounded for the harness model) | [`no_data_dependent_latency.sv`](../../verification/formal/no_data_dependent_latency.sv) | [`no-data-dependent-latency`](../../verification/records/no-data-dependent-latency/) |
 | `OUT` visible one cycle later, never earlier (formal) | [`pin_write_latency.sv`](../../verification/formal/pin_write_latency.sv) | [`pin-write-latency`](../../verification/records/pin-write-latency/) |
 | Control space: reset values, readback, reserved indices, fixed stalls, pin modes | [`test_control_space.py`](../../verification/test_control_space.py) | [`control-space`](../../verification/records/control-space/) |
 | P1 and P2 against catalogue CRCs and an independent line decoder | [`test_primitives.py`](../../verification/test_primitives.py) | [`primitives`](../../verification/records/primitives/) |

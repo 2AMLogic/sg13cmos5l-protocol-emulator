@@ -1,0 +1,42 @@
+##   0:00:00  Solver: z3
+##   0:00:00  Checking cover reachability in step 0..
+##   0:00:00  Checking cover reachability in step 1..
+##   0:00:00  Checking cover reachability in step 2..
+##   0:00:00  Checking cover reachability in step 3..
+##   0:00:00  Checking cover reachability in step 4..
+##   0:00:00  Reached cover statement in step 4 at formal_top: verification/formal/formal_top.v:295.7-295.43 ($cover$verification/formal/formal_top.v:295$574)
+##   0:00:00  Checking cover reachability in step 4..
+##   0:00:00  Checking cover reachability in step 5..
+##   0:00:00  Reached cover statement in step 5 at formal_top: verification/formal/no_data_dependent_latency.sv:365.7-365.44 ($flatten/u_property.$cover$verification/formal/no_data_dependent_latency.sv:365$458)
+##   0:00:00  Checking cover reachability in step 5..
+##   0:00:00  Reached cover statement in step 5 at formal_top: verification/formal/no_data_dependent_latency.sv:363.7-363.64 ($flatten/u_property.$cover$verification/formal/no_data_dependent_latency.sv:363$452)
+##   0:00:00  Checking cover reachability in step 5..
+##   0:00:00  Reached cover statement in step 5 at formal_top: verification/formal/no_data_dependent_latency.sv:378.7-378.68 ($flatten/u_property.$cover$verification/formal/no_data_dependent_latency.sv:378$490)
+##   0:00:00  Checking cover reachability in step 5..
+##   0:00:00  Reached cover statement in step 5 at formal_top: verification/formal/no_data_dependent_latency.sv:369.7-369.39 ($flatten/u_property.$cover$verification/formal/no_data_dependent_latency.sv:369$467)
+##   0:00:00  Checking cover reachability in step 5..
+##   0:00:00  Reached cover statement in step 5 at formal_top: verification/formal/no_data_dependent_latency.sv:367.7-367.56 ($flatten/u_property.$cover$verification/formal/no_data_dependent_latency.sv:367$462)
+##   0:00:00  Checking cover reachability in step 5..
+##   0:00:00  Reached cover statement in step 5 at formal_top: verification/formal/formal_top.v:298.7-298.54 ($cover$verification/formal/formal_top.v:298$584)
+##   0:00:00  Checking cover reachability in step 5..
+##   0:00:00  Checking cover reachability in step 6..
+##   0:00:00  Reached cover statement in step 6 at formal_top: verification/formal/no_data_dependent_latency.sv:373.7-373.68 ($flatten/u_property.$cover$verification/formal/no_data_dependent_latency.sv:373$476)
+##   0:00:00  Checking cover reachability in step 6..
+##   0:00:00  Reached cover statement in step 6 at formal_top: verification/formal/no_data_dependent_latency.sv:371.7-371.68 ($flatten/u_property.$cover$verification/formal/no_data_dependent_latency.sv:371$470)
+##   0:00:00  Checking cover reachability in step 6..
+##   0:00:00  Reached cover statement in step 6 at formal_top: verification/formal/formal_top.v:296.7-296.58 ($cover$verification/formal/formal_top.v:296$576)
+##   0:00:00  Reached cover statement in step 6 at formal_top: verification/formal/formal_top.v:297.7-297.57 ($cover$verification/formal/formal_top.v:297$580)
+##   0:00:00  Checking cover reachability in step 6..
+##   0:00:00  Checking cover reachability in step 7..
+##   0:00:00  Reached cover statement in step 7 at formal_top: verification/formal/no_data_dependent_latency.sv:376.7-376.82 ($flatten/u_property.$cover$verification/formal/no_data_dependent_latency.sv:376$482)
+##   0:00:00  Checking cover reachability in step 7..
+##   0:00:00  Reached cover statement in step 7 at formal_top: verification/formal/no_data_dependent_latency.sv:361.7-361.85 ($flatten/u_property.$cover$verification/formal/no_data_dependent_latency.sv:361$445)
+##   0:00:00  Checking cover reachability in step 7..
+##   0:00:00  Checking cover reachability in step 8..
+##   0:00:00  Checking cover reachability in step 9..
+##   0:00:00  Checking cover reachability in step 10..
+##   0:00:00  Checking cover reachability in step 11..
+##   0:00:00  Checking cover reachability in step 12..
+##   0:00:00  Checking cover reachability in step 13..
+##   0:00:00  Reached cover statement in step 13 at formal_top: verification/formal/no_data_dependent_latency.sv:380.7-380.67 ($flatten/u_property.$cover$verification/formal/no_data_dependent_latency.sv:380$496)
+##   0:00:00  Status: PASSED
