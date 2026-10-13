@@ -144,7 +144,7 @@ CI fails if a new kind of record appears without a line there. In short:
 ```bash
 ./scripts/setup-env.sh          # klt at the layout/toolchain.json pin + pinned cocotb
 scripts/run-rtl-benches.sh      # every PDK-free RTL bench (Icarus + cocotb)
-npm run lint                    # evidence-record, firmware and inventory checks
+npm run lint                    # evidence-record, firmware and inventory checks (manifest: scripts/lint-manifest.txt, runner: scripts/run_lint.py; runs every entry, reports all failures)
 scripts/signoff-report.sh --check-latest   # re-grade the T1 checklist
 ```
 
