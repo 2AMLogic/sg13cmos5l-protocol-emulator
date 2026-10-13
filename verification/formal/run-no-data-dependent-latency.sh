@@ -209,7 +209,7 @@ run_elab_core () { # $1 = out.smt2, $2 = core .v
 # covers removed, undefined bits made free, and an AIGER export for ABC.
 aig_core () {
   local out="$1" core="$2"
-  yosys -ql "$out.yosys.log" -p "read_verilog -formal -sv $core; read_verilog -formal -sv -nomem2reg -D REAL_CORE $SCRIPT_DIR/no_data_dependent_latency.sv $SCRIPT_DIR/formal_top.v; hierarchy -top formal_top; proc; flatten; opt_expr; opt_merge; opt_muxtree; opt_reduce; opt_merge; opt_dff; opt_clean; async2sync; dffunmap; setundef -anyseq; chformal -remove -cover; techmap; opt_clean; aigmap; opt_clean; write_aiger -zinit $out" 2>"$out.yosys.stderr" \
+  yosys -ql "$out.yosys.log" -p "read_verilog -formal -sv $core; read_verilog -formal -sv -nomem2reg -D REAL_CORE $SCRIPT_DIR/no_data_dependent_latency.sv $SCRIPT_DIR/formal_top.v; hierarchy -top formal_top; proc; flatten; opt_expr; opt_merge; opt_muxtree; opt_reduce; opt_merge; opt_dff; opt_clean; async2sync; dffunmap; setundef -anyseq; chformal -remove -cover; techmap; opt_clean; aigmap; opt_clean; write_aiger -zinit -ywmap ${out%.aig}.ywb $out" 2>"$out.yosys.stderr" \
     && [ -s "$out" ]
 }
 
