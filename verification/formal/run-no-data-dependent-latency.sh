@@ -27,6 +27,17 @@
 # its control stall stretched while ui_in == 0xA5. The original WAIT mutants
 # (legs [4/4] and [8/8]) are unchanged.
 #
+# Unbounded proof (issue #293): the real-core legs also export the same
+# elaborated netlist to AIGER and run ABC `scorr; pdr -a` on it (leg
+# [7c/8] and the PDR follow-up to each core mutant). A PDR verdict of
+# every assertion proved is UNBOUNDED for the harness model (8-word anyconst
+# program and boot-ROM tables, free per-cycle pins; see formal_top.v), and
+# the three core mutants must each be DISPROVED by the same engine, so the
+# proof is not vacuous. z3 k-induction on the SMT2 model is still attempted
+# and recorded (informational; it does not close, see the monitor header),
+# and BMC stays the cross-check engine. Requires yosys-abc (ships with
+# Yosys). PDR_TIME bounds each ABC run (seconds).
+#
 # Cold start (a third party with a fresh clone needs exactly this):
 #
 #   ./verification/formal/run-no-data-dependent-latency.sh [artifacts-dir]
@@ -62,12 +73,14 @@ mkdir -p "$ART_DIR"
 BMC_DEPTH="${BMC_DEPTH:-30}"
 
 DUT="${DUT:-all}"
+PDR_TIME="${PDR_TIME:-300}"
 fail=0
 
 need() { command -v "$1" >/dev/null 2>&1 || { echo "ERROR: $1 not found on PATH" >&2; exit 1; }; }
 need yosys
 need yosys-smtbmc
 need z3
+need yosys-abc
 
 case "$DUT" in fixture|core|all) ;; *) echo "ERROR: DUT must be fixture|core|all" >&2; exit 1;; esac
 echo "== toolchain =="
@@ -192,6 +205,47 @@ run_elab_core () { # $1 = out.smt2, $2 = core .v
   yosys -ql "$out.log" -p "read_verilog -formal -sv $core; read_verilog -formal -sv -nomem2reg -D REAL_CORE $SCRIPT_DIR/no_data_dependent_latency.sv $SCRIPT_DIR/formal_top.v; hierarchy -top formal_top; proc; flatten; opt_expr; opt_merge; opt_muxtree; opt_reduce; opt_merge; opt_dff; opt_clean; async2sync; dffunmap; write_smt2 -wires $out"
 }
 
+# aig_core <out.aig> <core.v>: the same elaboration as run_elab_core, then
+# covers removed, undefined bits made free, and an AIGER export for ABC.
+aig_core () {
+  local out="$1" core="$2"
+  yosys -ql "$out.yosys.log" -p "read_verilog -formal -sv $core; read_verilog -formal -sv -nomem2reg -D REAL_CORE $SCRIPT_DIR/no_data_dependent_latency.sv $SCRIPT_DIR/formal_top.v; hierarchy -top formal_top; proc; flatten; opt_expr; opt_merge; opt_muxtree; opt_reduce; opt_merge; opt_dff; opt_clean; async2sync; dffunmap; setundef -anyseq; chformal -remove -cover; techmap; opt_clean; aigmap; opt_clean; write_aiger -zinit $out" 2>"$out.yosys.stderr" \
+    && [ -s "$out" ]
+}
+
+# pdr_summary <aig> <log>: run ABC scorr + pdr; prints "all proved disproved undecided".
+pdr_summary () {
+  local aig="$1" log="$2" line
+  yosys-abc -c "read_aiger $aig; scorr; pdr -a -T $PDR_TIME" >"$log" 2>&1
+  line="$(grep -E 'Properties: +All = ' "$log" | tail -1)"
+  [ -n "$line" ] || { echo "0 0 0 0"; return; }
+  echo "$line" | sed -E 's/.*All = ([0-9]+)\. Proved = ([0-9]+)\. Disproved = ([0-9]+)\. Undecided = ([0-9]+).*/\1 \2 \3 \4/'
+}
+
+# pdr_expect_proved <label> <aig>: every assertion proved.
+pdr_expect_proved () {
+  local label="$1" aig="$2" all proved disproved undecided
+  read -r all proved disproved undecided <<<"$(pdr_summary "$aig" "${aig%.aig}-pdr.log")"
+  if [ "$all" -gt 0 ] && [ "$proved" -eq "$all" ]; then
+    echo "$label: PDR PROVED all $all assertions (UNBOUNDED for the harness model)"
+  else
+    echo "$label: PDR did not prove the property (all=$all proved=$proved disproved=$disproved undecided=$undecided)" >&2
+    fail=1
+  fi
+}
+
+# pdr_expect_disproved <label> <aig>: at least one assertion disproved (the engine has teeth).
+pdr_expect_disproved () {
+  local label="$1" aig="$2" all proved disproved undecided
+  read -r all proved disproved undecided <<<"$(pdr_summary "$aig" "${aig%.aig}-pdr.log")"
+  if [ "$disproved" -ge 1 ]; then
+    echo "$label: PDR disproved $disproved of $all assertions as required"
+  else
+    echo "$label: PDR disproved nothing (all=$all proved=$proved undecided=$undecided) -- the unbounded engine missed a data-dependent latency" >&2
+    fail=1
+  fi
+}
+
 echo
 echo "== monitor hash (must equal the fixture-run hash of record) =="
 sha256sum "$SCRIPT_DIR/no_data_dependent_latency.sv" "$REPO_ROOT/rtl/protocol_core.v"
@@ -224,6 +278,13 @@ else
   echo "induction: did not close (bounded result above is the shipped guarantee)"
 fi
 
+echo "== [7c/8] real core: unbounded proof, ABC scorr + pdr -a (PDR_TIME=$PDR_TIME s per run) =="
+if aig_core "$ART_DIR/core.aig" "$REPO_ROOT/rtl/protocol_core.v"; then
+  pdr_expect_proved "real core" "$ART_DIR/core.aig"
+else
+  echo "real core: AIGER export failed" >&2; fail=1
+fi
+
 echo "== [8/8] real-core mutant (WAIT stall cut to 1 cycle when ui_in == 0xA5): BMC depth $BMC_DEPTH (expect CEX) =="
 # Inject the defect into a scratch COPY of the core; fail loudly if the
 # substitution did not apply (so a future RTL edit cannot silently turn the
@@ -236,6 +297,11 @@ if cmp -s "$REPO_ROOT/rtl/protocol_core.v" "$ART_DIR/protocol_core_mutant.v"; th
 else
   run_elab_core "$ART_DIR/core-mutant.smt2" "$ART_DIR/protocol_core_mutant.v" || fail=1
   expect_cex "core mutant" "$ART_DIR/core-mutant.smt2" "$ART_DIR/core-mutant-cex.vcd"
+  if aig_core "$ART_DIR/core-mutant.aig" "$ART_DIR/protocol_core_mutant.v"; then
+    pdr_expect_disproved "core mutant" "$ART_DIR/core-mutant.aig"
+  else
+    echo "core mutant: AIGER export failed" >&2; fail=1
+  fi
 fi
 
 echo "== [8b/8] real-core control-space mutant (2-cycle control access stalls on while ui_in == 0xA5, DR 0012): BMC depth $BMC_DEPTH (expect CEX) =="
@@ -253,6 +319,11 @@ if [ "$changed" -ne 2 ]; then
 else
   run_elab_core "$ART_DIR/core-mutant-ctl.smt2" "$ART_DIR/protocol_core_mutant_ctl.v" || fail=1
   expect_cex "core control-space mutant" "$ART_DIR/core-mutant-ctl.smt2" "$ART_DIR/core-mutant-ctl-cex.vcd"
+  if aig_core "$ART_DIR/core-mutant-ctl.aig" "$ART_DIR/protocol_core_mutant_ctl.v"; then
+    pdr_expect_disproved "core control-space mutant" "$ART_DIR/core-mutant-ctl.aig"
+  else
+    echo "core control-space mutant: AIGER export failed" >&2; fail=1
+  fi
 fi
 
 echo "== [8c/8] real-core P1 mutant (WCTL CRC_BYTE stall cut to 1 cycle when ui_in == 0xA5, DR 0015): BMC depth $BMC_DEPTH (expect CEX) =="
@@ -265,12 +336,17 @@ if [ "$changed" -ne 1 ]; then
 else
   run_elab_core "$ART_DIR/core-mutant-crcb.smt2" "$ART_DIR/protocol_core_mutant_crcb.v" || fail=1
   expect_cex "core P1 mutant" "$ART_DIR/core-mutant-crcb.smt2" "$ART_DIR/core-mutant-crcb-cex.vcd"
+  if aig_core "$ART_DIR/core-mutant-crcb.aig" "$ART_DIR/protocol_core_mutant_crcb.v"; then
+    pdr_expect_disproved "core P1 mutant" "$ART_DIR/core-mutant-crcb.aig"
+  else
+    echo "core P1 mutant: AIGER export failed" >&2; fail=1
+  fi
 fi
 fi  # real-core legs
 
 echo
 if [ "$fail" -eq 0 ]; then
-  echo "RESULT: all expectations met (BMC pass + covers reachable + mutant caught, per selected DUT)"
+  echo "RESULT: all expectations met (BMC pass + covers reachable + mutant caught, plus the PDR unbounded proof on the real core, per selected DUT)"
 else
   echo "RESULT: FAILED -- do not mint a record from this run" >&2
 fi

@@ -1,0 +1,24 @@
+======== ABC command line "read_aiger .loom/formal-scratch/run1/core-mutant-ctl.aig; scorr; pdr -a -T 300"
+  4 : 0 4 22 46 21                                                       14    62      0.05 sec  CEX =   0
+  5 : 0 3 1 39 83 52                                                     14    87      0.12 sec  CEX =   0
+  5 : 0 3 1 39 115 85                                                     6    88      0.15 sec  CEX =   0
+  5 : 0 3 1 40 159 146                                                    8   105      0.19 sec  CEX =   0
+Output 5 was asserted in frame  5 ( 5) (solved 1 out of 8 outputs).
+  5 : 0 3 1 43 191 196                                                    7   128      0.23 sec  CEX =   1
+  5 : 0 3 1 43 225 229                                                    2   133      0.25 sec  CEX =   1
+Output 0 was asserted in frame  6 ( 6) (solved 2 out of 8 outputs).
+  6 : 0 3 1 46 250 169 242                                                9   165      0.39 sec  CEX =   2
+  6 : 0 3 1 46 251 171 291                                                4   167      0.42 sec  CEX =   2
+  6 : 0 3 1 46 259 177 341                                                4   183      0.46 sec  CEX =   2
+  6 : 0 3 1 46 263 184 386                                                5   183      0.49 sec  CEX =   2
+  6 : 0 3 1 46 263 201 427                                                2   183      0.51 sec  CEX =   2
+  6 : 0 3 1 46 272 220 457                                               11   183      0.57 sec  CEX =   2
+Output 6 was asserted in frame  6 ( 6) (solved 3 out of 8 outputs).
+Output 4 was asserted in frame  7 ( 7) (solved 4 out of 8 outputs).
+Output 7 was asserted in frame  7 ( 7) (solved 5 out of 8 outputs).
+Invariant F[8] : 168 clauses with 0 flops (out of 519) (cex = 0, ave = 19.23)
+Verification of invariant with 168 clauses was successful.  Time =     0.00 sec
+Proved output 1 in frame -368997964 (converged).
+Proved output 2 in frame -368997960 (converged).
+Proved output 3 in frame -368997956 (converged).
+Properties:  All = 8. Proved = 3. Disproved = 5. Undecided = 0.   Time =     0.83 sec

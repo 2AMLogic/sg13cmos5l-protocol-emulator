@@ -1,0 +1,42 @@
+##   0:00:00  Solver: z3
+##   0:00:00  Trying induction in step 20..
+##   0:00:00  Trying induction in step 19..
+##   0:00:00  Trying induction in step 18..
+##   0:00:00  Trying induction in step 17..
+##   0:00:00  Trying induction in step 16..
+##   0:00:00  Trying induction in step 15..
+##   0:00:00  Trying induction in step 14..
+##   0:00:00  Trying induction in step 13..
+##   0:00:00  Trying induction in step 12..
+##   0:00:01  Trying induction in step 11..
+##   0:00:01  Trying induction in step 10..
+##   0:00:02  Trying induction in step 9..
+##   0:00:02  Trying induction in step 8..
+##   0:00:03  Trying induction in step 7..
+##   0:00:03  Trying induction in step 6..
+##   0:00:03  Trying induction in step 5..
+##   0:00:04  Trying induction in step 4..
+##   0:00:04  Trying induction in step 3..
+##   0:00:05  Trying induction in step 2..
+##   0:00:05  Trying induction in step 1..
+##   0:00:05  Trying induction in step 0..
+##   0:00:06  Temporal induction failed!
+##   0:00:06  Value for anyconst formal_top.free_serial_loaded (verification/formal/formal_top.v:182.28-182.46): 0
+##   0:00:06  Value for anyconst formal_top.rom0 (verification/formal/formal_top.v:185.29-185.33): 1024
+##   0:00:06  Value for anyconst formal_top.rom1 (verification/formal/formal_top.v:186.29-186.33): 0
+##   0:00:06  Value for anyconst formal_top.rom2 (verification/formal/formal_top.v:187.29-187.33): 0
+##   0:00:06  Value for anyconst formal_top.rom3 (verification/formal/formal_top.v:188.29-188.33): 1024
+##   0:00:06  Value for anyconst formal_top.rom4 (verification/formal/formal_top.v:189.29-189.33): 0
+##   0:00:06  Value for anyconst formal_top.rom5 (verification/formal/formal_top.v:190.29-190.33): 8200
+##   0:00:06  Value for anyconst formal_top.rom6 (verification/formal/formal_top.v:191.29-191.33): 49154
+##   0:00:06  Value for anyconst formal_top.rom7 (verification/formal/formal_top.v:192.29-192.33): 1024
+##   0:00:06  Value for anyconst formal_top.prog0 (verification/formal/formal_top.v:86.29-86.34): 2048
+##   0:00:06  Value for anyconst formal_top.prog1 (verification/formal/formal_top.v:87.29-87.34): 2048
+##   0:00:06  Value for anyconst formal_top.prog2 (verification/formal/formal_top.v:88.29-88.34): 2048
+##   0:00:06  Value for anyconst formal_top.prog3 (verification/formal/formal_top.v:89.29-89.34): 2048
+##   0:00:06  Value for anyconst formal_top.prog4 (verification/formal/formal_top.v:90.29-90.34): 0
+##   0:00:06  Value for anyconst formal_top.prog5 (verification/formal/formal_top.v:91.29-91.34): 0
+##   0:00:06  Value for anyconst formal_top.prog6 (verification/formal/formal_top.v:92.29-92.34): 0
+##   0:00:06  Value for anyconst formal_top.prog7 (verification/formal/formal_top.v:93.29-93.34): 0
+##   0:00:06  Assert failed in formal_top: verification/formal/no_data_dependent_latency.sv:319.13-319.39 ($flatten/u_property.$assert$verification/formal/no_data_dependent_latency.sv:319$425)
+##   0:00:06  Status: FAILED
