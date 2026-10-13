@@ -32,7 +32,13 @@ run-time `uio` direction; the EE-key scope of the 1-cycle/no-op statements;
 14 and DRs 0005, 0007, 0008 and 0010–0018 are not bound by that act and stay
 `Proposed`. **No row of this tracker changes state in either direction as a
 result**: the targets are now bound, and whether each is met is still what
-the rows below report.
+the rows below report. — **2026-10-13 (issue #299):** the next act is
+prepared in [`ratification-batch-2.md`](ratification-batch-2.md): every
+still-`Proposed` DR and rows 13 and 14, with what the shipped design depends
+on and a ratify / amend first / defer recommendation for the keys.
+`scripts/check_ratification_batch.py` (`npm run lint`) fails when the RTL
+cites a DR that is neither `Ratified` nor listed there. **No row changes state
+and no `Status:` line moves**; the act stays a human two-key act.
 Submission deadline: **2027-01-18** (Jane Street Protocol Emulator ASIC
 Competition, targeting the March 2027 IHP CMOS5L shuttle via the Tiny
 Tapeout CMOS5L template).
