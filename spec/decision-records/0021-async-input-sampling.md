@@ -194,3 +194,54 @@ opposite.
 - **The synchronizer (option c)** for a post-submission respin.
 - **The LibreLane constraints** for the input pins (input delays) were not
   read for this record.
+
+## Dated entry — 2026-10-14 (issue #309): open item 1 closed
+
+This entry closes "Open items" item 1 above (SPI modes 1 and 3: MISO sample
+one core cycle after the peripheral's launch edge). The text above is
+unchanged; it describes the placement as of 2026-10-13.
+
+**What changed.** In `firmware/asm/spi_mode1.asm` and `spi_mode3.asm` the
+functional burst's `IN` moved from instruction 2 to instruction 5 of the
+10-instruction bit. In a CPHA=1 mode the leading-edge `OUT` (instruction 1) is
+where the peripheral launches MISO and the trailing-edge `OUT` (instruction 6)
+is where it is sampled, so the `IN` now sits 4 core cycles after the launch
+edge and 1 cycle before the sampling edge (it was 1 and 5). The extraction
+(`AND`, `SHF`, `SHF`) now follows the trailing edge, and the previous bit's
+`SHF R0` / `OR` fill the slots after the leading edge, so the accumulation
+lags the sample by one bit; bit 7's `SHF R0` / `OR` run after the section,
+inside the CS-hold cycles (`WAIT 3` became `SHF`, `OR`, `WAIT 1`: still 4
+cycles). Every `OUT` stays on its cycle; the section is still 80 cycles, 10
+cycles/bit, 198 total cycles; the images grew from 138 to 140 words. Modes 0
+and 2 are untouched (their MISO is launched at the previous trailing edge).
+
+**Margin (measured, bench-resolution of one core cycle).** The bench
+peripheral now takes a clock-to-MISO delay in whole core cycles
+(`verification/test_firmware_spi_miso_delay.py`). New images: every byte
+pattern tried (0x5A, 0x00, 0xFF, 0xA5) is received at delays of 0, 1, 2 and 3
+cycles and missed at 4. The previous images, kept as
+`verification/fixtures/spi_mode{1,3}_early_in.asm`, are received at 0 and miss
+0x5A, 0x00 and 0xA5 at 1, 2 and 3 (the negative control). At the nominal 20 ns
+core period (target-spec row 4's >= 50 MHz Target; `verification/
+test_firmware_spi.py` `CLK_PERIOD_NS`; row 4 is unmet and unconfirmed, and
+this is arithmetic at that clock) the old placement tolerated a MISO change
+under 21 ns after the launch edge, and the new one tolerates 61 ns and fails
+at 81 ns. At row 4's 100 MHz Stretch the same 3 cycles are 30 ns.
+
+**Assumption stated, not measured.** The peripheral's clock-to-MISO valid
+time (including the board and the input path) is assumed to be up to 50 ns
+for a 3.3 V serial peripheral. No part is selected in this repository and no
+datasheet value is cited. Against that class the old placement fails at 50
+MHz and the new one passes; at a 100 MHz core clock the new placement's 30 ns
+floor does not cover the top of that class, so a faster clock needs the
+t_V of the chosen part re-read. The input pin constraints in the LibreLane
+flow remain unread (item 4 below).
+
+**Evidence.** `verification/records/firmware-spi/records/20261014-123000-a602461.md`
+(RTL leg on the klt/Icarus flow; zero-delay gate-level leg and the SPI
+post-layout SDF leg on the LibreLane netlist and SDF, SPI bench only) and the
+four `firmware-spi` re-mints of the same date. Not run, and still open: the
+delay bench under SDF, and the gate-level runner's fault-injected negative
+controls and the other firmware benches on the new images' behalf (no other
+image changed). Coordinate any wider re-mint with the evidence re-mint work
+(#290) so it is not done twice.
