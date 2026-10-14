@@ -33,3 +33,4 @@ include random-regression
 include isa-lockstep
 include loadseq
 include loadseq-top
+include reset-release-offsets
