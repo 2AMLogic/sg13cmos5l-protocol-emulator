@@ -1,0 +1,21 @@
+== macro types in netlist: RM_IHPSG13_1P_256x16_c2_bm_bist; models: <repo>/rtl/vendor/RM_IHPSG13_1P_256x16_c2_bm_bist.v <repo>/rtl/vendor/RM_IHPSG13_1P_core_behavioral_bm_bist.v (via <repo>/flow/post-layout-sdf/netlist/macro-models.sim.v)
+== swept netlist: <repo>/flow/post-layout-sdf/netlist/tt_um_2amlogic_protocol_emulator.v
+== sdf corners: nom_fast_1p32V_m40C nom_slow_1p08V_125C nom_typ_1p20V_25C
+== alignment (from SDC): period 20.0 ns, drive +4.0 ns, sample +16.0 ns
+   normalized <repo>/flow/post-layout-sdf/sdf/nom_fast_1p32V_m40C.sdf: header_triplets_filled=3 zero_delay_interconnects_dropped=2012
+   normalized <repo>/flow/post-layout-sdf/sdf/nom_slow_1p08V_125C.sdf: header_triplets_filled=3 zero_delay_interconnects_dropped=2161
+   normalized <repo>/flow/post-layout-sdf/sdf/nom_typ_1p20V_25C.sdf: header_triplets_filled=3 zero_delay_interconnects_dropped=2087
+== nom_fast_1p32V_m40C ==
+   rc=0 annotated=true status=pass elapsed_s=9
+== nom_slow_1p08V_125C ==
+   rc=0 annotated=true status=pass elapsed_s=8
+== nom_typ_1p20V_25C ==
+   rc=0 annotated=true status=pass elapsed_s=9
+wrote <repo>/flow/post-layout-sdf-results.json
+== nom_fast_1p32V_m40C / sdf_reset_release_offsets ==
+   rc=0 elapsed_s=8
+== nom_slow_1p08V_125C / sdf_reset_release_offsets ==
+   rc=0 elapsed_s=7
+== nom_typ_1p20V_25C / sdf_reset_release_offsets ==
+   rc=0 elapsed_s=8
+wrote <repo>/flow/post-layout-sdf-reset-offsets-results.json

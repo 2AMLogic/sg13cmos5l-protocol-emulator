@@ -26,6 +26,7 @@ flow/post-layout-sdf/
 flow/post-layout-sdf-results.json
 # ... and its opt-in protocol suite's matrix (issue #217)
 flow/post-layout-sdf-protocol-results.json
+flow/post-layout-sdf-reset-offsets-results.json
 # SRAM-macro feasibility probe summary: regenerated on demand from the PDK
 # and the vendored upstream tables, frozen per-run under
 # verification/records/program-memory-macro-feasibility/artifacts/ (issue #39)
