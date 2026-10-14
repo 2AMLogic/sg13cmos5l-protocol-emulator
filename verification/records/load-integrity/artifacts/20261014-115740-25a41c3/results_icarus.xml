@@ -1,0 +1,14 @@
+<testsuites name="results">
+  <testsuite name="all" package="all">
+    <property name="random_seed" value="1" />
+    <testcase name="test_readout_equals_crc_hqx_for_random_images" classname="test_load_integrity" file="&lt;repo&gt;/verification/test_load_integrity.py" lineno="172" time="0.7837173938751221" sim_time_ns="181072.0" ratio_time="231042.46685745002" />
+    <testcase name="test_readout_is_the_running_crc_and_only_moves_on_a_commit" classname="test_load_integrity" file="&lt;repo&gt;/verification/test_load_integrity.py" lineno="198" time="0.0231473445892334" sim_time_ns="3903.0" ratio_time="168615.45327386778" />
+    <testcase name="test_byte_select_is_ui_in_1_alone_and_needs_no_clock" classname="test_load_integrity" file="&lt;repo&gt;/verification/test_load_integrity.py" lineno="234" time="0.007580757141113281" sim_time_ns="1350.6000000000058" ratio_time="178161.62355013285" />
+    <testcase name="test_truncated_load_mismatches" classname="test_load_integrity" file="&lt;repo&gt;/verification/test_load_integrity.py" lineno="263" time="0.19480466842651367" sim_time_ns="46652.0" ratio_time="239480.91376259073" />
+    <testcase name="test_dropped_clock_edge_mismatches" classname="test_load_integrity" file="&lt;repo&gt;/verification/test_load_integrity.py" lineno="301" time="0.9744620323181152" sim_time_ns="239522.0" ratio_time="245799.21234099712" />
+    <testcase name="test_doubled_clock_edge_mismatches" classname="test_load_integrity" file="&lt;repo&gt;/verification/test_load_integrity.py" lineno="330" time="1.508692741394043" sim_time_ns="363572.0" ratio_time="240984.78770704288" />
+    <testcase name="test_load_protocol_unchanged_by_the_readout" classname="test_load_integrity" file="&lt;repo&gt;/verification/test_load_integrity.py" lineno="433" time="0.037770748138427734" sim_time_ns="8401.0" ratio_time="222420.79953541807" />
+    <testcase name="test_no_readout_outside_the_load_phase" classname="test_load_integrity" file="&lt;repo&gt;/verification/test_load_integrity.py" lineno="482" time="0.006495475769042969" sim_time_ns="1433.0" ratio_time="220615.09440610776" />
+    <testcase name="test_readout_holds_at_saturation" classname="test_load_integrity" file="&lt;repo&gt;/verification/test_load_integrity.py" lineno="530" time="0.17395234107971191" sim_time_ns="41343.0" ratio_time="237668.54612813165" />
+  </testsuite>
+</testsuites>

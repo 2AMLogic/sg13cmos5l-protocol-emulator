@@ -1,0 +1,12 @@
+<testsuites name="results">
+  <testsuite name="all" package="all">
+    <property name="random_seed" value="1" />
+    <testcase name="test_boot_image_chain_and_model" classname="test_boot_rom" file="&lt;repo&gt;/verification/test_boot_rom.py" lineno="592" time="0.00927591323852539" sim_time_ns="10.0" ratio_time="1078.0609674600319" />
+    <testcase name="test_stub_straps_idle_on_unwritten_memory" classname="test_boot_rom" file="&lt;repo&gt;/verification/test_boot_rom.py" lineno="632" time="0.02544426918029785" sim_time_ns="1861.0" ratio_time="73140.24178933856" />
+    <testcase name="test_mode_low_never_runs_unverified_memory" classname="test_boot_rom" file="&lt;repo&gt;/verification/test_boot_rom.py" lineno="656" time="2.338045835494995" sim_time_ns="335501.0" ratio_time="143496.33138349917" />
+    <testcase name="test_warm_start_runs_a_verified_image" classname="test_boot_rom" file="&lt;repo&gt;/verification/test_boot_rom.py" lineno="697" time="1.4022266864776611" sim_time_ns="182061.0" ratio_time="129837.06682785373" />
+    <testcase name="test_warm_start_rejects_corrupted_images" classname="test_boot_rom" file="&lt;repo&gt;/verification/test_boot_rom.py" lineno="791" time="2.977067708969116" sim_time_ns="455210.99999999994" ratio_time="152905.82697483493" />
+    <testcase name="test_warm_start_refuses_a_zero_signature" classname="test_boot_rom" file="&lt;repo&gt;/verification/test_boot_rom.py" lineno="841" time="1.658613920211792" sim_time_ns="130060.99999999988" ratio_time="78415.47596766347" />
+    <testcase name="test_warm_start_runs_zero_padded_images" classname="test_boot_rom" file="&lt;repo&gt;/verification/test_boot_rom.py" lineno="874" time="1.2518219947814941" sim_time_ns="194371.0" ratio_time="155270.47839890968" />
+  </testsuite>
+</testsuites>

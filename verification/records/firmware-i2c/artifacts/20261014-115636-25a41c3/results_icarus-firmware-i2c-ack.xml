@@ -1,0 +1,8 @@
+<testsuites name="results">
+  <testsuite name="all" package="all">
+    <property name="random_seed" value="1" />
+    <testcase name="test_ack_samples_sit_inside_ninth_high" classname="test_firmware_i2c_ack" file="&lt;repo&gt;/verification/test_firmware_i2c_ack.py" lineno="405" time="0.002717733383178711" sim_time_ns="0.0" ratio_time="0.0" />
+    <testcase name="test_both_address_outcomes_early_response" classname="test_firmware_i2c_ack" file="&lt;repo&gt;/verification/test_firmware_i2c_ack.py" lineno="458" time="4.357962369918823" sim_time_ns="1363781.0" ratio_time="312940.05873332114" />
+    <testcase name="test_late_ack_responses_are_read_as_ack" classname="test_firmware_i2c_ack" file="&lt;repo&gt;/verification/test_firmware_i2c_ack.py" lineno="487" time="3.035757064819336" sim_time_ns="909200.9999999998" ratio_time="299497.2853844312" />
+  </testsuite>
+</testsuites>
