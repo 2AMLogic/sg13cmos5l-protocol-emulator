@@ -497,6 +497,16 @@ bit in both), both graded by the independent model in
    `uio[2]` needs two right shifts per bit to reach bit 0; on `uio[0]`
    (before issue #155) it needed none and the burst ran at 8 cycles/bit.
 
+**MISO sample placement (modes 1 and 3, issue #309).** In the CPHA=1
+modes the peripheral launches MISO on the leading edge, so the functional
+burst's `IN` is instruction 5 of the 10-instruction bit: 4 core cycles after
+the launch edge and 1 before the trailing (sampling) `OUT`. The delayed-MISO
+bench (`verification/test_firmware_spi_miso_delay.py`) receives every byte
+pattern with the peripheral's MISO change up to 3 cycles late and misses it at
+4; the earlier placement (`IN` 1 cycle after the launch edge, kept as
+`verification/fixtures/spi_mode{1,3}_early_in.asm`) misses it at 1. See DR 0021's
+dated entry of 2026-10-14 for the margin statement and its t_V assumption.
+
 **Measured at the pin** (record
 `verification/records/firmware-spi/`): SCLK period exactly 4 cycles
 (80.000 ns at the bench's nominal-only 20 ns clock) on the ceiling burst

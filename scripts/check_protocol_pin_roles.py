@@ -848,9 +848,24 @@ class Checker:
         img_port = PORT_ASM[(ports.pop(), "out")]
         idle_s = sclk if cpol else 0
         allowed = {(idle_s ^ (sclk * a)) | (mosi * b) for a in (0, 1) for b in (0, 1)} | {cs | idle_s}
-        pairs = [(a, b) for a, b in zip(ins, ins[1:])
-                 if a["m"] == "LDI" and b["m"] == "OUT" and b["ops"][0].upper() == img_port
-                 and b["ops"][1] == a["ops"][0]]
+        # A pin-image LDI may be separated from its OUT by `IN`s into other
+        # registers: the CPHA=1 functional bursts place the MISO sample
+        # just before the sampling-edge OUT (issue #309), after the image
+        # LDI. An intervening IN that overwrote the image register would
+        # break the pairing, so it is not skipped.
+        pairs = []
+        for i, a in enumerate(ins):
+            if a["m"] != "LDI":
+                continue
+            j = i + 1
+            while j < len(ins) and ins[j]["m"] == "IN" and ins[j]["ops"][0] != a["ops"][0]:
+                j += 1
+            if j >= len(ins):
+                continue
+            b = ins[j]
+            if (b["m"] == "OUT" and b["ops"][0].upper() == img_port
+                    and b["ops"][1] == a["ops"][0]):
+                pairs.append((a, b))
         if not pairs:
             c.err(f"{rel}: no LDI -> OUT {img_port} pin-image sites found (pattern spi_images)")
             return
