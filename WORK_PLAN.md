@@ -5,27 +5,36 @@ This roadmap is generated from the current GitHub label state.
 <!-- guide:plan-body:start -->
 ## Operator Attention: Merge-Risk-Hold Pileup
 
-Judge-approved PRs stuck under a `loom:operator` merge-risk hold — implementation work is done, only a human merge decision is missing.
+Judge-approved PRs under a hold (`loom:blocked` or `loom:operator`) — only a human merge decision is missing.
 
-- **#229**: Include independent host-load replay benches in the RTL CI gate
+- **#301**: Tooling: manifest-driven lint runner + self-test wiring inventory (#296)
 
-## Operator Priority
+## Very Important
 
-Issues the operator starred (`loom:operator-priority`); land these first.
+`loom:very-important` (one counts per workspace); every stage takes these first.
 
 _None._
+
+## Important
+
+`loom:important`; taken before unlabelled work.
+
+- **#261**: LibreLane: max-cap on SRAM A_DOUT[5..6] is avoided by placement, not by construction
+- **#265**: PR #263: netlist-dependent evidence re-mint for the A_DOUT buffers (#261) before merge
+- **#272**: Firmware: Fast-mode I2C t_LOW has zero margin (65 cycles = 1.30 µs) — move slack from the high phase
+- **#275**: Re-run firmware gate-level and post-layout SDF regression on the 70/55 Fast-mode I2C image (#272)
 
 ## Ready
 
 Human-approved issues ready for implementation (`loom:issue`).
 
-- **#125**: I2C Standard-mode: reconcile the 435-cycle firmware clock with the proposed 100 kHz target
+- **#261**: LibreLane: max-cap on SRAM A_DOUT[5..6] is avoided by placement, not by construction
 
 ## In Progress
 
 Issues currently being built (`loom:building`).
 
-- **#217**: Run protocol firmware waveform checks on the routed SDF corner sweep
+_None._
 
 ## PRs Awaiting Review
 
@@ -37,25 +46,22 @@ _None._
 
 PRs that passed review and are queued for Champion auto-merge (`loom:pr`).
 
-- **#229**: Include independent host-load replay benches in the RTL CI gate
+- **#301**: Tooling: manifest-driven lint runner + self-test wiring inventory (#296)
 
 ## Proposed
 
 Issues carrying `loom:curated`.
 
 - **#20**: T1 item 5: no timing evidence exists — both flows reported cell counts only, so >=50 MHz is unconfirmed (need a klt sta corner sweep) *(curated)*
-- **#44**: Two-key ratification has never run: zero RATIFY-KEY reviews exist, so target-spec + DRs 0001-0004 are 'Ratified' by assertion (DR 0004's own invalidation clause fires) *(curated)*
-- **#85**: spec: fix the eight findings that stopped the two-key ratification of PR #84 (fetch model, SPI sketch, row 10 source and four other citations) *(curated)*
-- **#100**: Auditor Capability Request: Python interpreter unavailable for tool-light validation *(curated)*
-- **#125**: I2C Standard-mode: reconcile the 435-cycle firmware clock with the proposed 100 kHz target *(curated)*
-- **#211**: UART load: count byte is outside the CRC; a one-bit count flip can ACK and RUN a truncated image (DR 0013 F8) *(curated)*
-- **#217**: Run protocol firmware waveform checks on the routed SDF corner sweep *(curated)*
-- **#235**: Row 13 stretch: a protocol in a role or pin direction the core protocols never use (PS/2, SWD target, MDIO PHY side) *(curated)*
+- **#261**: LibreLane: max-cap on SRAM A_DOUT[5..6] is avoided by placement, not by construction *(curated)*
+- **#262**: Re-run the firmware gate-level suite on the post-#258 I2C images *(curated)*
+- **#265**: PR #263: netlist-dependent evidence re-mint for the A_DOUT buffers (#261) before merge *(curated)*
+- **#278**: Re-stamp SG13CMOS5L PDK pin from klayout-tools (IHP-Open-PDK dev f7bca326) *(curated)*
+- **#296**: Tooling: replace the 38-command npm lint && chain with a manifest runner that reports all failures and enforces self-test wiring *(curated)*
 
 ## Proposed (Architect / Hermit)
 
-- **#230**: Submission D2: write the judge-facing architecture and ISA document *(architect)*
-- **#231**: Pin tt-gds-action to a commit SHA and lint against floating refs (submission risk R2) *(architect)*
+- **#304**: Verification: I2C pad model has no pull-up rise time, so fixed-count firmware margins are graded as if t_r = 0 *(architect)*
 
 ## Epics
 
@@ -63,15 +69,16 @@ _None._
 
 ## Backlog Balance
 
-| Tier | Count |
+| Bucket | Count |
 |------|-------|
 | Operator merge-risk holds | 1 |
-| Operator priority | 0 |
+| Very important | 0 |
+| Important | 4 |
 | Ready (`loom:issue`) | 1 |
-| In Progress (`loom:building`) | 1 |
+| In Progress (`loom:building`) | 0 |
 | PRs awaiting review | 0 |
 | Approved PRs awaiting merge | 1 |
-| Curated | 8 |
-| Architect / Hermit proposals | 2 |
+| Curated | 6 |
+| Architect / Hermit proposals | 1 |
 | Active epics | 0 |
 <!-- guide:plan-body:end -->
