@@ -2,11 +2,24 @@
 
 Chronological record of merged pull requests and closed issues, newest first.
 
+### 2026-10-14
+
+- **PR #312**: Firmware: SPI modes 1/3 functional-burst IN placed 4 cycles after the MISO launch edge (#309)
+- **PR #311**: refactor(verification): share mutant-runner scaffolding across ten *_mutants.py scripts
+- **PR #310**: Verification: rst_n release-offset bench under SDF back-annotation (row 14) (#305)
+- **Issue #309** (closed): Firmware: SPI modes 1/3 functional burst samples MISO one core cycle after the peripheral's launch edge
+- **Issue #305** (closed): Verification: rst_n release-offset bench under SDF back-annotation (row 14, split from #300)
+- **Issue #295** (closed): Consolidate duplicated runner scaffolding across ten verification/*_mutants.py scripts
+
 ### 2026-10-13
 
+- **PR #308**: Record rst_n recovery/removal timing at all reset flops (#300)
+- **PR #307**: Spec: DR 0021 direct sampling of asynchronous pins by IN (#303)
 - **PR #302**: Spec: second ratification batch worksheet and RTL-citation checker (#299)
 - **PR #298**: Formal: unbounded proof for no_data_dependent_latency on the real core (#293)
 - **PR #297**: CI: wire test_check_docs_issue_states.py into npm run lint
+- **Issue #303** (closed): Spec: no decision record covers direct (unsynchronized) sampling of asynchronous pins by IN
+- **Issue #300** (closed): Verification: no evidence for rst_n release timing under real delays (row 14 recovery/removal gap has no open issue)
 - **Issue #299** (closed): Spec: prepare the second ratification batch (the still-Proposed DRs and rows 13-14 the shipped design depends on) ahead of 2027-01-18
 - **Issue #294** (closed): CI: wire scripts/test_check_docs_issue_states.py into npm run lint (the only unwired script self-test)
 - **Issue #293** (closed): Formal: close the unbounded proof for no_data_dependent_latency (row 3)
