@@ -11,7 +11,7 @@ so every bench passed. The late-response regression is the test that can
 tell the two schedules apart; this runner is the demonstration that it
 does, and that it does so by asserting, not by crashing.
 
-Method (the tree-copying of `control_space_mutants.py`): copy the sources
+Method (the tree-copying of `_mutant_runner.py`): copy the sources
 into a scratch tree; in the copy, replace ONE ACK slot of ONE grade's
 committed program with that slot's original text, byte for byte, read
 from git at `ORIGINAL_REV` (the last revision with the low-phase
@@ -46,18 +46,16 @@ passed and every mutant was caught as required.
 
 from __future__ import annotations
 
-import argparse
 import ast
 import json
 import re
-import shutil
 import subprocess
 import sys
-import tempfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from control_space_mutants import REPO_ROOT, copy_tree  # noqa: E402
+from _mutant_runner import (REPO_ROOT, finish, fresh_tree, open_out, parse_args,  # noqa: E402
+                            run_bench as _run_bench)
 
 #: The last revision of `main` whose I2C write programs sampled ACK in the
 #: low phase (origin/main when issue #258 was implemented; the programs
@@ -131,26 +129,12 @@ def low_phase_in_offsets(tree: Path, program: str, section: str) -> list:
 
 
 def run_bench(tree: Path, request: str, tag: str) -> dict:
-    proc = subprocess.run(
-        ["klt", "functional-verification", request, "--format", "json"],
-        cwd=tree, capture_output=True, text=True, check=False,
-    )
-    (tree / f"klt-{tag}-stdout.json").write_text(proc.stdout, encoding="utf-8")
-    (tree / f"klt-{tag}-stderr.txt").write_text(proc.stderr, encoding="utf-8")
-    try:
-        doc = json.loads(proc.stdout)
-        tests = {
-            t["name"]: {
-                "status": t["status"],
-                "error_type": t.get("error_type"),
-                "error_message": (t.get("error_message") or "").splitlines()[0][:300]
-                if t.get("error_message") else None,
-            }
-            for t in doc["tests"]
-        }
-    except (ValueError, KeyError, TypeError):
-        return {"parsed": False, "rc": proc.returncode, "tests": {}}
-    return {"parsed": True, "rc": proc.returncode, "tests": tests}
+    return _run_bench(tree, request, tag=tag, detail=lambda t: {
+        "status": t["status"],
+        "error_type": t.get("error_type"),
+        "error_message": (t.get("error_message") or "").splitlines()[0][:300]
+        if t.get("error_message") else None,
+    })
 
 
 def all_passed(res: dict) -> bool:
@@ -160,26 +144,14 @@ def all_passed(res: dict) -> bool:
 
 
 def main(argv=None) -> int:
-    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("--out", help="directory to keep the per-run trees and summary.json in")
-    ap.add_argument("--only", help="run just this mutant (the golden run still runs)")
-    args = ap.parse_args(argv)
-
-    tmp = None
-    if args.out:
-        out = Path(args.out).resolve()
-        out.mkdir(parents=True, exist_ok=True)
-    else:
-        tmp = tempfile.TemporaryDirectory()
-        out = Path(tmp.name)
+    args = parse_args(__doc__, argv, out_help="directory to keep the per-run trees and summary.json in")
+    out, tmp = open_out(args.out)
 
     former = former_offsets()
     summary = {"benches": [ACK_REQUEST, SIBLING_REQUEST], "original_rev": ORIGINAL_REV,
                "runs": []}
 
-    golden = out / "golden"
-    shutil.rmtree(golden, ignore_errors=True)
-    copy_tree(golden)
+    golden = fresh_tree(out, "golden")
     ack = run_bench(golden, ACK_REQUEST, "ack")
     sib = run_bench(golden, SIBLING_REQUEST, "sibling")
     ok = all_passed(ack) and all_passed(sib)
@@ -192,9 +164,7 @@ def main(argv=None) -> int:
     for name, program, slot in MUTANTS:
         if args.only and name != args.only:
             continue
-        tree = out / name
-        shutil.rmtree(tree, ignore_errors=True)
-        copy_tree(tree)
+        tree = fresh_tree(out, name)
         path = tree / "firmware" / "asm" / f"{program}.asm"
         current = path.read_text(encoding="utf-8")
         orig_hits = SLOTS[slot].findall(original_source(program))
@@ -231,12 +201,8 @@ def main(argv=None) -> int:
             "as_required": good,
         })
 
-    (out / "summary.json").write_text(json.dumps(summary, indent=1) + "\n", encoding="utf-8")
-    print("RESULT: " + ("golden passes and the late-response regression fails every "
-                        "original-schedule mutant with an assertion" if ok else "NOT as required"))
-    if tmp is not None:
-        tmp.cleanup()
-    return 0 if ok else 1
+    return finish(out, tmp, summary, ok, "golden passes and the late-response regression fails every "
+                  "original-schedule mutant with an assertion")
 
 
 if __name__ == "__main__":

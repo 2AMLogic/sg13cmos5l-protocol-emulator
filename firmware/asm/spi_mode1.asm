@@ -121,6 +121,17 @@
 ; MSB first, and is echoed on uo_out after CS releases. MISO is uio
 ; bit 2, so the isolated bit is shifted right twice (one SHF in each
 ; half-period) before it is ORed in at bit 0.
+;
+; IN placement (issue #309, DR 0021 open item 1): in a CPHA=1 mode the
+; leading edge is where the peripheral LAUNCHES MISO and the trailing
+; edge is where it is SAMPLED. The IN is therefore instruction 5 of the
+; 10-instruction bit -- immediately before the trailing OUT (instruction
+; 6), 4 core cycles after the launch edge -- not instruction 2, 1 cycle
+; after it. The extraction (AND, SHF, SHF) follows the trailing edge and
+; the previous bit's SHF R0 / OR fill the slots after the leading edge, so
+; the accumulation lags the sample by one bit; bit 7's SHF R0 / OR run
+; after the section, inside the CS-hold cycles. Every OUT is at its
+; original cycle.
         LDI   R2, 0x00          ; CS asserted, SCLK still idle
         OUT   UIO_OUT, R2          ; CS falls
         WAIT  3                  ; 4 cycles of CS setup
@@ -129,87 +140,89 @@
         LDI   R2, 0x08          ; static leading image (preloaded)
 .cyclesec spi_mode1_func
         OUT   UIO_OUT, R2         ; leading edge (static image)
-        IN    R3, UIO_IN        ; sample MISO (bit 0)
-        AND   R3, R1            ; isolate MISO bit (uio bit 2)
-        SHF   R3, RIGHT         ; MISO bit -> bit 1
+        LDI   R3, 0x00            ; nothing received yet: clear the MISO register
+        NOP                       ; (slot of the previous bit's SHF R0 / OR)
         LDI   R2, 0x00          ; trailing data image (bit 0)
+        IN    R3, UIO_IN        ; sample MISO (bit 0), 4 cycles after the leading edge
         OUT   UIO_OUT, R2         ; trailing edge (sampling edge)
-        SHF   R3, RIGHT         ; MISO bit -> bit 0
-        SHF   R0, LEFT          ; RX accumulator <<= 1
-        OR    R0, R3            ; RX accumulator |= MISO bit
-        LDI   R2, 0x08          ; leading static image (next)
-        OUT   UIO_OUT, R2         ; leading edge (static image)
-        IN    R3, UIO_IN        ; sample MISO (bit 1)
         AND   R3, R1            ; isolate MISO bit (uio bit 2)
         SHF   R3, RIGHT         ; MISO bit -> bit 1
+        SHF   R3, RIGHT         ; MISO bit -> bit 0
+        LDI   R2, 0x08          ; leading static image (next)
+        OUT   UIO_OUT, R2         ; leading edge (static image)
+        SHF   R0, LEFT          ; RX accumulator <<= 1 (bit 0's turn)
+        OR    R0, R3            ; RX accumulator |= MISO bit 0
         LDI   R2, 0x00          ; trailing data image (bit 1)
+        IN    R3, UIO_IN        ; sample MISO (bit 1), 4 cycles after the leading edge
         OUT   UIO_OUT, R2         ; trailing edge (sampling edge)
-        SHF   R3, RIGHT         ; MISO bit -> bit 0
-        SHF   R0, LEFT          ; RX accumulator <<= 1
-        OR    R0, R3            ; RX accumulator |= MISO bit
-        LDI   R2, 0x08          ; leading static image (next)
-        OUT   UIO_OUT, R2         ; leading edge (static image)
-        IN    R3, UIO_IN        ; sample MISO (bit 2)
         AND   R3, R1            ; isolate MISO bit (uio bit 2)
         SHF   R3, RIGHT         ; MISO bit -> bit 1
+        SHF   R3, RIGHT         ; MISO bit -> bit 0
+        LDI   R2, 0x08          ; leading static image (next)
+        OUT   UIO_OUT, R2         ; leading edge (static image)
+        SHF   R0, LEFT          ; RX accumulator <<= 1 (bit 1's turn)
+        OR    R0, R3            ; RX accumulator |= MISO bit 1
         LDI   R2, 0x02          ; trailing data image (bit 2)
+        IN    R3, UIO_IN        ; sample MISO (bit 2), 4 cycles after the leading edge
         OUT   UIO_OUT, R2         ; trailing edge (sampling edge)
-        SHF   R3, RIGHT         ; MISO bit -> bit 0
-        SHF   R0, LEFT          ; RX accumulator <<= 1
-        OR    R0, R3            ; RX accumulator |= MISO bit
-        LDI   R2, 0x08          ; leading static image (next)
-        OUT   UIO_OUT, R2         ; leading edge (static image)
-        IN    R3, UIO_IN        ; sample MISO (bit 3)
         AND   R3, R1            ; isolate MISO bit (uio bit 2)
         SHF   R3, RIGHT         ; MISO bit -> bit 1
+        SHF   R3, RIGHT         ; MISO bit -> bit 0
+        LDI   R2, 0x08          ; leading static image (next)
+        OUT   UIO_OUT, R2         ; leading edge (static image)
+        SHF   R0, LEFT          ; RX accumulator <<= 1 (bit 2's turn)
+        OR    R0, R3            ; RX accumulator |= MISO bit 2
         LDI   R2, 0x02          ; trailing data image (bit 3)
+        IN    R3, UIO_IN        ; sample MISO (bit 3), 4 cycles after the leading edge
         OUT   UIO_OUT, R2         ; trailing edge (sampling edge)
-        SHF   R3, RIGHT         ; MISO bit -> bit 0
-        SHF   R0, LEFT          ; RX accumulator <<= 1
-        OR    R0, R3            ; RX accumulator |= MISO bit
-        LDI   R2, 0x08          ; leading static image (next)
-        OUT   UIO_OUT, R2         ; leading edge (static image)
-        IN    R3, UIO_IN        ; sample MISO (bit 4)
         AND   R3, R1            ; isolate MISO bit (uio bit 2)
         SHF   R3, RIGHT         ; MISO bit -> bit 1
+        SHF   R3, RIGHT         ; MISO bit -> bit 0
+        LDI   R2, 0x08          ; leading static image (next)
+        OUT   UIO_OUT, R2         ; leading edge (static image)
+        SHF   R0, LEFT          ; RX accumulator <<= 1 (bit 3's turn)
+        OR    R0, R3            ; RX accumulator |= MISO bit 3
         LDI   R2, 0x02          ; trailing data image (bit 4)
+        IN    R3, UIO_IN        ; sample MISO (bit 4), 4 cycles after the leading edge
         OUT   UIO_OUT, R2         ; trailing edge (sampling edge)
-        SHF   R3, RIGHT         ; MISO bit -> bit 0
-        SHF   R0, LEFT          ; RX accumulator <<= 1
-        OR    R0, R3            ; RX accumulator |= MISO bit
-        LDI   R2, 0x08          ; leading static image (next)
-        OUT   UIO_OUT, R2         ; leading edge (static image)
-        IN    R3, UIO_IN        ; sample MISO (bit 5)
         AND   R3, R1            ; isolate MISO bit (uio bit 2)
         SHF   R3, RIGHT         ; MISO bit -> bit 1
+        SHF   R3, RIGHT         ; MISO bit -> bit 0
+        LDI   R2, 0x08          ; leading static image (next)
+        OUT   UIO_OUT, R2         ; leading edge (static image)
+        SHF   R0, LEFT          ; RX accumulator <<= 1 (bit 4's turn)
+        OR    R0, R3            ; RX accumulator |= MISO bit 4
         LDI   R2, 0x02          ; trailing data image (bit 5)
+        IN    R3, UIO_IN        ; sample MISO (bit 5), 4 cycles after the leading edge
         OUT   UIO_OUT, R2         ; trailing edge (sampling edge)
-        SHF   R3, RIGHT         ; MISO bit -> bit 0
-        SHF   R0, LEFT          ; RX accumulator <<= 1
-        OR    R0, R3            ; RX accumulator |= MISO bit
-        LDI   R2, 0x08          ; leading static image (next)
-        OUT   UIO_OUT, R2         ; leading edge (static image)
-        IN    R3, UIO_IN        ; sample MISO (bit 6)
         AND   R3, R1            ; isolate MISO bit (uio bit 2)
         SHF   R3, RIGHT         ; MISO bit -> bit 1
+        SHF   R3, RIGHT         ; MISO bit -> bit 0
+        LDI   R2, 0x08          ; leading static image (next)
+        OUT   UIO_OUT, R2         ; leading edge (static image)
+        SHF   R0, LEFT          ; RX accumulator <<= 1 (bit 5's turn)
+        OR    R0, R3            ; RX accumulator |= MISO bit 5
         LDI   R2, 0x00          ; trailing data image (bit 6)
+        IN    R3, UIO_IN        ; sample MISO (bit 6), 4 cycles after the leading edge
         OUT   UIO_OUT, R2         ; trailing edge (sampling edge)
-        SHF   R3, RIGHT         ; MISO bit -> bit 0
-        SHF   R0, LEFT          ; RX accumulator <<= 1
-        OR    R0, R3            ; RX accumulator |= MISO bit
-        LDI   R2, 0x08          ; leading static image (next)
-        OUT   UIO_OUT, R2         ; leading edge (static image)
-        IN    R3, UIO_IN        ; sample MISO (bit 7)
         AND   R3, R1            ; isolate MISO bit (uio bit 2)
         SHF   R3, RIGHT         ; MISO bit -> bit 1
-        LDI   R2, 0x00          ; trailing data image (bit 7)
-        OUT   UIO_OUT, R2         ; trailing edge (sampling edge)
         SHF   R3, RIGHT         ; MISO bit -> bit 0
-        SHF   R0, LEFT          ; RX accumulator <<= 1
-        OR    R0, R3            ; RX accumulator |= MISO bit
-        LDI   R2, 0x08          ; leading static image
+        LDI   R2, 0x08          ; leading static image (next)
+        OUT   UIO_OUT, R2         ; leading edge (static image)
+        SHF   R0, LEFT          ; RX accumulator <<= 1 (bit 6's turn)
+        OR    R0, R3            ; RX accumulator |= MISO bit 6
+        LDI   R2, 0x00          ; trailing data image (bit 7)
+        IN    R3, UIO_IN        ; sample MISO (bit 7), 4 cycles after the leading edge
+        OUT   UIO_OUT, R2         ; trailing edge (sampling edge)
+        AND   R3, R1            ; isolate MISO bit (uio bit 2)
+        SHF   R3, RIGHT         ; MISO bit -> bit 1
+        SHF   R3, RIGHT         ; MISO bit -> bit 0
+        LDI   R2, 0x08          ; leading static image (pad, never written)
 .endcyclesec
-        WAIT  3                  ; 4 cycles of CS hold
+        SHF   R0, LEFT          ; bit 7's turn (completes the RX byte)
+        OR    R0, R3            ; RX accumulator |= MISO bit 7
+        WAIT  1                  ; 2 more cycles: 4 cycles of CS hold in all
         LDI   R2, 0x01          ; CS released, SCLK idle
         OUT   UIO_OUT, R2          ; CS rises
         OUT   UO_OUT, R0          ; ECHO the assembled RX byte on uo_out[7:0]

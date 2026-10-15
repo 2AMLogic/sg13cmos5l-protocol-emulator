@@ -132,7 +132,7 @@ reports but is not a required check on `main`.
   simulator written from the decision records (PR #204,
   [record](../../verification/records/isa-lockstep/records/20261011-182004-080e6be.md) <!-- superseded-ok: the record live at the main this page reviews; re-minted for issue #271 when DR 0001 gained dated notes -->).
   The control space is checked with mutants
-  ([record](../../verification/records/control-space/records/20261011-230658-66d2731.md)).
+  ([record](../../verification/records/control-space/records/20261014-115627-25a41c3.md)).
 - **Two flows, both named.** Every number is attributed either to the
   competition's LibreLane flow or to this program's klt flow, per
   [DR 0002](../../spec/decision-records/0002-flow-of-record.md).
@@ -208,7 +208,7 @@ design detail. Representative issues:
   reduce this risk; they do not remove it.
 - **No human or silicon ground truth.** Nothing has been taped out or measured.
   Pad electrical timing is not characterised: the
-  [pad model](../../verification/records/uio-pad-model/records/20261011-104304-d81097f.md)
+  [pad model](../../verification/records/uio-pad-model/records/20261014-115808-25a41c3.md)
   is logical and zero-delay. Post-layout simulation runs the SRAM as a
   zero-delay functional model, so its read timing is evidenced only by STA.
 - **Partly unratified targets.** Rows 13 and 14, and the decision records

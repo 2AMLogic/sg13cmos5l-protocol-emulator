@@ -1,0 +1,10 @@
+<testsuites name="results">
+  <testsuite name="all" package="all">
+    <property name="random_seed" value="1" />
+    <testcase name="test_sr_images_fresh" classname="test_firmware_i2c_sr" file="&lt;repo&gt;/verification/test_firmware_i2c_sr.py" lineno="327" time="0.005007743835449219" sim_time_ns="0.0" ratio_time="0.0" />
+    <testcase name="test_sr_exact_programs_pass_model_with_negative_controls" classname="test_firmware_i2c_sr" file="&lt;repo&gt;/verification/test_firmware_i2c_sr.py" lineno="357" time="7.4955456256866455" sim_time_ns="2047661.0" ratio_time="273183.7150030582" />
+    <testcase name="test_sr_poll_programs_stretch" classname="test_firmware_i2c_sr" file="&lt;repo&gt;/verification/test_firmware_i2c_sr.py" lineno="424" time="8.054473876953125" sim_time_ns="2174881.0" ratio_time="270021.48535401566" />
+    <testcase name="test_sr_uio_od_left_at_reset_cannot_drive_the_bus" classname="test_firmware_i2c_sr" file="&lt;repo&gt;/verification/test_firmware_i2c_sr.py" lineno="520" time="4.9819653034210205" sim_time_ns="1393921.0" ratio_time="279793.3978068496" />
+    <testcase name="test_sr_model_nominal_repeated_start_passes" classname="test_firmware_i2c_sr" file="&lt;repo&gt;/verification/test_firmware_i2c_sr.py" lineno="568" time="0.0005102157592773438" sim_time_ns="0.0" ratio_time="0.0" />
+  </testsuite>
+</testsuites>

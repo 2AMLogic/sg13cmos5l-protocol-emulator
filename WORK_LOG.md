@@ -2,8 +2,31 @@
 
 Chronological record of merged pull requests and closed issues, newest first.
 
+### 2026-10-13
+
+- **PR #302**: Spec: second ratification batch worksheet and RTL-citation checker (#299)
+- **PR #298**: Formal: unbounded proof for no_data_dependent_latency on the real core (#293)
+- **PR #297**: CI: wire test_check_docs_issue_states.py into npm run lint
+- **Issue #299** (closed): Spec: prepare the second ratification batch (the still-Proposed DRs and rows 13-14 the shipped design depends on) ahead of 2027-01-18
+- **Issue #294** (closed): CI: wire scripts/test_check_docs_issue_states.py into npm run lint (the only unwired script self-test)
+- **Issue #293** (closed): Formal: close the unbounded proof for no_data_dependent_latency (row 3)
+
 ### 2026-10-12
 
+- **PR #292**: Bump klt pin to f979a965 (klayout-tools#2720) with re-minted evidence
+- **PR #291**: docs: point PDK link at IHP-Open-PDK subtree and note klt/TT PDK revision split
+- **PR #288**: Firmware: SPI mode-0 three-byte burst under one CS, graded against the reference model (#286)
+- **PR #287**: ci: scheduled digest issue-state check; fix gap digest row 10
+- **PR #284**: Firmware: 434 cycles/bit UART transmitter with drift evidence (#281)
+- **PR #283**: Add a checked current-reading digest atop gap-to-submission.md
+- **PR #279**: docs(spec): dispose of the ratification keys' non-blocking notes on rows 1-12 (#271)
+- **Issue #289** (closed): Bump klt pin to a klayout-tools commit containing #2720 (IHP-Open-PDK fetch)
+- **Issue #286** (closed): Firmware: SPI multi-byte burst under one CS (target-spec row 11 caveat) graded against the reference model
+- **Issue #285** (closed): CI: run the digest issue-state check on a schedule — the gap digest already cites a closed issue as open
+- **Issue #282** (closed): Add a checked current-reading digest atop gap-to-submission.md
+- **Issue #281** (closed): Firmware: UART transmitter at 434 cycles/bit (115,200-class) with drift evidence
+- **Issue #271** (closed): spec: the ratification keys' non-blocking notes on rows 1–12 (PR #242)
+- **Issue #243** (closed): Formal: prove ACK-window sampling and NACK handling for shipped I2C firmware
 - **PR #277**: Move the generated i2c_fast_sr* programs to the 70/55 Fast split (#276)
 - **PR #240**: docs: cite live evidence records in docs/submission; lint superseded citations (#238)
 - **Issue #276** (closed): Move the generated i2c_fast_sr* programs to the 70/55 Fast split (zero t_LOW margin at 65/60)

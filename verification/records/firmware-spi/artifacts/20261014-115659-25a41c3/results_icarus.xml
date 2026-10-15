@@ -1,0 +1,7 @@
+<testsuites name="results">
+  <testsuite name="all" package="all">
+    <property name="random_seed" value="1" />
+    <testcase name="test_burst3_image_is_fresh" classname="test_firmware_spi_burst" file="&lt;repo&gt;/verification/test_firmware_spi_burst.py" lineno="144" time="0.0011055469512939453" sim_time_ns="0.0" ratio_time="0.0" />
+    <testcase name="test_mode0_three_byte_burst_under_one_cs" classname="test_firmware_spi_burst" file="&lt;repo&gt;/verification/test_firmware_spi_burst.py" lineno="170" time="0.10145330429077148" sim_time_ns="38241.0" ratio_time="376932.0306256257" />
+  </testsuite>
+</testsuites>

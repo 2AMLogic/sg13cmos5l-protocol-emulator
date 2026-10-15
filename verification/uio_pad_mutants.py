@@ -12,8 +12,8 @@ to see, and this runner is the demonstration that it does. The first
 mutant is the pre-DR-0012 top itself (`uio_oe = 8'h00`), the design the
 old benches passed on and that cannot pull an I2C line low.
 
-Method (the same as `control_space_mutants.py`, whose tree-copying it
-reuses): copy the sources into a scratch tree, inject ONE defect into the
+Method (the same as `control_space_mutants.py`, via the shared
+`_mutant_runner.py`): copy the sources into a scratch tree, inject ONE defect into the
 copy of the top, run the unmodified benches on it through `klt
 functional-verification`, and require each bench to FAIL -- by a parsed
 result with a failed test from the set that exists to catch it, not by a
@@ -36,16 +36,13 @@ Exit 0 = the golden run passed and every mutant was caught as required.
 
 from __future__ import annotations
 
-import argparse
-import json
-import shutil
-import subprocess
 import sys
-import tempfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from control_space_mutants import TOP, copy_tree  # noqa: E402
+from _mutant_runner import (finish, fresh_tree, open_out, parse_args,  # noqa: E402
+                            run_bench as _run_bench)
+from control_space_mutants import TOP  # noqa: E402
 
 PIN_MODE = "assign uio_oe  = (uio_od & ~core_uio_out) | (~uio_od & uio_dir);"
 
@@ -87,41 +84,17 @@ MUTANTS = [
 
 
 def run_bench(tree: Path, request: str) -> dict:
-    proc = subprocess.run(
-        ["klt", "functional-verification", request, "--format", "json"],
-        cwd=tree, capture_output=True, text=True, check=False,
-    )
-    stem = Path(request).stem
-    (tree / f"klt-{stem}-stdout.json").write_text(proc.stdout, encoding="utf-8")
-    (tree / f"klt-{stem}-stderr.txt").write_text(proc.stderr, encoding="utf-8")
-    try:
-        doc = json.loads(proc.stdout)
-        tests = {t["name"]: t["status"] for t in doc["tests"]}
-    except (ValueError, KeyError, TypeError):
-        return {"parsed": False, "rc": proc.returncode, "tests": {}}
-    return {"parsed": True, "rc": proc.returncode, "tests": tests}
+    return _run_bench(tree, request, tag=Path(request).stem)
 
 
 def main(argv=None) -> int:
-    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("--out", help="directory to keep the per-mutant trees and summary.json in")
-    ap.add_argument("--only", help="run just this mutant (the golden run still runs)")
-    args = ap.parse_args(argv)
-
-    tmp = None
-    if args.out:
-        out = Path(args.out).resolve()
-        out.mkdir(parents=True, exist_ok=True)
-    else:
-        tmp = tempfile.TemporaryDirectory()
-        out = Path(tmp.name)
+    args = parse_args(__doc__, argv)
+    out, tmp = open_out(args.out)
 
     ok = True
     summary = {"benches": sorted(BENCHES), "pin_mode_anchor": PIN_MODE, "runs": []}
 
-    golden = out / "golden"
-    shutil.rmtree(golden, ignore_errors=True)
-    copy_tree(golden)
+    golden = fresh_tree(out, "golden")
     for request in BENCHES:
         res = run_bench(golden, request)
         failed = sorted(n for n, s in res["tests"].items() if s != "passed")
@@ -136,9 +109,7 @@ def main(argv=None) -> int:
     for name, what, replacement in MUTANTS:
         if args.only and name != args.only:
             continue
-        tree = out / name
-        shutil.rmtree(tree, ignore_errors=True)
-        copy_tree(tree)
+        tree = fresh_tree(out, name)
         path = tree / TOP
         text = path.read_text(encoding="utf-8")
         if text.count(PIN_MODE) != 1:
@@ -166,12 +137,7 @@ def main(argv=None) -> int:
             })
             ok = ok and good
 
-    (out / "summary.json").write_text(json.dumps(summary, indent=1) + "\n", encoding="utf-8")
-    print("RESULT: " + ("golden passes and every pad-path mutant is caught by both benches"
-                        if ok else "NOT as required"))
-    if tmp is not None:
-        tmp.cleanup()
-    return 0 if ok else 1
+    return finish(out, tmp, summary, ok, "golden passes and every pad-path mutant is caught by both benches")
 
 
 if __name__ == "__main__":

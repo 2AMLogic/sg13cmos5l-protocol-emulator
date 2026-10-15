@@ -368,6 +368,38 @@ list with a single bare kind — drops it along with any per-entry `endpoint`.
 `loom-daemon telemetry-export` (the one-shot fixture replay) does not read
 it.
 
+**Provisioning and proving a host: `loom-daemon telemetry-join --host <roster-id>`
+(#11528).** Resolves this host's identity first and refuses a mismatched
+`--host` before credential fetch, write or send. The default source is
+`ssm-access:///2am/cloudflare/otlp-host/<host>`: fetch the existing
+`client_id`/`client_secret` pair and write `CF-Access-Client-Id` and
+`CF-Access-Client-Secret`. It neither mints a token nor changes Access policy.
+`headers-file:<path>` accepts an existing owner-only header file, including
+using the already provisioned destination as the source. Explicit legacy
+`ssm://<parameter>`, `file:<path>` and `age-file:<path>` sources still mean a
+scalar bearer token. Plaintext sources must be owner-only regular files;
+credential paths must stay outside every repository/worktree and contain no
+parent-directory traversal. New credential directories are 0700; existing
+destination parents must be private and owned by the invoking user (the
+command refuses a shared parent rather than chmodding it).
+
+The destination (`--headers-path`, default `~/.config/loom/otlp-headers`) is
+written atomically at 0600. Fresh content is parsed before replacement;
+malformed headers, partial Access pairs and nonregular/symlink destinations
+are refused without truncating existing credentials. Values never appear in
+errors or Debug. Only after provisioning does the live sender load the file,
+with no ambient or empty ingest-key Bearer header. OTLP is always compiled in.
+
+The command sends one `host.export` probe to the compiled-in `DEFAULT_ENDPOINT`
+(or `--endpoint`) and polls the reader (`--reader-url`) for
+`host.id == harness.ingest.principal == <roster-id>` within `--timeout`
+(default 60 s). The principal is a **resource** attribute stamped by ingress;
+`--probe-sql` can override the query for another schema. Credential fetch,
+401/403 refusal, other transport/status failures, identity mismatch, missing
+probe and reader outage remain distinct errors. CI uses fake credentials and
+loopback receivers; actual host provisioning/probe and the 2am onboarding-doc
+acceptance remain separate, explicitly unverified work under #11528.
+
 
 See [OTLP transport and artifact verification](otlp-transport.md) for response
 classification, per-signal counters, retry/drop policy and the real Collector
@@ -596,7 +628,7 @@ labels are listed in
 `loom.queue.*` from the same per-issue ready-queue rows that `loom-daemon queue`
 shows (#8852). A row is *waiting* in one of two states. `ready` means only
 capacity is holding it: the concurrency cap, the admission ramp, the saturation
-brake, or the repo slice. `blocked` means an automatic hold: a halted repo,
+brake, or the per-repo cap. `blocked` means an automatic hold: a halted repo,
 missing sweep command, quarantine, dispatch backoff, no-op cooldown, PR-less
 retry, or a dispatch error. Running rows are not waiting. Neither are rows held
 deliberately or elsewhere: a park or hard-exclusion label, a decline, another
@@ -608,9 +640,7 @@ over-reports. The clock is dropped when the issue leaves the listing, is
 dispatched, or stops waiting. It is kept across a failed listing, and it
 re-seeds after a daemon restart. A re-seed reads `updatedAt` again, so it can
 include time the issue spent in a non-waiting hold that did not touch it (for
-example a peer claim). On a sharded fleet, `out_of_slice` rows count as `ready`
-on every host that lists them, so `starved{state="ready"}` can fire on a host
-that is not the slice owner. Read the host label with that in mind. The
+example a peer claim). The
 signals are `loom.queue.oldest_wait{state}`, `loom.queue.starved{state}` (waiting longer than `LOOM_QUEUE_STARVATION_SECS`,
 default 21600 = 6 h), `loom.queue.starved.by_reason{reason}`, and the
 dispatch-wait delta pair `loom.queue.dispatch_wait` / `.samples`. Queue
@@ -649,10 +679,21 @@ comes from bus events the daemon already publishes: seconds from an issue
 sweep finishing to the next issue-sweep dispatch
 (`loom.dispatch.slot_turnaround` / `.samples`). The tick adds idle slots
 (`loom.dispatch.idle_slots`) and the slot-seconds left idle while ready work
-waited (`loom.dispatch.idle_slot_seconds`). Forge label-stage dwell
-(`loom.forge.stage_dwell{state}` / `.samples`, `loom.forge.stage_items{state}`)
+waited (`loom.dispatch.idle_slot_seconds`). Busy slots by role (#11847,
+`loom.dispatch.busy_slots{role}`) split the load: `role="sweep"` is the issue
+sweeps (so `busy_slots{role="sweep"} + idle_slots = max_concurrent`), and each
+role-runner role has its own series, with the role pool's ceiling and spare
+in `loom.dispatch.role_max_concurrent` and `loom.dispatch.role_idle_slots`.
+Forge label-stage dwell
+(`loom.forge.stage_dwell{state}` / `.samples`, `loom.forge.stage_items{state, repo}`)
 covers created → curated, curated → `loom:issue`, building → review requested
-and review requested → merged. It reads ETag-cached stage listings every 5
+and review requested → merged. Beside the per-label counts, `stage_items` has
+queue states from one ETag-cached open-items walk per repo (#11847):
+`triage`, `unlabeled`, `curated_not_promoted`, `issue_open_pr`,
+`issue_no_pr`, `parked`, `pr_held` and `pr_champion_held` (the Champion-hold
+label shape, `loom:pr` + `loom:blocked`, #11905; it reads no marker, so markerless parks count too). They are absent, not `0`, for a repo
+whose walk did not complete. `stage_items` is per repo, so a per-host total is `sum by (state)`, and the
+states overlap, so never sum across them. It reads ETag-cached stage listings every 5
 minutes plus at most 8 per-item reads per sample, never per tick. With
 `fleet.captainGauges` configured, the fleet captain samples for the fleet and
 dispatchers stand down while its published data is fresh
@@ -699,7 +740,7 @@ vocabulary (`loom.queue.disposition`'s wire values):
 | "admission brake" | `deferred_saturation` (decisions reason `saturation`, tick result `saturation_held`) |
 | "build back-off" / "WIP limit" (PR debt high) | `deferred_build_backoff` (decisions reason `build_backoff`, tick result `build_backoff_held`, #9410) |
 | "dependency blocked" | Loom has no issue-dependency gate. Nearest: `parked` (a `PARK_LABELS`/`SKIP_LABELS` entry, e.g. `loom:blocked`, alongside `loom:issue`) or `labelled_blocked` (`loom:blocked` without `loom:issue` — forge-side only, from `queue.snapshot`, never a tick outcome so it never appears on a `loom.dispatch.disposition` span) |
-| "lower tier" (ranked behind others) | `deferred_capacity` (machine concurrency cap full), `deferred_ramp_cap` (per-tick admission cap), `deferred_repo_cap` (per-repo cap), or `deferred_out_of_slice` (repo sharding) — `tier:*` labels do not affect dispatch order, only `loom.queue.rank` does |
+| "lower tier" (ranked behind others) | `deferred_capacity` (machine concurrency cap full), `deferred_ramp_cap` (per-tick admission cap), or `deferred_repo_cap` (per-repo cap); `deferred_out_of_slice` (repo sharding) is retired, #11682 — `tier:*` labels do not affect dispatch order, only `loom.queue.rank` does |
 | "waiting on overlapping work" (same files) | `deferred_file_overlap` (#9781): its `## Affected Files` share a path with same-repo work admitted earlier this tick or already in flight; the row's `detail` (and the `pick.decision` skip's `detail`) names the shared paths. A one-tick scheduling deferral, never a label or hold — see `daemon-reference.md` §"Same-repo file-overlap deferral" |
 | "repo locked by an open PR" | `open_pr` (the #4123 guard's `pr-open-skip`). Since #9674 the repo's `open_pr` rows carry the repo-level `lockout.frozen_candidates_count` / `lockout.frozen_points_sum` / `lockout.duration_seconds` attributes, so rank which repo's lockout is starving the most ready work by grouping those spans on `loom.repo` |
 
@@ -709,9 +750,15 @@ the closed-vocabulary `work_finder::halt_cause` token (#9017) — `main_red`,
 `write_scope` (#9548) — so
 "which hold is this repo under" is filterable straight from the span, no
 join needed. The attribute is absent on a cause-less legacy row (a
-pre-#9017 caller); the `loom.dispatch.tick`-span join
-(`loom.dispatch.result="halted_main_red"` through `parentSpanID`) remains
-the fallback there.
+pre-#9017 caller); the fallback there is the `loom.dispatch.tick`-span join
+through `parentSpanID`, reading the tick's `loom.dispatch.halt_causes`
+(comma-separated tokens). Do not key that join on
+`loom.dispatch.result="halted_main_red"`: since #11857 the result names a
+hold only when it covered the tick's work, so a tick that held one root
+beside healthy roots with candidates carries its per-candidate result
+(`all_skipped`, `no_eligible_work`, ...). `loom.dispatch.halt_causes` is
+still emitted on such a partial hold, and `loom.dispatch.held_roots` counts
+the held roots.
 
 A runnable copy of the "why hasn't `owner/repo#N` started" query is query 5 of
 `defaults/observability/signoz/queue-dwell.sql` — that file's other four

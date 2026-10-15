@@ -631,6 +631,18 @@ def _(fx):
     expect_fail(fx, "IN from port UI_IN", "concrete-firmware-bench")
 
 
+@case("SPI mode 1: a sample into the image register between LDI and OUT breaks the pairing")
+def _(fx):
+    # issue #309: the functional burst's IN sits between the trailing image
+    # LDI and its OUT. Only an IN into some other register is skipped; one
+    # that overwrites the image register is not a pin-image pair, and the
+    # data-bearing images are then unseen. Mutating also the ceiling
+    # burst's LDIs would hide the effect, so only the functional IN moves.
+    fx.mutate("firmware/asm/spi_mode1.asm", "IN    R3, UIO_IN        ; sample MISO (bit",
+              "IN    R2, UIO_IN        ; sample MISO (bit", count=8)
+    expect_fail(fx, "firmware/asm/spi_mode1.asm", "concrete-firmware-bench")
+
+
 @case("I2C idle image mutated (SDA moved)")
 def _(fx):
     fx.mutate("firmware/asm/i2c_fast.asm", "LDI   R3, 0x0C        ; both lines released",

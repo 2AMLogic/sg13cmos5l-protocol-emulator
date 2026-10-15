@@ -493,6 +493,11 @@ record.
   PS/2 and WS2812 do not.
 - **DR 0012's open items** (`RCTL UIO_*` returns the register; `RUN` is
   allowed outside the boot ROM) are frozen as built, still Proposed.
+- **2026-10-13 (issue #303): `IN` samples asynchronous pins directly.** There is
+  no input synchronizer; a transition in the capture window can leave an `IN`
+  bit metastable, and no bench here can show it. Scope, per-firmware cost and
+  the deferred two-flop option: [DR 0021](../../spec/decision-records/0021-async-input-sampling.md)
+  (Proposed).
 - **No silicon.** Every statement here is from simulation, formal or static
   checks.
 

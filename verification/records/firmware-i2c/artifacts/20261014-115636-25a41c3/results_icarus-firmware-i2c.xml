@@ -1,0 +1,9 @@
+<testsuites name="results">
+  <testsuite name="all" package="all">
+    <property name="random_seed" value="1" />
+    <testcase name="test_committed_images_are_fresh" classname="test_firmware_i2c" file="&lt;repo&gt;/verification/test_firmware_i2c.py" lineno="506" time="0.0035004615783691406" sim_time_ns="0.0" ratio_time="0.0" />
+    <testcase name="test_i2c_both_grades_pass_independent_reference_model" classname="test_firmware_i2c" file="&lt;repo&gt;/verification/test_firmware_i2c.py" lineno="545" time="2.8174784183502197" sim_time_ns="909181.0" ratio_time="322693.1550135432" />
+    <testcase name="test_uio_od_left_at_reset_cannot_drive_the_bus" classname="test_firmware_i2c" file="&lt;repo&gt;/verification/test_firmware_i2c.py" lineno="695" time="1.4506006240844727" sim_time_ns="454601.0000000001" ratio_time="313388.11830921104" />
+    <testcase name="test_reference_model_negative_control_still_fails" classname="test_firmware_i2c" file="&lt;repo&gt;/verification/test_firmware_i2c.py" lineno="774" time="0.0006256103515625" sim_time_ns="0.0" ratio_time="0.0" />
+  </testsuite>
+</testsuites>
