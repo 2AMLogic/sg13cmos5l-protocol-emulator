@@ -8,6 +8,7 @@ This roadmap is generated from the current GitHub label state.
 Judge-approved PRs under a hold (`loom:blocked` or `loom:operator`) — only a human merge decision is missing.
 
 - **#301**: Tooling: manifest-driven lint runner + self-test wiring inventory (#296)
+- **#316**: test: run firmware artifact parser self-test in npm run lint
 
 ## Very Important
 
@@ -35,18 +36,21 @@ Human-approved issues ready for implementation (`loom:issue`).
 Issues currently being built (`loom:building`).
 
 - **#315**: test_firmware_artifacts.py never runs: needs pytest (removed in #62) and isn't in npm run lint
+- **#318**: Generate the four nested-WAIT UART firmware variants from one generator (as gen_i2c_sr.py does for I2C)
 
 ## PRs Awaiting Review
 
 PRs waiting on Judge (`loom:review-requested`).
 
-- **#316**: test: run firmware artifact parser self-test in npm run lint
+_None._
 
 ## Approved (Awaiting Merge)
 
 PRs that passed review and are queued for Champion auto-merge (`loom:pr`).
 
 - **#301**: Tooling: manifest-driven lint runner + self-test wiring inventory (#296)
+- **#316**: test: run firmware artifact parser self-test in npm run lint
+- **#321**: refactor(firmware): generate nested-WAIT UART programs from one script
 
 ## Proposed
 
@@ -58,6 +62,7 @@ Issues carrying `loom:curated`.
 - **#265**: PR #263: netlist-dependent evidence re-mint for the A_DOUT buffers (#261) before merge *(curated)*
 - **#278**: Re-stamp SG13CMOS5L PDK pin from klayout-tools (IHP-Open-PDK dev f7bca326) *(curated)*
 - **#296**: Tooling: replace the 38-command npm lint && chain with a manifest runner that reports all failures and enforces self-test wiring *(curated)*
+- **#324**: Delete verification/_dut.py and stale _dut docstrings at next post-layout-sdf-regression / reset-pin-through re-mint *(curated)*
 
 ## Proposed (Architect / Hermit)
 
@@ -71,14 +76,14 @@ _None._
 
 | Bucket | Count |
 |------|-------|
-| Operator merge-risk holds | 1 |
+| Operator merge-risk holds | 2 |
 | Very important | 0 |
 | Important | 4 |
 | Ready (`loom:issue`) | 1 |
-| In Progress (`loom:building`) | 1 |
-| PRs awaiting review | 1 |
-| Approved PRs awaiting merge | 1 |
-| Curated | 6 |
+| In Progress (`loom:building`) | 2 |
+| PRs awaiting review | 0 |
+| Approved PRs awaiting merge | 3 |
+| Curated | 7 |
 | Architect / Hermit proposals | 1 |
 | Active epics | 0 |
 <!-- guide:plan-body:end -->
