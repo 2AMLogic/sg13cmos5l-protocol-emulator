@@ -1,0 +1,5 @@
+# Stdlib-style test_*.py files deliberately not run by `npm run lint`.
+# Format: <repo-relative path> :: <reason>
+# (cocotb benches -- modules that import cocotb -- are skipped automatically;
+# they are run from verification/request-*.json, not from lint.)
+verification/test_firmware_artifacts.py :: needs pytest, which is not a stdlib/CI-records-job dependency; exercised via the cocotb benches that use firmware_artifacts.py

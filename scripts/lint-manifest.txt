@@ -1,0 +1,52 @@
+# Ordered lint manifest run by scripts/run_lint.py (`npm run lint`).
+# One command per line, run from the repo root; `#` starts a comment.
+# Every entry runs even if an earlier one fails. Keep the ratification gate last.
+# scripts/check_lint_inventory.py requires every stdlib test_*.py self-test to be
+# listed here or in scripts/lint-self-test-exemptions.txt.
+
+python3 scripts/test_run_lint.py
+python3 verification/check_records.py
+python3 verification/test_check_records.py
+python3 verification/test_check_docs_records.py
+python3 verification/check_docs_records.py
+python3 verification/test_remint_records.py
+python3 flow/test_post_layout_protocols.py
+python3 verification/test_reset_coverage.py
+python3 verification/test_firmware_templates.py
+python3 verification/test_isa_model.py
+python3 verification/test_uio_pad_resolution.py
+python3 verification/test_spi_flash_model.py
+python3 verification/test_ws2812_model.py
+python3 verification/test_ps2_model.py
+python3 firmware/tools/test_mkflash.py
+python3 firmware/tools/test_gen_boot_rom.py
+python3 firmware/tools/test_asm.py
+python3 firmware/tools/test_loadseq.py
+python3 firmware/tools/check_firmware.py
+python3 scripts/test_check_test_results.py
+python3 scripts/test_check_ratification_gate.py
+python3 scripts/test_check_datasheet.py
+python3 scripts/check_datasheet.py
+python3 scripts/test_check_protocol_pin_roles.py
+python3 scripts/check_protocol_pin_roles.py
+python3 scripts/test_normalize_envelope_input_path.py
+python3 scripts/test_check_evidence_inventories.py
+python3 scripts/check_evidence_inventories.py
+python3 scripts/test_check_rtl_bench_inventory.py
+python3 scripts/check_rtl_bench_inventory.py
+python3 scripts/test_check_home_paths.py
+python3 scripts/check_home_paths.py
+python3 scripts/test_check_action_pins.py
+python3 scripts/check_action_pins.py
+python3 scripts/test_check_isa_freeze.py
+python3 scripts/check_isa_freeze.py
+python3 scripts/test_check_architecture.py
+python3 scripts/check_architecture.py
+python3 scripts/test_check_gap_digest.py
+python3 scripts/check_gap_digest.py
+python3 scripts/test_check_ratification_batch.py
+python3 scripts/check_ratification_batch.py
+python3 scripts/test_check_docs_issue_states.py
+python3 scripts/test_check_lint_inventory.py
+python3 scripts/check_lint_inventory.py
+python3 scripts/check_ratification_gate.py --base-ref origin/main
