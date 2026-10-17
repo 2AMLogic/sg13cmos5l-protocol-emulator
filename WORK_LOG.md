@@ -4,6 +4,7 @@ Chronological record of merged pull requests and closed issues, newest first.
 
 ### 2026-10-17
 
+- **PR #331**: docs: diagnose item 7 unverifiable_provenance cause in manifests README (partial #330)
 - **PR #332**: Bump klt pin to b447d889; item 4 LVS now runs and returns mismatch
 - **PR #323**: docs: correct README claim that _dut.py is imported by a bench
 - **PR #322**: refactor(firmware): generate the four SPI mode programs from one script
