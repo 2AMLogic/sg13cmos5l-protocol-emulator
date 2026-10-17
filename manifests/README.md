@@ -126,10 +126,13 @@ capture, PVT corner sweeps, or Monte Carlo.
   above.** Append-only; the bullets above stay as history. The
   `unverifiable_provenance` is **not** an open upstream binding
   (klayout-tools #2097/#2182 are closed; #2182 is what documents it). The
-  cause, read from the pinned grader (`f979a965`, `signoff.py`): a
-  `functional-verification` envelope carries no `provenance` block by
-  design, so a `content_hash` pin on it can never match and always renders
-  `unmet`/`unverifiable_provenance`. `klt signoff` prints no `detail` for
+  cause, read from the grader at `f979a965` (the pin when this was read;
+  `signoff.py`): a `functional-verification` envelope carries no
+  `provenance` block by design, so a `content_hash` pin on it can never
+  match and always renders `unmet`/`unverifiable_provenance`. Record
+  `20261017-192541-fef7ac1`, at the later pin `b447d889`, renders the same
+  `unverifiable_provenance` for item 7 (`signoff.py` not re-read at
+  `b447d889`). `klt signoff` prints no `detail` for
   this reason, so the cause is from source, not from a quoted `detail`.
   Item 7 **stays `unmet`** and its `content_hash` pin
   (`sha256:dfb3fe29…`) stays in the manifest: dropping the pin would grade
