@@ -36,7 +36,6 @@ Human-approved issues ready for implementation (`loom:issue`).
 Issues currently being built (`loom:building`).
 
 - **#315**: test_firmware_artifacts.py never runs: needs pytest (removed in #62) and isn't in npm run lint
-- **#318**: Generate the four nested-WAIT UART firmware variants from one generator (as gen_i2c_sr.py does for I2C)
 
 ## PRs Awaiting Review
 
@@ -50,7 +49,6 @@ PRs that passed review and are queued for Champion auto-merge (`loom:pr`).
 
 - **#301**: Tooling: manifest-driven lint runner + self-test wiring inventory (#296)
 - **#316**: test: run firmware artifact parser self-test in npm run lint
-- **#321**: refactor(firmware): generate nested-WAIT UART programs from one script
 
 ## Proposed
 
@@ -80,9 +78,9 @@ _None._
 | Very important | 0 |
 | Important | 4 |
 | Ready (`loom:issue`) | 1 |
-| In Progress (`loom:building`) | 2 |
+| In Progress (`loom:building`) | 1 |
 | PRs awaiting review | 0 |
-| Approved PRs awaiting merge | 3 |
+| Approved PRs awaiting merge | 2 |
 | Curated | 7 |
 | Architect / Hermit proposals | 1 |
 | Active epics | 0 |
