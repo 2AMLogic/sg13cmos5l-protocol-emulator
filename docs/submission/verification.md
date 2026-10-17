@@ -255,8 +255,9 @@ and the header of `flow/run-post-layout-sdf.sh`:
   klt/Yosys reference is `unmet / check_errored` (klayout-tools#2941); the
   compare against the run's own post-route netlist is `match`
   ([librelane-gds-signoff-check 20261012-204118](../../verification/records/librelane-gds-signoff-check/records/20261012-204118-0af4491.md)).
-- The T1 verdict of record is `tier: null`, **5 of 11 items met**
-  ([signoff-baseline 20261011-224007](../../verification/records/signoff-baseline/records/20261011-224007-de4a99e.md)).
+- The T1 verdict of record is `tier: null`, **6 of 11 items met**
+  (items 1, 2, 3, 7, 9 and 10;
+  [signoff-baseline 20261017-192807](../../verification/records/signoff-baseline/records/20261017-192807-fef7ac1.md)).
   This document does not move that.
 - The template's `gl_test` job checks results with `! grep failure results.xml`
   on the `ihp-cmos5l` branch, which would not match an `<error>` element. The
