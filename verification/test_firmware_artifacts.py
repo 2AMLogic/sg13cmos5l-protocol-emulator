@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Simulator-free tests for `firmware_artifacts.py` (issue #115).
 
-Run directly or under pytest. Covers parser edge cases and that every
+Stdlib only (no pytest): `python3 verification/test_firmware_artifacts.py`,
+run by `npm run lint`; exit 0 = all pass. Covers parser edge cases and that every
 committed UART/roundtrip/SPI/I2C artifact parses to the same values via the
 shared readers and via each bench's own wrapper (per-mode selection).
 """
@@ -11,8 +12,6 @@ import sys
 import tempfile
 from pathlib import Path
 
-import pytest
-
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parent
 sys.path.insert(0, str(HERE))
@@ -21,6 +20,26 @@ import firmware_artifacts as fa  # noqa: E402
 BUILD = REPO / "firmware" / "build"
 SPI_MODES = (0, 1, 2, 3)
 I2C_STEMS = ("i2c_std", "i2c_fast")
+FAILURES = []
+
+
+def check(name, fn):
+    try:
+        fn()
+    except AssertionError as err:
+        FAILURES.append(name)
+        print(f"FAIL {name}: {err}")
+    else:
+        print(f"ok   {name}")
+
+
+def expect_raises(exc, pattern, fn):
+    try:
+        fn()
+    except exc as err:
+        assert re.search(pattern, str(err)), f"{err!r} does not match {pattern!r}"
+        return
+    raise AssertionError(f"expected {exc.__name__} matching {pattern!r}")
 
 
 def _write(text):
@@ -37,15 +56,13 @@ def test_hex_blank_and_whitespace_lines():
 
 def test_hex_malformed_names_file_and_line():
     p = _write("1234\nzzzz\n")
-    with pytest.raises(ValueError, match=r"x\.hex:2.*zzzz"):
-        fa.parse_hex_image(p)
+    expect_raises(ValueError, r"x\.hex:2.*zzzz", lambda: fa.parse_hex_image(p))
 
 
-@pytest.mark.parametrize("text", ["", "\n  \n\t\n"])
-def test_hex_empty_rejected(text):
-    p = _write(text)
-    with pytest.raises(AssertionError, match="empty"):
-        fa.parse_hex_image(p)
+def test_hex_empty_rejected():
+    for text in ("", "\n  \n\t\n"):
+        p = _write(text)
+        expect_raises(AssertionError, "empty", lambda: fa.parse_hex_image(p))
 
 
 REPORT = """\
@@ -80,18 +97,23 @@ def test_total_cycles():
 
 
 def test_total_cycles_missing_is_assertion():
-    with pytest.raises(AssertionError, match="TOTAL-CYCLES"):
-        fa.total_cycles("CYCLES name=a start=0 end=1 cycles=2 branches=false\n")
-    with pytest.raises(AssertionError):
-        fa.total_cycles("  TOTAL-CYCLES 5\nTOTAL-CYCLES x\n")
+    expect_raises(
+        AssertionError,
+        "TOTAL-CYCLES",
+        lambda: fa.total_cycles("CYCLES name=a start=0 end=1 cycles=2 branches=false\n"),
+    )
+    expect_raises(
+        AssertionError,
+        "",
+        lambda: fa.total_cycles("  TOTAL-CYCLES 5\nTOTAL-CYCLES x\n"),
+    )
 
 
 def _committed_pairs():
     return sorted(BUILD.glob("*.cycles.txt"))
 
 
-@pytest.mark.parametrize("report", _committed_pairs(), ids=lambda p: p.name)
-def test_committed_reports_parse(report):
+def _check_committed_report(report):
     text = report.read_text(encoding="utf-8")
     sections = fa.parse_cycle_sections(text)
     for start, end, cycles, branches in sections.values():
@@ -104,11 +126,22 @@ def test_committed_reports_parse(report):
     )
 
 
+def test_committed_reports_parse():
+    reports = _committed_pairs()
+    assert reports, "no committed *.cycles.txt reports found"
+    for report in reports:
+        _check_committed_report(report)
+
+
 def test_per_mode_selection_uses_each_modes_own_files():
     sys.path.insert(0, str(HERE))
     # Import the bench modules only for their pure wrappers (needs cocotb
     # importable; skip otherwise).
-    pytest.importorskip("cocotb")
+    try:
+        import cocotb  # noqa: F401
+    except ImportError:
+        print("skip test_per_mode_selection_uses_each_modes_own_files: cocotb not importable")
+        return
     import test_firmware_spi as spi
     import test_firmware_i2c as i2c
     import test_firmware_uart as uart
@@ -141,5 +174,10 @@ def test_per_mode_selection_uses_each_modes_own_files():
     )
 
 
-if __name__ == "__main__":
-    raise SystemExit(pytest.main([__file__, "-q"]))
+for name, fn in sorted(globals().items()):
+    if name.startswith("test_"):
+        check(name, fn)
+if FAILURES:
+    print(f"{len(FAILURES)} FAILED")
+    sys.exit(1)
+print("all passed")
