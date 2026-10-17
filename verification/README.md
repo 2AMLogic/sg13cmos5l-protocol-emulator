@@ -325,9 +325,13 @@ gates. The host-side loader is issue #118.
   behaviour; the random regression sends half its multi-frame UART
   programs back to back and fails a 0xFF stream with 3-cycle-long bits on
   pitch.
-- `_dut.py` — shared `reset(dut)` coroutine, imported as a sibling module by
-  `test_protocol_emulator.py` (and any future bench added here) so reset
-  sequencing lives in one place.
+- `_dut.py` — a `reset(dut)` coroutine that **no bench imports** (see the
+  module's own docstring and DR 0013). Each bench resets through its own
+  loader (`test_protocol_emulator.load_program`, which `test_firmware_*.py`
+  import) or its own MODE-low reset (`test_boot_rom.py`). It is kept only
+  because it is a hashed provenance input of the `post-layout-sdf-regression`
+  and `reset-pin-through` records; deleting it is deferred to the next
+  re-mint of those records.
 - `request-protocol-emulator.json` — `klt functional-verification` request
   driving `test_protocol_emulator.py` against
   `src/tt_um_2amlogic_protocol_emulator.v` via Icarus.
