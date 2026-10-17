@@ -35,12 +35,13 @@ Human-approved issues ready for implementation (`loom:issue`).
 Issues currently being built (`loom:building`).
 
 - **#315**: test_firmware_artifacts.py never runs: needs pytest (removed in #62) and isn't in npm run lint
+- **#330**: T1 item 7: find and fix why the SDF-annotated regression grades unverifiable_provenance
 
 ## PRs Awaiting Review
 
 PRs waiting on Judge (`loom:review-requested`).
 
-_None._
+- **#331**: fix: bind item 7 SDF envelope without an ungradable content_hash pin
 
 ## Approved (Awaiting Merge)
 
@@ -60,6 +61,8 @@ Issues carrying `loom:curated`.
 - **#278**: Re-stamp SG13CMOS5L PDK pin from klayout-tools (IHP-Open-PDK dev f7bca326) *(curated)*
 - **#296**: Tooling: replace the 38-command npm lint && chain with a manifest runner that reports all failures and enforces self-test wiring *(curated)*
 - **#324**: Delete verification/_dut.py and stale _dut docstrings at next post-layout-sdf-regression / reset-pin-through re-mint *(curated)*
+- **#329**: T1 item 4: re-run klt lvs against the gate-level reference now that klayout-tools#2941 is closed *(curated)*
+- **#330**: T1 item 7: find and fix why the SDF-annotated regression grades unverifiable_provenance *(curated)*
 
 ## Proposed (Architect / Hermit)
 
@@ -77,10 +80,10 @@ _None._
 | Very important | 1 |
 | Important | 3 |
 | Ready (`loom:issue`) | 1 |
-| In Progress (`loom:building`) | 1 |
-| PRs awaiting review | 0 |
+| In Progress (`loom:building`) | 2 |
+| PRs awaiting review | 1 |
 | Approved PRs awaiting merge | 2 |
-| Curated | 7 |
+| Curated | 9 |
 | Architect / Hermit proposals | 1 |
 | Active epics | 0 |
 <!-- guide:plan-body:end -->
