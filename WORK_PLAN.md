@@ -34,13 +34,13 @@ Human-approved issues ready for implementation (`loom:issue`).
 
 Issues currently being built (`loom:building`).
 
-_None._
+- **#315**: test_firmware_artifacts.py never runs: needs pytest (removed in #62) and isn't in npm run lint
 
 ## PRs Awaiting Review
 
 PRs waiting on Judge (`loom:review-requested`).
 
-_None._
+- **#316**: test: run firmware artifact parser self-test in npm run lint
 
 ## Approved (Awaiting Merge)
 
@@ -75,8 +75,8 @@ _None._
 | Very important | 0 |
 | Important | 4 |
 | Ready (`loom:issue`) | 1 |
-| In Progress (`loom:building`) | 0 |
-| PRs awaiting review | 0 |
+| In Progress (`loom:building`) | 1 |
+| PRs awaiting review | 1 |
 | Approved PRs awaiting merge | 1 |
 | Curated | 6 |
 | Architect / Hermit proposals | 1 |
