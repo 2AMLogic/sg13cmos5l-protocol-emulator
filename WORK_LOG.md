@@ -6,9 +6,11 @@ Chronological record of merged pull requests and closed issues, newest first.
 
 - **PR #323**: docs: correct README claim that _dut.py is imported by a bench
 - **PR #322**: refactor(firmware): generate the four SPI mode programs from one script
+- **PR #321**: refactor(firmware): generate nested-WAIT UART programs from one script
 - **Issue #325** (closed): Delete unused verification/_dut.py at next re-mint of its hashing records
 - **Issue #320** (closed): verification/_dut.py has no caller but README says benches import it; fix doc now, delete at next re-mint
 - **Issue #319** (closed): Generate the four SPI mode firmware variants from one generator (as gen_i2c_sr.py does for I2C)
+- **Issue #318** (closed): Generate the four nested-WAIT UART firmware variants from one generator (as gen_i2c_sr.py does for I2C)
 
 ### 2026-10-14
 
