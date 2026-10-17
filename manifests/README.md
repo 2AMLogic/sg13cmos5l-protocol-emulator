@@ -122,6 +122,29 @@ capture, PVT corner sweeps, or Monte Carlo.
   (#24) are the unmet remainder. It renders
   `unmet`/`unverifiable_provenance` at the pinned `klt` for the same
   provenance-binding reason as item 7 (below).
+- **Item 7, state as of 2026-10-17 (issue #330) — corrects the explanation
+  above.** Append-only; the bullets above stay as history. The
+  `unverifiable_provenance` was **not** an open upstream binding
+  (klayout-tools #2097/#2182 are closed; #2182 is what documents it). The
+  cause, read from the pinned grader (`f979a965`, `signoff.py`): a
+  `functional-verification` envelope carries no `provenance` block by
+  design, so a `content_hash` pin on it can never match and always renders
+  `unmet`/`unverifiable_provenance`. `klt signoff` prints no `detail` for
+  this reason, so the cause is from source, not from a quoted `detail`.
+  The fix is in the manifest only: item 7's entry no longer carries a
+  `content_hash`. Item 7 renders **`met`** (citation `content_hash: null`,
+  `input_verified: null`), 6 of 11 T1 items met (1, 2, 3, 7, 9, 10). The
+  grader therefore no longer checks the envelope's bytes; the byte-pin
+  (`sha256:dfb3fe29…`) is enforced at the record layer
+  (`post-layout-sdf-regression` records, `verification/check_records.py`),
+  and re-pointing item 7 at a successor envelope (#275) must be done
+  deliberately in the manifest. No evidence was re-run or altered. The
+  item 9 sentence above is also out of date: item 9 cites a `generic`
+  envelope with an artifact binding and renders `met`. Item 4 still
+  renders `unmet`/`check_errored`. Verdict of record:
+  `20261017-192801-fef7ac1` … `20261017-192808-fef7ac1` (eight records,
+  one per live head, each superseding its head) The tool gap is filed as
+  klayout-tools#3747.
 - **Items 3 and 4 (layout evidence), state as of 2026-10-09 (issue #82)** —
   append-only; earlier states are in the superseded records. Both citations
   now point at record `20261009-054750-676f8b2`

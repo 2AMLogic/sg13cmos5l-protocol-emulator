@@ -19,8 +19,7 @@
       "content_hash": "sha256:6e0761cd6a208904b2a276ba77d3d69760da80a9b0a369e713c3702aa8ece805"
     },
     "7": {
-      "file": "verification/records/post-layout-sdf-regression/artifacts/20261011-114800-e5a0bae/klt-functional-verification-nom_typ_1p20V_25C.json",
-      "content_hash": "sha256:dfb3fe295ed3b1f1b2ea3dddb89e4052c9272d9c40c4e2b4accfc13281caaa55"
+      "file": "verification/records/post-layout-sdf-regression/artifacts/20261011-114800-e5a0bae/klt-functional-verification-nom_typ_1p20V_25C.json"
     },
     "9": {
       "file": "manifests/evidence/testbenches.json",
