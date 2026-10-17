@@ -14,14 +14,13 @@ Judge-approved PRs under a hold (`loom:blocked` or `loom:operator`) — only a h
 
 `loom:very-important` (one counts per workspace); every stage takes these first.
 
-_None._
+- **#265**: PR #263: netlist-dependent evidence re-mint for the A_DOUT buffers (#261) before merge
 
 ## Important
 
 `loom:important`; taken before unlabelled work.
 
 - **#261**: LibreLane: max-cap on SRAM A_DOUT[5..6] is avoided by placement, not by construction
-- **#265**: PR #263: netlist-dependent evidence re-mint for the A_DOUT buffers (#261) before merge
 - **#272**: Firmware: Fast-mode I2C t_LOW has zero margin (65 cycles = 1.30 µs) — move slack from the high phase
 - **#275**: Re-run firmware gate-level and post-layout SDF regression on the 70/55 Fast-mode I2C image (#272)
 
@@ -75,8 +74,8 @@ _None._
 | Bucket | Count |
 |------|-------|
 | Operator merge-risk holds | 2 |
-| Very important | 0 |
-| Important | 4 |
+| Very important | 1 |
+| Important | 3 |
 | Ready (`loom:issue`) | 1 |
 | In Progress (`loom:building`) | 1 |
 | PRs awaiting review | 0 |
