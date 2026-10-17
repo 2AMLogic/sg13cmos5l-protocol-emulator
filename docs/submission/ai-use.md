@@ -184,13 +184,15 @@ design detail. Representative issues:
     [#2285](https://github.com/2AMLogic/klayout-tools/issues/2285))
   - signoff items that accepted any passing envelope
     ([#2718](https://github.com/2AMLogic/klayout-tools/issues/2718))
+  - gate-level Verilog constructs that the LVS reference converter rejected
+    ([#2941](https://github.com/2AMLogic/klayout-tools/issues/2941), fixed
+    2026-10-16; the klt/Yosys reference now compares, and returns a real
+    `mismatch` rather than a converter error)
 - Still open:
   - request schemas cannot declare a hard macro
     ([#2635](https://github.com/2AMLogic/klayout-tools/issues/2635)). This
     blocks the klt flow's STA and place-and-route for this macro-backed
     design, so timing and the GDS come from LibreLane alone.
-  - LVS netlist constructs that are still rejected
-    ([#2941](https://github.com/2AMLogic/klayout-tools/issues/2941))
   - no control over gate-level power-up state
     ([#2998](https://github.com/2AMLogic/klayout-tools/issues/2998))
   - a remaining log-interleaving case
