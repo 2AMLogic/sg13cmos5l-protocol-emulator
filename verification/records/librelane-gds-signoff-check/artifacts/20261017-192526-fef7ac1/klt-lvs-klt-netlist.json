@@ -1,0 +1,2072 @@
+{
+  "schema_version": 1,
+  "engine": "klayout",
+  "layout": "../verification/records/librelane-gds-signoff-check/artifacts/20261017-192526-fef7ac1/layout-gate-level.spice",
+  "reference": "../verification/records/librelane-gds-signoff-check/artifacts/20261017-192526-fef7ac1/reference-klt-yosys-with-macro-stub.v",
+  "top": "TT_UM_2AMLOGIC_PROTOCOL_EMULATOR",
+  "reference_top": "TT_UM_2AMLOGIC_PROTOCOL_EMULATOR",
+  "parameter_tolerance": null,
+  "options": {
+    "combine_devices": false,
+    "combine_devices_per_circuit": null,
+    "combine_devices_max_attempts": 5,
+    "flatten_layout": false,
+    "flatten_reference": true,
+    "netgen_setup": null,
+    "parameter_tolerance": null,
+    "compare_parameters": null,
+    "power_connectivity": null,
+    "anchor_top_level_pins": null,
+    "strict_top_level_pin_count": false,
+    "supply_nets": [
+      "GND",
+      "VCC",
+      "VDD",
+      "VGND",
+      "VPWR",
+      "VSS"
+    ],
+    "finfet_bulk": null
+  },
+  "hints_applied": null,
+  "status": "mismatch",
+  "power_connectivity": {
+    "status": "match",
+    "reason": null,
+    "power_pins": [
+      "VDD",
+      "VSS"
+    ],
+    "power_pins_derivation": {
+      "rule": "declared-by-every-instantiated-master",
+      "masters": [
+        "SG13CMOS5L_A21OI_1",
+        "SG13CMOS5L_A21O_1",
+        "SG13CMOS5L_A221OI_1",
+        "SG13CMOS5L_A22OI_1",
+        "SG13CMOS5L_AND2_1",
+        "SG13CMOS5L_AND3_1",
+        "SG13CMOS5L_AND4_1",
+        "SG13CMOS5L_DFRBPQ_1",
+        "SG13CMOS5L_INV_1",
+        "SG13CMOS5L_MUX2_1",
+        "SG13CMOS5L_MUX4_1",
+        "SG13CMOS5L_NAND2B_1",
+        "SG13CMOS5L_NAND2_1",
+        "SG13CMOS5L_NAND3B_1",
+        "SG13CMOS5L_NAND3_1",
+        "SG13CMOS5L_NAND4_1",
+        "SG13CMOS5L_NOR2B_1",
+        "SG13CMOS5L_NOR2_1",
+        "SG13CMOS5L_NOR3_1",
+        "SG13CMOS5L_NOR4_1",
+        "SG13CMOS5L_O21AI_1",
+        "SG13CMOS5L_OR2_1",
+        "SG13CMOS5L_OR3_1",
+        "SG13CMOS5L_OR4_1",
+        "SG13CMOS5L_XNOR2_1",
+        "SG13CMOS5L_XOR2_1"
+      ],
+      "master_count": 26,
+      "corroborated": true,
+      "reason": null
+    },
+    "instance_count": 8506,
+    "expected_nets": null,
+    "unchecked_expected_pins": [],
+    "findings": [],
+    "finding_count": 0
+  },
+  "body_verification": {
+    "status": "unchecked",
+    "reason": "no request.layout.deck was given (the pre-extracted request.layout.netlist form), so nothing establishes this layout's substrate/well-tap convention and no synthesized body net can be told apart from a real one -- this run verified nothing about the device bodies either way",
+    "device_classes": [],
+    "device_count": 0,
+    "findings": [],
+    "finding_count": 0
+  },
+  "device_parameter_coverage": [],
+  "mismatch_count": 108,
+  "error_count": 88,
+  "category_counts": {
+    "hints.rejected": 43,
+    "topology": 45,
+    "topology.flattened": 1,
+    "topology.power_only_pruned": 1,
+    "topology.reference_port_alias_joined": 17,
+    "topology.top_level_pins_anchored": 1
+  },
+  "category_error_counts": {
+    "hints.rejected": 43,
+    "topology": 45
+  },
+  "counts": {
+    "nets": {
+      "layout": 3448,
+      "reference": 2562,
+      "matched": 0
+    },
+    "devices": {
+      "layout": 0,
+      "reference": 0,
+      "matched": 0
+    },
+    "pins": {
+      "layout": 45,
+      "reference": 43,
+      "matched": 0
+    }
+  },
+  "device_classes": null,
+  "environment": {
+    "engine": "klayout",
+    "engine_version": "0.30.12",
+    "netgen_binary": null,
+    "layout_sha256": "e11397622f373fea6a434c2698293408a171db217fd8f9d708b9158890ddf7f4",
+    "reference_sha256": "005295404de239b86e45bb8cd551ad92877fa600e73f4be10683b63950ed7d5d",
+    "extracted_netlist": null
+  },
+  "provenance": {
+    "klt_version": "0.7.1.dev1161+gb447d8899760",
+    "klayout_version": "0.30.12",
+    "pdk": {
+      "name": "ihp-sg13cmos5l",
+      "source": "PDK_ROOT environment variable",
+      "version": null,
+      "ambiguous_sources": [
+        "search root: ~/share/pdk"
+      ]
+    },
+    "deck": null,
+    "input": {
+      "content_hash": "sha256:e11397622f373fea6a434c2698293408a171db217fd8f9d708b9158890ddf7f4",
+      "role": "netlist"
+    },
+    "klayout_version_mismatch": false,
+    "pin_order_sources": [
+      {
+        "library": "sg13cmos5l_stdcell",
+        "path": "$PDK_ROOT/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/spice/sg13cmos5l_stdcell.spice",
+        "cells": 84
+      }
+    ]
+  },
+  "mismatches": [
+    {
+      "category": "hints.rejected",
+      "severity": "error",
+      "description": "top-level pin 'CLK' is declared on both sides, so options.anchor_top_level_pins asserted that its layout net and its reference net are the same node -- and the comparer did not confirm that pairing. The two sides disagree about what this boundary pin is wired to (a permuted bus on a black-box macro is the ordinary cause: every bit wired straight through is topologically interchangeable with its neighbours, so only the pin names can tell them apart). Set options.anchor_top_level_pins: false to compare on topology alone (see docs/cli/lvs.md, \"Top-level pin anchoring\")",
+      "side": "both",
+      "net": {
+        "layout": "CLK",
+        "reference": "CLK"
+      },
+      "device": null,
+      "property": null,
+      "details": {
+        "anchored_top_level_pin": "CLK"
+      },
+      "circuit": null,
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "hints.rejected",
+      "severity": "error",
+      "description": "top-level pin 'ENA' is declared on both sides, so options.anchor_top_level_pins asserted that its layout net and its reference net are the same node -- and the comparer did not confirm that pairing. The two sides disagree about what this boundary pin is wired to (a permuted bus on a black-box macro is the ordinary cause: every bit wired straight through is topologically interchangeable with its neighbours, so only the pin names can tell them apart). Set options.anchor_top_level_pins: false to compare on topology alone (see docs/cli/lvs.md, \"Top-level pin anchoring\")",
+      "side": "both",
+      "net": {
+        "layout": "ENA",
+        "reference": "ENA"
+      },
+      "device": null,
+      "property": null,
+      "details": {
+        "anchored_top_level_pin": "ENA"
+      },
+      "circuit": null,
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "hints.rejected",
+      "severity": "error",
+      "description": "top-level pin 'RST_N' is declared on both sides, so options.anchor_top_level_pins asserted that its layout net and its reference net are the same node -- and the comparer did not confirm that pairing. The two sides disagree about what this boundary pin is wired to (a permuted bus on a black-box macro is the ordinary cause: every bit wired straight through is topologically interchangeable with its neighbours, so only the pin names can tell them apart). Set options.anchor_top_level_pins: false to compare on topology alone (see docs/cli/lvs.md, \"Top-level pin anchoring\")",
+      "side": "both",
+      "net": {
+        "layout": "RST_N",
+        "reference": "RST_N"
+      },
+      "device": null,
+      "property": null,
+      "details": {
+        "anchored_top_level_pin": "RST_N"
+      },
+      "circuit": null,
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "hints.rejected",
+      "severity": "error",
+      "description": "top-level pin 'UIO_IN[0]' is declared on both sides, so options.anchor_top_level_pins asserted that its layout net and its reference net are the same node -- and the comparer did not confirm that pairing. The two sides disagree about what this boundary pin is wired to (a permuted bus on a black-box macro is the ordinary cause: every bit wired straight through is topologically interchangeable with its neighbours, so only the pin names can tell them apart). Set options.anchor_top_level_pins: false to compare on topology alone (see docs/cli/lvs.md, \"Top-level pin anchoring\")",
+      "side": "both",
+      "net": {
+        "layout": "UIO_IN[0]",
+        "reference": "UIO_IN[0]"
+      },
+      "device": null,
+      "property": null,
+      "details": {
+        "anchored_top_level_pin": "UIO_IN[0]"
+      },
+      "circuit": null,
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "hints.rejected",
+      "severity": "error",
+      "description": "top-level pin 'UIO_IN[1]' is declared on both sides, so options.anchor_top_level_pins asserted that its layout net and its reference net are the same node -- and the comparer did not confirm that pairing. The two sides disagree about what this boundary pin is wired to (a permuted bus on a black-box macro is the ordinary cause: every bit wired straight through is topologically interchangeable with its neighbours, so only the pin names can tell them apart). Set options.anchor_top_level_pins: false to compare on topology alone (see docs/cli/lvs.md, \"Top-level pin anchoring\")",
+      "side": "both",
+      "net": {
+        "layout": "UIO_IN[1]",
+        "reference": "UIO_IN[1]"
+      },
+      "device": null,
+      "property": null,
+      "details": {
+        "anchored_top_level_pin": "UIO_IN[1]"
+      },
+      "circuit": null,
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "hints.rejected",
+      "severity": "error",
+      "description": "top-level pin 'UIO_IN[2]' is declared on both sides, so options.anchor_top_level_pins asserted that its layout net and its reference net are the same node -- and the comparer did not confirm that pairing. The two sides disagree about what this boundary pin is wired to (a permuted bus on a black-box macro is the ordinary cause: every bit wired straight through is topologically interchangeable with its neighbours, so only the pin names can tell them apart). Set options.anchor_top_level_pins: false to compare on topology alone (see docs/cli/lvs.md, \"Top-level pin anchoring\")",
+      "side": "both",
+      "net": {
+        "layout": "UIO_IN[2]",
+        "reference": "UIO_IN[2]"
+      },
+      "device": null,
+      "property": null,
+      "details": {
+        "anchored_top_level_pin": "UIO_IN[2]"
+      },
+      "circuit": null,
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "hints.rejected",
+      "severity": "error",
+      "description": "top-level pin 'UIO_IN[3]' is declared on both sides, so options.anchor_top_level_pins asserted that its layout net and its reference net are the same node -- and the comparer did not confirm that pairing. The two sides disagree about what this boundary pin is wired to (a permuted bus on a black-box macro is the ordinary cause: every bit wired straight through is topologically interchangeable with its neighbours, so only the pin names can tell them apart). Set options.anchor_top_level_pins: false to compare on topology alone (see docs/cli/lvs.md, \"Top-level pin anchoring\")",
+      "side": "both",
+      "net": {
+        "layout": "UIO_IN[3]",
+        "reference": "UIO_IN[3]"
+      },
+      "device": null,
+      "property": null,
+      "details": {
+        "anchored_top_level_pin": "UIO_IN[3]"
+      },
+      "circuit": null,
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "hints.rejected",
+      "severity": "error",
+      "description": "top-level pin 'UIO_IN[4]' is declared on both sides, so options.anchor_top_level_pins asserted that its layout net and its reference net are the same node -- and the comparer did not confirm that pairing. The two sides disagree about what this boundary pin is wired to (a permuted bus on a black-box macro is the ordinary cause: every bit wired straight through is topologically interchangeable with its neighbours, so only the pin names can tell them apart). Set options.anchor_top_level_pins: false to compare on topology alone (see docs/cli/lvs.md, \"Top-level pin anchoring\")",
+      "side": "both",
+      "net": {
+        "layout": "UIO_IN[4]",
+        "reference": "UIO_IN[4]"
+      },
+      "device": null,
+      "property": null,
+      "details": {
+        "anchored_top_level_pin": "UIO_IN[4]"
+      },
+      "circuit": null,
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "hints.rejected",
+      "severity": "error",
+      "description": "top-level pin 'UIO_IN[5]' is declared on both sides, so options.anchor_top_level_pins asserted that its layout net and its reference net are the same node -- and the comparer did not confirm that pairing. The two sides disagree about what this boundary pin is wired to (a permuted bus on a black-box macro is the ordinary cause: every bit wired straight through is topologically interchangeable with its neighbours, so only the pin names can tell them apart). Set options.anchor_top_level_pins: false to compare on topology alone (see docs/cli/lvs.md, \"Top-level pin anchoring\")",
+      "side": "both",
+      "net": {
+        "layout": "UIO_IN[5]",
+        "reference": "UIO_IN[5]"
+      },
+      "device": null,
+      "property": null,
+      "details": {
+        "anchored_top_level_pin": "UIO_IN[5]"
+      },
+      "circuit": null,
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "hints.rejected",
+      "severity": "error",
+      "description": "top-level pin 'UIO_IN[6]' is declared on both sides, so options.anchor_top_level_pins asserted that its layout net and its reference net are the same node -- and the comparer did not confirm that pairing. The two sides disagree about what this boundary pin is wired to (a permuted bus on a black-box macro is the ordinary cause: every bit wired straight through is topologically interchangeable with its neighbours, so only the pin names can tell them apart). Set options.anchor_top_level_pins: false to compare on topology alone (see docs/cli/lvs.md, \"Top-level pin anchoring\")",
+      "side": "both",
+      "net": {
+        "layout": "UIO_IN[6]",
+        "reference": "UIO_IN[6]"
+      },
+      "device": null,
+      "property": null,
+      "details": {
+        "anchored_top_level_pin": "UIO_IN[6]"
+      },
+      "circuit": null,
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "hints.rejected",
+      "severity": "error",
+      "description": "top-level pin 'UIO_IN[7]' is declared on both sides, so options.anchor_top_level_pins asserted that its layout net and its reference net are the same node -- and the comparer did not confirm that pairing. The two sides disagree about what this boundary pin is wired to (a permuted bus on a black-box macro is the ordinary cause: every bit wired straight through is topologically interchangeable with its neighbours, so only the pin names can tell them apart). Set options.anchor_top_level_pins: false to compare on topology alone (see docs/cli/lvs.md, \"Top-level pin anchoring\")",
+      "side": "both",
+      "net": {
+        "layout": "UIO_IN[7]",
+        "reference": "UIO_IN[7]"
+      },
+      "device": null,
+      "property": null,
+      "details": {
+        "anchored_top_level_pin": "UIO_IN[7]"
+      },
+      "circuit": null,
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "hints.rejected",
+      "severity": "error",
+      "description": "top-level pin 'UIO_OE[0]' is declared on both sides, so options.anchor_top_level_pins asserted that its layout net and its reference net are the same node -- and the comparer did not confirm that pairing. The two sides disagree about what this boundary pin is wired to (a permuted bus on a black-box macro is the ordinary cause: every bit wired straight through is topologically interchangeable with its neighbours, so only the pin names can tell them apart). Set options.anchor_top_level_pins: false to compare on topology alone (see docs/cli/lvs.md, \"Top-level pin anchoring\")",
+      "side": "both",
+      "net": {
+        "layout": "UIO_OE[0]",
+        "reference": "UIO_OE[0]"
+      },
+      "device": null,
+      "property": null,
+      "details": {
+        "anchored_top_level_pin": "UIO_OE[0]"
+      },
+      "circuit": null,
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "hints.rejected",
+      "severity": "error",
+      "description": "top-level pin 'UIO_OE[1]' is declared on both sides, so options.anchor_top_level_pins asserted that its layout net and its reference net are the same node -- and the comparer did not confirm that pairing. The two sides disagree about what this boundary pin is wired to (a permuted bus on a black-box macro is the ordinary cause: every bit wired straight through is topologically interchangeable with its neighbours, so only the pin names can tell them apart). Set options.anchor_top_level_pins: false to compare on topology alone (see docs/cli/lvs.md, \"Top-level pin anchoring\")",
+      "side": "both",
+      "net": {
+        "layout": "UIO_OE[1]",
+        "reference": "UIO_OE[1]"
+      },
+      "device": null,
+      "property": null,
+      "details": {
+        "anchored_top_level_pin": "UIO_OE[1]"
+      },
+      "circuit": null,
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "hints.rejected",
+      "severity": "error",
+      "description": "top-level pin 'UIO_OE[2]' is declared on both sides, so options.anchor_top_level_pins asserted that its layout net and its reference net are the same node -- and the comparer did not confirm that pairing. The two sides disagree about what this boundary pin is wired to (a permuted bus on a black-box macro is the ordinary cause: every bit wired straight through is topologically interchangeable with its neighbours, so only the pin names can tell them apart). Set options.anchor_top_level_pins: false to compare on topology alone (see docs/cli/lvs.md, \"Top-level pin anchoring\")",
+      "side": "both",
+      "net": {
+        "layout": "UIO_OE[2]",
+        "reference": "UIO_OE[2]"
+      },
+      "device": null,
+      "property": null,
+      "details": {
+        "anchored_top_level_pin": "UIO_OE[2]"
+      },
+      "circuit": null,
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "hints.rejected",
+      "severity": "error",
+      "description": "top-level pin 'UIO_OE[3]' is declared on both sides, so options.anchor_top_level_pins asserted that its layout net and its reference net are the same node -- and the comparer did not confirm that pairing. The two sides disagree about what this boundary pin is wired to (a permuted bus on a black-box macro is the ordinary cause: every bit wired straight through is topologically interchangeable with its neighbours, so only the pin names can tell them apart). Set options.anchor_top_level_pins: false to compare on topology alone (see docs/cli/lvs.md, \"Top-level pin anchoring\")",
+      "side": "both",
+      "net": {
+        "layout": "UIO_OE[3]",
+        "reference": "UIO_OE[3]"
+      },
+      "device": null,
+      "property": null,
+      "details": {
+        "anchored_top_level_pin": "UIO_OE[3]"
+      },
+      "circuit": null,
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "hints.rejected",
+      "severity": "error",
+      "description": "top-level pin 'UIO_OE[4]' is declared on both sides, so options.anchor_top_level_pins asserted that its layout net and its reference net are the same node -- and the comparer did not confirm that pairing. The two sides disagree about what this boundary pin is wired to (a permuted bus on a black-box macro is the ordinary cause: every bit wired straight through is topologically interchangeable with its neighbours, so only the pin names can tell them apart). Set options.anchor_top_level_pins: false to compare on topology alone (see docs/cli/lvs.md, \"Top-level pin anchoring\")",
+      "side": "both",
+      "net": {
+        "layout": "UIO_OE[4]",
+        "reference": "UIO_OE[4]"
+      },
+      "device": null,
+      "property": null,
+      "details": {
+        "anchored_top_level_pin": "UIO_OE[4]"
+      },
+      "circuit": null,
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "hints.rejected",
+      "severity": "error",
+      "description": "top-level pin 'UIO_OE[5]' is declared on both sides, so options.anchor_top_level_pins asserted that its layout net and its reference net are the same node -- and the comparer did not confirm that pairing. The two sides disagree about what this boundary pin is wired to (a permuted bus on a black-box macro is the ordinary cause: every bit wired straight through is topologically interchangeable with its neighbours, so only the pin names can tell them apart). Set options.anchor_top_level_pins: false to compare on topology alone (see docs/cli/lvs.md, \"Top-level pin anchoring\")",
+      "side": "both",
+      "net": {
+        "layout": "UIO_OE[5]",
+        "reference": "UIO_OE[5]"
+      },
+      "device": null,
+      "property": null,
+      "details": {
+        "anchored_top_level_pin": "UIO_OE[5]"
+      },
+      "circuit": null,
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "hints.rejected",
+      "severity": "error",
+      "description": "top-level pin 'UIO_OE[6]' is declared on both sides, so options.anchor_top_level_pins asserted that its layout net and its reference net are the same node -- and the comparer did not confirm that pairing. The two sides disagree about what this boundary pin is wired to (a permuted bus on a black-box macro is the ordinary cause: every bit wired straight through is topologically interchangeable with its neighbours, so only the pin names can tell them apart). Set options.anchor_top_level_pins: false to compare on topology alone (see docs/cli/lvs.md, \"Top-level pin anchoring\")",
+      "side": "both",
+      "net": {
+        "layout": "UIO_OE[6]",
+        "reference": "UIO_OE[6]"
+      },
+      "device": null,
+      "property": null,
+      "details": {
+        "anchored_top_level_pin": "UIO_OE[6]"
+      },
+      "circuit": null,
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "hints.rejected",
+      "severity": "error",
+      "description": "top-level pin 'UIO_OE[7]' is declared on both sides, so options.anchor_top_level_pins asserted that its layout net and its reference net are the same node -- and the comparer did not confirm that pairing. The two sides disagree about what this boundary pin is wired to (a permuted bus on a black-box macro is the ordinary cause: every bit wired straight through is topologically interchangeable with its neighbours, so only the pin names can tell them apart). Set options.anchor_top_level_pins: false to compare on topology alone (see docs/cli/lvs.md, \"Top-level pin anchoring\")",
+      "side": "both",
+      "net": {
+        "layout": "UIO_OE[7]",
+        "reference": "UIO_OE[7]"
+      },
+      "device": null,
+      "property": null,
+      "details": {
+        "anchored_top_level_pin": "UIO_OE[7]"
+      },
+      "circuit": null,
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "hints.rejected",
+      "severity": "error",
+      "description": "top-level pin 'UIO_OUT[0]' is declared on both sides, so options.anchor_top_level_pins asserted that its layout net and its reference net are the same node -- and the comparer did not confirm that pairing. The two sides disagree about what this boundary pin is wired to (a permuted bus on a black-box macro is the ordinary cause: every bit wired straight through is topologically interchangeable with its neighbours, so only the pin names can tell them apart). Set options.anchor_top_level_pins: false to compare on topology alone (see docs/cli/lvs.md, \"Top-level pin anchoring\")",
+      "side": "both",
+      "net": {
+        "layout": "UIO_OUT[0]",
+        "reference": "UIO_OUT[0]"
+      },
+      "device": null,
+      "property": null,
+      "details": {
+        "anchored_top_level_pin": "UIO_OUT[0]"
+      },
+      "circuit": null,
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "hints.rejected",
+      "severity": "error",
+      "description": "top-level pin 'UIO_OUT[1]' is declared on both sides, so options.anchor_top_level_pins asserted that its layout net and its reference net are the same node -- and the comparer did not confirm that pairing. The two sides disagree about what this boundary pin is wired to (a permuted bus on a black-box macro is the ordinary cause: every bit wired straight through is topologically interchangeable with its neighbours, so only the pin names can tell them apart). Set options.anchor_top_level_pins: false to compare on topology alone (see docs/cli/lvs.md, \"Top-level pin anchoring\")",
+      "side": "both",
+      "net": {
+        "layout": "UIO_OUT[1]",
+        "reference": "UIO_OUT[1]"
+      },
+      "device": null,
+      "property": null,
+      "details": {
+        "anchored_top_level_pin": "UIO_OUT[1]"
+      },
+      "circuit": null,
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "hints.rejected",
+      "severity": "error",
+      "description": "top-level pin 'UIO_OUT[2]' is declared on both sides, so options.anchor_top_level_pins asserted that its layout net and its reference net are the same node -- and the comparer did not confirm that pairing. The two sides disagree about what this boundary pin is wired to (a permuted bus on a black-box macro is the ordinary cause: every bit wired straight through is topologically interchangeable with its neighbours, so only the pin names can tell them apart). Set options.anchor_top_level_pins: false to compare on topology alone (see docs/cli/lvs.md, \"Top-level pin anchoring\")",
+      "side": "both",
+      "net": {
+        "layout": "UIO_OUT[2]",
+        "reference": "UIO_OUT[2]"
+      },
+      "device": null,
+      "property": null,
+      "details": {
+        "anchored_top_level_pin": "UIO_OUT[2]"
+      },
+      "circuit": null,
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "hints.rejected",
+      "severity": "error",
+      "description": "top-level pin 'UIO_OUT[3]' is declared on both sides, so options.anchor_top_level_pins asserted that its layout net and its reference net are the same node -- and the comparer did not confirm that pairing. The two sides disagree about what this boundary pin is wired to (a permuted bus on a black-box macro is the ordinary cause: every bit wired straight through is topologically interchangeable with its neighbours, so only the pin names can tell them apart). Set options.anchor_top_level_pins: false to compare on topology alone (see docs/cli/lvs.md, \"Top-level pin anchoring\")",
+      "side": "both",
+      "net": {
+        "layout": "UIO_OUT[3]",
+        "reference": "UIO_OUT[3]"
+      },
+      "device": null,
+      "property": null,
+      "details": {
+        "anchored_top_level_pin": "UIO_OUT[3]"
+      },
+      "circuit": null,
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "hints.rejected",
+      "severity": "error",
+      "description": "top-level pin 'UIO_OUT[4]' is declared on both sides, so options.anchor_top_level_pins asserted that its layout net and its reference net are the same node -- and the comparer did not confirm that pairing. The two sides disagree about what this boundary pin is wired to (a permuted bus on a black-box macro is the ordinary cause: every bit wired straight through is topologically interchangeable with its neighbours, so only the pin names can tell them apart). Set options.anchor_top_level_pins: false to compare on topology alone (see docs/cli/lvs.md, \"Top-level pin anchoring\")",
+      "side": "both",
+      "net": {
+        "layout": "UIO_OUT[4]",
+        "reference": "UIO_OUT[4]"
+      },
+      "device": null,
+      "property": null,
+      "details": {
+        "anchored_top_level_pin": "UIO_OUT[4]"
+      },
+      "circuit": null,
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "hints.rejected",
+      "severity": "error",
+      "description": "top-level pin 'UIO_OUT[5]' is declared on both sides, so options.anchor_top_level_pins asserted that its layout net and its reference net are the same node -- and the comparer did not confirm that pairing. The two sides disagree about what this boundary pin is wired to (a permuted bus on a black-box macro is the ordinary cause: every bit wired straight through is topologically interchangeable with its neighbours, so only the pin names can tell them apart). Set options.anchor_top_level_pins: false to compare on topology alone (see docs/cli/lvs.md, \"Top-level pin anchoring\")",
+      "side": "both",
+      "net": {
+        "layout": "UIO_OUT[5]",
+        "reference": "UIO_OUT[5]"
+      },
+      "device": null,
+      "property": null,
+      "details": {
+        "anchored_top_level_pin": "UIO_OUT[5]"
+      },
+      "circuit": null,
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "hints.rejected",
+      "severity": "error",
+      "description": "top-level pin 'UIO_OUT[6]' is declared on both sides, so options.anchor_top_level_pins asserted that its layout net and its reference net are the same node -- and the comparer did not confirm that pairing. The two sides disagree about what this boundary pin is wired to (a permuted bus on a black-box macro is the ordinary cause: every bit wired straight through is topologically interchangeable with its neighbours, so only the pin names can tell them apart). Set options.anchor_top_level_pins: false to compare on topology alone (see docs/cli/lvs.md, \"Top-level pin anchoring\")",
+      "side": "both",
+      "net": {
+        "layout": "UIO_OUT[6]",
+        "reference": "UIO_OUT[6]"
+      },
+      "device": null,
+      "property": null,
+      "details": {
+        "anchored_top_level_pin": "UIO_OUT[6]"
+      },
+      "circuit": null,
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "hints.rejected",
+      "severity": "error",
+      "description": "top-level pin 'UIO_OUT[7]' is declared on both sides, so options.anchor_top_level_pins asserted that its layout net and its reference net are the same node -- and the comparer did not confirm that pairing. The two sides disagree about what this boundary pin is wired to (a permuted bus on a black-box macro is the ordinary cause: every bit wired straight through is topologically interchangeable with its neighbours, so only the pin names can tell them apart). Set options.anchor_top_level_pins: false to compare on topology alone (see docs/cli/lvs.md, \"Top-level pin anchoring\")",
+      "side": "both",
+      "net": {
+        "layout": "UIO_OUT[7]",
+        "reference": "UIO_OUT[7]"
+      },
+      "device": null,
+      "property": null,
+      "details": {
+        "anchored_top_level_pin": "UIO_OUT[7]"
+      },
+      "circuit": null,
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "hints.rejected",
+      "severity": "error",
+      "description": "top-level pin 'UI_IN[0]' is declared on both sides, so options.anchor_top_level_pins asserted that its layout net and its reference net are the same node -- and the comparer did not confirm that pairing. The two sides disagree about what this boundary pin is wired to (a permuted bus on a black-box macro is the ordinary cause: every bit wired straight through is topologically interchangeable with its neighbours, so only the pin names can tell them apart). Set options.anchor_top_level_pins: false to compare on topology alone (see docs/cli/lvs.md, \"Top-level pin anchoring\")",
+      "side": "both",
+      "net": {
+        "layout": "UI_IN[0]",
+        "reference": "UI_IN[0]"
+      },
+      "device": null,
+      "property": null,
+      "details": {
+        "anchored_top_level_pin": "UI_IN[0]"
+      },
+      "circuit": null,
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "hints.rejected",
+      "severity": "error",
+      "description": "top-level pin 'UI_IN[1]' is declared on both sides, so options.anchor_top_level_pins asserted that its layout net and its reference net are the same node -- and the comparer did not confirm that pairing. The two sides disagree about what this boundary pin is wired to (a permuted bus on a black-box macro is the ordinary cause: every bit wired straight through is topologically interchangeable with its neighbours, so only the pin names can tell them apart). Set options.anchor_top_level_pins: false to compare on topology alone (see docs/cli/lvs.md, \"Top-level pin anchoring\")",
+      "side": "both",
+      "net": {
+        "layout": "UI_IN[1]",
+        "reference": "UI_IN[1]"
+      },
+      "device": null,
+      "property": null,
+      "details": {
+        "anchored_top_level_pin": "UI_IN[1]"
+      },
+      "circuit": null,
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "hints.rejected",
+      "severity": "error",
+      "description": "top-level pin 'UI_IN[2]' is declared on both sides, so options.anchor_top_level_pins asserted that its layout net and its reference net are the same node -- and the comparer did not confirm that pairing. The two sides disagree about what this boundary pin is wired to (a permuted bus on a black-box macro is the ordinary cause: every bit wired straight through is topologically interchangeable with its neighbours, so only the pin names can tell them apart). Set options.anchor_top_level_pins: false to compare on topology alone (see docs/cli/lvs.md, \"Top-level pin anchoring\")",
+      "side": "both",
+      "net": {
+        "layout": "UI_IN[2]",
+        "reference": "UI_IN[2]"
+      },
+      "device": null,
+      "property": null,
+      "details": {
+        "anchored_top_level_pin": "UI_IN[2]"
+      },
+      "circuit": null,
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "hints.rejected",
+      "severity": "error",
+      "description": "top-level pin 'UI_IN[3]' is declared on both sides, so options.anchor_top_level_pins asserted that its layout net and its reference net are the same node -- and the comparer did not confirm that pairing. The two sides disagree about what this boundary pin is wired to (a permuted bus on a black-box macro is the ordinary cause: every bit wired straight through is topologically interchangeable with its neighbours, so only the pin names can tell them apart). Set options.anchor_top_level_pins: false to compare on topology alone (see docs/cli/lvs.md, \"Top-level pin anchoring\")",
+      "side": "both",
+      "net": {
+        "layout": "UI_IN[3]",
+        "reference": "UI_IN[3]"
+      },
+      "device": null,
+      "property": null,
+      "details": {
+        "anchored_top_level_pin": "UI_IN[3]"
+      },
+      "circuit": null,
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "hints.rejected",
+      "severity": "error",
+      "description": "top-level pin 'UI_IN[4]' is declared on both sides, so options.anchor_top_level_pins asserted that its layout net and its reference net are the same node -- and the comparer did not confirm that pairing. The two sides disagree about what this boundary pin is wired to (a permuted bus on a black-box macro is the ordinary cause: every bit wired straight through is topologically interchangeable with its neighbours, so only the pin names can tell them apart). Set options.anchor_top_level_pins: false to compare on topology alone (see docs/cli/lvs.md, \"Top-level pin anchoring\")",
+      "side": "both",
+      "net": {
+        "layout": "UI_IN[4]",
+        "reference": "UI_IN[4]"
+      },
+      "device": null,
+      "property": null,
+      "details": {
+        "anchored_top_level_pin": "UI_IN[4]"
+      },
+      "circuit": null,
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "hints.rejected",
+      "severity": "error",
+      "description": "top-level pin 'UI_IN[5]' is declared on both sides, so options.anchor_top_level_pins asserted that its layout net and its reference net are the same node -- and the comparer did not confirm that pairing. The two sides disagree about what this boundary pin is wired to (a permuted bus on a black-box macro is the ordinary cause: every bit wired straight through is topologically interchangeable with its neighbours, so only the pin names can tell them apart). Set options.anchor_top_level_pins: false to compare on topology alone (see docs/cli/lvs.md, \"Top-level pin anchoring\")",
+      "side": "both",
+      "net": {
+        "layout": "UI_IN[5]",
+        "reference": "UI_IN[5]"
+      },
+      "device": null,
+      "property": null,
+      "details": {
+        "anchored_top_level_pin": "UI_IN[5]"
+      },
+      "circuit": null,
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "hints.rejected",
+      "severity": "error",
+      "description": "top-level pin 'UI_IN[6]' is declared on both sides, so options.anchor_top_level_pins asserted that its layout net and its reference net are the same node -- and the comparer did not confirm that pairing. The two sides disagree about what this boundary pin is wired to (a permuted bus on a black-box macro is the ordinary cause: every bit wired straight through is topologically interchangeable with its neighbours, so only the pin names can tell them apart). Set options.anchor_top_level_pins: false to compare on topology alone (see docs/cli/lvs.md, \"Top-level pin anchoring\")",
+      "side": "both",
+      "net": {
+        "layout": "UI_IN[6]",
+        "reference": "UI_IN[6]"
+      },
+      "device": null,
+      "property": null,
+      "details": {
+        "anchored_top_level_pin": "UI_IN[6]"
+      },
+      "circuit": null,
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "hints.rejected",
+      "severity": "error",
+      "description": "top-level pin 'UI_IN[7]' is declared on both sides, so options.anchor_top_level_pins asserted that its layout net and its reference net are the same node -- and the comparer did not confirm that pairing. The two sides disagree about what this boundary pin is wired to (a permuted bus on a black-box macro is the ordinary cause: every bit wired straight through is topologically interchangeable with its neighbours, so only the pin names can tell them apart). Set options.anchor_top_level_pins: false to compare on topology alone (see docs/cli/lvs.md, \"Top-level pin anchoring\")",
+      "side": "both",
+      "net": {
+        "layout": "UI_IN[7]",
+        "reference": "UI_IN[7]"
+      },
+      "device": null,
+      "property": null,
+      "details": {
+        "anchored_top_level_pin": "UI_IN[7]"
+      },
+      "circuit": null,
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "hints.rejected",
+      "severity": "error",
+      "description": "top-level pin 'UO_OUT[0]' is declared on both sides, so options.anchor_top_level_pins asserted that its layout net and its reference net are the same node -- and the comparer did not confirm that pairing. The two sides disagree about what this boundary pin is wired to (a permuted bus on a black-box macro is the ordinary cause: every bit wired straight through is topologically interchangeable with its neighbours, so only the pin names can tell them apart). Set options.anchor_top_level_pins: false to compare on topology alone (see docs/cli/lvs.md, \"Top-level pin anchoring\")",
+      "side": "both",
+      "net": {
+        "layout": "UO_OUT[0]",
+        "reference": "UO_OUT[0]"
+      },
+      "device": null,
+      "property": null,
+      "details": {
+        "anchored_top_level_pin": "UO_OUT[0]"
+      },
+      "circuit": null,
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "hints.rejected",
+      "severity": "error",
+      "description": "top-level pin 'UO_OUT[1]' is declared on both sides, so options.anchor_top_level_pins asserted that its layout net and its reference net are the same node -- and the comparer did not confirm that pairing. The two sides disagree about what this boundary pin is wired to (a permuted bus on a black-box macro is the ordinary cause: every bit wired straight through is topologically interchangeable with its neighbours, so only the pin names can tell them apart). Set options.anchor_top_level_pins: false to compare on topology alone (see docs/cli/lvs.md, \"Top-level pin anchoring\")",
+      "side": "both",
+      "net": {
+        "layout": "UO_OUT[1]",
+        "reference": "UO_OUT[1]"
+      },
+      "device": null,
+      "property": null,
+      "details": {
+        "anchored_top_level_pin": "UO_OUT[1]"
+      },
+      "circuit": null,
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "hints.rejected",
+      "severity": "error",
+      "description": "top-level pin 'UO_OUT[2]' is declared on both sides, so options.anchor_top_level_pins asserted that its layout net and its reference net are the same node -- and the comparer did not confirm that pairing. The two sides disagree about what this boundary pin is wired to (a permuted bus on a black-box macro is the ordinary cause: every bit wired straight through is topologically interchangeable with its neighbours, so only the pin names can tell them apart). Set options.anchor_top_level_pins: false to compare on topology alone (see docs/cli/lvs.md, \"Top-level pin anchoring\")",
+      "side": "both",
+      "net": {
+        "layout": "UO_OUT[2]",
+        "reference": "UO_OUT[2]"
+      },
+      "device": null,
+      "property": null,
+      "details": {
+        "anchored_top_level_pin": "UO_OUT[2]"
+      },
+      "circuit": null,
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "hints.rejected",
+      "severity": "error",
+      "description": "top-level pin 'UO_OUT[3]' is declared on both sides, so options.anchor_top_level_pins asserted that its layout net and its reference net are the same node -- and the comparer did not confirm that pairing. The two sides disagree about what this boundary pin is wired to (a permuted bus on a black-box macro is the ordinary cause: every bit wired straight through is topologically interchangeable with its neighbours, so only the pin names can tell them apart). Set options.anchor_top_level_pins: false to compare on topology alone (see docs/cli/lvs.md, \"Top-level pin anchoring\")",
+      "side": "both",
+      "net": {
+        "layout": "UO_OUT[3]",
+        "reference": "UO_OUT[3]"
+      },
+      "device": null,
+      "property": null,
+      "details": {
+        "anchored_top_level_pin": "UO_OUT[3]"
+      },
+      "circuit": null,
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "hints.rejected",
+      "severity": "error",
+      "description": "top-level pin 'UO_OUT[4]' is declared on both sides, so options.anchor_top_level_pins asserted that its layout net and its reference net are the same node -- and the comparer did not confirm that pairing. The two sides disagree about what this boundary pin is wired to (a permuted bus on a black-box macro is the ordinary cause: every bit wired straight through is topologically interchangeable with its neighbours, so only the pin names can tell them apart). Set options.anchor_top_level_pins: false to compare on topology alone (see docs/cli/lvs.md, \"Top-level pin anchoring\")",
+      "side": "both",
+      "net": {
+        "layout": "UO_OUT[4]",
+        "reference": "UO_OUT[4]"
+      },
+      "device": null,
+      "property": null,
+      "details": {
+        "anchored_top_level_pin": "UO_OUT[4]"
+      },
+      "circuit": null,
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "hints.rejected",
+      "severity": "error",
+      "description": "top-level pin 'UO_OUT[5]' is declared on both sides, so options.anchor_top_level_pins asserted that its layout net and its reference net are the same node -- and the comparer did not confirm that pairing. The two sides disagree about what this boundary pin is wired to (a permuted bus on a black-box macro is the ordinary cause: every bit wired straight through is topologically interchangeable with its neighbours, so only the pin names can tell them apart). Set options.anchor_top_level_pins: false to compare on topology alone (see docs/cli/lvs.md, \"Top-level pin anchoring\")",
+      "side": "both",
+      "net": {
+        "layout": "UO_OUT[5]",
+        "reference": "UO_OUT[5]"
+      },
+      "device": null,
+      "property": null,
+      "details": {
+        "anchored_top_level_pin": "UO_OUT[5]"
+      },
+      "circuit": null,
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "hints.rejected",
+      "severity": "error",
+      "description": "top-level pin 'UO_OUT[6]' is declared on both sides, so options.anchor_top_level_pins asserted that its layout net and its reference net are the same node -- and the comparer did not confirm that pairing. The two sides disagree about what this boundary pin is wired to (a permuted bus on a black-box macro is the ordinary cause: every bit wired straight through is topologically interchangeable with its neighbours, so only the pin names can tell them apart). Set options.anchor_top_level_pins: false to compare on topology alone (see docs/cli/lvs.md, \"Top-level pin anchoring\")",
+      "side": "both",
+      "net": {
+        "layout": "UO_OUT[6]",
+        "reference": "UO_OUT[6]"
+      },
+      "device": null,
+      "property": null,
+      "details": {
+        "anchored_top_level_pin": "UO_OUT[6]"
+      },
+      "circuit": null,
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "hints.rejected",
+      "severity": "error",
+      "description": "top-level pin 'UO_OUT[7]' is declared on both sides, so options.anchor_top_level_pins asserted that its layout net and its reference net are the same node -- and the comparer did not confirm that pairing. The two sides disagree about what this boundary pin is wired to (a permuted bus on a black-box macro is the ordinary cause: every bit wired straight through is topologically interchangeable with its neighbours, so only the pin names can tell them apart). Set options.anchor_top_level_pins: false to compare on topology alone (see docs/cli/lvs.md, \"Top-level pin anchoring\")",
+      "side": "both",
+      "net": {
+        "layout": "UO_OUT[7]",
+        "reference": "UO_OUT[7]"
+      },
+      "device": null,
+      "property": null,
+      "details": {
+        "anchored_top_level_pin": "UO_OUT[7]"
+      },
+      "circuit": null,
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "topology",
+      "severity": "error",
+      "description": "circuit could not be matched to a counterpart",
+      "side": "both",
+      "net": null,
+      "device": null,
+      "property": null,
+      "details": null,
+      "circuit": {
+        "layout": "TT_UM_2AMLOGIC_PROTOCOL_EMULATOR",
+        "reference": "TT_UM_2AMLOGIC_PROTOCOL_EMULATOR"
+      },
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "topology",
+      "severity": "error",
+      "description": "circuit could not be matched to a counterpart",
+      "side": "layout",
+      "net": null,
+      "device": null,
+      "property": null,
+      "details": null,
+      "circuit": {
+        "layout": "RM_IHPSG13_1P_256X16_C2_BM_BIST",
+        "reference": null
+      },
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "topology",
+      "severity": "error",
+      "description": "circuit could not be matched to a counterpart",
+      "side": "layout",
+      "net": null,
+      "device": null,
+      "property": null,
+      "details": null,
+      "circuit": {
+        "layout": "SG13CMOS5L_A21O_1",
+        "reference": null
+      },
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "topology",
+      "severity": "error",
+      "description": "circuit could not be matched to a counterpart",
+      "side": "layout",
+      "net": null,
+      "device": null,
+      "property": null,
+      "details": null,
+      "circuit": {
+        "layout": "SG13CMOS5L_A21OI_1",
+        "reference": null
+      },
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "topology",
+      "severity": "error",
+      "description": "circuit could not be matched to a counterpart",
+      "side": "layout",
+      "net": null,
+      "device": null,
+      "property": null,
+      "details": null,
+      "circuit": {
+        "layout": "SG13CMOS5L_A21OI_2",
+        "reference": null
+      },
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "topology",
+      "severity": "error",
+      "description": "circuit could not be matched to a counterpart",
+      "side": "layout",
+      "net": null,
+      "device": null,
+      "property": null,
+      "details": null,
+      "circuit": {
+        "layout": "SG13CMOS5L_A221OI_1",
+        "reference": null
+      },
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "topology",
+      "severity": "error",
+      "description": "circuit could not be matched to a counterpart",
+      "side": "layout",
+      "net": null,
+      "device": null,
+      "property": null,
+      "details": null,
+      "circuit": {
+        "layout": "SG13CMOS5L_A22OI_1",
+        "reference": null
+      },
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "topology",
+      "severity": "error",
+      "description": "circuit could not be matched to a counterpart",
+      "side": "layout",
+      "net": null,
+      "device": null,
+      "property": null,
+      "details": null,
+      "circuit": {
+        "layout": "SG13CMOS5L_AND2_1",
+        "reference": null
+      },
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "topology",
+      "severity": "error",
+      "description": "circuit could not be matched to a counterpart",
+      "side": "layout",
+      "net": null,
+      "device": null,
+      "property": null,
+      "details": null,
+      "circuit": {
+        "layout": "SG13CMOS5L_AND2_2",
+        "reference": null
+      },
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "topology",
+      "severity": "error",
+      "description": "circuit could not be matched to a counterpart",
+      "side": "layout",
+      "net": null,
+      "device": null,
+      "property": null,
+      "details": null,
+      "circuit": {
+        "layout": "SG13CMOS5L_AND3_1",
+        "reference": null
+      },
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "topology",
+      "severity": "error",
+      "description": "circuit could not be matched to a counterpart",
+      "side": "layout",
+      "net": null,
+      "device": null,
+      "property": null,
+      "details": null,
+      "circuit": {
+        "layout": "SG13CMOS5L_AND4_1",
+        "reference": null
+      },
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "topology",
+      "severity": "error",
+      "description": "circuit could not be matched to a counterpart",
+      "side": "layout",
+      "net": null,
+      "device": null,
+      "property": null,
+      "details": null,
+      "circuit": {
+        "layout": "SG13CMOS5L_ANTENNANP",
+        "reference": null
+      },
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "topology",
+      "severity": "error",
+      "description": "circuit could not be matched to a counterpart",
+      "side": "layout",
+      "net": null,
+      "device": null,
+      "property": null,
+      "details": null,
+      "circuit": {
+        "layout": "SG13CMOS5L_BUF_1",
+        "reference": null
+      },
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "topology",
+      "severity": "error",
+      "description": "circuit could not be matched to a counterpart",
+      "side": "layout",
+      "net": null,
+      "device": null,
+      "property": null,
+      "details": null,
+      "circuit": {
+        "layout": "SG13CMOS5L_BUF_2",
+        "reference": null
+      },
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "topology",
+      "severity": "error",
+      "description": "circuit could not be matched to a counterpart",
+      "side": "layout",
+      "net": null,
+      "device": null,
+      "property": null,
+      "details": null,
+      "circuit": {
+        "layout": "SG13CMOS5L_BUF_4",
+        "reference": null
+      },
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "topology",
+      "severity": "error",
+      "description": "circuit could not be matched to a counterpart",
+      "side": "layout",
+      "net": null,
+      "device": null,
+      "property": null,
+      "details": null,
+      "circuit": {
+        "layout": "SG13CMOS5L_BUF_8",
+        "reference": null
+      },
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "topology",
+      "severity": "error",
+      "description": "circuit could not be matched to a counterpart",
+      "side": "layout",
+      "net": null,
+      "device": null,
+      "property": null,
+      "details": null,
+      "circuit": {
+        "layout": "SG13CMOS5L_DFRBPQ_1",
+        "reference": null
+      },
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "topology",
+      "severity": "error",
+      "description": "circuit could not be matched to a counterpart",
+      "side": "layout",
+      "net": null,
+      "device": null,
+      "property": null,
+      "details": null,
+      "circuit": {
+        "layout": "SG13CMOS5L_DLYGATE4SD3_1",
+        "reference": null
+      },
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "topology",
+      "severity": "error",
+      "description": "circuit could not be matched to a counterpart",
+      "side": "layout",
+      "net": null,
+      "device": null,
+      "property": null,
+      "details": null,
+      "circuit": {
+        "layout": "SG13CMOS5L_INV_1",
+        "reference": null
+      },
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "topology",
+      "severity": "error",
+      "description": "circuit could not be matched to a counterpart",
+      "side": "layout",
+      "net": null,
+      "device": null,
+      "property": null,
+      "details": null,
+      "circuit": {
+        "layout": "SG13CMOS5L_INV_2",
+        "reference": null
+      },
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "topology",
+      "severity": "error",
+      "description": "circuit could not be matched to a counterpart",
+      "side": "layout",
+      "net": null,
+      "device": null,
+      "property": null,
+      "details": null,
+      "circuit": {
+        "layout": "SG13CMOS5L_INV_4",
+        "reference": null
+      },
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "topology",
+      "severity": "error",
+      "description": "circuit could not be matched to a counterpart",
+      "side": "layout",
+      "net": null,
+      "device": null,
+      "property": null,
+      "details": null,
+      "circuit": {
+        "layout": "SG13CMOS5L_INV_8",
+        "reference": null
+      },
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "topology",
+      "severity": "error",
+      "description": "circuit could not be matched to a counterpart",
+      "side": "layout",
+      "net": null,
+      "device": null,
+      "property": null,
+      "details": null,
+      "circuit": {
+        "layout": "SG13CMOS5L_MUX2_1",
+        "reference": null
+      },
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "topology",
+      "severity": "error",
+      "description": "circuit could not be matched to a counterpart",
+      "side": "layout",
+      "net": null,
+      "device": null,
+      "property": null,
+      "details": null,
+      "circuit": {
+        "layout": "SG13CMOS5L_MUX4_1",
+        "reference": null
+      },
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "topology",
+      "severity": "error",
+      "description": "circuit could not be matched to a counterpart",
+      "side": "layout",
+      "net": null,
+      "device": null,
+      "property": null,
+      "details": null,
+      "circuit": {
+        "layout": "SG13CMOS5L_NAND2_1",
+        "reference": null
+      },
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "topology",
+      "severity": "error",
+      "description": "circuit could not be matched to a counterpart",
+      "side": "layout",
+      "net": null,
+      "device": null,
+      "property": null,
+      "details": null,
+      "circuit": {
+        "layout": "SG13CMOS5L_NAND2_2",
+        "reference": null
+      },
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "topology",
+      "severity": "error",
+      "description": "circuit could not be matched to a counterpart",
+      "side": "layout",
+      "net": null,
+      "device": null,
+      "property": null,
+      "details": null,
+      "circuit": {
+        "layout": "SG13CMOS5L_NAND2B_1",
+        "reference": null
+      },
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "topology",
+      "severity": "error",
+      "description": "circuit could not be matched to a counterpart",
+      "side": "layout",
+      "net": null,
+      "device": null,
+      "property": null,
+      "details": null,
+      "circuit": {
+        "layout": "SG13CMOS5L_NAND3_1",
+        "reference": null
+      },
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "topology",
+      "severity": "error",
+      "description": "circuit could not be matched to a counterpart",
+      "side": "layout",
+      "net": null,
+      "device": null,
+      "property": null,
+      "details": null,
+      "circuit": {
+        "layout": "SG13CMOS5L_NAND3B_1",
+        "reference": null
+      },
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "topology",
+      "severity": "error",
+      "description": "circuit could not be matched to a counterpart",
+      "side": "layout",
+      "net": null,
+      "device": null,
+      "property": null,
+      "details": null,
+      "circuit": {
+        "layout": "SG13CMOS5L_NAND4_1",
+        "reference": null
+      },
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "topology",
+      "severity": "error",
+      "description": "circuit could not be matched to a counterpart",
+      "side": "layout",
+      "net": null,
+      "device": null,
+      "property": null,
+      "details": null,
+      "circuit": {
+        "layout": "SG13CMOS5L_NOR2_1",
+        "reference": null
+      },
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "topology",
+      "severity": "error",
+      "description": "circuit could not be matched to a counterpart",
+      "side": "layout",
+      "net": null,
+      "device": null,
+      "property": null,
+      "details": null,
+      "circuit": {
+        "layout": "SG13CMOS5L_NOR2_2",
+        "reference": null
+      },
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "topology",
+      "severity": "error",
+      "description": "circuit could not be matched to a counterpart",
+      "side": "layout",
+      "net": null,
+      "device": null,
+      "property": null,
+      "details": null,
+      "circuit": {
+        "layout": "SG13CMOS5L_NOR2B_1",
+        "reference": null
+      },
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "topology",
+      "severity": "error",
+      "description": "circuit could not be matched to a counterpart",
+      "side": "layout",
+      "net": null,
+      "device": null,
+      "property": null,
+      "details": null,
+      "circuit": {
+        "layout": "SG13CMOS5L_NOR3_1",
+        "reference": null
+      },
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "topology",
+      "severity": "error",
+      "description": "circuit could not be matched to a counterpart",
+      "side": "layout",
+      "net": null,
+      "device": null,
+      "property": null,
+      "details": null,
+      "circuit": {
+        "layout": "SG13CMOS5L_NOR3_2",
+        "reference": null
+      },
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "topology",
+      "severity": "error",
+      "description": "circuit could not be matched to a counterpart",
+      "side": "layout",
+      "net": null,
+      "device": null,
+      "property": null,
+      "details": null,
+      "circuit": {
+        "layout": "SG13CMOS5L_NOR4_1",
+        "reference": null
+      },
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "topology",
+      "severity": "error",
+      "description": "circuit could not be matched to a counterpart",
+      "side": "layout",
+      "net": null,
+      "device": null,
+      "property": null,
+      "details": null,
+      "circuit": {
+        "layout": "SG13CMOS5L_NOR4_2",
+        "reference": null
+      },
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "topology",
+      "severity": "error",
+      "description": "circuit could not be matched to a counterpart",
+      "side": "layout",
+      "net": null,
+      "device": null,
+      "property": null,
+      "details": null,
+      "circuit": {
+        "layout": "SG13CMOS5L_O21AI_1",
+        "reference": null
+      },
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "topology",
+      "severity": "error",
+      "description": "circuit could not be matched to a counterpart",
+      "side": "layout",
+      "net": null,
+      "device": null,
+      "property": null,
+      "details": null,
+      "circuit": {
+        "layout": "SG13CMOS5L_OR2_1",
+        "reference": null
+      },
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "topology",
+      "severity": "error",
+      "description": "circuit could not be matched to a counterpart",
+      "side": "layout",
+      "net": null,
+      "device": null,
+      "property": null,
+      "details": null,
+      "circuit": {
+        "layout": "SG13CMOS5L_OR3_1",
+        "reference": null
+      },
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "topology",
+      "severity": "error",
+      "description": "circuit could not be matched to a counterpart",
+      "side": "layout",
+      "net": null,
+      "device": null,
+      "property": null,
+      "details": null,
+      "circuit": {
+        "layout": "SG13CMOS5L_OR4_1",
+        "reference": null
+      },
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "topology",
+      "severity": "error",
+      "description": "circuit could not be matched to a counterpart",
+      "side": "layout",
+      "net": null,
+      "device": null,
+      "property": null,
+      "details": null,
+      "circuit": {
+        "layout": "SG13CMOS5L_TIEHI",
+        "reference": null
+      },
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "topology",
+      "severity": "error",
+      "description": "circuit could not be matched to a counterpart",
+      "side": "layout",
+      "net": null,
+      "device": null,
+      "property": null,
+      "details": null,
+      "circuit": {
+        "layout": "SG13CMOS5L_TIELO",
+        "reference": null
+      },
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "topology",
+      "severity": "error",
+      "description": "circuit could not be matched to a counterpart",
+      "side": "layout",
+      "net": null,
+      "device": null,
+      "property": null,
+      "details": null,
+      "circuit": {
+        "layout": "SG13CMOS5L_XNOR2_1",
+        "reference": null
+      },
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "topology",
+      "severity": "error",
+      "description": "circuit could not be matched to a counterpart",
+      "side": "layout",
+      "net": null,
+      "device": null,
+      "property": null,
+      "details": null,
+      "circuit": {
+        "layout": "SG13CMOS5L_XOR2_1",
+        "reference": null
+      },
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "topology.flattened",
+      "severity": "warning",
+      "description": "options.flatten_reference flattened the reference netlist before comparing: 31 circuit(s) were collapsed into 1 top-level circuit(s), substituting every subcircuit-call instance in place -- this compare verified topology only after removing the original hierarchy boundaries on this side (see docs/cli/lvs.md, \"topology.flattened\")",
+      "side": "reference",
+      "net": null,
+      "device": null,
+      "property": null,
+      "details": null,
+      "circuit": null,
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "topology.power_only_pruned",
+      "severity": "warning",
+      "description": "removed layout-side circuit(s) whose every declared pin is a power/ground pin of the reference library (a pin the library declares but the gate-level-Verilog reference never carries), and every instance of them, before comparing -- 4 circuit(s): SG13CMOS5L_DECAP_4, SG13CMOS5L_DECAP_8, SG13CMOS5L_FILL_1, SG13CMOS5L_FILL_2 (see docs/cli/lvs.md, \"topology.power_only_pruned\")",
+      "side": "layout",
+      "net": null,
+      "device": null,
+      "property": null,
+      "details": null,
+      "circuit": null,
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "topology.reference_port_alias_joined",
+      "severity": "warning",
+      "description": "reference circuit 'protocol_core' declared port(s) pm_addr[0] via a plain 'assign <port> = ...;' alias (request.reference.form: \"gate-level-verilog\") -- joined onto the same net as 'pm_addr_r[0]' before comparing, matching a layout with a single physical net for these names, instead of reporting them as unmatched (see docs/cli/lvs.md, \"topology.reference_port_alias_joined\")",
+      "side": "reference",
+      "net": null,
+      "device": null,
+      "property": null,
+      "details": {
+        "canonical_net": "pm_addr_r[0]",
+        "aliased_ports": [
+          "pm_addr[0]"
+        ]
+      },
+      "circuit": {
+        "layout": null,
+        "reference": "protocol_core"
+      },
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "topology.reference_port_alias_joined",
+      "severity": "warning",
+      "description": "reference circuit 'protocol_core' declared port(s) pm_addr[1] via a plain 'assign <port> = ...;' alias (request.reference.form: \"gate-level-verilog\") -- joined onto the same net as 'pm_addr_r[1]' before comparing, matching a layout with a single physical net for these names, instead of reporting them as unmatched (see docs/cli/lvs.md, \"topology.reference_port_alias_joined\")",
+      "side": "reference",
+      "net": null,
+      "device": null,
+      "property": null,
+      "details": {
+        "canonical_net": "pm_addr_r[1]",
+        "aliased_ports": [
+          "pm_addr[1]"
+        ]
+      },
+      "circuit": {
+        "layout": null,
+        "reference": "protocol_core"
+      },
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "topology.reference_port_alias_joined",
+      "severity": "warning",
+      "description": "reference circuit 'protocol_core' declared port(s) pm_addr[2] via a plain 'assign <port> = ...;' alias (request.reference.form: \"gate-level-verilog\") -- joined onto the same net as 'pm_addr_r[2]' before comparing, matching a layout with a single physical net for these names, instead of reporting them as unmatched (see docs/cli/lvs.md, \"topology.reference_port_alias_joined\")",
+      "side": "reference",
+      "net": null,
+      "device": null,
+      "property": null,
+      "details": {
+        "canonical_net": "pm_addr_r[2]",
+        "aliased_ports": [
+          "pm_addr[2]"
+        ]
+      },
+      "circuit": {
+        "layout": null,
+        "reference": "protocol_core"
+      },
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "topology.reference_port_alias_joined",
+      "severity": "warning",
+      "description": "reference circuit 'protocol_core' declared port(s) pm_addr[3] via a plain 'assign <port> = ...;' alias (request.reference.form: \"gate-level-verilog\") -- joined onto the same net as 'pm_addr_r[3]' before comparing, matching a layout with a single physical net for these names, instead of reporting them as unmatched (see docs/cli/lvs.md, \"topology.reference_port_alias_joined\")",
+      "side": "reference",
+      "net": null,
+      "device": null,
+      "property": null,
+      "details": {
+        "canonical_net": "pm_addr_r[3]",
+        "aliased_ports": [
+          "pm_addr[3]"
+        ]
+      },
+      "circuit": {
+        "layout": null,
+        "reference": "protocol_core"
+      },
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "topology.reference_port_alias_joined",
+      "severity": "warning",
+      "description": "reference circuit 'protocol_core' declared port(s) pm_addr[4] via a plain 'assign <port> = ...;' alias (request.reference.form: \"gate-level-verilog\") -- joined onto the same net as 'pm_addr_r[4]' before comparing, matching a layout with a single physical net for these names, instead of reporting them as unmatched (see docs/cli/lvs.md, \"topology.reference_port_alias_joined\")",
+      "side": "reference",
+      "net": null,
+      "device": null,
+      "property": null,
+      "details": {
+        "canonical_net": "pm_addr_r[4]",
+        "aliased_ports": [
+          "pm_addr[4]"
+        ]
+      },
+      "circuit": {
+        "layout": null,
+        "reference": "protocol_core"
+      },
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "topology.reference_port_alias_joined",
+      "severity": "warning",
+      "description": "reference circuit 'protocol_core' declared port(s) pm_addr[5] via a plain 'assign <port> = ...;' alias (request.reference.form: \"gate-level-verilog\") -- joined onto the same net as 'pm_addr_r[5]' before comparing, matching a layout with a single physical net for these names, instead of reporting them as unmatched (see docs/cli/lvs.md, \"topology.reference_port_alias_joined\")",
+      "side": "reference",
+      "net": null,
+      "device": null,
+      "property": null,
+      "details": {
+        "canonical_net": "pm_addr_r[5]",
+        "aliased_ports": [
+          "pm_addr[5]"
+        ]
+      },
+      "circuit": {
+        "layout": null,
+        "reference": "protocol_core"
+      },
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "topology.reference_port_alias_joined",
+      "severity": "warning",
+      "description": "reference circuit 'protocol_core' declared port(s) pm_addr[6] via a plain 'assign <port> = ...;' alias (request.reference.form: \"gate-level-verilog\") -- joined onto the same net as 'pm_addr_r[6]' before comparing, matching a layout with a single physical net for these names, instead of reporting them as unmatched (see docs/cli/lvs.md, \"topology.reference_port_alias_joined\")",
+      "side": "reference",
+      "net": null,
+      "device": null,
+      "property": null,
+      "details": {
+        "canonical_net": "pm_addr_r[6]",
+        "aliased_ports": [
+          "pm_addr[6]"
+        ]
+      },
+      "circuit": {
+        "layout": null,
+        "reference": "protocol_core"
+      },
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "topology.reference_port_alias_joined",
+      "severity": "warning",
+      "description": "reference circuit 'protocol_core' declared port(s) pm_addr[7] via a plain 'assign <port> = ...;' alias (request.reference.form: \"gate-level-verilog\") -- joined onto the same net as 'pm_addr_r[7]' before comparing, matching a layout with a single physical net for these names, instead of reporting them as unmatched (see docs/cli/lvs.md, \"topology.reference_port_alias_joined\")",
+      "side": "reference",
+      "net": null,
+      "device": null,
+      "property": null,
+      "details": {
+        "canonical_net": "pm_addr_r[7]",
+        "aliased_ports": [
+          "pm_addr[7]"
+        ]
+      },
+      "circuit": {
+        "layout": null,
+        "reference": "protocol_core"
+      },
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "topology.reference_port_alias_joined",
+      "severity": "warning",
+      "description": "reference circuit 'protocol_core' declared port(s) pm_wdata[8] via a plain 'assign <port> = ...;' alias (request.reference.form: \"gate-level-verilog\") -- joined onto the same net as 'pm_hi[0]' before comparing, matching a layout with a single physical net for these names, instead of reporting them as unmatched (see docs/cli/lvs.md, \"topology.reference_port_alias_joined\")",
+      "side": "reference",
+      "net": null,
+      "device": null,
+      "property": null,
+      "details": {
+        "canonical_net": "pm_hi[0]",
+        "aliased_ports": [
+          "pm_wdata[8]"
+        ]
+      },
+      "circuit": {
+        "layout": null,
+        "reference": "protocol_core"
+      },
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "topology.reference_port_alias_joined",
+      "severity": "warning",
+      "description": "reference circuit 'protocol_core' declared port(s) pm_wdata[9] via a plain 'assign <port> = ...;' alias (request.reference.form: \"gate-level-verilog\") -- joined onto the same net as 'pm_hi[1]' before comparing, matching a layout with a single physical net for these names, instead of reporting them as unmatched (see docs/cli/lvs.md, \"topology.reference_port_alias_joined\")",
+      "side": "reference",
+      "net": null,
+      "device": null,
+      "property": null,
+      "details": {
+        "canonical_net": "pm_hi[1]",
+        "aliased_ports": [
+          "pm_wdata[9]"
+        ]
+      },
+      "circuit": {
+        "layout": null,
+        "reference": "protocol_core"
+      },
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "topology.reference_port_alias_joined",
+      "severity": "warning",
+      "description": "reference circuit 'protocol_core' declared port(s) pm_wdata[10] via a plain 'assign <port> = ...;' alias (request.reference.form: \"gate-level-verilog\") -- joined onto the same net as 'pm_hi[2]' before comparing, matching a layout with a single physical net for these names, instead of reporting them as unmatched (see docs/cli/lvs.md, \"topology.reference_port_alias_joined\")",
+      "side": "reference",
+      "net": null,
+      "device": null,
+      "property": null,
+      "details": {
+        "canonical_net": "pm_hi[2]",
+        "aliased_ports": [
+          "pm_wdata[10]"
+        ]
+      },
+      "circuit": {
+        "layout": null,
+        "reference": "protocol_core"
+      },
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "topology.reference_port_alias_joined",
+      "severity": "warning",
+      "description": "reference circuit 'protocol_core' declared port(s) pm_wdata[11] via a plain 'assign <port> = ...;' alias (request.reference.form: \"gate-level-verilog\") -- joined onto the same net as 'pm_hi[3]' before comparing, matching a layout with a single physical net for these names, instead of reporting them as unmatched (see docs/cli/lvs.md, \"topology.reference_port_alias_joined\")",
+      "side": "reference",
+      "net": null,
+      "device": null,
+      "property": null,
+      "details": {
+        "canonical_net": "pm_hi[3]",
+        "aliased_ports": [
+          "pm_wdata[11]"
+        ]
+      },
+      "circuit": {
+        "layout": null,
+        "reference": "protocol_core"
+      },
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "topology.reference_port_alias_joined",
+      "severity": "warning",
+      "description": "reference circuit 'protocol_core' declared port(s) pm_wdata[12] via a plain 'assign <port> = ...;' alias (request.reference.form: \"gate-level-verilog\") -- joined onto the same net as 'pm_hi[4]' before comparing, matching a layout with a single physical net for these names, instead of reporting them as unmatched (see docs/cli/lvs.md, \"topology.reference_port_alias_joined\")",
+      "side": "reference",
+      "net": null,
+      "device": null,
+      "property": null,
+      "details": {
+        "canonical_net": "pm_hi[4]",
+        "aliased_ports": [
+          "pm_wdata[12]"
+        ]
+      },
+      "circuit": {
+        "layout": null,
+        "reference": "protocol_core"
+      },
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "topology.reference_port_alias_joined",
+      "severity": "warning",
+      "description": "reference circuit 'protocol_core' declared port(s) pm_wdata[13] via a plain 'assign <port> = ...;' alias (request.reference.form: \"gate-level-verilog\") -- joined onto the same net as 'pm_hi[5]' before comparing, matching a layout with a single physical net for these names, instead of reporting them as unmatched (see docs/cli/lvs.md, \"topology.reference_port_alias_joined\")",
+      "side": "reference",
+      "net": null,
+      "device": null,
+      "property": null,
+      "details": {
+        "canonical_net": "pm_hi[5]",
+        "aliased_ports": [
+          "pm_wdata[13]"
+        ]
+      },
+      "circuit": {
+        "layout": null,
+        "reference": "protocol_core"
+      },
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "topology.reference_port_alias_joined",
+      "severity": "warning",
+      "description": "reference circuit 'protocol_core' declared port(s) pm_wdata[14] via a plain 'assign <port> = ...;' alias (request.reference.form: \"gate-level-verilog\") -- joined onto the same net as 'pm_hi[6]' before comparing, matching a layout with a single physical net for these names, instead of reporting them as unmatched (see docs/cli/lvs.md, \"topology.reference_port_alias_joined\")",
+      "side": "reference",
+      "net": null,
+      "device": null,
+      "property": null,
+      "details": {
+        "canonical_net": "pm_hi[6]",
+        "aliased_ports": [
+          "pm_wdata[14]"
+        ]
+      },
+      "circuit": {
+        "layout": null,
+        "reference": "protocol_core"
+      },
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "topology.reference_port_alias_joined",
+      "severity": "warning",
+      "description": "reference circuit 'protocol_core' declared port(s) pm_wdata[15] via a plain 'assign <port> = ...;' alias (request.reference.form: \"gate-level-verilog\") -- joined onto the same net as 'pm_hi[7]' before comparing, matching a layout with a single physical net for these names, instead of reporting them as unmatched (see docs/cli/lvs.md, \"topology.reference_port_alias_joined\")",
+      "side": "reference",
+      "net": null,
+      "device": null,
+      "property": null,
+      "details": {
+        "canonical_net": "pm_hi[7]",
+        "aliased_ports": [
+          "pm_wdata[15]"
+        ]
+      },
+      "circuit": {
+        "layout": null,
+        "reference": "protocol_core"
+      },
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "topology.reference_port_alias_joined",
+      "severity": "warning",
+      "description": "reference circuit 'protocol_program_memory' declared port(s) run_phase via a plain 'assign <port> = ...;' alias (request.reference.form: \"gate-level-verilog\") -- joined onto the same net as 'run_phase_r' before comparing, matching a layout with a single physical net for these names, instead of reporting them as unmatched (see docs/cli/lvs.md, \"topology.reference_port_alias_joined\")",
+      "side": "reference",
+      "net": null,
+      "device": null,
+      "property": null,
+      "details": {
+        "canonical_net": "run_phase_r",
+        "aliased_ports": [
+          "run_phase"
+        ]
+      },
+      "circuit": {
+        "layout": null,
+        "reference": "protocol_program_memory"
+      },
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "topology.top_level_pins_anchored",
+      "severity": "warning",
+      "description": "43 top-level pin name(s) declared on both sides were anchored by name before comparing (options.anchor_top_level_pins): each one's layout net is asserted to match the reference net of the same-named pin, which the comparer's own topology-only net pairing does not otherwise require. Without it, two boundary nets with identical topology (e.g. two bits of a black-box macro's bus) are interchangeable and a swap between them compares clean -- see docs/cli/lvs.md, \"Top-level pin anchoring\"",
+      "side": "both",
+      "net": null,
+      "device": null,
+      "property": null,
+      "details": {
+        "pins": [
+          "CLK",
+          "ENA",
+          "RST_N",
+          "UIO_IN[0]",
+          "UIO_IN[1]",
+          "UIO_IN[2]",
+          "UIO_IN[3]",
+          "UIO_IN[4]",
+          "UIO_IN[5]",
+          "UIO_IN[6]",
+          "UIO_IN[7]",
+          "UIO_OE[0]",
+          "UIO_OE[1]",
+          "UIO_OE[2]",
+          "UIO_OE[3]",
+          "UIO_OE[4]",
+          "UIO_OE[5]",
+          "UIO_OE[6]",
+          "UIO_OE[7]",
+          "UIO_OUT[0]"
+        ],
+        "pin_count": 43,
+        "pins_truncated": true
+      },
+      "circuit": null,
+      "instance": null,
+      "subcircuit": null
+    }
+  ],
+  "net_correspondence": []
+}

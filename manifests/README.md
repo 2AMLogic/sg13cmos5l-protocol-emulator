@@ -124,27 +124,24 @@ capture, PVT corner sweeps, or Monte Carlo.
   provenance-binding reason as item 7 (below).
 - **Item 7, state as of 2026-10-17 (issue #330) — corrects the explanation
   above.** Append-only; the bullets above stay as history. The
-  `unverifiable_provenance` was **not** an open upstream binding
+  `unverifiable_provenance` is **not** an open upstream binding
   (klayout-tools #2097/#2182 are closed; #2182 is what documents it). The
   cause, read from the pinned grader (`f979a965`, `signoff.py`): a
   `functional-verification` envelope carries no `provenance` block by
   design, so a `content_hash` pin on it can never match and always renders
   `unmet`/`unverifiable_provenance`. `klt signoff` prints no `detail` for
   this reason, so the cause is from source, not from a quoted `detail`.
-  The fix is in the manifest only: item 7's entry no longer carries a
-  `content_hash`. Item 7 renders **`met`** (citation `content_hash: null`,
-  `input_verified: null`), 6 of 11 T1 items met (1, 2, 3, 7, 9, 10). The
-  grader therefore no longer checks the envelope's bytes; the byte-pin
-  (`sha256:dfb3fe29…`) is enforced at the record layer
-  (`post-layout-sdf-regression` records, `verification/check_records.py`),
-  and re-pointing item 7 at a successor envelope (#275) must be done
-  deliberately in the manifest. No evidence was re-run or altered. The
-  item 9 sentence above is also out of date: item 9 cites a `generic`
-  envelope with an artifact binding and renders `met`. Item 4 still
-  renders `unmet`/`check_errored`. Verdict of record:
-  `20261017-192801-fef7ac1` … `20261017-192808-fef7ac1` (eight records,
-  one per live head, each superseding its head) The tool gap is filed as
-  klayout-tools#3747.
+  Item 7 **stays `unmet`** and its `content_hash` pin
+  (`sha256:dfb3fe29…`) stays in the manifest: dropping the pin would grade
+  the item `met` without the grader checking the envelope's bytes, which
+  relaxes ratified evidence and needs a `spec/` decision record first. The
+  gap is a missing gradable binding for this envelope kind, filed as
+  klayout-tools#3747; item 7 is re-pointed deliberately once it lands (or
+  when #275 supersedes the envelope). The item 9 sentence above is also out
+  of date: item 9 cites a `generic` envelope with an artifact binding and
+  renders `met`. No evidence was re-run or altered, and the manifest is
+  unchanged, so the latest `signoff-baseline` record still reproduces and
+  no successor record is minted.
 - **Items 3 and 4 (layout evidence), state as of 2026-10-09 (issue #82)** —
   append-only; earlier states are in the superseded records. Both citations
   now point at record `20261009-054750-676f8b2`
@@ -360,6 +357,36 @@ capture, PVT corner sweeps, or Monte Carlo.
   protocol suite. Baselines: `signoff-baseline` records
   `20261011-151926-96f8420` to `20261011-151929-96f8420` (one per live head),
   **5 of 11**, unchanged.
+- **Items 3 and 4, state as of 2026-10-17 (issue #329).** Append-only; the
+  bullets above are the earlier states. klayout-tools#2941 closed on
+  2026-10-16 (PR #3305), and the `klt` pin in `layout/toolchain.json` moved to
+  its merge commit `b447d889`. Items 3 and 4 now cite record
+  `20261017-192526-fef7ac1` (`librelane-gds-signoff-check/`), run on the same
+  GDS (`sha256:2c8fb81d…`). **Item 3 stays `met`**: `status: clean`, 0
+  violations. The deck hash moved again (`sha256:7c8784c2…` to
+  `sha256:bcc8d9cc…`, `released: false`) and its `coverage` block is wider: 26
+  rules checked where the previous pin's checked 21 (adds the NWell
+  width/space and the metal2/3/4 via-enclosure rules), plus an
+  `unchecked_rules` entry for `NW.b1`. **Item 4 stays `unmet`, for a new
+  reason, `check_failed`**: the converter now accepts the klt/Yosys reference
+  and the compare runs, and it returns `status: mismatch` (88 errors, 0 of
+  3,448 layout nets matched against 2,562; `power_connectivity` `match`). The
+  reference is the pre-place-and-route Yosys netlist and the layout is the
+  routed LibreLane GDS, so the two are not the same circuit; this is a
+  property of the item-4 definition above, not a converter gap. The pin for
+  item 4 is now the layout hash (`sha256:e1139762…`, the extracted netlist),
+  because a completed `klt lvs` records its input. The compare against the
+  LibreLane post-route reference stays `match` with `power_connectivity`
+  `match`, informational and uncited; whether item 4 should be defined against
+  it is still the open question for the issue owner. `klt extract` was not
+  re-run (the frozen netlist extracted at `f979a965` is the LVS input); the
+  record says so. The pin bump staled the eight live records that hash
+  `layout/toolchain.json`; each is superseded by a `20261017-1925xx-fef7ac1`
+  record (synthesis figures and netlists unchanged; the die-area and STA legs
+  stay BLOCKED on klayout-tools#2635, which this host could not re-observe
+  because its OpenROAD container runtime is unreachable). Baselines:
+  `signoff-baseline` records `20261017-192534-fef7ac1` to
+  `20261017-192541-fef7ac1` (one per live head), **5 of 11**, unchanged.
 - **Every citation pins a `content_hash`**, and what it is the hash of
   depends on the cited envelope (clarified 2026-10-10, issue #168; the
   manifests on `main` have always followed this, the sentence here did

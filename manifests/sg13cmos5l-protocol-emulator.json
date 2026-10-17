@@ -11,15 +11,16 @@
       "content_hash": "sha256:2c8fb81d18ab9d6cfd2ed0566e32f16d3cebdbbdff41520afbff29fa0e19c3af"
     },
     "3": {
-      "file": "verification/records/librelane-gds-signoff-check/artifacts/20261011-144308-e5a0bae/klt-drc.json",
+      "file": "verification/records/librelane-gds-signoff-check/artifacts/20261017-192526-fef7ac1/klt-drc.json",
       "content_hash": "sha256:2c8fb81d18ab9d6cfd2ed0566e32f16d3cebdbbdff41520afbff29fa0e19c3af"
     },
     "4": {
-      "file": "verification/records/librelane-gds-signoff-check/artifacts/20261011-144308-e5a0bae/klt-lvs-klt-netlist.json",
-      "content_hash": "sha256:6e0761cd6a208904b2a276ba77d3d69760da80a9b0a369e713c3702aa8ece805"
+      "file": "verification/records/librelane-gds-signoff-check/artifacts/20261017-192526-fef7ac1/klt-lvs-klt-netlist.json",
+      "content_hash": "sha256:e11397622f373fea6a434c2698293408a171db217fd8f9d708b9158890ddf7f4"
     },
     "7": {
-      "file": "verification/records/post-layout-sdf-regression/artifacts/20261011-114800-e5a0bae/klt-functional-verification-nom_typ_1p20V_25C.json"
+      "file": "verification/records/post-layout-sdf-regression/artifacts/20261011-114800-e5a0bae/klt-functional-verification-nom_typ_1p20V_25C.json",
+      "content_hash": "sha256:dfb3fe295ed3b1f1b2ea3dddb89e4052c9272d9c40c4e2b4accfc13281caaa55"
     },
     "9": {
       "file": "manifests/evidence/testbenches.json",
