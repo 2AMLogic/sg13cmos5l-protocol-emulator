@@ -2,8 +2,8 @@
 """Freshness check over every committed firmware program (issue #103).
 
 Runs, without rewriting any artifact:
-  1. gen_i2c_sr.py --check, gen_spi_modes.py --check   (generated .asm still
-     matches its generator)
+  1. gen_i2c_sr.py --check, gen_spi_modes.py --check, gen_uart_nested.py
+     --check   (generated .asm still matches its generator)
   2. asm.py <each firmware/asm/*.asm> --check   (hex + cycle report match)
   3. asm.py <each firmware/asm/boot/*.asm> --out-dir firmware/build/boot
      --check   (the boot ROM image matches its source; issue #138)
@@ -44,6 +44,7 @@ def main() -> int:
         return 1
     cmds = [[sys.executable, str(TOOLS / "gen_i2c_sr.py"), "--check"]]
     cmds += [[sys.executable, str(TOOLS / "gen_spi_modes.py"), "--check"]]
+    cmds += [[sys.executable, str(TOOLS / "gen_uart_nested.py"), "--check"]]
     cmds += [[sys.executable, str(TOOLS / "asm.py"), str(a), "--check"] for a in asms]
     cmds += [[sys.executable, str(TOOLS / "asm.py"), str(a),
               "--out-dir", str(BOOT_BUILD), "--check"] for a in boot_asms]

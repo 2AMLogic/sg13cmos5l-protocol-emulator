@@ -90,8 +90,9 @@ python3 firmware/tools/check_firmware.py
 ```
 
 `check_firmware.py` is the single invocation shared by CI and local use. It
-runs `gen_i2c_sr.py --check` and `gen_spi_modes.py --check` (generated I2C and
-SPI sources vs generator), then
+runs `gen_i2c_sr.py --check`, `gen_spi_modes.py --check` and
+`gen_uart_nested.py --check` (generated I2C, SPI and nested-WAIT UART sources
+vs their generators), then
 `asm.py <file> --check` on every `firmware/asm/*.asm` it discovers (image
 and cycle report), then the boot ROM chain below, keeps going after a
 failure, exits 1 if any check failed, and never rewrites an artifact. A
@@ -297,6 +298,10 @@ firmware, with no UART hardware:
 | `uart_rx_9600.asm` | 5,208 | 168 | nested `WAIT`, 20 outer passes |
 | `uart_tx_9600.asm` | 5,208 | 177 | nested `WAIT` transmitter |
 | `uart_tx_115200.asm` | 434 | 177 | nested `WAIT` transmitter, 1 outer pass (issue #281) |
+
+The four nested-`WAIT` programs above are written by
+`firmware/tools/gen_uart_nested.py` (`--check` guards drift); the committed
+`.asm` stays the evidence.
 
 All fit DR 0001's 256-word program store. Baud figures are arithmetic at
 the unconfirmed 50 MHz clock (5,208 cycles x 20 ns = ~9,600 baud); the
