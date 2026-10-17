@@ -122,6 +122,29 @@ capture, PVT corner sweeps, or Monte Carlo.
   (#24) are the unmet remainder. It renders
   `unmet`/`unverifiable_provenance` at the pinned `klt` for the same
   provenance-binding reason as item 7 (below).
+- **Item 7, state as of 2026-10-17 (issue #330) — corrects the explanation
+  above.** Append-only; the bullets above stay as history. The
+  `unverifiable_provenance` is **not** an open upstream binding
+  (klayout-tools #2097/#2182 are closed; #2182 is what documents it). The
+  cause, read from the grader at `f979a965` (the pin when this was read;
+  `signoff.py`): a `functional-verification` envelope carries no
+  `provenance` block by design, so a `content_hash` pin on it can never
+  match and always renders `unmet`/`unverifiable_provenance`. Record
+  `20261017-192541-fef7ac1`, at the later pin `b447d889`, renders the same
+  `unverifiable_provenance` for item 7 (`signoff.py` not re-read at
+  `b447d889`). `klt signoff` prints no `detail` for
+  this reason, so the cause is from source, not from a quoted `detail`.
+  Item 7 **stays `unmet`** and its `content_hash` pin
+  (`sha256:dfb3fe29…`) stays in the manifest: dropping the pin would grade
+  the item `met` without the grader checking the envelope's bytes, which
+  relaxes ratified evidence and needs a `spec/` decision record first. The
+  gap is a missing gradable binding for this envelope kind, filed as
+  klayout-tools#3747; item 7 is re-pointed deliberately once it lands (or
+  when #275 supersedes the envelope). The item 9 sentence above is also out
+  of date: item 9 cites a `generic` envelope with an artifact binding and
+  renders `met`. No evidence was re-run or altered, and the manifest is
+  unchanged, so the latest `signoff-baseline` record still reproduces and
+  no successor record is minted.
 - **Items 3 and 4 (layout evidence), state as of 2026-10-09 (issue #82)** —
   append-only; earlier states are in the superseded records. Both citations
   now point at record `20261009-054750-676f8b2`
