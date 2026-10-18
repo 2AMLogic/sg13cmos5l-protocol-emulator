@@ -35,13 +35,12 @@ Human-approved issues ready for implementation (`loom:issue`).
 Issues currently being built (`loom:building`).
 
 - **#315**: test_firmware_artifacts.py never runs: needs pytest (removed in #62) and isn't in npm run lint
-- **#330**: T1 item 7: find and fix why the SDF-annotated regression grades unverifiable_provenance
 
 ## PRs Awaiting Review
 
 PRs waiting on Judge (`loom:review-requested`).
 
-- **#331**: fix: bind item 7 SDF envelope without an ungradable content_hash pin
+_None._
 
 ## Approved (Awaiting Merge)
 
@@ -80,8 +79,8 @@ _None._
 | Very important | 1 |
 | Important | 3 |
 | Ready (`loom:issue`) | 1 |
-| In Progress (`loom:building`) | 2 |
-| PRs awaiting review | 1 |
+| In Progress (`loom:building`) | 1 |
+| PRs awaiting review | 0 |
 | Approved PRs awaiting merge | 2 |
 | Curated | 9 |
 | Architect / Hermit proposals | 1 |
