@@ -2,6 +2,11 @@
 
 Chronological record of merged pull requests and closed issues, newest first.
 
+### 2026-10-20
+
+- **PR #301**: Tooling: manifest-driven lint runner + self-test wiring inventory (#296)
+- **Issue #296** (closed): Tooling: replace the 38-command npm lint && chain with a manifest runner that reports all failures and enforces self-test wiring
+
 ### 2026-10-17
 
 - **PR #331**: docs: diagnose item 7 unverifiable_provenance cause in manifests README (partial #330)
