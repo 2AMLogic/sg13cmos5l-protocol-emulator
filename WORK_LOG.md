@@ -2,6 +2,18 @@
 
 Chronological record of merged pull requests and closed issues, newest first.
 
+### 2026-10-17
+
+- **PR #331**: docs: diagnose item 7 unverifiable_provenance cause in manifests README (partial #330)
+- **PR #332**: Bump klt pin to b447d889; item 4 LVS now runs and returns mismatch
+- **PR #323**: docs: correct README claim that _dut.py is imported by a bench
+- **PR #322**: refactor(firmware): generate the four SPI mode programs from one script
+- **PR #321**: refactor(firmware): generate nested-WAIT UART programs from one script
+- **Issue #325** (closed): Delete unused verification/_dut.py at next re-mint of its hashing records
+- **Issue #320** (closed): verification/_dut.py has no caller but README says benches import it; fix doc now, delete at next re-mint
+- **Issue #319** (closed): Generate the four SPI mode firmware variants from one generator (as gen_i2c_sr.py does for I2C)
+- **Issue #318** (closed): Generate the four nested-WAIT UART firmware variants from one generator (as gen_i2c_sr.py does for I2C)
+
 ### 2026-10-14
 
 - **PR #312**: Firmware: SPI modes 1/3 functional-burst IN placed 4 cycles after the MISO launch edge (#309)

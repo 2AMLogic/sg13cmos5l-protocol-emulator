@@ -496,19 +496,19 @@ the klt fetch at IHP-Open-PDK `dev` @ `f7bca326`, so the klt flow's revision
 will diverge from the flow of record at the klt pin bump (issue #289);
 reconciling the two (evidence re-runs and re-stamp) is issue #290. What is still
 missing is a per-run record: the klt DRC report's `provenance.pdk` is `null`
-(`verification/records/librelane-gds-signoff-check/artifacts/20261011-144308-e5a0bae/klt-drc.json`, <!-- superseded-ok: the v0.7.0-pin record the signoff manifest still cites for items 3 and 4; re-run at klt f979a965 with the same outcome by 20261012-204118-0af4491 (issue #289) -->
-klt 0.7.0, KLayout 0.30.12), so the PDK a given klt run used is not
+(`verification/records/librelane-gds-signoff-check/artifacts/20261017-192526-fef7ac1/klt-drc.json`,
+klt 0.7.1.dev1161+gb447d8899760, KLayout 0.30.12), so the PDK a given klt run used is not
 machine-recorded, and nothing machine-checks that the local `PDK_ROOT` is
 `2bbec755`. The klt DRC deck is
-klt's own `sg13cmos5l` deck (content hash `sha256:db9f44fa…`), not the IHP file
+klt's own `sg13cmos5l` deck (content hash `sha256:bcc8d9cc…` at the current klt pin; it has moved at every pin bump, see `layout/toolchain.json`), not the IHP file
 precheck runs, so the two DRC results are different evidence.
 
 ### Coverage
 
 "Precheck" below means `ihp-sg13cmos5l.drc` plus the structural checks above
 (TT/LibreLane CI). klt evidence is the klt flow's `klt drc` report on the CI GDS,
-`verification/records/librelane-gds-signoff-check/artifacts/20261011-144308-e5a0bae/klt-drc.json` <!-- superseded-ok: the v0.7.0-pin record the signoff manifest still cites for items 3 and 4; re-run at klt f979a965 with the same outcome by 20261012-204118-0af4491 (issue #289) -->
-(21 rules checked, 0 violations, 6 inapplicable, `status: clean`).
+`verification/records/librelane-gds-signoff-check/artifacts/20261017-192526-fef7ac1/klt-drc.json`
+(26 rules checked, 0 violations, 6 inapplicable, `status: clean`; the deck at the current klt pin checks 26 rules where the previous pin's checked 21; see the record).
 
 | Layout we draw | Checked by precheck | Absent from precheck | Evidence |
 |---|---|---|---|

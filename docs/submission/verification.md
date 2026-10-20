@@ -157,7 +157,7 @@ failing `.asm` byte for byte.
 
 | Claim | Oracle | Record | Repro | Limits |
 |---|---|---|---|---|
-| Serial program-load path and loader pin sequence | CRC-16/XMODEM from `binascii`; loader generator tests | [firmware-loadseq 20261011-104230](../../verification/records/firmware-loadseq/records/20261011-104230-d81097f.md): 6/6 and 3/3 | `... request-loadseq.json ...`, `... request-loadseq-top.json ...`; `python3 firmware/tools/test_loadseq.py` | The `PM_CRC` readout on `uo_out` (DR 0013 layer 1, #167 merged) is built and graded against `binascii.crc_hqx` by [load-integrity 20261014-115740](../../verification/records/load-integrity/records/20261014-115740-25a41c3.md): PASS 9/9, RTL (pin-only on gates in 3.5). |
+| Serial program-load path and loader pin sequence | CRC-16/XMODEM from `binascii`; loader generator tests | [firmware-loadseq 20261017-074002](../../verification/records/firmware-loadseq/records/20261017-074002-8b9be9b.md): 6/6 and 3/3 | `... request-loadseq.json ...`, `... request-loadseq-top.json ...`; `python3 firmware/tools/test_loadseq.py` | The `PM_CRC` readout on `uo_out` (DR 0013 layer 1, #167 merged) is built and graded against `binascii.crc_hqx` by [load-integrity 20261014-115740](../../verification/records/load-integrity/records/20261014-115740-25a41c3.md): PASS 9/9, RTL (pin-only on gates in 3.5). |
 | Boot ROM: with `MODE` low the core runs the ROM and never decodes program memory unless a boot program verified the image; warm start refuses signature `0x0000` | Independent ISA prediction of the idle state; ROM mutants | [boot-rom 20261014-114130](../../verification/records/boot-rom/records/20261014-114130-25a41c3.md): PASS 7/7, 13 of 13 mutants caught | `... request-boot-rom.json ...`; `python3 verification/boot_rom_mutants.py --out <dir>` | RTL. DR 0013 is Proposed. |
 | SPI-flash boot reads one clean mode-0 `0x03` transaction, runs only a signed image, blank/zero/corrupt flash never reaches `RUN` | `reference_models/spi_flash.py` | [boot-spi 20261014-114151](../../verification/records/boot-spi/records/20261014-114151-25a41c3.md): PASS 6/6, 12 of 12 mutants caught | `... request-boot-spi.json ...`; `python3 verification/boot_spi_mutants.py --out <dir>` | RTL. A model of one flash behaviour, not a part datasheet. |
 | UART load at nominal rate and ±2 %, corrupted payloads, bad CRCs, a count whose complement does not match (#211) and a wrong magic never reach `RUN`; a loaded `uart_tx` program is graded by its own model | `uart_boot_host.py` | [boot-uart 20261011-165704](../../verification/records/boot-uart/records/20261011-165704-56ebaf9.md): PASS 8/8, 8 of 8 ROM mutants caught (earlier frame: [20261010-132617](../../verification/records/boot-uart/records/20261010-132617-8372c57.md), 8/8, 7 of 7 <!-- superseded-ok: the pre-#211 frame, kept as history -->) | `... request-boot-uart.json ...`; `python3 verification/boot_uart_mutants.py --out <dir>` | Finding F8 and its residue: next row. |
@@ -184,9 +184,9 @@ cited gate-level records and the runner's `NETLIST` default
 | Figure | Flow | Record |
 |---|---|---|
 | 20 ns (50 MHz) closes at all three corners, 0 setup and 0 hold violations. Worst setup +5.785 ns (`nom_slow_1p08V_125C`), worst hold +0.0830 ns (`nom_fast_1p32V_m40C`). Max-slew and max-cap violations: 0 at every corner. | **LibreLane**, post-route OpenSTA | [librelane-corner-timing 20261011-144900](../../verification/records/librelane-corner-timing/records/20261011-144900-e5a0bae.md) |
-| Top: 2,526 instances, 35,224.3836 um^2 | **klt/Yosys** synthesis (typ corner deck, 20 ns recipe) | [synthesis-baseline 20261012-204120](../../verification/records/synthesis-baseline/records/20261012-204120-0af4491.md) |
+| Top: 2,526 instances, 35,224.3836 um^2 | **klt/Yosys** synthesis (typ corner deck, 20 ns recipe) | [synthesis-baseline 20261017-192528](../../verification/records/synthesis-baseline/records/20261017-192528-fef7ac1.md) |
 | Placed standard-cell area 46,047.7 um^2 (3,414 instances); LibreLane's own synthesis step reports 2,586 cells, 35,897.26 um^2 | **LibreLane** | the corner-timing record above |
-| klt STA over six corners | klt | [sta-corner-sweep 20261012-204122](../../verification/records/sta-corner-sweep/records/20261012-204122-0af4491.md): still **BLOCKED**, no result (`klt sta` fails on the OpenROAD container runtime; klayout-tools#2635). No number. |
+| klt STA over six corners | klt | [sta-corner-sweep 20261017-192530](../../verification/records/sta-corner-sweep/records/20261017-192530-fef7ac1.md): still **BLOCKED**, no result (`klt sta` fails on the OpenROAD container runtime; klayout-tools#2635). No number. |
 
 The two area numbers come from different synthesis tools and are reported side
 by side; a mismatch is a finding, not a figure to choose between.
@@ -252,11 +252,14 @@ and the header of `flow/run-post-layout-sdf.sh`:
   and are green too, for example run 38166393534 at `cd47c724`. D1 stays Partial until that run is linked as
   the run of record from the tracker's D1 row and the root `README.md`.
 - The klt DRC is `clean` on that GDS; the klt-flow LVS check against the
-  klt/Yosys reference is `unmet / check_errored` (klayout-tools#2941); the
+  klt/Yosys reference is `unmet / check_failed`: since klayout-tools#2941
+  closed, the converter accepts the reference and the compare runs, and it
+  returns `mismatch` (0 of 3,448 layout nets matched), because that reference
+  is the pre-place-and-route netlist and the layout is routed; the
   compare against the run's own post-route netlist is `match`
-  ([librelane-gds-signoff-check 20261012-204118](../../verification/records/librelane-gds-signoff-check/records/20261012-204118-0af4491.md)).
+  ([librelane-gds-signoff-check 20261017-192526](../../verification/records/librelane-gds-signoff-check/records/20261017-192526-fef7ac1.md)).
 - The T1 verdict of record is `tier: null`, **5 of 11 items met**
-  ([signoff-baseline 20261011-224007](../../verification/records/signoff-baseline/records/20261011-224007-de4a99e.md)).
+  ([signoff-baseline 20261017-192540](../../verification/records/signoff-baseline/records/20261017-192540-fef7ac1.md)).
   This document does not move that.
 - The template's `gl_test` job checks results with `! grep failure results.xml`
   on the `ihp-cmos5l` branch, which would not match an `<error>` element. The
