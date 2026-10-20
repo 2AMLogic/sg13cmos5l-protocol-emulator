@@ -53,7 +53,9 @@ that are not themselves the Tiny Tapeout top:
   It is a `case` over the fetch address behind one register, so it reads
   with the macro's one-cycle delay and the core takes either source through
   the same fetch stage; addresses outside the image read as `HALT`. The
-  image is 30 words; DR 0013 caps it at 128 and the generator refuses more.
+  image is 232 words. The generator refuses an image over 256 words (the
+  fetch address space), a stopgap because DR 0013's proposed cap of 128 does
+  not fit the UART load; see `firmware/README.md`.
   The core decodes the ROM from `rst_n` release with `MODE` low until the
   boot program executes `WCTL RUN` (`fetch_rom`, also `BOOT_STATUS[1]`),
   and tells the program memory not to read the macro for fetch meanwhile
