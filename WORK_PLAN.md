@@ -39,13 +39,13 @@ Issues currently being built (`loom:building`).
 
 PRs waiting on Judge (`loom:review-requested`).
 
-- **#316**: test: run firmware artifact parser self-test in npm run lint
+_None._
 
 ## Approved (Awaiting Merge)
 
 PRs that passed review and are queued for Champion auto-merge (`loom:pr`).
 
-_None._
+- **#316**: test: run firmware artifact parser self-test in npm run lint
 
 ## Proposed
 
@@ -77,8 +77,8 @@ _None._
 | Important | 3 |
 | Ready (`loom:issue`) | 1 |
 | In Progress (`loom:building`) | 1 |
-| PRs awaiting review | 1 |
-| Approved PRs awaiting merge | 0 |
+| PRs awaiting review | 0 |
+| Approved PRs awaiting merge | 1 |
 | Curated | 8 |
 | Architect / Hermit proposals | 1 |
 | Active epics | 0 |
