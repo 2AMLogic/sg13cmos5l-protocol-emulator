@@ -7,8 +7,7 @@ This roadmap is generated from the current GitHub label state.
 
 Judge-approved PRs under a hold (`loom:blocked` or `loom:operator`) — only a human merge decision is missing.
 
-- **#301**: Tooling: manifest-driven lint runner + self-test wiring inventory (#296)
-- **#316**: test: run firmware artifact parser self-test in npm run lint
+_None._
 
 ## Very Important
 
@@ -40,14 +39,13 @@ Issues currently being built (`loom:building`).
 
 PRs waiting on Judge (`loom:review-requested`).
 
-_None._
+- **#316**: test: run firmware artifact parser self-test in npm run lint
 
 ## Approved (Awaiting Merge)
 
 PRs that passed review and are queued for Champion auto-merge (`loom:pr`).
 
-- **#301**: Tooling: manifest-driven lint runner + self-test wiring inventory (#296)
-- **#316**: test: run firmware artifact parser self-test in npm run lint
+_None._
 
 ## Proposed
 
@@ -58,7 +56,6 @@ Issues carrying `loom:curated`.
 - **#262**: Re-run the firmware gate-level suite on the post-#258 I2C images *(curated)*
 - **#265**: PR #263: netlist-dependent evidence re-mint for the A_DOUT buffers (#261) before merge *(curated)*
 - **#278**: Re-stamp SG13CMOS5L PDK pin from klayout-tools (IHP-Open-PDK dev f7bca326) *(curated)*
-- **#296**: Tooling: replace the 38-command npm lint && chain with a manifest runner that reports all failures and enforces self-test wiring *(curated)*
 - **#324**: Delete verification/_dut.py and stale _dut docstrings at next post-layout-sdf-regression / reset-pin-through re-mint *(curated)*
 - **#329**: T1 item 4: re-run klt lvs against the gate-level reference now that klayout-tools#2941 is closed *(curated)*
 - **#330**: T1 item 7: find and fix why the SDF-annotated regression grades unverifiable_provenance *(curated)*
@@ -75,14 +72,14 @@ _None._
 
 | Bucket | Count |
 |------|-------|
-| Operator merge-risk holds | 2 |
+| Operator merge-risk holds | 0 |
 | Very important | 1 |
 | Important | 3 |
 | Ready (`loom:issue`) | 1 |
 | In Progress (`loom:building`) | 1 |
-| PRs awaiting review | 0 |
-| Approved PRs awaiting merge | 2 |
-| Curated | 9 |
+| PRs awaiting review | 1 |
+| Approved PRs awaiting merge | 0 |
+| Curated | 8 |
 | Architect / Hermit proposals | 1 |
 | Active epics | 0 |
 <!-- guide:plan-body:end -->
