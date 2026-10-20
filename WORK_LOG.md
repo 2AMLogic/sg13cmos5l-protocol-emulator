@@ -4,6 +4,8 @@ Chronological record of merged pull requests and closed issues, newest first.
 
 ### 2026-10-20
 
+- **PR #340**: docs: correct boot ROM size and cap in rtl/README.md
+- **Issue #339** (closed): rtl/README.md: stale boot ROM claim (says 30 words, cap 128; actual 232 words, cap 256)
 - **PR #301**: Tooling: manifest-driven lint runner + self-test wiring inventory (#296)
 - **Issue #296** (closed): Tooling: replace the 38-command npm lint && chain with a manifest runner that reports all failures and enforces self-test wiring
 
