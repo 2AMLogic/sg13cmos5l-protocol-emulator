@@ -2,6 +2,11 @@
 
 Chronological record of merged pull requests and closed issues, newest first.
 
+### 2026-10-21
+
+- **PR #316**: test: run firmware artifact parser self-test in npm run lint
+- **Issue #315** (closed): test_firmware_artifacts.py never runs: needs pytest (removed in #62) and isn't in npm run lint
+
 ### 2026-10-20
 
 - **PR #340**: docs: correct boot ROM size and cap in rtl/README.md
