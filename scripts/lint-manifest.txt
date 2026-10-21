@@ -19,6 +19,7 @@ python3 verification/test_spi_flash_model.py
 python3 verification/test_ws2812_model.py
 python3 verification/test_ps2_model.py
 python3 firmware/tools/test_mkflash.py
+python3 verification/test_firmware_artifacts.py
 python3 firmware/tools/test_gen_boot_rom.py
 python3 firmware/tools/test_asm.py
 python3 firmware/tools/test_loadseq.py
