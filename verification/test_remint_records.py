@@ -12,6 +12,7 @@ Usage: python3 verification/test_remint_records.py
 
 from __future__ import annotations
 
+import os
 import shutil
 import subprocess
 import sys
@@ -29,6 +30,19 @@ STUB_PASS = """#!/bin/sh
 case "$1" in --version) echo "klt 9.9.9"; exit 0;; esac
 echo '{"status":"pass","engine":"icarus","test_count":2,"passed_count":2,"environment":{}}'
 """
+# Like STUB_PASS, plus a minimal `klt artifact put` that writes a manifest.
+STUB_STORE = STUB_PASS.replace(
+    'echo \'{"status"',
+    '''if [ "$1" = artifact ]; then
+  [ "$2" = put ] && [ "$3" = --help ] && exit 0
+  M="$4"; shift 6
+  printf '{"schema_version":1,"entries":[' > "$M"; sep=""
+  for f in "$@"; do
+    printf '%s{"sha256":"%064d","size":3,"kind":"evidence","name":"%s","uri":"artifact:evidence/x/00/%064d"}' "$sep" 7 "$f" 7 >> "$M"; sep=","
+  done
+  printf ']}' >> "$M"; exit 0
+fi
+echo \'{"status"''')
 STUB_FAIL = STUB_PASS.replace('"pass"', '"fail"')
 
 
@@ -42,7 +56,7 @@ def build(tmp: Path, with_request: bool = True) -> Path:
     if with_request:
         (repo / REQ).write_text(req, encoding="utf-8")
         inputs.append((REQ, T._sha256_text(req)))
-    for name in ("check_records.py", "_repo_utils.py", "remint_records.py"):
+    for name in ("check_records.py", "_repo_utils.py", "remint_records.py", "artifact_store.py"):
         shutil.copyfile(T.SCRIPT_DIR / name, repo / "verification" / name)
     T.record_path(repo, "demo", OLD_ID).write_text(
         T.make_record(OLD_ID, "demo", inputs=inputs), encoding="utf-8")
@@ -104,9 +118,12 @@ def stale(repo: Path) -> None:
     T._git(repo, "commit", "--quiet", "-m", "change rtl")
 
 
-def tool(repo: Path, *args: str) -> tuple[int, str]:
+def tool(repo: Path, *args: str, broker: str | None = None) -> tuple[int, str]:
+    env = {k: v for k, v in os.environ.items() if k != "KLT_ARTIFACT_BROKER"}
+    if broker:
+        env["KLT_ARTIFACT_BROKER"] = broker
     r = subprocess.run([sys.executable, str(repo / "verification" / "remint_records.py"), *args],
-                       cwd=repo, capture_output=True, text=True)
+                       cwd=repo, capture_output=True, text=True, env=env)
     return r.returncode, r.stdout + r.stderr
 
 
@@ -212,6 +229,37 @@ def main() -> int:
               r.returncode == 0, r.stdout + r.stderr, failures)
         code, out = tool(repo)
         check("multi: nothing stale afterwards", code == 0, out, failures)
+
+    with tempfile.TemporaryDirectory(prefix="remint-selftest-") as d:
+        repo = build(Path(d))
+        stale(repo)
+        (repo / "klt-stub").write_text(STUB_STORE, encoding="utf-8")
+        code, out = tool(repo, "--rerun", "--klt", str(repo / "klt-stub"),
+                         "--artifact-store", "demo")
+        check("artifact store without a broker fails closed, mints nothing",
+              code == 1 and records(repo) == [OLD_ID] and "KLT_ARTIFACT_BROKER" in out
+              and not (repo / "manifests").exists()
+              and not (repo / "verification/records/demo/artifacts").exists(), out, failures)
+        code, out = tool(repo, "--rerun", "--klt", str(repo / "klt-stub"),
+                         "--artifact-store", "demo", broker="http://broker.invalid")
+        new = [r for r in records(repo) if r != OLD_ID]
+        check("artifact store mints a record with a manifest and no committed bytes",
+              code == 0 and len(new) == 1
+              and not (repo / "verification/records/demo/artifacts").exists()
+              and (repo / "manifests/artifacts" / f"demo-{new[0]}.manifest.json").is_file()
+              if new else False, out, failures)
+        if new:
+            text = T.record_path(repo, "demo", new[0]).read_text(encoding="utf-8")
+            check("stored record carries the name/size/sha256 summary",
+                  "| name | size | sha256 |" in text and "artifact store" in text
+                  and "klt-functional-verification.json" in text, text, failures)
+            T._git(repo, "add", "-A")
+            T._git(repo, "commit", "--quiet", "-m", "remint")
+            r = subprocess.run([sys.executable, str(repo / "verification/check_records.py"),
+                                "--base-ref", T.BASE_REF],
+                               cwd=repo, capture_output=True, text=True)
+            check("stored record passes the real linter", r.returncode == 0,
+                  r.stdout + r.stderr, failures)
 
     # Sanitized XML must still parse (#192): a literal `<repo>` in an attribute
     # is not well-formed XML, so the XML path escapes the placeholder.

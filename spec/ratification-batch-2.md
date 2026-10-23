@@ -50,6 +50,7 @@ ran from 2026-09-26, issue #44, to 2026-10-11), so this list exists now.
 | DR 0018 | Proposed 2026-10-10 | Row 13's protocol choice (WS2812): `firmware/asm/ws2812.asm`, its reference model and RTL and gate-level benches; its 2026-10-11 note names the PS/2 device (`firmware/asm/ps2_device.asm`). Depends on DR 0017 | 2026-10-11 (issue #235) | none | ratify |
 | DR 0020 | Proposed 2026-10-11 | The top ties an open-drain pin's pad data low (`src/tt_um_2amlogic_protocol_emulator.v`, issue #244), a conformance fix to DR 0012 under DR 0017 section 4 | 2026-10-11 | none | ratify |
 | DR 0021 | Proposed 2026-10-13 | Records that `IN` samples asynchronous pins directly (no synchronizer), surveys the shipped firmware and recommends accept plus an optional firmware double-`IN`; the two-flop synchronizer is deferred. No RTL or firmware change (issue #303) | 2026-10-13 (issue #303) | none | ratify |
+| DR 0022 | Proposed 2026-10-23 | New bulk evidence bytes go to the fleet artifact store; git keeps a manifest and a summary per run. Fail closed, manifest-forward only, no history rewrite. No RTL, spec value or claim change (issue #344) | 2026-10-23 (issue #344) | none | ratify |
 
 DRs 0006 and 0009 are `Recorded` (a finding and an act record, not decisions)
 and need no key. DR 0019 does not exist in `spec/decision-records/`.
