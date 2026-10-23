@@ -789,6 +789,22 @@ with Record ID, Result, Timestamp and Supersedes rewritten; review the Claim
 and Run configuration before committing. Records with no request file are
 reported and must be re-minted by hand. Self-test: `test_remint_records.py`.
 
+## Bulk evidence bytes: artifact store, manifest in git (#344)
+
+New runs of the heavy experiments (`librelane-gds-signoff-check`,
+`post-layout-sdf-regression`, `random-regression`) do not commit their raw
+outputs. `remint_records.py` (and `python3 verification/artifact_store.py
+EXPERIMENT RECORD-ID FILE...` for hand-minted records) stages them in the
+git-ignored `verification/.artifact-scratch/`, stores them with `klt artifact
+put`, and commits only `manifests/artifacts/<experiment>-<record-id>.manifest.json`
+plus a name/size/sha256 table in the record. With no `$KLT_ARTIFACT_BROKER`, no
+`klt artifact put` or an unreachable broker the writer exits nonzero and commits
+nothing; there is no fallback to committing bytes. `scripts/check_artifact_manifests.py`
+(in `npm run lint`) rejects non-`artifact:` URIs, bucket/account names, and
+stored bytes that are also committed. Already-committed records are untouched.
+See [DR 0022](../spec/decision-records/0022-evidence-artifact-store.md) and
+[`manifests/artifacts/README.md`](../manifests/artifacts/README.md).
+
 ## Append-only rule
 
 `records/*.md` and `artifacts/**` are never edited or deleted after

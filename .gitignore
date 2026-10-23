@@ -140,3 +140,7 @@ flow/ws2812-gate-level/
 flow/ps2-gate-level/
 # reset / power-up / reselect gate-level regression scratch (issue #131)
 flow/reset-power-up/
+
+# raw evidence staged for `klt artifact put` (issue #344): bytes go to the
+# artifact store, only manifests/artifacts/*.manifest.json is committed
+verification/.artifact-scratch/
