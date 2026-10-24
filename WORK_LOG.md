@@ -2,6 +2,11 @@
 
 Chronological record of merged pull requests and closed issues, newest first.
 
+### 2026-10-23
+
+- **PR #345**: feat: store bulk evidence in the artifact store, commit manifests
+- **Issue #344** (closed): Adopt the common artifact store for sim evidence (manifests in git, bytes via klt artifact)
+
 ### 2026-10-21
 
 - **PR #316**: test: run firmware artifact parser self-test in npm run lint
