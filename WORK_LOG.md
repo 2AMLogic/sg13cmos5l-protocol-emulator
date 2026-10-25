@@ -2,6 +2,10 @@
 
 Chronological record of merged pull requests and closed issues, newest first.
 
+### 2026-10-25
+
+- **Issue #100** (closed): Auditor Capability Request: Python interpreter unavailable for tool-light validation
+
 ### 2026-10-23
 
 - **PR #345**: feat: store bulk evidence in the artifact store, commit manifests
