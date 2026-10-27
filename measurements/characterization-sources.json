@@ -25,7 +25,7 @@
     {"corner": "nom_typ_1p20V_25C", "setup_slack_ns": 10.714, "hold_slack_ns": 0.2611},
     {"corner": "nom_fast_1p32V_m40C", "setup_slack_ns": 11.074, "hold_slack_ns": 0.0830}
   ],
-  "klt_timing": {"flow": "klt (OpenSTA)", "status": "no evidence: blocked on klayout-tools#2635 (program-memory hard macro cannot be declared); host OpenROAD runtime also unreachable at the last run", "evidence": [{"experiment": "sta-corner-sweep"}]},
+  "klt_timing": {"flow": "klt (OpenSTA)", "status": "no evidence: blocked at klt 0.8.0: the program-memory hard macro cannot be declared (ORD-2013 re-observed at the last run); klayout-tools#2635 closed 2026-10-27 by a fix that is after v0.8.0", "evidence": [{"experiment": "sta-corner-sweep"}]},
   "area": [
     {"item": "Placed cells + SRAM macro, share of 2x2 core", "value": "58.55 %", "flow": "LibreLane (post-route)", "evidence": [{"record_id": "20261011-144900-e5a0bae", "experiment": "librelane-corner-timing"}]},
     {"item": "Program-memory macro RM_IHPSG13_1P_256x16_c2_bm_bist", "value": "28,127.104 um^2 (22.2 % of 2x2 core 413.76 x 306.18 um)", "flow": "PDK LEF/GDS probe", "evidence": [{"experiment": "program-memory-macro-feasibility"}]},

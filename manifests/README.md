@@ -390,6 +390,23 @@ capture, PVT corner sweeps, or Monte Carlo.
   because its OpenROAD container runtime is unreachable). Baselines:
   `signoff-baseline` records `20261017-192534-fef7ac1` to
   `20261017-192541-fef7ac1` (one per live head), **5 of 11**, unchanged.
+- **2026-10-27 (issue #356): klt moves to the PyPI release `klayout-tools==0.8.0`; item 3 goes from `met` to `unmet`.**
+  Items 3 and 4 now cite the `0.8.0` envelopes of `librelane-gds-signoff-check`
+  `20261027-190021-1ec5186` (same GDS and layout hashes, so the pins are
+  unchanged); item 9's pin follows the edited `testbenches.txt`. The `0.8.0` deck
+  checks 33 rules (26 before) and reports 4,484 violations, all inside the
+  foundry SRAM macro (`nwell.enclosing.pactiv.1` 4,352, `nwell.space.2` 132), so
+  item 3 renders `unmet` / `check_failed` and the met count moves from 5 to
+  **4** (items 1, 2, 9, 10). Nothing waives them; keeping the old `clean`
+  envelope cited would have graded stale-toolchain evidence as current. Item 4
+  is unchanged (`mismatch`, 88 errors, same cause). Item 6 does not grade
+  `not_applicable` with the present manifest (#348 is unblocked by the bump, not
+  resolved by it). The grader's `grading_ruleset_id` moved to `sha256:46c446d8…`.
+  The die-area and STA legs are still BLOCKED on the program-memory hard macro:
+  klayout-tools#2635 closed today by PR #2645, which is 146 commits past
+  `v0.8.0`, so it is not in this pin; `ORD-2013` was re-observed at `0.8.0`.
+  Baselines: `signoff-baseline` `20261027-190041-1ec5186` to
+  `20261027-190048-1ec5186` (one per live head), **4 of 11**.
 - **Every citation pins a `content_hash`**, and what it is the hash of
   depends on the cited envelope (clarified 2026-10-10, issue #168; the
   manifests on `main` have always followed this, the sentence here did

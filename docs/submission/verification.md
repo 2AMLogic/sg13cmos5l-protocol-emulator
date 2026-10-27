@@ -184,9 +184,9 @@ cited gate-level records and the runner's `NETLIST` default
 | Figure | Flow | Record |
 |---|---|---|
 | 20 ns (50 MHz) closes at all three corners, 0 setup and 0 hold violations. Worst setup +5.785 ns (`nom_slow_1p08V_125C`), worst hold +0.0830 ns (`nom_fast_1p32V_m40C`). Max-slew and max-cap violations: 0 at every corner. | **LibreLane**, post-route OpenSTA | [librelane-corner-timing 20261011-144900](../../verification/records/librelane-corner-timing/records/20261011-144900-e5a0bae.md) |
-| Top: 2,526 instances, 35,224.3836 um^2 | **klt/Yosys** synthesis (typ corner deck, 20 ns recipe) | [synthesis-baseline 20261017-192528](../../verification/records/synthesis-baseline/records/20261017-192528-fef7ac1.md) |
+| Top: 2,526 instances, 35,224.3836 um^2 | **klt/Yosys** synthesis (typ corner deck, 20 ns recipe) | [synthesis-baseline 20261027-190001](../../verification/records/synthesis-baseline/records/20261027-190001-1ec5186.md) |
 | Placed standard-cell area 46,047.7 um^2 (3,414 instances); LibreLane's own synthesis step reports 2,586 cells, 35,897.26 um^2 | **LibreLane** | the corner-timing record above |
-| klt STA over six corners | klt | [sta-corner-sweep 20261017-192530](../../verification/records/sta-corner-sweep/records/20261017-192530-fef7ac1.md): still **BLOCKED**, no result (`klt sta` fails on the OpenROAD container runtime; klayout-tools#2635). No number. |
+| klt STA over six corners | klt | [sta-corner-sweep 20261027-190013](../../verification/records/sta-corner-sweep/records/20261027-190013-1ec5186.md): still **BLOCKED**, no result (`klt sta` at `0.8.0` fails with `ORD-2013`, the program-memory hard macro; klayout-tools#2635 closed 2026-10-27 by a fix after `v0.8.0`). No number. |
 
 The two area numbers come from different synthesis tools and are reported side
 by side; a mismatch is a finding, not a figure to choose between.
@@ -251,15 +251,15 @@ and the header of `flow/run-post-layout-sdf.sh`:
   `main`'s own `gds` runs since PR #260 merged build the same design files
   and are green too, for example run 38166393534 at `cd47c724`. D1 stays Partial until that run is linked as
   the run of record from the tracker's D1 row and the root `README.md`.
-- The klt DRC is `clean` on that GDS; the klt-flow LVS check against the
+- The klt DRC is `violations` on that GDS at klt `0.8.0`: 4,484 findings, all inside the foundry SRAM macro (`nwell.enclosing.pactiv.1` 4,352, `nwell.space.2` 132), none in the logic or routing. They are NEW rules in the `0.8.0` deck (the earlier pin's deck graded `clean` on the same bytes). This document does not waive them; whether macro-internal findings count against T1 item 3 is open. The klt-flow LVS check against the
   klt/Yosys reference is `unmet / check_failed`: since klayout-tools#2941
   closed, the converter accepts the reference and the compare runs, and it
   returns `mismatch` (0 of 3,448 layout nets matched), because that reference
   is the pre-place-and-route netlist and the layout is routed; the
   compare against the run's own post-route netlist is `match`
-  ([librelane-gds-signoff-check 20261017-192526](../../verification/records/librelane-gds-signoff-check/records/20261017-192526-fef7ac1.md)).
-- The T1 verdict of record is `tier: null`, **5 of 11 items met**
-  ([signoff-baseline 20261027-022306](../../verification/records/signoff-baseline/records/20261027-022306-5e954a8.md)).
+  ([librelane-gds-signoff-check 20261027-190021](../../verification/records/librelane-gds-signoff-check/records/20261027-190021-1ec5186.md)).
+- The T1 verdict of record is `tier: null`, **4 of 11 items met** (items 1, 2, 9, 10; item 3 moved from met to unmet with the klt `0.8.0` bump)
+  ([signoff-baseline 20261027-190047](../../verification/records/signoff-baseline/records/20261027-190047-1ec5186.md)).
   This document does not move that.
 - The template's `gl_test` job checks results with `! grep failure results.xml`
   on the `ihp-cmos5l` branch, which would not match an `<error>` element. The
