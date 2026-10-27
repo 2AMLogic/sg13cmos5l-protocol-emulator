@@ -90,8 +90,9 @@ with open(sys.argv[1]) as f:
 print(doc['klt_install'])
 " "$TOOLCHAIN_JSON")"
 
-if [[ -z "$KLT_INSTALL" || "$KLT_INSTALL" != git+* ]]; then
-  echo "ERROR: layout/toolchain.json's klt_install ('$KLT_INSTALL') is not a pinned VCS URL (expected 'git+https://...@<sha>')." >&2
+if [[ -z "$KLT_INSTALL" ]] \
+    || { [[ "$KLT_INSTALL" != git+*@* ]] && [[ ! "$KLT_INSTALL" =~ ^klayout-tools==[0-9]+\.[0-9]+\.[0-9]+$ ]]; }; then
+  echo "ERROR: layout/toolchain.json's klt_install ('$KLT_INSTALL') is not a pinned klt reference (expected 'klayout-tools==X.Y.Z' or 'git+https://...@<sha>')." >&2
   echo "  Fix: check layout/toolchain.json -- klt_install must never be a floating branch reference." >&2
   exit 1
 fi
