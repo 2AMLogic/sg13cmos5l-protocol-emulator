@@ -11,11 +11,11 @@
       "content_hash": "sha256:2c8fb81d18ab9d6cfd2ed0566e32f16d3cebdbbdff41520afbff29fa0e19c3af"
     },
     "3": {
-      "file": "verification/records/librelane-gds-signoff-check/artifacts/20261017-192526-fef7ac1/klt-drc.json",
+      "file": "verification/records/librelane-gds-signoff-check/artifacts/20261027-190021-1ec5186/klt-drc.json",
       "content_hash": "sha256:2c8fb81d18ab9d6cfd2ed0566e32f16d3cebdbbdff41520afbff29fa0e19c3af"
     },
     "4": {
-      "file": "verification/records/librelane-gds-signoff-check/artifacts/20261017-192526-fef7ac1/klt-lvs-klt-netlist.json",
+      "file": "verification/records/librelane-gds-signoff-check/artifacts/20261027-190021-1ec5186/klt-lvs-klt-netlist.json",
       "content_hash": "sha256:e11397622f373fea6a434c2698293408a171db217fd8f9d708b9158890ddf7f4"
     },
     "7": {
@@ -28,7 +28,7 @@
     },
     "9": {
       "file": "manifests/evidence/testbenches.json",
-      "content_hash": "sha256:9af25cf3bea9fb19c3c55f184b8a508bb86c5a18970b169a584bd6a1af28732c"
+      "content_hash": "sha256:82a7313e936901f32a8aea48b9201e33a1eaa4202d8bd1c23555774d33da5539"
     },
     "10": {
       "file": "manifests/evidence/hygiene.json",
