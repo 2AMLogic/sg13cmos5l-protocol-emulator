@@ -77,7 +77,7 @@
 
 ## Environment, pinned
 
-# klt + cocotb: the klt pin is layout/toolchain.json (v0.7.0, 0e2362bd);
+# klt + cocotb: the klt pin is layout/toolchain.json (klayout-tools==0.8.0, c572046be644);
 # cocotb 2.1.0 and cocotb-tools 0.1.0 are pinned in scripts/setup-env.sh.
 #   ./scripts/setup-env.sh
 # Simulator: Icarus Verilog on PATH (the records name 13.0).

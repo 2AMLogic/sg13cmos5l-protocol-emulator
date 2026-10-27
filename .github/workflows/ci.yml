@@ -122,6 +122,9 @@ jobs:
       - name: Provision klt at the layout/toolchain.json pin
         run: ./scripts/setup-env.sh
 
+      - name: Assert the provisioned klt is the pinned release
+        run: test "$(klt --version)" = "klt 0.8.0"
+
       - name: Re-render the tier report and compare with the committed record
         run: scripts/signoff-report.sh --check-latest
 
