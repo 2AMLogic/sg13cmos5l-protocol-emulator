@@ -2,6 +2,12 @@
 
 Chronological record of merged pull requests and closed issues, newest first.
 
+### 2026-10-27
+
+- **PR #354**: test: klt erc supply spec and report on the LibreLane GDS
+- **PR #352**: feat: generate pre-silicon characterization report and bind it to T1 item 8
+- **Issue #349** (closed): T1 item 8 (Characterization report): aggregate per-row results with Fmax, area and power across corners
+
 ### 2026-10-25
 
 - **Issue #100** (closed): Auditor Capability Request: Python interpreter unavailable for tool-light validation
