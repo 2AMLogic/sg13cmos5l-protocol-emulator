@@ -22,6 +22,10 @@
       "file": "verification/records/post-layout-sdf-regression/artifacts/20261011-114800-e5a0bae/klt-functional-verification-nom_typ_1p20V_25C.json",
       "content_hash": "sha256:dfb3fe295ed3b1f1b2ea3dddb89e4052c9272d9c40c4e2b4accfc13281caaa55"
     },
+    "8": {
+      "file": "manifests/evidence/characterization.json",
+      "content_hash": "sha256:dcb924d656628360ef07547635e02e78ea2edb0265082f11a620bc05c54766b0"
+    },
     "9": {
       "file": "manifests/evidence/testbenches.json",
       "content_hash": "sha256:9af25cf3bea9fb19c3c55f184b8a508bb86c5a18970b169a584bd6a1af28732c"
