@@ -34,14 +34,13 @@ _None._
 Issues currently being built (`loom:building`).
 
 - **#261**: LibreLane: max-cap on SRAM A_DOUT[5..6] is avoided by placement, not by construction
-- **#349**: T1 item 8 (Characterization report): aggregate per-row results with Fmax, area and power across corners
-- **#350**: T1 item 11 (Power delivery): klt erc supply spec and report on the LibreLane GDS, with the PDN and LVS halves named
+- **#356**: Bump klayout-tools pin b447d8899760 → 0.8.0
 
 ## PRs Awaiting Review
 
 PRs waiting on Judge (`loom:review-requested`).
 
-- **#352**: feat: generate pre-silicon characterization report and bind it to T1 item 8
+- **#357**: build: pin klayout-tools to release 0.8.0 and re-mint evidence (item 3 now unmet)
 
 ## Approved (Awaiting Merge)
 
@@ -62,8 +61,7 @@ Issues carrying `loom:curated`.
 - **#329**: T1 item 4: re-run klt lvs against the gate-level reference now that klayout-tools#2941 is closed *(curated)*
 - **#330**: T1 item 7: find and fix why the SDF-annotated regression grades unverifiable_provenance *(curated)*
 - **#348**: T1 item 6 (Monte Carlo): record "not applicable" as a hash-bound statement covering every ratified spec row *(curated)*
-- **#349**: T1 item 8 (Characterization report): aggregate per-row results with Fmax, area and power across corners *(curated)*
-- **#350**: T1 item 11 (Power delivery): klt erc supply spec and report on the LibreLane GDS, with the PDN and LVS halves named *(curated)*
+- **#356**: Bump klayout-tools pin b447d8899760 → 0.8.0 *(curated)*
 
 ## Proposed (Architect / Hermit)
 
@@ -81,10 +79,10 @@ _None._
 | Very important | 1 |
 | Important | 3 |
 | Ready (`loom:issue`) | 0 |
-| In Progress (`loom:building`) | 3 |
+| In Progress (`loom:building`) | 2 |
 | PRs awaiting review | 1 |
 | Approved PRs awaiting merge | 0 |
-| Curated | 11 |
+| Curated | 10 |
 | Architect / Hermit proposals | 1 |
 | Active epics | 0 |
 <!-- guide:plan-body:end -->
