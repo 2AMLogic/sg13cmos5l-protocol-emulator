@@ -4,6 +4,8 @@ Chronological record of merged pull requests and closed issues, newest first.
 
 ### 2026-10-27
 
+- **PR #357**: build: pin klayout-tools to release 0.8.0 and re-mint evidence (item 3 now unmet)
+- **Issue #356** (closed): Bump klayout-tools pin b447d8899760 → 0.8.0
 - **PR #354**: test: klt erc supply spec and report on the LibreLane GDS
 - **PR #352**: feat: generate pre-silicon characterization report and bind it to T1 item 8
 - **Issue #349** (closed): T1 item 8 (Characterization report): aggregate per-row results with Fmax, area and power across corners
