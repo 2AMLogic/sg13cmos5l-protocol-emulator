@@ -420,8 +420,23 @@ capture, PVT corner sweeps, or Monte Carlo.
   issues: no RTL yet for the ISA core (#18/#19), no layout/DRC/LVS at all
   (items 2–4, none filed yet — downstream of item 1), no timing evidence
   (#20) and an unratified spec (#17) behind item 5, no characterization
-  numbers (#21) for item 8, and no power grid (item 11 — `klayout-tools`
-  #2025's new power-delivery item; nothing to cite yet, no layout exists).
+  numbers (#21) for item 8, and item 11 (`klayout-tools` #2025's
+  power-delivery item), which is deliberately uncited and renders
+  `no_evidence` for a tool reason, not for lack of work: its first part
+  now exists (issue #350, `klt erc` supply spec `flow/erc-librelane-gds.json`,
+  record `verification/records/librelane-erc/records/20261027-014500-5ee7356.md`),
+  but the grader (`signoff_power_delivery.py`) grades item 11 as a compound
+  of an `erc`, an `lvs` and, for an RTL-flow block, a `place-and-route`
+  citation, and a list holding the `erc` part alone renders `wrong_kind`
+  (tried at the pin, not committed), so there is no partial citation that
+  would name the missing parts. The missing parts are: **part 3**, item 4's
+  LVS with `power_connectivity.status: "match"` (waits on #329, the revised
+  LVS evidence contract), and **part 2**, a `klt place-and-route` response
+  with `power.pdn: true` and a `power.tapcell_master` (the klt flow cannot
+  place this design, `klayout-tools`#2635; LibreLane, the flow of record per
+  DR 0002, routes it and yields no `klt place-and-route`-shaped statement, so
+  no LibreLane file is cited in its place). Item 11 stays `unmet` until
+  both exist; track it on #351.
   Do not cite an envelope that does not actually support an item just to
   change a reason string — the tracker's linked issues are the
   per-item "why", the manifest's rendered reasons are the mechanical
