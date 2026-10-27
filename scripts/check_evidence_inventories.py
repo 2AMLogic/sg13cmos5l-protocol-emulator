@@ -29,10 +29,10 @@ Checks:
    measurement cannot land without a bench line, and a line cannot outlive
    its directory.
 3. Every `manifests/evidence/*.json` is a passing `generic` envelope with an
-   integer `t1_item` in {1, 2, 9, 10}, whose `provenance.input` names a file
+   integer `t1_item` in {1, 2, 8, 9, 10} (item 8 may also be `fail`), whose `provenance.input` names a file
    that re-hashes to its `content_hash`, and the manifest cites that envelope
    for that item with the same pin.
-4. The manifest cites items 1, 2, 9 and 10 only through such envelopes (no
+4. The manifest cites items 1, 2, 8, 9 and 10 only through such envelopes (no
    native envelope, which would carry no information about the item).
 
 Zero dependencies beyond the Python 3 standard library.
@@ -56,7 +56,10 @@ DEFAULT_ROOT = Path(__file__).resolve().parent.parent
 EVIDENCE_DIR = "manifests/evidence"
 MANIFEST = "manifests/sg13cmos5l-protocol-emulator.json"
 RECORDS_DIR = "verification/records"
-BOUND_ITEMS = {1, 2, 9, 10}
+BOUND_ITEMS = {1, 2, 8, 9, 10}
+# Item 8 is the generated characterization report; its envelope honestly says
+# `fail` while any spec row fails, so it may be `pass` or `fail`.
+FAILABLE_ITEMS = {8}
 
 SHA_LINE = re.compile(r"^sha256:([0-9a-f]{64})\s+(\S+)\s*$")
 LINK_LINE = re.compile(r"^link\s+(\S+)\s+->\s+(\S+)\s*$")
@@ -151,8 +154,9 @@ def check_envelopes(root: Path, manifest: dict) -> tuple[list[str], set[int]]:
             errors.append(f"{rel}: not readable JSON ({exc})")
             continue
         item = env.get("t1_item")
-        if env.get("kind") != "generic" or env.get("status") != "pass":
-            errors.append(f"{rel}: expected kind `generic`, status `pass`")
+        allowed = ("pass", "fail") if item in FAILABLE_ITEMS else ("pass",)
+        if env.get("kind") != "generic" or env.get("status") not in allowed:
+            errors.append(f"{rel}: expected kind `generic`, status {' or '.join(f'`{s}`' for s in allowed)}")
         if not isinstance(item, int) or isinstance(item, bool) or item not in BOUND_ITEMS:
             errors.append(f"{rel}: t1_item must be one of {sorted(BOUND_ITEMS)}, got {item!r}")
             continue

@@ -45,6 +45,8 @@ python3 scripts/test_check_architecture.py
 python3 scripts/check_architecture.py
 python3 scripts/test_check_gap_digest.py
 python3 scripts/check_gap_digest.py
+python3 scripts/test_characterization_report.py
+python3 scripts/characterization_report.py --check
 python3 scripts/test_check_ratification_batch.py
 python3 scripts/check_ratification_batch.py
 python3 scripts/test_check_docs_issue_states.py
