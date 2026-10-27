@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "version": "0.7.1.dev1161+gb447d8899760",
+  "package_version": "0.7.1.dev1161+gb447d8899760",
+  "git_commit": "b447d88997603eb3ba7a1a6ba27136cd29ed76e1",
+  "git_tag": null,
+  "dirty": false,
+  "is_release": false,
+  "grading_ruleset_id": "sha256:3f6fcacadb32a1dd8a0e979522f0879d1a48e94e8a266ee5ea8b420115ecf127",
+  "klayout_version": "0.30.12",
+  "klayout_version_expected": "0.30.12"
+}
