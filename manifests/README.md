@@ -583,3 +583,13 @@ retirement's supersession chain must extend).
 - Toolchain pin: `layout/toolchain.json` (`klt_install`,
   `klt_last_verified_commit`); provisioning: `scripts/setup-env.sh`;
   environment record: `docs/environment.md`.
+
+## Item 8: characterization report (issue #349)
+
+Item 8 cites `evidence/characterization.json`, a `generic` envelope bound to
+`measurements/characterization.md`, which `scripts/characterization_report.py`
+regenerates from the committed records and the tracker digest (`--check` runs
+in `npm run lint`). The envelope's `status` is `pass` only when no spec row
+fails; while any does, it says `fail` and the item renders
+`unmet` / `check_failed`, as intended. `scripts/check_evidence_inventories.py`
+accepts `fail` for item 8 only.
