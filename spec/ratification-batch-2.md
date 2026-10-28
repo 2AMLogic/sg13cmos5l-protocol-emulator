@@ -51,6 +51,7 @@ ran from 2026-09-26, issue #44, to 2026-10-11), so this list exists now.
 | DR 0020 | Proposed 2026-10-11 | The top ties an open-drain pin's pad data low (`src/tt_um_2amlogic_protocol_emulator.v`, issue #244), a conformance fix to DR 0012 under DR 0017 section 4 | 2026-10-11 | none | ratify |
 | DR 0021 | Proposed 2026-10-13 | Records that `IN` samples asynchronous pins directly (no synchronizer), surveys the shipped firmware and recommends accept plus an optional firmware double-`IN`; the two-flop synchronizer is deferred. No RTL or firmware change (issue #303) | 2026-10-13 (issue #303) | none | ratify |
 | DR 0022 | Proposed 2026-10-23 | New bulk evidence bytes go to the fleet artifact store; git keeps a manifest and a summary per run. Fail closed, manifest-forward only, no history rewrite. No RTL, spec value or claim change (issue #344) | 2026-10-23 (issue #344) | none | ratify |
+| DR 0023 | Proposed 2026-10-28 | Nothing shipped: classifies the 4,484 klt 0.8.0 DRC findings (all inside the SRAM macro `RM_IHPSG13_1P_256x16_c2_bm_bist`) and lists waiver options; applies none, so T1 item 3 stays `unmet`. No RTL, spec value or claim change (issue #360) | 2026-10-28 (issue #360) | klayout-tools#4520 (upstream deck answer); the owner's choice among its options | amend first |
 
 DRs 0006 and 0009 are `Recorded` (a finding and an act record, not decisions)
 and need no key. DR 0019 does not exist in `spec/decision-records/`.
