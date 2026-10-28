@@ -37,8 +37,16 @@ Checks:
 
 Zero dependencies beyond the Python 3 standard library.
 
+Attested use (issue #361): `klt signoff --attest 1|10` runs this script as a
+freshness / audit command (manifests/attest/item*.json). Those commands pass
+`--inventory NAME` (repeatable), which runs only check 1 on the named
+`manifests/evidence/NAME` files and skips checks 2-4. Checks 3-4 compare the
+envelopes with the manifest, and an attestation run is what produces those
+envelopes, so running them inside it would fail on the very re-mint it is part
+of. The unrestricted run (`npm run lint`, CI records job) keeps all four.
+
 Usage:
-    python3 scripts/check_evidence_inventories.py [--repo-root DIR]
+    python3 scripts/check_evidence_inventories.py [--repo-root DIR] [--inventory NAME]...
 
 Exit codes: 0 pass, 1 a check failed, 2 usage error.
 """
@@ -194,11 +202,34 @@ def check_envelopes(root: Path, manifest: dict) -> tuple[list[str], set[int]]:
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("--repo-root", type=Path, default=DEFAULT_ROOT)
+    ap.add_argument(
+        "--inventory",
+        action="append",
+        default=[],
+        metavar="NAME",
+        help=f"check only {EVIDENCE_DIR}/NAME (repeatable); skips checks 2-4",
+    )
     args = ap.parse_args(argv)
     root = args.repo_root.resolve()
 
     errors: list[str] = []
     inventories = sorted((root / EVIDENCE_DIR).glob("*.txt"))
+    if args.inventory:
+        names = {i.name: i for i in inventories}
+        unknown = sorted(set(args.inventory) - set(names))
+        if unknown:
+            print(f"FAIL: no such inventory under {EVIDENCE_DIR}/: {', '.join(unknown)}")
+            return 1
+        inventories = [names[n] for n in sorted(set(args.inventory))]
+        for inv in inventories:
+            errors += check_inventory(root, inv)[0]
+        if errors:
+            print("FAIL: evidence inventories do not describe the tree:")
+            for e in errors:
+                print(f"  - {e}")
+            return 1
+        print(f"PASS: {len(inventories)} inventories hold (restricted run: {', '.join(i.name for i in inventories)})")
+        return 0
     tb_experiments: set[str] | None = None
     for inv in inventories:
         errs, exps = check_inventory(root, inv)

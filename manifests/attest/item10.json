@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "kind": "t1-attestation-inventory",
+  "t1_item": 10,
+  "description": "T1 item 10 (Repo hygiene). hygiene: README, LICENSE, the target spec, the environment doc and the CI workflows. checks: the audit commands CI runs, each of which exits non-zero on failure. evidence-inventories is the restricted run (--inventory) of scripts/check_evidence_inventories.py: the unrestricted run also compares the envelopes with the manifest, which an attestation is what refreshes. lint is `npm run lint` (check_records.py and the unrestricted inventory run included); it is local_only because the CI records job runs it on every push. It cannot be re-run while the manifest pins are being refreshed (it fails until the signoff-baseline record is re-minted, and that record cites this item's envelope), so re-mint this item FIRST on a tree whose baseline still holds (manifests/README.md).",
+  "hygiene": [
+    "README.md",
+    "LICENSE",
+    "spec/target-spec.md",
+    "docs/environment.md",
+    ".github/workflows/ci.yml",
+    ".github/workflows/gds.yaml",
+    ".github/workflows/test.yaml",
+    "manifests/evidence/testbenches.txt",
+    "manifests/evidence/hygiene.txt",
+    "manifests/evidence/design-sources.txt",
+    "verification/check_records.py",
+    "scripts/check_evidence_inventories.py"
+  ],
+  "checks": [
+    {
+      "name": "evidence-inventories",
+      "argv": [
+        "python3",
+        "scripts/check_evidence_inventories.py",
+        "--inventory",
+        "design-sources.txt",
+        "--inventory",
+        "testbenches.txt",
+        "--inventory",
+        "hygiene.txt"
+      ]
+    },
+    {
+      "name": "firmware-fresh",
+      "argv": [
+        "python3",
+        "firmware/tools/check_firmware.py"
+      ]
+    },
+    {
+      "name": "lint",
+      "argv": [
+        "npm",
+        "run",
+        "lint"
+      ],
+      "local_only": true
+    }
+  ]
+}
