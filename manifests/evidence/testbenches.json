@@ -3,16 +3,725 @@
   "kind": "generic",
   "status": "pass",
   "t1_item": 9,
-  "summary": "Testbenches shipped: every evidence directory under verification/records/ and every measured target-spec row is mapped to its committed bench and cold-start command, with the klt pin, cocotb pin, PDK revision (IHP-Open-PDK 2bbec755) and formal toolchain pin; rows with no measurement say so. Audited 2026-10-10 at klt v0.7.0, issue #83. Refreshed for issue #137 (the load-integrity bench). Refreshed for issue #141 (the row-13 WS2812 bench). Refreshed for issue #235 (the row-13 stretch PS/2 bench). Refreshed for issue #211 (the count-alias bench now asserts rejection; the gate-level netlist of gds run 38108543866). Refreshed for issues #244 and #246 (the gate-level lines name the netlist of gds run 38136727636; the control-space bench has the open-drain pad-data test; the SDF line names the protocol suite). Refreshed for issue #258 (the I2C ACK-schedule bench and its mutant runner on the firmware-i2c line). Refreshed for issue #259 (the i2c-ack-window formal experiment: ACK-window property, runner and records). Refreshed for issue #350 (the librelane-erc experiment: klt erc supply spec on the LibreLane GDS). Refreshed for issue #356 (the klt pin moves to the PyPI release klayout-tools==0.8.0; the inventory comment naming the pin is updated, nothing else).",
-  "source": "manifests/evidence/testbenches.txt",
+  "summary": "T1 item 9 (Testbenches shipped): 98/98 attestation checks passed (klt signoff --attest)",
+  "source": "manifests/attest/item9.json",
+  "attestation": {
+    "producer": "klt signoff --attest",
+    "inventory_schema_version": 1,
+    "hash_algorithm": "sha256-raw-bytes",
+    "check_count": 98,
+    "passed_count": 98,
+    "checks": [
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "firmware/tools/test_loadseq.py",
+        "passed": true,
+        "content_hash": "sha256:43f18594d652584dd569dc445d037d0cb4b7656c5259781d07f2948f316dc8e5"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "flow/erc-librelane-gds.json",
+        "passed": true,
+        "content_hash": "sha256:62c5b36be58a52cb3172851ba4180a3a6be6c57efa467109ca69925dbbe3133a"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "flow/gen-erc-librelane-gds-spec.py",
+        "passed": true,
+        "content_hash": "sha256:b5fe0be925d0f29a5693137f902e28f111d4504accb030fd65f4f1d51d6f7020"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "flow/post_layout_protocols.py",
+        "passed": true,
+        "content_hash": "sha256:cff481811bcaa677589005cfc2c9833c4a1ca3c0d9c98bf3502c1b7d88e0c91a"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "flow/run-die-area-par.sh",
+        "passed": true,
+        "content_hash": "sha256:cb587cd5d874320e564b01ef9cd76a68a3b257c1563645a53d2756bbc029214b"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "flow/run-firmware-gate-level.sh",
+        "passed": true,
+        "content_hash": "sha256:d8ea3ad3786724e90cbfecc9df811503ecbfd30b2d99db6d92d19fbf6a58bd0b"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "flow/run-post-layout-sdf.sh",
+        "passed": true,
+        "content_hash": "sha256:8c3790edf3477e25284f77dd5fabbfc2cdfb1a78c18e5309454f15aa681bb9b7"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "flow/run-reset-power-up-gate-level.sh",
+        "passed": true,
+        "content_hash": "sha256:688856534ea6652dfc37da1533218a2b3d04bd94e3725a2fb86f23e4662d3201"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "flow/run-sram-macro-feasibility.py",
+        "passed": true,
+        "content_hash": "sha256:9098a69645ba221e5375ad1f06b88832c11a1048b02931a4ff005f06e8a9d1a5"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "flow/run-sta-corner-sweep.sh",
+        "passed": true,
+        "content_hash": "sha256:6e9e6d3ff3f12e22a9e87e54e5429a6dbe315964eae3c61c625ff3476afc065d"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "scripts/check_evidence_inventories.py",
+        "passed": true,
+        "content_hash": "sha256:699bc6ad2490f73a3551ffe61b7ffddcda882f01f90162f5455ac70aa4f6fbb8"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "scripts/run-rtl-benches.sh",
+        "passed": true,
+        "content_hash": "sha256:5b49b8fccaf2e6b218ac1a14d959dd10ed1cdb9bf31983bd63979f7e92f01f9c"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "scripts/setup-env.sh",
+        "passed": true,
+        "content_hash": "sha256:10ea796726cb15062f30cb690aaf4381f020a3f773bbe2ced4598ab767811724"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "scripts/signoff-report.sh",
+        "passed": true,
+        "content_hash": "sha256:f9f3b9c76fc3a5b441d20ac408ab63fdc35470ac76bbbd6894d7027670895ee5"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "verification/boot_rom_mutants.py",
+        "passed": true,
+        "content_hash": "sha256:173c04aa561f1ab1314143da12140adf90e9b3806f805ea0f609cb81c909c54e"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "verification/boot_spi_mutants.py",
+        "passed": true,
+        "content_hash": "sha256:6b1dce9f3aceb58b31612c6b9c141fd284b5699a83e06d602b1cfbe8db170e5c"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "verification/boot_uart_mutants.py",
+        "passed": true,
+        "content_hash": "sha256:d1566437a4a9c557e8eecf43526c265cb87b1a3207b58c1b31e0cf574c5d8787"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "verification/control_space_mutants.py",
+        "passed": true,
+        "content_hash": "sha256:c5de78892474c3be543de022b9b504924efce296372ff361252767655430275c"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "verification/formal/formal_top.v",
+        "passed": true,
+        "content_hash": "sha256:5a9263ffc09c9bfcb34d4302b6cf4ef6dc91a8150a241011772f1a4e04dd46a6"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "verification/formal/formal_top_i2c_ack.v",
+        "passed": true,
+        "content_hash": "sha256:864e9074ef210badc26da9e5c78ba04a724dceaa3501f163a338b144089ac7b4"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "verification/formal/formal_top_pin_write.v",
+        "passed": true,
+        "content_hash": "sha256:73f52315db4f834e406d71c5e02b2a0444004e3aed0c4de2d0dfd974b02bd1cb"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "verification/formal/i2c_ack_images.py",
+        "passed": true,
+        "content_hash": "sha256:bfc1fcd1a2d410943e9f251f073f2249c75ccd982ca496f8d864493952396cbc"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "verification/formal/i2c_ack_window.sv",
+        "passed": true,
+        "content_hash": "sha256:fb41d6c52fee9807e27db0f7eda03d439f6016e761341f49a7f47752ec2a02ee"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "verification/formal/no_data_dependent_latency.sv",
+        "passed": true,
+        "content_hash": "sha256:6e9691ef026ff758e7a0b943bdec3d04aa49e84fb87b73227621b1661a469c18"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "verification/formal/pin_write_latency.sv",
+        "passed": true,
+        "content_hash": "sha256:76a5bbed2b569b7f6a521b7fca1f0aa4f4249a11d5026897479b28395b5c096e"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "verification/formal/pin_write_mutants.py",
+        "passed": true,
+        "content_hash": "sha256:8b1b23f628232ef50ace46c2ce4da1ab22ec2d1132e00e5031fca0ac3de11c21"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "verification/formal/run-i2c-ack-window.sh",
+        "passed": true,
+        "content_hash": "sha256:d32260e4be54bd6fa4309d4629c07ed71eca2545324b0b52f6e324fabf23f2ac"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "verification/formal/run-no-data-dependent-latency.sh",
+        "passed": true,
+        "content_hash": "sha256:1265182e287ccfb371b774df7b824374dc0ee57580ba3f5556d42ae7d17da355"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "verification/formal/run-pin-write-latency.sh",
+        "passed": true,
+        "content_hash": "sha256:f2d79b5f8bf3d4ae568787e469d5a50ba15b2860bdc5f44d2a817710f6086a05"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "verification/formal/test-mutant-gate.sh",
+        "passed": true,
+        "content_hash": "sha256:d367284c8c6e17d8223151f2c648fc1e5d0b1cc3afb5d58075599abb47f31133"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "verification/i2c_ack_schedule_mutants.py",
+        "passed": true,
+        "content_hash": "sha256:e008b0e0895c1a565f5a3d7e50cd708baf48931ab275ffdf87011c150484b50b"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "verification/isa_lockstep_mutants.py",
+        "passed": true,
+        "content_hash": "sha256:26a2190d05b07d1a52e1398d981df3314f0f36dc3b7f1a07a8b12f73f1cf97d8"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "verification/load_integrity_mutants.py",
+        "passed": true,
+        "content_hash": "sha256:ea0d6e44e1cdb672f494fde4e27e33a3d2be7720957d309799f01c03832636e1"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "verification/primitives_mutants.py",
+        "passed": true,
+        "content_hash": "sha256:ebdf98918b96313880a1130bda8857f9b1f34523a75bb5d05e48839d34682975"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "verification/reference_models/isa.py",
+        "passed": true,
+        "content_hash": "sha256:7f9addaa7e5593a878de72671e2d8efd932628fe2e8799696810b6c25f60e84c"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "verification/reference_models/ps2.py",
+        "passed": true,
+        "content_hash": "sha256:3d4a93209d9a05979d3a60915e406b255fb0337141db35ebff599e54d84b7ede"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "verification/reference_models/ws2812.py",
+        "passed": true,
+        "content_hash": "sha256:786c5d618cfa48ea1fc9c6f7f9044929e5483b2e66e98a4b720fde9b1821a128"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "verification/remint_records.py",
+        "passed": true,
+        "content_hash": "sha256:711bc05826c561f1753227f48d00586510d2e175e3600dcf5b6036da67834949"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "verification/request-boot-rom.json",
+        "passed": true,
+        "content_hash": "sha256:83030fa77a7752eaf2e9eb274195698fd17b13231faa65ca3ab26a77f768ec43"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "verification/request-boot-spi.json",
+        "passed": true,
+        "content_hash": "sha256:a083aedab5e64980c2f3584fa553bbd26b84601e80154f599b0bd7289f2a07d7"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "verification/request-boot-uart-count-alias.json",
+        "passed": true,
+        "content_hash": "sha256:9332ce277074b7d73be324ed444b698b3c325a22e2d22e45e74c46da0d47ef70"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "verification/request-boot-uart.json",
+        "passed": true,
+        "content_hash": "sha256:b27033595ca97b0ffd00bf54b38d2fc3a66b0a6c4081ddd0069b1ad4400a9c25"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "verification/request-control-space.json",
+        "passed": true,
+        "content_hash": "sha256:c678b465296de376935220aa0593173485a9427ae48d58fae6532cdc0fb77ca0"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "verification/request-firmware-i2c-ack.json",
+        "passed": true,
+        "content_hash": "sha256:02b36d7736776f211b55360d236b1247317aad92388643956f31717a1c5624b9"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "verification/request-firmware-i2c-sr.json",
+        "passed": true,
+        "content_hash": "sha256:812f2776b92acd696af78e426c5da19e8391b4c208733120d4b7b65d7c622519"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "verification/request-firmware-i2c.json",
+        "passed": true,
+        "content_hash": "sha256:899929fcf5bc7999c26f375f96e8e38cd12f8a12f6050c3cae0ff5e91e11396e"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "verification/request-firmware-ps2.json",
+        "passed": true,
+        "content_hash": "sha256:94546b1e9793b4ad6e722f0057c41b4e09ed7a4f7d654598752bb6ab9ca93461"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "verification/request-firmware-roundtrip.json",
+        "passed": true,
+        "content_hash": "sha256:8625f113a08463d88657ffbdfb299b30f5e89d94043b24c69ebb216974606a36"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "verification/request-firmware-spi-burst.json",
+        "passed": true,
+        "content_hash": "sha256:e8bdf615074de55ffe2906bf9b1ab9a22e5280a7c59e89a0f21b66e5b76adfe6"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "verification/request-firmware-spi-miso-delay.json",
+        "passed": true,
+        "content_hash": "sha256:26ddde44b7841b05e2e376b3be960c1423dedda6c7bc984cea021c862030f4a6"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "verification/request-firmware-spi.json",
+        "passed": true,
+        "content_hash": "sha256:e89dca6d83f898b6067b6916db5faaeebdac7ba6dcf5b7d6646919807e8239db"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "verification/request-firmware-uart-rx.json",
+        "passed": true,
+        "content_hash": "sha256:d3d0032e5c6737cdfc896c3c2d7ce046ea0c785330565f2d14a7625b1ab07f25"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "verification/request-firmware-uart.json",
+        "passed": true,
+        "content_hash": "sha256:dcdbbfb35953cc4e82936a604d9f34c57cf04edb9c2990afbfc1275223d2b8b6"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "verification/request-firmware-ws2812.json",
+        "passed": true,
+        "content_hash": "sha256:18f0083f4d7fea4b077ff70b52c407234a688f7b69338ab1a5c4be8823e9ed4d"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "verification/request-isa-lockstep.json",
+        "passed": true,
+        "content_hash": "sha256:cf2349c21a5d6b2cc82e699165733bb17dbc8a913516c452a9a62a62206a100d"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "verification/request-load-integrity.json",
+        "passed": true,
+        "content_hash": "sha256:71cef92e357a23fcfb99e6f29889458a90bfdb7e64ba8a62bb73ff974c798c04"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "verification/request-loadseq-top.json",
+        "passed": true,
+        "content_hash": "sha256:ae18efab72d5da0ddb11fa949f3cf42c11e71bf4a762783df109c3f9e527bf29"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "verification/request-loadseq.json",
+        "passed": true,
+        "content_hash": "sha256:3d9e26ae8978679e9889306d56c1894f0e08dead58253bc73452b1126b623b12"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "verification/request-primitives.json",
+        "passed": true,
+        "content_hash": "sha256:536c50651ca270872e1b6124ff3385cd5b94e02ad0de81af7a8efd14014567f7"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "verification/request-program-memory.json",
+        "passed": true,
+        "content_hash": "sha256:bd55099f1fa9c8c654642556ee0f2e2182100c861921b1bd96f88d40dd2c3ff3"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "verification/request-protocol-emulator.json",
+        "passed": true,
+        "content_hash": "sha256:3be955aebb34b9d1223f3e810ba210cd6720cc3b0e091313701977451b7c85ce"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "verification/request-protocol-models.json",
+        "passed": true,
+        "content_hash": "sha256:0551d214ee7eba33824fc0102b7669138cf288873f20b846c9ea3fdd01d0500c"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "verification/request-random-regression.json",
+        "passed": true,
+        "content_hash": "sha256:a6d531aa518bb780388181a3705ebe549b185490baf1c1bb560017dbb109ad52"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "verification/request-reset-release-offsets.json",
+        "passed": true,
+        "content_hash": "sha256:d009f91f1598443cf95149eb4d5874d6a3f288d022bbf5c035a753251831d1cd"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "verification/request-uio-pads.json",
+        "passed": true,
+        "content_hash": "sha256:cd880acc9ecb532d8d038d929dab408d658f78d2cc6254daff7182bdf2a70f52"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "verification/reset_coverage.py",
+        "passed": true,
+        "content_hash": "sha256:4c951bb22c935761bf04ec9fc81a8a02c70a3df7e8d954dddbab335fb342ccc4"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "verification/test_boot_rom.py",
+        "passed": true,
+        "content_hash": "sha256:33ef15898b5066c3318ac577089fd909a9eeee2aca5499dca68bff2098d66775"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "verification/test_boot_spi.py",
+        "passed": true,
+        "content_hash": "sha256:28471f606685e91fb67eccadcbee52949ae0b590cdf4a669437d82f762c68c59"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "verification/test_boot_uart.py",
+        "passed": true,
+        "content_hash": "sha256:1f6f517954a1009deb1826f9074adb8f63774e7daf53a791252a7058e8dda79d"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "verification/test_boot_uart_count_alias.py",
+        "passed": true,
+        "content_hash": "sha256:0748275141fd2f48f3560c82026c8bc0bb5281828faf181c90336ed8a7201a84"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "verification/test_control_space.py",
+        "passed": true,
+        "content_hash": "sha256:2f544b083effbeb12567de2706e90955e5d9835d671c64c2fc0627f5f1a116c0"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "verification/test_firmware_i2c.py",
+        "passed": true,
+        "content_hash": "sha256:bbb6a9cefac909a37ad8d8d14c0137c18cb9d76caf7a3ffd81eb02f5aad3eb35"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "verification/test_firmware_i2c_ack.py",
+        "passed": true,
+        "content_hash": "sha256:ea3f3ec521862a6f07eb40fe8ada74c0b43f21d85270181f7deaec7fa0128081"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "verification/test_firmware_i2c_sr.py",
+        "passed": true,
+        "content_hash": "sha256:a15bdfc9fcadebe99a99542764b17fdb722825a3593927416363346d3375c17f"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "verification/test_firmware_ps2.py",
+        "passed": true,
+        "content_hash": "sha256:0ba89dd9bbdd960d0e1e3722341c671e19b0b738ad5077b7f90ef38ec4fa1d23"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "verification/test_firmware_roundtrip.py",
+        "passed": true,
+        "content_hash": "sha256:8fe7de1cee955315d29fdd6e5c69381aad7c0cc58e9dbf91e4f0ef264e3534cd"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "verification/test_firmware_spi.py",
+        "passed": true,
+        "content_hash": "sha256:cc63f894c53dd31c597f1ff644d901e429071586c2eaab9c0e6221d0e2a6907f"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "verification/test_firmware_uart.py",
+        "passed": true,
+        "content_hash": "sha256:97670d29582790dc6e883661756bca76d222e7d6f965b7cd74cc1809821ce2a6"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "verification/test_firmware_uart_rx.py",
+        "passed": true,
+        "content_hash": "sha256:c136acce9fcadbb97043114daf5eedc336a37de6fbdaae7544648661da98545d"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "verification/test_firmware_ws2812.py",
+        "passed": true,
+        "content_hash": "sha256:859284cedecff2befb04588e2718bb7bafcfb50975c840fd4c65e0ad0f4d05db"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "verification/test_isa_lockstep.py",
+        "passed": true,
+        "content_hash": "sha256:49ad2fdce2267000016ab6871acbf8e3a2dc733f5630e1e47c9a775b0b2a078e"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "verification/test_load_integrity.py",
+        "passed": true,
+        "content_hash": "sha256:37150985a8f4abd7be564b850f2adca211957b18de5f948133751132462177c5"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "verification/test_loadseq.py",
+        "passed": true,
+        "content_hash": "sha256:27cdc11fb3d7a9d70863fc317d1fbf77811804b3b3be2c481a549b0b7f74e051"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "verification/test_loadseq_top.py",
+        "passed": true,
+        "content_hash": "sha256:2065ed7f6d99e718fffdbb95e5eb17f13b10f7985c21b4a5685e9bbb4ce5c5e8"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "verification/test_primitives.py",
+        "passed": true,
+        "content_hash": "sha256:fb7ce1bb45f7c5e577574b455b5619c83b83d340a02ccfcbb9df8ad41c159876"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "verification/test_program_memory.py",
+        "passed": true,
+        "content_hash": "sha256:1071b5eb62455b6f920bc47a4ff9352a3fae1a0842a010f1bc1807d2fafc8a39"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "verification/test_protocol_emulator.py",
+        "passed": true,
+        "content_hash": "sha256:a9be5a5969655c99d0608dbca0340e8ec009b944b044c5d883ceceeed9273670"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "verification/test_protocol_models.py",
+        "passed": true,
+        "content_hash": "sha256:58ae1750c1331a8ff48e5c12ddc0767e12db025f142bd12ae2bfda7a423a6b83"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "verification/test_ps2_model.py",
+        "passed": true,
+        "content_hash": "sha256:e13c952cac00b4eaaaa619313dac96fca0b20bf9bb8f7670ad12dc3d4672f7d9"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "verification/test_random_regression.py",
+        "passed": true,
+        "content_hash": "sha256:05e6543e2c9be2854ffe15ce314aa56064c71d86fd3b8f8c8af3f7bc7fa0ba35"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "verification/test_uio_pad_resolution.py",
+        "passed": true,
+        "content_hash": "sha256:d362a1c8409642c919b48a76061b1823db0c6de6ada494f3a97160609e40a5de"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "verification/test_uio_pads.py",
+        "passed": true,
+        "content_hash": "sha256:675cba03e64525af6d23a763cf223c7abf77a8b09a0ca05016ebab5a1390064b"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "verification/test_ws2812_model.py",
+        "passed": true,
+        "content_hash": "sha256:3d79bab188e250aa7f637bef7ee2af572afd03fc16afaa5eb29d9d1385ffd965"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "verification/uart_boot_host.py",
+        "passed": true,
+        "content_hash": "sha256:58f5457cd5b7f1e997540b5295492acc96caf94ab61f7f3b1d2c204ffb3ae644"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "verification/uio_pad_mutants.py",
+        "passed": true,
+        "content_hash": "sha256:95ee16bbed34405bd56e3e7d81d3576ac0845fe8d5447ddb2ecc3855debac354"
+      },
+      {
+        "check": "command",
+        "role": "cold_start",
+        "argv": [
+          "scripts/run-rtl-benches.sh"
+        ],
+        "cwd": ".",
+        "exit_status": 0,
+        "passed": true,
+        "local_only": true
+      },
+      {
+        "check": "pin",
+        "role": "pdk",
+        "passed": true,
+        "value": {
+          "name": "ihp-sg13cmos5l",
+          "revision": "2bbec755dc67"
+        }
+      },
+      {
+        "check": "pin",
+        "role": "tools",
+        "passed": true,
+        "value": {
+          "cocotb": "2.1.0",
+          "cocotb-tools": "0.1.0",
+          "iverilog": "12.0",
+          "klt": "0.8.0",
+          "yosys": "0.68"
+        }
+      }
+    ]
+  },
   "provenance": {
     "klt_version": "0.8.0",
-    "klayout_version": "0.30.12",
+    "klayout_version": null,
     "pdk": null,
     "deck": null,
     "input": {
-      "content_hash": "sha256:82a7313e936901f32a8aea48b9201e33a1eaa4202d8bd1c23555774d33da5539",
-      "path": "testbenches.txt"
+      "path": {
+        "path": "manifests/attest/item9.json",
+        "scope": "repo"
+      },
+      "content_hash": "sha256:70d44f17d34881c742d237927c531eeda5661c77f64a0001b08eb98c291be9a1"
     }
   }
 }

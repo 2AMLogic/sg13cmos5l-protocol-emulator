@@ -3,16 +3,163 @@
   "kind": "generic",
   "status": "pass",
   "t1_item": 1,
-  "summary": "Design sources (Digital): the committed RTL under src/ and rtl/, the boot-ROM generator chain, the klt/Yosys synthesis request, and the two derived gate-level netlists of record (klt/Yosys: librelane-gds-signoff-check 20261011-144308-e5a0bae; LibreLane post-route: gds run 38136727636 at 6dd0e9d), each listed with its sha256. Audited 2026-10-10 against main 5669077 for issue #83; refreshed for issue #139 (the 223-word UART-load boot ROM) and for issue #208 (DR 0015's P1 and P2), and here for the merged design of both (PR #212). Refreshed for issue #137 (the load-phase CRC readout on uo_out). Refreshed for issue #211 (the 232-word boot ROM with the UART frame's count-complement check). Refreshed for issues #244 and #246 (DR 0020: an open-drain pin's pad data is tied to 0 in the top; five LibreLane timing-repair keys in src/config.json).",
-  "source": "manifests/evidence/design-sources.txt",
+  "summary": "T1 item 1 (Design sources): 17/17 attestation checks passed (klt signoff --attest)",
+  "source": "manifests/attest/item1.json",
+  "attestation": {
+    "producer": "klt signoff --attest",
+    "inventory_schema_version": 1,
+    "hash_algorithm": "sha256-raw-bytes",
+    "check_count": 17,
+    "passed_count": 17,
+    "checks": [
+      {
+        "check": "present",
+        "role": "source",
+        "path": "firmware/asm/boot/boot_rom.asm",
+        "passed": true,
+        "content_hash": "sha256:1cd4580ce27f2a36846fd3475dbf192acf79d8c8999c9584e5a4627e3b881935"
+      },
+      {
+        "check": "present",
+        "role": "source",
+        "path": "firmware/build/boot/boot_rom.hex",
+        "passed": true,
+        "content_hash": "sha256:5d5fc8a5c52577476563329c9bf9014ee5c0e2cf87eca33af32fc64edf1d1ab1"
+      },
+      {
+        "check": "present",
+        "role": "source",
+        "path": "flow/blackbox-RM_IHPSG13_1P_256x16_c2_bm_bist.v",
+        "passed": true,
+        "content_hash": "sha256:f6db947091f94805d4e178cf31cbaa2d185bed36d4747ad165c34c592e07ac6f"
+      },
+      {
+        "check": "present",
+        "role": "source",
+        "path": "flow/synthesize-protocol-emulator.json",
+        "passed": true,
+        "content_hash": "sha256:e62454e3eb50689dfc4d4ef9b7012de44633e661b3841be4c46137c93511885d"
+      },
+      {
+        "check": "present",
+        "role": "source",
+        "path": "info.yaml",
+        "passed": true,
+        "content_hash": "sha256:a71a51a59df1e1a2cf2efb73cf6881a4af606b59f4347ad5d584ec87da750b4a"
+      },
+      {
+        "check": "present",
+        "role": "source",
+        "path": "rtl/protocol_boot_rom.v",
+        "passed": true,
+        "content_hash": "sha256:329ed189d457010b259349e5d59e36db09d67422b4909320253929c3e0fdbebe"
+      },
+      {
+        "check": "present",
+        "role": "source",
+        "path": "rtl/protocol_core.v",
+        "passed": true,
+        "content_hash": "sha256:d4bab243a80af56a41b8ef730bc0ecbee889f2c02f4587311d6f9f694636437a"
+      },
+      {
+        "check": "present",
+        "role": "source",
+        "path": "rtl/protocol_program_memory.v",
+        "passed": true,
+        "content_hash": "sha256:2b08865ab24d6bac84b390dfa76bab6686b572ba8f19124130bfc34e93dff637"
+      },
+      {
+        "check": "present",
+        "role": "source",
+        "path": "rtl/vendor/RM_IHPSG13_1P_256x16_c2_bm_bist.v",
+        "passed": true,
+        "content_hash": "sha256:9d456840a37dff650ee6a09dc1f3d4e2d8d3348fcea7dc305933dd4543feff1a"
+      },
+      {
+        "check": "present",
+        "role": "source",
+        "path": "rtl/vendor/RM_IHPSG13_1P_core_behavioral_bm_bist.v",
+        "passed": true,
+        "content_hash": "sha256:e2e43ec0159cbc34662fe91114e8cb03a697a2a829ad63b0d4f06631908ea787"
+      },
+      {
+        "check": "present",
+        "role": "source",
+        "path": "src/config.json",
+        "passed": true,
+        "content_hash": "sha256:199d85202619655bfb526e59ef8b308b3de57755a951c4085e346c51b493ffe7"
+      },
+      {
+        "check": "present",
+        "role": "source",
+        "path": "src/pdn_cfg.tcl",
+        "passed": true,
+        "content_hash": "sha256:147f4b08456e2f57a3673b92a65e3af4b214f498146dbba6ca3228c06614bc8d"
+      },
+      {
+        "check": "present",
+        "role": "source",
+        "path": "src/tt_um_2amlogic_protocol_emulator.v",
+        "passed": true,
+        "content_hash": "sha256:8c380b9165a09a60e6be8d8546eac360a733317253f152c15faaa13489e94a29"
+      },
+      {
+        "check": "present",
+        "role": "derived",
+        "path": "verification/records/librelane-gds-signoff-check/artifacts/20261011-144308-e5a0bae/reference-asrouted.v",
+        "passed": true,
+        "content_hash": "sha256:fbc7bc30a4987aaa47ea2633df46993ebe1ee42171edc54173e25ff343e085ba"
+      },
+      {
+        "check": "present",
+        "role": "derived",
+        "path": "verification/records/librelane-gds-signoff-check/artifacts/20261011-144308-e5a0bae/reference-klt-yosys.v",
+        "passed": true,
+        "content_hash": "sha256:7c9c4611974c554c738840692e3d4f7c0bac82f3bd649eb70545f62306add2ed"
+      },
+      {
+        "check": "command",
+        "role": "freshness",
+        "target": "verification/records/librelane-gds-signoff-check/artifacts/20261011-144308-e5a0bae/reference-asrouted.v",
+        "generator": "LibreLane (gds workflow, TinyTapeout/tt-gds-action@ihp-cmos5l)",
+        "argv": [
+          "python3",
+          "scripts/check_evidence_inventories.py",
+          "--inventory",
+          "design-sources.txt"
+        ],
+        "cwd": ".",
+        "exit_status": 0,
+        "passed": true
+      },
+      {
+        "check": "command",
+        "role": "freshness",
+        "target": "verification/records/librelane-gds-signoff-check/artifacts/20261011-144308-e5a0bae/reference-klt-yosys.v",
+        "generator": "klt synthesize flow/synthesize-protocol-emulator.json",
+        "argv": [
+          "python3",
+          "scripts/check_evidence_inventories.py",
+          "--inventory",
+          "design-sources.txt"
+        ],
+        "cwd": ".",
+        "exit_status": 0,
+        "passed": true
+      }
+    ]
+  },
   "provenance": {
-    "klt_version": "0.7.0",
-    "klayout_version": "0.30.12",
+    "klt_version": "0.8.0",
+    "klayout_version": null,
     "pdk": null,
     "deck": null,
     "input": {
-      "content_hash": "sha256:28cd062da1b590127bc6904c782323af9e9f7a31a7ab7d44baed14b2907b3423",
-      "path": "design-sources.txt"
+      "path": {
+        "path": "manifests/attest/item1.json",
+        "scope": "repo"
+      },
+      "content_hash": "sha256:ae4afb9eba3be835a8f8a433619e575a42d436eaca2f7cf9952788a76dc3b407"
     }
   }
 }

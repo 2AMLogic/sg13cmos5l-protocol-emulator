@@ -125,6 +125,24 @@ jobs:
       - name: Assert the provisioned klt is the pinned release
         run: test "$(klt --version)" = "klt 0.8.0"
 
+      # T1 items 1, 9 and 10 are tool-attested (issue #361): each committed
+      # envelope under manifests/evidence/ is re-produced from its inventory
+      # under manifests/attest/ by `klt signoff --attest N --check`, which
+      # fails on any change to the inventory, to an inventoried file's bytes
+      # or to a check's outcome. Commands marked "local_only" in an inventory
+      # (they need iverilog, or are `npm run lint`) are listed as [SKIP] here
+      # with their committed outcome carried through; the rtl-benches and
+      # records jobs run those same commands. Runs before the tier re-render
+      # so a drifted attestation is named as such, not as a changed verdict.
+      - name: Re-attest T1 item 1 (design sources)
+        run: klt signoff --attest 1 --inventory manifests/attest/item1.json --check manifests/evidence/design-sources.json
+
+      - name: Re-attest T1 item 9 (testbenches shipped)
+        run: klt signoff --attest 9 --inventory manifests/attest/item9.json --check manifests/evidence/testbenches.json
+
+      - name: Re-attest T1 item 10 (repo hygiene)
+        run: klt signoff --attest 10 --inventory manifests/attest/item10.json --check manifests/evidence/hygiene.json
+
       - name: Re-render the tier report and compare with the committed record
         run: scripts/signoff-report.sh --check-latest
 

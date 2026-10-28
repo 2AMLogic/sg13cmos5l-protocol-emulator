@@ -407,6 +407,15 @@ capture, PVT corner sweeps, or Monte Carlo.
   `v0.8.0`, so it is not in this pin; `ORD-2013` was re-observed at `0.8.0`.
   Baselines: `signoff-baseline` `20261027-190041-1ec5186` to
   `20261027-190048-1ec5186` (one per live head), **4 of 11**.
+- **2026-10-28 (issue #361): items 1, 9 and 10 move onto `klt signoff
+  --attest` envelopes; no verdict changes.** The three hand-written
+  `kind: generic` envelopes (two still stamped `klt_version` `0.7.0`) are
+  replaced by tool-produced ones from `manifests/attest/item{1,9,10}.json`
+  (17, 98 and 15 checks, all passed), each citing the inventory as its input
+  and carrying `artifact_binding.attestation`. The pins of items 1, 9 and 10
+  are the inventories' hashes. The `signoff` CI job re-attests each before the
+  tier re-render. Baselines: `signoff-baseline` `20261028-183910-18198b7` to
+  `20261028-183917-18198b7` (one per live head), still **4 of 11**.
 - **Every citation pins a `content_hash`**, and what it is the hash of
   depends on the cited envelope (clarified 2026-10-10, issue #168; the
   manifests on `main` have always followed this, the sentence here did
@@ -531,6 +540,32 @@ checks that each envelope, its artifact and the manifest pin agree.
 sections and bench lines), not bytes, so a routine README or bench edit does
 not force a re-mint; `design-sources.txt` and the GDS binding pin bytes,
 because "regenerated on design change" is what items 1 and 2 claim.
+
+**Attested envelopes for items 1, 9 and 10 (issue #361).** The envelopes
+`design-sources.json`, `testbenches.json` and `hygiene.json` are produced by
+`klt signoff --attest N --inventory manifests/attest/itemN.json -o
+manifests/evidence/<name>.json` (klt `0.8.0`, `attestation.producer: "klt
+signoff --attest"`), not written by hand. The inventories name the files
+(`sources`, `testbenches`, `hygiene`) and the commands that must exit 0; the
+`.txt` lists stay as the audit prose and as the byte pins, and the attested
+`derived[].check` / `checks[]` commands invoke
+`scripts/check_evidence_inventories.py --inventory <name>.txt`. The manifest
+pin for each of these items is the envelope's `provenance.input.content_hash`,
+i.e. the hash of the inventory, so editing an inventory needs a re-mint.
+CI's `signoff` job runs `klt signoff --attest N --inventory ... --check
+manifests/evidence/<name>.json` for N in 1, 9, 10 before the tier re-render; it
+fails on a change to an inventory, to an inventoried file's bytes (the per-file
+hashes are in the envelope) or to a command's outcome. Commands marked
+`local_only` (the bench cold start needs iverilog; `npm run lint`) are listed
+as `[SKIP]` there with their committed outcome carried through, and run in the
+`rtl-benches` and `records` jobs. Two traps when re-minting: (1) a `klt
+signoff --attest` path may not traverse a symlink, so item 1 names the
+`rtl/` targets, not the `src/protocol_*.v` links; (2) the `lint` check fails on
+any tree whose `signoff-baseline` record is stale (that record cites the item
+10 envelope), so re-mint item 10 FIRST, on a tree whose baseline still holds,
+then items 1 and 9, the manifest pins, and last the baseline record. Item 1's
+derived-netlist freshness is the sha256 pin, not a re-synthesis compare (not
+byte-stable across Yosys versions, `layout/toolchain.json` 2026-10-12).
 
 **Refreshing after a design change** (all in the PR that changes the design):
 mint the new synthesis and `librelane-gds-signoff-check` records (as

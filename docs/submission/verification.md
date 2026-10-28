@@ -259,7 +259,7 @@ and the header of `flow/run-post-layout-sdf.sh`:
   compare against the run's own post-route netlist is `match`
   ([librelane-gds-signoff-check 20261027-190021](../../verification/records/librelane-gds-signoff-check/records/20261027-190021-1ec5186.md)).
 - The T1 verdict of record is `tier: null`, **4 of 11 items met** (items 1, 2, 9, 10; item 3 moved from met to unmet with the klt `0.8.0` bump)
-  ([signoff-baseline 20261027-190047](../../verification/records/signoff-baseline/records/20261027-190047-1ec5186.md)).
+  ([signoff-baseline 20261028-183916](../../verification/records/signoff-baseline/records/20261028-183916-18198b7.md)).
   This document does not move that.
 - The template's `gl_test` job checks results with `! grep failure results.xml`
   on the `ihp-cmos5l` branch, which would not match an `<error>` element. The

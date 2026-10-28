@@ -3,16 +3,156 @@
   "kind": "generic",
   "status": "pass",
   "t1_item": 10,
-  "summary": "Repo hygiene: README sections (what the block is, the spec table link, how to reproduce every result), the Apache-2.0 LICENSE, and the CI jobs that keep the records, harness and evidence formats valid. Audited 2026-10-10, issue #83.",
-  "source": "manifests/evidence/hygiene.txt",
+  "summary": "T1 item 10 (Repo hygiene): 15/15 attestation checks passed (klt signoff --attest)",
+  "source": "manifests/attest/item10.json",
+  "attestation": {
+    "producer": "klt signoff --attest",
+    "inventory_schema_version": 1,
+    "hash_algorithm": "sha256-raw-bytes",
+    "check_count": 15,
+    "passed_count": 15,
+    "checks": [
+      {
+        "check": "present",
+        "role": "hygiene",
+        "path": ".github/workflows/ci.yml",
+        "passed": true,
+        "content_hash": "sha256:3a5f21df6ef12cc9609abf0d91e20e0fd28743576b29454aea58cc497a038d14"
+      },
+      {
+        "check": "present",
+        "role": "hygiene",
+        "path": ".github/workflows/gds.yaml",
+        "passed": true,
+        "content_hash": "sha256:c17fca9a3cac2d7da4d7cd395423735de05b7bd9c1f7c8a9dfdf56ff19a1175d"
+      },
+      {
+        "check": "present",
+        "role": "hygiene",
+        "path": ".github/workflows/test.yaml",
+        "passed": true,
+        "content_hash": "sha256:d613b0024972cc2fd6405a32eec8a275f1accd3b0532833a18905fce2dbb277c"
+      },
+      {
+        "check": "present",
+        "role": "hygiene",
+        "path": "LICENSE",
+        "passed": true,
+        "content_hash": "sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+      },
+      {
+        "check": "present",
+        "role": "hygiene",
+        "path": "README.md",
+        "passed": true,
+        "content_hash": "sha256:07022faf8e85d9da1beb297863f0a0c6981b2eede0b84f208c5598f25c89b027"
+      },
+      {
+        "check": "present",
+        "role": "hygiene",
+        "path": "docs/environment.md",
+        "passed": true,
+        "content_hash": "sha256:dc52dbc66bf7c665e42d82a17212f72cff6b9ce55c4753e1ddfd0d7f53dc940c"
+      },
+      {
+        "check": "present",
+        "role": "hygiene",
+        "path": "manifests/evidence/design-sources.txt",
+        "passed": true,
+        "content_hash": "sha256:28cd062da1b590127bc6904c782323af9e9f7a31a7ab7d44baed14b2907b3423"
+      },
+      {
+        "check": "present",
+        "role": "hygiene",
+        "path": "manifests/evidence/hygiene.txt",
+        "passed": true,
+        "content_hash": "sha256:df6f2b9221feeda4f5577acfa9714289429b0d0e562ac43579faf75f8756b229"
+      },
+      {
+        "check": "present",
+        "role": "hygiene",
+        "path": "manifests/evidence/testbenches.txt",
+        "passed": true,
+        "content_hash": "sha256:82a7313e936901f32a8aea48b9201e33a1eaa4202d8bd1c23555774d33da5539"
+      },
+      {
+        "check": "present",
+        "role": "hygiene",
+        "path": "scripts/check_evidence_inventories.py",
+        "passed": true,
+        "content_hash": "sha256:699bc6ad2490f73a3551ffe61b7ffddcda882f01f90162f5455ac70aa4f6fbb8"
+      },
+      {
+        "check": "present",
+        "role": "hygiene",
+        "path": "spec/target-spec.md",
+        "passed": true,
+        "content_hash": "sha256:cdf25c9d142e1f8f1fa49420c8fe8646407bae61f6115ca791a1f6f553858616"
+      },
+      {
+        "check": "present",
+        "role": "hygiene",
+        "path": "verification/check_records.py",
+        "passed": true,
+        "content_hash": "sha256:b21944fd274fe1c772aeca6becd8accf4922cd2bbfc3f6b74773789a02a4ba2a"
+      },
+      {
+        "check": "command",
+        "role": "audit",
+        "name": "evidence-inventories",
+        "argv": [
+          "python3",
+          "scripts/check_evidence_inventories.py",
+          "--inventory",
+          "design-sources.txt",
+          "--inventory",
+          "testbenches.txt",
+          "--inventory",
+          "hygiene.txt"
+        ],
+        "cwd": ".",
+        "exit_status": 0,
+        "passed": true
+      },
+      {
+        "check": "command",
+        "role": "audit",
+        "name": "firmware-fresh",
+        "argv": [
+          "python3",
+          "firmware/tools/check_firmware.py"
+        ],
+        "cwd": ".",
+        "exit_status": 0,
+        "passed": true
+      },
+      {
+        "check": "command",
+        "role": "audit",
+        "name": "lint",
+        "argv": [
+          "npm",
+          "run",
+          "lint"
+        ],
+        "cwd": ".",
+        "exit_status": 0,
+        "passed": true,
+        "local_only": true
+      }
+    ]
+  },
   "provenance": {
-    "klt_version": "0.7.0",
-    "klayout_version": "0.30.12",
+    "klt_version": "0.8.0",
+    "klayout_version": null,
     "pdk": null,
     "deck": null,
     "input": {
-      "content_hash": "sha256:df6f2b9221feeda4f5577acfa9714289429b0d0e562ac43579faf75f8756b229",
-      "path": "hygiene.txt"
+      "path": {
+        "path": "manifests/attest/item10.json",
+        "scope": "repo"
+      },
+      "content_hash": "sha256:44d194601d68b448aef6e4ca3e2e69cc436f78a15336281965d0c3e432f961c6"
     }
   }
 }
