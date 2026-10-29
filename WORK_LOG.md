@@ -2,6 +2,16 @@
 
 Chronological record of merged pull requests and closed issues, newest first.
 
+### 2026-10-29
+
+- **PR #366**: records: reproduce SRAM-macro DRC findings on the bare macro
+- **PR #362**: docs: classify SRAM-macro DRC findings, propose waiver options
+
+### 2026-10-28
+
+- **PR #363**: feat: attest T1 items 1, 9, 10 with klt signoff --attest inventories
+- **Issue #361** (closed): T1 grading: attest items 1, 9, 10 with klt signoff --attest instead of hand-written text-list envelopes
+
 ### 2026-10-27
 
 - **PR #357**: build: pin klayout-tools to release 0.8.0 and re-mint evidence (item 3 now unmet)
