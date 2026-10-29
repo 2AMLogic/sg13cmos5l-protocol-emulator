@@ -43,3 +43,17 @@ against a foundry rule document remains **undetermined**.
 Option 2 now, option 1 if the owner accepts foundry sign-off of the macro as the
 basis (and the deadline, 2027-01-18, nears without an upstream answer). Nothing
 is decided or applied by this record.
+
+## Update 2026-10-29: operator ruling (klayout-tools#4530)
+
+The operator ruled on 2026-10-28 that DRC violations inside unmodified foundry
+cells are a **disclosed T1 item-3 exception** when they reproduce on the bare
+cell, are pinned to the cell's content hash with their rules and counts, and are
+disclosed in the claim. Option 1 above is therefore replaced by that rule: no
+per-block waiver file and no per-block decision are needed. Condition 1 is
+measured in record `20261029-041827-063c7fd`: the bare macro alone reports the
+same 4,352 `nwell.enclosing.pactiv.1` and 132 `nwell.space.2` findings, and its
+geometry digest is identical bare and in the block. Grading it mechanically is
+blocked on klayout-tools#4582 (the grader rejects sub-cell attribution) and on a
+klt release carrying the exception grading; until then item 3 stays `unmet` and
+the manifest is not re-pointed. Options 2 and 3 are not pursued.
