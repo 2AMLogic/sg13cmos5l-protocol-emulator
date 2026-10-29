@@ -14,9 +14,14 @@ foundry SRAM macro `RM_IHPSG13_1P_256x16_c2_bm_bist` (4,352
 `nwell.enclosing.pactiv.1` in the bit-cell sub-cells, 132 `nwell.space.2` in the
 matrix/column sub-cells), none in logic or routing. Record
 `verification/records/librelane-gds-signoff-check/records/20261028-182000-18198b7.md`
-classifies them: the PDK's own KLayout runset reports 0 on the same GDS but
-implements only `NW.b1` (the counterpart of `nwell.space.2`) and has no
-counterpart for the enclosure rule, so real-vs-artifact is **undetermined**.
+classifies them. Every finding lies fully inside the macro's SRAM marker layer
+(25/0). The PDK's own KLayout runset (pinned PDK `2bbec755dc67`, KLayout 0.30.12)
+reports 0 on the same GDS for both rules, but for the enclosure rule (`NW.c`, in
+the PDK's `sg13cmos5l_maximal.drc`) it checks NWell *minus* the SRAM marker, a
+scoping the klt deck does not apply, so the 4,352 enclosure findings are a
+deck-scoping difference. The 132 `nwell.space.2` findings (runset `NW.b1`, no
+SRAM scoping) are an unexplained klt-vs-runset disagreement. Real-vs-artifact
+against a foundry rule document remains **undetermined**.
 
 ## Options (owner's choice; none is applied here)
 
