@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "entries": [
+    {
+      "sha256": "41619cc07f4271c8e61f2130d375123fc142d0ed5463a11dd61bd4052bcc7c8a",
+      "size": 3762762,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.8.1.dev683+g0800ae9f6496",
+        "loom.repo": "2AMLogic/sg13cmos5l-protocol-emulator",
+        "commit": "063c7fd8870d5d7be6a94976d4888cb5f6ac774f"
+      },
+      "uri": "artifact:evidence/2AMLogic__sg13cmos5l-protocol-emulator/41/41619cc07f4271c8e61f2130d375123fc142d0ed5463a11dd61bd4052bcc7c8a",
+      "name": "verification/.artifact-scratch/20261029-041827-063c7fd/klt-drc-bare-macro.json",
+      "media_type": "application/json"
+    },
+    {
+      "sha256": "3730ee4d098c53592430e52175dd50fcf83302def280be3434208812765fa59f",
+      "size": 3993605,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.8.1.dev683+g0800ae9f6496",
+        "loom.repo": "2AMLogic/sg13cmos5l-protocol-emulator",
+        "commit": "063c7fd8870d5d7be6a94976d4888cb5f6ac774f"
+      },
+      "uri": "artifact:evidence/2AMLogic__sg13cmos5l-protocol-emulator/37/3730ee4d098c53592430e52175dd50fcf83302def280be3434208812765fa59f",
+      "name": "verification/.artifact-scratch/20261029-041827-063c7fd/klt-drc-block.json",
+      "media_type": "application/json"
+    }
+  ]
+}
