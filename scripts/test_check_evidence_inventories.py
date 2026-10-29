@@ -72,9 +72,12 @@ def build(root: Path) -> None:
     bind(root, 9, "manifests/evidence/testbenches.txt", "testbenches.json")
 
 
+ARGS: list[str] = []
+
+
 def run(root: Path) -> tuple[int, str]:
     p = subprocess.run(
-        [sys.executable, str(CHECKER), "--repo-root", str(root)],
+        [sys.executable, str(CHECKER), "--repo-root", str(root), *ARGS],
         capture_output=True, text=True,
     )
     return p.returncode, p.stdout + p.stderr
@@ -128,8 +131,25 @@ CASES = [
 ]
 
 
+# The restricted run (`--inventory NAME`, issue #361) is what the klt
+# attestation inventories invoke: it checks the named .txt only, so a stale
+# envelope/manifest pin (which the attestation is about to refresh) must not
+# fail it, while an edited listed file still must.
+RESTRICTED = [
+    ("restricted run passes on a clean tree", lambda r: None, 0, "restricted run"),
+    ("restricted run ignores a stale envelope", edit_inventory, 0, "restricted run"),
+    ("restricted run still catches an edited file", lambda r: write(r, "rtl/core.v", "module core2; endmodule\n"), 1, "`rtl/core.v` changed"),
+    ("restricted run on an unknown inventory", lambda r: None, 1, "no such inventory"),
+]
+
+
 def main() -> int:
     results = [case(*c) for c in CASES]
+    ARGS[:] = ["--inventory", "testbenches.txt"]
+    results += [case(*c) for c in RESTRICTED[:3]]
+    ARGS[:] = ["--inventory", "nope.txt"]
+    results += [case(*c) for c in RESTRICTED[3:]]
+    ARGS[:] = []
     print(f"{sum(results)}/{len(results)} cases as specified")
     return 0 if all(results) else 1
 

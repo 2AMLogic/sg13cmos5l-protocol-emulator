@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "kind": "t1-attestation-inventory",
+  "t1_item": 1,
+  "description": "T1 item 1 (Design sources). sources: the committed RTL (rtl/ targets: klt refuses paths through the src/protocol_*.v symlinks, whose targets these are), the boot-ROM generator chain, the klt/Yosys request, the LibreLane configuration and the PDK black-box/vendored SRAM models. derived: the two gate-level netlists of record. Their freshness check is the sha256 pin in manifests/evidence/design-sources.txt, verified by scripts/check_evidence_inventories.py --inventory design-sources.txt (a re-synthesis compare is not byte-stable across Yosys versions, layout/toolchain.json 2026-10-12). The .txt keeps the audit prose; firmware/tools/check_firmware.py (CI records job) checks the boot-ROM chain link by link.",
+  "sources": [
+    "src/tt_um_2amlogic_protocol_emulator.v",
+    "rtl/protocol_core.v",
+    "rtl/protocol_program_memory.v",
+    "rtl/protocol_boot_rom.v",
+    "firmware/asm/boot/boot_rom.asm",
+    "firmware/build/boot/boot_rom.hex",
+    "flow/blackbox-RM_IHPSG13_1P_256x16_c2_bm_bist.v",
+    "rtl/vendor/RM_IHPSG13_1P_256x16_c2_bm_bist.v",
+    "rtl/vendor/RM_IHPSG13_1P_core_behavioral_bm_bist.v",
+    "flow/synthesize-protocol-emulator.json",
+    "src/config.json",
+    "info.yaml",
+    "src/pdn_cfg.tcl"
+  ],
+  "derived": [
+    {
+      "path": "verification/records/librelane-gds-signoff-check/artifacts/20261011-144308-e5a0bae/reference-klt-yosys.v",
+      "generator": "klt synthesize flow/synthesize-protocol-emulator.json",
+      "check": {
+        "argv": [
+          "python3",
+          "scripts/check_evidence_inventories.py",
+          "--inventory",
+          "design-sources.txt"
+        ]
+      }
+    },
+    {
+      "path": "verification/records/librelane-gds-signoff-check/artifacts/20261011-144308-e5a0bae/reference-asrouted.v",
+      "generator": "LibreLane (gds workflow, TinyTapeout/tt-gds-action@ihp-cmos5l)",
+      "check": {
+        "argv": [
+          "python3",
+          "scripts/check_evidence_inventories.py",
+          "--inventory",
+          "design-sources.txt"
+        ]
+      }
+    }
+  ]
+}

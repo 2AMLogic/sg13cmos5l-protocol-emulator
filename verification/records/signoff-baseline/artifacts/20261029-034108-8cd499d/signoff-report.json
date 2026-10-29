@@ -33,16 +33,25 @@
         "command": null,
         "kind": "generic",
         "check_status": "pass",
-        "content_hash": "sha256:28cd062da1b590127bc6904c782323af9e9f7a31a7ab7d44baed14b2907b3423",
+        "content_hash": "sha256:ae4afb9eba3be835a8f8a433619e575a42d436eaca2f7cf9952788a76dc3b407",
         "input_verified": true,
         "exit_status": 0,
         "artifact_binding": {
           "t1_item": 1,
-          "path": "design-sources.txt",
-          "content_hash": "sha256:28cd062da1b590127bc6904c782323af9e9f7a31a7ab7d44baed14b2907b3423",
+          "path": {
+            "path": "manifests/attest/item1.json",
+            "scope": "repo"
+          },
+          "content_hash": "sha256:ae4afb9eba3be835a8f8a433619e575a42d436eaca2f7cf9952788a76dc3b407",
           "input_verified": true,
-          "summary": "Design sources (Digital): the committed RTL under src/ and rtl/, the boot-ROM generator chain, the klt/Yosys synthesis request, and the two derived gate-level netlists of record (klt/Yosys: librelane-gds-signoff-check 20261011-144308-e5a0bae; LibreLane post-route: gds run 38136727636 at 6dd0e9d), each listed with its sha256. Audited 2026-10-10 against main 5669077 for issue #83; refreshed for issue #139 (the 223-word UART-load boot ROM) and for issue #208 (DR 0015's P1 and P2), and here for the merged design of both (PR #212). Refreshed for issue #137 (the load-phase CRC readout on uo_out). Refreshed for issue #211 (the 232-word boot ROM with the UART frame's count-complement check). Refreshed for issues #244 and #246 (DR 0020: an open-drain pin's pad data is tied to 0 in the top; five LibreLane timing-repair keys in src/config.json).",
-          "source": "manifests/evidence/design-sources.txt"
+          "summary": "T1 item 1 (Design sources): 17/17 attestation checks passed (klt signoff --attest)",
+          "source": "manifests/attest/item1.json",
+          "attestation": {
+            "producer": "klt signoff --attest",
+            "inventory_schema_version": 1,
+            "check_count": 17,
+            "passed_count": 17
+          }
         }
       }
     },
@@ -181,16 +190,25 @@
         "command": null,
         "kind": "generic",
         "check_status": "pass",
-        "content_hash": "sha256:82a7313e936901f32a8aea48b9201e33a1eaa4202d8bd1c23555774d33da5539",
+        "content_hash": "sha256:70d44f17d34881c742d237927c531eeda5661c77f64a0001b08eb98c291be9a1",
         "input_verified": true,
         "exit_status": 0,
         "artifact_binding": {
           "t1_item": 9,
-          "path": "testbenches.txt",
-          "content_hash": "sha256:82a7313e936901f32a8aea48b9201e33a1eaa4202d8bd1c23555774d33da5539",
+          "path": {
+            "path": "manifests/attest/item9.json",
+            "scope": "repo"
+          },
+          "content_hash": "sha256:70d44f17d34881c742d237927c531eeda5661c77f64a0001b08eb98c291be9a1",
           "input_verified": true,
-          "summary": "Testbenches shipped: every evidence directory under verification/records/ and every measured target-spec row is mapped to its committed bench and cold-start command, with the klt pin, cocotb pin, PDK revision (IHP-Open-PDK 2bbec755) and formal toolchain pin; rows with no measurement say so. Audited 2026-10-10 at klt v0.7.0, issue #83. Refreshed for issue #137 (the load-integrity bench). Refreshed for issue #141 (the row-13 WS2812 bench). Refreshed for issue #235 (the row-13 stretch PS/2 bench). Refreshed for issue #211 (the count-alias bench now asserts rejection; the gate-level netlist of gds run 38108543866). Refreshed for issues #244 and #246 (the gate-level lines name the netlist of gds run 38136727636; the control-space bench has the open-drain pad-data test; the SDF line names the protocol suite). Refreshed for issue #258 (the I2C ACK-schedule bench and its mutant runner on the firmware-i2c line). Refreshed for issue #259 (the i2c-ack-window formal experiment: ACK-window property, runner and records). Refreshed for issue #350 (the librelane-erc experiment: klt erc supply spec on the LibreLane GDS). Refreshed for issue #356 (the klt pin moves to the PyPI release klayout-tools==0.8.0; the inventory comment naming the pin is updated, nothing else).",
-          "source": "manifests/evidence/testbenches.txt"
+          "summary": "T1 item 9 (Testbenches shipped): 98/98 attestation checks passed (klt signoff --attest)",
+          "source": "manifests/attest/item9.json",
+          "attestation": {
+            "producer": "klt signoff --attest",
+            "inventory_schema_version": 1,
+            "check_count": 98,
+            "passed_count": 98
+          }
         }
       }
     },
@@ -209,16 +227,25 @@
         "command": null,
         "kind": "generic",
         "check_status": "pass",
-        "content_hash": "sha256:df6f2b9221feeda4f5577acfa9714289429b0d0e562ac43579faf75f8756b229",
+        "content_hash": "sha256:44d194601d68b448aef6e4ca3e2e69cc436f78a15336281965d0c3e432f961c6",
         "input_verified": true,
         "exit_status": 0,
         "artifact_binding": {
           "t1_item": 10,
-          "path": "hygiene.txt",
-          "content_hash": "sha256:df6f2b9221feeda4f5577acfa9714289429b0d0e562ac43579faf75f8756b229",
+          "path": {
+            "path": "manifests/attest/item10.json",
+            "scope": "repo"
+          },
+          "content_hash": "sha256:44d194601d68b448aef6e4ca3e2e69cc436f78a15336281965d0c3e432f961c6",
           "input_verified": true,
-          "summary": "Repo hygiene: README sections (what the block is, the spec table link, how to reproduce every result), the Apache-2.0 LICENSE, and the CI jobs that keep the records, harness and evidence formats valid. Audited 2026-10-10, issue #83.",
-          "source": "manifests/evidence/hygiene.txt"
+          "summary": "T1 item 10 (Repo hygiene): 15/15 attestation checks passed (klt signoff --attest)",
+          "source": "manifests/attest/item10.json",
+          "attestation": {
+            "producer": "klt signoff --attest",
+            "inventory_schema_version": 1,
+            "check_count": 15,
+            "passed_count": 15
+          }
         }
       }
     },
