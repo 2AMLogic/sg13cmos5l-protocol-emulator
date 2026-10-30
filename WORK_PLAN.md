@@ -34,14 +34,12 @@ _None._
 Issues currently being built (`loom:building`).
 
 - **#261**: LibreLane: max-cap on SRAM A_DOUT[5..6] is avoided by placement, not by construction
-- **#360**: T1 item 3 (DRC clean): resolve the 4,484 nwell findings in the SRAM macro under the klt 0.8.0 deck
-- **#361**: T1 grading: attest items 1, 9, 10 with klt signoff --attest instead of hand-written text-list envelopes
 
 ## PRs Awaiting Review
 
 PRs waiting on Judge (`loom:review-requested`).
 
-- **#363**: feat: attest T1 items 1, 9, 10 with klt signoff --attest inventories
+_None._
 
 ## Approved (Awaiting Merge)
 
@@ -63,7 +61,6 @@ Issues carrying `loom:curated`.
 - **#330**: T1 item 7: find and fix why the SDF-annotated regression grades unverifiable_provenance *(curated)*
 - **#348**: T1 item 6 (Monte Carlo): record "not applicable" as a hash-bound statement covering every ratified spec row *(curated)*
 - **#360**: T1 item 3 (DRC clean): resolve the 4,484 nwell findings in the SRAM macro under the klt 0.8.0 deck *(curated)*
-- **#361**: T1 grading: attest items 1, 9, 10 with klt signoff --attest instead of hand-written text-list envelopes *(curated)*
 
 ## Proposed (Architect / Hermit)
 
@@ -81,10 +78,10 @@ _None._
 | Very important | 1 |
 | Important | 3 |
 | Ready (`loom:issue`) | 0 |
-| In Progress (`loom:building`) | 3 |
-| PRs awaiting review | 1 |
+| In Progress (`loom:building`) | 1 |
+| PRs awaiting review | 0 |
 | Approved PRs awaiting merge | 0 |
-| Curated | 11 |
+| Curated | 10 |
 | Architect / Hermit proposals | 1 |
 | Active epics | 0 |
 <!-- guide:plan-body:end -->
