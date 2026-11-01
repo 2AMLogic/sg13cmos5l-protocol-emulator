@@ -45,7 +45,7 @@
         "role": "source",
         "path": "info.yaml",
         "passed": true,
-        "content_hash": "sha256:a71a51a59df1e1a2cf2efb73cf6881a4af606b59f4347ad5d584ec87da750b4a"
+        "content_hash": "sha256:038e3988c7d4eaa54a228ad9d9d94fd998504317e3dc2ba98a9117c63cc44b24"
       },
       {
         "check": "present",
