@@ -7,7 +7,7 @@ This roadmap is generated from the current GitHub label state.
 
 Judge-approved PRs under a hold (`loom:blocked` or `loom:operator`) — only a human merge decision is missing.
 
-_None._
+- **#370**: feat(flow): declare SRAM macro in klt sta sweep and record macro-backed klt result
 
 ## Very Important
 
@@ -33,6 +33,7 @@ _None._
 
 Issues currently being built (`loom:building`).
 
+- **#20**: T1 item 5: no timing evidence exists — both flows reported cell counts only, so >=50 MHz is unconfirmed (need a klt sta corner sweep)
 - **#261**: LibreLane: max-cap on SRAM A_DOUT[5..6] is avoided by placement, not by construction
 
 ## PRs Awaiting Review
@@ -45,7 +46,7 @@ _None._
 
 PRs that passed review and are queued for Champion auto-merge (`loom:pr`).
 
-_None._
+- **#370**: feat(flow): declare SRAM macro in klt sta sweep and record macro-backed klt result
 
 ## Proposed
 
@@ -75,13 +76,13 @@ _None._
 
 | Bucket | Count |
 |------|-------|
-| Operator merge-risk holds | 0 |
+| Operator merge-risk holds | 1 |
 | Very important | 1 |
 | Important | 3 |
 | Ready (`loom:issue`) | 0 |
-| In Progress (`loom:building`) | 1 |
+| In Progress (`loom:building`) | 2 |
 | PRs awaiting review | 0 |
-| Approved PRs awaiting merge | 0 |
+| Approved PRs awaiting merge | 1 |
 | Curated | 11 |
 | Architect / Hermit proposals | 1 |
 | Active epics | 0 |
