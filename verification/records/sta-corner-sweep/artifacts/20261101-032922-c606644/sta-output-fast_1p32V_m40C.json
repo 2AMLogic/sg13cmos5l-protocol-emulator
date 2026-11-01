@@ -1,0 +1,166 @@
+{
+  "schema_version": 2,
+  "engine": "openroad",
+  "engine_version": "26Q3-1510-g6cb3f2b704",
+  "hdl_toplevel": "tt_um_2amlogic_protocol_emulator",
+  "status": "ok",
+  "def_path": null,
+  "verilog_path": {
+    "path": "flow/sta-sweep/tt_um_2amlogic_protocol_emulator_synth.v",
+    "scope": "repo"
+  },
+  "geometry_source": "netlist_estimate",
+  "wire_load_model": "1k",
+  "wire_load_mode": "top",
+  "macros": [
+    {
+      "cell": "RM_IHPSG13_1P_256x16_c2_bm_bist",
+      "lef": "/home/ubuntu/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_sram/lef/RM_IHPSG13_1P_256x16_c2_bm_bist.lef",
+      "lib": {
+        "fast_1p32V_m40C": "/home/ubuntu/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_sram/lib/RM_IHPSG13_1P_256x16_c2_bm_bist_fast_1p32V_m55C.lib",
+        "slow_1p08V_125C": "/home/ubuntu/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_sram/lib/RM_IHPSG13_1P_256x16_c2_bm_bist_slow_1p08V_125C.lib",
+        "typ_1p20V_25C": "/home/ubuntu/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_sram/lib/RM_IHPSG13_1P_256x16_c2_bm_bist_typ_1p20V_25C.lib"
+      },
+      "gds": null,
+      "verilog_blackbox": null
+    }
+  ],
+  "clock_mode": "ideal",
+  "clock_uncertainty": {
+    "applied": false
+  },
+  "spef_path": null,
+  "worst_slack_ns": 13.2755,
+  "total_negative_slack_ns": 0,
+  "worst_hold_slack_ns": -0.08676,
+  "total_negative_hold_slack_ns": -1.18203,
+  "fmax_mhz": 148.709,
+  "timing_status": "constrained",
+  "constraint_completeness": {
+    "status": "incomplete",
+    "unconstrained_endpoints": {
+      "status": "ok",
+      "count": 24,
+      "sample": [
+        "uio_oe[0]",
+        "uio_oe[1]",
+        "uio_oe[2]",
+        "uio_oe[3]",
+        "uio_oe[4]",
+        "uio_oe[5]",
+        "uio_oe[6]",
+        "uio_oe[7]",
+        "uio_out[0]",
+        "uio_out[1]",
+        "uio_out[2]",
+        "uio_out[3]",
+        "uio_out[4]",
+        "uio_out[5]",
+        "uio_out[6]",
+        "uio_out[7]",
+        "uo_out[0]",
+        "uo_out[1]",
+        "uo_out[2]",
+        "uo_out[3]"
+      ],
+      "truncated": true,
+      "reason": null
+    },
+    "unclocked_registers": {
+      "status": "ok",
+      "count": 0,
+      "sample": [],
+      "truncated": false,
+      "reason": null
+    },
+    "sample_limit": 20
+  },
+  "setup_violation_count": 0,
+  "hold_violation_count": 23,
+  "worst_setup_path": {
+    "status": "ok",
+    "check_type": "setup",
+    "engine_check_role": "setup",
+    "startpoint": "u_prog_mem/u_sram/A_DOUT[8]",
+    "endpoint": "u_boot_rom/_1097_/D",
+    "slack_ns": 13.27548,
+    "consistent_with_aggregate": true,
+    "reason": null
+  },
+  "worst_hold_path": {
+    "status": "ok",
+    "check_type": "hold",
+    "engine_check_role": "hold",
+    "startpoint": "u_prog_mem/_383_/Q",
+    "endpoint": "u_prog_mem/u_sram/A_ADDR[7]",
+    "slack_ns": -0.08676,
+    "consistent_with_aggregate": true,
+    "reason": null
+  },
+  "clock_skew_ns": 4e-05,
+  "estimated_power_mw": 2.7889,
+  "power_basis": {
+    "activity_source": "engine_default",
+    "activity": null,
+    "duty": null,
+    "parasitics": "estimate_only"
+  },
+  "provenance": {
+    "klt_version": "0.8.1.dev146+g79bd3956d926",
+    "klayout_version": "0.30.12",
+    "pdk": {
+      "name": "ihp-sg13cmos5l",
+      "source": "PDK_ROOT environment variable",
+      "version": null
+    },
+    "deck": {
+      "name": "sg13cmos5l_stdcell__fast_1p32V_m40C",
+      "content_hash": "sha256:af12d75a72d19648fa690027d29843fbae550aa91f4e40dd3339c7116d6e425d",
+      "released": false,
+      "path": {
+        "path": null,
+        "scope": "external"
+      }
+    },
+    "input": {
+      "content_hash": "sha256:0f9cd5cd474b5961416fdf16a425465ac90bbf983975c712000738434a7bb2fd",
+      "role": "netlist"
+    }
+  },
+  "spef_annotation": null,
+  "clock_propagation": null,
+  "sdf": null,
+  "electrical_checks": null,
+  "engine_log": {
+    "invocation_id": "3e0e1179066845e3ad6c03a608de9b2b",
+    "script_name": "sta_tt_um_2amlogic_protocol_emulator_synth.tcl",
+    "script_path": {
+      "path": "flow/sta-corners/fast_1p32V_m40C/.klt/sta/sta_tt_um_2amlogic_protocol_emulator_synth.tcl",
+      "scope": "repo"
+    },
+    "script_sha256": "e34af5d0aacce44e26c253343cccb38a610396cbcef428308f7ec732bf271dd1",
+    "metrics_path": {
+      "path": "flow/sta-corners/fast_1p32V_m40C/.klt/sta/tt_um_2amlogic_protocol_emulator_synth_metrics.json",
+      "scope": "repo"
+    },
+    "outcome": "exited",
+    "returncode": 0,
+    "directory": {
+      "path": "flow/sta-corners/fast_1p32V_m40C/.klt/sta/openroad-logs/3e0e1179066845e3ad6c03a608de9b2b",
+      "scope": "repo"
+    },
+    "stdout_path": {
+      "path": "flow/sta-corners/fast_1p32V_m40C/.klt/sta/openroad-logs/3e0e1179066845e3ad6c03a608de9b2b/stdout.log",
+      "scope": "repo"
+    },
+    "stderr_path": {
+      "path": "flow/sta-corners/fast_1p32V_m40C/.klt/sta/openroad-logs/3e0e1179066845e3ad6c03a608de9b2b/stderr.log",
+      "scope": "repo"
+    },
+    "metadata_path": {
+      "path": "flow/sta-corners/fast_1p32V_m40C/.klt/sta/openroad-logs/3e0e1179066845e3ad6c03a608de9b2b/invocation.json",
+      "scope": "repo"
+    },
+    "retention_errors": []
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "schema": "klt.sta.request/1",
+  "verilog": "../../sta-sweep/tt_um_2amlogic_protocol_emulator_synth.v",
+  "hdl_toplevel": "tt_um_2amlogic_protocol_emulator",
+  "pdk": {
+    "cell_library": "sg13cmos5l_stdcell",
+    "corner": "typ_1p20V_25C"
+  },
+  "constraints": {
+    "clock_port": "clk",
+    "clock_period_ns": 20.0,
+    "wire_load_model": "1k",
+    "wire_load_mode": "top"
+  },
+  "macros": [
+    {
+      "cell": "RM_IHPSG13_1P_256x16_c2_bm_bist",
+      "lef": "/home/ubuntu/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_sram/lef/RM_IHPSG13_1P_256x16_c2_bm_bist.lef",
+      "lib": {
+        "slow_1p08V_125C": "/home/ubuntu/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_sram/lib/RM_IHPSG13_1P_256x16_c2_bm_bist_slow_1p08V_125C.lib",
+        "typ_1p20V_25C": "/home/ubuntu/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_sram/lib/RM_IHPSG13_1P_256x16_c2_bm_bist_typ_1p20V_25C.lib",
+        "fast_1p32V_m40C": "/home/ubuntu/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_sram/lib/RM_IHPSG13_1P_256x16_c2_bm_bist_fast_1p32V_m55C.lib"
+      }
+    }
+  ]
+}
