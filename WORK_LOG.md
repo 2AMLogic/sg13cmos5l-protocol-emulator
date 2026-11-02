@@ -72,7 +72,7 @@ Chronological record of merged pull requests and closed issues, newest first.
 - **PR #521**: Bump Repo Skills 0.24.3 -> 0.24.7
 - **PR #513**: fix(rtl): make rf_global2_core config and block inputs real ports
 - **PR #511**: fix(rtl): promote galactic_core coefficient and block inputs to ports
-- **Issue #524** (closed): Remove hard-coded /Users/joseph paths: build or resolve the Surge XT oracle engine in-repo
+- **Issue #524** (closed): Remove hard-coded user-home paths: build or resolve the Surge XT oracle engine in-repo
 - **Issue #520** (closed): rtl-lint: negative controls report CONTROL-BROKEN (baseline did not PASS) on main since #437
 - **Issue #477** (closed): RTL: rf_global2_core has 9 non-port signals read but undriven in standalone elaboration (Verilator UNDRIVEN)
 - **Issue #474** (closed): RTL: galactic_core has 11 non-port signals read but undriven in standalone elaboration (Verilator UNDRIVEN)
