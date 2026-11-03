@@ -2,6 +2,11 @@
 
 Chronological record of merged pull requests and closed issues, newest first.
 
+### 2026-11-03
+
+- **PR #375**: refactor(firmware): generate i2c_fast/i2c_std asm from one template
+- **Issue #374** (closed): Generate i2c_fast.asm / i2c_std.asm from one template like the _sr variants
+
 ### 2026-11-01
 
 - **PR #559**: docs(decision-records): ratify eight GPL-boundary records under the #25 principle (operator, 2026-10-29)
