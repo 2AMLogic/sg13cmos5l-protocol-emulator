@@ -90,7 +90,7 @@ python3 firmware/tools/check_firmware.py
 ```
 
 `check_firmware.py` is the single invocation shared by CI and local use. It
-runs `gen_i2c_sr.py --check`, `gen_spi_modes.py --check` and
+runs `gen_i2c_sr.py --check`, `gen_i2c_pair.py --check`, `gen_spi_modes.py --check` and
 `gen_uart_nested.py --check` (generated I2C, SPI and nested-WAIT UART sources
 vs their generators), then
 `asm.py <file> --check` on every `firmware/asm/*.asm` it discovers (image
@@ -352,7 +352,9 @@ floor); `i2c_std.asm` is the same instruction stream on the
 Standard-mode budget (low = 258, high = 242 — a 500-cycle clock, i.e. no
 faster than the 100 kHz Standard-mode ceiling at the unconfirmed nominal
 50 MHz clock; both phases clear UM10204 Table 10's t_LOW / t_HIGH minima of
-235 / 200 cycles). Until issue #125 this was low = 235, high = 200 (both
+235 / 200 cycles). The pair is generated from one template by
+`firmware/tools/gen_i2c_pair.py` (issue #374; per-mode WAIT literals and
+annotation blocks only), and `check_firmware.py` fails on drift. Until issue #125 this was low = 235, high = 200 (both
 floors to the cycle, 435 cycles, ~114.9 kHz at the nominal clock), which met
 every phase minimum but ran *faster* than the 100 kHz Standard-mode maximum;
 that was a non-compliance, not a "maximum" the bus was allowed to reach, and
