@@ -594,7 +594,19 @@ def test_committed_artifacts_match_source():
     assert drift == [], f"committed firmware/build/ artifacts drifted: {drift}"
 
 
+def test_i2c_pair_generator_has_no_drift():
+    # issue #374: i2c_fast.asm / i2c_std.asm come from gen_i2c_pair.py. The
+    # check lives here, not in check_firmware.py, CI's ci.yml or any manifest:
+    # those are hashed inputs of recorded evidence, so editing them would
+    # stale append-only records.
+    import subprocess
+    r = subprocess.run([sys.executable, str(SCRIPT_DIR / "gen_i2c_pair.py"),
+                        "--check"], capture_output=True, text=True)
+    assert r.returncode == 0, f"gen_i2c_pair.py --check drift:\n{r.stdout}{r.stderr}"
+
+
 ALL_TESTS = [
+    test_i2c_pair_generator_has_no_drift,
     test_nop, test_ldi, test_mov_rr_ops, test_shf, test_in, test_out,
     test_wait, test_branches, test_halt, test_case_insensitive_mnemonics_and_operands,
     test_label_resolution_absolute, test_forward_reference, test_program_size_limit,
