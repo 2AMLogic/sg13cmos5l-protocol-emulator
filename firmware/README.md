@@ -354,9 +354,9 @@ faster than the 100 kHz Standard-mode ceiling at the unconfirmed nominal
 50 MHz clock; both phases clear UM10204 Table 10's t_LOW / t_HIGH minima of
 235 / 200 cycles). The pair is generated from one template by
 `firmware/tools/gen_i2c_pair.py` (issue #374; per-mode WAIT literals and
-annotation blocks only), and CI fails on drift via a separate
-`gen_i2c_pair.py --check` step (not in `check_firmware.py`, a hashed input of
-recorded evidence). Until issue #125 this was low = 235, high = 200 (both
+annotation blocks only), and `test_asm.py` (run by CI) fails on drift via
+`gen_i2c_pair.py --check` (not `check_firmware.py` or `ci.yml`, which are
+hashed inputs of recorded evidence and signoff manifests). Until issue #125 this was low = 235, high = 200 (both
 floors to the cycle, 435 cycles, ~114.9 kHz at the nominal clock), which met
 every phase minimum but ran *faster* than the 100 kHz Standard-mode maximum;
 that was a non-compliance, not a "maximum" the bus was allowed to reach, and

@@ -80,10 +80,6 @@ jobs:
           python3 firmware/tools/test_gen_boot_rom.py
           python3 firmware/tools/test_loadseq.py
           python3 firmware/tools/check_firmware.py
-          # gen_i2c_pair.py (issue #374) is checked here, not inside
-          # check_firmware.py: that file is a hashed input of recorded
-          # evidence, so editing it would stale the append-only records.
-          python3 firmware/tools/gen_i2c_pair.py --check
 
       # Datasheet drift (issue #110): docs/info.md's image table must agree
       # with firmware/asm/, firmware/build/ and the cycle reports.
