@@ -2,6 +2,11 @@
 
 Chronological record of merged pull requests and closed issues, newest first.
 
+### 2026-11-04
+
+- **PR #370**: feat(flow): declare SRAM macro in klt sta sweep and record macro-backed klt result
+- **Issue #20** (closed): T1 item 5: no timing evidence exists — both flows reported cell counts only, so >=50 MHz is unconfirmed (need a klt sta corner sweep)
+
 ### 2026-11-03
 
 - **PR #375**: refactor(firmware): generate i2c_fast/i2c_std asm from one template
