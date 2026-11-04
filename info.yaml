@@ -64,7 +64,7 @@ project:
   # bound to DR 0005's unratified status. What changed on 2026-10-02 is that
   # the number is no longer unmeasured; its authority as sign-off is unchanged.
   # Full detail: spec/gap-to-submission.md row 4.
-  clock_hz:     50000000 # 50 MHz -- DRAFT, unratified; measured on the LibreLane flow only, 3 of 6 declared corners (see the note above and spec/gap-to-submission.md row 4)
+  clock_hz:     50000000 # 50 MHz -- DRAFT, unratified; LibreLane flow closes post-route at 3 corners; klt netlist-estimate closes setup but fails hold (2026-11-01, issue #20; see spec/gap-to-submission.md row 4)
 
   # How many tiles your design occupies?
   #

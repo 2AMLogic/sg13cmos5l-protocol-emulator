@@ -186,7 +186,7 @@ cited gate-level records and the runner's `NETLIST` default
 | 20 ns (50 MHz) closes at all three corners, 0 setup and 0 hold violations. Worst setup +5.785 ns (`nom_slow_1p08V_125C`), worst hold +0.0830 ns (`nom_fast_1p32V_m40C`). Max-slew and max-cap violations: 0 at every corner. | **LibreLane**, post-route OpenSTA | [librelane-corner-timing 20261011-144900](../../verification/records/librelane-corner-timing/records/20261011-144900-e5a0bae.md) |
 | Top: 2,526 instances, 35,224.3836 um^2 | **klt/Yosys** synthesis (typ corner deck, 20 ns recipe) | [synthesis-baseline 20261027-190001](../../verification/records/synthesis-baseline/records/20261027-190001-1ec5186.md) |
 | Placed standard-cell area 46,047.7 um^2 (3,414 instances); LibreLane's own synthesis step reports 2,586 cells, 35,897.26 um^2 | **LibreLane** | the corner-timing record above |
-| klt STA over six corners | klt | [sta-corner-sweep 20261027-190013](../../verification/records/sta-corner-sweep/records/20261027-190013-1ec5186.md): still **BLOCKED**, no result (`klt sta` at `0.8.0` fails with `ORD-2013`, the program-memory hard macro; klayout-tools#2635 closed 2026-10-27 by a fix after `v0.8.0`). No number. |
+| klt STA over the three macro-characterized corners (netlist estimate, no placement/CTS/hold repair) | klt | [sta-corner-sweep 20261101-032922](../../verification/records/sta-corner-sweep/records/20261101-032922-c606644.md): setup at 20 ns closes at all three (worst +2.867 ns); **hold fails** at all three (worst -0.2266 ns, 23 endpoints each). Run at a post-v0.8.0 klt in a throwaway environment, not the pin. Disagrees with LibreLane on hold; recorded as a finding. |
 
 The two area numbers come from different synthesis tools and are reported side
 by side; a mismatch is a finding, not a figure to choose between.
@@ -259,7 +259,7 @@ and the header of `flow/run-post-layout-sdf.sh`:
   compare against the run's own post-route netlist is `match`
   ([librelane-gds-signoff-check 20261027-190021](../../verification/records/librelane-gds-signoff-check/records/20261027-190021-1ec5186.md)).
 - The T1 verdict of record is `tier: null`, **4 of 11 items met** (items 1, 2, 9, 10; item 3 moved from met to unmet with the klt `0.8.0` bump)
-  ([signoff-baseline 20261029-045107](../../verification/records/signoff-baseline/records/20261029-045107-1223abb.md)).
+  ([signoff-baseline 20261101-040907](../../verification/records/signoff-baseline/records/20261101-040907-51b36ed.md)).
   This document does not move that.
 - The template's `gl_test` job checks results with `! grep failure results.xml`
   on the `ihp-cmos5l` branch, which would not match an `<error>` element. The

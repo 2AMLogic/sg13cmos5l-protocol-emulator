@@ -87,12 +87,16 @@ HDL_TOPLEVEL="tt_um_2amlogic_protocol_emulator"
 WIRE_LOAD_MODEL="1k"
 WIRE_LOAD_MODE="top"
 
-# The declared corner set: every sg13cmos5l_stdcell liberty corner the
-# PDK ships (setup is binding on the slow corners, hold on the fast ones).
+# The declared corner set (issue #20, DR 0007): the three corners the program
+# memory macro (RM_IHPSG13_1P_256x16_c2_bm_bist) ships a liberty for. The
+# stdcell fast corner is -40C but the macro's is -55C; the pairing below is
+# DR 0007's, not invented here. The other three shipped stdcell corners
+# (1.35/1.50/1.65 V) have no macro liberty and are recorded as
+# uncharacterized, not passed. Pass a corner name to run just that one.
 ALL_CORNERS=(
-  slow_1p08V_125C slow_1p35V_125C
-  typ_1p20V_25C   typ_1p50V_25C
-  fast_1p32V_m40C fast_1p65V_m40C
+  slow_1p08V_125C
+  typ_1p20V_25C
+  fast_1p32V_m40C
 )
 
 CORNERS=("$@")
@@ -145,12 +149,20 @@ for corner in "${CORNERS[@]}"; do
   corner_dir="${REQUEST_DIR}/${corner}"
   mkdir -p "${corner_dir}"
   request_path="${corner_dir}/sta-protocol-emulator.json"
-  python3 - "$request_path" "$corner" "$NETLIST_FOR_STA" <<'PYEOF'
+  python3 - "$request_path" "$corner" "$NETLIST_FOR_STA" "$PDK_ROOT_RESOLVED" <<'PYEOF'
 import json
 import os
 import sys
 
-request_path, corner, netlist_abs = sys.argv[1], sys.argv[2], sys.argv[3]
+request_path, corner, netlist_abs, pdk_root = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
+sram = os.path.join(pdk_root, "ihp-sg13cmos5l", "libs.ref", "sg13cmos5l_sram")
+cell = "RM_IHPSG13_1P_256x16_c2_bm_bist"
+# Per-corner macro liberty, keyed by the stdcell corner name (DR 0007 pairing).
+macro_lib = {
+    "slow_1p08V_125C": "slow_1p08V_125C",
+    "typ_1p20V_25C": "typ_1p20V_25C",
+    "fast_1p32V_m40C": "fast_1p32V_m55C",
+}
 request_dir = os.path.dirname(request_path)
 netlist_rel = os.path.relpath(netlist_abs, request_dir)
 
@@ -165,6 +177,16 @@ request = {
         "wire_load_model": "1k",
         "wire_load_mode": "top",
     },
+    "macros": [
+        {
+            "cell": cell,
+            "lef": os.path.join(sram, "lef", cell + ".lef"),
+            "lib": {
+                k: os.path.join(sram, "lib", f"{cell}_{v}.lib")
+                for k, v in macro_lib.items()
+            },
+        }
+    ],
 }
 with open(request_path, "w", encoding="utf-8") as handle:
     json.dump(request, handle, indent=2)
