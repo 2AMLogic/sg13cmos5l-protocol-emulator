@@ -380,3 +380,5 @@ superseded for its own reasons.
    dated note under "Numbering note" above). This record needs a carrying
    PR of its own, after klt timing evidence exists
    (`2AMLogic/klayout-tools#2635`).
+
+   *Dated note 2026-11-04 (issue #377, against open item 1; no change to this record's Proposed status or text above):* the klt flow's macro-backed `netlist_estimate` result (record `verification/records/sta-corner-sweep/records/20261101-032923-c606644.md`) has its worst hold, -0.2266 ns, at `slow_1p08V_125C`, not at the fast corner (-0.1295 ns typ, -0.0868 ns fast). That is a pre-placement, no-CTS estimate and is not the LibreLane result; it is input to the corner-pairing question, not an answer to it. The LibreLane fast-corner hold the notes above call +0.1156 ns is +0.0830 ns in the live record `20261011-144900-e5a0bae`.
