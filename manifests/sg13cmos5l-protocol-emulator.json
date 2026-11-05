@@ -11,8 +11,21 @@
       "content_hash": "sha256:2c8fb81d18ab9d6cfd2ed0566e32f16d3cebdbbdff41520afbff29fa0e19c3af"
     },
     "3": {
-      "file": "verification/records/librelane-gds-signoff-check/artifacts/20261027-190021-1ec5186/klt-drc.json",
-      "content_hash": "sha256:2c8fb81d18ab9d6cfd2ed0566e32f16d3cebdbbdff41520afbff29fa0e19c3af"
+      "file": "verification/records/librelane-gds-signoff-check/artifacts/20261105-081055-a10e03c/klt-drc.json",
+      "content_hash": "sha256:2c8fb81d18ab9d6cfd2ed0566e32f16d3cebdbbdff41520afbff29fa0e19c3af",
+      "foundry_cell_exceptions": [
+        {
+          "cell": "RM_IHPSG13_1P_256x16_c2_bm_bist",
+          "cell_hash": "sha256:e3e53b3345f3e6e3705528225d60bd4beb1600c692102a3d565126707b66f570",
+          "rules": {
+            "nwell.enclosing.pactiv.1": 4352,
+            "nwell.space.2": 132
+          },
+          "bare_cell_report": "verification/records/librelane-gds-signoff-check/artifacts/20261105-081055-a10e03c/klt-drc-bare-macro.json",
+          "bare_cell_layout": "verification/records/librelane-gds-signoff-check/artifacts/20261105-081055-a10e03c/RM_IHPSG13_1P_256x16_c2_bm_bist.gds",
+          "layout": "verification/records/librelane-gds-signoff-check/artifacts/20261027-190021-1ec5186/tt_um_2amlogic_protocol_emulator.gds"
+        }
+      ]
     },
     "4": {
       "file": "verification/records/librelane-gds-signoff-check/artifacts/20261027-190021-1ec5186/klt-lvs-klt-netlist.json",
