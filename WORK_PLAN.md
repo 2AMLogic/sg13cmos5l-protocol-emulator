@@ -65,7 +65,6 @@ Issues carrying `loom:curated`.
 ## Proposed (Architect / Hermit)
 
 - **#304**: Verification: I2C pad model has no pull-up rise time, so fixed-count firmware margins are graded as if t_r = 0 *(architect)*
-- **#382**: Enforce or remove advisory [implementation] layer in check_protocol_pin_roles.py *(hermit)*
 
 ## Epics
 
@@ -83,6 +82,6 @@ _None._
 | PRs awaiting review | 0 |
 | Approved PRs awaiting merge | 0 |
 | Curated | 10 |
-| Architect / Hermit proposals | 2 |
+| Architect / Hermit proposals | 1 |
 | Active epics | 0 |
 <!-- guide:plan-body:end -->
