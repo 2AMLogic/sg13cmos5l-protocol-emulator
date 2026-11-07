@@ -25,7 +25,7 @@
     {"corner": "nom_typ_1p20V_25C", "setup_slack_ns": 10.714, "hold_slack_ns": 0.2611},
     {"corner": "nom_fast_1p32V_m40C", "setup_slack_ns": 11.074, "hold_slack_ns": 0.0830}
   ],
-  "klt_timing": {"flow": "klt (OpenSTA)", "status": "macro-backed netlist-estimate result at a post-v0.8.0 klt (throwaway environment, not the layout/toolchain.json pin): setup at 20 ns closes at the 3 macro-characterized corners (worst +2.867 ns), hold fails at all 3 (worst -0.2266 ns, 23 violating endpoints each; no placement, CTS or hold repair), so 50 MHz is not shown to close on the klt flow; the pinned klt 0.8.0 still cannot declare the macro", "evidence": [{"experiment": "sta-corner-sweep"}]},
+  "klt_timing": {"flow": "klt (OpenSTA)", "status": "macro-backed netlist-estimate result at the layout/toolchain.json pin (klt 0.8.1.dev146+g79bd3956d926, klayout-tools PR #2645; IHP-Open-PDK 2bbec755dc67, figures identical at the host f7bca326): setup at 20 ns closes at the 3 macro-characterized corners (worst +2.867 ns), hold fails at all 3 (worst -0.2266 ns, 23 violating endpoints each; no placement, CTS or hold repair), so 50 MHz is not shown to close on the klt flow; the klt 0.8.0 that preceded this pin could not declare the macro (ORD-2013)", "evidence": [{"experiment": "sta-corner-sweep"}]},
   "area": [
     {"item": "Placed cells + SRAM macro, share of 2x2 core", "value": "58.55 %", "flow": "LibreLane (post-route)", "evidence": [{"record_id": "20261011-144900-e5a0bae", "experiment": "librelane-corner-timing"}]},
     {"item": "Program-memory macro RM_IHPSG13_1P_256x16_c2_bm_bist", "value": "28,127.104 um^2 (22.2 % of 2x2 core 413.76 x 306.18 um)", "flow": "PDK LEF/GDS probe", "evidence": [{"experiment": "program-memory-macro-feasibility"}]},

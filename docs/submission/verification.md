@@ -184,9 +184,9 @@ cited gate-level records and the runner's `NETLIST` default
 | Figure | Flow | Record |
 |---|---|---|
 | 20 ns (50 MHz) closes at all three corners, 0 setup and 0 hold violations. Worst setup +5.785 ns (`nom_slow_1p08V_125C`), worst hold +0.0830 ns (`nom_fast_1p32V_m40C`). Max-slew and max-cap violations: 0 at every corner. | **LibreLane**, post-route OpenSTA | [librelane-corner-timing 20261011-144900](../../verification/records/librelane-corner-timing/records/20261011-144900-e5a0bae.md) |
-| Top: 2,526 instances, 35,224.3836 um^2 | **klt/Yosys** synthesis (typ corner deck, 20 ns recipe) | [synthesis-baseline 20261027-190001](../../verification/records/synthesis-baseline/records/20261027-190001-1ec5186.md) |
+| Top: 2,526 instances, 35,224.3836 um^2 | **klt/Yosys** synthesis (typ corner deck, 20 ns recipe) | [synthesis-baseline 20261107-213001](../../verification/records/synthesis-baseline/records/20261107-213001-d392a2a.md) |
 | Placed standard-cell area 46,047.7 um^2 (3,414 instances); LibreLane's own synthesis step reports 2,586 cells, 35,897.26 um^2 | **LibreLane** | the corner-timing record above |
-| klt STA over the three macro-characterized corners (netlist estimate, no placement/CTS/hold repair) | klt | [sta-corner-sweep 20261101-032922](../../verification/records/sta-corner-sweep/records/20261101-032922-c606644.md): setup at 20 ns closes at all three (worst +2.867 ns); **hold fails** at all three (worst -0.2266 ns, 23 endpoints each). Run at a post-v0.8.0 klt in a throwaway environment, not the pin. Disagrees with LibreLane on hold; recorded as a finding. |
+| klt STA over the three macro-characterized corners (netlist estimate, no placement/CTS/hold repair) | klt | [sta-corner-sweep 20261107-214001](../../verification/records/sta-corner-sweep/records/20261107-214001-d392a2a.md): setup at 20 ns closes at all three (worst +2.867 ns); **hold fails** at all three (worst -0.2266 ns, 23 endpoints each). Run at the `layout/toolchain.json` pin (klt `0.8.1.dev146+g79bd3956d926`, IHP-Open-PDK `2bbec755`; figures identical at the host `f7bca326`). Disagrees with LibreLane on hold; recorded as a finding. |
 
 The two area numbers come from different synthesis tools and are reported side
 by side; a mismatch is a finding, not a figure to choose between.

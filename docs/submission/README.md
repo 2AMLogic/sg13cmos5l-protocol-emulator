@@ -405,7 +405,7 @@ and `git ls-remote` on **2026-10-11** (read-only; nothing installed).
 
 **Flow naming.** Every number below is labelled with the flow that produced it:
 **TT/LibreLane CI** is the `gds` and `precheck` workflow jobs. **klt** is this
-program's `klt drc` flow (`layout/toolchain.json` pin `0e2362bd`). They use
+program's `klt drc` flow (`layout/toolchain.json` pin `79bd3956d926`, klt `0.8.1.dev146+g79bd3956d926`). They use
 different decks and are not interchangeable.
 
 ### What was inspected

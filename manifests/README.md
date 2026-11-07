@@ -421,6 +421,21 @@ capture, PVT corner sweeps, or Monte Carlo.
   `v0.8.0`, so it is not in this pin; `ORD-2013` was re-observed at `0.8.0`.
   Baselines: `signoff-baseline` `20261027-190041-1ec5186` to
   `20261027-190048-1ec5186` (one per live head), **4 of 11**.
+- **2026-11-07 (issue #371): klt moves from `klayout-tools==0.8.0` to the git commit `79bd3956d926` (klayout-tools PR #2645, `request.macros`); no verdict changes.**
+  The pin is a git build, `klt 0.8.1.dev146+g79bd3956d926`, because no PyPI
+  release contains PR #2645; CI asserts that exact string. Item 10's envelope
+  `hygiene.json` was re-produced (`klt signoff --attest 10`) because it hashes
+  `.github/workflows/ci.yml` and `testbenches.txt`, both edited here. Items 1
+  and 9 re-attest as `match` at the new klt without a re-mint (item 9 does not
+  hash the edited `testbenches.txt` pin prose), so their envelopes still carry
+  `klt 0.8.0` in their provenance. The `layout/toolchain.json` hash moved, so
+  the live `synthesis-baseline` records (`20261107-213001-d392a2a`,
+  `20261107-213002-d392a2a`) and `sta-corner-sweep` records
+  (`20261107-214001-d392a2a`, `20261107-214002-d392a2a`) were re-minted with
+  every figure unchanged. The die-area, `librelane-gds-signoff-check` and
+  `librelane-erc` records that pin the old hash are NOT re-minted here (split
+  to #389: they need the `request.macros` P&R decision and the gds-run
+  artifact), so they stay stale until #389 lands.
 - **2026-10-28 (issue #361): items 1, 9 and 10 move onto `klt signoff
   --attest` envelopes; no verdict changes.** The three hand-written
   `kind: generic` envelopes (two still stamped `klt_version` `0.7.0`) are
