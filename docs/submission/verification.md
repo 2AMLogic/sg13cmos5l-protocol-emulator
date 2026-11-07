@@ -258,8 +258,8 @@ and the header of `flow/run-post-layout-sdf.sh`:
   is the pre-place-and-route netlist and the layout is routed; the
   compare against the run's own post-route netlist is `match`
   ([librelane-gds-signoff-check 20261027-190021](../../verification/records/librelane-gds-signoff-check/records/20261027-190021-1ec5186.md)).
-- The T1 verdict of record is `tier: null`, **4 of 11 items met** (items 1, 2, 9, 10; item 3 moved from met to unmet with the klt `0.8.0` bump)
-  ([signoff-baseline 20261104-075607](../../verification/records/signoff-baseline/records/20261104-075607-3504419.md)).
+- The T1 verdict of record is `tier: null`, **3 of 11 items met** (items 1, 2, 9; item 3 moved from met to unmet with the klt `0.8.0` bump, and item 10 from met to unmet / `stale_evidence` with the klt git-pin bump of #371, pending its re-attestation in #389)
+  ([signoff-baseline 20261107-215007](../../verification/records/signoff-baseline/records/20261107-215007-5b5e5a9.md)).
   This document does not move that.
 - The template's `gl_test` job checks results with `! grep failure results.xml`
   on the `ihp-cmos5l` branch, which would not match an `<error>` element. The
