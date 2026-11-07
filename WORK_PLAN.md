@@ -34,6 +34,7 @@ _None._
 Issues currently being built (`loom:building`).
 
 - **#261**: LibreLane: max-cap on SRAM A_DOUT[5..6] is avoided by placement, not by construction
+- **#371**: chore: pin a klt containing request.macros (PR #2645) and re-mint the records it stales
 - **#386**: gap-to-submission: reconcile rows 1 and 10 with the #281 and #192 UART evidence
 
 ## PRs Awaiting Review
@@ -81,7 +82,7 @@ _None._
 | Very important | 1 |
 | Important | 3 |
 | Ready (`loom:issue`) | 0 |
-| In Progress (`loom:building`) | 2 |
+| In Progress (`loom:building`) | 3 |
 | PRs awaiting review | 0 |
 | Approved PRs awaiting merge | 1 |
 | Curated | 12 |
