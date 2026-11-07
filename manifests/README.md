@@ -145,6 +145,20 @@ capture, PVT corner sweeps, or Monte Carlo.
   renders `met`. No evidence was re-run or altered, and the manifest is
   unchanged, so the latest `signoff-baseline` record still reproduces and
   no successor record is minted.
+- **Item 7, state as of 2026-11-04 (issue #330) — the grader's own `detail`.**
+  Append-only; the bullet above is the earlier state, and its "re-pointed once
+  #3747 lands" expectation no longer holds. klayout-tools#3747 closed
+  **by disclosure only**: v0.8.0 prints a `detail` for item 7 but adds no
+  gradable binding. In record `20261104-075608-3504419` (`klt` build `0.8.0`,
+  `c572046be644`), item 7 is `unmet` / `unverifiable_provenance` with
+  `detail: {content_hash_pin: "unverifiable", content_hash_pin_note:
+  "functional-verification envelopes carry no provenance.input.content_hash;
+  the pin cannot be compared"}`. Item 7 **stays `unmet`**; it is not fixed.
+  The `content_hash` pin stays in the manifest (dropping it needs a `spec/`
+  decision record), and the remaining lever is an upstream binding, filed as
+  klayout-tools#4893, or the envelope being superseded by #275. No evidence
+  was re-run or altered and the manifest is unchanged, so no successor
+  `signoff-baseline` record is minted.
 - **Items 3 and 4 (layout evidence), state as of 2026-10-09 (issue #82)** —
   append-only; earlier states are in the superseded records. Both citations
   now point at record `20261009-054750-676f8b2`
