@@ -122,8 +122,8 @@ jobs:
       - name: Provision klt at the layout/toolchain.json pin
         run: ./scripts/setup-env.sh
 
-      - name: Assert the provisioned klt is the pinned release
-        run: test "$(klt --version)" = "klt 0.8.0"
+      - name: Assert the provisioned klt is the pinned build
+        run: test "$(klt --version)" = "klt 0.8.1.dev146+g79bd3956d926"
 
       # T1 items 1, 9 and 10 are tool-attested (issue #361): each committed
       # envelope under manifests/evidence/ is re-produced from its inventory
