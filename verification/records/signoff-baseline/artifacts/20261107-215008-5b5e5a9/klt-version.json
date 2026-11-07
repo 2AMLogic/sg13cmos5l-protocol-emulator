@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "version": "0.8.1.dev146+g79bd3956d926",
+  "package_version": "0.8.1.dev146+g79bd3956d926",
+  "git_commit": "79bd3956d92668a8a6908b22ceefa3f64cd77577",
+  "git_tag": null,
+  "dirty": false,
+  "is_release": false,
+  "reinstall_spec": "klayout-tools @ git+https://github.com/2AMLogic/klayout-tools@79bd3956d92668a8a6908b22ceefa3f64cd77577",
+  "grading_ruleset_id": "sha256:2ab7ecb81eaa189cdf4c256727ee948931860fd329c9386effc5082c0a95cf74",
+  "klayout_version": "0.30.13",
+  "klayout_version_expected": "0.30.12"
+}
