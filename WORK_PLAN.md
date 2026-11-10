@@ -7,7 +7,7 @@ This roadmap is generated from the current GitHub label state.
 
 Judge-approved PRs under a hold (`loom:blocked` or `loom:operator`) — only a human merge decision is missing.
 
-- **#387**: docs: retire closed UART RX and 434-cycle TX blockers from gap digest
+_None._
 
 ## Very Important
 
@@ -35,7 +35,6 @@ Issues currently being built (`loom:building`).
 
 - **#261**: LibreLane: max-cap on SRAM A_DOUT[5..6] is avoided by placement, not by construction
 - **#371**: chore: pin a klt containing request.macros (PR #2645) and re-mint the records it stales
-- **#386**: gap-to-submission: reconcile rows 1 and 10 with the #281 and #192 UART evidence
 
 ## PRs Awaiting Review
 
@@ -47,7 +46,7 @@ _None._
 
 PRs that passed review and are queued for Champion auto-merge (`loom:pr`).
 
-- **#387**: docs: retire closed UART RX and 434-cycle TX blockers from gap digest
+_None._
 
 ## Proposed
 
@@ -64,7 +63,6 @@ Issues carrying `loom:curated`.
 - **#360**: T1 item 3 (DRC clean): resolve the 4,484 nwell findings in the SRAM macro under the klt 0.8.0 deck *(curated)*
 - **#365**: T1 item 3: apply foundry-cell DRC exception for the SRAM macro once klt releases grading *(curated)*
 - **#371**: chore: pin a klt containing request.macros (PR #2645) and re-mint the records it stales *(curated)*
-- **#386**: gap-to-submission: reconcile rows 1 and 10 with the #281 and #192 UART evidence *(curated)*
 
 ## Proposed (Architect / Hermit)
 
@@ -78,14 +76,14 @@ _None._
 
 | Bucket | Count |
 |------|-------|
-| Operator merge-risk holds | 1 |
+| Operator merge-risk holds | 0 |
 | Very important | 1 |
 | Important | 3 |
 | Ready (`loom:issue`) | 0 |
-| In Progress (`loom:building`) | 3 |
+| In Progress (`loom:building`) | 2 |
 | PRs awaiting review | 0 |
-| Approved PRs awaiting merge | 1 |
-| Curated | 12 |
+| Approved PRs awaiting merge | 0 |
+| Curated | 11 |
 | Architect / Hermit proposals | 1 |
 | Active epics | 0 |
 <!-- guide:plan-body:end -->

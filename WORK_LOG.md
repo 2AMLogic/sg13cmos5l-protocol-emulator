@@ -2,6 +2,11 @@
 
 Chronological record of merged pull requests and closed issues, newest first.
 
+### 2026-11-10
+
+- **PR #387**: docs: retire closed UART RX and 434-cycle TX blockers from gap digest
+- **Issue #386** (closed): gap-to-submission: reconcile rows 1 and 10 with the #281 and #192 UART evidence
+
 ### 2026-11-04
 
 - **PR #384**: lint: enforce --require-implemented for protocol pin role check
