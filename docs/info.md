@@ -223,8 +223,12 @@ assembler's static count over the instruction stream (the committed
 independent reference model, in **RTL simulation (Icarus 13.0 driven by
 `klt functional-verification` — the klt flow)**. The cycle count is the
 claim; any baud/MHz reading is arithmetic at target-spec row 4's 50 MHz
-clock, which is **unconfirmed on the klt flow** (`klt sta` produced 0 of 6
-corners, [record](../verification/records/sta-corner-sweep/records/20261010-205317-af36071.md)),
+clock, which is **unconfirmed on the klt flow**: `klt sta` closes setup at
+20 ns at the three macro-characterized corners but **hold fails at all three**
+([record](../verification/records/sta-corner-sweep/records/20261101-032922-c606644.md)),
+a pre-CTS, pre-route netlist estimate with an ideal clock and no hold repair,
+run at a post-v0.8.0 klt in a throwaway environment rather than the
+`layout/toolchain.json` pin and with no PDK commit stamp (the re-mint is #394),
 so no wall-clock rate is claimed here. Nothing in this table was run on
 the Tiny Tapeout LibreLane flow or on silicon (see the
 "Evidence not yet in hand" section below).
@@ -558,9 +562,17 @@ No pin claim here is backed by silicon or by the LibreLane flow.
   Firmware, the control-space, boot-ROM, SPI-flash-boot, UART-load, primitive and load-integrity benches on that netlist at zero delay:
   [`firmware-gate-level`](../verification/records/firmware-gate-level/records/20261012-072500-243b6a4.md).
   Firmware with back-annotated delays: UART TX, SPI and I2C repeated START, as above; nothing else.
-- **klt synthesis and timing.** `klt sta` does not yet support the SRAM
-  macro, so the two flows do not agree on timing; per the project rule that
-  mismatch is a finding, not a number to pick from.
+- **klt synthesis and timing.** `klt sta` now runs on the macro-backed design,
+  but the two flows do not agree on timing: LibreLane's post-route analysis
+  reports 0 setup and 0 hold violations at the three corners, while the klt
+  leg's pre-CTS, pre-route netlist estimate closes setup at 20 ns and fails
+  hold at all three
+  ([record](../verification/records/sta-corner-sweep/records/20261101-032922-c606644.md)).
+  Per the project rule that mismatch is a finding, not a number to pick from;
+  the two are different geometry stages, so it is not shown to be a tool
+  disagreement about the same design state, and neither number is merged with
+  the other. The klt place-and-route leg has not been run on this design
+  (#389).
 - **Silicon:** none.
 - **Pads.** The I2C results are on a logical, zero-delay pad model
   ([record](../verification/records/uio-pad-model/records/20261011-012813-428e12f.md)):

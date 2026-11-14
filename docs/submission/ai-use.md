@@ -188,11 +188,16 @@ design detail. Representative issues:
     ([#2941](https://github.com/2AMLogic/klayout-tools/issues/2941), fixed
     2026-10-16; the klt/Yosys reference now compares, and returns a real
     `mismatch` rather than a converter error)
+  - request schemas could not declare a hard macro (LEF + liberty + GDS)
+    ([#2635](https://github.com/2AMLogic/klayout-tools/issues/2635), closed
+    2026-10-27). The klt STA leg has since run on the macro-backed design:
+    setup closes at 20 ns at the three macro-characterized corners and hold
+    fails at all three, a pre-CTS, pre-route netlist estimate
+    ([record](../../verification/records/sta-corner-sweep/records/20261101-032922-c606644.md)).
+    The GDS still comes from LibreLane alone — the klt place-and-route leg has
+    not been run on this design (#389) — and timing now has a klt number that
+    disagrees with LibreLane on hold, recorded as a finding.
 - Still open:
-  - request schemas cannot declare a hard macro
-    ([#2635](https://github.com/2AMLogic/klayout-tools/issues/2635)). This
-    blocks the klt flow's STA and place-and-route for this macro-backed
-    design, so timing and the GDS come from LibreLane alone.
   - no control over gate-level power-up state
     ([#2998](https://github.com/2AMLogic/klayout-tools/issues/2998))
   - a remaining log-interleaving case

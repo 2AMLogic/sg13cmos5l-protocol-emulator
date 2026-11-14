@@ -54,9 +54,17 @@ reports die area 131,620 µm² and passing `gds`, `precheck`, `gl_test`, and
 at the 20 ns (50 MHz) constraint; the remaining timing/specification gaps are
 tracked in [`spec/gap-to-submission.md`](spec/gap-to-submission.md).
 
-The klt flow supports CMOS5L standard cells, but its macro-backed STA and
-place-and-route legs remain blocked by
-[klayout-tools#2635](https://github.com/2AMLogic/klayout-tools/issues/2635).
+The klt flow supports CMOS5L standard cells, and its macro-backed STA leg has
+now run: on the klt flow (OpenSTA via `klt sta`, a pre-CTS, pre-route netlist
+estimate with an ideal clock and no hold repair), setup at 20 ns closes at the
+three macro-characterized corners, but hold fails at all three
+([record](verification/records/sta-corner-sweep/records/20261101-032922-c606644.md);
+run at a post-v0.8.0 klt in a throwaway environment rather than the
+`layout/toolchain.json` pin, with no PDK commit stamp — the re-mint is #394).
+The LibreLane post-route result above remains the timing of record; the two
+flows disagree on hold at different geometry stages, and that disagreement is
+recorded as a finding, not reconciled. The klt place-and-route (die-area) leg
+has still not been run on the macro-backed design (#389).
 Evidence from the two flows is recorded separately under
 [`spec/decision-records/0002-flow-of-record.md`](spec/decision-records/0002-flow-of-record.md).
 Nothing has been taped out or measured on silicon. Low-speed USB and
