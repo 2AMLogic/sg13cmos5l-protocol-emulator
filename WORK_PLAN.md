@@ -22,6 +22,9 @@ _None._
 - **#261**: LibreLane: max-cap on SRAM A_DOUT[5..6] is avoided by placement, not by construction
 - **#272**: Firmware: Fast-mode I2C t_LOW has zero margin (65 cycles = 1.30 µs) — move slack from the high phase
 - **#275**: Re-run firmware gate-level and post-layout SDF regression on the 70/55 Fast-mode I2C image (#272)
+- **#396**: Draft the decision record for the T1 item 4 (LVS) evidence contract authorized on #329
+- **#398**: Docs: README and submission write-ups still say the klt STA leg is blocked on klayout-tools#2635 and claims nothing
+- **#400**: docs/info.md cites 21 superseded evidence records; check_docs_records.py only runs over docs/submission
 
 ## Ready
 
@@ -39,7 +42,8 @@ Issues currently being built (`loom:building`).
 
 PRs waiting on Judge (`loom:review-requested`).
 
-_None._
+- **#395**: docs: roadmap as of 2026-11-13
+- **#399**: build: track the fleet klayout-tools version instead of pinning one, and delete the re-mint loop that enforced the pin
 
 ## Approved (Awaiting Merge)
 
@@ -62,10 +66,13 @@ Issues carrying `loom:curated`.
 - **#360**: T1 item 3 (DRC clean): resolve the 4,484 nwell findings in the SRAM macro under the klt 0.8.0 deck *(curated)*
 - **#365**: T1 item 3: apply foundry-cell DRC exception for the SRAM macro once klt releases grading *(curated)*
 - **#371**: chore: pin a klt containing request.macros (PR #2645) and re-mint the records it stales *(curated)*
+- **#396**: Draft the decision record for the T1 item 4 (LVS) evidence contract authorized on #329 *(curated)*
+- **#398**: Docs: README and submission write-ups still say the klt STA leg is blocked on klayout-tools#2635 and claims nothing *(curated)*
 
 ## Proposed (Architect / Hermit)
 
 - **#304**: Verification: I2C pad model has no pull-up rise time, so fixed-count firmware margins are graded as if t_r = 0 *(architect)*
+- **#401**: Simplify scripts/check_protocol_pin_roles.py: 10 undeclared instance attributes make the Checker order-dependent *(hermit)*
 
 ## Epics
 
@@ -77,12 +84,12 @@ _None._
 |------|-------|
 | Operator merge-risk holds | 0 |
 | Very important | 1 |
-| Important | 3 |
+| Important | 6 |
 | Ready (`loom:issue`) | 1 |
 | In Progress (`loom:building`) | 1 |
-| PRs awaiting review | 0 |
+| PRs awaiting review | 2 |
 | Approved PRs awaiting merge | 0 |
-| Curated | 11 |
-| Architect / Hermit proposals | 1 |
+| Curated | 13 |
+| Architect / Hermit proposals | 2 |
 | Active epics | 0 |
 <!-- guide:plan-body:end -->
