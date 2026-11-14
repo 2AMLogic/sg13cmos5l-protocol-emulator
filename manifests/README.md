@@ -661,9 +661,11 @@ retirement's supersession chain must extend).
   above) and `docs/cli/signoff.md`.
 - Gap-to-T1 tracker (issue #27) — the living checklist that points at
   this manifest's committed report as the verdict of record.
-- Toolchain pin: `layout/toolchain.json` (`klt_install`,
-  `klt_last_verified_commit`); provisioning: `scripts/setup-env.sh`;
-  environment record: `docs/environment.md`.
+- Toolchain declaration: `layout/toolchain.json` (`klt_install`,
+  `klt_required_commands`) — a bare `klayout-tools` requirement since
+  2026-11-14, not a pin, and `klt_last_verified_commit` is gone with it
+  (issue #371, per 2AMLogic/2am#7038); provisioning:
+  `scripts/setup-env.sh`; environment record: `docs/environment.md`.
 
 ## Item 8: characterization report (issue #349)
 

@@ -500,7 +500,7 @@ missing is a per-run record: the klt DRC report's `provenance.pdk` is `null`
 klt 0.8.0, KLayout 0.30.12), so the PDK a given klt run used is not
 machine-recorded, and nothing machine-checks that the local `PDK_ROOT` is
 `2bbec755`. The klt DRC deck is
-klt's own `sg13cmos5l` deck (content hash `sha256:5a43b8eb…` at the current klt pin, `klayout-tools==0.8.0`; it has moved at every pin bump, see `layout/toolchain.json`), not the IHP file
+klt's own `sg13cmos5l` deck (content hash `sha256:5a43b8eb…` as measured by the klt that produced the cited report, `klt 0.8.0` — `klt-pin: historical`; this repo no longer pins klt, issue #371, and the deck hash has moved at every version change, see `layout/toolchain.json`), not the IHP file
 precheck runs, so the two DRC results are different evidence.
 
 ### Coverage
@@ -508,7 +508,7 @@ precheck runs, so the two DRC results are different evidence.
 "Precheck" below means `ihp-sg13cmos5l.drc` plus the structural checks above
 (TT/LibreLane CI). klt evidence is the klt flow's `klt drc` report on the CI GDS,
 `verification/records/librelane-gds-signoff-check/artifacts/20261027-190021-1ec5186/klt-drc.json`
-(33 rules checked, 12 inapplicable, `status: violations`, 4,484 violations, every one inside the foundry SRAM macro: `nwell.enclosing.pactiv.1` 4,352 and `nwell.space.2` 132; the deck at the current klt pin checks 33 rules where the previous pin's checked 26 and graded `clean`; see the record).
+(33 rules checked, 12 inapplicable, `status: violations`, 4,484 violations, every one inside the foundry SRAM macro: `nwell.enclosing.pactiv.1` 4,352 and `nwell.space.2` 132; the deck at the klt that produced this report (`0.8.0`) checks 33 rules where the version before it checked 26 and graded `clean`; see the record).
 
 | Layout we draw | Checked by precheck | Absent from precheck | Evidence |
 |---|---|---|---|

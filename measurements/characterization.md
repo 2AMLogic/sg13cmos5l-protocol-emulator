@@ -39,7 +39,7 @@ Flow: LibreLane (post-route OpenSTA), clock 20 ns, record librelane-corner-timin
 | nom_typ_1p20V_25C | +10.714 | +0.2611 | 107.7 | yes |
 | nom_fast_1p32V_m40C | +11.074 | +0.0830 | 112.0 | yes |
 
-Flow klt (OpenSTA): macro-backed netlist-estimate result at a post-v0.8.0 klt (throwaway environment, not the layout/toolchain.json pin): setup at 20 ns closes at the 3 macro-characterized corners (worst +2.867 ns), hold fails at all 3 (worst -0.2266 ns, 23 violating endpoints each; no placement, CTS or hold repair), so 50 MHz is not shown to close on the klt flow; the pinned klt 0.8.0 still cannot declare the macro (record sta-corner-sweep `20261101-032923-c606644` (+1 live)).
+Flow klt (OpenSTA): macro-backed netlist-estimate result produced by klt 0.8.1.dev146+g79bd3956d926 (klayout-tools git commit 79bd3956d926, which contains klayout-tools#2645, `request.macros`), run in a throwaway environment: setup at 20 ns closes at the 3 macro-characterized corners (worst +2.867 ns), hold fails at all 3 (worst -0.2266 ns, 23 violating endpoints each; no placement, CTS or hold repair), so 50 MHz is not shown to close on the klt flow. This repo no longer pins klt (issue #371, per 2AMLogic/2am#7038), and a record keeps the version that produced it, so this entry names that version rather than a repo pin; the re-run at the fleet version -- which also stamps the IHP-Open-PDK commit this record leaves unstamped and corrects the Flow comparison -- is #394 (record sta-corner-sweep `20261101-032923-c606644` (+1 live)).
 
 ## Area
 
