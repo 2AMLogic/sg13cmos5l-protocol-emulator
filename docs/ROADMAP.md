@@ -51,19 +51,19 @@ The body of #351 predates the klt 0.8.0 deck: it ticks item 3 and points items
 - **Move off the per-repo klayout-tools pin (#371, in progress).** Done when
   `npm run lint` and `scripts/signoff-report.sh --check-latest` pass on the
   merged change. Most of Next waits on this.
-- **Draft the item 4 evidence contract (#329; no drafting issue yet).** The
+- **Draft the item 4 evidence contract (#396, from the ruling on #329).** The
   ruling on #329 authorizes preparing a decision record naming the post-route
   reference for physical connectivity and the independent RTL-to-reference
   evidence required beside it. Done when a `Proposed` DR is in
   `spec/decision-records/` and listed in `spec/ratification-batch-2.md`, with
   item 4 still `unmet`. Needs no tool run.
-- **Reconcile digest rows 7 and 11 (no issue yet).** Row 11 still says
+- **Reconcile digest rows 7 and 11 (#397, `loom:blocked`).** Row 11 still says
   multi-byte bursts under one CS are untested, though #286 landed that bench;
   row 7 still names klayout-tools#2635, closed upstream on 2026-10-27. Done
   when both rows carry a dated note, `scripts/check_gap_digest.py` passes and
   the characterization report and signoff baseline are re-minted (as in #386).
-- **Correct the "klt STA is blocked and claims nothing" statements (no issue
-  yet).** `README.md`, `docs/submission/verification.md` and
+- **Correct the "klt STA is blocked and claims nothing" statements (#398).**
+  `README.md`, `docs/submission/verification.md` and
   `docs/submission/ai-use.md` say so, but a macro-backed `klt sta` record
   exists (`sta-corner-sweep/records/20261101-032923-c606644.md`, PR #370). Done
   when each states that record's result and
@@ -119,8 +119,10 @@ Unblocked once the netlist evidence refresh (#265) lands and PR #263 merges:
 - **Second ratification act.** Rows 13 and 14 and the `Proposed` DRs wait for
   two `RATIFY-KEY` reviews on `spec/ratification-batch-2.md`.
 
-Dispatchable today: the three unissued Now items. Every other open issue is in
-progress (#371), waits on #371, or sits behind the attended refresh.
+Dispatchable from the Now list: #396 and #398, both filed 2026-11-14 and now
+`loom:building`. #397 carries `loom:blocked`, so it is not dispatchable. Every
+other open issue is in progress (#371), waits on #371, or sits behind the
+attended refresh.
 
 ## Not planned
 
