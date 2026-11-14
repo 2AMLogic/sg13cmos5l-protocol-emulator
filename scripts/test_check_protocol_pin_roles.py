@@ -23,6 +23,7 @@ Exit codes: 0 all cases behave as specified, 1 at least one did not.
 
 from __future__ import annotations
 
+import ast
 import json
 import re
 import shutil
@@ -994,6 +995,68 @@ def _(fx):
     code, out = fx.run()
     assert code == 1 and "[schema] PASS" in out, out
     assert "MISO" in out and "spi_mode3.asm" in out, out
+
+
+# ------------------------------------------- the Checker's state is declared
+@case("structure: every Checker instance attribute is declared in __init__")
+def _(fx):
+    """Attributes created outside `__init__` make the layered order
+    (`load_table` -> `run_inventory` -> `implementation`) a hidden protocol: no
+    reader of a `prof_*` method can tell which state is live at that point
+    without tracing `run()` by hand, and two readers of the same attribute can
+    disagree about whether it exists. Declaring every attribute in `__init__`
+    with its empty/None default is what makes that order checkable, so this
+    case fails if a new attribute is introduced by assignment elsewhere."""
+    cls = next(n for n in ast.walk(ast.parse(CHECKER.read_text(encoding="utf-8")))
+               if isinstance(n, ast.ClassDef) and n.name == "Checker")
+
+    def stores(node) -> list[tuple[str, int]]:
+        """Every `self.X = ...` / `self.X: T = ...` / `self.X += ...` in `node`."""
+        out = []
+        for n in ast.walk(node):
+            if isinstance(n, ast.Assign):
+                targets = n.targets
+            elif isinstance(n, (ast.AugAssign, ast.AnnAssign)):
+                targets = [n.target]
+            else:
+                continue
+            for t in targets:
+                for sub in ast.walk(t):
+                    if (isinstance(sub, ast.Attribute) and isinstance(sub.value, ast.Name)
+                            and sub.value.id == "self"):
+                        out.append((sub.attr, sub.lineno))
+        return out
+
+    methods = [m for m in cls.body if isinstance(m, (ast.FunctionDef, ast.AsyncFunctionDef))]
+    init = next(m for m in methods if m.name == "__init__")
+    declared = {attr for attr, _ in stores(init)}
+    undeclared = sorted(
+        f"self.{attr} ({m.name}:{line})"
+        for m in methods if m.name != "__init__"
+        for attr, line in stores(m) if attr not in declared
+    )
+    assert not undeclared, (
+        f"{CHECKER.name}: Checker attribute(s) assigned outside __init__; declare "
+        f"them there with their empty/None defaults: {undeclared}"
+    )
+
+
+@case("summary: a schema failure still prints a complete JSON summary")
+def _(fx):
+    """`--format json` reaches `summary()` even when `load_table()` failed and
+    `run()` returned before the schema layer filled its derived state. The
+    summary must still carry every key at its declared default -- this is the
+    path the checker used to defend with a `getattr` on one of them."""
+    fx.mutate_table(lambda t: t.pop("open_drain_mask"))
+    code, out = fx.run("--format", "json")
+    assert code == 1, out
+    doc = json.loads(out)
+    assert doc["open_drain_mask"] == "0x00", out
+    assert doc["record"] == RECORD, out
+    assert doc["layers"]["schema"]["ok"] is False, out
+    assert "table: missing top-level key 'open_drain_mask'" in doc["layers"]["schema"]["errors"], out
+    assert doc["layers"]["concrete-firmware-bench"]["sites_checked"] == 0, out
+    assert doc["unwired_electrical_roles"] == [], out
 
 
 def main() -> int:

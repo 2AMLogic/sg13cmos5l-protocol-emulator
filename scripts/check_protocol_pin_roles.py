@@ -203,6 +203,21 @@ class Checker:
         self.table: dict | None = None
         self.pins: dict[tuple[str, int], dict] = {}
         self._cache: dict[str, str | None] = {}
+        # Filled by the schema layer (load_table -> validate_table -> validate_*),
+        # read by the inventory and implementation layers. Declared here so every
+        # reader sees the same pre-`run()` defaults instead of an AttributeError.
+        self.od_mask = 0
+        self.pp_mask = 0
+        self.pin_modes: dict[str, dict[str, int]] = {}
+        self.inv: dict[str, dict] = {}
+        self.debug_bits: dict[str, dict[str, int]] = {}
+        # Filled by the concrete layer (run_inventory -> prof_top / prof_core),
+        # read by the implementation layer. `top_text` currently has no reader.
+        self.top_text: str | None = None
+        self.core_text: str | None = None
+        self.uio_oe_expr: str | None = None
+        self.uio_out_expr: str | None = None
+        self.uio_out_reset: int | None = None
 
     # ------------------------------------------------------------ file access
     def read(self, rel: str, layer: Layer) -> str | None:
@@ -309,7 +324,7 @@ class Checker:
         """`bench_debug` declares writes that are NOT pin roles but that a
         profile must still account for bit by bit. Only `uart_rx` has any."""
         s = self.schema
-        self.debug_bits: dict[str, dict[str, int]] = {}
+        self.debug_bits = {}
         bd = self.table.get("bench_debug", {})
         if not isinstance(bd, dict) or set(bd) - set(BENCH_DEBUG_VOCAB):
             s.err(f"table.bench_debug: keys must be a subset of {sorted(BENCH_DEBUG_VOCAB)}")
@@ -1458,7 +1473,7 @@ class Checker:
 
     # -------------------------------------------------------- implementation
     def implementation(self) -> None:
-        expr = getattr(self, "uio_oe_expr", None)
+        expr = self.uio_oe_expr
         pp, od = self.pp_mask, self.od_mask
         lit = re.fullmatch(r"(?:8)?'h([0-9A-Fa-f]+)|(\d+)'h([0-9A-Fa-f]+)", expr or "")
         if expr is None:
@@ -1498,7 +1513,7 @@ class Checker:
                         f"(DR 0012 UIO_DIR / UIO_OD); DR 0008's synthesis-time mask cannot serve it")
         else:
             self.concrete.err(f"top-level `uio_oe = {expr}` is an unsupported extraction pattern")
-        reset = getattr(self, "uio_out_reset", None)
+        reset = self.uio_out_reset
         if od and reset is not None and (reset & od) != od:
             self.unwired.append(
                 f"prerequisite: port_uio_out resets to 8'h{reset:02X}; open-drain pins (mask "
@@ -1573,12 +1588,12 @@ class Checker:
                 f"top-level `uio_oe = {expr}` is not DR 0012's pin-mode rule "
                 "`(uio_od & ~core_uio_out) | (~uio_od & uio_dir)`")
         self.concrete.sites += 1
-        pad = getattr(self, "uio_out_expr", None)
+        pad = self.uio_out_expr
         if pad is None or re.sub(r"\s+", "", pad) != self.DR0020_UIO_OUT:
             self.concrete.err(
                 f"top-level `uio_out = {pad}` is not DR 0020's pad data "
                 "`core_uio_out & ~uio_od` (an open-drain pin's pad data must be the constant 0)")
-        core = getattr(self, "core_text", None) or ""
+        core = self.core_text or ""
         for reg in ("uio_dir", "uio_od"):
             self.concrete.sites += 1
             m = re.search(rf"\b{reg}\s*<=\s*8'h([0-9A-Fa-f]{{2}})\s*;", core)
@@ -1592,7 +1607,7 @@ class Checker:
         # prerequisite reported in the other shapes). Under DR 0012 they
         # enable no pin as long as the program never writes a pin-mode
         # register, so that -- not the write itself -- is what is checked.
-        for rel in sorted(getattr(self, "uart_rx_debug", {}) or {}):
+        for rel in sorted(self.uart_rx_debug):
             text = self.read(rel, self.concrete)
             if text is None:
                 continue
@@ -1609,7 +1624,7 @@ class Checker:
         # or an open-drain pin first would assert the line), and write no
         # pin-mode register the profile leaves at 0. A file that does not is
         # reported as unwired, not as an error.
-        modes = getattr(self, "pin_modes", {})
+        modes = self.pin_modes
         what = {"uio_dir": ("UIO_DIR", "push-pull"), "uio_od": ("UIO_OD", "open-drain")}
         for rel, ent in sorted(self.inv.items()):
             prof = ent["profile"]
@@ -1666,7 +1681,7 @@ class Checker:
                 for l in (self.schema, self.meta, self.concrete)
             },
             "unwired_electrical_roles": self.unwired,
-            "open_drain_mask": f"0x{getattr(self, 'od_mask', 0):02X}",
+            "open_drain_mask": f"0x{self.od_mask:02X}",
         }
 
 
