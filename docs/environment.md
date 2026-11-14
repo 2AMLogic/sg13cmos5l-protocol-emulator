@@ -31,15 +31,18 @@ an actionable install pointer, never a traceback. It is safe to re-run
 
 | Component | Pinned to | Resolved via |
 |---|---|---|
-| `klayout-tools` (`klt`) | the PyPI release recorded in [`layout/toolchain.json`](../layout/toolchain.json)'s `klt_install` field — **not duplicated here**, so the two flows (`layout/`'s DRC/LVS and `verification/`'s cocotb harness) can never drift onto different `klt` pins by accident. As of this writing: `klayout-tools==0.8.0` (tag `v0.8.0`, commit [`c572046be644`](https://github.com/2AMLogic/klayout-tools/commit/c572046be644e0407f693f2410f3abb799d68a3a); bumped by issue #356 2026-10-27 from a git dev pin; a git build reports a dev version and would not satisfy `==0.8.0`, klayout-tools#2823; `layout/toolchain.json`'s comment log carries each bump's rationale and what was verified) | `uv tool install --force --with cocotb==2.1.0 --with cocotb-tools==0.1.0 "$(python3 -c "import json;print(json.load(open('layout/toolchain.json'))['klt_install'])")"` (what `scripts/setup-env.sh` runs; CI asserts `klt --version` prints `klt 0.8.0`). On a shared host use `uvx --from "klayout-tools==0.8.0" klt …` instead of installing |
+| `klayout-tools` (`klt`) | **not pinned by this repo** since 2026-11-14 (issue #371). Per the 2026-11-09 operator ruling ([2AMLogic/2am#7038](https://github.com/2AMLogic/2am/issues/7038)) chip repos track one fleet version — `PIN_KLAYOUT_TOOLS_VERSION` in 2AMLogic/2am's `infra/aws/batch-image-pins.env` — instead of declaring their own. [`layout/toolchain.json`](../layout/toolchain.json)'s `klt_install` is therefore the bare requirement `klayout-tools`, still the single place both flows (`layout/`'s DRC/LVS and `verification/`'s cocotb harness) read, so they cannot drift onto different builds by accident. The fleet version was **0.9.0** when this row was written — read 2am's file rather than trusting that number, and read `klt version --format json` for what a given run actually used. Each evidence record names the version that produced it and is **not** re-minted when the fleet bumps (rule 2 of the ruling); `layout/toolchain.json`'s append-only comment log carries the migration's rationale and every earlier pin's. Historical, for reading old records: the last declared pin was `klayout-tools==0.8.0`, tag `v0.8.0`, commit [`c572046be644`](https://github.com/2AMLogic/klayout-tools/commit/c572046be644e0407f693f2410f3abb799d68a3a) (issue #356, 2026-10-27) — `klt-pin: historical` | `uv tool install --force --with cocotb==2.1.0 --with cocotb-tools==0.1.0 "$(python3 -c "import json;print(json.load(open('layout/toolchain.json'))['klt_install'])")"` (what `scripts/setup-env.sh` runs; CI then **prints** `klt --version` and `klt version --format json` rather than asserting a version string). On a shared host use `uvx --from "klayout-tools==<the fleet version>" klt …` instead of installing |
 | `cocotb` | `2.1.0` (pinned explicitly in `scripts/setup-env.sh`, installed as a `uv tool install --with` extra alongside `klt`) | verified end-to-end: `klt functional-verification verification/request-protocol-emulator.json --format json` reports `"cocotb_version": "2.1.0"` in its `environment` block |
 | `cocotb-tools` | `0.1.0` (its only published release as of this writing) | same `uv tool install --with` step |
 | Python | whatever `uv`'s own resolver selects for `klayout-tools`' `requires-python = ">=3.10"` floor — `uv tool install` manages this itself; no separate interpreter-selection step is needed here (contrast with sky130-modexp's script, which hand-picks an interpreter — see "Why this differs" below) | `uv tool install` |
 
-**Pin rationale**: `scripts/setup-env.sh` deliberately reads the `klt` pin
-live from `layout/toolchain.json` instead of hardcoding a second copy of the
-commit hash. `layout/toolchain.json`'s own append-only comment log is the
-authoritative history of every `klt` pin bump and why — see that file
+**Rationale**: `scripts/setup-env.sh` deliberately reads `klt_install`
+live from `layout/toolchain.json` instead of hardcoding a second copy of it.
+That mattered when the value was a commit hash and it still matters now that
+it is a bare requirement: there is exactly one declaration, and CI and a
+local developer provision from it identically. `layout/toolchain.json`'s own
+append-only comment log is the authoritative history of every `klt` pin bump,
+and of the 2026-11-14 migration off pinning altogether — see that file
 directly for the full rationale chain, rather than duplicating it here where
 it could go stale independently.
 
@@ -54,7 +57,7 @@ command fail with an opaque error.
 | Tool | Used for | Resolved version on the environment these records were produced on |
 |---|---|---|
 | Icarus Verilog (`iverilog`) | `klt functional-verification` (the only leg this script's acceptance criterion requires) | 12.0 (stable) (`iverilog -V`) |
-| Yosys (`yosys`) | `klt synthesize` (plain, `--pdk ihp-sg13cmos5l`, at `layout/toolchain.json`'s klt pin; `flow/run-sta-corner-sweep.sh` uses it to produce the gate-level netlist its `klt sta` leg times). The earlier direct-Yosys stopgap was retired from the active path 2026-09-21 (issue #20) and deleted 2026-10-07 (issue #32) — see `flow/README.md` | 0.68 (`yosys -V`) |
+| Yosys (`yosys`) | `klt synthesize` (plain, `--pdk ihp-sg13cmos5l`, at the `klt` `layout/toolchain.json`'s `klt_install` provisions; `flow/run-sta-corner-sweep.sh` uses it to produce the gate-level netlist its `klt sta` leg times). The earlier direct-Yosys stopgap was retired from the active path 2026-09-21 (issue #20) and deleted 2026-10-07 (issue #32) — see `flow/README.md` | 0.68 (`yosys -V`) |
 | OpenROAD (`openroad`) | any future place-and-route leg of `flow/` (this program's own flow; distinct from the Tiny Tapeout LibreLane flow, which bundles and drives its own OpenROAD internally — see `.github/workflows/gds.yaml`) | `26Q3-1278-g4421880472` (`openroad -version`) |
 
 Unlike `sky130-modexp`, this repo does not pin or wrap `openroad` behind a

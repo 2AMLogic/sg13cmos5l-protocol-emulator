@@ -389,6 +389,74 @@ def _add_record_with_inputs(repo: Path, inputs: list[tuple], msg: str) -> None:
     _add_record(repo, "demo", NEW_ID, make_record(NEW_ID, "demo", inputs=inputs), msg)
 
 
+# --- #371 / 2AMLogic/2am#7038: the exempt toolchain input path -------------
+
+TOOLCHAIN_PATH = "layout/toolchain.json"
+TOOLCHAIN_PINNED = '{"klt_install": "klayout-tools==0.8.0"}\n'
+TOOLCHAIN_FLEET = '{"klt_install": "klayout-tools (fleet version)"}\n'
+
+
+def case_stale_toolchain_hash_is_exempt(repo: Path) -> None:
+    """The 2026-11-09 fleet-version ruling (2AMLogic/2am#7038, issue #371):
+    editing `layout/toolchain.json` must NOT stale a live record that cites
+    it. The recorded hash stays as frozen provenance -- a record keeps the
+    toolchain version that produced it -- rather than forcing a repo-wide
+    re-mint on every fleet bump."""
+    (repo / "layout").mkdir(exist_ok=True)
+    (repo / "layout" / "toolchain.json").write_text(TOOLCHAIN_PINNED, encoding="utf-8")
+    _add_record_with_inputs(
+        repo,
+        [
+            ("rtl/dut.v", _sha256_text(DUMMY_RTL)),
+            (TOOLCHAIN_PATH, _sha256_text(TOOLCHAIN_PINNED)),
+        ],
+        "fixture: live record citing the toolchain pin",
+    )
+    (repo / "layout" / "toolchain.json").write_text(TOOLCHAIN_FLEET, encoding="utf-8")
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "--quiet", "-m", "fixture: drop the per-repo klt pin")
+
+
+def case_other_input_still_checked_on_exempt_record(repo: Path) -> None:
+    """The exemption is per-PATH, never a per-record opt-out: a record that
+    cites the exempt toolchain file must still fail on a stale hash for any
+    other input it cites."""
+    case_stale_toolchain_hash_is_exempt(repo)
+    (repo / "rtl" / "dut.v").write_text(
+        DUMMY_RTL + "// the RTL changed after the record was minted\n",
+        encoding="utf-8",
+    )
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "--quiet", "-m", "fixture: change a non-exempt source too")
+
+
+def case_exempt_input_must_still_be_tracked(repo: Path) -> None:
+    """Exempt from the hash *comparison* only, not from check 7: a live
+    record's toolchain input must still name a git-tracked regular file, so a
+    record citing a path that does not exist is still an error."""
+    _add_record_with_inputs(
+        repo,
+        [
+            ("rtl/dut.v", _sha256_text(DUMMY_RTL)),
+            (TOOLCHAIN_PATH, _sha256_text(TOOLCHAIN_PINNED)),
+        ],
+        "fixture: cite a toolchain file that was never committed",
+    )
+
+
+def case_exempt_input_hash_must_still_be_wellformed(repo: Path) -> None:
+    """Exempt from the comparison, not from check 7's grammar: an empty
+    content_hash on the toolchain input is still an error, so the exemption
+    cannot be used to smuggle in an unverifiable entry."""
+    (repo / "layout").mkdir(exist_ok=True)
+    (repo / "layout" / "toolchain.json").write_text(TOOLCHAIN_PINNED, encoding="utf-8")
+    _add_record_with_inputs(
+        repo,
+        [("rtl/dut.v", _sha256_text(DUMMY_RTL)), (TOOLCHAIN_PATH, "")],
+        "fixture: toolchain input with an empty content_hash",
+    )
+
+
 def case_symlinked_record_file(repo: Path) -> None:
     """The Judge's A2: a record file that is a symlink to a file outside
     `verification/records/`. git versions only the link text, so the target
@@ -681,6 +749,30 @@ CASES = [
         case_supersedes_is_a_list,
         1,
         "`supersedes` must be a record-id string or null, not list",
+    ),
+    (
+        "a stale layout/toolchain.json hash is exempt from freshness",
+        case_stale_toolchain_hash_is_exempt,
+        0,
+        "PASS: all records valid",
+    ),
+    (
+        "a stale non-exempt input still fails on a record citing the toolchain",
+        case_other_input_still_checked_on_exempt_record,
+        1,
+        "demo/records/20260102-000000-abc1234.md: provenance hash for `rtl/dut.v` is stale",
+    ),
+    (
+        "the exempt toolchain input must still be a tracked file",
+        case_exempt_input_must_still_be_tracked,
+        1,
+        "input `layout/toolchain.json` no longer exists in the working tree",
+    ),
+    (
+        "the exempt toolchain input must still carry a well-formed hash",
+        case_exempt_input_hash_must_still_be_wellformed,
+        1,
+        "`layout/toolchain.json` has content_hash ''",
     ),
 ]
 

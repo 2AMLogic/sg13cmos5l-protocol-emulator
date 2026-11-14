@@ -430,6 +430,76 @@ capture, PVT corner sweeps, or Monte Carlo.
   are the inventories' hashes. The `signoff` CI job re-attests each before the
   tier re-render. Baselines: `signoff-baseline` `20261028-183910-18198b7` to
   `20261028-183917-18198b7` (one per live head), still **4 of 11**.
+- **2026-11-14 (issue #371): this repo stops pinning klayout-tools and tracks
+  the fleet version; item 7 goes `unmet` -> `met`; 4 of 11 becomes 5 of 11.**
+  Per the 2026-11-09 operator ruling (2AMLogic/2am#7038), `layout/toolchain.json`
+  declares no klayout-tools version and `klt_last_verified_commit` is gone;
+  `scripts/signoff-report.sh`'s commit-equality gate is replaced by recording
+  the grading build, and CI prints `klt --version` instead of asserting one.
+  Under the ruling an evidence record **keeps the version that produced it**, so
+  no record was re-minted for the version move itself, and
+  `verification/check_records.py` no longer compares this file's hash when
+  grading provenance freshness.
+  Items 9 and 10 WERE re-attested, because their envelopes pin by content hash
+  files this change edits (`scripts/setup-env.sh` and `scripts/signoff-report.sh`
+  for item 9; `.github/workflows/ci.yml`, `docs/environment.md`,
+  `verification/check_records.py` and `manifests/evidence/testbenches.txt` for
+  item 10). Both pass at klt `0.9.0`: item 9 with all 27 RTL benches green on
+  the cold start, item 10 with 15 of 15 checks. `manifests/attest/item9.json`'s
+  `pins.tools.klt` now names the version that produced the attestation rather
+  than a repo pin, and its `cold_start` declares a `timeout_s` (the sequential
+  Icarus run does not fit klt's 1800 s default on a shared worker). Item 8's pin
+  follows the regenerated characterization report; item 10's pin is unchanged
+  (its inventory bytes did not move).
+  **The one verdict movement, recorded and not silently adopted: T1 item 7
+  (Post-layout verification) goes `unmet`/`unverifiable_provenance` -> `met`.**
+  The two bullets above both recorded item 7 as stuck because a
+  `functional-verification` envelope carries no `provenance.input.content_hash`
+  for the manifest pin to be compared against, and both said the only levers
+  were an upstream binding or #275 superseding the envelope. The upstream
+  binding landed: klayout-tools#4893 closed 2026-11-04, before v0.9.0 was
+  tagged 2026-11-05, and the grader can now re-hash the cited evidence file.
+  The same citation and the same pin (`sha256:dfb3fe29...`) render `met` with
+  `content_hash_basis: "evidence_file"`, `input_verified: true`. The pin was
+  NOT dropped and no ratified value was relaxed -- the grader checks more than
+  it did, not less. Item 7's body-bias disclosure note is unchanged and stays
+  claimant-enforced. Items 3, 4, 5, 6, 8 and 11 are byte-identical on status
+  and reason; `tier` stays `null`.
+  **Second recorded movement, in envelope SHAPE rather than verdict: T1 item
+  1's envelope and its manifest pin changed basis.** At klt 0.8.0 item 1's
+  envelope recorded `provenance.input` = the inventory, so the manifest pin
+  was `manifests/attest/item1.json`'s hash (the bullet above, 2026-10-28,
+  says "the pins of items 1, 9 and 10 are the inventories' hashes" -- that is
+  now true of items 9 and 10 only). At 0.9.0 the envelope records
+  `provenance.input.paths`, every inventoried file with its own hash, and
+  `provenance.input.content_hash` is a digest over the whole set; item 1's pin
+  is that digest. Nothing about item 1's evidence changed -- its re-attest is
+  17 of 17 checks passed, as before -- but the committed 0.8.0-shaped envelope
+  `--check`s as `drifted` against a 0.9.0 producer, so it had to be
+  regenerated. `scripts/check_evidence_inventories.py` only understood the
+  single-file shape and now reads both, verifying each set member against its
+  own recorded hash and leaving the set digest to `klt signoff --attest
+  --check`, which is what derives it;
+  `scripts/test_check_evidence_inventories.py` covers the new shape.
+  Baselines: `signoff-baseline` `20261114-021001-2ad8b1c` to
+  `20261114-021008-2ad8b1c` (one per live head), **5 of 11**, superseding the
+  `20261108-1200xx-79d0aef` heads directly.
+  **Ordering note for the next person who refreshes these envelopes.** The
+  baseline had to be rendered twice to get here, and only the second render
+  landed. `klt signoff --attest 10` runs `npm run lint`, which runs the record
+  linter, and `-o` writes nothing when a check fails (klayout-tools#5538). So
+  when a file is BOTH an item-10 input and a `signoff-baseline` input --
+  `manifests/evidence/testbenches.txt` and `scripts/check_evidence_inventories.py`
+  both are -- editing it stales the baseline, which fails the linter, which
+  blocks the attestation that has to pin the edited file. The way through is
+  to mint a throwaway baseline round, re-attest item 10, then delete that
+  round and mint the real one: a record added and deleted on the same branch
+  leaves no append-only violation, so no scaffolding evidence lands. The
+  2026-10-28 bullet's "re-mint item 10 FIRST, on a tree whose baseline still
+  holds" only works when nothing else has already staled the baseline.
+  A second attest-time gap found here is filed as klayout-tools#5602: a
+  declared check that invokes `klt` resolves the host's klt, not the attesting
+  one, because the attesting venv's `bin` is stripped from the check's `PATH`.
 - **Every citation pins a `content_hash`**, and what it is the hash of
   depends on the cited envelope (clarified 2026-10-10, issue #168; the
   manifests on `main` have always followed this, the sentence here did
@@ -661,9 +731,11 @@ retirement's supersession chain must extend).
   above) and `docs/cli/signoff.md`.
 - Gap-to-T1 tracker (issue #27) — the living checklist that points at
   this manifest's committed report as the verdict of record.
-- Toolchain pin: `layout/toolchain.json` (`klt_install`,
-  `klt_last_verified_commit`); provisioning: `scripts/setup-env.sh`;
-  environment record: `docs/environment.md`.
+- Toolchain declaration: `layout/toolchain.json` (`klt_install`,
+  `klt_required_commands`) — a bare `klayout-tools` requirement since
+  2026-11-14, not a pin, and `klt_last_verified_commit` is gone with it
+  (issue #371, per 2AMLogic/2am#7038); provisioning:
+  `scripts/setup-env.sh`; environment record: `docs/environment.md`.
 
 ## Item 8: characterization report (issue #349)
 

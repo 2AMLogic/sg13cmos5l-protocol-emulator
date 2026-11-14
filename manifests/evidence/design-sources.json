@@ -150,16 +150,126 @@
     ]
   },
   "provenance": {
-    "klt_version": "0.8.0",
+    "klt_version": "0.9.0",
     "klayout_version": null,
     "pdk": null,
     "deck": null,
     "input": {
-      "path": {
-        "path": "manifests/attest/item1.json",
-        "scope": "repo"
-      },
-      "content_hash": "sha256:ae4afb9eba3be835a8f8a433619e575a42d436eaca2f7cf9952788a76dc3b407"
+      "paths": [
+        {
+          "path": {
+            "path": "firmware/asm/boot/boot_rom.asm",
+            "scope": "repo"
+          },
+          "content_hash": "sha256:1cd4580ce27f2a36846fd3475dbf192acf79d8c8999c9584e5a4627e3b881935"
+        },
+        {
+          "path": {
+            "path": "firmware/build/boot/boot_rom.hex",
+            "scope": "repo"
+          },
+          "content_hash": "sha256:5d5fc8a5c52577476563329c9bf9014ee5c0e2cf87eca33af32fc64edf1d1ab1"
+        },
+        {
+          "path": {
+            "path": "flow/blackbox-RM_IHPSG13_1P_256x16_c2_bm_bist.v",
+            "scope": "repo"
+          },
+          "content_hash": "sha256:f6db947091f94805d4e178cf31cbaa2d185bed36d4747ad165c34c592e07ac6f"
+        },
+        {
+          "path": {
+            "path": "flow/synthesize-protocol-emulator.json",
+            "scope": "repo"
+          },
+          "content_hash": "sha256:e62454e3eb50689dfc4d4ef9b7012de44633e661b3841be4c46137c93511885d"
+        },
+        {
+          "path": {
+            "path": "info.yaml",
+            "scope": "repo"
+          },
+          "content_hash": "sha256:038e3988c7d4eaa54a228ad9d9d94fd998504317e3dc2ba98a9117c63cc44b24"
+        },
+        {
+          "path": {
+            "path": "manifests/attest/item1.json",
+            "scope": "repo"
+          },
+          "content_hash": "sha256:ae4afb9eba3be835a8f8a433619e575a42d436eaca2f7cf9952788a76dc3b407"
+        },
+        {
+          "path": {
+            "path": "rtl/protocol_boot_rom.v",
+            "scope": "repo"
+          },
+          "content_hash": "sha256:329ed189d457010b259349e5d59e36db09d67422b4909320253929c3e0fdbebe"
+        },
+        {
+          "path": {
+            "path": "rtl/protocol_core.v",
+            "scope": "repo"
+          },
+          "content_hash": "sha256:d4bab243a80af56a41b8ef730bc0ecbee889f2c02f4587311d6f9f694636437a"
+        },
+        {
+          "path": {
+            "path": "rtl/protocol_program_memory.v",
+            "scope": "repo"
+          },
+          "content_hash": "sha256:2b08865ab24d6bac84b390dfa76bab6686b572ba8f19124130bfc34e93dff637"
+        },
+        {
+          "path": {
+            "path": "rtl/vendor/RM_IHPSG13_1P_256x16_c2_bm_bist.v",
+            "scope": "repo"
+          },
+          "content_hash": "sha256:9d456840a37dff650ee6a09dc1f3d4e2d8d3348fcea7dc305933dd4543feff1a"
+        },
+        {
+          "path": {
+            "path": "rtl/vendor/RM_IHPSG13_1P_core_behavioral_bm_bist.v",
+            "scope": "repo"
+          },
+          "content_hash": "sha256:e2e43ec0159cbc34662fe91114e8cb03a697a2a829ad63b0d4f06631908ea787"
+        },
+        {
+          "path": {
+            "path": "src/config.json",
+            "scope": "repo"
+          },
+          "content_hash": "sha256:199d85202619655bfb526e59ef8b308b3de57755a951c4085e346c51b493ffe7"
+        },
+        {
+          "path": {
+            "path": "src/pdn_cfg.tcl",
+            "scope": "repo"
+          },
+          "content_hash": "sha256:147f4b08456e2f57a3673b92a65e3af4b214f498146dbba6ca3228c06614bc8d"
+        },
+        {
+          "path": {
+            "path": "src/tt_um_2amlogic_protocol_emulator.v",
+            "scope": "repo"
+          },
+          "content_hash": "sha256:8c380b9165a09a60e6be8d8546eac360a733317253f152c15faaa13489e94a29"
+        },
+        {
+          "path": {
+            "path": "verification/records/librelane-gds-signoff-check/artifacts/20261011-144308-e5a0bae/reference-asrouted.v",
+            "scope": "repo"
+          },
+          "content_hash": "sha256:fbc7bc30a4987aaa47ea2633df46993ebe1ee42171edc54173e25ff343e085ba"
+        },
+        {
+          "path": {
+            "path": "verification/records/librelane-gds-signoff-check/artifacts/20261011-144308-e5a0bae/reference-klt-yosys.v",
+            "scope": "repo"
+          },
+          "content_hash": "sha256:7c9c4611974c554c738840692e3d4f7c0bac82f3bd649eb70545f62306add2ed"
+        }
+      ],
+      "content_hash": "sha256:a6bd1d9f573745aa12c65465893a6bd81040a3b966e69f44acb3190270f98bfa"
     }
   }
 }

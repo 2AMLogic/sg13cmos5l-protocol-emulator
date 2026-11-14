@@ -77,7 +77,13 @@
 
 ## Environment, pinned
 
-# klt + cocotb: the klt pin is layout/toolchain.json (klayout-tools==0.8.0, c572046be644);
+# klt + cocotb: klt is NOT pinned by this repo (issue #371, per the 2026-11-09
+# operator ruling 2AMLogic/2am#7038). layout/toolchain.json's klt_install is the
+# bare requirement `klayout-tools`; the fleet version is
+# PIN_KLAYOUT_TOOLS_VERSION in 2AMLogic/2am infra/aws/batch-image-pins.env (0.9.0
+# when this line was written -- read that file, and read each record's own
+# provenance for the version that produced it). The last declared pin was
+# klayout-tools==0.8.0, c572046be644 -- klt-pin: historical.
 # cocotb 2.1.0 and cocotb-tools 0.1.0 are pinned in scripts/setup-env.sh.
 #   ./scripts/setup-env.sh
 # Simulator: Icarus Verilog on PATH (the records name 13.0).
