@@ -62,12 +62,6 @@ The body of #351 predates the klt 0.8.0 deck: it ticks item 3 and points items
   row 7 still names klayout-tools#2635, closed upstream on 2026-10-27. Done
   when both rows carry a dated note, `scripts/check_gap_digest.py` passes and
   the characterization report and signoff baseline are re-minted (as in #386).
-- **Correct the "klt STA is blocked and claims nothing" statements (#398).**
-  `README.md`, `docs/submission/verification.md` and
-  `docs/submission/ai-use.md` say so, but a macro-backed `klt sta` record
-  exists (`sta-corner-sweep/records/20261101-032923-c606644.md`, PR #370). Done
-  when each states that record's result and
-  `python3 verification/check_docs_records.py` passes.
 
 ## Next
 
@@ -119,10 +113,9 @@ Unblocked once the netlist evidence refresh (#265) lands and PR #263 merges:
 - **Second ratification act.** Rows 13 and 14 and the `Proposed` DRs wait for
   two `RATIFY-KEY` reviews on `spec/ratification-batch-2.md`.
 
-Dispatchable from the Now list: #396 and #398, both filed 2026-11-14 and now
-`loom:building`. #397 carries `loom:blocked`, so it is not dispatchable. Every
-other open issue is in progress (#371), waits on #371, or sits behind the
-attended refresh.
+Dispatchable from the Now list: #396 (filed 2026-11-14, `loom:building`).
+#397 carries `loom:blocked`, so it is not dispatchable. Every other open issue
+is in progress (#371), waits on #371, or sits behind the attended refresh.
 
 ## Not planned
 
