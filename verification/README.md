@@ -851,7 +851,17 @@ on:
   the current working tree (a record is "live" unless a valid supersession
   in its own experiment directory names it; the same record ID superseded in
   a different experiment, or in a directory that merely shares the
-  experiment's leaf name, does not count, #157);
+  experiment's leaf name, does not count, #157) — **with one exempt path**,
+  `layout/toolchain.json`: its recorded hash stays in the record as frozen
+  provenance but is not compared against the working tree. The 2026-11-09
+  operator ruling (2AMLogic/2am#7038) retires per-repo klayout-tools pins in
+  favour of one fleet version, and under it a record keeps the toolchain
+  version that produced it instead of being re-minted when the declaration
+  moves; comparing the hash made every edit to that file stale every live
+  record citing it (issue #371). The exemption is per-path, never per-record:
+  every other input of a live record is still compared, and this path is
+  still required to be well-formed and git-tracked. The list is
+  `FRESHNESS_EXEMPT_INPUT_PATHS` in `check_records.py`;
 - **append-only violations**: any file under `verification/records/`
   modified, renamed, or deleted relative to the merge base with
   `origin/main`.

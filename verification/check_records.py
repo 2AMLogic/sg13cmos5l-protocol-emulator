@@ -43,6 +43,11 @@ Checks, per record `verification/records/<experiment>/records/<record-id>.md`:
    experiment directory: record IDs are not unique across experiments (a
    batch mint stamps one ID on many), so the exemption is keyed on
    `(experiment, record_id)`, never on the ID alone (#157).
+   One input path is exempt from the *comparison* (but not from the
+   well-formedness and tracked-file checks): `layout/toolchain.json`, per the
+   2026-11-09 fleet-version ruling (2AMLogic/2am#7038) -- see
+   `FRESHNESS_EXEMPT_INPUT_PATHS` for the reason. Every other input of a live
+   record is still compared.
 5. **Append-only** -- every path under `verification/records/` must be
    either untracked-before (a pure addition) or unchanged, relative to the
    merge-base with `origin/main` (or `--base-ref`). Any modification,
@@ -87,6 +92,26 @@ RECORDS_ROOT = REPO_ROOT / "verification" / "records"
 RECORD_ID_RE = re.compile(r"^\d{8}-\d{6}-[0-9a-f]{7,40}$")
 EXPERIMENT_RE = re.compile(r"^[a-z0-9][a-z0-9._-]*$")
 CONTENT_HASH_RE = re.compile(r"^sha256:[0-9a-f]{64}$")
+
+# Input paths whose recorded `content_hash` is kept as frozen provenance but is
+# NOT compared against the working tree (check 4). One entry, with its reason:
+#
+#   `layout/toolchain.json` -- the operator ruling of 2026-11-09
+#   (2AMLogic/2am#7038) retires per-repo klayout-tools pins: chip repos track
+#   one fleet version (`PIN_KLAYOUT_TOOLS_VERSION` in 2AMLogic/2am
+#   `infra/aws/batch-image-pins.env`), and under rule 2 an evidence record
+#   *keeps the version that produced it* rather than being re-minted whenever
+#   the toolchain declaration moves. Comparing this file's hash made the
+#   opposite true: any edit to it staled every live record that cites it (nine
+#   of them as of 2026-11-14), forcing a repo-wide re-mint on every bump --
+#   the per-chip loop the ruling exists to delete, and what turned PR #390's
+#   CI red (issue #371).
+#
+# The exemption is deliberately per-path and not a per-record opt-out: every
+# OTHER input of every live record is still compared, so a stale RTL, netlist
+# or GDS hash still fails. Records already citing this file keep their
+# (now inert) entry unedited; new records simply need not list it.
+FRESHNESS_EXEMPT_INPUT_PATHS = frozenset({"layout/toolchain.json"})
 
 REQUIRED_META_KEYS = (
     "record_id",
@@ -427,6 +452,10 @@ def check_hash_freshness(path: Path, superseded: set) -> list[str]:
         problem = live_input_error(path, rel_path)
         if problem:
             errors.append(problem)
+            continue
+        if rel_path in FRESHNESS_EXEMPT_INPUT_PATHS:
+            # Recorded for provenance, not asserted -- see
+            # FRESHNESS_EXEMPT_INPUT_PATHS (2AMLogic/2am#7038, issue #371).
             continue
         src = REPO_ROOT / rel_path
         current_hash = sha256_of(src)
