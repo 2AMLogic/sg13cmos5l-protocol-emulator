@@ -87,7 +87,7 @@
         "role": "testbench",
         "path": "scripts/check_evidence_inventories.py",
         "passed": true,
-        "content_hash": "sha256:699bc6ad2490f73a3551ffe61b7ffddcda882f01f90162f5455ac70aa4f6fbb8"
+        "content_hash": "sha256:6fb28630ee24867cbd4e7183d9f4ef5654210ca5df099cb4383c709b04a9b94d"
       },
       {
         "check": "present",
@@ -101,14 +101,14 @@
         "role": "testbench",
         "path": "scripts/setup-env.sh",
         "passed": true,
-        "content_hash": "sha256:10ea796726cb15062f30cb690aaf4381f020a3f773bbe2ced4598ab767811724"
+        "content_hash": "sha256:59d117fcc6dc8342c81bc69110a9b02914d977b193d687ad9d07bcc6fef757cd"
       },
       {
         "check": "present",
         "role": "testbench",
         "path": "scripts/signoff-report.sh",
         "passed": true,
-        "content_hash": "sha256:f9f3b9c76fc3a5b441d20ac408ab63fdc35470ac76bbbd6894d7027670895ee5"
+        "content_hash": "sha256:418c9398d4f027026d035d5f902897d12bc2b904282a405995423e328c8d5b36"
       },
       {
         "check": "present",
@@ -276,7 +276,7 @@
         "role": "testbench",
         "path": "verification/remint_records.py",
         "passed": true,
-        "content_hash": "sha256:711bc05826c561f1753227f48d00586510d2e175e3600dcf5b6036da67834949"
+        "content_hash": "sha256:5f3280b04be7152692d8f3096c6a6444666d26a662cb7e76d6d83a365aeee730"
       },
       {
         "check": "present",
@@ -705,14 +705,14 @@
           "cocotb": "2.1.0",
           "cocotb-tools": "0.1.0",
           "iverilog": "12.0",
-          "klt": "0.8.0",
+          "klt": "0.9.0",
           "yosys": "0.68"
         }
       }
     ]
   },
   "provenance": {
-    "klt_version": "0.8.0",
+    "klt_version": "0.9.0",
     "klayout_version": null,
     "pdk": null,
     "deck": null,
@@ -721,7 +721,7 @@
         "path": "manifests/attest/item9.json",
         "scope": "repo"
       },
-      "content_hash": "sha256:70d44f17d34881c742d237927c531eeda5661c77f64a0001b08eb98c291be9a1"
+      "content_hash": "sha256:5a797e8f99155edbe3b16799c827e43a71a7e27ac3e43552f6a3ac62f97b17e4"
     }
   }
 }

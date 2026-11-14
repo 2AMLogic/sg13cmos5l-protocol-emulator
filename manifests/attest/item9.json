@@ -2,7 +2,7 @@
   "schema_version": 1,
   "kind": "t1-attestation-inventory",
   "t1_item": 9,
-  "description": "T1 item 9 (Testbenches shipped). testbenches: every committed bench, its request-*.json, mutant runner, reference model and formal property named in manifests/evidence/testbenches.txt (which keeps the per-experiment cold-start index). cold_start: scripts/run-rtl-benches.sh, the PDK-free cocotb run over every verification/request-*.json; local_only because it needs iverilog, which the signoff CI job does not have -- the rtl-benches CI job runs the same command on every push. pins: the PDK revision of the flow of record (README.md, rtl/vendor/README.md) and the tool versions in layout/toolchain.json and docs/environment.md.",
+  "description": "T1 item 9 (Testbenches shipped). testbenches: every committed bench, its request-*.json, mutant runner, reference model and formal property named in manifests/evidence/testbenches.txt (which keeps the per-experiment cold-start index). cold_start: scripts/run-rtl-benches.sh, the PDK-free cocotb run over every verification/request-*.json; local_only because it needs iverilog, which the signoff CI job does not have -- the rtl-benches CI job runs the same command on every push. timeout_s is declared because the full sequential Icarus cold start does not fit klt's 1800 s default on a shared dispatch worker (issue #371); it is a ceiling on a local re-attest, not a performance claim. pins: the PDK revision of the flow of record (README.md, rtl/vendor/README.md) and the tool versions the cold-start run reproduces against. The klt entry is the klayout-tools version that produced this attestation, NOT a repo pin: since 2026-11-14 (issue #371, per 2AMLogic/2am#7038) layout/toolchain.json declares no klayout-tools version and this repo tracks the fleet's. The remaining entries describe the CI rtl-benches flow of record.",
   "testbenches": [
     "firmware/tools/test_loadseq.py",
     "flow/erc-librelane-gds.json",
@@ -104,7 +104,8 @@
     "argv": [
       "scripts/run-rtl-benches.sh"
     ],
-    "local_only": true
+    "local_only": true,
+    "timeout_s": 7200
   },
   "pins": {
     "pdk": {
@@ -112,7 +113,7 @@
       "revision": "2bbec755dc67"
     },
     "tools": {
-      "klt": "0.8.0",
+      "klt": "0.9.0",
       "cocotb": "2.1.0",
       "cocotb-tools": "0.1.0",
       "iverilog": "12.0",
