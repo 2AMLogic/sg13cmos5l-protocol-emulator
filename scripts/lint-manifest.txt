@@ -9,6 +9,7 @@ python3 verification/check_records.py
 python3 verification/test_check_records.py
 python3 verification/test_check_docs_records.py
 python3 verification/check_docs_records.py
+python3 verification/check_docs_records.py --docs docs
 python3 verification/test_remint_records.py
 python3 flow/test_post_layout_protocols.py
 python3 verification/test_reset_coverage.py
