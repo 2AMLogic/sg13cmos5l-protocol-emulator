@@ -8,14 +8,21 @@
 #               --format json
 #
 # from the repo root (evidence paths inside the manifest are cwd-relative,
-# so the runner -- not the caller -- owns the working directory), after
-# checking that the `klt` it is about to use is at the exact commit
-# `layout/toolchain.json` pins. The rendered report is the verdict of record
-# for this block's T1 state once committed as an evidence record under
+# so the runner -- not the caller -- owns the working directory). The
+# rendered report is the verdict of record for this block's T1 state once
+# committed as an evidence record under
 # verification/records/signoff-baseline/ (see manifests/README.md).
 #
-# No `--tiers-doc` override: the pinned `klt` (`layout/toolchain.json`)
-# bundles its own copy of `docs/design-evidence-tiers.md` with all eleven
+# It does NOT gate on a klt version. Until 2026-11-14 it refused to run
+# unless `klt version --format json`'s git_commit equalled
+# `layout/toolchain.json`'s `klt_last_verified_commit`; the 2026-11-09
+# operator ruling (2AMLogic/2am#7038) retired both the repo-level pin and
+# that check -- a record keeps the version that produced it, and signoff
+# stops checking a record against a repo pin (issue #371). The grading
+# build's full identity is printed to stderr and travels in the rendered
+# report's build block instead.
+#
+# No `--tiers-doc` override: the provisioned `klt` bundles its own copy of `docs/design-evidence-tiers.md` with all eleven
 # T1 items (issue #52 retired the vendored `manifests/design-evidence-tiers.md`
 # once the pin moved past the checklist's item-11 addition -- see
 # manifests/README.md's "The vendored tiers doc" section for the history and
@@ -30,8 +37,8 @@
 #      the manifest and found nothing outside the build-identity block
 #      moved, so the same pinned commit verifies from any provisioning
 #      route; klayout-tools #2249/#2258).
-#   1  Real failure: klt missing / not at the pinned commit / `signoff`
-#      missing from its subcommand list; klt exitted 1 or 2 (usage or
+#   1  Real failure: klt missing / `signoff` missing from its subcommand
+#      list; klt exitted 1 or 2 (usage or
 #      error); no signoff-baseline record committed; or --check-latest
 #      found a drift (`klt signoff --check` exitted 3, status "drifted":
 #      a graded field outside the build block -- item status/reason,
@@ -64,7 +71,6 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 cd "$REPO_ROOT"
 
 MANIFEST="manifests/sg13cmos5l-protocol-emulator.json"
-TOOLCHAIN_JSON="layout/toolchain.json"
 RECORDS_GLOB="verification/records/signoff-baseline/records/*.md"
 
 OUT=""
@@ -90,35 +96,43 @@ if ! command -v "$KLT_BIN" >/dev/null 2>&1; then
   exit 1
 fi
 
-# --- pin check: the grading build must be layout/toolchain.json's commit ---
+# --- producer identity: RECORDED, not asserted (issue #371) ---
+# This used to be a gate: it read `klt_last_verified_commit` from
+# layout/toolchain.json and exitted 1 unless `klt version --format json`'s
+# git_commit matched it exactly. The 2026-11-09 operator ruling
+# (2AMLogic/2am#7038) retires that check along with the per-repo pin -- rule 2
+# is that an evidence record keeps the klayout-tools version that produced it,
+# and signoff stops checking that a record matches a repo pin. So the grading
+# build's identity is now REPORTED here (and carried into the rendered
+# report's own build block, which `klt signoff --check` excludes from the
+# comparison) rather than used to refuse the run. A release that actually
+# moves a graded field is still caught -- by --check-latest's drift
+# comparison, which names the field, instead of by a version mismatch that
+# pre-empted it.
 if ! command -v python3 >/dev/null 2>&1; then
-  echo "error: python3 required to read $TOOLCHAIN_JSON" >&2
+  echo "error: python3 required to read '$KLT_BIN version --format json'" >&2
   exit 1
 fi
-PINNED_COMMIT="$(python3 -c "
-import json
-with open('$TOOLCHAIN_JSON') as f:
-    doc = json.load(f)
-print(doc['klt_last_verified_commit'])
-")"
-ACTUAL_COMMIT="$(python3 -c "
+GRADER_ID="$(python3 -c "
 import json, subprocess, sys
 out = subprocess.run(['$KLT_BIN', 'version', '--format', 'json'], capture_output=True, text=True)
 try:
-    print(json.loads(out.stdout)['git_commit'])
+    doc = json.loads(out.stdout)
 except Exception:
     sys.exit(1)
+print('version {} (git_commit {}, tag {}, is_release {}, grading_ruleset_id {})'.format(
+    doc.get('version', '?'),
+    doc.get('git_commit', '?'),
+    doc.get('git_tag') or 'none',
+    doc.get('is_release', '?'),
+    doc.get('grading_ruleset_id', '?'),
+))
 ")" || { echo "error: could not read '$KLT_BIN version --format json'" >&2; exit 1; }
-if [[ "$ACTUAL_COMMIT" != "$PINNED_COMMIT" ]]; then
-  echo "error: $KLT_BIN is at commit $ACTUAL_COMMIT, but $TOOLCHAIN_JSON pins $PINNED_COMMIT." >&2
-  echo "  The committed signoff report is only reproducible on the pinned build. Re-provision:" >&2
-  echo "    ./scripts/setup-env.sh" >&2
-  exit 1
-fi
+echo "-- grading klt: $GRADER_ID" >&2
 
 # --- capability check: layout/toolchain.json's own drift-detect pattern ---
 if ! "$KLT_BIN" --help 2>&1 | grep -q "signoff"; then
-  echo "error: '$KLT_BIN' does not list a 'signoff' subcommand (pinned build at $PINNED_COMMIT is missing a required capability)." >&2
+  echo "error: '$KLT_BIN' does not list a 'signoff' subcommand (the provisioned build is missing a capability layout/toolchain.json's klt_required_commands names). Provisioned build: $GRADER_ID" >&2
   exit 1
 fi
 
@@ -140,7 +154,7 @@ case "$KLT_RC" in
     exit 1 ;;
 esac
 
-echo "klt signoff rendered OK (exit $KLT_RC; grader at pinned commit $PINNED_COMMIT)" >&2
+echo "klt signoff rendered OK (exit $KLT_RC; grader: $GRADER_ID)" >&2
 
 if [[ -n "$OUT" ]]; then
   cp "$FRESH" "$OUT"
