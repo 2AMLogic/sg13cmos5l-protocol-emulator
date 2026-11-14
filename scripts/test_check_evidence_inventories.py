@@ -117,6 +117,68 @@ def wrong_item(root: Path) -> None:
     p.write_text(json.dumps(env))
 
 
+
+# --- klt 0.9.0's file-SET envelope shape (issue #371) ----------------------
+# `klt signoff --attest 1` at the fleet klayout-tools version records every
+# inventoried file under `provenance.input.paths`, each with its own hash, and
+# makes `provenance.input.content_hash` a digest over the whole set rather
+# than the sha256 of any single file. The checker must verify each member
+# against its own recorded hash, and must not read the set digest as if it
+# were one file's.
+
+
+def bind_set(root: Path, item: int, rels: list[str], env_name: str, set_digest: str) -> None:
+    env = {
+        "schema_version": 1,
+        "kind": "generic",
+        "status": "pass",
+        "t1_item": item,
+        "provenance": {
+            "input": {
+                "paths": [
+                    {
+                        "path": {"path": rel, "scope": "repo"},
+                        "content_hash": "sha256:" + sha((root / rel).read_bytes()),
+                    }
+                    for rel in rels
+                ],
+                "content_hash": set_digest,
+            }
+        },
+    }
+    write(root, f"manifests/evidence/{env_name}", json.dumps(env))
+    mpath = root / MANIFEST
+    manifest = json.loads(mpath.read_text())
+    manifest["evidence"][str(item)] = {
+        "file": f"manifests/evidence/{env_name}",
+        "content_hash": set_digest,
+    }
+    write(root, MANIFEST, json.dumps(manifest))
+
+
+SET_DIGEST = "sha256:" + "a" * 64
+
+
+def add_set_envelope(root: Path) -> None:
+    bind_set(root, 1, ["rtl/core.v", "README.md"], "design-sources.json", SET_DIGEST)
+
+
+def set_envelope_member_stale(root: Path) -> None:
+    add_set_envelope(root)
+    # Edit a member AFTER the envelope recorded its hash. The inventory .txt
+    # does not list rtl/core.v for item 1 here, so only the set member check
+    # can catch this.
+    write(root, "README.md", "# block\n\n## License\n\n## Added\n")
+
+
+def set_envelope_empty_paths(root: Path) -> None:
+    add_set_envelope(root)
+    p = root / "manifests/evidence/design-sources.json"
+    env = json.loads(p.read_text())
+    env["provenance"]["input"]["paths"] = []
+    p.write_text(json.dumps(env))
+
+
 CASES = [
     ("clean tree passes", lambda r: None, 0, "PASS"),
     ("listed file edited", lambda r: write(r, "rtl/core.v", "module core2; endmodule\n"), 1, "`rtl/core.v` changed"),
@@ -125,9 +187,14 @@ CASES = [
     ("symlink retargeted", lambda r: ((r / "src_core.v").unlink(), os.symlink("../x.v", r / "src_core.v")), 1, "points at `../x.v`"),
     ("heading dropped", lambda r: write(r, "README.md", "# block\n"), 1, "no longer has the line `## License`"),
     ("new experiment without a bench line", lambda r: write(r, "verification/records/new/records/.keep", ""), 1, "no `experiment new` line"),
-    ("inventory edited, envelope not refreshed", edit_inventory, 1, "no longer hashes to the envelope's content_hash"),
+    ("inventory edited, envelope not refreshed", edit_inventory, 1, "no longer hashes to the hash the envelope records for it"),
     ("item cited through a native envelope", native_cite, 1, "item 10 is cited, but not through a valid envelope"),
     ("envelope declares another item", wrong_item, 1, "does not cite this envelope for item 10"),
+    ("file-set envelope (klt 0.9.0 item 1) passes", add_set_envelope, 0, "PASS"),
+    ("file-set envelope with a stale member fails", set_envelope_member_stale, 1,
+     "no longer hashes to the hash the envelope records for it"),
+    ("file-set envelope with an empty paths list fails", set_envelope_empty_paths, 1,
+     "does not name a file (or file set) in the tree"),
 ]
 
 
