@@ -17,7 +17,7 @@
         "role": "hygiene",
         "path": ".github/workflows/ci.yml",
         "passed": true,
-        "content_hash": "sha256:3a5f21df6ef12cc9609abf0d91e20e0fd28743576b29454aea58cc497a038d14"
+        "content_hash": "sha256:593c55117a782a86885a6222e23c87350763c4a3076c69fd3c5f43b987291c3e"
       },
       {
         "check": "present",
@@ -52,7 +52,7 @@
         "role": "hygiene",
         "path": "docs/environment.md",
         "passed": true,
-        "content_hash": "sha256:dc52dbc66bf7c665e42d82a17212f72cff6b9ce55c4753e1ddfd0d7f53dc940c"
+        "content_hash": "sha256:ed8ca28439cfcacc325602602f63996600d6acb0da543eb0bf61bf1a8c30b4d5"
       },
       {
         "check": "present",
@@ -73,14 +73,14 @@
         "role": "hygiene",
         "path": "manifests/evidence/testbenches.txt",
         "passed": true,
-        "content_hash": "sha256:82a7313e936901f32a8aea48b9201e33a1eaa4202d8bd1c23555774d33da5539"
+        "content_hash": "sha256:e1d987db5c4e06dfd5e28f18032af9f3fafb040bc95b73fac323bb796fd02e70"
       },
       {
         "check": "present",
         "role": "hygiene",
         "path": "scripts/check_evidence_inventories.py",
         "passed": true,
-        "content_hash": "sha256:699bc6ad2490f73a3551ffe61b7ffddcda882f01f90162f5455ac70aa4f6fbb8"
+        "content_hash": "sha256:6fb28630ee24867cbd4e7183d9f4ef5654210ca5df099cb4383c709b04a9b94d"
       },
       {
         "check": "present",
@@ -94,7 +94,7 @@
         "role": "hygiene",
         "path": "verification/check_records.py",
         "passed": true,
-        "content_hash": "sha256:b21944fd274fe1c772aeca6becd8accf4922cd2bbfc3f6b74773789a02a4ba2a"
+        "content_hash": "sha256:a83ec91566918bd8cfb29c611aa6888ec78cca32971567f484ef8c2171cb9981"
       },
       {
         "check": "command",
@@ -143,7 +143,7 @@
     ]
   },
   "provenance": {
-    "klt_version": "0.8.0",
+    "klt_version": "0.9.0",
     "klayout_version": null,
     "pdk": null,
     "deck": null,
