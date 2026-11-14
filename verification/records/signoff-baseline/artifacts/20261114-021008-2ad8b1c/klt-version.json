@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "version": "0.9.0",
+  "package_version": "0.9.0",
+  "git_commit": "5dbbad05ff42265c92a6f3d2f20d1bbcd2957d49",
+  "git_tag": "v0.9.0",
+  "dirty": false,
+  "is_release": true,
+  "reinstall_spec": "klayout-tools==0.9.0",
+  "grading_ruleset_id": "sha256:22c42b66c4d1f99b5c00f6bf53d80b20fa8365860d857a921508ca5ab5f3771b",
+  "klayout_version": "0.30.13",
+  "klayout_version_expected": "0.30.12"
+}
