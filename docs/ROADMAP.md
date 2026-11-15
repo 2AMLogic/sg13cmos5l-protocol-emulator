@@ -17,7 +17,7 @@ committed with benches against independent reference models.
 
 **Spec.** Rows 1–12 of `spec/target-spec.md` and DRs 0001–0004 are ratified
 (PR #242, DR 0009). Rows 13 and 14 and DRs 0005, 0007, 0008, 0010–0018 and
-0020–0023 are `Proposed`; the next act is prepared in
+0020–0024 are `Proposed`; the next act is prepared in
 [`spec/ratification-batch-2.md`](../spec/ratification-batch-2.md).
 
 **Spec rows** (digest in [`spec/gap-to-submission.md`](../spec/gap-to-submission.md),
@@ -36,7 +36,7 @@ klt 0.8.0): **4 of 11 met**.
 |---|---|---|
 | 1 Design sources, 2 Layout, 9 Testbenches, 10 Hygiene | met | — |
 | 3 DRC clean | unmet, `check_failed` (4,484 findings, all inside the foundry SRAM macro) | #365, after #371 |
-| 4 LVS clean | unmet, `check_failed` | #329: evidence contract not yet written |
+| 4 LVS clean | unmet, `check_failed` | #329: contract drafted (DR 0024, `Proposed`); waits on review and the post-route evidence |
 | 5 Full corner verification | unmet, `no_evidence` | no open issue; see Later |
 | 6 Monte Carlo | unmet, `no_evidence` | #348 (record "not applicable") |
 | 7 Post-layout verification | unmet, `unverifiable_provenance` | re-grade after #371 |
@@ -51,12 +51,6 @@ The body of #351 predates the klt 0.8.0 deck: it ticks item 3 and points items
 - **Move off the per-repo klayout-tools pin (#371, in progress).** Done when
   `npm run lint` and `scripts/signoff-report.sh --check-latest` pass on the
   merged change. Most of Next waits on this.
-- **Draft the item 4 evidence contract (#396, from the ruling on #329).** The
-  ruling on #329 authorizes preparing a decision record naming the post-route
-  reference for physical connectivity and the independent RTL-to-reference
-  evidence required beside it. Done when a `Proposed` DR is in
-  `spec/decision-records/` and listed in `spec/ratification-batch-2.md`, with
-  item 4 still `unmet`. Needs no tool run.
 - **Reconcile digest rows 7 and 11 (#397, `loom:blocked`).** Row 11 still says
   multi-byte bursts under one CS are untested, though #286 landed that bench;
   row 7 still names klayout-tools#2635, closed upstream on 2026-10-27. Done
@@ -113,9 +107,9 @@ Unblocked once the netlist evidence refresh (#265) lands and PR #263 merges:
 - **Second ratification act.** Rows 13 and 14 and the `Proposed` DRs wait for
   two `RATIFY-KEY` reviews on `spec/ratification-batch-2.md`.
 
-Dispatchable from the Now list: #396 (filed 2026-11-14, `loom:building`).
-#397 carries `loom:blocked`, so it is not dispatchable. Every other open issue
-is in progress (#371), waits on #371, or sits behind the attended refresh.
+Dispatchability changes faster than this file; check the tracker before
+dispatching. The Now list is #371 (in progress) and #397 (blocked on the
+upstream reconciliation).
 
 ## Not planned
 
