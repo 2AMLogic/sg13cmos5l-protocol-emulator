@@ -4,7 +4,8 @@ A tiny protocol-emulation CPU on IHP SG13CMOS5L whose UART, SPI and I2C are
 firmware, built for the Protocol Emulator ASIC Competition (submission due
 2027-01-18).
 
-Status as of 2026-11-13, `main` @ `3619c879`.
+Status as of 2026-11-15, `main` @ `3d24d4b0` (roadmap pass of 2026-11-13,
+restated as Now items landed).
 
 ## Where it stands
 
