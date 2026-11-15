@@ -1041,6 +1041,92 @@ def _(fx):
     )
 
 
+@case("structure: every prof_* handler is classified by METADATA_PROFILES")
+def _(fx):
+    """`run_inventory` picks the layer a missing inventory file is reported on
+    with one dispatch -- `self.meta if prof in METADATA_PROFILES else
+    self.concrete` -- so the profile -> layer mapping is declared in that one
+    constant. A wrong choice attributes the diagnostic to the wrong one of
+    DR 0010's four reported results: the `info` profile's missing `info.yaml`
+    would be blamed on `concrete-firmware-bench` instead of
+    `metadata-capability` (and a future metadata-source profile left
+    unclassified would get its missing file blamed there too), with every
+    behavioural case still green -- the missing-file branch is unreachable
+    through the CLI, so no fixture can catch it. This case walks the Checker's
+    own AST the way the attribute case above does and fails while any `prof_*`
+    handler's classification is undecided."""
+    module = ast.parse(CHECKER.read_text(encoding="utf-8"))
+
+    declared: set[str] | None = None
+    for n in module.body:
+        targets = n.targets if isinstance(n, ast.Assign) else []
+        if not any(isinstance(t, ast.Name) and t.id == "METADATA_PROFILES"
+                   for t in targets):
+            continue
+        v = n.value
+        elems = (v.elts if isinstance(v, ast.Set)
+                 else v.args[0].elts if isinstance(v, ast.Call)
+                 and v.args and isinstance(v.args[0], ast.Set)
+                 else None)
+        assert elems is not None, (
+            f"{CHECKER.name}: METADATA_PROFILES is not a set/frozenset literal; "
+            "teach this case its new shape"
+        )
+        assert all(isinstance(e, ast.Constant) and isinstance(e.value, str)
+                   for e in elems), (
+            f"{CHECKER.name}: METADATA_PROFILES holds non-string elements; "
+            "teach this case its new shape"
+        )
+        declared = {e.value for e in elems}
+    assert declared is not None, (
+        f"{CHECKER.name}: module-level METADATA_PROFILES constant not found; "
+        "the missing-file layer dispatch has no declared home"
+    )
+
+    cls = next(n for n in ast.walk(module)
+               if isinstance(n, ast.ClassDef) and n.name == "Checker")
+    handlers = {m.name for m in cls.body
+                if isinstance(m, (ast.FunctionDef, ast.AsyncFunctionDef))
+                and m.name.startswith("prof_")}
+
+    # The committed ground truth (DR 0010): `info` reads `info.yaml`, a
+    # metadata document; every other inventoried profile's source file is
+    # firmware, bench or RTL, and its missing file reports on
+    # concrete-firmware-bench.
+    metadata = {"prof_info"}
+    concrete = {
+        "prof_uart_tx", "prof_uart_rx", "prof_spi", "prof_i2c", "prof_i2c_gen",
+        "prof_demo", "prof_ws2812", "prof_ps2", "prof_bench_uart",
+        "prof_bench_ws2812", "prof_bench_ps2", "prof_bench_spi",
+        "prof_bench_i2c", "prof_bench_i2c_sr", "prof_bench_load", "prof_top",
+        "prof_core", "prof_isa_ports",
+    }
+
+    unclassified = sorted(handlers - metadata - concrete)
+    assert not unclassified, (
+        f"{CHECKER.name}: prof_* handler(s) {unclassified} not classified; add "
+        "the profile to METADATA_PROFILES (metadata source) or to this case's "
+        "`concrete` set (firmware/bench/RTL source)"
+    )
+    unknown = sorted((metadata | concrete) - handlers)
+    assert not unknown, (
+        f"{CHECKER.name}: classified handler(s) {unknown} have no prof_* "
+        "method; drop them from this case's sets"
+    )
+    mismatched = sorted(f"prof_{p}" for p in declared if f"prof_{p}" not in metadata)
+    assert not mismatched, (
+        f"{CHECKER.name}: METADATA_PROFILES names {mismatched} but this case "
+        "classifies them as concrete; reconcile the two"
+    )
+    undeclared = sorted(p for p in (h[len("prof_"):] for h in metadata)
+                        if p not in declared)
+    assert not undeclared, (
+        f"{CHECKER.name}: metadata-source profile(s) {undeclared} missing from "
+        "METADATA_PROFILES; their missing files would be blamed on "
+        "concrete-firmware-bench"
+    )
+
+
 @case("summary: a schema failure still prints a complete JSON summary")
 def _(fx):
     """`--format json` reaches `summary()` even when `load_table()` failed and
