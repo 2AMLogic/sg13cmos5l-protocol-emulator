@@ -165,6 +165,15 @@ PATTERNS = {
 # written to that port by the profile.
 BENCH_DEBUG_VOCAB = {"uart_rx": {"SAMPLE_MARK", "FRAME_ERROR"}}
 
+# Inventory profiles whose source file is a metadata document (DR 0010's `info`
+# profile reads `info.yaml`) rather than firmware, a bench script or RTL:
+# `run_inventory` reports a missing file for one of these on
+# `metadata-capability`, and for every other profile on
+# `concrete-firmware-bench`. Classify each new `prof_*` handler's profile here
+# (metadata) or leave it out (concrete); the test suite's `structure:` case
+# fails while a handler's classification is undecided.
+METADATA_PROFILES = frozenset({"info"})
+
 ISA_PORT_CODES = {"UI_IN": 0, "UIO_IN": 1, "UO_OUT": 2, "UIO_OUT": 3}
 PORT_ASM = {
     ("ui_in", "in"): "UI_IN",
@@ -666,7 +675,7 @@ class Checker:
             # `info` reports a missing file on metadata-capability, all other
             # profiles on concrete-firmware-bench; a missing file skips the
             # handler, not the `patterns` check below.
-            text = self.read(rel, self.meta if prof == "info" else self.concrete)
+            text = self.read(rel, self.meta if prof in METADATA_PROFILES else self.concrete)
             if text is not None:
                 fn(rel, ent, text)
             if prof != "demo" and not ent["patterns"]:
