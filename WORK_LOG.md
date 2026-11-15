@@ -2,12 +2,34 @@
 
 Chronological record of merged pull requests and closed issues, newest first.
 
+> **Provenance correction (2026-11-15, issue #415).** 165 entries in this log belonged to a
+> different project and have been removed per-entry by the commit that carries this note.
+> They all entered in one misdirected write, commit `329b5a18` ("docs: update WORK_LOG,
+> WORK_PLAN, and README", merged as PR #373, merge `caa257dc`, 2026-11-02); the bytes remain
+> in git history — this note supersedes them rather than destroying them, per the
+> append-only rule. The mechanical two-signal sweep (identity against the live issue/PR
+> list, provenance against `329b5a18`) also flags exactly one entry that is deliberately
+> **retained** as this project's own: `- **Issue #44**` (in the 2026-10-11 section,
+> introduced by `dacc38c4`, not by `329b5a18`; its logged title is an exact prefix of
+> issue #44's current title, which was renamed after it was logged). Do not delete it to
+> make a re-run of the sweep report zero.
+
+### 2026-11-15
+
+- **PR #412**: refactor: hoist prof_* read prologues into run_inventory; drop dead pins_of and top_text
+- **Issue #409** (closed): Simplify scripts/check_protocol_pin_roles.py: hoist the 19 identical read/None-guard prologues into run_inventory (~53 LOC)
+
 ### 2026-11-14
 
 - **PR #410**: docs: re-point 20 superseded record citations in info.md at their live heads
 - **PR #408**: docs(spec): add DR 0024 defining the LVS reference, coverage and evidence audit
 - **Issue #398** (closed): Docs: README and submission write-ups still say the klt STA leg is blocked on klayout-tools#2635 and claims nothing
 - **Issue #396** (closed): Draft the decision record for the T1 item 4 (LVS) evidence contract authorized on #329
+- **Issue #400** (closed): docs/info.md cites 21 superseded evidence records; check_docs_records.py only runs over docs/submission
+- **Issue #411** (closed): Remove two dead members of Checker in scripts/check_protocol_pin_roles.py: pins_of (0 callers) and top_text (0 readers)
+- **PR #406**: refactor(lint): declare the Checker's 10 late-created attributes in __init__
+- **Issue #401** (closed): Simplify scripts/check_protocol_pin_roles.py: 10 undeclared instance attributes make the Checker order-dependent
+- **PR #407**: docs: state the recorded klt STA result instead of a closed-upstream blocker
 
 ### 2026-11-10
 
@@ -30,21 +52,6 @@ Chronological record of merged pull requests and closed issues, newest first.
 - **PR #375**: refactor(firmware): generate i2c_fast/i2c_std asm from one template
 - **Issue #374** (closed): Generate i2c_fast.asm / i2c_std.asm from one template like the _sr variants
 
-### 2026-11-01
-
-- **PR #559**: docs(decision-records): ratify eight GPL-boundary records under the #25 principle (operator, 2026-10-29)
-
-### 2026-10-31
-
-- **PR #556**: Bump Repo Skills 0.24.7 -> 0.25.1
-- **PR #553**: docs: record ext_mem_instr LVS root cause and klt --check reproducibility
-- **Issue #544** (closed): T1 items 2/3/4/11: gf180mcu physical flow (P&R, DRC, LVS, ERC) — split from #24, no FPGA dependency
-
-### 2026-10-30
-
-- **PR #551**: fix: triage T1 physical-flow findings and clear DRC via power config
-- **PR #549**: feat: add T1 physical-flow evidence for 3 synthesized product groups
-
 ### 2026-10-29
 
 - **PR #366**: records: reproduce SRAM-macro DRC findings on the bare macro
@@ -57,9 +64,6 @@ Chronological record of merged pull requests and closed issues, newest first.
 
 ### 2026-10-27
 
-- **PR #541**: feat: attest T1 item 10 repo hygiene with klt signoff --attest and bump klt pin
-- **PR #540**: feat: add partial gf180mcu synthesis record for T1 item 1
-- **Issue #539** (closed): T1 item 10 (repo hygiene): hygiene inventory over README, license and CI, attested with klt signoff --attest 10
 - **PR #357**: build: pin klayout-tools to release 0.8.0 and re-mint evidence (item 3 now unmet)
 - **Issue #356** (closed): Bump klayout-tools pin b447d8899760 → 0.8.0
 - **PR #354**: test: klt erc supply spec and report on the LibreLane GDS
@@ -72,63 +76,23 @@ Chronological record of merged pull requests and closed issues, newest first.
 
 ### 2026-10-23
 
-- **PR #533**: feat: fail-closed evidence writer and manifest checker for the artifact store
-- **PR #515**: fix(rtl): promote rf_send34_core cfg and block inputs to ports
-- **Issue #532** (closed): Adopt the common artifact store for sim evidence (manifests in git, bytes via klt artifact)
-- **Issue #479** (closed): RTL: rf_send34_core has 19 non-port signals read but undriven in standalone elaboration (Verilator UNDRIVEN)
 - **PR #345**: feat: store bulk evidence in the artifact store, commit manifests
 - **Issue #344** (closed): Adopt the common artifact store for sim evidence (manifests in git, bytes via klt artifact)
 
-### 2026-10-22
-
-- **PR #530**: test: pin NC-B RTL mip-mutant control to the -hi-v1 fixture and correct its evidence
-- **PR #519**: fix(rtl): load wavetable_core sinc ROM through a write port
-- **PR #518**: refactor(rtl): expose reverb1_core coefficient plane and block inputs as ports
-- **PR #516**: refactor(rtl): make rf_bins12_core config and block inputs module ports
-- **PR #512**: fix(rtl): drive rf_global34_core config and block inputs through ports
-- **Issue #529** (closed): wavetable RTL negative control --mutant (WAVETABLE_MUTANT_MIP) does not fail on seq-wt-base-v1 / seq-wt-pitch-extremes-v1
-- **Issue #478** (closed): RTL: rf_global34_core has 11 non-port signals read but undriven in standalone elaboration (Verilator UNDRIVEN)
-- **Issue #476** (closed): RTL: rf_bins12_core has 11 non-port signals read but undriven in standalone elaboration (Verilator UNDRIVEN)
-- **Issue #472** (closed): RTL: reverb1_core has 17 non-port signals read but undriven in standalone elaboration (Verilator UNDRIVEN)
-- **Issue #471** (closed): RTL: wavetable_core has 2 non-port signals read but undriven in standalone elaboration (Verilator UNDRIVEN)
-
 ### 2026-10-21
 
-- **PR #525**: fix: default Surge oracle paths to repo-local oracle/build/surge
-- **PR #523**: fix(rtl): remove initial drive of logical4_core block_done and its MULTIDRIVEN waiver
-- **PR #522**: fix(rtl-lint): refresh waivers and keep latch control live without a LATCH waiver
-- **PR #521**: Bump Repo Skills 0.24.3 -> 0.24.7
-- **PR #513**: fix(rtl): make rf_global2_core config and block inputs real ports
-- **PR #511**: fix(rtl): promote galactic_core coefficient and block inputs to ports
-- **Issue #524** (closed): Remove hard-coded user-home paths: build or resolve the Surge XT oracle engine in-repo
-- **Issue #520** (closed): rtl-lint: negative controls report CONTROL-BROKEN (baseline did not PASS) on main since #437
-- **Issue #477** (closed): RTL: rf_global2_core has 9 non-port signals read but undriven in standalone elaboration (Verilator UNDRIVEN)
-- **Issue #474** (closed): RTL: galactic_core has 11 non-port signals read but undriven in standalone elaboration (Verilator UNDRIVEN)
-- **Issue #470** (closed): RTL: logical4_core `block_done` driven from both an initial block and always_ff (Verilator MULTIDRIVEN, logical4_core.sv:226)
 - **PR #316**: test: run firmware artifact parser self-test in npm run lint
 - **Issue #315** (closed): test_firmware_artifacts.py never runs: needs pytest (removed in #62) and isn't in npm run lint
 
 ### 2026-10-20
 
-- **PR #508**: docs(sxt-023): Delay reference contract and substitute-build qualification report
-- **PR #499**: ci: gate committed klt signoff T1 verdict with byte-compare workflow
-- **PR #437**: Add static Verilator RTL lint gate and RTL classification manifest (#434)
-- **Issue #507** (closed): Define and qualify the canonical Delay reference contract (#16 / #12)
-- **Issue #498** (closed): T1: commit a klt signoff block manifest and gate its verdict in CI
-- **Issue #434** (closed): Add static RTL lint gate (Verilator) and classify product vs sim-only/mutant RTL
 - **PR #340**: docs: correct boot ROM size and cap in rtl/README.md
 - **Issue #339** (closed): rtl/README.md: stale boot ROM claim (says 30 words, cap 128; actual 232 words, cap 256)
 - **PR #301**: Tooling: manifest-driven lint runner + self-test wiring inventory (#296)
 - **Issue #296** (closed): Tooling: replace the 38-command npm lint && chain with a manifest runner that reports all failures and enforces self-test wiring
 
-### 2026-10-18
-
-- **PR #503**: SXT-028j: run oracle legs on prebuilt oracle, confirm declared contracts, record carriers REFUSED
-
 ### 2026-10-17
 
-- **PR #414**: CI hardening: job timeouts, PR-only concurrency cancel, SHA-pinned actions
-- **Issue #410** (closed): CI hardening: job timeouts, PR-run concurrency cancel, and SHA-pinned actions
 - **PR #331**: docs: diagnose item 7 unverifiable_provenance cause in manifests README (partial #330)
 - **PR #332**: Bump klt pin to b447d889; item 4 LVS now runs and returns mismatch
 - **PR #323**: docs: correct README claim that _dut.py is imported by a bench
@@ -138,19 +102,6 @@ Chronological record of merged pull requests and closed issues, newest first.
 - **Issue #320** (closed): verification/_dut.py has no caller but README says benches import it; fix doc now, delete at next re-mint
 - **Issue #319** (closed): Generate the four SPI mode firmware variants from one generator (as gen_i2c_sr.py does for I2C)
 - **Issue #318** (closed): Generate the four nested-WAIT UART firmware variants from one generator (as gen_i2c_sr.py does for I2C)
-
-### 2026-10-16
-
-- **PR #491**: test(SXT-043): record native fixture-revision-2 results for Digibass
-- **PR #487**: docs(evidence): record NC-2 artifacts as not reproducible
-- **PR #482**: Bump Repo Skills 0.19.5 -> 0.24.3
-- **PR #481**: fix(rtl): promote logical4 cfg/in_l/in_r to core ports
-- **PR #480**: fix(rtl): assign dp_tmp by default in reverb1_core request block
-- **PR #431**: Add GPL-boundary register and register cross-check (#370)
-- **Issue #484** (closed): SXT-034: record NC-2 spectral_corr artifacts as not reproducible (missing mutant input)
-- **Issue #469** (closed): RTL: reverb1_core infers a latch for dp_tmp (Verilator LATCH, reverb1_core.sv:130)
-- **Issue #370** (closed): GPL-boundary register: list every GPL-derived constant table with its source and provenance
-- **Issue #329** (closed): SXT-043 fixture: clear osc-1 p[] modulation routings before Sine override so Digibass reference is valid (follow-up to #311)
 
 ### 2026-10-14
 
@@ -163,22 +114,6 @@ Chronological record of merged pull requests and closed issues, newest first.
 
 ### 2026-10-13
 
-- **PR #467**: SXT-028g: Phaser same-shape carrier drift screen (live run NOT_RUN) (#426)
-- **PR #466**: SXT-028h: screen same-shape drift-zero rf-bins12 carriers
-- **PR #465**: SXT-028d: screen same-shape drift-zero rf-global2 carriers (#425)
-- **PR #442**: Refuse non-finite float audio in wet comparator (#439)
-- **PR #441**: ablation_delta: validate WAV pair before BIT-IDENTICAL shortcut (#438)
-- **PR #422**: SXT-028: re-run effect RTL-vs-model comparators against committed rtl-exactness verdicts
-- **PR #403**: fix(#401): honest package.json test/check/lint scripts
-- **PR #397**: SXT-020: reject contradictory/unsupported patch-image versions (#391)
-- **PR #368**: LP24 full-engine observation tap, external host route (#307)
-- **Issue #439** (closed): SXT-023: refuse non-finite wet audio and emit strict comparison JSON
-- **Issue #438** (closed): SXT-014: validate live WAV identity and 48 kHz format before ablation diagnostics
-- **Issue #425** (closed): SXT-028d: screen same-shape drift-zero rf-global2 carriers
-- **Issue #424** (closed): SXT-028h: screen same-shape drift-zero rf-bins12 carriers
-- **Issue #416** (closed): Triage RTL-vs-model comparators with no CI execution and re-run the effect comparators against their committed rtl-exactness verdicts
-- **Issue #401** (closed): package.json test/check:ci/check:all scripts exit 0 with no checks run (NOT_RUN reads as PASS)
-- **Issue #391** (closed): SXT-020: reject contradictory binary and JSON patch-image versions
 - **PR #308**: Record rst_n recovery/removal timing at all reset flops (#300)
 - **PR #307**: Spec: DR 0021 direct sampling of asynchronous pins by IN (#303)
 - **PR #302**: Spec: second ratification batch worksheet and RTL-citation checker (#299)
@@ -192,21 +127,6 @@ Chronological record of merged pull requests and closed issues, newest first.
 
 ### 2026-10-12
 
-- **PR #464**: fix: gate slow-controls JUnit on full (classname, name) identity
-- **PR #461**: fix(tools): report-status audit fails on unreadable JSON, refuses empty coverage (#460)
-- **PR #459**: SXT-331 prerequisite: reusable shape-preserving carrier drift screen (#423)
-- **PR #458**: SXT-024: require decay-sweep coverage before successful comparison exit (#456)
-- **PR #457**: Reject duplicate and unowned LFO checkpoint keys before RTL exactness PASS
-- **PR #453**: Reject shortened voice checkpoint records before RTL exactness PASS
-- **PR #427**: SXT-023: state Delay ext-mem traffic on one basis (#367)
-- **Issue #463** (closed): Slow-controls JUnit gate: reject duplicate and wrong-class required testcases
-- **Issue #462** (closed): Champion: Merge-Risk Hold Digest
-- **Issue #460** (closed): Report vocabulary audit: fail on unreadable JSON and refuse empty input coverage
-- **Issue #456** (closed): SXT-024: require decay-sweep coverage before successful comparison exit
-- **Issue #455** (closed): Reject duplicate and unowned LFO checkpoint keys before RTL exactness PASS
-- **Issue #451** (closed): Reject shortened voice checkpoint records before RTL exactness PASS
-- **Issue #423** (closed): SXT-331 prerequisite: reusable shape-preserving carrier drift screen
-- **Issue #367** (closed): SXT-023: correct Delay ext-mem traffic basis (EVIDENCE.md A6, ext_mem_if.md) and frames_rendered 8550 vs 8790 blocks
 - **PR #292**: Bump klt pin to f979a965 (klayout-tools#2720) with re-minted evidence
 - **PR #291**: docs: point PDK link at IHP-Open-PDK subtree and note klt/TT PDK revision split
 - **PR #288**: Firmware: SPI mode-0 three-byte burst under one CS, graded against the reference model (#286)
@@ -228,22 +148,6 @@ Chronological record of merged pull requests and closed issues, newest first.
 
 ### 2026-10-11
 
-- **PR #454**: SXT-023: refuse invalid comparison windows and empty exactness coverage
-- **PR #450**: feat: gate SXT-013 acceptance ratings on recorded audition (#447)
-- **PR #449**: Declare velocity live-control simulator dependency and report missing tools
-- **PR #448**: Pin CI numpy/pytest via requirements-ci.txt (#354)
-- **PR #443**: docs: classify every committed NumPy version stamp for the #354 CI pin decision
-- **PR #440**: Reject ambient and cached surgepy bindings before reference rendering
-- **PR #435**: Add review packets for the 15 pending decision records (#371)
-- **Issue #452** (closed): SXT-023: refuse invalid comparison windows and empty exactness coverage
-- **Issue #447** (closed): SXT-013: gate acceptance ratings on recorded audition after playback failures
-- **Issue #436** (closed): Reject ambient and cached surgepy bindings before reference rendering
-- **Issue #430** (closed): tests/test_report_status_tokens.py: 4 failures on main (unlisted status tokens in reports/)
-- **Issue #411** (closed): main: tests/test_report_status_tokens.py fails on sxt-013 listening-cache sample report tokens
-- **Issue #400** (closed): Declare velocity live-control simulator dependency and report missing tools
-- **Issue #373** (closed): Classify the four NumPy versions stamped in committed evidence records (live vs historical) before #354 pins CI
-- **Issue #371** (closed): Prepare review packets for the 15 pending decision records ahead of the two-key ceremony
-- **Issue #354** (closed): Pin Python test dependencies (numpy/pytest) so CI numerics are reproducible
 - **PR #270**: Prove corrected I2C controller-write ACK windows and address-NACK STOP (#259)
 - **PR #269**: docs: R3 update, what the precheck DRC covers (#257)
 - **PR #268**: ci: pin tt-gds-action to a commit SHA and lint it (R2)
@@ -284,16 +188,6 @@ Chronological record of merged pull requests and closed issues, newest first.
 
 ### 2026-10-10
 
-- **PR #433**: SXT-029: require evidence-backed readiness for every coverage leaf (#432)
-- **PR #429**: Census bookkeeping: reconcile every CSV preset identity with the manifest
-- **PR #421**: SXT-025: run integrated wet-path negative controls through the live registry
-- **PR #420**: SXT-029: refuse coverage control overrides at the publication destination
-- **PR #417**: CI: slow-controls workflow runs NC_LIVE_SLOW negative controls (#415)
-- **Issue #432** (closed): SXT-029: require evidence-backed readiness for every coverage leaf
-- **Issue #428** (closed): Census bookkeeping: reconcile every CSV preset identity with the manifest
-- **Issue #419** (closed): SXT-025: execute integrated wet-path negative controls through the live registry
-- **Issue #418** (closed): SXT-029: refuse coverage control overrides at the publication destination
-- **Issue #415** (closed): CI: run the NC_LIVE_SLOW negative controls (Chorus, Reverb, velocity, budget no-op) on a schedule so they stop being permanently NOT_RUN
 - **PR #233**: spec: freeze the submission ISA (DR 0017) with a sha256 check (#141 part 1)
 - **PR #232**: Buffer all SRAM macro inputs in the LibreLane flow (#201)
 - **PR #228**: Gate gl_test on repository-owned GL results validation
@@ -371,36 +265,6 @@ Chronological record of merged pull requests and closed issues, newest first.
 
 ### 2026-10-09
 
-- **PR #413**: DAG check: waivers for PASS nodes with non-PASS prerequisites (#409)
-- **PR #412**: Use oc.sha256_file instead of local copies in 8 reference scripts
-- **PR #407**: SXT-028f: reject unknown/empty reference-control selections (#405)
-- **PR #406**: SXT-013: bind listening-cache audio to preset and render identities
-- **PR #399**: feat(#392): verify allocation offsets, overlap and slot ownership
-- **PR #398**: test: enumerate profile_budget and reverb2 reference controls (#387)
-- **PR #396**: SXT-023: Delay matches pinned-engine fixtures within budgets (d(t) probe + model revision)
-- **PR #395**: SXT-029: require preset-scoped complete-wet integration evidence before supported (#384)
-- **PR #394**: Deduplicate stereo WAV reader and channel metrics in Chorus comparator (#376)
-- **PR #393**: Audit committed report verdict tokens against the six-status vocabulary (#365)
-- **PR #389**: Publish current NOT_RUN refusal verdicts for shared RTL comparison input errors
-- **PR #388**: test: AGENTS.md/CLAUDE.md parity outside marker blocks (#364)
-- **PR #386**: SXT-028e-sse: arm64 macOS reference-leg attempt (control FAIL, rest NOT_RUN) (#317)
-- **PR #385**: Reject stale trace outputs in shared RTL simulator runs (#360)
-- **PR #383**: SXT-028e-sse: FuzzTable<1> libc++ observation on alternate arm64 host - MISMATCH at default flags; pinned-host leg NOT_RUN (#135)
-- **PR #380**: docs(policy): option A for source-nonrepeatable carriers + census spec (#310)
-- **Issue #409** (closed): DAG check: PASS nodes with BLOCKED prerequisites need an explicit waiver (7 today)
-- **Issue #405** (closed): SXT-028f: reject unknown and empty standalone reference-control selections
-- **Issue #404** (closed): SXT-013: bind listening-cache audio to preset and render identities
-- **Issue #392** (closed): SXT-020: verify allocation intervals cannot alias per-instance effect state
-- **Issue #387** (closed): Extend the negative-control enumerator to cover profile_budget_controls.py and reverb2_reference_controls.py (outside the *_negative_controls.py glob)
-- **Issue #384** (closed): SXT-029: require preset-scoped complete-wet integration evidence before supported
-- **Issue #376** (closed): Deduplicate stereo WAV reader and channel metrics in wet effect comparators
-- **Issue #375** (closed): Auditor Capability Request: refresh origin/main when SSH host verification fails
-- **Issue #365** (closed): Audit committed report verdict tokens against the six-status vocabulary (REFUSED/VERIFIED/OK undeclared)
-- **Issue #364** (closed): Enforce AGENTS.md/CLAUDE.md parity outside Loom marker blocks with a test
-- **Issue #360** (closed): Reject stale trace outputs in shared RTL simulator runs
-- **Issue #272** (closed): Remove duplicated sha256_file(path) reimplementation: 7 copies already have a canonical oracle_common.sha256_file
-- **Issue #265** (closed): Remove duplicated sha256(path) helper: 5 copies in tools/ instead of one shared module
-- **Issue #261** (closed): Remove duplicated main()/revision_pin_ok() skeleton across rf_* RTL-model harnesses
 - **PR #171**: spec: reconcile DR 0015 with the baseline-only DR 0011
 - **PR #170**: docs(spec): record in DR 0010 that the UART RX debug writes drive no pad under DR 0012
 - **PR #169**: feat: boot ROM, fetch-source switch and warm start; MODE-low no longer runs uninitialized SRAM (DR 0013 layer 2)
@@ -458,48 +322,17 @@ Chronological record of merged pull requests and closed issues, newest first.
 - **PR #120**: spec: Proposed DR 0010 protocol pin roles plus drift checker
 - **PR #121**: ci: run the RTL-level cocotb benches (no PDK) on every PR
 
-### 2026-10-08
-
-- **PR #358**: SXT-029: reconcile voice-scope ledger with landed SXT-026a evidence
-- **PR #350**: ci: widen python-compile gate to all repository python
-- **PR #349**: CI: add rtl-sim job with Icarus Verilog and simulator-skip gate
-- **Issue #355** (closed): Add a test that enumerates tools/*_negative_controls.py so no control goes unrun (14 of 25 unreferenced)
-- **Issue #353** (closed): SXT-029: reconcile the voice-scope coverage ledger with landed SXT-026a evidence
-- **Issue #351** (closed): Auditor Capability Request: Python runtime for gf180-surge validation
-- **Issue #347** (closed): CI python-compile gate covers only tools and census; compiler, probes, fixtures, oracle, model, tests are uncompiled
-- **Issue #346** (closed): README Status says Planning/only SXT-000 done while the generated board shows 14 PASS nodes
-- **Issue #345** (closed): CI: iverilog-gated tests are silently skipped on the PR runner, so RTL-vs-model harness tests never run in CI
-
 ### 2026-10-07
 
-- **PR #344**: audit(#318): live A/B/C settle-boundary measurements on the pinned oracle
-- **PR #343**: Remove duplicate flat rtl/*.hex copies in reports/sxt-025
-- **PR #341**: SXT-028e-sse: live parity test for census static-screen mirror (#336)
-- **PR #339**: SXT-030: simulation-verified external-memory stall instrumentation (#316)
-- **PR #338**: #318: cross-runner settle-boundary audit (A/B BLOCKED off-oracle; C measured; SXT-023 240-block pre-roll finding)
-- **PR #337**: SXT-043 fixture revision 2: clear osc-1 p[] routes before the Sine type switch (#329)
-- **Issue #342** (closed): Remove duplicate flat rtl/*.hex copies in reports/sxt-025 (~15.5 MB)
-- **Issue #336** (closed): SXT-028e-sse: live parity test between the census static-screen mirror and the oracle render_screens (#314 follow-up)
-- **Issue #327** (closed): SXT-036 EVIDENCE.md says nine oracle-status controls; tool and artifact have ten (O10 undocumented)
-- **Issue #316** (closed): SXT-030: Implement and simulation-verify the external-memory service/stall instrumentation (hardware-independent)
 - **PR #80**: chore: delete retired direct-Yosys synthesis stopgap
 - **Issue #32** (closed): Remove flow/run_synthesize_direct_yosys.py (retired stopgap) and its stale doc references
 
-### 2026-10-05
-
-- **PR #335**: SXT-028e-sse: per-slot corpus census; no admissible Distortion SSE carrier (#314)
-- **PR #334**: docs(byte-frozen): fix registry count, SLFO cost caveat, ninth-entry note (#326)
-- **Issue #326** (closed): byte-frozen registry: correct three bookkeeping defects introduced by PR #321's conflict resolution
-- **Issue #314** (closed): SXT-028e-sse follow-up (F-028e-sse-8): find an admissible CORPUS carrier for the Distortion SSE branch, or establish that none exists
-
 ### 2026-10-04
 
-- **PR #333**: test(SXT-028l): pin carrier/live-record agreement with mutation controls (#325)
 - **Issue #23** (closed): Firmware: UART, SPI and I2C programs from DR 0001's cycle-budget sketches (target-spec rows 1, 10, 11, 12)
 
 ### 2026-10-03
 
-- **Issue #322** (closed): SXT-028l: the same-class dual-instance carrier (Strynth.fxp) fails the engine-side drift determinism gate — restore render coverage for that shape or record a bounded gap
 - **PR #79**: spec: propose DR 0008 for silicon-true open-drain uio_oe wiring
 - **Issue #75** (closed): Pin-plan decision record: silicon-true open-drain SCL/SDA needs uio_oe wiring (DR 0001's flagged open question, surfaced by the I2C firmware)
 
