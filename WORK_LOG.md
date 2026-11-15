@@ -16,6 +16,15 @@ Chronological record of merged pull requests and closed issues, newest first.
 
 ### 2026-11-15
 
+- **PR #421**: test: assert run_inventory reads METADATA_PROFILES so the mapping cannot go dead
+- **PR #420**: docs: excise 165 foreign WORK_LOG entries from 329b5a18 and backfill 7 suppressed items
+- **PR #418**: docs: restate provisional pin-role preamble around DR 0010's Proposed status
+- **PR #417**: test: declare the profile->layer mapping as METADATA_PROFILES with a structure guard
+- **PR #395**: docs: roadmap as of 2026-11-13
+- **Issue #419** (closed): METADATA_PROFILES guard does not pin the run_inventory dispatch site to the constant
+- **Issue #416** (closed): docs/info.md: pin-role status says issue #94 is "still open"; it closed 2026-10-09
+- **Issue #415** (closed): WORK_LOG.md carries another project's history (54 SXT-* lines), so the Guide's presence check skips this repo's merged PRs
+- **Issue #413** (closed): Test the profile→layer mapping for run_inventory's missing-file diagnostic (currently unreachable through main, so untested)
 - **PR #412**: refactor: hoist prof_* read prologues into run_inventory; drop dead pins_of and top_text
 - **Issue #409** (closed): Simplify scripts/check_protocol_pin_roles.py: hoist the 19 identical read/None-guard prologues into run_inventory (~53 LOC)
 
