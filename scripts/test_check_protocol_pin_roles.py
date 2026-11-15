@@ -1054,7 +1054,10 @@ def _(fx):
     behavioural case still green -- the missing-file branch is unreachable
     through the CLI, so no fixture can catch it. This case walks the Checker's
     own AST the way the attribute case above does and fails while any `prof_*`
-    handler's classification is undecided."""
+    handler's classification is undecided. It also asserts the dispatch reads
+    the constant -- that some `METADATA_PROFILES` name survives inside
+    `run_inventory` -- so the mapping cannot fall back to a bare literal
+    (leaving the constant, and this partition, dead) with the suite green."""
     module = ast.parse(CHECKER.read_text(encoding="utf-8"))
 
     declared: set[str] | None = None
@@ -1085,6 +1088,21 @@ def _(fx):
 
     cls = next(n for n in ast.walk(module)
                if isinstance(n, ast.ClassDef) and n.name == "Checker")
+    fn = next((m for m in cls.body
+               if isinstance(m, (ast.FunctionDef, ast.AsyncFunctionDef))
+               and m.name == "run_inventory"), None)
+    assert fn is not None, (
+        f"{CHECKER.name}: Checker.run_inventory not found; the missing-file "
+        "layer dispatch this case guards has moved -- teach this case its "
+        "new home"
+    )
+    assert any(isinstance(n, ast.Name) and n.id == "METADATA_PROFILES"
+               for n in ast.walk(fn)), (
+        f"{CHECKER.name}: Checker.run_inventory (defined at line {fn.lineno}) "
+        "does not reference METADATA_PROFILES; the missing-file layer dispatch "
+        "has drifted back to a literal and the constant -- with this case's "
+        "handler partition -- is dead code"
+    )
     handlers = {m.name for m in cls.body
                 if isinstance(m, (ast.FunctionDef, ast.AsyncFunctionDef))
                 and m.name.startswith("prof_")}
