@@ -463,13 +463,16 @@ pin sequence, but no board adapter ships and no silicon exists to run it on.
 
 ## Pins (PROVISIONAL)
 
-**Status: provisional.** The pin-role decision record is still open
-([issue #94](https://github.com/2AMLogic/sg13cmos5l-protocol-emulator/issues/94));
-target-spec row 5 fixes only the template's pin *budget*, not roles. This
-section documents what the committed firmware **observably uses** and the
-RTL's current limitation. It is not a ratified pin plan, and the roles
-below are the firmware's own choices, not proposals that anyone has
-admitted. It will change when #94 and DR 0008 land.
+**Status: provisional.** The pin-role decision record is DR 0010
+([issue #94](https://github.com/2AMLogic/sg13cmos5l-protocol-emulator/issues/94)),
+which is **Proposed** and unratified; target-spec row 5 fixes only the
+template's pin *budget*, not roles. This section documents what the
+committed firmware **observably uses** and the RTL's current limitation.
+The roles below match DR 0010's proposed target pin plan (SPI and I2C
+moved in #155, UART receive in #178), but until DR 0010 is ratified this
+is not a ratified pin plan and the roles can still change. *(Restated
+2026-11-15, issue #416; the provisional verdict and the pin tables are
+unchanged.)*
 
 Fixed by the RTL (`src/tt_um_2amlogic_protocol_emulator.v`), not provisional:
 
