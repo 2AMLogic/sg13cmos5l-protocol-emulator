@@ -2,6 +2,13 @@
 
 Chronological record of merged pull requests and closed issues, newest first.
 
+### 2026-11-14
+
+- **PR #410**: docs: re-point 20 superseded record citations in info.md at their live heads
+- **PR #408**: docs(spec): add DR 0024 defining the LVS reference, coverage and evidence audit
+- **Issue #398** (closed): Docs: README and submission write-ups still say the klt STA leg is blocked on klayout-tools#2635 and claims nothing
+- **Issue #396** (closed): Draft the decision record for the T1 item 4 (LVS) evidence contract authorized on #329
+
 ### 2026-11-10
 
 - **PR #387**: docs: retire closed UART RX and 434-cycle TX blockers from gap digest
