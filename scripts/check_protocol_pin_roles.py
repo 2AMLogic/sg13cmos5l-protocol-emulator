@@ -212,8 +212,7 @@ class Checker:
         self.inv: dict[str, dict] = {}
         self.debug_bits: dict[str, dict[str, int]] = {}
         # Filled by the concrete layer (run_inventory -> prof_top / prof_core),
-        # read by the implementation layer. `top_text` currently has no reader.
-        self.top_text: str | None = None
+        # read by the implementation layer.
         self.core_text: str | None = None
         self.uio_oe_expr: str | None = None
         self.uio_out_expr: str | None = None
@@ -544,9 +543,6 @@ class Checker:
         pb = self.role_pin(phase, role)
         return 0 if pb is None else 1 << pb[1]
 
-    def pins_of(self, phase: str, roles) -> list[tuple[str, int]]:
-        return [self.role_pin(phase, r) for r in roles]
-
     # --------------------------------------------------------- asm extraction
     INSTR_RE = re.compile(r"^\s*(?:(\w+):)?\s*([A-Za-z]+)\s+(.*?)\s*$")
     MNEM = {"LDI": 2, "MOV": 2, "IN": 2, "OUT": 2, "AND": 2, "OR": 2, "XOR": 2,
@@ -667,7 +663,12 @@ class Checker:
             if fn is None:
                 self.schema.err(f"{rel}: unsupported inventory profile {prof!r}")
                 continue
-            fn(rel, ent)
+            # `info` reports a missing file on metadata-capability, all other
+            # profiles on concrete-firmware-bench; a missing file skips the
+            # handler, not the `patterns` check below.
+            text = self.read(rel, self.meta if prof == "info" else self.concrete)
+            if text is not None:
+                fn(rel, ent, text)
             if prof != "demo" and not ent["patterns"]:
                 self.schema.err(f"{rel}: no extraction patterns listed")
 
@@ -691,10 +692,7 @@ class Checker:
         return out_ports, in_ports, res
 
     # ---------------------------------------------------------- profile: uart
-    def prof_uart_tx(self, rel, ent):
-        text = self.read(rel, self.concrete)
-        if text is None:
-            return
+    def prof_uart_tx(self, rel, ent, text):
         c = self.concrete
         ins = self.asm_instrs(text)
         outs, _ins, _ = self.out_in_ports([("uart_tx", ["TX"])], [], "spi_result")
@@ -752,7 +750,7 @@ class Checker:
                 return {0, (mask << 1) & 0xFF}
         return None
 
-    def prof_uart_rx(self, rel, ent):
+    def prof_uart_rx(self, rel, ent, text):
         """UART receive: RX sampled from the table's uart_rx.RX pin, the byte
         written to the uart_rx_result port.
 
@@ -768,9 +766,6 @@ class Checker:
         `uio_oe = 8'h00`. Under DR 0010's proposed open-drain mask they would
         pull the open-drain uio pins low; `implementation()` reports that as
         an unmet prerequisite (DR 0010 "UART receive")."""
-        text = self.read(rel, self.concrete)
-        if text is None:
-            return
         c = self.concrete
         ins = self.asm_instrs(text)
         _outs, in_ports, res = self.out_in_ports([], [("uart_rx", ["RX"])], "uart_rx_result")
@@ -836,10 +831,7 @@ class Checker:
                       f"(pattern uart_rx_debug)")
 
     # ----------------------------------------------------------- profile: spi
-    def prof_spi(self, rel, ent):
-        text = self.read(rel, self.concrete)
-        if text is None:
-            return
+    def prof_spi(self, rel, ent, text):
         c = self.concrete
         m = re.search(r"spi_mode([0-3])(?:_[a-z0-9]+)?\.asm$", rel)
         if not m:
@@ -959,10 +951,7 @@ class Checker:
                     c.err(f"{rel}:{i['no']}: SCL poll mask "
                           f"{prev['ops'][1] if prev else '(none)'} != table SCL mask 0x{scl:02X}")
 
-    def prof_i2c(self, rel, ent):
-        text = self.read(rel, self.concrete)
-        if text is None:
-            return
+    def prof_i2c(self, rel, ent, text):
         c = self.concrete
         ins = self.asm_instrs(text)
         outs, ins_p, res = self.out_in_ports(
@@ -980,10 +969,7 @@ class Checker:
 
         self.in_and_sites(rel, ins, want)
 
-    def prof_i2c_gen(self, rel, ent):
-        text = self.read(rel, self.concrete)
-        if text is None:
-            return
+    def prof_i2c_gen(self, rel, ent, text):
         try:
             ins = self.gen_instrs(text, rel)
         except SyntaxError as exc:
@@ -994,22 +980,16 @@ class Checker:
             return
         self.i2c_checks(rel, ins)
 
-    def prof_demo(self, rel, ent):
-        text = self.read(rel, self.concrete)
-        if text is None:
-            return
+    def prof_demo(self, rel, ent, text):
         ins = self.asm_instrs(text)
         # generic ISA demo: whole-port use, no protocol pin roles asserted
         self.check_ports(rel, ins, {"UO_OUT"}, {"UI_IN"}, {"UO_OUT"}, {"UI_IN"})
 
     # ------------------------------------------------------ profile: ws2812
-    def prof_ws2812(self, rel, ent):
+    def prof_ws2812(self, rel, ent, text):
         """Row 13's WS2812 program (DR 0018, issue #141): DIN on the table's
         pin, written only through `OUT UO_OUT` from the DIN pin image (R2)
         or from R1, which holds that image ANDed with the data or zero."""
-        text = self.read(rel, self.concrete)
-        if text is None:
-            return
         c = self.concrete
         ins = self.asm_instrs(text)
         outs, _ins, _ = self.out_in_ports([("ws2812", ["DIN"])], [], "spi_result")
@@ -1039,14 +1019,11 @@ class Checker:
         # answer; the bench grades every DIN level the program produces.
 
     # --------------------------------------------------------- profile: ps2
-    def prof_ps2(self, rel, ent):
+    def prof_ps2(self, rel, ent, text):
         """Row 13's stretch program (DR 0018 note of 2026-10-11, issue #235):
         a PS/2 device on two open-drain lines. Checks the pin images the
         program loads, the bit moves and the shift recipes against the
         table's `ps2` phase."""
-        text = self.read(rel, self.concrete)
-        if text is None:
-            return
         c = self.concrete
         ins = self.asm_instrs(text)
         clk, data = self.mask_of("ps2", "PS2_CLK"), self.mask_of("ps2", "PS2_DATA")
@@ -1159,35 +1136,23 @@ class Checker:
                 f"{want[0]}[{want[1]}]"
             )
 
-    def prof_bench_uart(self, rel, ent):
-        text = self.read(rel, self.concrete)
-        if text is None:
-            return
+    def prof_bench_uart(self, rel, ent, text):
         m = self.need(text, r'^TX_PIN,\s*TX_BIT\s*=\s*"(\w+)",\s*(\d+)', rel, "TX_PIN, TX_BIT")
         if m:
             self.check_pb(rel, "TX_PIN/TX_BIT", m.group(1), int(m.group(2)), "uart_tx", "TX")
 
-    def prof_bench_ws2812(self, rel, ent):
-        text = self.read(rel, self.concrete)
-        if text is None:
-            return
+    def prof_bench_ws2812(self, rel, ent, text):
         m = self.need(text, r'^DIN_PIN,\s*DIN_BIT\s*=\s*"(\w+)",\s*(\d+)', rel, "DIN_PIN, DIN_BIT")
         if m:
             self.check_pb(rel, "DIN_PIN/DIN_BIT", m.group(1), int(m.group(2)), "ws2812", "DIN")
 
-    def prof_bench_ps2(self, rel, ent):
-        text = self.read(rel, self.concrete)
-        if text is None:
-            return
+    def prof_bench_ps2(self, rel, ent, text):
         m = self.need(text, r'^CLK_BIT,\s*DATA_BIT\s*=\s*(\d+),\s*(\d+)', rel, "CLK_BIT, DATA_BIT")
         if m:
             self.check_pb(rel, "CLK_BIT", "uio", int(m.group(1)), "ps2", "PS2_CLK")
             self.check_pb(rel, "DATA_BIT", "uio", int(m.group(2)), "ps2", "PS2_DATA")
 
-    def prof_bench_spi(self, rel, ent):
-        text = self.read(rel, self.concrete)
-        if text is None:
-            return
+    def prof_bench_spi(self, rel, ent, text):
         m = self.need(text, r"^CS_BIT,\s*SCLK_BIT,\s*MOSI_BIT\s*=\s*(\d+),\s*(\d+),\s*(\d+)", rel,
                       "CS_BIT, SCLK_BIT, MOSI_BIT")
         bits = dict(zip(("CS", "SCLK", "MOSI"), (int(v) for v in m.groups()))) if m else {}
@@ -1228,10 +1193,7 @@ class Checker:
                                                 ("drive", "MISO_BIT")),
                            names=("CS_BIT", "SCLK_BIT", "MOSI_BIT", "MISO_BIT"))
 
-    def prof_bench_i2c(self, rel, ent):
-        text = self.read(rel, self.concrete)
-        if text is None:
-            return
+    def prof_bench_i2c(self, rel, ent, text):
         for role in ("SCL", "SDA"):
             m = self.need(text, rf'^{role}_PIN,\s*{role}_BIT\s*=\s*"(\w+)",\s*(\d+)', rel,
                           f"{role}_PIN, {role}_BIT")
@@ -1278,10 +1240,7 @@ class Checker:
             self.concrete.err(f"{rel}: writes dut.uio_in directly; the uio lines are resolved by "
                               f"the pad model (verification/uio_pads.py), which owns uio_in")
 
-    def prof_bench_i2c_sr(self, rel, ent):
-        text = self.read(rel, self.concrete)
-        if text is None:
-            return
+    def prof_bench_i2c_sr(self, rel, ent, text):
         m = self.need(text, r"from test_firmware_i2c import \((.*?)^\)", rel,
                       "constant import from test_firmware_i2c", re.S | re.M)
         if m:
@@ -1302,10 +1261,7 @@ class Checker:
             self.concrete.err(f"{rel}: calls i2c_board() itself; use test_firmware_i2c.i2c_pads "
                               f"(would re-derive the pin)")
 
-    def prof_bench_load(self, rel, ent):
-        text = self.read(rel, self.concrete)
-        if text is None:
-            return
+    def prof_bench_load(self, rel, ent, text):
         mode_pin = next((k for k, p in self.pins.items() if p["load_role"] == "PROG_MODE"), None)
         ser_pin = next((k for k, p in self.pins.items() if p["load_role"] == "PROG_SER"), None)
         m = re.search(r"async def load_program\(.*?(?=^async def |^def |\Z)", text, re.S | re.M)
@@ -1337,10 +1293,7 @@ class Checker:
         if drop and int(drop.group(1), 16) & mode_mask:
             self.concrete.err(f"{rel}: MODE-drop literal {drop.group(1)} still sets the PROG_MODE bit")
 
-    def prof_top(self, rel, ent):
-        text = self.read(rel, self.concrete)
-        if text is None:
-            return
+    def prof_top(self, rel, ent, text):
         for pat, role in ((r"\.mode_pin\s*\(\s*ui_in\[(\d+)\]\s*\)", "PROG_MODE"),
                           (r"\.serial_in\s*\(\s*ui_in\[(\d+)\]\s*\)", "PROG_SER")):
             m = self.need(text, pat, rel, f"{role} connection", re.M)
@@ -1386,25 +1339,18 @@ class Checker:
             if not m or m.group(1) != port:
                 self.meta.err(f"{rel}: core port_{port} is not connected to the whole {port} bus")
         m = re.search(r"assign\s+uio_oe\s*=\s*([^;]+);", text)
-        self.top_text = text
         self.uio_oe_expr = m.group(1).strip() if m else None
         if m is None:
             self.concrete.err(f"{rel}: no `assign uio_oe = ...;` found (pattern top_uio_oe)")
 
-    def prof_core(self, rel, ent):
-        text = self.read(rel, self.concrete)
-        if text is None:
-            return
+    def prof_core(self, rel, ent, text):
         self.core_text = text
         m = re.search(r"port_uio_out\s*<=\s*8'h([0-9A-Fa-f]{2})\s*;", text)
         self.uio_out_reset = int(m.group(1), 16) if m else None
         if m is None:
             self.concrete.err(f"{rel}: no `port_uio_out <= 8'hXX;` reset literal (pattern core_uio_out_reset)")
 
-    def prof_isa_ports(self, rel, ent):
-        text = self.read(rel, self.concrete)
-        if text is None:
-            return
+    def prof_isa_ports(self, rel, ent, text):
         for name, code in ISA_PORT_CODES.items():
             m = re.search(rf'"{name}":\s*\(0b([01]{{2}}),', text)
             self.concrete.sites += 1
@@ -1413,10 +1359,7 @@ class Checker:
                                   f"(info.yaml labels port codes 00/01/10/11)")
 
     # ------------------------------------------------------------- metadata
-    def prof_info(self, rel, ent):
-        text = self.read(rel, self.meta)
-        if text is None:
-            return
+    def prof_info(self, rel, ent, text):
         m = self.meta
         block = re.search(r"^pinout:\s*\n(.*?)^yaml_version", text, re.S | re.M)
         if not block:
