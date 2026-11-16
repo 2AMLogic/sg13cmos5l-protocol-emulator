@@ -8,6 +8,7 @@ This roadmap is generated from the current GitHub label state.
 Judge-approved PRs under a hold (`loom:blocked` or `loom:operator`) — only a human merge decision is missing.
 
 - **#399**: build: track the fleet klayout-tools version instead of pinning one, and delete the re-mint loop that enforced the pin
+- **#423**: chore(loom): resync installed Loom to v0.19.1302
 
 ## Very Important
 
@@ -40,13 +41,14 @@ Issues currently being built (`loom:building`).
 
 PRs waiting on Judge (`loom:review-requested`).
 
-- **#395**: docs: roadmap as of 2026-11-13
+_None._
 
 ## Approved (Awaiting Merge)
 
 PRs that passed review and are queued for Champion auto-merge (`loom:pr`).
 
 - **#399**: build: track the fleet klayout-tools version instead of pinning one, and delete the re-mint loop that enforced the pin
+- **#423**: chore(loom): resync installed Loom to v0.19.1302
 
 ## Proposed
 
@@ -78,13 +80,13 @@ _None._
 
 | Bucket | Count |
 |------|-------|
-| Operator merge-risk holds | 1 |
+| Operator merge-risk holds | 2 |
 | Very important | 1 |
 | Important | 4 |
 | Ready (`loom:issue`) | 1 |
 | In Progress (`loom:building`) | 1 |
-| PRs awaiting review | 1 |
-| Approved PRs awaiting merge | 1 |
+| PRs awaiting review | 0 |
+| Approved PRs awaiting merge | 2 |
 | Curated | 11 |
 | Architect / Hermit proposals | 3 |
 | Active epics | 0 |
