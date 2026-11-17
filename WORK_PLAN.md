@@ -40,7 +40,7 @@ Issues currently being built (`loom:building`).
 
 PRs waiting on Judge (`loom:review-requested`).
 
-- **#427**: chore(loom): resync installed Loom to v0.19.1306
+_None._
 
 ## Approved (Awaiting Merge)
 
@@ -83,7 +83,7 @@ _None._
 | Important | 4 |
 | Ready (`loom:issue`) | 1 |
 | In Progress (`loom:building`) | 1 |
-| PRs awaiting review | 1 |
+| PRs awaiting review | 0 |
 | Approved PRs awaiting merge | 1 |
 | Curated | 11 |
 | Architect / Hermit proposals | 3 |
