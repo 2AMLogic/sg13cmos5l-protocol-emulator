@@ -8,7 +8,7 @@ This roadmap is generated from the current GitHub label state.
 Judge-approved PRs under a hold (`loom:blocked` or `loom:operator`) — only a human merge decision is missing.
 
 - **#399**: build: track the fleet klayout-tools version instead of pinning one, and delete the re-mint loop that enforced the pin
-- **#423**: chore(loom): resync installed Loom to v0.19.1302
+- **#425**: chore(loom): resync installed Loom to v0.19.1305
 
 ## Very Important
 
@@ -48,7 +48,7 @@ _None._
 PRs that passed review and are queued for Champion auto-merge (`loom:pr`).
 
 - **#399**: build: track the fleet klayout-tools version instead of pinning one, and delete the re-mint loop that enforced the pin
-- **#423**: chore(loom): resync installed Loom to v0.19.1302
+- **#425**: chore(loom): resync installed Loom to v0.19.1305
 
 ## Proposed
 

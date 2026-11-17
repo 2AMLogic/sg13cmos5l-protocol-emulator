@@ -14,6 +14,10 @@ Chronological record of merged pull requests and closed issues, newest first.
 > issue #44's current title, which was renamed after it was logged). Do not delete it to
 > make a re-run of the sweep report zero.
 
+### 2026-11-16
+
+- **PR #423**: chore(loom): resync installed Loom to v0.19.1302
+
 ### 2026-11-15
 
 - **PR #421**: test: assert run_inventory reads METADATA_PROFILES so the mapping cannot go dead
