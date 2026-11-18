@@ -135,6 +135,32 @@ in the workflow step) turns that `NOTE` into a failure with no code change.
 | `.github/workflows/ratification-gate.yml`, job **`two-key gate (spec Status flips)`** | `check_ratification_gate.py --pr <N>` | **Authoritative.** Triggers on `pull_request` *and* `pull_request_review` — a key review arrives after the last push, so without the review trigger the gate would never see the reviews that release the PR. Also on `merge_group`: as a required check it must report on the merge queue's trial-merge commits (`--base-sha` from `merge_group.base_sha`, PR number parsed from `merge_group.head_ref`), and there it fails closed — an unresolvable base or PR is a failure, never the local mode's `SKIP`. |
 | `npm run lint` → `npm run check:ci` | `test_check_ratification_gate.py`, then `check_ratification_gate.py --base-ref origin/main` | Composable local/CI copy of the same assertion, plus the gate's own self-test. |
 
+### The merge-group run has a group-size-1 precondition
+
+The `merge_group` run pairs two scopes that are only guaranteed to coincide
+while the merge queue's **maximum group size is 1**: its flips come from the
+whole trial-merge tree (`merge_group.base_sha` diffed against the trial-merge
+`HEAD`), but the reviews it checks those flips against come from the **one**
+PR parsed out of the queue ref (`merge_group.head_ref`). A group of exactly
+one PR makes tree and reviews the same change; GitHub's queue batches by
+default, so if the operator raises the group size, a batched trial-merge
+tree can carry sibling PRs' changes while the ref names only one of them —
+and a sibling's flip then fails the group against reviews that say nothing
+about it, naming (at best) the wrong PR.
+
+The direction is **fail-closed** — the gate never passes a flip it cannot
+attribute — but it can block a PR that is individually fine. The narrow
+opposite risk (a false pass) is covered by the **authoritative** per-PR
+`pull_request` run: a PR cannot enter the queue until its own gate passes,
+so an unratified flip is blocked before it is ever queued; the
+`merge_group` run is a second line of defence against batch-interactions,
+not the primary gate. Accordingly, the precondition is: **the queue's
+maximum group size must stay at 1** (an operator setting, made at rollout).
+Raising it requires first teaching the gate to attribute each flip to the
+PR that carries it — check the flip is present in the named PR's own diff,
+or enumerate the group's entries and demand keys from whichever PR carries
+the flip.
+
 The local invocation auto-discovers the PR for the current branch via `gh pr
 view`. With a flip present and **no** resolvable PR context (no PR yet, no
 `gh` auth) it prints `SKIP` and exits 0 — the unverifiable case is left to
