@@ -13,20 +13,28 @@
 # does not flip a `spec/` `Status:` line to `Ratified` passes trivially, so it
 # costs ordinary PRs one ~20s job and gates only the act it is about.
 #
-# Two triggers, deliberately:
+# Three triggers, deliberately:
 #   * `pull_request` -- catches the flip as soon as it is pushed.
 #   * `pull_request_review` -- a key review arrives *after* the last push, so
 #     without this trigger the gate would never see the reviews that release
 #     the PR. Both events carry `github.event.pull_request`, so the same
 #     check re-runs against the same head sha and the latest run wins.
+#   * `merge_group` (issue #432) -- this job is on main's required status
+#     checks, so it MUST also report on the merge queue's trial-merge
+#     commits: a required check that skips on merge_group is a silent drop,
+#     not a pass. The event carries no pull_request object, so the job
+#     resolves everything from the event payload itself: checkout at
+#     `merge_group.head_sha`, base from `merge_group.base_sha` (passed as
+#     `--base-sha`), and the carrying PR number parsed from
+#     `merge_group.head_ref` (`refs/heads/gh-readonly-queue/<base>/pr-<N>-<sha>`).
+#     Under `--merge-group` the gate fails closed -- an unresolvable base or
+#     PR is a failure, never the local mode's SKIP.
 #
-# Two and only two: every step below reads `github.event.pull_request` (the
-# checkout ref, the base-branch fetch, the `--pr`/`--base-ref` arguments), and
-# the job's `if` requires it. An event that does not carry a pull_request --
-# `workflow_dispatch` above all -- therefore cannot run this job at all; it
-# would be offered in the Actions UI and then silently skip, which is worse
-# than not being offered. Adding one means giving every one of those steps a
-# way to resolve the target PR's number, head sha and base ref for itself.
+# Everything else stays out: every step resolves what it needs per event, and
+# the job's `if` admits exactly `pull_request`-shaped events plus
+# `merge_group`. An event that carries neither -- `workflow_dispatch` above
+# all -- still cannot run this job at all; it would be offered in the Actions
+# UI and then silently skip, which is worse than not being offered.
 #
 # OPERATOR NOTE: for this to block a merge rather than merely report, the job
 # must be added to `main`'s required status checks (branch protection is an
@@ -42,8 +50,11 @@ on:
     types: [opened, synchronize, reopened, ready_for_review]
   pull_request_review:
     types: [submitted, edited, dismissed]
+  merge_group:
 
 concurrency:
+  # merge_group carries no PR number, so the group falls back to the queue
+  # ref -- unique per queue entry -- and cancel-in-progress stays safe.
   group: ratification-gate-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
@@ -55,14 +66,14 @@ jobs:
   two-key-gate:
     name: two-key gate (spec Status flips)
     runs-on: ubuntu-latest
-    if: github.event.pull_request != null
+    if: github.event.pull_request != null || github.event_name == 'merge_group'
     steps:
       - uses: actions/checkout@v4
         with:
-          # The PR head itself, not the merge commit: the gate compares the
-          # head tree against the merge-base, and full history is needed to
-          # resolve that merge-base.
-          ref: ${{ github.event.pull_request.head.sha }}
+          # The PR head itself (or the queue's trial-merge commit), not a
+          # merge ref: the gate compares the head tree against the base, and
+          # full history is needed to resolve it.
+          ref: ${{ github.event.pull_request.head.sha || github.event.merge_group.head_sha }}
           fetch-depth: 0
 
       - uses: actions/setup-python@v5
@@ -70,6 +81,10 @@ jobs:
           python-version: '3.13'
 
       - name: Make the PR's base branch available for the merge-base
+        # merge_group has no base *branch*: its base arrives as a commit
+        # (merge_group.base_sha) via --base-sha, and fetch-depth: 0 already
+        # carries it.
+        if: github.event.pull_request != null
         run: |
           git fetch --no-tags --quiet origin \
             "+refs/heads/${{ github.event.pull_request.base.ref }}:refs/remotes/origin/${{ github.event.pull_request.base.ref }}"
@@ -83,8 +98,18 @@ jobs:
       - name: Two-key gate against this PR's reviews
         env:
           GH_TOKEN: ${{ github.token }}
+          MG_BASE_SHA: ${{ github.event.merge_group.base_sha }}
+          MG_HEAD_REF: ${{ github.event.merge_group.head_ref }}
         run: |
-          python3 scripts/check_ratification_gate.py \
-            --repo "${{ github.repository }}" \
-            --pr "${{ github.event.pull_request.number }}" \
-            --base-ref "origin/${{ github.event.pull_request.base.ref }}"
+          if [ "${{ github.event_name }}" = "merge_group" ]; then
+            python3 scripts/check_ratification_gate.py \
+              --repo "${{ github.repository }}" \
+              --base-sha "$MG_BASE_SHA" \
+              --merge-group \
+              --merge-group-head-ref "$MG_HEAD_REF"
+          else
+            python3 scripts/check_ratification_gate.py \
+              --repo "${{ github.repository }}" \
+              --pr "${{ github.event.pull_request.number }}" \
+              --base-ref "origin/${{ github.event.pull_request.base.ref }}"
+          fi

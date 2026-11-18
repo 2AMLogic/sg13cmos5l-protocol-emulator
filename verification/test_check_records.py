@@ -148,7 +148,7 @@ def build_fixture_repo(tmp: Path) -> Path:
     return repo
 
 
-def run_linter(repo: Path) -> tuple[int, str]:
+def run_linter(repo: Path, *extra_args: str) -> tuple[int, str]:
     result = subprocess.run(
         [
             sys.executable,
@@ -156,6 +156,7 @@ def run_linter(repo: Path) -> tuple[int, str]:
             "--base-ref",
             BASE_REF,
             "--require-append-only",
+            *extra_args,
         ],
         cwd=repo,
         capture_output=True,
@@ -684,6 +685,50 @@ CASES = [
     ),
 ]
 
+# --- --base-sha: the merge queue's entry point (issue #432) ----------------
+# The workflow passes github.event.merge_group.base_sha as an explicit base
+# commit; the linter must diff directly against it and fail explicitly when
+# it is absent or unavailable. Each entry adds a base resolver run against
+# the fixture repo before the linter is invoked.
+
+BASE_SHA_UNAVAILABLE = "0" * 40
+
+
+def _base_sha_of_fixture(repo: Path) -> str:
+    return _git(repo, "rev-parse", BASE_REF).strip()
+
+
+BASE_SHA_CASES = [
+    (
+        "an unavailable --base-sha commit fails explicitly",
+        case_valid,
+        lambda repo: BASE_SHA_UNAVAILABLE,
+        1,
+        "append-only check: base commit `" + BASE_SHA_UNAVAILABLE + "` is not available",
+    ),
+    (
+        "an empty --base-sha fails explicitly (a payload without a base)",
+        case_valid,
+        lambda repo: "",
+        1,
+        "append-only check: base commit `` is not available",
+    ),
+    (
+        "a record modified relative to --base-sha fails (append-only)",
+        case_edited_existing_record,
+        _base_sha_of_fixture,
+        1,
+        "append-only violation",
+    ),
+    (
+        "adding a new record is allowed against --base-sha",
+        case_new_record_is_a_pure_addition,
+        _base_sha_of_fixture,
+        0,
+        "no append-only violations",
+    ),
+]
+
 
 def main() -> int:
     if not LINTER.exists():
@@ -693,7 +738,7 @@ def main() -> int:
         print(f"FATAL: {REPO_UTILS} not found", file=sys.stderr)
         return 1
 
-    print(f"== check_records.py self-test ({len(CASES)} cases) ==")
+    print(f"== check_records.py self-test ({len(CASES) + len(BASE_SHA_CASES)} cases) ==")
     failures = 0
     for name, mutate, expected_exit, expected_substring in CASES:
         with tempfile.TemporaryDirectory(prefix="record-linter-selftest-") as tmpdir:
@@ -720,11 +765,37 @@ def main() -> int:
             else:
                 print(f"OK:   {name}")
 
+    for name, mutate, base_sha_of, expected_exit, expected_substring in BASE_SHA_CASES:
+        with tempfile.TemporaryDirectory(prefix="record-linter-selftest-") as tmpdir:
+            repo = build_fixture_repo(Path(tmpdir))
+            mutate(repo)
+            exit_code, output = run_linter(repo, "--base-sha", base_sha_of(repo))
+
+            problems = []
+            if exit_code != expected_exit:
+                problems.append(f"exit {exit_code}, expected {expected_exit}")
+            if expected_substring not in output:
+                problems.append(f"output missing {expected_substring!r}")
+            if "Traceback (most recent call last)" in output:
+                problems.append("linter crashed with a traceback")
+
+            if problems:
+                failures += 1
+                print(f"FAIL: {name}")
+                for problem in problems:
+                    print(f"  - {problem}")
+                print("  --- linter output ---")
+                for line in output.splitlines():
+                    print(f"  | {line}")
+            else:
+                print(f"OK:   {name}")
+
     print()
+    total = len(CASES) + len(BASE_SHA_CASES)
     if failures:
-        print(f"FAIL: {failures}/{len(CASES)} self-test case(s) did not behave as specified")
+        print(f"FAIL: {failures}/{total} self-test case(s) did not behave as specified")
         return 1
-    print(f"PASS: all {len(CASES)} self-test cases behaved as specified")
+    print(f"PASS: all {total} self-test cases behaved as specified")
     return 0
 
 

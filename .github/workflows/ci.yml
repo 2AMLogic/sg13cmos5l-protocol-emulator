@@ -17,6 +17,11 @@ name: CI
 
 on:
   pull_request:
+  # Merge queue (issue #432): the required checks must report on the
+  # queue's trial-merge commits, or the ruleset tooling refuses to enable
+  # the queue. No path/branch filters -- a filtered merge_group run is a
+  # silent drop of a required context.
+  merge_group:
   push:
     branches: [main]
   workflow_dispatch:
@@ -29,6 +34,9 @@ on:
 #    group still bounds the queue to one active run plus one pending run; a
 #    newer push replaces only the *pending* run (superseded, no verdict, no
 #    jobs started), never a run whose benches have started.
+#  - merge_group: cancel-in-progress is false (the event is neither
+#    pull_request nor a superseded pending run) and the ref is unique per
+#    queue entry, so no group is shared with anything else.
 # The group is workflow-prefixed and ref-based, so PR refs, main, and other
 # workflows never share a group.
 concurrency:
@@ -91,8 +99,22 @@ jobs:
       - name: Record linter + its self-test (npm run lint)
         run: npm run lint
 
+      # Append-only base: on a merge_group run the diff is against the
+      # queue's trial-merge base (github.event.merge_group.base_sha), NOT a
+      # moving origin/main merge-base; on pull_request/push the command is
+      # byte-unchanged. An absent base_sha (a payload without one) is an
+      # explicit failure via --require-append-only, never a silent pass
+      # against the wrong base. Pattern per sky130-comparator#332.
       - name: Record linter, strict append-only against origin/main
-        run: python3 verification/check_records.py --require-append-only --base-ref origin/main
+        env:
+          MG_BASE_SHA: ${{ github.event.merge_group.base_sha }}
+        run: |
+          if [ "${{ github.event_name }}" = "merge_group" ]; then
+            python3 verification/check_records.py --require-append-only \
+              --base-ref origin/main --base-sha "$MG_BASE_SHA"
+          else
+            python3 verification/check_records.py --require-append-only --base-ref origin/main
+          fi
 
   # klt signoff --manifest re-run (issue #16): CI re-renders this block's
   # T1 tier-verdict report from the committed block manifest against the

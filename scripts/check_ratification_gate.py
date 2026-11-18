@@ -59,12 +59,22 @@ Usage:
 
     # Local (npm run lint): auto-discovers the PR for the current branch.
     # No flip -> pass. Flip with no resolvable PR context -> SKIP (the
-    # workflow job is the authoritative check).
+    # workflow job is the authoritative check). Under --merge-group neither
+    # SKIP path exists: an unresolvable base or PR fails instead.
     python3 scripts/check_ratification_gate.py --base-ref origin/main
 
     # Offline, for the self-test and for reproducing a control case.
     python3 scripts/check_ratification_gate.py --base-ref REF \
         --pr-author some-bot --reviews-file reviews.json
+
+    # Merge queue (merge_group event): --base-sha carries the queue's
+    # github.event.merge_group.base_sha and --merge-group-head-ref carries
+    # the queue ref (parsed for the carrying PR number). In this mode an
+    # unresolvable base, or a flip whose carrying PR cannot be resolved,
+    # FAILS -- it never SKIPs.
+    python3 scripts/check_ratification_gate.py --merge-group \
+        --base-sha <sha> \
+        --merge-group-head-ref refs/heads/gh-readonly-queue/main/pr-47-<sha>
 
 Exit codes: 0 pass (or nothing to gate), 1 the gate failed, 2 usage error.
 """
@@ -158,6 +168,35 @@ def resolve_base(repo_root: Path, base_ref: str) -> str | None:
         return None
     merge_base = run_git(repo_root, "merge-base", base_ref, "HEAD", check=False)
     return merge_base.strip() or None
+
+
+def commit_exists(repo_root: Path, sha: str) -> bool:
+    """True if `sha` names a commit object available in this checkout."""
+    if not sha.strip():
+        return False
+    rev = run_git(
+        repo_root,
+        "rev-parse",
+        "--verify",
+        "--quiet",
+        f"{sha}^{{commit}}",
+        check=False,
+    )
+    return bool(rev.strip())
+
+
+#: A merge-queue ref is `refs/heads/gh-readonly-queue/<base>/pr-<N>-<sha>`;
+#: the PR number is the only part the gate can resolve review context from.
+QUEUE_PR_RE = re.compile(r"/pr-(\d+)-")
+
+
+def pr_number_from_head_ref(head_ref: str | None) -> int | None:
+    """PR number carried by a merge-group `head_ref`, or None if absent or
+    unparsable (the caller decides whether that is fatal)."""
+    if not head_ref:
+        return None
+    match = QUEUE_PR_RE.search(head_ref)
+    return int(match.group(1)) if match else None
 
 
 def tree_spec_files(repo_root: Path, commit: str) -> set[str]:
@@ -471,6 +510,23 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--base-sha", help="explicit base commit; overrides --base-ref's merge-base"
     )
+    parser.add_argument(
+        "--merge-group",
+        action="store_true",
+        help=(
+            "merge-queue mode: this run is a merge_group event. An unresolvable "
+            "base, or a flip whose carrying PR cannot be resolved from "
+            "--merge-group-head-ref, FAILS instead of SKIP"
+        ),
+    )
+    parser.add_argument(
+        "--merge-group-head-ref",
+        help=(
+            "github.event.merge_group.head_ref "
+            "(refs/heads/gh-readonly-queue/<base>/pr-<N>-<sha>); parsed for "
+            "the carrying PR number"
+        ),
+    )
     parser.add_argument("--pr", type=int, help="carrying PR number (authoritative mode)")
     parser.add_argument("--repo", help="OWNER/REPO for gh API calls (default: current)")
     parser.add_argument(
@@ -502,8 +558,29 @@ def main(argv: list[str] | None = None) -> int:
     )
 
     try:
-        base = args.base_sha or resolve_base(repo_root, args.base_ref)
+        base = (
+            args.base_sha
+            if args.base_sha is not None
+            else resolve_base(repo_root, args.base_ref)
+        )
+        if base and not commit_exists(repo_root, base):
+            if args.merge_group:
+                print(
+                    f"FAIL: merge_group base commit {base!r} is not available in "
+                    "this checkout (shallow clone? the job needs fetch-depth: 0); "
+                    "refusing to evaluate the gate without its pre-change state."
+                )
+                return 1
+            raise GateError(f"base commit {base!r} is not available")
         if not base:
+            if args.merge_group:
+                print(
+                    f"FAIL: merge_group base (--base-sha {args.base_sha!r}) is "
+                    f"absent or base ref {args.base_ref!r} could not be resolved; "
+                    "a merge-queue run has no pre-change state to compare against "
+                    "and must not SKIP."
+                )
+                return 1
             print(
                 f"SKIP: base ref {args.base_ref!r} could not be resolved, so no "
                 "pre-change state is available to compare against."
@@ -539,8 +616,20 @@ def main(argv: list[str] | None = None) -> int:
             pr_author, reviews = args.pr_author, reviews_raw
             source = f"--reviews-file {args.reviews_file}"
         else:
-            pr_number = args.pr or discover_pr_number(repo_root)
+            if args.merge_group:
+                pr_number = pr_number_from_head_ref(args.merge_group_head_ref)
+            else:
+                pr_number = args.pr or discover_pr_number(repo_root)
             if not pr_number:
+                if args.merge_group:
+                    print(
+                        "FAIL: a ratification flip is present but no carrying PR "
+                        "could be resolved from the merge-group head ref "
+                        f"{args.merge_group_head_ref!r} (expected "
+                        "refs/heads/gh-readonly-queue/<base>/pr-<N>-<sha>); "
+                        "failing closed rather than SKIP."
+                    )
+                    return 1
                 print(
                     "SKIP: a ratification flip is present but no carrying PR could be "
                     "resolved for this branch, so the two-key requirement cannot be "

@@ -107,6 +107,18 @@ def _commit(repo: Path, message: str) -> None:
     _git(repo, "commit", "--quiet", "-m", message)
 
 
+def _rev_parse(repo: Path, ref: str) -> str:
+    """Resolve `ref` in the fixture repo to its commit sha (`_git` discards
+    stdout by design; the merge-group cases need the base commit's sha)."""
+    return subprocess.run(
+        ["git", "rev-parse", ref],
+        cwd=repo,
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout.strip()
+
+
 def _review(
     body: str,
     login: str = "ee-key-holder",
@@ -601,6 +613,169 @@ def case_no_base_ref_skips(repo: Path) -> tuple[bool, str]:
     return (result.returncode == 0 and "SKIP" in result.stdout), result.stdout
 
 
+# ------------------------------------------------ merge-group (issue #432)
+#
+# On a merge_group run the gate is a REQUIRED check, so every path that the
+# local mode answers with a SKIP must instead fail: a skipped required check
+# reads as a pass to the queue. The base arrives as an explicit commit
+# (--base-sha, github.event.merge_group.base_sha) and the carrying PR number
+# is parsed from the queue ref, never auto-discovered -- a queue branch is
+# not a PR branch, so `gh pr view` cannot resolve it.
+
+QUEUE_REF = "refs/heads/gh-readonly-queue/main/pr-47-deadbeefdeadbeefdeadbeefdeadbeefdeadbee"
+
+
+def case_merge_group_base_absent_fails(repo: Path) -> tuple[bool, str]:
+    """A merge_group run whose base_sha is absent must FAIL, never SKIP."""
+    (repo / "spec" / "decision-records" / "0009-a-record.md").write_text(RATIFIED_DR)
+    _commit(repo, "flip 0009 to Ratified")
+    result = _run_gate(
+        repo,
+        [],
+        extra_args=(
+            "--merge-group",
+            "--base-sha",
+            "",
+            "--merge-group-head-ref",
+            QUEUE_REF,
+        ),
+    )
+    return (
+        result.returncode == 1
+        and "FAIL" in result.stdout
+        and "SKIP:" not in result.stdout
+        and "must not SKIP" in result.stdout
+    ), result.stdout
+
+
+def case_merge_group_base_unavailable_fails(repo: Path) -> tuple[bool, str]:
+    """A merge_group run whose base commit is not in the checkout (shallow
+    clone) must FAIL with a named reason."""
+    (repo / "spec" / "decision-records" / "0009-a-record.md").write_text(RATIFIED_DR)
+    _commit(repo, "flip 0009 to Ratified")
+    result = _run_gate(
+        repo,
+        [],
+        extra_args=(
+            "--merge-group",
+            "--base-sha",
+            "0" * 40,
+            "--merge-group-head-ref",
+            QUEUE_REF,
+        ),
+    )
+    return (
+        result.returncode == 1
+        and "is not available" in result.stdout
+        and "SKIP:" not in result.stdout
+    ), result.stdout
+
+
+def case_merge_group_flip_no_resolvable_pr_fails(repo: Path) -> tuple[bool, str]:
+    """A flip whose queue ref carries no parseable PR number fails closed.
+
+    Run WITHOUT `--reviews-file`/`--pr-author`: those supply review context
+    directly and would bypass the PR resolution this case exercises (which is
+    exactly what happens in a real merge_group run -- the job has review
+    context only through the PR the queue ref names). Resolving the PR is
+    what fails here, before any forge call, so the run needs no network.
+    """
+    (repo / "spec" / "decision-records" / "0009-a-record.md").write_text(RATIFIED_DR)
+    _commit(repo, "flip 0009 to Ratified")
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(GATE),
+            "--repo-root",
+            str(repo),
+            "--base-sha",
+            _rev_parse(repo, BASE_REF),
+            "--merge-group",
+            "--merge-group-head-ref",
+            "refs/heads/gh-readonly-queue/main/pr-notanumber-deadbee",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    return (
+        result.returncode == 1
+        and "no carrying PR" in result.stdout
+        and "SKIP:" not in result.stdout
+    ), result.stdout
+
+
+def case_merge_group_flip_with_valid_keys_passes(repo: Path) -> tuple[bool, str]:
+    """A queue run with a real base, a parseable PR ref and two proper keys
+    must PASS -- the ordinary two-key evaluation, unchanged."""
+    (repo / "spec" / "decision-records" / "0009-a-record.md").write_text(RATIFIED_DR)
+    _commit(repo, "flip 0009 to Ratified")
+    result = _run_gate(
+        repo,
+        [
+            _review(EE_OK(), login="ee-key-holder"),
+            _review(MARKET_OK(), login="market-key-holder"),
+        ],
+        extra_args=(
+            "--merge-group",
+            "--base-sha",
+            _rev_parse(repo, BASE_REF),
+            "--merge-group-head-ref",
+            QUEUE_REF,
+        ),
+    )
+    return (
+        result.returncode == 0
+        and "PASS" in result.stdout
+        and "FAIL" not in result.stdout
+    ), result.stdout
+
+
+def case_merge_group_flip_without_keys_fails(repo: Path) -> tuple[bool, str]:
+    """The negative control, replayed on a merge_group run: a flip with zero
+    reviews must FAIL on the keys themselves."""
+    (repo / "spec" / "decision-records" / "0009-a-record.md").write_text(RATIFIED_DR)
+    _commit(repo, "flip 0009 to Ratified")
+    result = _run_gate(
+        repo,
+        [],
+        extra_args=(
+            "--merge-group",
+            "--base-sha",
+            _rev_parse(repo, BASE_REF),
+            "--merge-group-head-ref",
+            QUEUE_REF,
+        ),
+    )
+    return (
+        result.returncode == 1
+        and "no ee key" in result.stdout
+        and "no market key" in result.stdout
+    ), result.stdout
+
+
+def case_merge_group_non_flip_passes(repo: Path) -> tuple[bool, str]:
+    """No flip: a merge_group run passes trivially, exactly as on a PR."""
+    path = repo / "spec" / "decision-records" / "0009-a-record.md"
+    path.write_text(PROPOSED_DR.replace("Something is proposed.", "Something else."))
+    _commit(repo, "edit prose")
+    result = _run_gate(
+        repo,
+        [],
+        extra_args=(
+            "--merge-group",
+            "--base-sha",
+            _rev_parse(repo, BASE_REF),
+            "--merge-group-head-ref",
+            QUEUE_REF,
+        ),
+    )
+    return (
+        result.returncode == 0
+        and "no spec/ Status line is flipped" in result.stdout
+    ), result.stdout
+
+
 FIXTURE_CASES = (
     case_negative_control,
     case_positive_control,
@@ -626,6 +801,12 @@ FIXTURE_CASES = (
     case_lint_wiring_self_modification,
     case_same_login_note_only,
     case_no_base_ref_skips,
+    case_merge_group_base_absent_fails,
+    case_merge_group_base_unavailable_fails,
+    case_merge_group_flip_no_resolvable_pr_fails,
+    case_merge_group_flip_with_valid_keys_passes,
+    case_merge_group_flip_without_keys_fails,
+    case_merge_group_non_flip_passes,
 )
 
 
@@ -660,6 +841,29 @@ def case_real_spec_status_vocabulary() -> tuple[bool, str]:
     return (not problems), "\n".join(problems) or f"{seen} Status line(s) checked"
 
 
+def case_pr_number_parsing() -> tuple[bool, str]:
+    """The queue-ref parser: PR number out of
+    `refs/heads/gh-readonly-queue/<base>/pr-<N>-<sha>`, None otherwise."""
+    sys.path.insert(0, str(SCRIPT_DIR))
+    import check_ratification_gate as gate  # noqa: PLC0415
+
+    cases = [
+        ("refs/heads/gh-readonly-queue/main/pr-47-deadbee", 47),
+        ("refs/heads/gh-readonly-queue/gh-readonly-queue/main/pr-7-cafe", 7),
+        ("refs/heads/gh-readonly-queue/main/pr-notanumber-deadbee", None),
+        ("refs/heads/gh-readonly-queue/main/deadbee", None),
+        ("refs/heads/some-regular-branch", None),
+        ("", None),
+        (None, None),
+    ]
+    problems = []
+    for head_ref, expected in cases:
+        got = gate.pr_number_from_head_ref(head_ref)
+        if got != expected:
+            problems.append(f"{head_ref!r}: got {got!r}, expected {expected!r}")
+    return (not problems), "\n".join(problems) or f"{len(cases)} refs parsed as specified"
+
+
 def main() -> int:
     failures = 0
     for case in FIXTURE_CASES:
@@ -680,7 +884,12 @@ def main() -> int:
     if not ok:
         failures += 1
 
-    total = len(FIXTURE_CASES) + 1
+    ok, detail = case_pr_number_parsing()
+    print(f"[{'PASS' if ok else 'FAIL'}] case_pr_number_parsing -- {detail}")
+    if not ok:
+        failures += 1
+
+    total = len(FIXTURE_CASES) + 2
     print(f"\n{total - failures}/{total} cases behaved as specified")
     return 1 if failures else 0
 
