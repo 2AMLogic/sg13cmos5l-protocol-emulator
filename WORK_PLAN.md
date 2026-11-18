@@ -3,6 +3,7 @@
 This roadmap is generated from the current GitHub label state.
 
 <!-- guide:plan-body:start -->
+_Generated: 2026-11-18T21:29:44Z (snapshot; compare against live labels)_
 ## Operator Attention: Merge-Risk-Hold Pileup
 
 Judge-approved PRs under a hold (`loom:blocked` or `loom:operator`) — only a human merge decision is missing.
@@ -35,7 +36,6 @@ Human-approved issues (`loom:issue`) ready for implementation — excluding held
 Issues currently being built (`loom:building`).
 
 - **#371**: chore: pin a klt containing request.macros (PR #2645) and re-mint the records it stales
-- **#432**: Merge queue: add the merge_group trigger and adapt the PR-metadata gates
 
 ## PRs Awaiting Review
 
@@ -64,7 +64,6 @@ Issues carrying `loom:curated`.
 - **#360**: T1 item 3 (DRC clean): resolve the 4,484 nwell findings in the SRAM macro under the klt 0.8.0 deck *(curated)* *(held)*
 - **#365**: T1 item 3: apply foundry-cell DRC exception for the SRAM macro once klt releases grading *(curated)* *(held)*
 - **#371**: chore: pin a klt containing request.macros (PR #2645) and re-mint the records it stales *(curated)*
-- **#432**: Merge queue: add the merge_group trigger and adapt the PR-metadata gates *(curated)*
 
 ## Proposed (Architect / Hermit)
 
@@ -84,10 +83,10 @@ _None._
 | Very important | 1 |
 | Important | 4 |
 | Ready (`loom:issue`, net of holds/building/merge-pending) | 1 |
-| In Progress (`loom:building`) | 2 |
+| In Progress (`loom:building`) | 1 |
 | PRs awaiting review | 0 |
 | Approved PRs awaiting merge | 1 |
-| Curated | 12 |
+| Curated | 11 |
 | Architect / Hermit proposals | 3 |
 | Active epics | 0 |
 <!-- guide:plan-body:end -->
