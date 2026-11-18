@@ -30,7 +30,7 @@ estimate closes setup but fails hold), row 12 (stale gate-level and SDF records
 for the Fast-mode I2C images) and row 7 (klt place-and-route not run).
 
 **T1 checklist** (`klt signoff`, record
-`verification/records/signoff-baseline/records/20261114-080808-59bc656.md`,
+`verification/records/signoff-baseline/records/20261118-105608-ddf2a85.md`,
 klt 0.8.0): **4 of 11 met**.
 
 | Item | Verdict | What moves it |

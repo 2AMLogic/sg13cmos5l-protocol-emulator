@@ -46,8 +46,9 @@ Checks, per record `verification/records/<experiment>/records/<record-id>.md`:
 5. **Append-only** -- every path under `verification/records/` must be
    either untracked-before (a pure addition) or unchanged, relative to the
    merge-base with `origin/main` (or `--base-ref`). Any modification,
-   rename, or deletion fails. If the base ref cannot be resolved, this
-   check prints SKIP unless `--require-append-only` is given.
+   rename, or deletion fails. If the base cannot be resolved, this
+   check prints SKIP unless `--require-append-only` is given, in which
+   case it fails.
 6. **No symlinks** -- no tracked entry under `verification/records/` may
    be a symlink (git mode `120000`), and no record may be reached through a
    symlinked file or directory on disk. git stores only a symlink's link
@@ -66,6 +67,7 @@ Usage:
     python3 verification/check_records.py
     python3 verification/check_records.py --require-append-only
     python3 verification/check_records.py --base-ref origin/main
+    python3 verification/check_records.py --require-append-only --base-sha <commit>
 
 Exit codes: 0 pass, 1 a check failed.
 """
@@ -439,16 +441,39 @@ def check_hash_freshness(path: Path, superseded: set) -> list[str]:
     return errors
 
 
-def check_append_only(base_ref: str, require: bool) -> list[str]:
-    try:
-        merge_base = run_git("merge-base", base_ref, "HEAD")
-    except subprocess.CalledProcessError as exc:
-        detail = (exc.stderr or str(exc)).strip()
-        msg = f"append-only check: could not resolve base ref `{base_ref}` ({detail})"
-        if require:
-            return [msg]
-        print(f"SKIP: {msg}")
-        return []
+def check_append_only(
+    base_ref: str, require: bool, base_sha: str | None = None
+) -> list[str]:
+    """Append-only diff of HEAD against `base_sha` when given (a merge-queue
+    trial merge: `github.event.merge_group.base_sha`, used directly with no
+    merge-base), else against the merge-base of `base_ref` and HEAD. `require`
+    upgrades an unresolvable base from a printed SKIP to a returned error."""
+    label = base_sha if base_sha is not None else base_ref
+    if base_sha is not None:
+        try:
+            merge_base = run_git(
+                "rev-parse", "--verify", "--quiet", f"{base_sha}^{{commit}}"
+            )
+        except subprocess.CalledProcessError as exc:
+            detail = (exc.stderr or str(exc)).strip()
+            msg = (
+                f"append-only check: base commit `{base_sha}` is not available "
+                f"({detail or 'unresolvable'})"
+            )
+            if require:
+                return [msg]
+            print(f"SKIP: {msg}")
+            return []
+    else:
+        try:
+            merge_base = run_git("merge-base", base_ref, "HEAD")
+        except subprocess.CalledProcessError as exc:
+            detail = (exc.stderr or str(exc)).strip()
+            msg = f"append-only check: could not resolve base ref `{base_ref}` ({detail})"
+            if require:
+                return [msg]
+            print(f"SKIP: {msg}")
+            return []
 
     try:
         diff = run_git(
@@ -473,10 +498,10 @@ def check_append_only(base_ref: str, require: bool) -> list[str]:
         paths = parts[1:]
         errors.append(
             f"append-only violation: `{status}` on {', '.join(paths)} "
-            f"relative to {base_ref} -- records/artifacts must only be added"
+            f"relative to {label} -- records/artifacts must only be added"
         )
     if not errors:
-        print(f"OK: no append-only violations relative to {base_ref} ({merge_base[:12]})")
+        print(f"OK: no append-only violations relative to {label} ({merge_base[:12]})")
     return errors
 
 
@@ -491,6 +516,16 @@ def main() -> int:
         "--require-append-only",
         action="store_true",
         help="fail (instead of SKIP) if the append-only base ref cannot be resolved",
+    )
+    parser.add_argument(
+        "--base-sha",
+        default=None,
+        help=(
+            "explicit base commit for the append-only diff (merge queue: "
+            "github.event.merge_group.base_sha); overrides --base-ref, which "
+            "is then unused; an unavailable commit fails under "
+            "--require-append-only"
+        ),
     )
     args = parser.parse_args()
 
@@ -564,7 +599,9 @@ def main() -> int:
 
     print()
     print("== append-only check ==")
-    append_errors = check_append_only(args.base_ref, args.require_append_only)
+    append_errors = check_append_only(
+        args.base_ref, args.require_append_only, args.base_sha
+    )
     for e in append_errors:
         print(f"  - {e}")
     all_errors.extend(append_errors)
