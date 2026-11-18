@@ -14,6 +14,15 @@ Chronological record of merged pull requests and closed issues, newest first.
 > issue #44's current title, which was renamed after it was logged). Do not delete it to
 > make a re-run of the sweep report zero.
 
+## Archives
+
+- [2026-09](work_log/WORK_LOG_2026-09.md)
+
+### 2026-11-18
+
+- **PR #434**: ci: report the required checks on merge_group commits (merge queue readiness)
+- **Issue #432** (closed): Merge queue: add the merge_group trigger and adapt the PR-metadata gates
+
 ### 2026-11-17
 
 - **PR #427**: chore(loom): resync installed Loom to v0.19.1306
@@ -435,19 +444,3 @@ Chronological record of merged pull requests and closed issues, newest first.
 - **Issue #17** (closed): Ratify the target spec and DR 0001/0002/0003 via the two-key mechanism (T1 item 5's precondition) — and install the ratification tree this repo lacks
 - **Issue #16** (closed): Commit a klt signoff block manifest so this block's T1 state is graded, not hand-read
 
-### 2026-09-14
-
-- **PR #15**: feat: add scripts/setup-env.sh to pin klt + cocotb + PDK
-- **PR #14**: docs: close out issue #2 — gds workflow now green end to end
-- **PR #13**: fix: remove dead venv-reexec code from verification/_repo_utils.py
-- **PR #12**: fix: add missing sg13cmos5l_udp.v to gate-level test sources
-- **PR #11**: docs: backfill LibreLane cell count for the synthesis-baseline record
-- **PR #9**: docs: reconcile gap-to-submission tracker with the landed harness bootstrap (Part of #2)
-- **PR #7**: Bootstrap Tiny Tapeout template + klt/cocotb harness (issue #2)
-- **PR #4**: docs: ratify target spec, ISA/flow/firmware decision records
-- **Issue #10** (closed): Investigate gl_test and viewer job failures in the gds GitHub Actions workflow
-- **Issue #8** (closed): Remove dead venv-reexec code in verification/_repo_utils.py: cites nonexistent files/issues
-- **Issue #6** (closed): Add scripts/setup-env.sh to pin klt + cocotb + PDK for the verification/ harness
-- **Issue #5** (closed): Backfill LibreLane cell count for the harness-bootstrap stub's synthesis-baseline record
-- **Issue #2** (closed): Harness bootstrap: Tiny Tapeout CMOS5L template wiring + cocotb bench and synthesis baseline ported from sky130-modexp
-- **Issue #1** (closed): Ratify the target spec: protocol emulator ISA — draft spec, ISA / flow-of-record / firmware-toolchain decision records, verification plan, gap-to-submission tracker
