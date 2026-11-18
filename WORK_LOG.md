@@ -20,6 +20,7 @@ Chronological record of merged pull requests and closed issues, newest first.
 
 ### 2026-11-18
 
+- **Issue #440** (closed): WORK_PLAN omits operator-held curated issues with no priority label (#435 is invisible)
 - **PR #437**: docs: state the merge-group group-size-1 precondition in the ratification gate doc
 - **PR #434**: ci: report the required checks on merge_group commits (merge queue readiness)
 - **Issue #432** (closed): Merge queue: add the merge_group trigger and adapt the PR-metadata gates
