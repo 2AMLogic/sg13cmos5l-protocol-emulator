@@ -333,7 +333,7 @@ microsecond figure is core cycles times 20 ns.
 - If a pinned file changes after this note, DR 0017 section 4 item 3 decides
   whether the change invalidates this evidence.
 
-## Dated note 2026-11-19 (issue #452): the SWD probe examined, and set aside on program-memory arithmetic
+## Dated note 2026-11-19 (issue #452): the SWD probe examined — first arithmetic corrected; the agreed fallback fits
 
 Status: Proposed, like the rest of this record. It changes no RTL, no pinned
 file of DR 0017's freeze and no target-spec value, and it makes no row met.
@@ -349,10 +349,23 @@ Issue #452 asked for the other half of SWD: the chip as the **debug probe**
 read of a target's IDCODE through turnaround cycles and an ACK. DR 0018's
 PS/2 note (above) had left the SWD *target* as a candidate for a later
 increment and said why it was not chosen then ("a larger build"). This note
-is the examination that note deferred. Its conclusion is narrower and more
-final than "larger": **on DR 0017's frozen ISA the probe side does not fit
-the 256 × 16 program memory at any size, and the gap is arithmetic, not
-engineering.**
+is the examination that note deferred.
+
+**Revision, same day, before merge.** The first draft of this note (the
+original revision of PR #456) concluded "the probe side does not fit the
+256 × 16 program memory at any size". That conclusion was wrong, and the
+review of PR #456 showed why: the draft's per-cycle floor counted
+**execution instances** of instructions, while the 256-word constraint is on
+**stored program words** — two registers can preload the high and low pin
+images, one `OUT` per SWCLK transition then suffices, and a loop stores its
+body once however many cycles it runs. This revision replaces the draft's
+arithmetic with a counted, assembler-measured implementation and reaches
+the opposite verdict: **on DR 0017's frozen ISA the issue's agreed fallback
+(line reset, switch, second line reset and idle clocks, then IDCODE + one DP
+register read) fits the 256 × 16 program memory with room to spare —
+182 of 256 stored words.** What still does not fit is the issue's full goal
+(a word of AP memory), which needs probe-driven write transactions; see the
+boundary section below.
 
 ### The protocol choice was legal
 
@@ -365,118 +378,197 @@ Serial Wire); and `git grep -i "swd\|serial wire" -- spec/` at this note's
 parent finds the string only in DR 0018 line 283 (the SWD *target*, a
 different role — the target samples a clock it does not generate, the probe
 generates one) and in `spec/gap-to-submission.md` row 13's status prose. The
-examination below, not the exclusion list, is what sets the probe aside.
+examination below, not the exclusion list, is what decides the probe's
+fate.
 
 ### The protocol constants used, and their source quality
 
-The arithmetic needs only the shape of one SWD exchange, not exact
-constants: a line reset of at least 50 SWCLK cycles with SWDIO high, a
-16-bit JTAG-to-SWD switch sequence (0xE79E, LSB first), one 8-bit request
-sampled by the target on SWCLK rising edges, a turnaround cycle, a 3-bit
-one-hot ACK, and 32 data bits plus one parity bit driven by the target.
+The arithmetic needs only the shape of one connection, not exact constants:
+
+- a line reset of at least 50 SWCLK cycles with SWDIO high;
+- a 16-bit JTAG-to-SWD switch sequence (0xE79E, LSB first);
+- **after the switch, a second line reset followed by idle clocks with
+  SWDIO low** — pyOCD's mode selection for the 0xE79E transition sends a
+  second line reset and then idle cycles, and issue #452's curated
+  requirements call for at least two idle clocks (source: pyOCD,
+  `pyocd/probe/swj.py`, the SWJ sequence around `0ce0fbd`);
+- one 8-bit request sampled by the target on SWCLK rising edges, a
+  turnaround at the park bit's fall (the target takes SWDIO while SWCLK is
+  low), a 3-bit one-hot ACK, and 32 data bits plus one parity bit driven by
+  the target, each sampled on a rising edge.
+
 Source: Arm Debug Interface v5 Architecture Specification (ARM IHI 0031,
-section B4, "SWD"). **No copy of IHI 0031 was fetched into this repository
-for this note**, so these figures carry DR 0015's "confirm" mark: a fetched
-copy must be checked before any SWD firmware work resumes. The conclusion
-does not hinge on them — a fetched copy moving any constant by a few cycles
-moves the word counts below by tens, against a gap of hundreds.
+section B4, "SWD"), with the connection-shape point above taken from pyOCD's
+implementation because it is the observable reference for what a working
+probe sends. **No copy of IHI 0031 was fetched into this repository for this
+note**, so these figures carry DR 0015's "confirm" mark: a fetched copy must
+be checked before any SWD firmware work resumes. The conclusion does not
+hinge on them: a fetched copy moving any constant by a few cycles moves the
+stored-word counts below by single words per cycle, against a margin of 74.
 
-### Why every SWCLK cycle costs four program words
+### The corrected cost model: stored words, not execution cycles
 
-This is the whole finding, and it is a property of the ISA (DR 0001 as
-built), not of any schedule:
+DR 0001's constraint is program memory: **256 stored 16-bit words**.
+Execution time is a separate axis this record does not budget — SWD is not
+free-running, and this repository records no upper bound on the probe's
+clock period ("confirm": a fetched copy of IHI 0031 settles what, if
+anything, target-side idle limits exist). The first draft counted
+per-execution instruction instances against the 256-word budget; that is
+the defect the review caught. Stored words are what follow:
 
-- SWCLK is one `uio` pin, and the only way firmware changes a pin is `OUT`,
-  which writes the whole 8-bit image from a register (`OUT UIO_OUT, R3`).
-- Consecutive `OUT`s from an unchanged register write the same value: no
-  edge. Every half-cycle therefore needs an instruction that changes the
-  image register (`LDI` immediate or `XOR` with a mask — the ISA has no
-  other 1-word way) followed by the `OUT`: **two words per SWCLK
-  transition, four per cycle**.
-- A loop amortises only its exit test (`SUB` + `BNZ`, two words per
-  iteration); the four words per cycle are inside every iteration, so a
-  looped schedule costs 4 + 2/K words per cycle (K cycles per iteration)
-  — always more than straight-line's four. DR 0011 found the same for USB
-  (per-bit copies, unrolled, because the loop test is pure overhead).
-- The DR 0012 variants reach the same floor: toggling SWCLK through
-  `UIO_DIR` (drive / release against a pull) or `UIO_OD` (drive low /
-  release against a pull-up) replaces `OUT` with `WCTL`, and still needs
-  the image-change word first — two words per transition either way. The
-  DR 0015 primitives do not help: P2's `LINE_PUT`/`LINE_OUT` encode a data
-  bit (NRZI, stuffing — nothing SWD uses) and the encoded level still
-  reaches a pin only through one `OUT` per bit slot, with the clock edges
-  the firmware's own problem. P3 (Manchester, whose stage toggles a pin
-  by itself) was never built: its control indices do not exist in DR
-  0012's register map or `firmware/tools/asm.py`.
+- **Two preloaded images make one `OUT` per transition.** The high and low
+  `UIO_OUT` images (e.g. `0x0C` = SWCLK high + SWDIO high, `0x08` = SWCLK
+  low + SWDIO high) live in two registers; every SWCLK transition is then a
+  single `OUT UIO_OUT, Rn` — one stored word per transition, two per cycle
+  if unrolled. The draft's "two words per transition, four per cycle"
+  assumed the image register must be reloaded before every `OUT`; it need
+  not be.
+- **A loop stores its body once.** The line reset is `LDI R2, 50` plus a
+  4-word body (`OUT` high, `OUT` low, `SUB`, `BNZ`): **5 stored words for
+  any reset length**. The draft's "a loop amortises only its exit test …
+  always more than straight-line's four" divided per-execution body
+  instances by cycles; the stored cost is the body, once.
+- **Fixed bit patterns transmit at 4 words per bit.** For a known pattern
+  (the switch sequence, a request byte), each bit is: `LDI` low image
+  (SWCLK low, SWDIO = bit); `OUT`; `LDI` high image (SWCLK high, SWDIO =
+  bit); `OUT`. SWDIO then changes only while SWCLK is low and is stable at
+  every rising edge. (A 3-word-per-bit shape exists — change SWDIO with the
+  same `OUT` that raises SWCLK — but it gives the target no hold margin at
+  the rising edge, so the count uses the safe shape.)
+- **Target-driven bits sample through one shared body.** ACK and data are
+  read on rising edges through an 8-word loop body — `OUT` high; `IN`;
+  `AND` with the dio mask; `OUT UO_OUT` (report the masked sample byte);
+  `OUT` low; `LDI 1`; `SUB`; `BNZ` — stored once for however many samples
+  the transaction needs. A read transaction's 36 rising samples (3 ACK +
+  32 data + 1 parity) cost 9 stored words including the counter load, and
+  the second transaction re-uses the shape with its own copy (9 words).
+- **Four registers suffice, and result bytes need not live in registers.**
+  R0/R1 hold the two images, and R0's `0x08` doubles as the SWDIO mask for
+  the `AND`; R2 counts; R3 is the sample/decrement scratch. The draft's
+  full-word-accumulator objection ("the IDCODE is 32 bits against four
+  8-bit registers …") assumed the four result bytes must all sit in
+  registers at once. They need not: DR 0012 gives firmware read/write
+  access to program memory (`PM_ADDR`, `PM_DATA_HI`/`PM_DATA_LO`, its
+  "Program-memory timing" section), so bytes can be parked in unused words
+  and reported byte-at-a-time — and the counted implementation below
+  sidesteps accumulation entirely by reporting each masked dio sample as it
+  is taken. (Scratch check on the committed model, only `R0` live: store
+  `0x1234` and `0x5678` at words 254 and 255, read them back on `UO_OUT`
+  as `12 34 56 78`.)
+- The DR 0012 variants and DR 0015 primitives change none of this: toggling
+  a pin through `UIO_DIR`/`UIO_OD` costs one `WCTL` per transition, the
+  same stored word as an `OUT`; P2's `LINE_PUT`/`LINE_OUT` still encode
+  NRZI/stuffing bits SWD does not use; P3 (Manchester) was never built —
+  its control indices do not exist in DR 0012's register map or
+  `firmware/tools/asm.py`.
 
-Target-driven phases (ACK, data) cost the same four words per cycle: the
-probe still generates both edges, and sampling adds words on top
-(`IN`, mask, isolate, accumulate — roughly six more per sampled bit).
+### The counted implementation: the fallback measured at 182 stored words
 
-### The word counts
+The issue's agreed fallback — line reset, switch, second line reset and idle
+clocks, then IDCODE + one DP register read — was written as a program and
+measured. The shapes above compose into these stored-word sections, counted
+by the committed assembler (`firmware/tools/asm.py`):
 
-Straight-line, four words per cycle, minimal setup, before any sampling,
-extraction or result reporting:
+| Phase | Stored words |
+|---|---|
+| Setup (two images, `UIO_DIR` push-pull, SWDIO high before the first edge, decrement constant) | 5 |
+| Line reset loop — ≥ 50 cycles, SWDIO high (counter + 4-word body, any length) | 5 |
+| JTAG-to-SWD switch, 16 bits at 4 words/bit | 64 |
+| Second line reset (dio-high fall, counter, `JMP`, own 4-word body) | 7 |
+| Idle clocks ×2, SWDIO low | 10 |
+| Request 1 (IDCODE read), 8 bits at 4 words/bit | 32 |
+| Turnaround 1 (park-bit fall, release SWDIO while SWCLK low) | 3 |
+| Sample loop 1 — counter + 8-word body for 36 rising samples (ACK 3, data 32, parity 1) | 9 |
+| Re-drive SWDIO (`LDI`, `WCTL UIO_DIR`) for transaction 2 | 2 |
+| Request 2 (DP read), 8 bits | 32 |
+| Turnaround 2 | 3 |
+| Sample loop 2 (36 rising samples) | 9 |
+| `HALT` | 1 |
+| **Total — startup + both reads** | **182** |
 
-| Phase | SWCLK cycles | Words |
-|---|---|---|
-| Line reset (≥ 50 cycles, SWDIO high) | 50 | 200 |
-| JTAG-to-SWD switch (0xE79E, LSB first) | 16 | 64 |
-| Request (8 bits, e.g. 0xA5 = IDCODE read) | 8 | 32 |
-| Turnaround | 1 | 4 |
-| ACK (target-driven) | 3 | 12 |
-| Data + parity (target-driven) | 33 | 132 |
-| **One protocol-complete packet** | **111** | **444** |
+Startup plus the first transaction only (the minimum the fallback names)
+is **136 stored words**; the second read adds 46. **182 of 256: the
+fallback fits with 74 words (29%) spare.**
 
-Measured on the committed assembler (`firmware/tools/asm.py`), with the
-would-be pin plan SWCLK = `uio[2]` (mask 0x04), SWDIO = `uio[3]` (mask
-0x08), push-pull through DR 0012:
+Measured, not just added up. Assembling the program with the committed
+assembler gives exactly 182 words and no warnings. Running that image on
+the committed ISA model (`verification/reference_models/isa.py`) against a
+scripted SWD target driving SWDIO while the probe has released it:
 
-- a program that does **only the line reset** — setup plus 50 straight-line
-  cycles plus `HALT` — assembles to **207 words** (81% of program memory);
-- adding **only the 16-bit switch sequence** reaches **260 words**, which
-  the assembler rejects: `error: program exceeds DR 0001's 256-word
-  program memory`.
+- the program runs to `HALT` (1135 core edges; 206 SWCLK rising edges =
+  50 + 16 + 50 + 2 + 8 + 36 + 8 + 36 across the two transactions);
+- the SWDIO value at every rising edge matches the scripted patterns: the
+  switch reads `0111100111100111` (0xE79E, LSB first), and both request
+  bytes (DP-read shapes with odd parity; the specific DP address is exactly
+  the kind of IHI 0031 constant this note marks "confirm") come back
+  bit-exact;
+- the bytes the probe reports on `UO_OUT` match the target's answers: ACK
+  `001`, then IDCODE `0x4BA00477` LSB first with odd parity, then the same
+  for a second 32-bit DP value — one masked dio byte per rising edge, in
+  transaction order.
 
-Nothing else in the issue's scope survives that: the ACK and the IDCODE are
-target-driven bits that must be sampled to be used (the issue's acceptance
-criteria grade the ACK and require the IDCODE reported), the IDCODE itself
-is 32 bits against four 8-bit registers with no instruction that reads `C`,
-so a full-word accumulator would occupy every register and leave none for
-the masks, counters and image register every loop needs (the same state
-shortage DR 0011 records for USB), and a second packet for the memory-word
-read would add another ≈ 180 words of bare waveform. The issue's fallback
-("stop at IDCODE + one DP register read") does not rescue it, because the
-first packet alone is the part that does not fit.
+The program text is ~120 lines composed of the shapes above; every figure
+in the table is re-derivable from the section list, and the measurement is
+the committed assembler plus the committed model — no bench, no RTL, no new
+tool.
 
-The gap is 256 words of program memory against ≈ 450 of bare waveform for
-the smallest packet the protocol defines — close to a factor of two before
-any of the work that makes the result evidence. No schedule shape changes
-the four-words-per-cycle floor, because the floor follows from `OUT` being
-the only pin write and images being the only edge source.
+### What still does not fit: probe-driven write transactions
+
+The issue's full goal is one word of AP memory. That needs at least two
+probe-driven write transactions (SELECT, then TAR) before the read. A write
+transaction's data phase drives 33 bits (32 + parity) at 4 words/bit = 132
+stored words, ≈ 180 all-in per transaction with its request, turnaround and
+ACK loop (derived from the section table, not separately
+assembler-measured). Two of those do not fit alongside the ~91-word
+startup; arbitrary (computed) data would cost more still. So the fallback
+is the boundary: **IDCODE + one DP register read fits; a memory-word read
+does not, on this ISA.** This is the conclusion shape the issue itself
+anticipated when it set the fallback.
 
 ### What this note does and does not claim
 
-- It sets aside the **probe role only**. The SWD **target** (issue #235's
-  candidate, `gap-to-submission.md` row 13) has a different cost shape —
-  it samples SWCLK with `IN` and drives SWDIO in response, so it pays one
-  output word per driven bit instead of four per clock cycle — and this
-  note's arithmetic says nothing about it. It remains a candidate.
+- It corrects the first draft's verdict on the **probe role**: the agreed
+  fallback fits, with margin. Issue #452 therefore **stays open** — the
+  probe is buildable on the frozen ISA, and the firmware, bench, reference
+  model and evidence records are the issue's own next step. This PR creates
+  none of them.
+- A real probe would check the ACK (`BZ`/`BNZ` on the sampled `001`) before
+  clocking data. The counted shape reports ACK instead of branching on it;
+  an ACK check is a protocol handshake, the legitimate branch case DR
+  0003's assembler lint already names, and the 74-word margin absorbs its
+  words.
+- The **SWD target** (issue #235's candidate, `gap-to-submission.md` row 13)
+  has a different cost shape — it samples SWCLK with `IN` and drives SWDIO
+  in response, so it pays one output word per driven bit — and this note's
+  arithmetic says nothing about it. It remains a candidate.
 - It is a feasibility record, in the sense of DR 0011: it writes down one
   cost accounting and what it excludes, and reaches no verdict about SWD on
   any other ISA. If DR 0017's freeze is ever amended (section 4), this
-  arithmetic must be re-run before the probe is re-examined — a wider
-  program memory, an edge-generating primitive or a second output port
-  each changes the floor.
+  accounting must be re-run before firmware work is planned against it — a
+  wider program memory, an edge-generating primitive or a second output
+  port each changes it.
+- The ADIv5 constants stay "confirm" (no copy of IHI 0031 was fetched).
+  They move the stored-word counts by single words per cycle (reset length,
+  idle clocks), not by tens — the margin absorbs them.
 - It makes no row met and does not touch the PS/2 or WS2812 evidence.
+- **Same-flaw watch, out of scope here:** DR 0011's USB feasibility uses
+  per-bit unrolled straight-line accounting ("per-bit copies, unrolled,
+  because the loop test is pure overhead") — the same stored-vs-executed
+  distinction this revision corrects. Re-running that record is a separate
+  piece of work; it is flagged here, not silently left standing.
 
 ### Consequences
 
-- Issue #452 closes as not planned, with this note as the rationale. No
-  firmware, bench, reference model, pin-role table entry or evidence record
-  is created for the probe.
-- DR 0010's pin table is unchanged: `uio[2]`/`uio[3]` keep their existing
-  SPI / I2C / PS/2 roles, and no `swd` phase is added for firmware that
-  does not exist.
+- Issue #452 stays open: the first draft's close-as-not-planned rationale is
+  withdrawn by this revision, and PR #456 drops the closing keyword. The
+  probe's firmware, bench, reference model, pin-role table entry and
+  evidence records are the issue's own work, to be picked up from the
+  counted implementation above.
+- DR 0010's pin table is unchanged by this note: `uio[2]`/`uio[3]` keep
+  their existing SPI / I2C / PS/2 roles, and no `swd` phase is added until
+  firmware exists to hold to it. The counted implementation's would-be plan
+  (SWCLK = `uio[2]`, SWDIO = `uio[3]`, push-pull while driving, SWDIO
+  released for turnaround and target-driven phases) stays inside this
+  analysis.
 - Row 13's stretch column keeps its remaining candidate (the SWD target),
   still subject to its own examination.
