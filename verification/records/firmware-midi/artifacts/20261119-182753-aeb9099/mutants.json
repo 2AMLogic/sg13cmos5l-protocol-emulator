@@ -1,0 +1,25 @@
+{
+ "bench": "verification/test_firmware_midi.py",
+ "runs": [
+  {
+   "kind": "golden",
+   "tests": 2,
+   "failed": [],
+   "as_required": true
+  },
+  {
+   "kind": "mutant",
+   "name": "slow-start-bit",
+   "defect": "100 extra cycles on the start bit of each TX frame",
+   "file": "firmware/asm/midi_tx.asm",
+   "tests": 2,
+   "failed": [
+    "test_midi_tx"
+   ],
+   "expected_catchers": [
+    "test_midi_tx"
+   ],
+   "as_required": true
+  }
+ ]
+}
