@@ -214,7 +214,9 @@ Two committed cocotb benches do exactly this, byte-for-byte:
 
 Every program committed under [`firmware/asm/`](../firmware/asm), with its
 committed image in [`firmware/build/`](../firmware/build). There is no
-protocol hardware: each row is a program for the core above.
+protocol hardware: each row is a program for the core above. Candidate
+protocols beyond the built set — every seed protocol ranked by sourced
+demand and fit — are cataloged in [`protocols.md`](protocols.md).
 
 **What the numbers are.** *Words* and *Total cycles* are the DR 0003
 assembler's static count over the instruction stream (the committed

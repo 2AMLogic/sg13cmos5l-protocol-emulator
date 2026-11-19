@@ -12,7 +12,10 @@ Ethernet as stretch goals, not built; see
 [DR 0015](spec/decision-records/0015-stretch-protocols-with-neutral-primitives.md)
 for the proposed verdict) is implemented in firmware running on the chip
 rather than in fixed logic. One chip, many protocols, chosen at run time by
-the program it loads. It is this program's entry in the
+the program it loads. The catalog of candidate protocols beyond the built
+set — every seed protocol ranked by sourced demand and fit, with the ranked
+build shortlist — is
+[`docs/protocols.md`](docs/protocols.md). It is this program's entry in the
 [Jane Street Protocol Emulator ASIC Competition](https://blog.janestreet.com/protocol-emulator-asic-competition/)
 (submissions due 2027-01-18, targeting the March 2027 CMOS5L shuttle via
 [Tiny Tapeout](https://tinytapeout.com/)), and it is built in public from the
