@@ -24,7 +24,7 @@
         "role": "hygiene",
         "path": ".github/workflows/gds.yaml",
         "passed": true,
-        "content_hash": "sha256:c17fca9a3cac2d7da4d7cd395423735de05b7bd9c1f7c8a9dfdf56ff19a1175d"
+        "content_hash": "sha256:05796430dd293cf1a8ebcdd533aca7845149cb73633149f3ff66b914ae967cda"
       },
       {
         "check": "present",
@@ -87,7 +87,7 @@
         "role": "hygiene",
         "path": "spec/target-spec.md",
         "passed": true,
-        "content_hash": "sha256:71850f2be503ebe8e9a1361bea58ac1653c3e0dd3311fc9128928fade0c5db9c"
+        "content_hash": "sha256:eb399f910a58e87438d22a2254c9954f91881d8b7786438bc66c99d344427a55"
       },
       {
         "check": "present",
