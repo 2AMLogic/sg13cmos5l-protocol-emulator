@@ -31,6 +31,16 @@ Specification and decision records.
   1–12 as targets; rows 13 and 14 `Proposed`; each row's binding and its met/unmet evidence state
   are in the table's State column, registered per row in
   `decision-records/0004-target-spec-ratification.md`).
+- `statistical-claims-na.md`, `statistical-claims-na.json`,
+  `target-spec-ratified.json` — the T1 item 6 "statistical claims: not
+  applicable" claim (2026-11-19, issue #348). The markdown is the
+  human-readable statement walking all fourteen rows; the two JSONs are the
+  machine-bound pair the block manifest's item 6 cites in klayout-tools
+  #2865's `not_applicable` form (spec companion + statement, each pinned by
+  content hash, ids only). The JSONs embed both markdowns' sha256s;
+  `scripts/check_statistical_claims_na.py` (`npm run lint`) fails if either
+  drifts, and any edit to `target-spec.md` needs the embeds refreshed and
+  the signoff baseline re-minted.
 - `decision-records/` — numbered decision records (0001-isa.md and up),
   including `0004-target-spec-ratification.md` — the per-row register and
   binding record of 2026-09-21, whose own invalidation clause
