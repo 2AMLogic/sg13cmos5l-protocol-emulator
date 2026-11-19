@@ -98,6 +98,8 @@ PHASES = (
     "ws2812",
     "ps2",
     "dmx512",
+    "nec_ir_tx",
+    "nec_ir_rx",
 )
 UNUSED = "unused"
 # PROG_SER / PROG_MODE are the serial program-load inputs. CRC_BYTE_SEL (an
@@ -108,9 +110,9 @@ LOAD_ROLE_PORT = {"PROG_SER": "ui_in", "PROG_MODE": "ui_in",
                   "CRC_BYTE_SEL": "ui_in", "CRC_READOUT": "uo_out"}
 
 # Role classes (what the role does electrically).
-DRIVE_PP = {"TX", "CS", "SCLK", "MOSI", "DIN"} | {f"RESULT[{i}]" for i in range(8)}
+DRIVE_PP = {"TX", "CS", "SCLK", "MOSI", "DIN", "IR_TX"} | {f"RESULT[{i}]" for i in range(8)}
 DRIVE_OD = {"SCL", "SDA", "PS2_CLK", "PS2_DATA"}
-SAMPLE = {"MISO", "RX"}
+SAMPLE = {"MISO", "RX", "IR_RX"}
 ALL_ROLES = DRIVE_PP | DRIVE_OD | SAMPLE
 
 # Phase role vocabulary (the record's `phases` object must match exactly).
@@ -129,6 +131,11 @@ PHASE_VOCAB = {
     # Multi-protocol extra credit (issue #445): the DMX512 transmitter's
     # line, driven push-pull through an external RS-485 transceiver.
     "dmx512": {"TX"},
+    # Multi-protocol extra credit (issue #448): the NEC infrared
+    # transmitter's carrier line (push-pull through a transistor to an IR
+    # LED) and the demodulating receiver module's input.
+    "nec_ir_tx": {"IR_TX"},
+    "nec_ir_rx": {"IR_RX"},
 }
 
 # Extraction patterns this script implements. An inventory entry naming any
@@ -1154,6 +1161,33 @@ class Checker:
         if not any(i["m"] == "AND" and i["ops"][1] == "R1" for i in ins):
             c.err(f"{rel}: no `AND Rx, R1` bit-isolation site found")
 
+    # ------------------------------------------------------ profile: nec_ir
+    def prof_nec_ir(self, rel, ent, text):
+        """The NEC infrared transmitter (issue #448): IR_TX driven on the
+        table's nec_ir_tx.IR_TX pin, the same shape as `prof_dmx512` --
+        the first `LDI R1, imm` is the carrier-high pin image (also the
+        bit-7 mask), every ALU-mask LDI must be a pin mask, and an
+        `AND Rx, R1` bit-isolation site must exist. The program reads no
+        pin: the receiver-module input (nec_ir_rx.IR_RX on ui_in) is board
+        wiring no committed image samples yet, so no IN port is allowed."""
+        c = self.concrete
+        ins = self.asm_instrs(text)
+        outs, _ins, _ = self.out_in_ports([("nec_ir_tx", ["IR_TX"])], [], "spi_result")
+        self.check_ports(rel, ins, outs, set(), outs, set())
+        mask = self.mask_of("nec_ir_tx", "IR_TX")
+        first = next((i for i in ins if i["m"] == "LDI" and i["ops"][0] == "R1"), None)
+        if first is None:
+            c.err(f"{rel}: no `LDI R1, imm` carrier-image site found (pattern uart_tx_mask)")
+        else:
+            c.sites += 1
+            v = self.imm(first["ops"][1])
+            if v != mask:
+                c.err(f"{rel}:{first['no']}: IR_TX mask LDI R1, {first['ops'][1]} but the table's "
+                      f"nec_ir_tx IR_TX pin {self.role_pin('nec_ir_tx', 'IR_TX')} is 0x{mask:02X}")
+        self.check_mask_sites(rel, ins, {mask}, "NEC IR TX")
+        if not any(i["m"] == "AND" and i["ops"][1] == "R1" for i in ins):
+            c.err(f"{rel}: no `AND Rx, R1` bit-isolation site found")
+
     # ------------------------------------------------------- profile: benches
     def need(self, text, pattern, rel, what, flags=re.M):
         m = re.search(pattern, text, flags)
@@ -1184,6 +1218,11 @@ class Checker:
         m = self.need(text, r'^TX_PIN,\s*TX_BIT\s*=\s*"(\w+)",\s*(\d+)', rel, "TX_PIN, TX_BIT")
         if m:
             self.check_pb(rel, "TX_PIN/TX_BIT", m.group(1), int(m.group(2)), "dmx512", "TX")
+
+    def prof_bench_nec_ir(self, rel, ent, text):
+        m = self.need(text, r'^TX_PIN,\s*TX_BIT\s*=\s*"(\w+)",\s*(\d+)', rel, "TX_PIN, TX_BIT")
+        if m:
+            self.check_pb(rel, "TX_PIN/TX_BIT", m.group(1), int(m.group(2)), "nec_ir_tx", "IR_TX")
 
     def prof_bench_ws2812(self, rel, ent, text):
         m = self.need(text, r'^DIN_PIN,\s*DIN_BIT\s*=\s*"(\w+)",\s*(\d+)', rel, "DIN_PIN, DIN_BIT")
