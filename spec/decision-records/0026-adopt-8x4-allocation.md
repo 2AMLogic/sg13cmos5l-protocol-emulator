@@ -2,7 +2,7 @@
 
 Status: **Ratified** — by the two `RATIFY-KEY` reviews (one EE key, one
 market key, neither held by the carrying PR's author or the design's
-author) on pull request #NNN (issue #464). That PR's merge commit is the
+author) on pull request #483 (issue #464). That PR's merge commit is the
 ratification record, the same act shape [`0009`](0009-two-key-ratification-act.md)
 records for DRs 0001–0004. This file was written before either review: it
 names no review URLs and no merge hash, because the reviews are posted on
