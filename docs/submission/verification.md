@@ -246,20 +246,24 @@ and the header of `flow/run-post-layout-sdf.sh`:
 
 - The Tiny Tapeout `gds` workflow (LibreLane) is the flow of record for the
   submitted GDS (DR 0002). All four jobs (`gds`, `precheck`, `gl_test`,
-  `viewer`) were green on the final top's run 38136727636 at `6dd0e9d` (a
-  run of the PR branch that became PR #260), as cited by the records above.
+  `viewer`) were green on run 44602047558 at `3c228a2`, the run of the
+  tree with the SRAM `A_DOUT` buffers (issue #261) that the records above
+  cite, as they were on run 38136727636 at `6dd0e9d` before that change.
   `main`'s own `gds` runs since PR #260 merged build the same design files
   and are green too, for example run 38166393534 at `cd47c724`. D1 stays Partial until that run is linked as
   the run of record from the tracker's D1 row and the root `README.md`.
 - The klt DRC is `violations` on that GDS at klt `0.8.0`: 4,484 findings, all inside the foundry SRAM macro (`nwell.enclosing.pactiv.1` 4,352, `nwell.space.2` 132), none in the logic or routing. They are NEW rules in the `0.8.0` deck (the earlier pin's deck graded `clean` on the same bytes). This document does not waive them; whether macro-internal findings count against T1 item 3 is open. The klt-flow LVS check against the
   klt/Yosys reference is `unmet / check_failed`: since klayout-tools#2941
   closed, the converter accepts the reference and the compare runs, and it
-  returns `mismatch` (0 of 3,448 layout nets matched), because that reference
+  returns `mismatch` (0 of 3,504 layout nets matched), because that reference
   is the pre-place-and-route netlist and the layout is routed; the
-  compare against the run's own post-route netlist is `match`
-  ([librelane-gds-signoff-check 20261027-190021](../../verification/records/librelane-gds-signoff-check/records/20261027-190021-1ec5186.md)).
+  compare against the run's own post-route netlist is `match`, on a layout
+  netlist extracted by klt `0.7.0+gf979a9659513` and not by the pinned
+  `0.8.0`, whose own extraction of the SRAM macro's pins fails that compare
+  on this GDS and on the previous one alike (the record states both)
+  ([librelane-gds-signoff-check 20261119-234500](../../verification/records/librelane-gds-signoff-check/records/20261119-234500-2b283a4.md)).
 - The T1 verdict of record is `tier: null`, **4 of 11 items met and 1 `not_applicable`** (items 1, 2, 9, 10 met; item 6 `not_applicable` via the hash-bound statement `spec/statistical-claims-na.md`, covering the ratified rows 1–12, issue #348; item 3 moved from met to unmet with the klt `0.8.0` bump)
-  ([signoff-baseline 20261119-203628](../../verification/records/signoff-baseline/records/20261119-203628-175a284.md)).
+  ([signoff-baseline 20261119-234811](../../verification/records/signoff-baseline/records/20261119-234811-23efb28.md)).
   This document does not move that.
 - The template's `gl_test` job checks results with `! grep failure results.xml`
   on the `ihp-cmos5l` branch, which would not match an `<error>` element. The
