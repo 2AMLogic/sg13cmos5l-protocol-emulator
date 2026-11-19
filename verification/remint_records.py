@@ -37,6 +37,19 @@ With `--rerun`, for every stale record that names request file(s):
 executable (default `klt`; use `uvx --from klayout-tools==X.Y.Z klt`
 quoting as needed).
 
+`--collapse EXPERIMENT` (mutually exclusive with `--rerun`, #472) targets the
+interchangeable-leaf experiments (`COLLAPSIBLE_EXPERIMENTS`, currently
+`signoff-baseline`): it mints ONE record whose `supersedes` lists every stale
+live leaf of the experiment, instead of one successor per leaf, so parallel
+branches that each re-mint cannot double the leaf count again. It is
+bookkeeping only -- nothing is re-run (those leaves hash no request file;
+their experiment is re-run by hand, e.g. `scripts/signoff-report.sh`) -- so
+the minted record's **Result** and **Run configuration** are `(fill in)`
+placeholders that `check_records.py` rejects until the operator who re-ran
+the experiment fills them in. Refused for any other experiment, for stale
+leaves that hash request files (use `--rerun`), and for leaves whose input
+paths, claim or result are not interchangeable.
+
 Heavy experiments (`ARTIFACT_STORE_EXPERIMENTS`, plus any `--artifact-store
 EXPERIMENT`) do not commit their raw outputs (#344): the envelope and XML are
 staged in the git-ignored `verification/.artifact-scratch/`, stored with
@@ -69,6 +82,18 @@ ARTIFACT_STORE_EXPERIMENTS = frozenset({
     "random-regression",
 })
 
+# Experiments whose stale live leaves are interchangeable restatements of one
+# verdict -- identical input paths, claim and result, only record_id,
+# supersedes and timestamp differ (measured on the 20261119 signoff-baseline
+# batches, #472). `--collapse` mints ONE record superseding every stale live
+# leaf of such an experiment instead of one per leaf, so two branches that
+# each re-mint in parallel cannot double the live-leaf count on merge. Every
+# other experiment keeps one successor per leaf (its records assert
+# genuinely distinct runs).
+COLLAPSIBLE_EXPERIMENTS = frozenset({
+    "signoff-baseline",
+})
+
 REQUEST_RE = re.compile(r"^verification/request-[A-Za-z0-9._-]+\.json$")
 
 
@@ -87,12 +112,15 @@ def live_records() -> list[tuple[Path, dict]]:
             continue
     superseded = set()
     for path, meta in metas.items():
-        target = meta.get("supersedes")
-        if not isinstance(target, str) or target == "none":
+        targets = meta.get("supersedes")
+        if not isinstance(targets, (str, list)) or targets == "none":
+            continue
+        if cr.supersedes_type_error(path, targets) is not None:
             continue
         exp = cr.experiment_key(path)
-        if cr.supersession_error(path, target, ids.get(exp, set())) is None:
-            superseded.add((exp, target))
+        for target in cr.supersedes_ids(targets):
+            if cr.supersession_error(path, target, ids.get(exp, set())) is None:
+                superseded.add((exp, target))
     return [
         (p, m) for p, m in sorted(metas.items())
         if (cr.experiment_key(p), p.stem) not in superseded
@@ -231,11 +259,13 @@ def _field_of(block: list[str]) -> str | None:
 def render_record(old_text: str, old_meta: dict, new_id: str, revision: str,
                   envelopes: dict[str, dict], artifact_names: dict[str, list[str]],
                   now: dt.datetime, stale_inputs: list[str], klt_version: str | None,
-                  stored: str | None = None) -> str:
+                  stored: str | None = None,
+                  supersede_ids: list[str] | None = None) -> str:
     old_id = old_meta["record_id"]
+    old_ids = [old_id] if supersede_ids is None else list(supersede_ids)
     meta = json.loads(json.dumps(old_meta))
     meta["record_id"] = new_id
-    meta["supersedes"] = old_id
+    meta["supersedes"] = old_ids[0] if len(old_ids) == 1 else old_ids
     meta["git_revision"] = revision
     if klt_version:
         meta["provenance"]["klt_version"] = klt_version
@@ -257,6 +287,7 @@ def render_record(old_text: str, old_meta: dict, new_id: str, revision: str,
              if stored else f"Artifacts in `artifacts/{new_id}/`: {arts}")
     where_link = (f"manifest `{stored}`" if stored else f"artifacts `artifacts/{new_id}/`")
     ts = now.strftime("%Y-%m-%dT%H:%M:%SZ")
+    ids_listed = ", ".join(f"`{i}`" for i in old_ids)
     replacements = {
         "Record ID": f"- **Record ID**: {new_id}",
         "Result": (
@@ -268,7 +299,7 @@ def render_record(old_text: str, old_meta: dict, new_id: str, revision: str,
             f"(automated re-mint; review before commit)."
         ),
         "Supersedes": (
-            f"- **Supersedes**: `{old_id}` -- hashed input(s) changed: "
+            f"- **Supersedes**: {ids_listed} -- hashed input(s) changed: "
             f"{', '.join('`' + s + '`' for s in stale_inputs)}. Re-run unchanged "
             f"(same request file(s)); no claim text was edited by the tool."
         ),
@@ -280,10 +311,16 @@ def render_record(old_text: str, old_meta: dict, new_id: str, revision: str,
             out.append(replacements[field])
         elif field == "Links":
             out.extend(block)
-            out.append(
-                f"  - Re-mint of `records/{old_id}.md` (superseded, untouched); "
-                f"{where_link}."
-            )
+            if len(old_ids) == 1:
+                out.append(
+                    f"  - Re-mint of `records/{old_id}.md` (superseded, untouched); "
+                    f"{where_link}."
+                )
+            else:
+                out.append(
+                    f"  - Collapse re-mint of {len(old_ids)} stale live leaves "
+                    f"({ids_listed}; superseded, untouched); {where_link}."
+                )
         else:
             out.extend(block)
     return head + "\n".join(out).rstrip("\n") + "\n"
@@ -337,11 +374,160 @@ def mint(entry: dict, envelopes: dict[str, dict], xmls: dict[str, str | None],
     return new_rec
 
 
+def _collapse_fingerprint(entry: dict) -> tuple:
+    """What makes stale live leaves interchangeable: the ordered list of
+    input paths they hash, and their Claim and Result prose. Recorded hashes
+    are deliberately excluded -- two branches that re-minted in parallel
+    recorded the hashes of their own trees, which is the exact case
+    `--collapse` exists to merge (#472)."""
+    text = entry["path"].read_text(encoding="utf-8")
+    meta = cr._extract_meta_block(text, entry["path"])
+    inputs = (meta.get("provenance") or {}).get("inputs")
+    paths = tuple(i.get("path") for i in inputs) if isinstance(inputs, list) else ()
+    prose = cr._extract_prose_fields(text)
+    return (paths, prose.get("Claim"), prose.get("Result"))
+
+
+def render_collapsed_record(old_text: str, old_meta: dict, new_id: str,
+                            supersede_ids: list[str], revision: str,
+                            now: dt.datetime,
+                            stale_inputs: list[str]) -> str:
+    """The `--collapse` mint (#472): one record whose `supersedes` lists every
+    stale live leaf. Bookkeeping only -- nothing was re-run by this tool, so
+    **Result** and **Run configuration** are left as `(fill in)`
+    placeholders, which `check_records.py` rejects until the operator who
+    re-ran the experiment fills them in."""
+    meta = json.loads(json.dumps(old_meta))
+    meta["record_id"] = new_id
+    meta["supersedes"] = list(supersede_ids)
+    meta["git_revision"] = revision
+    for item in meta["provenance"]["inputs"]:
+        item["content_hash"] = sha256_of(REPO_ROOT / item["path"])
+
+    m = re.search(r"<!--\s*record-meta\s*(.*?)-->", old_text, re.DOTALL)
+    body = old_text[m.end():]
+    head = "<!-- record-meta\n" + json.dumps(meta, indent=2) + "\n-->"
+
+    ids_listed = ", ".join(f"`{i}`" for i in supersede_ids)
+    ts = now.strftime("%Y-%m-%dT%H:%M:%SZ")
+    replacements = {
+        "Record ID": f"- **Record ID**: {new_id}",
+        "Run configuration": "- **Run configuration**: (fill in)",
+        "Result": "- **Result**: (fill in)",
+        "Timestamp / author": (
+            f"- **Timestamp / author**: {ts}, `verification/remint_records.py "
+            f"--collapse` (bookkeeping mint; no run performed by the tool)."
+        ),
+        "Supersedes": (
+            f"- **Supersedes**: {ids_listed} -- {len(supersede_ids)} interchangeable "
+            f"stale live leaves (identical input paths, claim and result) collapsed "
+            f"into this one record (#472). Hashed input(s) changed: "
+            f"{', '.join('`' + s + '`' for s in stale_inputs)}."
+        ),
+    }
+    out = []
+    for block in _split_blocks(body):
+        field = _field_of(block)
+        if field in replacements:
+            out.append(replacements[field])
+        elif field == "Links":
+            out.extend(block)
+            out.append(
+                f"  - Collapse re-mint of {len(supersede_ids)} stale live leaves "
+                f"({ids_listed}; superseded, untouched) by "
+                f"`verification/remint_records.py --collapse`; no run was performed "
+                f"by the tool -- re-run the experiment, then fill **Result** and "
+                f"**Run configuration** before committing (`check_records.py` fails "
+                f"on the placeholders until you do)."
+            )
+        else:
+            out.extend(block)
+    return head + "\n".join(out).rstrip("\n") + "\n"
+
+
+def mint_collapsed(template: dict, supersede_ids: list[str], new_id: str,
+                   revision: str, now: dt.datetime,
+                   stale_inputs: list[str]) -> Path:
+    path: Path = template["path"]
+    new_rec = path.parent / f"{new_id}.md"
+    if new_rec.exists():
+        raise RuntimeError(f"{new_rec} already exists; refusing to overwrite")
+    latest = max(supersede_ids)
+    if not new_id > latest:
+        raise RuntimeError(f"new id {new_id} does not sort after {latest}")
+    old_text = path.read_text(encoding="utf-8")
+    old_meta = cr._extract_meta_block(old_text, path)
+    new_rec.write_text(
+        render_collapsed_record(old_text, old_meta, new_id, supersede_ids,
+                                revision, now, stale_inputs),
+        encoding="utf-8")
+    return new_rec
+
+
+def collapse(experiment: str) -> int:
+    """`--collapse EXPERIMENT`: mint ONE record superseding every stale live
+    leaf of an interchangeable-leaf experiment (#472). See the module
+    docstring for the guards."""
+    if experiment not in COLLAPSIBLE_EXPERIMENTS:
+        print(
+            f"ERROR: --collapse refuses {experiment!r}: only the known "
+            f"interchangeable-leaf experiments "
+            f"{', '.join(sorted(COLLAPSIBLE_EXPERIMENTS))} may be collapsed; "
+            f"every other experiment keeps one successor per stale leaf"
+        )
+        return 1
+    report = [e for e in stale_report(live_records()) if e["experiment"] == experiment]
+    if not report:
+        print(f"no stale live records in {experiment}; nothing to collapse")
+        return 0
+    if any(e["requests"] for e in report):
+        print(
+            f"ERROR: {experiment}: some stale leaves hash request files; re-run "
+            f"them with --rerun instead (a collapse mint would skip the runs)"
+        )
+        return 1
+    fingerprints = {_collapse_fingerprint(e) for e in report}
+    if len(fingerprints) > 1:
+        print(
+            f"ERROR: {experiment}: the {len(report)} stale live leaves are not "
+            f"interchangeable (input paths, claim or result differ); collapse "
+            f"refuses to merge records that assert different things"
+        )
+        return 1
+    if run_git("status", "--porcelain", "--untracked-files=no"):
+        print("WARNING: working tree is dirty; git_revision will be HEAD, not the tree run")
+    revision = run_git("rev-parse", "HEAD")
+    now = dt.datetime.now(dt.timezone.utc).replace(microsecond=0)
+    short_rev = run_git("rev-parse", "--short=7", "HEAD")
+    supersede_ids = sorted(e["record_id"] for e in report)
+    template = max(report, key=lambda e: e["record_id"])  # newest leaf
+    exp_dir = template["path"].parent.parent
+    new_id, _ = allocate_id(supersede_ids[-1], exp_dir, now, short_rev, set())
+    stale_inputs = sorted({rel for e in report for rel, _, _ in e["stale"]})
+    try:
+        new = mint_collapsed(template, supersede_ids, new_id, revision, now,
+                             stale_inputs)
+    except (RuntimeError, OSError) as exc:
+        print(f"ERROR: {experiment}: {exc}")
+        return 1
+    print(f"MINTED: {new.relative_to(REPO_ROOT)} "
+          f"(collapses {len(supersede_ids)} stale live leaves: {', '.join(supersede_ids)})")
+    print("NOTE: Result and Run configuration are `(fill in)` placeholders -- re-run "
+          "the experiment and fill them before committing; check_records.py fails on "
+          "the placeholders until you do")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--rerun", action="store_true",
                     help="re-run the stale records' requests and mint superseding records")
+    ap.add_argument("--collapse", metavar="EXPERIMENT",
+                    help="mint ONE record superseding every stale live leaf of "
+                         "EXPERIMENT (interchangeable-leaf experiments only; "
+                         "bookkeeping -- nothing is re-run; mutually exclusive "
+                         "with --rerun)")
     ap.add_argument("--only", metavar="EXPERIMENT",
                     help="restrict to one experiment (path relative to verification/records/)")
     ap.add_argument("--klt", default="klt", help="klt command (default: klt)")
@@ -349,6 +535,13 @@ def main(argv: list[str] | None = None) -> int:
                     help="also keep this experiment's raw outputs in the artifact store "
                          "(repeatable; the heavy experiments always do)")
     args = ap.parse_args(argv)
+
+    if args.collapse is not None:
+        if args.rerun:
+            ap.error("--collapse and --rerun are mutually exclusive")
+        if args.only and args.only != args.collapse:
+            ap.error("--only conflicts with --collapse EXPERIMENT")
+        return collapse(args.collapse)
 
     report = stale_report(live_records())
     if args.only:

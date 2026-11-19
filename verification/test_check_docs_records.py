@@ -21,6 +21,9 @@ LINT = Path(__file__).resolve().parent / "check_docs_records.py"
 A, B, C = "20261001-000001-aaaaaaa", "20261002-000002-bbbbbbb", "20261003-000003-ccccccc"
 OTHER = "20261004-000004-ddddddd"
 MISSING = "20261005-000005-eeeeeee"
+# #472: a list-form supersession collapses leaves L1+L2 into LISTC.
+L1, L2 = "20261006-000006-ffffff1", "20261007-000007-ffffff2"
+LISTC = "20261008-000008-ffffff3"
 
 
 def write_record(root: Path, exp: str, rid: str, supersedes) -> None:
@@ -43,6 +46,9 @@ def run(docs_text: dict) -> tuple[int, str]:
         write_record(rec, "exp", B, A)
         write_record(rec, "exp", C, B)
         write_record(rec, "other", OTHER, None)
+        write_record(rec, "listy", L1, None)
+        write_record(rec, "listy", L2, None)
+        write_record(rec, "listy", LISTC, [L1, L2])
         for name, text in docs_text.items():
             (docs / name).write_text(text)
         p = subprocess.run(
@@ -64,6 +70,10 @@ CASES = [
     ("marker does not excuse a missing record", {"a.md": f"{MISSING} <!-- superseded-ok: history -->\n"}, 1, "not a record"),
     ("marker covers only its own line", {"a.md": f"{link('exp', A)} <!-- superseded-ok: h -->\n{link('exp', B)}\n"}, 1, B),
     ("every doc is scanned", {"a.md": "ok\n", "b.md": link("exp", A) + "\n"}, 1, "b.md:1"),
+    # #472: every id in a list-form supersedes is superseded.
+    ("leaf named in a supersedes list fails", {"a.md": link("listy", L1) + "\n"}, 1, L1),
+    ("second leaf named in a supersedes list fails", {"a.md": f"see `{L2}` here\n"}, 1, L2),
+    ("the list-superseding record itself is live", {"a.md": link("listy", LISTC) + "\n"}, 0, ""),
 ]
 
 

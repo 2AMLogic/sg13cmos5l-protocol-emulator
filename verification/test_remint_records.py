@@ -118,6 +118,141 @@ def stale(repo: Path) -> None:
     T._git(repo, "commit", "--quiet", "-m", "change rtl")
 
 
+# --- #472: --collapse ---------------------------------------------------------
+
+
+def build_collapsible(tmp: Path, leaves: int = 2, claim_vary: bool = False,
+                      with_request: bool = False) -> Path:
+    """Experiment `signoff-baseline` with N interchangeable live leaves
+    (identical inputs, claim and result), optionally hashing a request
+    file, optionally one leaf asserting a different claim."""
+    repo = tmp / "fixture"
+    (repo / "rtl").mkdir(parents=True)
+    (repo / "verification" / "records" / "signoff-baseline" / "records").mkdir(parents=True)
+    (repo / "rtl" / "dut.v").write_text(T.DUMMY_RTL, encoding="utf-8")
+    inputs = [("rtl/dut.v", T._sha256_text(T.DUMMY_RTL))]
+    if with_request:
+        (repo / REQ).write_text('{"schema": "demo"}\n', encoding="utf-8")
+        inputs.append((REQ, T._sha256_text('{"schema": "demo"}\n')))
+    for name in ("check_records.py", "_repo_utils.py", "remint_records.py"):
+        shutil.copyfile(T.SCRIPT_DIR / name, repo / "verification" / name)
+    for i in range(leaves):
+        rid = f"20260101-{i:06d}-abc1234"
+        text = T.make_record(rid, "signoff-baseline", inputs=inputs)
+        if claim_vary and i == 1:
+            text = text.replace("fixture claim", "a different claim")
+        T.record_path(repo, "signoff-baseline", rid).write_text(text, encoding="utf-8")
+    T._git(repo, "init", "--quiet")
+    T._git(repo, "add", "-A")
+    T._git(repo, "commit", "--quiet", "-m", "fixture")
+    T._git(repo, "update-ref", T.BASE_REF, "HEAD")
+    return repo
+
+
+def baseline_records(repo: Path) -> list[str]:
+    return sorted(
+        p.stem
+        for p in (repo / "verification/records/signoff-baseline/records").glob("*.md")
+    )
+
+
+LEAF_IDS = ["20260101-000000-abc1234", "20260101-000001-abc1234"]
+
+
+def collapse_cases(failures: list) -> None:
+    with tempfile.TemporaryDirectory(prefix="remint-collapse-") as d:
+        repo = build_collapsible(Path(d))
+        code, out = tool(repo, "--collapse", "demo")
+        check("--collapse refuses a non-interchangeable experiment",
+              code == 1 and "refuses" in out and "--rerun" not in out.splitlines()[0]
+              and baseline_records(repo) == LEAF_IDS, out, failures)
+
+    with tempfile.TemporaryDirectory(prefix="remint-collapse-") as d:
+        repo = build_collapsible(Path(d))
+        code, out = tool(repo, "--collapse", "signoff-baseline")
+        check("--collapse with nothing stale mints nothing",
+              code == 0 and "nothing to collapse" in out
+              and baseline_records(repo) == LEAF_IDS, out, failures)
+
+    with tempfile.TemporaryDirectory(prefix="remint-collapse-") as d:
+        repo = build_collapsible(Path(d), with_request=True)
+        stale(repo)
+        code, out = tool(repo, "--collapse", "signoff-baseline")
+        check("--collapse refuses stale leaves that hash request files",
+              code == 1 and "--rerun" in out
+              and baseline_records(repo) == LEAF_IDS, out, failures)
+
+    with tempfile.TemporaryDirectory(prefix="remint-collapse-") as d:
+        repo = build_collapsible(Path(d), claim_vary=True)
+        stale(repo)
+        code, out = tool(repo, "--collapse", "signoff-baseline")
+        check("--collapse refuses leaves with differing claims",
+              code == 1 and "not interchangeable" in out
+              and baseline_records(repo) == LEAF_IDS, out, failures)
+
+    with tempfile.TemporaryDirectory(prefix="remint-collapse-") as d:
+        repo = build_collapsible(Path(d))
+        stale(repo)
+        code, out = tool(repo, "--collapse", "signoff-baseline", "--rerun")
+        check("--collapse and --rerun are mutually exclusive",
+              code == 2 and "mutually exclusive" in out, out, failures)
+
+    with tempfile.TemporaryDirectory(prefix="remint-collapse-") as d:
+        repo = build_collapsible(Path(d))
+        stale(repo)
+        olds = {rid: T.record_path(repo, "signoff-baseline", rid).read_text(encoding="utf-8")
+                for rid in LEAF_IDS}
+        code, out = tool(repo, "--collapse", "signoff-baseline")
+        new = [r for r in baseline_records(repo) if r not in LEAF_IDS]
+        check("--collapse mints exactly one record for two stale leaves",
+              code == 0 and len(new) == 1 and "MINTED" in out
+              and "collapses 2 stale live leaves" in out, out, failures)
+        if new:
+            text = T.record_path(repo, "signoff-baseline", new[0]).read_text(encoding="utf-8")
+            check("collapsed record's supersedes lists both leaves",
+                  f'"supersedes": [\n    "{LEAF_IDS[0]}",\n    "{LEAF_IDS[1]}"\n  ]' in text
+                  and T._sha256_text(NEW_RTL) in text, text, failures)
+            check("collapsed record fails closed on the Result/Run configuration placeholders",
+                  "- **Result**: (fill in)" in text
+                  and "- **Run configuration**: (fill in)" in text
+                  and "no run was performed" in text, text, failures)
+            check("old leaves are byte-identical (append-only)",
+                  all(T.record_path(repo, "signoff-baseline", r).read_text(encoding="utf-8") == olds[r]
+                      for r in LEAF_IDS), "", failures)
+            T._git(repo, "add", "-A")
+            T._git(repo, "commit", "--quiet", "-m", "collapse mint")
+            r = subprocess.run([sys.executable, str(repo / "verification" / "check_records.py"),
+                                "--base-ref", T.BASE_REF, "--require-append-only"],
+                               cwd=repo, capture_output=True, text=True)
+            check("linter rejects the collapse mint until the placeholders are filled",
+                  r.returncode == 1 and "empty/placeholder" in r.stdout
+                  and "`Result`" in r.stdout and "`Run configuration`" in r.stdout,
+                  r.stdout, failures)
+            filled = (text
+                      .replace("- **Result**: (fill in)",
+                               "- **Result**: **Overall: PASS** (re-run by hand)")
+                      .replace("- **Run configuration**: (fill in)",
+                               "- **Run configuration**: re-run by hand"))
+            T.record_path(repo, "signoff-baseline", new[0]).write_text(filled, encoding="utf-8")
+            T._git(repo, "add", "-A")
+            T._git(repo, "commit", "--quiet", "-m", "fill the placeholders")
+            r = subprocess.run([sys.executable, str(repo / "verification" / "check_records.py"),
+                                "--base-ref", T.BASE_REF, "--require-append-only"],
+                               cwd=repo, capture_output=True, text=True)
+            check("filled collapse mint passes the real linter", r.returncode == 0,
+                  r.stdout, failures)
+            # Exactly one live record remains: the next change stales one record.
+            (repo / "rtl" / "dut.v").write_text(NEW_RTL + "// v3\n", encoding="utf-8")
+            T._git(repo, "add", "-A")
+            T._git(repo, "commit", "--quiet", "-m", "v3")
+            code, out = tool(repo)
+            stale_lines = [l for l in out.splitlines() if l.startswith("STALE")]
+            check("two leaves collapsed to one live record",
+                  code == 1 and stale_lines == [
+                      f"STALE: verification/records/signoff-baseline/records/{new[0]}.md"
+                  ], out, failures)
+
+
 def tool(repo: Path, *args: str, broker: str | None = None) -> tuple[int, str]:
     env = {k: v for k, v in os.environ.items() if k != "KLT_ARTIFACT_BROKER"}
     if broker:
@@ -283,6 +418,8 @@ def main() -> int:
           not any(f"<{n}>" in clean for n in rr.PLACEHOLDERS), clean, failures)
     check("plain _sanitize (JSON/text path) still writes the literal <repo>",
           rr._sanitize(f"{rr.REPO_ROOT}/a") == "<repo>/a", "", failures)
+
+    collapse_cases(failures)
 
     print()
     if failures:

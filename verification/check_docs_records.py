@@ -57,8 +57,14 @@ def load_records(records_root: Path):
         except json.JSONDecodeError:
             continue  # check_records.py reports malformed records
         target = meta.get("supersedes")
-        if isinstance(target, str) and target not in ("", "none"):
-            superseded.add((experiment, target))
+        # #472: `supersedes` may be a string or a list of strings; every
+        # named record is superseded (no longer live for docs to cite).
+        targets = [target] if isinstance(target, str) else (
+            target if isinstance(target, list) else []
+        )
+        for t in targets:
+            if isinstance(t, str) and t not in ("", "none"):
+                superseded.add((experiment, t))
     return all_ids, superseded
 
 

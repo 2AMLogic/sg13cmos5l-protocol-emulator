@@ -61,7 +61,14 @@ def live_records(repo: Path) -> dict[str, dict[str, str]]:
                 continue
             meta = json.loads(m.group(1))
             recs[meta["record_id"]] = meta.get("supersedes")
-        superseded = {v for v in recs.values() if v}
+        superseded: set = set()
+        for v in recs.values():
+            # #472: `supersedes` may be a string or a list of strings; every
+            # named record is superseded.
+            if isinstance(v, str) and v:
+                superseded.add(v)
+            elif isinstance(v, list):
+                superseded.update(t for t in v if isinstance(t, str) and t)
         out[d.name] = {k: "" for k in recs if k not in superseded}
     return out
 
