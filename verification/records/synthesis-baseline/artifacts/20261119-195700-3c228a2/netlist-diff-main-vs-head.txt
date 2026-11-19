@@ -1,0 +1,35 @@
+### tt_um_2amlogic_protocol_emulator_synth.v: differs
+--- main-325447e/tt_um_2amlogic_protocol_emulator_synth.v
++++ head-3c228a2/tt_um_2amlogic_protocol_emulator_synth.v
+@@ -15175,2 +15175,3 @@
+   wire [15:0] mem_din_pin;
++  wire [15:0] mem_dout;
+   wire mem_men;
+@@ -16536,3 +16537,3 @@
+     .A_DLY(1'h1),
+-    .A_DOUT(instr_word),
++    .A_DOUT(mem_dout),
+     .A_MEN(mem_men_pin),
+@@ -16548,2 +16549,3 @@
+   assign run_phase = run_phase_r;
++  assign instr_word = mem_dout;
+ endmodule
+
+### protocol_program_memory_synth.v: differs
+--- main-325447e/protocol_program_memory_synth.v
++++ head-3c228a2/protocol_program_memory_synth.v
+@@ -206,2 +206,3 @@
+   wire [15:0] mem_din_pin;
++  wire [15:0] mem_dout;
+   wire mem_men;
+@@ -1567,3 +1568,3 @@
+     .A_DLY(1'h1),
+-    .A_DOUT(instr_word),
++    .A_DOUT(mem_dout),
+     .A_MEN(mem_men_pin),
+@@ -1579,2 +1580,3 @@
+   assign run_phase = run_phase_r;
++  assign instr_word = mem_dout;
+ endmodule
+
+### protocol_boot_rom_synth.v: identical
