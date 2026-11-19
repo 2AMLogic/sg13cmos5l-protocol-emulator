@@ -602,6 +602,17 @@ capture, PVT corner sweeps, or Monte Carlo.
   The verification matrix and limitations now cite the live klt (OpenSTA)
   result again. The netlist estimate closes setup at 20 ns and fails hold at
   all three macro-characterized corners. LibreLane closes hold after routing.
+- **2026-11-19, PR #399 after the item 6 merge (#467).** The fleet advanced
+  to klt `0.9.2` in 2AMLogic/2am commit `6e7c7778`. The [merged verdict](../verification/records/signoff-baseline/artifacts/20261119-203123-b9a3cc3/signoff-report.json)
+  grades **5 of 11 met and 1 not applicable**. Item 6 gained the hash-bound
+  statement from #348. Item 7 still verifies its existing evidence file.
+  These account for the differences from the two parent rounds. The render
+  at `b9a3cc37` supplies `20261119-202924-b9a3cc3` through `20261119-203123-b9a3cc3`,
+  superseding all 64 branch and 56 main signoff records individually.
+  Item 9 was refreshed because its inventory hashes the signoff script,
+  including the rewrapped comment. klt carried the existing local-only RTL
+  cold-start result and recomputed the other checks. Item 1 and item 10
+  reproduced with their existing envelopes.
 - **Every citation pins a `content_hash`**, and what it is the hash of
   depends on the cited envelope (clarified 2026-10-10, issue #168; the
   manifests on `main` have always followed this, the sentence here did
