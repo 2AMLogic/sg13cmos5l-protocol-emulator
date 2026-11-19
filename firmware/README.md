@@ -45,6 +45,12 @@ firmware/
                          (target-spec row 13 stretch column, issue #235;
                          protocol chosen by the dated note in DR 0018 after
                          DR 0017's ISA freeze)
+    dmx512_tx.asm        DMX512 (USITT DMX512-A) universe transmitter on
+                         uo_out[0] through an external RS-485 transceiver:
+                         BREAK, mark-after-break, 0x00 start code, 512
+                         channel slots at 200 cycles/bit 8N2, forever
+                         (multi-protocol extra credit, issue #445; catalog
+                         #443; firmware on the frozen DR 0017 ISA)
     boot/boot_rom.asm    the on-chip boot ROM's program (issues #138 and
                          #139, DR 0013 layer 2: warm start and UART load).
                          Not loaded into program memory: the ROM in
@@ -653,6 +659,120 @@ klt functional-verification verification/request-firmware-roundtrip.json --forma
 
 Its result is committed as an append-only evidence record under
 `verification/records/firmware-assembler-roundtrip/`.
+
+### `dmx512_tx.asm` — DMX512 universe transmitter (issue #445)
+
+The multi-protocol extra credit's stage-lighting controller (catalog
+#443): firmware on the frozen DR 0017 ISA, no RTL change and no hardware
+peripheral, speaking USITT DMX512-A. Endless packets, each a BREAK, a
+mark-after-break, the 0x00 start code as one 8N2 slot, then 512 channel
+slots back to back, the next BREAK landing exactly on the end of slot
+512's second stop bit. TX is `uo_out[0]` — DR 0010's `dmx512` role, the
+same pad the UART profiles use — driven through an external RS-485
+transceiver (pin roles added to DR 0010 by this issue; the catalog row
+lands with #443).
+
+**Timing: exactly 200 core cycles per bit**, measured at the pin by
+`verification/test_firmware_dmx512.py` against the independent receiver
+model `verification/reference_models/dmx512.py`. As with `uart_tx.asm`,
+the cycle counts are the claim; the microsecond figures below are
+arithmetic at target-spec row 4's **unconfirmed** 50 MHz core clock
+(20 ns/cycle; STA against this core is blocked —
+`verification/records/sta-corner-sweep/`), so every wall-clock reading
+is conditional on row 4.
+
+| Interval | Cycles | at unconfirmed 50 MHz | Graded against |
+|---|---|---|---|
+| BREAK (line low) | **4,609** | 91.78 us | >= 4,600 (92 us, the issue's controller target; the 1986 spec's 88 us is the receiver limit) |
+| mark-after-break (line high) | **605** | 12.1 us | >= 600 (12 us, same reading; spec receiver limit 8 us) |
+| one bit | **200** | 4 us | 250 kbaud nominal; the model's per-slot drift bound (below) |
+| one slot (1 start + 8 data + 2 stop) | **2,200** | 44 us | 8N2, back to back, no extra inter-slot mark |
+| one universe | **1,133,814** | ~22.68 ms | BREAK + mark + start code + 512 slots |
+
+**The channel pattern.** The universe is not stored (four registers, no
+data memory): slot n carries level `(5 x (n-1)) mod 256`. A 5-step walk
+mod 256 visits every level with period 256 — 512 slots are two periods —
+and adjacent slots always differ, including across the 255 -> 4 wrap at
+slot 53. The pattern's natural 0x00 slots (1 and 257) send nine
+consecutive low periods, and slot 512 carries 251 (0xFB). The bench
+computes the expected levels from that formula alone; the model recovers
+the bytes independently.
+
+**Where the cycles come from** (the `.cyclesec` sections of the
+committed report; every instruction is 1 cycle except `WAIT imm8` =
+imm8 + 1):
+
+| Section | Instructions | Cycles |
+|---|---|---|
+| per data bit (`dmx512_sc_bit`, `dmx512_bit_a`, `dmx512_bit_b`) | `MOV`+`AND`+`OUT`+`SHF`+`SUB`+`WAIT 193`+`BNZ` | 1+1+1+1+1+194+1 = **200** |
+| START -> first data bit | `OUT`+`WAIT 194`+`WCTL`+`LDI`+`MOV`+`AND` | 1+195+1+1+1+1 = **200** |
+| last data bit -> stop 1 | `OUT`+`SHF`+`SUB`+`WAIT 193`+`BNZ`+`WAIT 1`+`OUT` | 1+1+1+194+1+2+1 = **200** |
+| stop 1 -> next START (`dmx512_slot_tail_*`) | `WAIT 194`+`WAIT 195`+`RCTL`+`ADD`x5+`BNZ`+[`JMP`|fall-through]+`XOR` | 1+195+196+1+5+1+1+1 = **400** |
+
+The image is **90 words** of the 256-word store (assembler:
+`python3 firmware/tools/asm.py firmware/asm/dmx512_tx.asm`; freshness:
+`python3 firmware/tools/check_firmware.py`).
+
+**How 512 slots are counted without a slot counter.** No register is free
+inside a slot for one (R1 the pin mask, R0 the level, R2 the transient
+pin image, R3 the bit counter), so each half loop of 256 slots terminates
+on the pattern itself: the last of the tail's five `ADD`s sets Z exactly
+when the level returns to 0 — after slots 256 and 512 only. A slot
+counter that wrapped at 8 bits cannot hide in this structure, and the
+bench decodes all 513 slots plus the following BREAK.
+
+**The level survives the slot in control space.** The uart_tx bit loop
+shifts its byte to zero; here the same register must still hold the
+level for the `+ 5`, so the program stashes it across the slot in
+`PM_ADDR` (`WCTL`/`RCTL`) — the storage trick DR 0013's boot loader uses
+with `UIO_DIR`. This is why the assembler reports **exactly two lint
+warnings** (the half-loop `BNZ` after the reload): the linear taint scan
+cannot see through a branch-target label, while the program executes no
+`IN` at all, so no pin-derived data exists to taint anything. The bench
+asserts that warning count.
+
+**Timing model, and what the bench grades.** DMX receivers
+resynchronise on every slot's start edge and sample the 11 bits at
+nominal centres, so per-slot cumulative drift must stay under half a bit
+across 10 bit periods: `MAX_SLOT_DRIFT_PCT = 5%` of the bit period
+(`reference_models/dmx512.py`, derived there). E1.11 publishes no
+numeric transmitter bit-rate tolerance, so that derived bound is the one
+the bench cites; the DUT's slots measure 0%. Negative controls, both on
+the DUT's own captured waveform: a copy with the channel-2 slot shifted
+one bit early (only one stop bit left) is rejected while the preceding
+byte still decodes, and a 1.051x-retimed copy fails the drift bound
+while still decoding.
+
+**Wiring a fixture (TX only).** TX = `uo_out[0]` drives D of a 3.3 V
+TI **THVD1450** RS-485 transceiver on a TX-only Pmod adapter:
+
+| THVD1450 pin | Signal | Connect to |
+|---|---|---|
+| 8 VCC | supply | 3.3 V |
+| 7 B | line complement (D−) | DMX fixture pin 3 (data complement) |
+| 6 A | line true (D+) | DMX fixture pin 2 (data true) |
+| 5 GND | common | board GND **and** fixture common (DMX pin 1) |
+| 4 D | driver input | `uo_out[0]` (the board pin carrying it) |
+| 3 DE | driver enable | 3.3 V (always transmitting) |
+| 2 /RE | receiver enable | 3.3 V (held disabled; TX only) |
+| 1 R | receiver output | unconnected |
+
+DE and /RE tie high, so the driver is always enabled: the chip sends
+whatever `uo_out[0]` does, idle-high between packets. Terminate 120 ohm
+across A–B **at the fixture end only** (the last device on the line);
+fixtures carry their own connector wiring, pin 1 common, pin 2 true (D+,
+`A`), pin 3 complement (D−, `B`). Receipt of this Pmod, bring-up and a
+real fixture are out of scope here (issue #445): the claim this program
+makes is the cycle-exact waveform at the pad, verified at RTL.
+
+Bench: `verification/test_firmware_dmx512.py`
+(`verification/request-firmware-dmx512.json`), registered in
+`scripts/rtl-bench-inventory.txt`; model self-test
+`verification/test_dmx512_model.py`.
+
+```bash
+klt functional-verification verification/request-firmware-dmx512.json --format json
+```
 
 ## Source syntax
 
