@@ -552,6 +552,33 @@ capture, PVT corner sweeps, or Monte Carlo.
   finding, not a new one. Both docs citing a baseline
   (`docs/submission/verification.md`, `docs/ROADMAP.md`) were re-pointed at
   this round in the same change.
+- **Items 1, 2, 7, 8, 9 and 10, state as of 2026-11-19 (PR #399, the second
+  post-merge round, after PR #457).** Append-only; the bullets above are the
+  earlier states. `main` moved once more after the post-#461 round above
+  (PR #457: the protocol-catalog docs -- `docs/protocols.md`, `README.md`,
+  `docs/info.md` and the two baseline-pointer edits -- plus its item-10
+  envelope re-mint for the README edit and its own three baseline rounds),
+  GitHub reported the PR `CONFLICTING` again, and the claim-reconciliation
+  pass routed it back to Doctor. The merge's two content conflicts
+  (`docs/ROADMAP.md`, `docs/submission/verification.md`) kept this branch's
+  5-of-11 pointers; `manifests/evidence/hygiene.json` merged clean -- the
+  merge took `main`'s re-minted envelope and its `README.md` pin matches the
+  merged README byte for byte, so every item-1/2/9/10 pin verifies against
+  the merged tree (`scripts/check_evidence_inventories.py` PASS) and **no
+  envelope was re-attested; the #5538 throwaway ordering did not apply this
+  time either**. `scripts/characterization_report.py --check` passes on the
+  merged tree (the merge changed none of its inputs; nothing regenerated).
+  **The round superseding both stale rounds (the branch's own
+  `20261119-190101`..`-190132-7472e91`, stale on `hygiene.json` only, and
+  `main`'s post-#457 `20261119-183553`..`-183624-872af7d`, graded at the
+  pre-migration klt 0.8.0 and stale on the branch's pre-#457 inputs) is
+  `signoff-baseline 20261119-193301` .. `20261119-193404-c99dfbf`, 5 of 11
+  at klt `0.9.0`** -- sixty-four records, one per live record of the two
+  stale rounds. No verdict moves against the branch's own round; against
+  `main`'s the one-item difference is the same recorded grader change
+  (item 7, klayout-tools#4893), not new evidence. Both docs citing a
+  baseline (`docs/submission/verification.md`, `docs/ROADMAP.md`) were
+  re-pointed at this round in the same change.
 - **Every citation pins a `content_hash`**, and what it is the hash of
   depends on the cited envelope (clarified 2026-10-10, issue #168; the
   manifests on `main` have always followed this, the sentence here did
