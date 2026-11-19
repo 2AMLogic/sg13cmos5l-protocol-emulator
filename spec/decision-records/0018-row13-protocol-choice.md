@@ -340,8 +340,8 @@ file of DR 0017's freeze and no target-spec value, and it makes no row met.
 This note is committed before any SWD firmware, bench or reference model
 exists — and none is created by the work it records. Its parent at the
 note's first commit was `origin/main` at `ff4029fb`; the branch has since
-merged `origin/main` through `aeb90997` (the merge base at review time),
-which contains the same freeze commit
+merged `origin/main` through `aeb90997` and then `325447e7`, which
+contain the same freeze commit
 `1696045bfa1a33f93c95a5bf6c29b05f4ea0d734`; `python3
 scripts/check_isa_freeze.py` reports the same eleven pinned files and the
 same amendments before and after this note, re-run at each parent.
@@ -381,7 +381,10 @@ and another after the read parity (before the host re-drives SWDIO); the
 parity is even, for the request header and the read data alike; and the
 write-transaction boundary is a property of the unrolled schedule costed
 here, not of the ISA. The corrected fallback count is **192 of 256 stored
-words, 210 SWCLK rising edges** — the figures in the rest of this note.
+words, 210 SWCLK rising edges** at this point — later revisions correct
+the sample order and add the §B4.1.4 idle tail, and the figures in the
+rest of this note are the fourth revision's **201 words, 218 rising
+edges**.
 
 **Third revision, same day, before merge.** The second revision's prose
 said even parity, but the two request bytes it recorded as the evidence
@@ -398,6 +401,28 @@ decodes the request frame and rejects a request whose parity bit is not
 the even value, so the parity claim is checked by the measurement
 instead of being stated over it. Byte values change no count: a request
 is 8 driven bits whichever even-parity shape it carries.
+
+**Fourth revision, same day, before merge.** The re-review of the third
+revision caught two timing defects in the measured schedule, both now
+corrected and re-measured. First, the sample loop raised SWCLK and only
+then executed `IN` — but IHI 0031 §B4.3.1 permits the target to change or
+release SWDIO on a rising edge, so a sample taken after the rise may
+already be the *next* bit; Arm's CMSIS-DAP read primitive samples the pin
+during the preceding SWCLK-low phase, and the loop body now does the same
+(`IN` first, the rising `OUT` after — a reorder that changes no stored
+word). Second, the schedule stopped SWCLK immediately after the final
+turnaround; ADIv5 §§B4.1.1 and B4.1.4 require at least eight idle cycles
+with SWDIO low before the host stops clocking (idle cycles are not
+required between the first read and the next request), so a nine-word
+idle loop now runs before the existing `HALT`. Re-measured against a
+scripted target with exactly that aggressive-but-legal timing — SWDIO
+launches on the rising edge that ends the turnaround and advances one bit
+on every subsequent rise — the corrected schedule is **201 words, no
+warnings, 1182 core edges, 218 SWCLK rising edges** (the IDCODE-only
+schedule: **151 words, 172 rises**), both reads ACK OK with the expected
+data and parity and the eight-edge idle tail present; the same target
+run against the third revision's order mis-decodes the first read as ACK
+`100` and data `0xA5D0023B` — every response bit read one rise late.
 
 ### The protocol choice was legal
 
@@ -428,11 +453,18 @@ The arithmetic needs only the shape of one connection, not exact constants:
   one-clock turnaround cycle after the request's park bit — the probe
   releases SWDIO while SWCLK is low and clocks one further rising edge
   before the first ACK bit is sampled**; a 3-bit one-hot ACK and 32 data
-  bits plus one even-parity bit driven by the target, each sampled on a
-  rising edge; **and a second one-clock turnaround after the read parity,
-  before the probe re-enables its SWDIO driver**. Arm's CMSIS-DAP clocks
+  bits plus one even-parity bit driven by the target, each of them
+  **sampled by the probe in the SWCLK-low phase *before* the next rising
+  edge — IHI 0031 §B4.3.1 permits the target to change or release SWDIO
+  on a rising edge, so the value seen after a rise may already be the
+  next bit**; **a second one-clock turnaround after the read parity,
+  before the probe re-enables its SWDIO driver**; and **after the last
+  transfer, at least eight idle cycles with SWDIO low before the host
+  stops SWCLK** (idle cycles are not required between a read and the next
+  request) — ADIv5 §§B4.1.1 and B4.1.4. Arm's CMSIS-DAP clocks
   both turnaround slots (release before the response, re-drive after read
-  parity) and generates/checks even parity; it is the observable reference
+  parity), generates/checks even parity, and reads response bits during
+  the preceding low phase; it is the observable reference
   for what a working probe does, in the same standing as pyOCD above.
 
 Source: Arm Debug Interface v5 Architecture Specification (ARM IHI 0031,
@@ -442,7 +474,7 @@ probe sends. **No copy of IHI 0031 was fetched into this repository for this
 note**, so these figures carry DR 0015's "confirm" mark: a fetched copy must
 be checked before any SWD firmware work resumes. The conclusion does not
 hinge on them: a fetched copy moving any constant by a few cycles moves the
-stored-word counts below by single words per cycle, against a margin of 64.
+stored-word counts below by single words per cycle, against a margin of 55.
 
 ### The corrected cost model: stored words, not execution cycles
 
@@ -474,12 +506,15 @@ the defect the review caught. Stored words are what follow:
   same `OUT` that raises SWCLK — but it gives the target no hold margin at
   the rising edge, so the count uses the safe shape.)
 - **Target-driven bits sample through one shared body.** ACK and data are
-  read on rising edges through an 8-word loop body — `OUT` high; `IN`;
+  read through an 8-word loop body — `IN` (sample while SWCLK is low);
   `AND` with the dio mask; `OUT UO_OUT` (report the masked sample byte);
-  `OUT` low; `LDI 1`; `SUB`; `BNZ` — stored once for however many samples
-  the transaction needs. A read transaction's 36 rising samples (3 ACK +
-  32 data + 1 parity) cost 9 stored words including the counter load, and
-  the second transaction re-uses the shape with its own copy (9 words).
+  `OUT` high — the rise the target may advance SWDIO on, per §B4.3.1,
+  which is why the `IN` precedes it; `OUT` low; `LDI 1`; `SUB`; `BNZ` —
+  stored once for however many samples the transaction needs. A read
+  transaction's 36 samples (3 ACK + 32 data + 1 parity), each taken in
+  the low phase before the rise that may change the bit, cost 9 stored
+  words including the counter load, and the second transaction re-uses
+  the shape with its own copy (9 words).
 - **Four registers suffice, and result bytes need not live in registers.**
   R0/R1 hold the two images, and R0's `0x08` doubles as the SWDIO mask for
   the `AND`; R2 counts; R3 is the sample/decrement scratch. The draft's
@@ -500,7 +535,7 @@ the defect the review caught. Stored words are what follow:
   its control indices do not exist in DR 0012's register map or
   `firmware/tools/asm.py`.
 
-### The counted implementation: the fallback measured at 192 stored words
+### The counted implementation: the fallback measured at 201 stored words
 
 The issue's agreed fallback — line reset, switch, second line reset and idle
 clocks, then IDCODE + one DP register read — was written as a program and
@@ -516,31 +551,39 @@ by the committed assembler (`firmware/tools/asm.py`):
 | Idle clocks ×2, SWDIO low | 10 |
 | Request 1 (IDCODE read), 8 bits at 4 words/bit | 32 |
 | Turnaround 1 — park-bit fall, release SWDIO, one clocked turnaround cycle, SWCLK left low for sampling | 5 |
-| Sample loop 1 — counter + 8-word body for 36 rising samples (ACK 3, data 32, parity 1) | 9 |
+| Sample loop 1 — counter + 8-word body for 36 low-phase samples (ACK 3, data 32, parity 1; `IN` before the rising `OUT`) | 9 |
 | Turnaround after read parity + re-drive SWDIO (`OUT` rise, `OUT` fall, `LDI`, `WCTL UIO_DIR`) | 4 |
 | Request 2 (DP read), 8 bits | 32 |
 | Turnaround 2 (same clocked shape as turnaround 1) | 5 |
-| Sample loop 2 (36 rising samples) | 9 |
-| Final turnaround + SWDIO re-drive + `HALT` | 5 |
-| **Total — startup + both reads** | **192** |
+| Sample loop 2 (36 low-phase samples, own copy) | 9 |
+| Final turnaround + SWDIO re-drive (`OUT` rise, `OUT` fall, `LDI`, `WCTL UIO_DIR`) | 4 |
+| Trailing idle ×8, SWDIO low before SWCLK stops — idle image pair, SWDIO-low fall, counter, decrement constant, own 4-word body (§§B4.1.1, B4.1.4) | 9 |
+| `HALT` | 1 |
+| **Total — startup + both reads** | **201** |
 
 Startup (91 words) plus the first transaction only (the minimum the
-fallback names) is **137 stored words**; the second read, its turnaround
-and the final handback add 55. **192 of 256: the fallback fits with 64
-words (25%) spare.**
+fallback names) is **137 stored words** at the end of the first sample
+loop; the final turnaround and re-drive (4), the trailing idle tail (9)
+and `HALT` (1) bring the IDCODE-only schedule to **151 words and 172
+SWCLK rising edges**. The second read, its turnaround and the shared
+handback and tail add 50 more. **201 of 256: the fallback fits with 55
+words (21%) spare.**
 
 Measured, not just added up. Assembling the program with the committed
-assembler gives exactly 192 words and no warnings. Running that image on
+assembler gives exactly 201 words and no warnings. Running that image on
 the committed ISA model (`verification/reference_models/isa.py`) against a
-scripted SWD target that advances on SWCLK rising edges and honours line
-ownership — it takes SWDIO only after the leading turnaround cycle, drives
-it through ACK, data and parity, and releases it at the read parity before
-the probe re-drives:
+scripted SWD target with §B4.3.1 timing and full line-ownership rules —
+it takes SWDIO on the rising edge that ends the turnaround cycle,
+**launches the first ACK bit on that rise and advances SWDIO by one bit
+on every subsequent rise**, releases the line on the rise after the read
+parity, decodes the request frames, rejects a wrong-parity request, and
+counts the trailing idle edges:
 
-- the program runs to `HALT` (1145 core edges; 210 SWCLK rising edges =
-  118 startup + 2 × (8 request + 1 turnaround + 36 samples + 1 turnaround)
-  through the final handback, the count the review derived for the default
-  one-cycle turnaround);
+- the program runs to `HALT` (1182 core edges; 218 SWCLK rising edges =
+  118 startup + 2 × (8 request + 1 turnaround + 36 sample-loop rises +
+  1 turnaround) + **8 trailing idle rises**, the count the re-review
+  derived for the corrected schedule); the target counts exactly eight
+  trailing rises with SWDIO low at each, the §B4.1.4 tail;
 - the SWDIO value at every rising edge matches the scripted patterns: the
   switch reads `0111100111100111` (0xE79E, LSB first), and both request
   bytes come back bit-exact: `0xA5` then `0xBD`, both **LSB first** (bit 0
@@ -561,22 +604,28 @@ the probe re-drives:
   parity bit; CMSIS-DAP's request-parity generation and read-parity
   check are even, and the wire bits here follow them;
 - the bytes the probe reports on `UO_OUT` match the target's answers: ACK
-  `001` — decoded correctly now that the turnaround slot precedes the first
-  sample (the review's reconstruction, which sampled one edge early,
-  decoded `011`) — then IDCODE `0x4BA00477` LSB first with even parity
+  `001` — the first sample taken in the SWCLK-low phase *before* the rise
+  that advances the target (§B4.3.1; CMSIS-DAP's read primitive does the
+  same) — then IDCODE `0x4BA00477` LSB first with even parity
   (13 ones → parity bit 1), then the same for a second 32-bit DP value
-  (`0x12345678`, also parity bit 1) — one masked dio byte per rising edge,
-  in transaction order.
+  (`0x12345678`, also parity bit 1) — one masked dio byte per sample,
+  in transaction order. The sample order is load-bearing, and the
+  measurement shows it: the same target run against the third revision's
+  order (raise SWCLK, *then* `IN`) mis-decodes the first read as ACK
+  `100` and data `0xA5D0023B` — every response bit read one rise late —
+  while the corrected order reads both transactions clean.
 
 The program text is ~200 commented source lines composed of the shapes
 above and **is not committed with this note** — the figures and wire
 constants in this section are the record of the measurement and its only
 artifact. Every figure in the table is re-derivable from the section
 list, and the measurement is the committed assembler plus the committed
-model — no bench, no RTL, no new tool. The third revision's numbers come
-from a rebuild of the program from this list (the image the second
-revision measured was equally uncommitted and no longer exists); both
-builds agree on every count.
+model — no bench, no RTL, no new tool. The third and fourth revisions'
+numbers come from rebuilds of the program from this list (the images
+earlier revisions measured were equally uncommitted and no longer
+exist); the rebuilds agree on every count they share — the fourth
+revision's reorder and idle tail change no figure before the final
+handback, where the tail adds its 9 words and 8 rises.
 
 ### What does not fit the measured schedule: probe-driven write transactions
 
@@ -614,7 +663,7 @@ conclusion shape the issue itself anticipated when it set the fallback.
 - A real probe would check the ACK (`BZ`/`BNZ` on the sampled `001`) before
   clocking data. The counted shape reports ACK instead of branching on it;
   an ACK check is a protocol handshake, the legitimate branch case DR
-  0003's assembler lint already names, and the 64-word margin absorbs its
+  0003's assembler lint already names, and the 55-word margin absorbs its
   words.
 - The **SWD target** (issue #235's candidate, `gap-to-submission.md` row 13)
   has a different cost shape — it samples SWCLK with `IN` and drives SWDIO
