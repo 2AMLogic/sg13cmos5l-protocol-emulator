@@ -9,6 +9,13 @@
 # reset/power-up runner's default is the same file. No bench, request or
 # invocation changed. The PDK revision is unchanged.
 #
+# Refreshed 2026-11-19 for issue #462 (the MIDI evidence family): a
+# `firmware-midi` experiment line is added. The MIDI timing evidence that
+# PR #454 mis-filed under `firmware-uart-rx` (superseded there by record
+# 20261119-182840-aeb9099) was re-run unchanged at the klt 0.8.0 pin and
+# re-filed as firmware-midi record 20261119-182753-aeb9099; no bench,
+# request, model or firmware image changed. The PDK revision is unchanged.
+#
 # Refreshed 2026-10-11 for issue #259 (the I2C ACK-window formal property): an
 # `i2c-ack-window` experiment line is added (the runner
 # verification/formal/run-i2c-ack-window.sh, formal toolchain plus Icarus), and
@@ -177,6 +184,7 @@ experiment  firmware-assembler-roundtrip  verification/test_firmware_roundtrip.p
 experiment  firmware-gate-level  `PDK_ROOT=<pdk> ./flow/run-firmware-gate-level.sh --full --control-space --boot-rom --boot-spi --primitives --boot-uart --load-integrity` [PDK]; default netlist frozen in post-layout-sdf-regression/artifacts/20261119-205800-2b283a4/
 experiment  firmware-i2c  verification/test_firmware_i2c.py, test_firmware_i2c_sr.py, test_firmware_i2c_ack.py; `klt functional-verification verification/request-firmware-i2c.json --format json`, `... request-firmware-i2c-sr.json ...` and `... request-firmware-i2c-ack.json ...`; ACK-schedule controls `python3 verification/i2c_ack_schedule_mutants.py --out <dir>` (issue #258)
 experiment  firmware-loadseq  verification/test_loadseq.py, test_loadseq_top.py; `klt functional-verification verification/request-loadseq.json --format json` and `... request-loadseq-top.json ...`; `python3 firmware/tools/test_loadseq.py` (not in run-rtl-benches.sh; cold-started by hand for this audit, both pass)
+experiment  firmware-midi  verification/test_firmware_midi.py + reference_models/midi.py; `klt functional-verification verification/request-firmware-midi.json --format json`; controls `python3 verification/midi_mutants.py --out <dir>`
 experiment  firmware-spi  verification/test_firmware_spi.py; `klt functional-verification verification/request-firmware-spi.json --format json`
 experiment  firmware-uart  verification/test_firmware_uart.py; `klt functional-verification verification/request-firmware-uart.json --format json`
 experiment  firmware-ws2812  verification/test_firmware_ws2812.py + reference_models/ws2812.py; `klt functional-verification verification/request-firmware-ws2812.json --format json`; model self-test `python3 verification/test_ws2812_model.py` (in `npm run lint`); mutant programs are tests in the bench
