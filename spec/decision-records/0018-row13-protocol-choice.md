@@ -363,9 +363,23 @@ arithmetic with a counted, assembler-measured implementation and reaches
 the opposite verdict: **on DR 0017's frozen ISA the issue's agreed fallback
 (line reset, switch, second line reset and idle clocks, then IDCODE + one DP
 register read) fits the 256 × 16 program memory with room to spare —
-182 of 256 stored words.** What still does not fit is the issue's full goal
-(a word of AP memory), which needs probe-driven write transactions; see the
-boundary section below.
+192 of 256 stored words, turnaround cycles included.** What still does not
+fit **the unrolled schedule measured here** is the issue's full goal
+(a word of AP memory), which needs probe-driven write transactions; whether
+a tighter, table-driven shape reaches it is unmeasured — see the boundary
+section below.
+
+**Second revision, same day, before merge.** The first revision of this
+note assigned every SWCLK rising edge to startup, a request or response
+bits, called the request/read parity odd, and ruled out the AP-memory read
+on the unrolled arithmetic alone. The PR's re-review corrected all three,
+with Arm's CMSIS-DAP as the observable reference: a one-clock turnaround
+cycle is clocked after the request's park bit (before the ACK is sampled)
+and another after the read parity (before the host re-drives SWDIO); the
+parity is even, for the request header and the read data alike; and the
+write-transaction boundary is a property of the unrolled schedule costed
+here, not of the ISA. The corrected fallback count is **192 of 256 stored
+words, 210 SWCLK rising edges** — the figures in the rest of this note.
 
 ### The protocol choice was legal
 
@@ -392,10 +406,16 @@ The arithmetic needs only the shape of one connection, not exact constants:
   second line reset and then idle cycles, and issue #452's curated
   requirements call for at least two idle clocks (source: pyOCD,
   `pyocd/probe/swj.py`, the SWJ sequence around `0ce0fbd`);
-- one 8-bit request sampled by the target on SWCLK rising edges, a
-  turnaround at the park bit's fall (the target takes SWDIO while SWCLK is
-  low), a 3-bit one-hot ACK, and 32 data bits plus one parity bit driven by
-  the target, each sampled on a rising edge.
+- one 8-bit request sampled by the target on SWCLK rising edges; **a
+  one-clock turnaround cycle after the request's park bit — the probe
+  releases SWDIO while SWCLK is low and clocks one further rising edge
+  before the first ACK bit is sampled**; a 3-bit one-hot ACK and 32 data
+  bits plus one even-parity bit driven by the target, each sampled on a
+  rising edge; **and a second one-clock turnaround after the read parity,
+  before the probe re-enables its SWDIO driver**. Arm's CMSIS-DAP clocks
+  both turnaround slots (release before the response, re-drive after read
+  parity) and generates/checks even parity; it is the observable reference
+  for what a working probe does, in the same standing as pyOCD above.
 
 Source: Arm Debug Interface v5 Architecture Specification (ARM IHI 0031,
 section B4, "SWD"), with the connection-shape point above taken from pyOCD's
@@ -404,7 +424,7 @@ probe sends. **No copy of IHI 0031 was fetched into this repository for this
 note**, so these figures carry DR 0015's "confirm" mark: a fetched copy must
 be checked before any SWD firmware work resumes. The conclusion does not
 hinge on them: a fetched copy moving any constant by a few cycles moves the
-stored-word counts below by single words per cycle, against a margin of 74.
+stored-word counts below by single words per cycle, against a margin of 64.
 
 ### The corrected cost model: stored words, not execution cycles
 
@@ -462,7 +482,7 @@ the defect the review caught. Stored words are what follow:
   its control indices do not exist in DR 0012's register map or
   `firmware/tools/asm.py`.
 
-### The counted implementation: the fallback measured at 182 stored words
+### The counted implementation: the fallback measured at 192 stored words
 
 The issue's agreed fallback — line reset, switch, second line reset and idle
 clocks, then IDCODE + one DP register read — was written as a program and
@@ -474,56 +494,82 @@ by the committed assembler (`firmware/tools/asm.py`):
 | Setup (two images, `UIO_DIR` push-pull, SWDIO high before the first edge, decrement constant) | 5 |
 | Line reset loop — ≥ 50 cycles, SWDIO high (counter + 4-word body, any length) | 5 |
 | JTAG-to-SWD switch, 16 bits at 4 words/bit | 64 |
-| Second line reset (dio-high fall, counter, `JMP`, own 4-word body) | 7 |
+| Second line reset (dio-high fall, counter, decrement-constant reload, own 4-word body) | 7 |
 | Idle clocks ×2, SWDIO low | 10 |
 | Request 1 (IDCODE read), 8 bits at 4 words/bit | 32 |
-| Turnaround 1 (park-bit fall, release SWDIO while SWCLK low) | 3 |
+| Turnaround 1 — park-bit fall, release SWDIO, one clocked turnaround cycle, SWCLK left low for sampling | 5 |
 | Sample loop 1 — counter + 8-word body for 36 rising samples (ACK 3, data 32, parity 1) | 9 |
-| Re-drive SWDIO (`LDI`, `WCTL UIO_DIR`) for transaction 2 | 2 |
+| Turnaround after read parity + re-drive SWDIO (`OUT` rise, `OUT` fall, `LDI`, `WCTL UIO_DIR`) | 4 |
 | Request 2 (DP read), 8 bits | 32 |
-| Turnaround 2 | 3 |
+| Turnaround 2 (same clocked shape as turnaround 1) | 5 |
 | Sample loop 2 (36 rising samples) | 9 |
-| `HALT` | 1 |
-| **Total — startup + both reads** | **182** |
+| Final turnaround + SWDIO re-drive + `HALT` | 5 |
+| **Total — startup + both reads** | **192** |
 
-Startup plus the first transaction only (the minimum the fallback names)
-is **136 stored words**; the second read adds 46. **182 of 256: the
-fallback fits with 74 words (29%) spare.**
+Startup (91 words) plus the first transaction only (the minimum the
+fallback names) is **137 stored words**; the second read, its turnaround
+and the final handback add 55. **192 of 256: the fallback fits with 64
+words (25%) spare.**
 
 Measured, not just added up. Assembling the program with the committed
-assembler gives exactly 182 words and no warnings. Running that image on
+assembler gives exactly 192 words and no warnings. Running that image on
 the committed ISA model (`verification/reference_models/isa.py`) against a
-scripted SWD target driving SWDIO while the probe has released it:
+scripted SWD target that advances on SWCLK rising edges and honours line
+ownership — it takes SWDIO only after the leading turnaround cycle, drives
+it through ACK, data and parity, and releases it at the read parity before
+the probe re-drives:
 
-- the program runs to `HALT` (1135 core edges; 206 SWCLK rising edges =
-  50 + 16 + 50 + 2 + 8 + 36 + 8 + 36 across the two transactions);
+- the program runs to `HALT` (1145 core edges; 210 SWCLK rising edges =
+  118 startup + 2 × (8 request + 1 turnaround + 36 samples + 1 turnaround)
+  through the final handback, the count the review derived for the default
+  one-cycle turnaround);
 - the SWDIO value at every rising edge matches the scripted patterns: the
   switch reads `0111100111100111` (0xE79E, LSB first), and both request
-  bytes (DP-read shapes with odd parity; the specific DP address is exactly
-  the kind of IHI 0031 constant this note marks "confirm") come back
-  bit-exact;
+  bytes (DP-read shapes with **even** parity over the header bits — `0x91`
+  and `0xB9` as transmitted; the specific DP addresses are exactly the kind
+  of IHI 0031 constant this note marks "confirm") come back bit-exact. The
+  first revision called this parity odd, which would accept the opposite
+  parity bit; CMSIS-DAP's request-parity generation and read-parity check
+  are even, and the wire bits here follow them;
 - the bytes the probe reports on `UO_OUT` match the target's answers: ACK
-  `001`, then IDCODE `0x4BA00477` LSB first with odd parity, then the same
-  for a second 32-bit DP value — one masked dio byte per rising edge, in
-  transaction order.
+  `001` — decoded correctly now that the turnaround slot precedes the first
+  sample (the review's reconstruction, which sampled one edge early,
+  decoded `011`) — then IDCODE `0x4BA00477` LSB first with even parity
+  (13 ones → parity bit 1), then the same for a second 32-bit DP value
+  (`0x12345678`, also parity bit 1) — one masked dio byte per rising edge,
+  in transaction order.
 
-The program text is ~120 lines composed of the shapes above; every figure
-in the table is re-derivable from the section list, and the measurement is
+The program text is ~190 commented source lines composed of the shapes
+above; every figure in the table is re-derivable from the section list, and
+the measurement is
 the committed assembler plus the committed model — no bench, no RTL, no new
 tool.
 
-### What still does not fit: probe-driven write transactions
+### What does not fit the measured schedule: probe-driven write transactions
 
 The issue's full goal is one word of AP memory. That needs at least two
-probe-driven write transactions (SELECT, then TAR) before the read. A write
-transaction's data phase drives 33 bits (32 + parity) at 4 words/bit = 132
-stored words, ≈ 180 all-in per transaction with its request, turnaround and
-ACK loop (derived from the section table, not separately
-assembler-measured). Two of those do not fit alongside the ~91-word
-startup; arbitrary (computed) data would cost more still. So the fallback
-is the boundary: **IDCODE + one DP register read fits; a memory-word read
-does not, on this ISA.** This is the conclusion shape the issue itself
-anticipated when it set the fallback.
+probe-driven write transactions (SELECT, then TAR) before the read. On the
+unrolled schedule costed above, a write transaction's data phase drives 33
+bits (32 + parity) at 4 words/bit = 132 stored words, ≈ 180 all-in per
+transaction with its request, turnarounds and ACK loop (derived from the
+section table, not separately assembler-measured). Two of those do not fit
+alongside the 91-word startup; arbitrary (computed) data would cost more
+still.
+
+**That is a result for the unrolled schedule, not a bound on the ISA.**
+The review of this PR measured a table-driven alternative for the same data
+phase with the committed assembler and ISA model: a 15-word driver
+(including setup and `HALT`) looping over 33 stored low-clock pin images —
+48 words total including the table — raising the clock for each image and
+reproducing all 33 bits of `0x13579BDF` and their even parity. Stored pin
+images are data, not code, so the per-bit cost is ~1 stored word plus the
+shared loop, not 4. The full AP sequence (two write transactions plus the
+read, with turnarounds and ACK handling) has been measured under neither
+shape, so this note claims only: **on the unrolled 4-words-per-bit
+schedule, IDCODE + one DP register read fits and a memory-word read does
+not; whether a table-driven probe fits the memory-word read is an open
+measurement, recorded here as the issue's next step.** This is the
+conclusion shape the issue itself anticipated when it set the fallback.
 
 ### What this note does and does not claim
 
@@ -535,7 +581,7 @@ anticipated when it set the fallback.
 - A real probe would check the ACK (`BZ`/`BNZ` on the sampled `001`) before
   clocking data. The counted shape reports ACK instead of branching on it;
   an ACK check is a protocol handshake, the legitimate branch case DR
-  0003's assembler lint already names, and the 74-word margin absorbs its
+  0003's assembler lint already names, and the 64-word margin absorbs its
   words.
 - The **SWD target** (issue #235's candidate, `gap-to-submission.md` row 13)
   has a different cost shape — it samples SWCLK with `IN` and drives SWDIO
