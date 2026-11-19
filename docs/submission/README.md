@@ -145,8 +145,8 @@ for Partial.
   #246's slow-corner margin is +5.8 ns on the LibreLane flow (it was +1.9 ns),
   with no max-slew or max-capacitance violation, from five repair settings
   in `src/config.json`. Both are in the records of gds run 38136727636
-  (`librelane-corner-timing` `20261011-144900-e5a0bae`,
-  `post-layout-sdf-regression` `20261011-114800-e5a0bae`). #217 closed at
+  (`librelane-corner-timing` `20261119-202500-3c228a2`,
+  `post-layout-sdf-regression` `20261119-205800-2b283a4`). #217 closed at
   2026-10-11T16:34Z on that evidence: UART TX, SPI and I2C repeated START
   have routed-SDF runs at all three corners; the boot programs, UART RX,
   PS/2, WS2812 and the random regression do not. D1 still has to be
