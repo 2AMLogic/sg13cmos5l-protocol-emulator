@@ -371,9 +371,11 @@ inventory is a hard failure.
     {"pin": "uio[7]", "port": "uio", "bit": 7, "electrical_role": "input", "load_role": "none", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "uart_rx": "unused", "uart_rx_result": "unused", "spi_transfer": "unused", "spi_result": "unused", "i2c_transfer": "unused", "i2c_result": "unused", "ws2812": "unused", "ps2": "unused", "dmx512": "unused"}, "shared_pin_rationale": ""}
   ],
   "inventory": [
+    {"file": "firmware/asm/midi_tx.asm", "profile": "uart_tx", "patterns": ["asm_ports", "uart_tx_mask"]},
     {"file": "firmware/asm/uart_tx.asm", "profile": "uart_tx", "patterns": ["asm_ports", "uart_tx_mask"]},
     {"file": "firmware/asm/uart_tx_9600.asm", "profile": "uart_tx", "patterns": ["asm_ports", "uart_tx_mask"]},
     {"file": "firmware/asm/uart_tx_115200.asm", "profile": "uart_tx", "patterns": ["asm_ports", "uart_tx_mask"]},
+    {"file": "firmware/asm/midi_rx.asm", "profile": "uart_rx", "patterns": ["asm_ports", "uart_rx_mask", "uart_rx_debug"]},
     {"file": "firmware/asm/uart_rx.asm", "profile": "uart_rx", "patterns": ["asm_ports", "uart_rx_mask", "uart_rx_debug"]},
     {"file": "firmware/asm/uart_rx_115200.asm", "profile": "uart_rx", "patterns": ["asm_ports", "uart_rx_mask", "uart_rx_debug"]},
     {"file": "firmware/asm/uart_rx_9600.asm", "profile": "uart_rx", "patterns": ["asm_ports", "uart_rx_mask", "uart_rx_debug"]},
@@ -535,6 +537,21 @@ carries the load-phase `PM_CRC` readout (DR 0013 layer 1) while a serial load
 is in progress, so a strip on it sees CRC bits until `MODE` drops. The
 program then holds DIN low for more than 280 µs before its first frame, which
 a WS2812B treats as a reset.
+
+### MIDI 1.0 (#444)
+
+The two MIDI images reuse the UART pin roles because MIDI DIN carries an
+idle-high 8N1 stream on the logic side of its current loop. Load one image
+at a time.
+
+| Image | Wire pin | Result and observability |
+|---|---|---|
+| `midi_tx.asm` | `uo_out[0]` TX to MIDI OUT | Idle high after the last byte |
+| `midi_rx.asm` | `ui_in[1]` RX from MIDI IN | Status and two data bytes on `uo_out[7:0]`. The UART sample mark and frame error use the same internal `uio_out` bits as `uart_rx`. |
+
+Both images leave the bidirectional pads as inputs. The
+[firmware wiring table](../../firmware/README.md#midi-10-din) connects the
+dedicated headers to an external optoisolated DIN interface.
 
 ### PS/2 device, row 13 stretch column (added by #235)
 

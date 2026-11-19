@@ -20,6 +20,7 @@ include program-memory
 include protocol-models
 include firmware-uart
 include firmware-uart-rx
+include firmware-midi
 include firmware-spi
 include firmware-spi-burst
 include firmware-spi-miso-delay

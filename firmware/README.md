@@ -24,6 +24,8 @@ firmware/
                          the nested-WAIT transmitter, and
                          uart_tx_115200.asm (434, issue #281) the same
                          transmitter at the 115,200-class period
+    midi_tx.asm          MIDI DIN note-on, control-change and note-off demo
+    midi_rx.asm          MIDI DIN monitor with receive running status
     i2c_fast.asm         bit-banged I2C controller, Fast-mode 400 kHz
                          phase budget (issue #73, the I2C third of #23)
     i2c_std.asm          the same controller on the Standard-mode
@@ -346,6 +348,66 @@ Bench: `verification/test_firmware_uart_rx.py`
 
 ```bash
 klt functional-verification verification/request-firmware-uart-rx.json --format json
+```
+
+### MIDI 1.0 DIN
+
+Load `midi_tx.hex` (**108 words**) to send middle C on MIDI channel 3,
+set modulation, then release the note. The nine bytes on the wire are
+`92 3C 55  B2 01 40  82 3C 00`. The image sends them once and leaves TX
+high. The transmitter reads the nine byte literals in program memory through
+`PM_DATA_HI/LO` and shares one 8N1 output routine across all three messages.
+
+Load `midi_rx.hex` (**218 words**) to monitor note-on, note-off and
+control-change on all 16 channels. After the second data byte passes its stop
+check, sample `uo_out[7:0]` on successive core clocks for the status (channel
+included), first data byte, and second data byte. The bus idles at `FF` on
+either side, including between messages with identical data bytes. A note-on
+with zero velocity retains its received encoding and means release. Running
+status stays in R3. The receiver uses the address register `PM_ADDR` to save
+the first data byte between frames, with `FF` marking an empty slot.
+
+A new channel status discards a partial message. Unsupported channel or system
+common status cancels running status. Real-time bytes can pass between data
+bytes without disturbing the parser. A bad stop makes the receiver wait for
+idle high and a fresh status. Stray data produces no output.
+
+| Interval | Core clocks | At 50 MHz |
+|---|---:|---:|
+| TX start bit, each LSB-first data bit, stop bit | 1,600 each | 32 µs (31.25 kbaud) |
+| TX start to next start (8N1, contiguous bytes) | 16,000 | 320 µs |
+| Explicit status and two data bytes on the wire | 48,000 | 960 µs |
+| RX start edge to first data sample | about 2,400 (3-clock polling loop) | about 48 µs |
+| RX data sample to next data or stop sample | 1,600 | 32 µs |
+| RX result, per byte | 1 | 20 ns |
+
+The time and baud columns assume target-spec row 4's **unconfirmed 50 MHz
+clock**. For example, a TX data-to-data interval is one shift, one counter
+load, six 258-clock passes, a 47-clock remainder, and three instructions to
+mask and drive the next bit. The bench measures TX edges and RX sample marks
+against 1,600 ±16 clocks and drives consecutive RX frames at both tolerance
+limits.
+
+**DIN interface wiring.** One 3.3 V interface is the Adafruit MIDI
+FeatherWing (#4740), jumpered to the demo board's dedicated Pmod headers.
+Its H11L1 optocoupler isolates MIDI IN. MIDI OUT uses 33 Ω from 3.3 V to DIN
+pin 4 and 10 Ω from the TX driver to DIN pin 5. [Interface schematic](https://github.com/adafruit/Adafruit-MIDI-FeatherWing-PCB/blob/d060360d31ba77963443121e71bae136c882a788/Adafruit%20MIDI%20FeatherWing.sch)
+
+| Image | Demo-board Pmod signal | FeatherWing header | DIN cable |
+|---|---|---|---|
+| TX | Dedicated output `uo_out[0]` | `TX` | MIDI OUT to instrument IN |
+| RX | Dedicated input `ui_in[1]` | `RX` (opto output) | Instrument OUT to MIDI IN |
+| Either | 3.3 V and GND | `3V` and `GND` | Logic-side power |
+
+Connect the signal for the loaded image. For RX, release the demo-board MCU's
+driver on `ui_in[1]` so the optocoupler can drive it. For TX, load the image
+before connecting the instrument since the output header carries the CRC
+readout during serial loading. The cocotb test covers the digital pins. The
+external current loop has not been tested on hardware.
+
+```sh
+klt functional-verification verification/request-firmware-midi.json --format json
+python3 verification/midi_mutants.py
 ```
 
 ### `i2c_fast.asm` / `i2c_std.asm` — bit-banged I2C controller, both speed grades (issue #73)
