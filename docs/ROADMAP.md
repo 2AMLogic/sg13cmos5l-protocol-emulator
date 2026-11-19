@@ -30,8 +30,8 @@ estimate closes setup but fails hold), row 12 (stale gate-level and SDF records
 for the Fast-mode I2C images) and row 7 (klt place-and-route not run).
 
 **T1 checklist** (`klt signoff`, record
-`verification/records/signoff-baseline/records/20261119-193824-2b42059.md`,
-klt 0.8.0): **4 of 11 met**.
+`verification/records/signoff-baseline/records/20261119-194123-398d8e1e.md`,
+klt 0.8.0): **4 of 11 met, 1 `not_applicable`**.
 
 | Item | Verdict | What moves it |
 |---|---|---|
@@ -39,7 +39,7 @@ klt 0.8.0): **4 of 11 met**.
 | 3 DRC clean | unmet, `check_failed` (4,484 findings, all inside the foundry SRAM macro) | #365, after #371 |
 | 4 LVS clean | unmet, `check_failed` | #329: contract drafted (DR 0024, `Proposed`); waits on review and the post-route evidence |
 | 5 Full corner verification | unmet, `no_evidence` | no open issue; see Later |
-| 6 Monte Carlo | unmet, `no_evidence` | #348 (record "not applicable") |
+| 6 Monte Carlo | `not_applicable` (hash-bound statement `spec/statistical-claims-na.md`, covering the ratified rows 1–12; #348) | re-mint if a row ever turns statistical or rows 13–14 ratify |
 | 7 Post-layout verification | unmet, `unverifiable_provenance` | re-grade after #371 |
 | 8 Characterization report | unmet, `check_failed` | follows the unmet spec rows |
 | 11 Power delivery | unmet, `no_evidence` | #350; LVS half waits on #329 |
@@ -67,8 +67,6 @@ Unblocked once #371 lands:
   change staled nine records. Done when a signoff baseline reads item 3 `met`
   with the exception listed. The same branch note reports item 7 `met` at
   0.9.0, not investigated: the baseline must say why it changed.
-- **Item 6 (#348).** Commit the hash-bound "not applicable" statement for the
-  ratified rows 1–12. Done when a baseline reads item 6 `not_applicable`.
 - **klt STA re-run (#394).** Done when a new `sta-corner-sweep` record names
   the exact PDK commit and quotes the live LibreLane hold figure.
 - **klt place-and-route, signoff-check and ERC re-mints (#389).** Done when
