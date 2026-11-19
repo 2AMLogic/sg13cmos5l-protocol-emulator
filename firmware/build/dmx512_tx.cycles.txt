@@ -1,0 +1,102 @@
+cycle-accounting report (DR 0003 firmware toolchain)
+program: dmx512_tx
+source: firmware/asm/dmx512_tx.asm
+WORDS 90
+TOTAL-CYCLES 7873
+CYCLES name=dmx512_sc_bit start=32 end=38 cycles=200 branches=true
+CYCLES name=dmx512_bit_a start=48 end=54 cycles=200 branches=true
+CYCLES name=dmx512_slot_tail_a start=57 end=65 cycles=398 branches=true
+CYCLES name=dmx512_bit_b start=71 end=77 cycles=200 branches=true
+CYCLES name=dmx512_slot_tail_b start=80 end=89 cycles=399 branches=true
+WARNING line 190: BNZ branches on flags set by ADD over IN-sampled (pin-derived) data -- a data-dependent-latency hazard if this loop produces protocol timing (DR 0001 'Timing model'; legitimate for protocol handshakes, e.g. an I2C ACK wait)
+WARNING line 225: BNZ branches on flags set by ADD over IN-sampled (pin-derived) data -- a data-dependent-latency hazard if this loop produces protocol timing (DR 0001 'Timing model'; legitimate for protocol handshakes, e.g. an I2C ACK wait)
+ADDR 0x00 WORD 0x1401 LDI R1, 0x01 cycles=1
+ADDR 0x01 WORD 0xA600 OUT UO_OUT, R1 cycles=1
+ADDR 0x02 WORD 0xB0FF WAIT 255 cycles=256
+ADDR 0x03 WORD 0x7F00 XOR R3, R3 cycles=1
+ADDR 0x04 WORD 0xAE00 OUT UO_OUT, R3 cycles=1
+ADDR 0x05 WORD 0xB0FF WAIT 255 cycles=256
+ADDR 0x06 WORD 0xB0FF WAIT 255 cycles=256
+ADDR 0x07 WORD 0xB0FF WAIT 255 cycles=256
+ADDR 0x08 WORD 0xB0FF WAIT 255 cycles=256
+ADDR 0x09 WORD 0xB0FF WAIT 255 cycles=256
+ADDR 0x0A WORD 0xB0FF WAIT 255 cycles=256
+ADDR 0x0B WORD 0xB0FF WAIT 255 cycles=256
+ADDR 0x0C WORD 0xB0FF WAIT 255 cycles=256
+ADDR 0x0D WORD 0xB0FF WAIT 255 cycles=256
+ADDR 0x0E WORD 0xB0FF WAIT 255 cycles=256
+ADDR 0x0F WORD 0xB0FF WAIT 255 cycles=256
+ADDR 0x10 WORD 0xB0FF WAIT 255 cycles=256
+ADDR 0x11 WORD 0xB0FF WAIT 255 cycles=256
+ADDR 0x12 WORD 0xB0FF WAIT 255 cycles=256
+ADDR 0x13 WORD 0xB0FF WAIT 255 cycles=256
+ADDR 0x14 WORD 0xB0FF WAIT 255 cycles=256
+ADDR 0x15 WORD 0xB0FF WAIT 255 cycles=256
+ADDR 0x16 WORD 0xB0FF WAIT 255 cycles=256
+ADDR 0x17 WORD 0xA600 OUT UO_OUT, R1 cycles=1
+ADDR 0x18 WORD 0xB0C8 WAIT 200 cycles=201
+ADDR 0x19 WORD 0xB0C8 WAIT 200 cycles=201
+ADDR 0x1A WORD 0xB0C8 WAIT 200 cycles=201
+ADDR 0x1B WORD 0x1000 LDI R0, 0x00 cycles=1
+ADDR 0x1C WORD 0xAE00 OUT UO_OUT, R3 cycles=1
+ADDR 0x1D WORD 0xB0C2 WAIT 194 cycles=195
+ADDR 0x1E WORD 0xA002 WCTL PM_ADDR, R0 cycles=1
+ADDR 0x1F WORD 0x1C08 LDI R3, 0x08 cycles=1
+ADDR 0x20 WORD 0x2800 MOV R2, R0 cycles=1
+ADDR 0x21 WORD 0x5900 AND R2, R1 cycles=1
+ADDR 0x22 WORD 0xAA00 OUT UO_OUT, R2 cycles=1
+ADDR 0x23 WORD 0x8000 SHF R0, RIGHT cycles=1
+ADDR 0x24 WORD 0x4D00 SUB R3, R1 cycles=1
+ADDR 0x25 WORD 0xB0C1 WAIT 193 cycles=194
+ADDR 0x26 WORD 0xE020 BNZ sc_bit cycles=1
+ADDR 0x27 WORD 0xB001 WAIT 1 cycles=2
+ADDR 0x28 WORD 0xA600 OUT UO_OUT, R1 cycles=1
+ADDR 0x29 WORD 0xB0C6 WAIT 198 cycles=199
+ADDR 0x2A WORD 0xB0C6 WAIT 198 cycles=199
+ADDR 0x2B WORD 0x7F00 XOR R3, R3 cycles=1
+ADDR 0x2C WORD 0xAE00 OUT UO_OUT, R3 cycles=1
+ADDR 0x2D WORD 0xB0C2 WAIT 194 cycles=195
+ADDR 0x2E WORD 0xA002 WCTL PM_ADDR, R0 cycles=1
+ADDR 0x2F WORD 0x1C08 LDI R3, 0x08 cycles=1
+ADDR 0x30 WORD 0x2800 MOV R2, R0 cycles=1
+ADDR 0x31 WORD 0x5900 AND R2, R1 cycles=1
+ADDR 0x32 WORD 0xAA00 OUT UO_OUT, R2 cycles=1
+ADDR 0x33 WORD 0x8000 SHF R0, RIGHT cycles=1
+ADDR 0x34 WORD 0x4D00 SUB R3, R1 cycles=1
+ADDR 0x35 WORD 0xB0C1 WAIT 193 cycles=194
+ADDR 0x36 WORD 0xE030 BNZ chan_a_bit cycles=1
+ADDR 0x37 WORD 0xB001 WAIT 1 cycles=2
+ADDR 0x38 WORD 0xA600 OUT UO_OUT, R1 cycles=1
+ADDR 0x39 WORD 0xB0C2 WAIT 194 cycles=195
+ADDR 0x3A WORD 0xB0C3 WAIT 195 cycles=196
+ADDR 0x3B WORD 0x9202 RCTL R0, PM_ADDR cycles=1
+ADDR 0x3C WORD 0x3100 ADD R0, R1 cycles=1
+ADDR 0x3D WORD 0x3100 ADD R0, R1 cycles=1
+ADDR 0x3E WORD 0x3100 ADD R0, R1 cycles=1
+ADDR 0x3F WORD 0x3100 ADD R0, R1 cycles=1
+ADDR 0x40 WORD 0x3100 ADD R0, R1 cycles=1
+ADDR 0x41 WORD 0xE02B BNZ chan_a cycles=1
+ADDR 0x42 WORD 0x7F00 XOR R3, R3 cycles=1
+ADDR 0x43 WORD 0xAE00 OUT UO_OUT, R3 cycles=1
+ADDR 0x44 WORD 0xB0C2 WAIT 194 cycles=195
+ADDR 0x45 WORD 0xA002 WCTL PM_ADDR, R0 cycles=1
+ADDR 0x46 WORD 0x1C08 LDI R3, 0x08 cycles=1
+ADDR 0x47 WORD 0x2800 MOV R2, R0 cycles=1
+ADDR 0x48 WORD 0x5900 AND R2, R1 cycles=1
+ADDR 0x49 WORD 0xAA00 OUT UO_OUT, R2 cycles=1
+ADDR 0x4A WORD 0x8000 SHF R0, RIGHT cycles=1
+ADDR 0x4B WORD 0x4D00 SUB R3, R1 cycles=1
+ADDR 0x4C WORD 0xB0C1 WAIT 193 cycles=194
+ADDR 0x4D WORD 0xE047 BNZ chan_b_bit cycles=1
+ADDR 0x4E WORD 0xB001 WAIT 1 cycles=2
+ADDR 0x4F WORD 0xA600 OUT UO_OUT, R1 cycles=1
+ADDR 0x50 WORD 0xB0C2 WAIT 194 cycles=195
+ADDR 0x51 WORD 0xB0C3 WAIT 195 cycles=196
+ADDR 0x52 WORD 0x9202 RCTL R0, PM_ADDR cycles=1
+ADDR 0x53 WORD 0x3100 ADD R0, R1 cycles=1
+ADDR 0x54 WORD 0x3100 ADD R0, R1 cycles=1
+ADDR 0x55 WORD 0x3100 ADD R0, R1 cycles=1
+ADDR 0x56 WORD 0x3100 ADD R0, R1 cycles=1
+ADDR 0x57 WORD 0x3100 ADD R0, R1 cycles=1
+ADDR 0x58 WORD 0xE042 BNZ chan_b cycles=1
+ADDR 0x59 WORD 0xC004 JMP universe cycles=1
