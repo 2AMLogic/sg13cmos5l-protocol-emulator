@@ -338,11 +338,13 @@ microsecond figure is core cycles times 20 ns.
 Status: Proposed, like the rest of this record. It changes no RTL, no pinned
 file of DR 0017's freeze and no target-spec value, and it makes no row met.
 This note is committed before any SWD firmware, bench or reference model
-exists — and none is created by the work it records. Its parent is
-`origin/main` at `ff4029fb`, which contains the freeze commit
+exists — and none is created by the work it records. Its parent at the
+note's first commit was `origin/main` at `ff4029fb`; the branch has since
+merged `origin/main` through `aeb90997` (the merge base at review time),
+which contains the same freeze commit
 `1696045bfa1a33f93c95a5bf6c29b05f4ea0d734`; `python3
 scripts/check_isa_freeze.py` reports the same eleven pinned files and the
-same amendments before and after this note.
+same amendments before and after this note, re-run at each parent.
 
 Issue #452 asked for the other half of SWD: the chip as the **debug probe**
 (host) — line reset, JTAG-to-SWD switch, an 8-bit request with parity, and a
@@ -380,6 +382,22 @@ parity is even, for the request header and the read data alike; and the
 write-transaction boundary is a property of the unrolled schedule costed
 here, not of the ISA. The corrected fallback count is **192 of 256 stored
 words, 210 SWCLK rising edges** — the figures in the rest of this note.
+
+**Third revision, same day, before merge.** The second revision's prose
+said even parity, but the two request bytes it recorded as the evidence
+(`0x91`, `0xB9`) encode the odd-parity bit — `0x91` decodes as a *write*
+under either bit order — so the recorded trace contradicted the
+protocol statement it was cited for. The counted program was never
+committed and the tree that measured it no longer exists, so this
+revision rebuilds the program from the section list below and re-measures
+with the committed assembler and model: the same **192 words, no
+warnings, 1145 core edges, 210 SWCLK rising edges**, and the request
+bytes on the wire are `0xA5` and `0xBD` — even-parity DP reads, recorded
+below with their field decode and bit order. The scripted target now
+decodes the request frame and rejects a request whose parity bit is not
+the even value, so the parity claim is checked by the measurement
+instead of being stated over it. Byte values change no count: a request
+is 8 driven bits whichever even-parity shape it carries.
 
 ### The protocol choice was legal
 
@@ -525,12 +543,23 @@ the probe re-drives:
   one-cycle turnaround);
 - the SWDIO value at every rising edge matches the scripted patterns: the
   switch reads `0111100111100111` (0xE79E, LSB first), and both request
-  bytes (DP-read shapes with **even** parity over the header bits — `0x91`
-  and `0xB9` as transmitted; the specific DP addresses are exactly the kind
-  of IHI 0031 constant this note marks "confirm") come back bit-exact. The
-  first revision called this parity odd, which would accept the opposite
-  parity bit; CMSIS-DAP's request-parity generation and read-parity check
-  are even, and the wire bits here follow them;
+  bytes come back bit-exact: `0xA5` then `0xBD`, both **LSB first** (bit 0
+  of the byte on the first wire edge). Decoded against the request frame
+  defined above — `[start, APnDP, RnW, A2, A3, parity, stop, park]` —
+  both are DP reads (APnDP 0, RnW 1) with **even** parity over the four
+  header bits: `0xA5` is start 1, APnDP 0, RnW 1, A[2:3] 00 (the
+  IDCODE/ABORT bank — the read of IDCODE this probe performs), one
+  header one → parity bit 1, stop 0, park 1; `0xBD` is the same shape at
+  A[2:3] 11 (the RDBUFF bank), three header ones → parity bit 1. The
+  scripted target decodes the frame and rejects a request whose parity
+  bit is not the even value, so the measurement checks the parity rather
+  than assuming it. The second revision recorded `0x91`/`0xB9` here —
+  both carry the odd-parity bit, the contradiction the third revision
+  exists to fix. Which DP register a real probe reads second is exactly
+  the kind of IHI 0031 constant this note marks "confirm". The first
+  revision called this parity odd, which would accept the opposite
+  parity bit; CMSIS-DAP's request-parity generation and read-parity
+  check are even, and the wire bits here follow them;
 - the bytes the probe reports on `UO_OUT` match the target's answers: ACK
   `001` — decoded correctly now that the turnaround slot precedes the first
   sample (the review's reconstruction, which sampled one edge early,
@@ -539,11 +568,15 @@ the probe re-drives:
   (`0x12345678`, also parity bit 1) — one masked dio byte per rising edge,
   in transaction order.
 
-The program text is ~190 commented source lines composed of the shapes
-above; every figure in the table is re-derivable from the section list, and
-the measurement is
-the committed assembler plus the committed model — no bench, no RTL, no new
-tool.
+The program text is ~200 commented source lines composed of the shapes
+above and **is not committed with this note** — the figures and wire
+constants in this section are the record of the measurement and its only
+artifact. Every figure in the table is re-derivable from the section
+list, and the measurement is the committed assembler plus the committed
+model — no bench, no RTL, no new tool. The third revision's numbers come
+from a rebuild of the program from this list (the image the second
+revision measured was equally uncommitted and no longer exists); both
+builds agree on every count.
 
 ### What does not fit the measured schedule: probe-driven write transactions
 
