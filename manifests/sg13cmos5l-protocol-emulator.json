@@ -36,7 +36,7 @@
     },
     "8": {
       "file": "manifests/evidence/characterization.json",
-      "content_hash": "sha256:57fe8e23b5eedf5e75bf46fd7af8e45249ff5514f8d4ffffd5e3545e7ff91c90"
+      "content_hash": "sha256:5958a78c8bb3f97fc4362d62ae56deaf3800f675e2f337f610e5b7fe466937c6"
     },
     "9": {
       "file": "manifests/evidence/testbenches.json",
