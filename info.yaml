@@ -100,7 +100,23 @@ project:
   # could not place it at all (klayout-tools#2635); both say which flow
   # produced which number. `verification/records/core-datapath/` is the
   # functional/cycle-level leg and deliberately claims no area at all.
-  tiles: "2x2"
+  #
+  # 2026-11-19 (issue #464): grown from "2x2" to "8x4". This is not a design
+  # choice but the competition rules' direction: the competition post
+  # ("Update November 9th", read 2026-11-19) says, under Process, "Set the
+  # tile size in `info.yaml` to 8x4." and, under Area, "The maximum area is
+  # 8x4 tiles per design. This is confirmed for the March 2027 shuttle, and
+  # Tiny Tapeout says the tile sizes are final." The operator ruling on #273
+  # (2026-11-19) settled the allocation on that text. Row 7's ratified
+  # "≤ 2×2" target is superseded by
+  # spec/decision-records/0026-adopt-8x4-allocation.md, ratified by the two
+  # RATIFY-KEY reviews on its carrying PR (the DR 0009 act shape). The
+  # measured state does NOT move with this field: every committed placed
+  # figure is a 2x2-die figure (die 419.52 x 313.74 um, LibreLane flow); the
+  # 8x4 re-measure is the follow-up evidence campaign. Using the extra area
+  # is not decided here -- DR 0014's question of what area beyond 2x2 buys
+  # stays open and separate.
+  tiles: "8x4"
 
   # Your top module name must start with "tt_um_". Make it unique by including your github username:
   top_module:  "tt_um_2amlogic_protocol_emulator"
