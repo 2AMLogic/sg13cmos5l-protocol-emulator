@@ -1,0 +1,3 @@
+3394781.00ns INFO     ..tt_um_2amlogic_protocol_emulator TX cycles/bit across observed runs: [1600.0]
+11621902.00ns INFO     ..tt_um_2amlogic_protocol_emulator RX sample spacing (core clocks): [1600]
+                                                        AssertionError: 0x92 bits 0..2: 3300.0 cycles
