@@ -1,0 +1,10 @@
+klt: <scratch>/venv/bin/klt :: klt 0.8.0
+iverilog: not on this image
+Python 3.12.3
+Linux 7.0.0-1014-aws x86_64
+32
+klayout 0.30.13
+pdk: IHP-Open-PDK 2bbec755dc67ca3db0261c3d6163e15735d66710 (depth-1 fetch in the job)
+repo: 2b283a4c501f72aa31be2800ff5cfeb88490f015  mode: signoff 
+f6d9cfc173213050c0ef89a5d15fdf7fc74016e5d444947d247691baf15e1b8f  dl/tt_submission/tt_submission/tt_um_2amlogic_protocol_emulator.v
+bf567373bf425daafbb167d7327caa5be73520088cd73b3a2b41c3afb58fb79b  dl/tt_submission/tt_submission/tt_um_2amlogic_protocol_emulator.gds

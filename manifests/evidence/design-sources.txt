@@ -1,6 +1,17 @@
 # T1 item 1 (Design sources), Digital column: the committed RTL sources and
 # the synthesized gate-level netlists derived from them.
 #
+# Refreshed 2026-11-19 for issue #261: rtl/protocol_program_memory.v puts one
+# sg13cmos5l_buf_4 on each of the 16 SRAM A_DOUT bits, in the LibreLane flow
+# only (under `ifdef __librelane__`), so that no macro output pin drives the
+# decode fan-out directly. Its hash changed, and the two netlists of record
+# below now describe gds run 44602047558 at 3c228a2 and the klt/Yosys
+# synthesis of the same tree. The klt/Yosys netlist has no buffer cell from
+# this change; its bytes differ from the previous netlist of record because
+# the memory's read-data net is renamed and because it was synthesized by
+# Yosys 0.68, not 0.69 (same 2,526 instances and 35,224.3836 um^2). Every
+# other hashed source is byte-identical to the #244/#246 refresh that follows.
+#
 # Refreshed 2026-10-11 for issues #244 and #246: the top,
 # src/tt_um_2amlogic_protocol_emulator.v, ties an open-drain pin's pad data
 # to 0 (DR 0020, a conformance fix to DR 0012), and src/config.json gained
@@ -55,7 +66,7 @@
 
 sha256:8c380b9165a09a60e6be8d8546eac360a733317253f152c15faaa13489e94a29  src/tt_um_2amlogic_protocol_emulator.v
 sha256:d4bab243a80af56a41b8ef730bc0ecbee889f2c02f4587311d6f9f694636437a  rtl/protocol_core.v
-sha256:2b08865ab24d6bac84b390dfa76bab6686b572ba8f19124130bfc34e93dff637  rtl/protocol_program_memory.v
+sha256:d8d32e0b8b26745a77ce2a30024243c8cccb06d6ffa91d38d8cec303b2e33892  rtl/protocol_program_memory.v
 sha256:329ed189d457010b259349e5d59e36db09d67422b4909320253929c3e0fdbebe  rtl/protocol_boot_rom.v
 
 # The template's "sources live in src/" rule is met by symlinks, so there is
@@ -98,16 +109,16 @@ file  src/pdn_cfg.tcl
 ## The derived gate-level netlists of record
 
 # klt/Yosys flow: `klt synthesize flow/synthesize-protocol-emulator.json`
-# run by synthesis-baseline record 20261011-114659-e5a0bae and frozen by
-# librelane-gds-signoff-check record 20261011-144308-e5a0bae (2,526 instances,
-# 35,224.3836 um^2 on that flow, Yosys 0.69+post). This is the reference T1
+# run by synthesis-baseline record 20261119-195700-3c228a2 and frozen by
+# librelane-gds-signoff-check record 20261119-234500-2b283a4 (2,526 instances,
+# 35,224.3836 um^2 on that flow, Yosys 0.68). This is the reference T1
 # item 4's LVS compares against.
-sha256:7c9c4611974c554c738840692e3d4f7c0bac82f3bd649eb70545f62306add2ed  verification/records/librelane-gds-signoff-check/artifacts/20261011-144308-e5a0bae/reference-klt-yosys.v
+sha256:ebfd4f163c3407b31b295c4d49727270b07b6ef44141d692dfe8dc7c1dcf3924  verification/records/librelane-gds-signoff-check/artifacts/20261119-234500-2b283a4/reference-klt-yosys.v
 
-# LibreLane flow: the post-route netlist of gds run 38136727636 at 6dd0e9d
+# LibreLane flow: the post-route netlist of gds run 44602047558 at 3c228a2
 # (tt_submission artifact), frozen by librelane-gds-signoff-check record
-# 20261011-144308-e5a0bae and byte-identical to the one frozen by the
-# post-layout-sdf-regression record 20261011-114800-e5a0bae. It is the netlist
+# 20261119-234500-2b283a4 and byte-identical to the one frozen by the
+# post-layout-sdf-regression record 20261119-205800-2b283a4. It is the netlist
 # the committed GDS (T1 item 2) was routed as, and the one the post-layout SDF
 # regression (T1 item 7) simulates.
-sha256:fbc7bc30a4987aaa47ea2633df46993ebe1ee42171edc54173e25ff343e085ba  verification/records/librelane-gds-signoff-check/artifacts/20261011-144308-e5a0bae/reference-asrouted.v
+sha256:f6d9cfc173213050c0ef89a5d15fdf7fc74016e5d444947d247691baf15e1b8f  verification/records/librelane-gds-signoff-check/artifacts/20261119-234500-2b283a4/reference-asrouted.v

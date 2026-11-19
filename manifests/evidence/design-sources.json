@@ -66,7 +66,7 @@
         "role": "source",
         "path": "rtl/protocol_program_memory.v",
         "passed": true,
-        "content_hash": "sha256:2b08865ab24d6bac84b390dfa76bab6686b572ba8f19124130bfc34e93dff637"
+        "content_hash": "sha256:d8d32e0b8b26745a77ce2a30024243c8cccb06d6ffa91d38d8cec303b2e33892"
       },
       {
         "check": "present",
@@ -106,21 +106,21 @@
       {
         "check": "present",
         "role": "derived",
-        "path": "verification/records/librelane-gds-signoff-check/artifacts/20261011-144308-e5a0bae/reference-asrouted.v",
+        "path": "verification/records/librelane-gds-signoff-check/artifacts/20261119-234500-2b283a4/reference-asrouted.v",
         "passed": true,
-        "content_hash": "sha256:fbc7bc30a4987aaa47ea2633df46993ebe1ee42171edc54173e25ff343e085ba"
+        "content_hash": "sha256:f6d9cfc173213050c0ef89a5d15fdf7fc74016e5d444947d247691baf15e1b8f"
       },
       {
         "check": "present",
         "role": "derived",
-        "path": "verification/records/librelane-gds-signoff-check/artifacts/20261011-144308-e5a0bae/reference-klt-yosys.v",
+        "path": "verification/records/librelane-gds-signoff-check/artifacts/20261119-234500-2b283a4/reference-klt-yosys.v",
         "passed": true,
-        "content_hash": "sha256:7c9c4611974c554c738840692e3d4f7c0bac82f3bd649eb70545f62306add2ed"
+        "content_hash": "sha256:ebfd4f163c3407b31b295c4d49727270b07b6ef44141d692dfe8dc7c1dcf3924"
       },
       {
         "check": "command",
         "role": "freshness",
-        "target": "verification/records/librelane-gds-signoff-check/artifacts/20261011-144308-e5a0bae/reference-asrouted.v",
+        "target": "verification/records/librelane-gds-signoff-check/artifacts/20261119-234500-2b283a4/reference-asrouted.v",
         "generator": "LibreLane (gds workflow, TinyTapeout/tt-gds-action@ihp-cmos5l)",
         "argv": [
           "python3",
@@ -135,7 +135,7 @@
       {
         "check": "command",
         "role": "freshness",
-        "target": "verification/records/librelane-gds-signoff-check/artifacts/20261011-144308-e5a0bae/reference-klt-yosys.v",
+        "target": "verification/records/librelane-gds-signoff-check/artifacts/20261119-234500-2b283a4/reference-klt-yosys.v",
         "generator": "klt synthesize flow/synthesize-protocol-emulator.json",
         "argv": [
           "python3",
@@ -159,7 +159,7 @@
         "path": "manifests/attest/item1.json",
         "scope": "repo"
       },
-      "content_hash": "sha256:ae4afb9eba3be835a8f8a433619e575a42d436eaca2f7cf9952788a76dc3b407"
+      "content_hash": "sha256:291147a62dd28c95d83bb03ef69be2363a6a445c283eccb14251c1a3251e05fd"
     }
   }
 }

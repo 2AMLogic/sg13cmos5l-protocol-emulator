@@ -1,0 +1,14 @@
+klt: klt 0.8.0
+klayout 0.30.13
+Python 3.12.3
+Linux 7.0.0-1014-aws x86_64
+32
+repo: 2b283a4c501f72aa31be2800ff5cfeb88490f015 mode: lvsonly 
+old klt lvs asrouted exit 0
+old klt lvs klt-netlist exit 3
+old asrouted match errors 0 mismatches 114 {'topology': 112, 'topology.power_only_pruned': 1, 'topology.top_level_pins_anchored': 1} 0.30.13
+old klt-netlist mismatch errors 88 mismatches 108 {'hints.rejected': 43, 'topology': 45, 'topology.flattened': 1, 'topology.power_only_pruned': 1, 'topology.reference_port_alias_joined': 17, 'topology.top_level_pins_anchored': 1} 0.30.13
+new klt lvs asrouted exit 0
+new klt lvs klt-netlist exit 3
+new asrouted match errors 0 mismatches 114 {'topology': 112, 'topology.power_only_pruned': 1, 'topology.top_level_pins_anchored': 1} 0.30.13
+new klt-netlist mismatch errors 87 mismatches 123 {'hints.rejected': 43, 'topology': 44, 'topology.flattened': 1, 'topology.power_only_pruned': 1, 'topology.reference_port_alias_joined': 33, 'topology.top_level_pins_anchored': 1} 0.30.13

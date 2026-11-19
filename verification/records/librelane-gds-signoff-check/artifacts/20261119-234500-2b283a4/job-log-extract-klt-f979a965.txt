@@ -1,0 +1,30 @@
+klt 0.7.0+gf979a9659513
+klt: klt 0.7.0+gf979a9659513
+klayout 0.30.12
+Python 3.12.3
+Linux 7.0.0-1014-aws x86_64
+32
+repo: 2b283a4c501f72aa31be2800ff5cfeb88490f015 mode: full new
+extract start 2026-11-19T22:51:36Z
+klt extract exit 0
+extract end 2026-11-19T23:41:25Z
+d77d92265285ba9020c211b774d04c177132e94efba88f3d4bc95f9991bc0a86  <scratch>/src/out/new-layout-gate-level.spice
+e11397622f373fea6a434c2698293408a171db217fd8f9d708b9158890ddf7f4  <repo>/verification/records/librelane-gds-signoff-check/artifacts/20261027-190021-1ec5186/layout-gate-level.spice
+new klt lvs asrouted exit 0
+new klt lvs klt-netlist exit 1
+Traceback (most recent call last):
+  File "<string>", line 4, in <module>
+  File "/usr/lib/python3.12/json/__init__.py", line 293, in load
+    return loads(fp.read(),
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/json/__init__.py", line 346, in loads
+    return _default_decoder.decode(s)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/json/decoder.py", line 337, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/json/decoder.py", line 355, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+new asrouted match errors 0 mismatches 114 {'topology': 112, 'topology.power_only_pruned': 1, 'topology.top_level_pins_anchored': 1} 0.30.12
+lvs end 2026-11-19T23:41:27Z
