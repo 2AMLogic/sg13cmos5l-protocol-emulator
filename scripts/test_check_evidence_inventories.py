@@ -117,7 +117,6 @@ def wrong_item(root: Path) -> None:
     p.write_text(json.dumps(env))
 
 
-
 # --- klt 0.9.0's file-SET envelope shape (issue #371) ----------------------
 # `klt signoff --attest 1` at the fleet klayout-tools version records every
 # inventoried file under `provenance.input.paths`, each with its own hash, and

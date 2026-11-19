@@ -22,11 +22,10 @@
 # build's full identity is printed to stderr and travels in the rendered
 # report's build block instead.
 #
-# No `--tiers-doc` override: the provisioned `klt` bundles its own copy of `docs/design-evidence-tiers.md` with all eleven
-# T1 items (issue #52 retired the vendored `manifests/design-evidence-tiers.md`
-# once the pin moved past the checklist's item-11 addition -- see
-# manifests/README.md's "The vendored tiers doc" section for the history and
-# retirement record).
+# The provisioned `klt` bundles all eleven T1 items in
+# `docs/design-evidence-tiers.md`. Issue #52 retired the vendored copy and
+# the `--tiers-doc` override once the bundled checklist included item 11.
+# See "The vendored tiers doc" in manifests/README.md for the history.
 #
 # Exit codes:
 #   0  Report rendered (klt exitted 0 = every item met, or 3 = at least one
