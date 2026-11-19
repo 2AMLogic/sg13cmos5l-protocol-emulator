@@ -45,6 +45,12 @@ firmware/
                          (target-spec row 13 stretch column, issue #235;
                          protocol chosen by the dated note in DR 0018 after
                          DR 0017's ISA freeze)
+    onewire_master.asm   1-Wire bus MASTER on uio[3] (DQ, open-drain): reset
+                         + presence, Read ROM and Read Scratchpad with the
+                         Dallas CRC-8 checked in software, Convert T polled
+                         to done, temperature + status published on uo_out
+                         (multi-protocol extra credit, issue #447; the
+                         catalog is #443; no ISA change -- DR 0017 froze it)
     boot/boot_rom.asm    the on-chip boot ROM's program (issues #138 and
                          #139, DR 0013 layer 2: warm start and UART load).
                          Not loaded into program memory: the ROM in
@@ -607,6 +613,88 @@ klt functional-verification verification/request-firmware-i2c.json --format json
 
 Its result is committed as an append-only evidence record under
 `verification/records/firmware-i2c/`.
+
+### `onewire_master.asm` -- 1-Wire bus master, one DS18B20 (issue #447)
+
+The 1-Wire entry of the multi-protocol extra-credit catalog (#443): a
+**bus master** for a single DS18B20 temperature sensor, firmware only, on
+the frozen ISA (DR 0017) -- base instructions plus DR 0012's runtime pin
+mode and `PM_ADDR` as a one-byte scratch cell, the `ps2_device.asm` idiom.
+No DR 0015 primitive: the Dallas CRC-8 (x^8 + x^5 + x^4 + 1, reflected
+0x8C, init 0, AN27) is software shift/xor, folded **per wire bit** --
+1-Wire bits arrive LSB first and the reflected CRC eats them LSB first,
+so each sampled bit updates the CRC the moment it lands, and no byte loop
+of its own exists.
+
+One open-drain line: DQ = `uio[3]` (mask 0x08), the I2C Pmod's SDA
+position -- the row that carries pull-ups (DR 0010's `onewire` profile,
+`UIO_DIR` 0x00, `UIO_OD` 0x08). Writing 1 releases the line (the external
+pull-up wins), 0 pulls it low. What it does, in order: reset pulse +
+presence detect (nobody home -> status 2); Read ROM (0x33), 8 bytes,
+CRC-8 checked (bad -> status 3); Skip ROM (0xCC) + Convert T (0x44), then
+read-time-slot poll until the device answers 1; reset; Skip ROM + Read
+Scratchpad (0xBE), 9 bytes, CRC-8 checked (bad -> status 4); status 1.
+Every received byte is published on `uo_out` as it completes (the result
+convention of the I2C/SPI programs), so the temperature is scratchpad
+bytes 0..1 of the publication sequence and the status byte is the last
+write: 1 ok, 2 no presence, 3 ROM CRC error, 4 scratchpad CRC error.
+**252 words** of the 256-word store; the Read ROM step is in.
+
+Timing, in core cycles at DR 0001's opcode table (1 cycle per
+instruction, `WAIT imm8` = imm8 + 1), measured on the pads by the bench.
+Every wall-clock figure is arithmetic at target-spec row 4's **target**
+50 MHz clock, which is unconfirmed on both flows: 1 cycle = 20 ns. The
+limits are the DS18B20 datasheet's "1-Wire standard speed" table (Maxim
+19-7487):
+
+| Interval | Measured (cycles) | at 20 ns | DS18B20 limit |
+|---|---|---|---|
+| reset low | 24,002 | 480.04 us | >= 480 us |
+| presence sample (after release) | 3,502 | 70.04 us | inside the 15-60 + 60-240 us presence window |
+| reset window (release -> next fall) | >= 24,015 | >= 480.3 us | >= 480 us |
+| write-1 low | ~102 | ~2.04 us | 1-15 us |
+| write-0 low | ~3,077 | ~61.5 us | 60-120 us |
+| write-1 slot (fall -> fall) | ~3,019 | ~60.4 us | >= 60 us + >= 1 us recovery |
+| write-0 slot (fall -> fall) | ~3,332 | ~66.6 us | >= 60 us + >= 1 us recovery |
+| read-slot low | ~99 | ~1.98 us | >= 1 us, < 15 us |
+| read sample point (after fall) | ~449 | ~8.98 us | <= 15 us |
+| read slot (fall -> fall) | ~3,218 | ~64.4 us | >= 60 us + >= 1 us recovery |
+
+The 60 us-class delays inside the write engine are unrolled `WAIT 255`
+(its phase register `R2` must survive); the reset and slot tails are
+`WAIT 246` loops at 250 cycles an iteration. The assembler's
+data-dependent-latency lint warns on nine branches; four are pin-data
+handshakes or data-neutral CRC skips (presence detect, conversion poll,
+two CRC feedback branches) and five branch on the `PM_ADDR` bit counter,
+whose pin taint is an artifact of the lint's linear scan forgetting
+control state at labels -- the program's header documents each, and the
+bench asserts the exact list. Determinism claims exclude the presence
+detect, the conversion poll and the CRC feedback skips (1 cycle either
+way).
+
+**External parts and Pmod wiring** (no transceiver and no optocoupler is
+needed -- the master is an open-drain pad and the sensor hangs on the
+same line): one DS18B20 in a TO-92 (or 8-pin SOIC) package, Vdd pin to
+the Pmod's Vcc, GND pin to the Pmod's GND, DQ pin to `uio[3]` (the I2C
+Pmod's SDA position, upper-row pin 4), and one **4.7 kOhm pull-up from
+DQ to Vdd** -- the standard I2C Pmod's SDA pull-up can serve, but the
+DS18B20 datasheet's own value is 4.7 kOhm, so a discrete resistor on a
+breadboard Pmod adapter is the named part.
+
+The 750 ms real conversion time is **not** simulated: the bench's
+independent DS18B20 model (`verification/reference_models/onewire.py`,
+written from the datasheet's timing table and AN27 alone) answers the
+conversion poll busy for a configured few read slots and then says done,
+which this section says out loud.
+
+Run its DUT-facing bench with:
+
+```bash
+klt functional-verification verification/request-firmware-onewire.json --format json
+```
+
+Its result is committed as an append-only evidence record under
+`verification/records/firmware-onewire/`.
 
 ### `i2c_{fast,std}_sr[_poll].asm` — write, repeated START, read, clock stretch (issue #92)
 
