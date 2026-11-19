@@ -108,7 +108,7 @@
         "role": "testbench",
         "path": "scripts/signoff-report.sh",
         "passed": true,
-        "content_hash": "sha256:418c9398d4f027026d035d5f902897d12bc2b904282a405995423e328c8d5b36"
+        "content_hash": "sha256:3b41e9de11ac4a0fc47d7e8c05b9f5e73dd0c599e4a630ab3115932b3734f385"
       },
       {
         "check": "present",
@@ -705,14 +705,14 @@
           "cocotb": "2.1.0",
           "cocotb-tools": "0.1.0",
           "iverilog": "12.0",
-          "klt": "0.9.0",
+          "klt": "0.9.2",
           "yosys": "0.68"
         }
       }
     ]
   },
   "provenance": {
-    "klt_version": "0.9.0",
+    "klt_version": "0.9.2",
     "klayout_version": null,
     "pdk": null,
     "deck": null,
@@ -721,7 +721,7 @@
         "path": "manifests/attest/item9.json",
         "scope": "repo"
       },
-      "content_hash": "sha256:5a797e8f99155edbe3b16799c827e43a71a7e27ac3e43552f6a3ac62f97b17e4"
+      "content_hash": "sha256:43ce736b3d133137fe66230b371998fe1cc2c8f50ba67683b4cacd058294321a"
     }
   }
 }
