@@ -133,6 +133,8 @@ test/gate_level_netlist.v
 .loom/gh-config-by-owner-*/
 /.loom-local/
 # <<< loom-managed <<<
+# token-pool --ranking runtime artifact (issue #475)
+.loom/account-ranking.*
 # gate-level firmware regression scratch (issue #108)
 flow/firmware-gate-level/
 flow/ws2812-gate-level/
