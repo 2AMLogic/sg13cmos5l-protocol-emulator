@@ -719,14 +719,14 @@ from the end of both stop bits. [Microchip AN1465, pp. 4–6, figures 7–10](ht
 | Forward stops (4 Te) + gap to next forward (≥22 Te) | ≥541,667 nominal | 541,878 after direct arc, 541,796 on no reply |
 | Query EOF to backward start | 7–22 Te | 145,833 and 458,333 at the two endpoints, rounded to a clock |
 | Backward stops | 4 sender Te, idle high | 76,000 / 83,332 / 92,400 for the fast / nominal / slow gear |
-| Backward EOF to next forward | ≥458,334 nominal | 460,782–476,963 for the three valid replies |
+| Backward EOF to next forward | ≥458,334 nominal | 460,783–476,963 for the three valid replies |
 
 The pad bench also drives a low final stop half, a shortened start and an
 early reply, then verifies recovery with a different valid byte. Its TX
 negative control shortens the first half to 13,232 cycles. Reproduce with
 `python3 verification/test_dali_model.py` and
 `klt functional-verification verification/request-firmware-dali.json --format json`
-from the repository root. [Pad bench](../verification/test_firmware_dali.py)
+from the repository root. [RTL evidence](../verification/records/firmware-dali/records/20261119-151157-bd0e3dc.md)
 
 ### Pmod wiring
 
