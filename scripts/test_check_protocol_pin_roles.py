@@ -413,6 +413,12 @@ def _(fx):
     expect_fail(fx, "DIN pin image LDI R2, 0x40", "concrete-firmware-bench")
 
 
+@case("DALI receive samples must extract the isolated receiver pin")
+def _(fx):
+    fx.mutate("firmware/asm/dali_master.asm", "SHF   R3, RIGHT", "SHF   R3, LEFT")
+    expect_fail(fx, "RX sample", "concrete-firmware-bench")
+
+
 @case("WS2812 program drives uo_out from another register")
 def _(fx):
     fx.mutate("firmware/asm/ws2812.asm", "OUT   UO_OUT, R1       ; s20", "OUT   UO_OUT, R0       ; s20")
@@ -1117,7 +1123,7 @@ def _(fx):
         "prof_demo", "prof_ws2812", "prof_ps2", "prof_bench_uart",
         "prof_bench_ws2812", "prof_bench_ps2", "prof_bench_spi",
         "prof_bench_i2c", "prof_bench_i2c_sr", "prof_bench_load", "prof_top",
-        "prof_core", "prof_isa_ports",
+        "prof_core", "prof_isa_ports", "prof_dali", "prof_bench_dali",
     }
 
     unclassified = sorted(handlers - metadata - concrete)

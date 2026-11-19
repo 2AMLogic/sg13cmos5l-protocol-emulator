@@ -30,6 +30,7 @@ include firmware-i2c-ack
 include firmware-roundtrip
 include firmware-ws2812
 include firmware-ps2
+include firmware-dali
 include random-regression
 include isa-lockstep
 include loadseq

@@ -43,6 +43,8 @@ firmware/
                          (target-spec row 13 stretch column, issue #235;
                          protocol chosen by the dated note in DR 0018 after
                          DR 0017's ISA freeze)
+    dali_master.asm      DALI control device on uio[0] (TX) and uio[1] (RX), direct arc power
+                         and QUERY ACTUAL LEVEL for short address zero
     boot/boot_rom.asm    the on-chip boot ROM's program (issues #138 and
                          #139, DR 0013 layer 2: warm start and UART load).
                          Not loaded into program memory: the ROM in
@@ -683,3 +685,56 @@ loads through the DR 0001 serial load phase and reads back exactly through
 the fetch port the core will execute from — the same out-of-band stance as
 `verification/test_program_memory.py`, because DR 0001 defines no readback
 instruction and the 16-opcode table is exactly full.
+
+## DALI lighting control
+
+The [210-word image](build/dali_master.cycles.txt) sends direct arc power
+`0x54` to short address zero (`0x0054`), then repeats QUERY ACTUAL LEVEL
+(`0x01A0`). Each valid eight-bit answer appears on `uo_out[7:0]` after its
+stop bits. Until the first answer RESULT is zero. An early, malformed or
+missing answer leaves the last result on the pins. The controller assumes an
+idle, single-controller bus at startup. [Assembly source](asm/dali_master.asm)
+
+Manchester coding is bit-banged on the frozen ISA. Each bit contains two
+opposite levels. A rising mid-bit edge encodes one, a falling edge zero.
+The start bit is one, data is MSB first, and the two stop bits are high
+throughout. The receive loop re-synchronizes to each mid-bit edge, samples
+the first half of the next bit, and waits for its complement within a bounded
+window. The only control-space registers used are `UIO_DIR`, `UIO_OD` and
+`PM_ADDR` (one scratch byte). No Manchester primitive is used.
+
+### Timing on the RTL
+
+All times and cycle limits below are **at target-spec row 4's unconfirmed
+50 MHz clock** (20 ns per core cycle). At 1,200 bit/s a half-bit, Te, is
+20,833⅓ cycles. The reference model converts the specified ±10% **rate**
+range to integer cycle limits. Equal-level halves have no intervening pad
+edge, so the bench grades their combined duration. Frame gaps are measured
+from the end of both stop bits. [Microchip AN1465, pp. 4–6, figures 7–10](https://ww1.microchip.com/downloads/en/AppNotes/01465A.pdf)
+
+| Interval | Protocol limit (cycles) | RTL observation (cycles) |
+|---|---:|---:|
+| Forward isolated half-bit | 18,940–23,148 | 20,823–20,837 |
+| Forward two adjacent equal halves | 37,879–46,296 | 41,666–41,669 |
+| Forward stops (4 Te) + gap to next forward (≥22 Te) | ≥541,667 nominal | 541,878 after direct arc, 541,796 on no reply |
+| Query EOF to backward start | 7–22 Te | 145,833 and 458,333 at the two endpoints, rounded to a clock |
+| Backward stops | 4 sender Te, idle high | 76,000 / 83,332 / 92,400 for the fast / nominal / slow gear |
+| Backward EOF to next forward | ≥458,334 nominal | 460,782–476,963 for the three valid replies |
+
+The pad bench also drives a low final stop half, a shortened start and an
+early reply, then verifies recovery with a different valid byte. Its TX
+negative control shortens the first half to 13,232 cycles. Reproduce with
+`python3 verification/test_dali_model.py` and
+`klt functional-verification verification/request-firmware-dali.json --format json`
+from the repository root. [Pad bench](../verification/test_firmware_dali.py)
+
+### Pmod wiring
+
+Use a Pmod-to-mikroBUS adapter or jumpers to a **MikroElektronika DALI Click**
+(original board with two TLP181 optocouplers). With J2 at 3.3 V and J1 at
+INT, connect upper-row Pmod pin 1 (`uio[0]`) to **RST / DALI_TX**, pin 2
+(`uio[1]`) to **INT / DALI_RX**, pin 5 to logic GND, and pin 6 to +3.3 V.
+Connect the powered DALI pair to CN2. TX high releases the bus and TX low
+sinks it through U1/M1. RX high reports idle and RX low reports an asserted
+bus. The pad bench models these digital levels. Hardware and analogue
+timing have not been measured. [DALI Click manual, sections 5–6](https://download.mikroe.com/documents/add-on-boards/click/dali/dali-click-manual-v100.pdf)
