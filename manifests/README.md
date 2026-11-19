@@ -430,6 +430,22 @@ capture, PVT corner sweeps, or Monte Carlo.
   are the inventories' hashes. The `signoff` CI job re-attests each before the
   tier re-render. Baselines: `signoff-baseline` `20261028-183910-18198b7` to
   `20261028-183917-18198b7` (one per live head), still **4 of 11**.
+- **2026-11-19 (issue #348): item 6 cites the `not_applicable` form and
+  renders `not_applicable`.** The manifest's item 6 now carries the
+  klayout-tools #2865 form: a `not_applicable` object binding two JSON
+  documents by content hash — `spec/target-spec-ratified.json` (the spec
+  companion: `status: ratified`, rows `1`–`12`, **ids only**) and
+  `spec/statistical-claims-na.json` (the statement: one
+  `id`/`class`/`reason` entry per ratified row). The human-readable
+  statement walking all fourteen rows is `spec/statistical-claims-na.md`;
+  see the item-6 bullet below for the binding chain and the freeze it puts
+  on `spec/target-spec.md`. No other item moves: `t1_met_count` stays 4
+  (items 1, 2, 9, 10) and the report gains
+  `t1_not_applicable_count: 1`; `tier` stays `null`. Baselines:
+  `signoff-baseline` `20261119-183018-6d6fc00` to `20261119-183025-6d6fc00`
+  (one per live head), **4 of 11 met, 1 not applicable**. Sequencing note:
+  PR #399 also re-mints the baseline; whichever lands second re-mints again
+  — that is this treadmill working as designed, not a conflict.
 - **Every citation pins a `content_hash`**, and what it is the hash of
   depends on the cited envelope (clarified 2026-10-10, issue #168; the
   manifests on `main` have always followed this, the sentence here did
@@ -513,12 +529,37 @@ capture, PVT corner sweeps, or Monte Carlo.
   belongs; when `2AMLogic/klayout-tools#2635` closes and the klt leg can
   produce a `klt sta` report for the macro-backed core, *that* report is the
   citation this item has been waiting for.
-- **Item 6 is uncited by explicit statement, not omission**: this block's
-  spec table (`spec/target-spec.md`) has **no statistical row** — every
-  row is a deterministic protocol-timing, area, or pin-budget bound — so
-  the checklist's own text ("a block whose spec has no statistical row
-  must say so explicitly rather than omitting the item") is satisfied by
-  this paragraph (and tracker issue #27's item-6 row), not by a citation.
+- **Item 6 is cited in the `not_applicable` form (2026-11-19, issue #348;
+  before that it was uncited by explicit statement in this README — prose
+  that bound nothing)**: this block's spec table (`spec/target-spec.md`)
+  has **no statistical row** — every row is a deterministic
+  protocol-timing, area, or pin-budget bound — so per the checklist's own
+  text ("a block whose spec has no statistical row must say so explicitly
+  rather than omitting the item") and klayout-tools #2865's form, the
+  manifest's item 6 carries a `not_applicable` citation binding two JSON
+  documents by content hash:
+  `spec/target-spec-ratified.json` (the spec companion:
+  `status: "ratified"`, one row per **ratified** spec row — rows 1–12,
+  carrying **ids only**, because the grader's conservative statistical scan
+  refuses a spec row that so much as mentions accuracy, matching, offset,
+  yield, sigma or Monte Carlo, and row 10 is *titled* "UART bit-timing
+  accuracy") and `spec/statistical-claims-na.json` (the statement: one
+  `id`/`class`/`reason` entry per ratified row). The human-readable
+  statement walking all fourteen rows — including the unratified 13–14,
+  which the hash-bound claim deliberately does **not** cover — is
+  `spec/statistical-claims-na.md`. `klt signoff` renders the item
+  `not_applicable`, never `met`, and counts it toward T1 separately
+  (`t1_not_applicable_count`, never folded into `t1_met_count`). **The
+  claim freezes `spec/target-spec.md`**, which takes frequent dated-note
+  edits: the statement JSON embeds the spec markdown's sha256 and its own
+  markdown's sha256, `scripts/check_statistical_claims_na.py`
+  (`npm run lint`, CI's records job) fails if either embed drifts, and the
+  live `signoff-baseline` records pin both markdowns — so **any edit to
+  `spec/target-spec.md` or `spec/statistical-claims-na.md` needs the
+  companions' embedded hashes updated and the baseline re-minted**, exactly
+  like any other citation rot. When rows 13 and 14 ratify, extend the spec
+  companion's `rows`, extend the statement to cover them (the grader
+  requires exact agreement between the two), and re-mint.
 
 ## Items 1, 2, 9 and 10: artifact-anchored attestations (issue #83)
 
