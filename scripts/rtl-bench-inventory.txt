@@ -36,3 +36,4 @@ include isa-lockstep
 include loadseq
 include loadseq-top
 include reset-release-offsets
+include firmware-dmx512
