@@ -18,6 +18,11 @@ Chronological record of merged pull requests and closed issues, newest first.
 
 - [2026-09](work_log/WORK_LOG_2026-09.md)
 
+### 2026-11-19
+
+- **PR #459**: fix: characterization_report --check misses the stale item 8 manifest pin
+- **Issue #458** (closed): characterization_report.py regeneration leaves the top-manifest item 8 pin stale; --check still passes
+
 ### 2026-11-18
 
 - **Issue #440** (closed): WORK_PLAN omits operator-held curated issues with no priority label (#435 is invisible)
