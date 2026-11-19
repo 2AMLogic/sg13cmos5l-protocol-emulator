@@ -289,6 +289,16 @@ gates. The host-side loader is issue #118.
   bit-edge, mid-word discard, no mid-run re-entry, 256-word saturation).
   Driven by `klt functional-verification` (see
   `request-program-memory.json`).
+- `program_memory_driver.py` — the shared pin driver for the two
+  module-level `protocol_program_memory` benches (`test_program_memory.py`
+  and `test_firmware_roundtrip.py`, issue #486): reset release with MODE
+  pre-driven and the run-phase ports tied idle, the MSB-first
+  one-bit-per-edge serial shift with the MODE drop on its own edge, the
+  synchronous fetch read, and the post-NBA registered-output read. Each
+  bench imports what it uses and keeps its own assertions;
+  `test_loadseq.py` deliberately drives its own pins and imports nothing
+  from here. Not a testbench itself (`klt functional-verification` never
+  names it); hashed as a provenance input by both benches' records.
 - `test_protocol_models.py` — constrained-random reference-model
   validation bench (verification-plan.md §4, issue #25): drives the
   `reference_models/` package's independent UART/SPI/I2C models with
