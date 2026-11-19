@@ -613,6 +613,34 @@ capture, PVT corner sweeps, or Monte Carlo.
   including the rewrapped comment. klt carried the existing local-only RTL
   cold-start result and recomputed the other checks. Item 1 and item 10
   reproduced with their existing envelopes.
+- **2026-11-19 (PR #399, the post-#484 round).** `main` moved twice more
+  after the item 6 round above (PR #468's MIDI re-filing, three merges of
+  PR #462/#452 legs, and PR #484), the claim-reconciliation pass routed the
+  PR back to Doctor as `CONFLICTING`, and the conflict-only merge
+  `e4ca4ab6` kept this branch's 5-of-11 doc pointers while taking main's
+  `firmware-midi` testbench line and characterization row updates. The
+  three manifest content-hash conflicts (`manifests/sg13cmos5l-protocol-emulator.json`
+  item 8, `manifests/evidence/characterization.json`'s input pin,
+  `manifests/evidence/hygiene.json`'s testbenches pin) were re-bound to the
+  merged bytes -- the merged `measurements/characterization.md` and
+  `manifests/evidence/testbenches.txt` hash to neither parent's pin --
+  and `scripts/check_evidence_inventories.py` PASSES on the merged tree
+  (no envelope was re-attested; the pins moved because their inputs are
+  unions, not because any audit changed). The round superseding both live
+  sets (the branch's 120 `20261119-2029xx..203123-b9a3cc3` and main's 112
+  `20261119-2035xx..203629-175a284`, graded at the retired klt `0.8.0` pin)
+  is `signoff-baseline 20261119-223829` .. `20261119-224220-e4ca4ab`, 232
+  records, one per live predecessor, **5 of 11 met, 1 not applicable, at
+  the fleet klt `0.9.2`** (the same release build, git commit
+  `046ba74652fc096bd97071fc3237f7159dd40183`, as the previous branch
+  round, provisioned in a throwaway venv outside the repository). The
+  render is byte-identical to `20261119-203123-b9a3cc3`'s artifact -- the
+  merge moved no graded field; against main's 0.8.0 round the only status
+  difference remains item 7 (the recorded grader change,
+  klayout-tools#4893), not new evidence. Both docs citing a baseline
+  (`docs/submission/verification.md`, `docs/ROADMAP.md`) were re-pointed
+  at this round in the same change.
+
 - **Every citation pins a `content_hash`**, and what it is the hash of
   depends on the cited envelope (clarified 2026-10-10, issue #168; the
   manifests on `main` have always followed this, the sentence here did
