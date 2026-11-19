@@ -84,6 +84,7 @@ PIN_MODE_PROFILES = {
     "spi": ("spi_transfer",),
     "i2c": ("i2c_transfer",),
     "ps2": ("ps2",),
+    "onewire": ("onewire",),
 }
 PIN_MODE_REGS = ("uio_dir", "uio_od")
 CTL_INDEX = {"UIO_DIR": "0X00", "UIO_OD": "0X01"}
@@ -97,6 +98,8 @@ PHASES = (
     "i2c_result",
     "ws2812",
     "ps2",
+    "onewire",
+    "onewire_result",
     "dmx512",
 )
 UNUSED = "unused"
@@ -109,7 +112,7 @@ LOAD_ROLE_PORT = {"PROG_SER": "ui_in", "PROG_MODE": "ui_in",
 
 # Role classes (what the role does electrically).
 DRIVE_PP = {"TX", "CS", "SCLK", "MOSI", "DIN"} | {f"RESULT[{i}]" for i in range(8)}
-DRIVE_OD = {"SCL", "SDA", "PS2_CLK", "PS2_DATA"}
+DRIVE_OD = {"SCL", "SDA", "PS2_CLK", "PS2_DATA", "DQ"}
 SAMPLE = {"MISO", "RX"}
 ALL_ROLES = DRIVE_PP | DRIVE_OD | SAMPLE
 
@@ -126,6 +129,10 @@ PHASE_VOCAB = {
     "ws2812": {"DIN"},
     # Row 13 stretch (DR 0018 note, issue #235): the PS/2 device's two lines.
     "ps2": {"PS2_CLK", "PS2_DATA"},
+    # Multi-protocol extra credit (issue #447): the 1-Wire master's single
+    # open-drain data line, driven low and sampled high.
+    "onewire": {"DQ"},
+    "onewire_result": {f"RESULT[{i}]" for i in range(8)},
     # Multi-protocol extra credit (issue #445): the DMX512 transmitter's
     # line, driven push-pull through an external RS-485 transceiver.
     "dmx512": {"TX"},
@@ -151,6 +158,9 @@ PATTERNS = {
     "ps2_images",           # ps2_device.asm: release images, CLK mask, DATA images, bit moves, UIO_OD value
     "ps2_shifts",           # ps2_device.asm: the shift recipe after each IN UIO_IN
     "bench_ps2",            # CLK_BIT, DATA_BIT = n, m
+    "onewire_images",       # onewire_master.asm: every LDI -> OUT UIO_OUT pin image is 0 or the DQ mask
+    "onewire_in_mask",      # onewire_master.asm: each IN UIO_IN sample is masked with the DQ bit
+    "bench_onewire",        # DQ_BIT = n; pads calls name DQ_BIT; no uio_in writes
     "bench_spi_consts",     # CS/SCLK/MOSI/MISO constants and capture ports
     "bench_i2c_consts",     # SCL/SDA constants, LINE_PIN, CAPTURE_SPECS, i2c_board(scl=, sda=), pad calls
     "bench_i2c_sr_consts",  # imports from test_firmware_i2c, pad calls by named bit, no uio_in write
@@ -1128,6 +1138,46 @@ class Checker:
                       f"the recipes the table's PS2_CLK uio[{cb}] / PS2_DATA uio[{db}] allow: "
                       f"{[list(k) for k in expected]}")
 
+    # --------------------------------------------------------- profile: onewire
+    def prof_onewire(self, rel, ent, text):
+        """The 1-Wire master (issue #447): DQ on the table's pin, open-drain
+        (`UIO_OD`, checked with the other profiles in runtime_pin_mode),
+        every pin image either 0 (assert) or the DQ mask (released), every
+        DQ sample masked with the DQ bit, and the received bytes on the
+        `onewire_result` port."""
+        c = self.concrete
+        ins = self.asm_instrs(text)
+        outs, ins_p, res = self.out_in_ports(
+            [("onewire", ["DQ"])], [("onewire", ["DQ"])], "onewire_result"
+        )
+        self.check_ports(rel, ins, outs | res, ins_p, outs | res, ins_p)
+        mask = self.mask_of("onewire", "DQ")
+        if not mask:
+            c.err(f"{rel}: the table's onewire phase has no DQ pin")
+            return
+        # every LDI feeding an OUT UIO_OUT is the low image (0) or released
+        for a, b in zip(ins, ins[1:]):
+            if a["m"] != "LDI" or b["m"] != "OUT":
+                continue
+            if b["ops"][0].upper() != "UIO_OUT" or b["ops"][1] != a["ops"][0]:
+                continue
+            c.sites += 1
+            v = self.imm(a["ops"][1])
+            if v not in (0, mask):
+                c.err(f"{rel}:{a['no']}: pin image {a['ops'][1]} for OUT UIO_OUT; a 1-Wire "
+                      f"master writes only 0 (assert) or the released DQ mask 0x{mask:02X}")
+        # each IN UIO_IN's next AND (on the IN's destination) masks the DQ bit
+        pb = self.role_pin("onewire", "DQ")
+        before = c.sites
+        self.in_and_sites(rel, ins, lambda _i: (mask, "onewire DQ mask"),
+                          port=PORT_ASM[(pb[0], "in")] if pb else "UIO_IN")
+        if c.sites == before:
+            c.err(f"{rel}: no `IN Rx, UIO_IN` ... `AND Rx, Ry` DQ sample site found")
+        # and the byte results reach the result port
+        if not any(i["m"] == "OUT" and i["ops"][0].upper() in res for i in ins):
+            c.err(f"{rel}: no OUT to the onewire_result port; the received bytes "
+                  "belong there")
+
     # -------------------------------------------------------- profile: dmx
     def prof_dmx512(self, rel, ent, text):
         """The DMX512 transmitter (issue #445): TX driven on the table's
@@ -1195,6 +1245,15 @@ class Checker:
         if m:
             self.check_pb(rel, "CLK_BIT", "uio", int(m.group(1)), "ps2", "PS2_CLK")
             self.check_pb(rel, "DATA_BIT", "uio", int(m.group(2)), "ps2", "PS2_DATA")
+
+    def prof_bench_onewire(self, rel, ent, text):
+        m = self.need(text, r'^DQ_BIT\s*=\s*(\d+)', rel, "DQ_BIT")
+        if m:
+            self.check_pb(rel, "DQ_BIT", "uio", int(m.group(1)), "onewire", "DQ")
+        # the slave drives DQ through the pad model, by named bit, and the
+        # bench must not write uio_in itself
+        self.pad_calls(rel, text, required=(("pull_low", "DQ_BIT"), ("release", "DQ_BIT")),
+                       names=("DQ_BIT",))
 
     def prof_bench_spi(self, rel, ent, text):
         m = self.need(text, r"^CS_BIT,\s*SCLK_BIT,\s*MOSI_BIT\s*=\s*(\d+),\s*(\d+),\s*(\d+)", rel,
@@ -1615,7 +1674,7 @@ class Checker:
         what = {"uio_dir": ("UIO_DIR", "push-pull"), "uio_od": ("UIO_OD", "open-drain")}
         for rel, ent in sorted(self.inv.items()):
             prof = ent["profile"]
-            if prof not in ("spi", "i2c", "ps2") or prof not in modes:
+            if prof not in ("spi", "i2c", "ps2", "onewire") or prof not in modes:
                 continue
             text = self.read(rel, self.concrete)
             if text is None:
