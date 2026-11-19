@@ -1,0 +1,16 @@
+klt: klt 0.8.0
+klayout 0.30.13
+Python 3.12.3
+Linux 7.0.0-1014-aws x86_64
+32
+repo: 2b283a4c501f72aa31be2800ff5cfeb88490f015 mode: full old
+extract start 2026-11-19T21:54:53Z
+klt extract exit 0
+extract end 2026-11-19T22:46:22Z
+49dee52b34cac67425128be75211edbc791e1f09f3e3d1ca107e4a0f866867c5  <scratch>/src/out/old-layout-gate-level.spice
+e11397622f373fea6a434c2698293408a171db217fd8f9d708b9158890ddf7f4  <repo>/verification/records/librelane-gds-signoff-check/artifacts/20261027-190021-1ec5186/layout-gate-level.spice
+old klt lvs asrouted exit 3
+old klt lvs klt-netlist exit 3
+old asrouted mismatch errors 227 mismatches 229 {'net.merged': 56, 'net.split': 58, 'topology': 113, 'topology.power_only_pruned': 1, 'topology.top_level_pins_anchored': 1} 0.30.13
+old klt-netlist mismatch errors 88 mismatches 108 {'hints.rejected': 43, 'topology': 45, 'topology.flattened': 1, 'topology.power_only_pruned': 1, 'topology.reference_port_alias_joined': 17, 'topology.top_level_pins_anchored': 1} 0.30.13
+lvs end 2026-11-19T22:46:25Z

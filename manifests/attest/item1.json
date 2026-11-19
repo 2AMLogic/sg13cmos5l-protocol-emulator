@@ -20,7 +20,7 @@
   ],
   "derived": [
     {
-      "path": "verification/records/librelane-gds-signoff-check/artifacts/20261011-144308-e5a0bae/reference-klt-yosys.v",
+      "path": "verification/records/librelane-gds-signoff-check/artifacts/20261119-234500-2b283a4/reference-klt-yosys.v",
       "generator": "klt synthesize flow/synthesize-protocol-emulator.json",
       "check": {
         "argv": [
@@ -32,7 +32,7 @@
       }
     },
     {
-      "path": "verification/records/librelane-gds-signoff-check/artifacts/20261011-144308-e5a0bae/reference-asrouted.v",
+      "path": "verification/records/librelane-gds-signoff-check/artifacts/20261119-234500-2b283a4/reference-asrouted.v",
       "generator": "LibreLane (gds workflow, TinyTapeout/tt-gds-action@ihp-cmos5l)",
       "check": {
         "argv": [

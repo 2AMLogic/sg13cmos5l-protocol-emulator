@@ -145,8 +145,8 @@ for Partial.
   #246's slow-corner margin is +5.8 ns on the LibreLane flow (it was +1.9 ns),
   with no max-slew or max-capacitance violation, from five repair settings
   in `src/config.json`. Both are in the records of gds run 38136727636
-  (`librelane-corner-timing` `20261011-144900-e5a0bae`,
-  `post-layout-sdf-regression` `20261011-114800-e5a0bae`). #217 closed at
+  (`librelane-corner-timing` `20261119-202500-3c228a2`,
+  `post-layout-sdf-regression` `20261119-205800-2b283a4`). #217 closed at
   2026-10-11T16:34Z on that evidence: UART TX, SPI and I2C repeated START
   have routed-SDF runs at all three corners; the boot programs, UART RX,
   PS/2, WS2812 and the random regression do not. D1 still has to be
@@ -496,7 +496,7 @@ the klt fetch at IHP-Open-PDK `dev` @ `f7bca326`, so the klt flow's revision
 will diverge from the flow of record at the klt pin bump (issue #289);
 reconciling the two (evidence re-runs and re-stamp) is issue #290. What is still
 missing is a per-run record: the klt DRC report's `provenance.pdk` is `null`
-(`verification/records/librelane-gds-signoff-check/artifacts/20261027-190021-1ec5186/klt-drc.json`,
+(`verification/records/librelane-gds-signoff-check/artifacts/20261119-234500-2b283a4/klt-drc.json`,
 klt 0.8.0, KLayout 0.30.12), so the PDK a given klt run used is not
 machine-recorded, and nothing machine-checks that the local `PDK_ROOT` is
 `2bbec755`. The klt DRC deck is
@@ -507,7 +507,7 @@ precheck runs, so the two DRC results are different evidence.
 
 "Precheck" below means `ihp-sg13cmos5l.drc` plus the structural checks above
 (TT/LibreLane CI). klt evidence is the klt flow's `klt drc` report on the CI GDS,
-`verification/records/librelane-gds-signoff-check/artifacts/20261027-190021-1ec5186/klt-drc.json`
+`verification/records/librelane-gds-signoff-check/artifacts/20261119-234500-2b283a4/klt-drc.json`
 (33 rules checked, 12 inapplicable, `status: violations`, 4,484 violations, every one inside the foundry SRAM macro: `nwell.enclosing.pactiv.1` 4,352 and `nwell.space.2` 132; the deck at the current klt pin checks 33 rules where the previous pin's checked 26 and graded `clean`; see the record).
 
 | Layout we draw | Checked by precheck | Absent from precheck | Evidence |

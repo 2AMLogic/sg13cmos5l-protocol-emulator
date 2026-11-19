@@ -123,7 +123,7 @@ reports but is not a required check on `main`.
   ([`704a3fb`](../../verification/records/post-layout-sdf-regression/records/20261010-083555-704a3fb.md) <!-- superseded-ok: history of the failed-then-fixed record chain -->),
   whose netlist it shares, and states what it still does not show. A later
   record on a newer netlist
-  ([`e5a0bae`](../../verification/records/post-layout-sdf-regression/records/20261011-114802-e5a0bae.md))
+  ([`e5a0bae`](../../verification/records/post-layout-sdf-regression/records/20261119-205802-2b283a4.md))
   has since superseded it, still passing.
 - **Independent references.** Protocol firmware is graded against separately
   written reference models
@@ -132,7 +132,7 @@ reports but is not a required check on `main`.
   simulator written from the decision records (PR #204,
   [record](../../verification/records/isa-lockstep/records/20261011-182004-080e6be.md) <!-- superseded-ok: the record live at the main this page reviews; re-minted for issue #271 when DR 0001 gained dated notes -->).
   The control space is checked with mutants
-  ([record](../../verification/records/control-space/records/20261014-115627-25a41c3.md)).
+  ([record](../../verification/records/control-space/records/20261119-195636-3c228a2.md)).
 - **Two flows, both named.** Every number is attributed either to the
   competition's LibreLane flow or to this program's klt flow, per
   [DR 0002](../../spec/decision-records/0002-flow-of-record.md).
@@ -193,7 +193,7 @@ design detail. Representative issues:
     2026-10-27). The klt STA leg has since run on the macro-backed design:
     setup closes at 20 ns at the three macro-characterized corners and hold
     fails at all three, a pre-CTS, pre-route netlist estimate
-    ([record](../../verification/records/sta-corner-sweep/records/20261101-032922-c606644.md)).
+    ([record](../../verification/records/sta-corner-sweep/records/20261119-200312-3c228a2.md)).
     The GDS still comes from LibreLane alone — the klt place-and-route leg has
     not been run on this design (#389) — and timing now has a klt number that
     disagrees with LibreLane on hold, recorded as a finding.
@@ -215,7 +215,7 @@ design detail. Representative issues:
   reduce this risk; they do not remove it.
 - **No human or silicon ground truth.** Nothing has been taped out or measured.
   Pad electrical timing is not characterised: the
-  [pad model](../../verification/records/uio-pad-model/records/20261014-115808-25a41c3.md)
+  [pad model](../../verification/records/uio-pad-model/records/20261119-200329-3c228a2.md)
   is logical and zero-delay. Post-layout simulation runs the SRAM as a
   zero-delay functional model, so its read timing is evidenced only by STA.
 - **Partly unratified targets.** Rows 13 and 14, and the decision records

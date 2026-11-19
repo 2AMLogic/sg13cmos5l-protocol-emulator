@@ -315,6 +315,54 @@ module protocol_program_memory (
   assign mem_din_pin  = mem_din;
 `endif
 
+  // Issue #261: the macro's OUTPUT pins get the same treatment, for a
+  // different limit. The macro liberty puts a max_capacitance of 64 fF on
+  // each A_DOUT pin (0.064 pF, the last index of its output tables), and
+  // nothing in the LibreLane flow repairs a load on a macro output: the
+  // design-repair steps size and buffer standard-cell drivers, and a 40 %
+  // cap repair margin changed nothing (trial t26 of issue #246). Without
+  // these cells each A_DOUT bit drives the whole decode fanout of its
+  // instruction bit directly, so whether the routed net stays under 64 fF
+  // is decided by where the placer puts that fanout: A_DOUT[5] and
+  // A_DOUT[6] were at 72 fF on one placement (gds run 38135049645) and
+  // under the limit on the next.
+  //
+  // With one buffer per bit the macro pin's net has exactly one sink, the
+  // buffer's input, in every placement: the decode fanout hangs on the
+  // buffer's output, where the flow's own design repair does reach. The
+  // load the macro sees is then one standard-cell input pin plus one
+  // two-pin wire, and the post-GRT repair's 300 um wire-length limit
+  // (src/config.json) bounds that wire. The librelane-corner-timing
+  // record of #261 gives the measured figures.
+  //
+  // Same rules as the input buffers above: `__librelane__` only, so
+  // simulation and the klt/Yosys flow keep the plain wire and behaviour is
+  // unchanged (the two flows' netlists now differ by 43 cells, 27 + 16);
+  // one named instance per bit so the routed netlist's SDF annotates.
+  // `instr_word`, the name the core and the benches read, is the buffered
+  // side; only the macro's own pins carry `mem_dout`.
+  wire [15:0] mem_dout;
+`ifdef __librelane__
+  sg13cmos5l_buf_4 u_dout_buf_0  (.A(mem_dout[0]), .X(instr_word[0]));
+  sg13cmos5l_buf_4 u_dout_buf_1  (.A(mem_dout[1]), .X(instr_word[1]));
+  sg13cmos5l_buf_4 u_dout_buf_2  (.A(mem_dout[2]), .X(instr_word[2]));
+  sg13cmos5l_buf_4 u_dout_buf_3  (.A(mem_dout[3]), .X(instr_word[3]));
+  sg13cmos5l_buf_4 u_dout_buf_4  (.A(mem_dout[4]), .X(instr_word[4]));
+  sg13cmos5l_buf_4 u_dout_buf_5  (.A(mem_dout[5]), .X(instr_word[5]));
+  sg13cmos5l_buf_4 u_dout_buf_6  (.A(mem_dout[6]), .X(instr_word[6]));
+  sg13cmos5l_buf_4 u_dout_buf_7  (.A(mem_dout[7]), .X(instr_word[7]));
+  sg13cmos5l_buf_4 u_dout_buf_8  (.A(mem_dout[8]), .X(instr_word[8]));
+  sg13cmos5l_buf_4 u_dout_buf_9  (.A(mem_dout[9]), .X(instr_word[9]));
+  sg13cmos5l_buf_4 u_dout_buf_10 (.A(mem_dout[10]), .X(instr_word[10]));
+  sg13cmos5l_buf_4 u_dout_buf_11 (.A(mem_dout[11]), .X(instr_word[11]));
+  sg13cmos5l_buf_4 u_dout_buf_12 (.A(mem_dout[12]), .X(instr_word[12]));
+  sg13cmos5l_buf_4 u_dout_buf_13 (.A(mem_dout[13]), .X(instr_word[13]));
+  sg13cmos5l_buf_4 u_dout_buf_14 (.A(mem_dout[14]), .X(instr_word[14]));
+  sg13cmos5l_buf_4 u_dout_buf_15 (.A(mem_dout[15]), .X(instr_word[15]));
+`else
+  assign instr_word = mem_dout;
+`endif
+
   RM_IHPSG13_1P_256x16_c2_bm_bist u_sram (
       .A_CLK      (clk),
       .A_MEN      (mem_men_pin),
@@ -323,7 +371,7 @@ module protocol_program_memory (
       .A_ADDR     (mem_addr_pin),
       .A_DIN      (mem_din_pin),
       .A_DLY      (1'b1),          // datasheet's mandatory setting (DR 0005)
-      .A_DOUT     (instr_word),
+      .A_DOUT     (mem_dout),
       .A_BM       (16'hFFFF),      // whole-word writes only
       // BIST port tied off: this design never uses it (DR 0005).
       .A_BIST_CLK (1'b0),

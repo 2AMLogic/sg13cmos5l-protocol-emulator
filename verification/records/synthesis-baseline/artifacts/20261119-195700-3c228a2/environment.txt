@@ -1,0 +1,8 @@
+klt: <scratch>/venv/bin/klt :: klt 0.8.0
+yosys: /usr/local/bin/yosys :: Yosys 0.68+ (git sha1 a5af9d690, Release, GNU /usr/bin/c++ 13.3.0) [github.com/The-OpenROAD-Project/yosys at HEAD]
+openroad: /usr/local/bin/openroad :: 26Q4-1310-g98c6045c72 
+Python 3.12.3
+Linux 7.0.0-1014-aws x86_64
+klayout 0.30.13
+pdk: IHP-Open-PDK 2bbec755dc67ca3db0261c3d6163e15735d66710 (depth-1 fetch in the job)
+repo: 3c228a25823520862cb0d7556811829eb7320956  base(main): 325447e7e23ed445a246ce51d4cf4fd1d40df04d

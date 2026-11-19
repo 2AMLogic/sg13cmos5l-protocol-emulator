@@ -446,6 +446,27 @@ capture, PVT corner sweeps, or Monte Carlo.
   (one per live head), **4 of 11 met, 1 not applicable**. Sequencing note:
   PR #399 also re-mints the baseline; whichever lands second re-mints again
   — that is this treadmill working as designed, not a conflict.
+- **2026-11-19 (issue #261): the design gains one buffer per SRAM `A_DOUT`
+  bit; items 1, 2, 3, 4, 7, 8 and 9 are re-bound and no verdict changes.**
+  Item 1's inventory names the new `rtl/protocol_program_memory.v` hash and
+  the two netlists of record of the new tree; items 2 and 3 pin the GDS of
+  gds run 44602047558 (`sha256:bf567373...`); items 3 and 4 cite the
+  envelopes of `librelane-gds-signoff-check` `20261119-234500-2b283a4`;
+  item 7 cites the functional-verification envelope of
+  `post-layout-sdf-regression` `20261119-205800-2b283a4`; item 8 follows the
+  regenerated characterization report and item 9 was re-attested (98
+  checks). DRC is the same 4,484 macro-internal findings, so item 3 stays
+  `unmet` / `check_failed`; item 4 stays `unmet` / `check_failed` on the
+  klt/Yosys-reference mismatch (87 errors, 88 before). **One departure from
+  the pin, recorded in that record and not hidden here:** item 4's pinned
+  layout netlist was extracted by klt `0.7.0+gf979a9659513`, the build that
+  extracted the previous one, because `klt extract` at the pinned `0.8.0`
+  declares the abstracted SRAM macro's bus pins twice and ties the second
+  copy to `VPWR`; its netlist fails the as-routed LVS (227 errors) on this
+  GDS and, identically, on the GDS this refresh replaces. The `0.8.0`
+  extraction and its envelopes are committed beside the cited ones. Baselines:
+  `signoff-baseline` `20261119-234621-23efb28` to `20261119-234812-23efb28`
+  (one per live head), **4 of 11 met, 1 not applicable**, unchanged.
 - **Every citation pins a `content_hash`**, and what it is the hash of
   depends on the cited envelope (clarified 2026-10-10, issue #168; the
   manifests on `main` have always followed this, the sentence here did

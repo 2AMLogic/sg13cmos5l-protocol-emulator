@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "engine": "icarus",
+  "hdl_toplevel": "tt_um_2amlogic_protocol_emulator",
+  "testbench": "test_firmware_midi",
+  "status": "pass",
+  "test_count": 2,
+  "passed_count": 2,
+  "failed_count": 0,
+  "skipped_count": 0,
+  "tests": [
+    {
+      "name": "test_midi_tx",
+      "status": "passed",
+      "sim_time_ns": 3394781.0,
+      "real_time_s": 5.671
+    },
+    {
+      "name": "test_midi_rx",
+      "status": "passed",
+      "sim_time_ns": 8227121.0,
+      "real_time_s": 14.108
+    }
+  ],
+  "coverage": null,
+  "trace": null,
+  "environment": {
+    "engine": "icarus",
+    "engine_version": "13.0",
+    "cocotb_version": "2.1.0",
+    "results_xml": "<repo>/verification/.klt/functional-verification/results_icarus.xml",
+    "test_log": "<repo>/verification/.klt/functional-verification/test_icarus.log",
+    "build_log": "<repo>/verification/.klt/functional-verification/build_icarus.log",
+    "random_seed": 1,
+    "source_defines": {},
+    "initial_state": null,
+    "sdf": null
+  }
+}

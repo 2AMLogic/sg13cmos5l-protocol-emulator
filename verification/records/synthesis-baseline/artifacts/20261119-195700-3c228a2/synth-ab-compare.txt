@@ -1,0 +1,21 @@
+klt-synthesize-protocol-emulator DIFFERENT
+    status head= ok main= ok
+    engine_version head= 0.68+ main= 0.68+
+    instance_count head= 2526 main= 2526
+    area_um2 head= 35224.3836 main= 35224.3836
+    sequential_area_um2 head= 12933.0432 main= 12933.0432
+    netlist_sha256 head= ebfd4f163c3407b31b295c4d49727270b07b6ef44141d692dfe8dc7c1dcf3924 main= ee15398fbe57b4ce38cbad6165cf7758e6a707869e3e5ab00229472d779c8af6
+klt-synthesize-program-memory DIFFERENT
+    status head= ok main= ok
+    engine_version head= 0.68+ main= 0.68+
+    instance_count head= 241 main= 241
+    area_um2 head= 4632.1254 main= 4632.1254
+    sequential_area_um2 head= 2351.4624 main= 2351.4624
+    netlist_sha256 head= e8242a11be6e46c648b4bd06c1809edc6042906683652b6ac6c9a191afc23501 main= 484e7ea295be4b24817edc46c76f270a64c660caffc96de82659a988d8d37e21
+klt-synthesize-boot-rom IDENTICAL
+    status head= ok main= ok
+    engine_version head= 0.68+ main= 0.68+
+    instance_count head= 556 main= 556
+    area_um2 head= 5939.3628 main= 5939.3628
+    sequential_area_um2 head= 783.8208 main= 783.8208
+    netlist_sha256 head= 0e98181c8a87798f9a691a1cb3238e8884024090160f0d8a40aa10464f53ce46 main= 0e98181c8a87798f9a691a1cb3238e8884024090160f0d8a40aa10464f53ce46

@@ -52,7 +52,7 @@
         "role": "testbench",
         "path": "flow/run-firmware-gate-level.sh",
         "passed": true,
-        "content_hash": "sha256:d8ea3ad3786724e90cbfecc9df811503ecbfd30b2d99db6d92d19fbf6a58bd0b"
+        "content_hash": "sha256:2feebeb504dc98f0eec3339d6ac2dd282e311e398e35751d3fde66785a4e1317"
       },
       {
         "check": "present",
@@ -66,7 +66,7 @@
         "role": "testbench",
         "path": "flow/run-reset-power-up-gate-level.sh",
         "passed": true,
-        "content_hash": "sha256:688856534ea6652dfc37da1533218a2b3d04bd94e3725a2fb86f23e4662d3201"
+        "content_hash": "sha256:69bba16289d6f87d7ca3aff2c626119346ef6c36761b3f8610d11560b6d5d5c1"
       },
       {
         "check": "present",

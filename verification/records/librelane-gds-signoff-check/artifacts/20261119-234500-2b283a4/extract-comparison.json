@@ -1,0 +1,178 @@
+{
+ "what": "klt extract of the same GDS by two klt builds, and the as-routed LVS (klt lvs 0.8.0) of each extracted netlist; plus the control: the superseded record's GDS extracted by klt 0.8.0",
+ "new_gds": "sha256:bf567373bf425daafbb167d7327caa5be73520088cd73b3a2b41c3afb58fb79b",
+ "extract_klt_0.7.0+gf979a9659513": {
+  "netlist_sha256": "sha256:d77d92265285ba9020c211b774d04c177132e94efba88f3d4bc95f9991bc0a86",
+  "net_count": 3504,
+  "pin_count": 45,
+  "envelope_sha256": "sha256:079102f257de68dd202461a39d35d114fb6f38e210b258c28305ed8b2b1594dd",
+  "asrouted": {
+   "status": "match",
+   "error_count": 0,
+   "mismatch_count": 114,
+   "category_counts": {
+    "topology": 112,
+    "topology.power_only_pruned": 1,
+    "topology.top_level_pins_anchored": 1
+   },
+   "counts": {
+    "nets": {
+     "layout": 3504,
+     "reference": 3495,
+     "matched": 3833
+    },
+    "devices": {
+     "layout": 0,
+     "reference": 0,
+     "matched": 0
+    },
+    "pins": {
+     "layout": 45,
+     "reference": 43,
+     "matched": 381
+    }
+   }
+  },
+  "klt_netlist": {
+   "status": "mismatch",
+   "error_count": 87,
+   "mismatch_count": 123,
+   "category_counts": {
+    "hints.rejected": 43,
+    "topology": 44,
+    "topology.flattened": 1,
+    "topology.power_only_pruned": 1,
+    "topology.reference_port_alias_joined": 33,
+    "topology.top_level_pins_anchored": 1
+   },
+   "counts": {
+    "nets": {
+     "layout": 3504,
+     "reference": 2562,
+     "matched": 0
+    },
+    "devices": {
+     "layout": 0,
+     "reference": 0,
+     "matched": 0
+    },
+    "pins": {
+     "layout": 45,
+     "reference": 43,
+     "matched": 0
+    }
+   }
+  }
+ },
+ "extract_klt_0.8.0": {
+  "netlist_sha256": "sha256:d51450f0f169167cf786a22596c6cb1662c5ce120aa63321173e82fc3f98f7be",
+  "net_count": 3504,
+  "pin_count": 45,
+  "envelope_sha256": "sha256:c8d5fb8f9018046fb621aa7a4e41714e9e2f1e464f45d841b1345a12d256a3be",
+  "asrouted": {
+   "status": "mismatch",
+   "error_count": 227,
+   "mismatch_count": 229,
+   "category_counts": {
+    "net.merged": 56,
+    "net.split": 58,
+    "topology": 113,
+    "topology.power_only_pruned": 1,
+    "topology.top_level_pins_anchored": 1
+   },
+   "counts": {
+    "nets": {
+     "layout": 3504,
+     "reference": 3495,
+     "matched": 3831
+    },
+    "devices": {
+     "layout": 0,
+     "reference": 0,
+     "matched": 0
+    },
+    "pins": {
+     "layout": 45,
+     "reference": 43,
+     "matched": 477
+    }
+   }
+  },
+  "klt_netlist": {
+   "status": "mismatch",
+   "error_count": 87,
+   "mismatch_count": 123,
+   "category_counts": {
+    "hints.rejected": 43,
+    "topology": 44,
+    "topology.flattened": 1,
+    "topology.power_only_pruned": 1,
+    "topology.reference_port_alias_joined": 33,
+    "topology.top_level_pins_anchored": 1
+   },
+   "counts": {
+    "nets": {
+     "layout": 3504,
+     "reference": 2562,
+     "matched": 0
+    },
+    "devices": {
+     "layout": 0,
+     "reference": 0,
+     "matched": 0
+    },
+    "pins": {
+     "layout": 45,
+     "reference": 43,
+     "matched": 0
+    }
+   }
+  }
+ },
+ "control_old_gds_extract_klt_0.8.0": {
+  "gds_sha256": "sha256:2c8fb81d18ab9d6cfd2ed0566e32f16d3cebdbbdff41520afbff29fa0e19c3af",
+  "netlist_sha256": "sha256:49dee52b34cac67425128be75211edbc791e1f09f3e3d1ca107e4a0f866867c5",
+  "committed_netlist_sha256_extracted_at_f979a965": "sha256:e11397622f373fea6a434c2698293408a171db217fd8f9d708b9158890ddf7f4",
+  "asrouted": {
+   "status": "mismatch",
+   "error_count": 227,
+   "mismatch_count": 229,
+   "category_counts": {
+    "net.merged": 56,
+    "net.split": 58,
+    "topology": 113,
+    "topology.power_only_pruned": 1,
+    "topology.top_level_pins_anchored": 1
+   },
+   "counts": {
+    "nets": {
+     "layout": 3448,
+     "reference": 3435,
+     "matched": 3775
+    },
+    "devices": {
+     "layout": 0,
+     "reference": 0,
+     "matched": 0
+    },
+    "pins": {
+     "layout": 45,
+     "reference": 43,
+     "matched": 481
+    }
+   }
+  }
+ },
+ "macro_subckt_pins": {
+  "klt_0.7.0+gf979a9659513": 109,
+  "klt_0.8.0": 205,
+  "note": "klt 0.8.0 declares each macro bus pin twice, once as NAME<i> (bound to the routed net) and once as NAME[i]; all 96 NAME[i] pins and VDD!/VDDARRAY! are bound to VPWR"
+ },
+ "spot_groups": [
+  "rs-emu261-signoff2",
+  "rs-emu261-lvsdiag-a",
+  "rs-emu261-lvsdiag-b",
+  "rs-emu261-lvsdiag-e2",
+  "rs-emu261-lvsfinal"
+ ]
+}
