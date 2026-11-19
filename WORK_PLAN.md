@@ -3,7 +3,7 @@
 This roadmap is generated from the current GitHub label state.
 
 <!-- guide:plan-body:start -->
-_Generated: 2026-11-19T10:26:13Z (snapshot; compare against live labels)_
+_Generated: 2026-11-19T14:58:25Z (snapshot; compare against live labels)_
 ## Operator Attention: Merge-Risk-Hold Pileup
 
 Judge-approved PRs under a hold (`loom:blocked` or `loom:operator`) — only a human merge decision is missing.
@@ -30,12 +30,22 @@ Judge-approved PRs under a hold (`loom:blocked` or `loom:operator`) — only a h
 Human-approved issues (`loom:issue`) ready for implementation — excluding held (`loom:blocked`/`loom:operator`/`loom:frozen`), `loom:building`, and issues closed by an open `loom:pr` PR (listed under Approved).
 
 - **#261**: LibreLane: max-cap on SRAM A_DOUT[5..6] is avoided by placement, not by construction
+- **#445**: Firmware: DMX512 on the existing ISA (multi-protocol extra credit)
 
 ## In Progress
 
 Issues currently being built (`loom:building`).
 
 - **#371**: chore: pin a klt containing request.macros (PR #2645) and re-mint the records it stales
+- **#443**: Docs: protocol catalog (docs/protocols.md), every candidate protocol ranked by sourced demand and fit
+- **#444**: Firmware: MIDI on the existing ISA (multi-protocol extra credit)
+- **#446**: Firmware: Modbus RTU on the existing ISA (multi-protocol extra credit)
+- **#447**: Firmware: 1-Wire on the existing ISA (multi-protocol extra credit)
+- **#448**: Firmware: NEC infrared on the existing ISA (multi-protocol extra credit)
+- **#449**: Firmware: DALI on the existing ISA (multi-protocol extra credit)
+- **#450**: Firmware: CAN 2.0A on the existing ISA (multi-protocol extra credit)
+- **#451**: Firmware: I2S on the existing ISA (multi-protocol extra credit)
+- **#452**: Firmware: SWD probe on the existing ISA (multi-protocol extra credit)
 
 ## PRs Awaiting Review
 
@@ -65,6 +75,16 @@ Issues carrying `loom:curated`.
 - **#365**: T1 item 3: apply foundry-cell DRC exception for the SRAM macro once klt releases grading *(curated)* *(held)*
 - **#371**: chore: pin a klt containing request.macros (PR #2645) and re-mint the records it stales *(curated)*
 - **#435**: Ratification gate on merge_group: a batched queue group attributes flips to one PR's reviews *(curated)* *(held)*
+- **#443**: Docs: protocol catalog (docs/protocols.md), every candidate protocol ranked by sourced demand and fit *(curated)*
+- **#444**: Firmware: MIDI on the existing ISA (multi-protocol extra credit) *(curated)*
+- **#445**: Firmware: DMX512 on the existing ISA (multi-protocol extra credit) *(curated)*
+- **#446**: Firmware: Modbus RTU on the existing ISA (multi-protocol extra credit) *(curated)*
+- **#447**: Firmware: 1-Wire on the existing ISA (multi-protocol extra credit) *(curated)*
+- **#448**: Firmware: NEC infrared on the existing ISA (multi-protocol extra credit) *(curated)*
+- **#449**: Firmware: DALI on the existing ISA (multi-protocol extra credit) *(curated)*
+- **#450**: Firmware: CAN 2.0A on the existing ISA (multi-protocol extra credit) *(curated)*
+- **#451**: Firmware: I2S on the existing ISA (multi-protocol extra credit) *(curated)*
+- **#452**: Firmware: SWD probe on the existing ISA (multi-protocol extra credit) *(curated)*
 
 ## Proposed (Architect / Hermit)
 
@@ -83,11 +103,11 @@ _None._
 | Operator merge-risk holds | 1 |
 | Very important | 1 |
 | Important | 4 |
-| Ready (`loom:issue`, net of holds/building/merge-pending) | 1 |
-| In Progress (`loom:building`) | 1 |
+| Ready (`loom:issue`, net of holds/building/merge-pending) | 2 |
+| In Progress (`loom:building`) | 10 |
 | PRs awaiting review | 0 |
 | Approved PRs awaiting merge | 1 |
-| Curated | 12 |
+| Curated | 22 |
 | Architect / Hermit proposals | 3 |
 | Active epics | 0 |
 <!-- guide:plan-body:end -->
