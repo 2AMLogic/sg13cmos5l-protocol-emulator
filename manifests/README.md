@@ -526,6 +526,32 @@ capture, PVT corner sweeps, or Monte Carlo.
   item-10 attestation, then deleted unlanded before this round was minted.
   Both docs citing a baseline (`docs/submission/verification.md`,
   `docs/ROADMAP.md`) were re-pointed at this round in the same change.
+- **Items 1, 2, 7, 8, 9 and 10, state as of 2026-11-19 (PR #399, the
+  post-#461 merge).** Append-only; the bullets above are the earlier states.
+  `main` moved again after the rebase round above (PR #461: the
+  firmware-dmx512 bench set, DR-0010 edits and
+  `scripts/check_protocol_pin_roles.py` changes), GitHub reported the PR
+  `CONFLICTING`, and the claim-reconciliation pass routed it to Doctor. The
+  merge changed `manifests/evidence/testbenches.txt` (both sides edited it)
+  and, through the item-10 envelope, `manifests/evidence/hygiene.json`: the
+  merge's conflict resolution set the envelope's `testbenches.txt` pin to the
+  merged file's hash, and the committed envelope re-produces **in place**
+  (`klt signoff --attest 10 --check` status `match` at klt `0.9.0`, 15 of 15
+  checks) -- no re-attest, so the #5538 throwaway ordering did not apply this
+  time. Items 1 and 9 also still re-produce (`--check` status `match`), and
+  `scripts/characterization_report.py --check` passes on the merged tree (the
+  merge changed none of its inputs; nothing was regenerated). **The round
+  superseding both stale rounds (the branch's own
+  `20261119-174650`..`-174705-db962c6` and `main`'s post-#461
+  `20261119-174501`..`-174516-a4bb6ba`) is `signoff-baseline
+  20261119-190101` .. `20261119-190132-7472e91`, 5 of 11 at klt `0.9.0`**
+  -- thirty-two records, one per live record of the two stale rounds. No
+  verdict moves against the branch's own round (the merge moved envelope
+  bytes only); against `main`'s the one-item difference (item 7, the grader
+  change recorded in the bullets above) is the rebase round's recorded
+  finding, not a new one. Both docs citing a baseline
+  (`docs/submission/verification.md`, `docs/ROADMAP.md`) were re-pointed at
+  this round in the same change.
 - **Every citation pins a `content_hash`**, and what it is the hash of
   depends on the cited envelope (clarified 2026-10-10, issue #168; the
   manifests on `main` have always followed this, the sentence here did
