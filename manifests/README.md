@@ -500,6 +500,32 @@ capture, PVT corner sweeps, or Monte Carlo.
   A second attest-time gap found here is filed as klayout-tools#5602: a
   declared check that invokes `klt` resolves the host's klt, not the attesting
   one, because the attesting venv's `bin` is stripped from the check's `PATH`.
+- **Items 1, 2, 7, 8, 9 and 10, state as of 2026-11-19 (PR #399, the rebase
+  onto `main`).** Append-only; the bullets above are the earlier states. The
+  branch rebased onto `main` (81 commits after the merge base), merging
+  `main`'s tree: new `firmware-uart-rx` records, the firmware-midi bench set,
+  DR 0010/0024, and `main`'s own baseline round
+  (`20261119-16260N-3e50769`, 4 of 11 at the pre-migration grader). No
+  verdict moved in the merge: the characterization report and envelope were
+  regenerated on the merged tree (`scripts/characterization_report.py`; the
+  regenerated report is byte-identical to the merge's own output -- the
+  report's rows and the `klt_timing` provenance prose are unchanged), the
+  manifest's item-8 pin follows the regenerated envelope, and T1 item 10 was
+  re-attested at klt `0.9.0` because its envelope pinned pre-rebase hashes of
+  `.github/workflows/ci.yml` and `verification/check_records.py` (both files
+  changed on `main`; `--check` reported `drifted`; 15 of 15 checks after
+  re-attest). Items 1 and 9 still re-produce (`--check` status `match`) and
+  their pins are unchanged. **The round superseding both stale rounds
+  (`20261114-02100N-2ad8b1c` and `20261119-16260N-3e50769`) is
+  `signoff-baseline 20261119-174650` .. `20261119-174705-db962c6`, 5 of 11 at
+  klt `0.9.0`** -- the same five items as the branch's 2026-11-14 round, and
+  one
+  more than `main`'s (item 7, the grader change already recorded above; no
+  new evidence). The #5538 ordering was needed again and followed: a
+  throwaway round was minted first so the record linter passed inside the
+  item-10 attestation, then deleted unlanded before this round was minted.
+  Both docs citing a baseline (`docs/submission/verification.md`,
+  `docs/ROADMAP.md`) were re-pointed at this round in the same change.
 - **Every citation pins a `content_hash`**, and what it is the hash of
   depends on the cited envelope (clarified 2026-10-10, issue #168; the
   manifests on `main` have always followed this, the sentence here did
