@@ -422,6 +422,9 @@ inventory is a hard failure.
    "RESULT[5]",
    "RESULT[6]",
    "RESULT[7]"
+  ],
+  "dmx512": [
+   "TX"
   ]
  },
  "pins": [
@@ -443,7 +446,8 @@ inventory is a hard failure.
     "ws2812": "unused",
     "ps2": "unused",
     "onewire": "unused",
-    "onewire_result": "unused"
+    "onewire_result": "unused",
+    "dmx512": "unused"
    },
    "shared_pin_rationale": ""
   },
@@ -465,7 +469,8 @@ inventory is a hard failure.
     "ws2812": "unused",
     "ps2": "unused",
     "onewire": "unused",
-    "onewire_result": "unused"
+    "onewire_result": "unused",
+    "dmx512": "unused"
    },
    "shared_pin_rationale": ""
   },
@@ -487,7 +492,8 @@ inventory is a hard failure.
     "ws2812": "unused",
     "ps2": "unused",
     "onewire": "unused",
-    "onewire_result": "unused"
+    "onewire_result": "unused",
+    "dmx512": "unused"
    },
    "shared_pin_rationale": ""
   },
@@ -509,7 +515,8 @@ inventory is a hard failure.
     "ws2812": "unused",
     "ps2": "unused",
     "onewire": "unused",
-    "onewire_result": "unused"
+    "onewire_result": "unused",
+    "dmx512": "unused"
    },
    "shared_pin_rationale": ""
   },
@@ -531,7 +538,8 @@ inventory is a hard failure.
     "ws2812": "unused",
     "ps2": "unused",
     "onewire": "unused",
-    "onewire_result": "unused"
+    "onewire_result": "unused",
+    "dmx512": "unused"
    },
    "shared_pin_rationale": ""
   },
@@ -553,7 +561,8 @@ inventory is a hard failure.
     "ws2812": "unused",
     "ps2": "unused",
     "onewire": "unused",
-    "onewire_result": "unused"
+    "onewire_result": "unused",
+    "dmx512": "unused"
    },
    "shared_pin_rationale": ""
   },
@@ -575,7 +584,8 @@ inventory is a hard failure.
     "ws2812": "unused",
     "ps2": "unused",
     "onewire": "unused",
-    "onewire_result": "unused"
+    "onewire_result": "unused",
+    "dmx512": "unused"
    },
    "shared_pin_rationale": ""
   },
@@ -597,7 +607,8 @@ inventory is a hard failure.
     "ws2812": "unused",
     "ps2": "unused",
     "onewire": "unused",
-    "onewire_result": "unused"
+    "onewire_result": "unused",
+    "dmx512": "unused"
    },
    "shared_pin_rationale": ""
   },
@@ -619,7 +630,8 @@ inventory is a hard failure.
     "ws2812": "unused",
     "ps2": "unused",
     "onewire": "unused",
-    "onewire_result": "RESULT[0]"
+    "onewire_result": "RESULT[0]",
+    "dmx512": "TX"
    },
    "shared_pin_rationale": ""
   },
@@ -641,7 +653,8 @@ inventory is a hard failure.
     "ws2812": "unused",
     "ps2": "unused",
     "onewire": "unused",
-    "onewire_result": "RESULT[1]"
+    "onewire_result": "RESULT[1]",
+    "dmx512": "unused"
    },
    "shared_pin_rationale": ""
   },
@@ -663,7 +676,8 @@ inventory is a hard failure.
     "ws2812": "unused",
     "ps2": "unused",
     "onewire": "unused",
-    "onewire_result": "RESULT[2]"
+    "onewire_result": "RESULT[2]",
+    "dmx512": "unused"
    },
    "shared_pin_rationale": ""
   },
@@ -685,7 +699,8 @@ inventory is a hard failure.
     "ws2812": "unused",
     "ps2": "unused",
     "onewire": "unused",
-    "onewire_result": "RESULT[3]"
+    "onewire_result": "RESULT[3]",
+    "dmx512": "unused"
    },
    "shared_pin_rationale": ""
   },
@@ -707,7 +722,8 @@ inventory is a hard failure.
     "ws2812": "unused",
     "ps2": "unused",
     "onewire": "unused",
-    "onewire_result": "RESULT[4]"
+    "onewire_result": "RESULT[4]",
+    "dmx512": "unused"
    },
    "shared_pin_rationale": ""
   },
@@ -729,7 +745,8 @@ inventory is a hard failure.
     "ws2812": "unused",
     "ps2": "unused",
     "onewire": "unused",
-    "onewire_result": "RESULT[5]"
+    "onewire_result": "RESULT[5]",
+    "dmx512": "unused"
    },
    "shared_pin_rationale": ""
   },
@@ -751,7 +768,8 @@ inventory is a hard failure.
     "ws2812": "unused",
     "ps2": "unused",
     "onewire": "unused",
-    "onewire_result": "RESULT[6]"
+    "onewire_result": "RESULT[6]",
+    "dmx512": "unused"
    },
    "shared_pin_rationale": ""
   },
@@ -773,7 +791,8 @@ inventory is a hard failure.
     "ws2812": "DIN",
     "ps2": "unused",
     "onewire": "unused",
-    "onewire_result": "RESULT[7]"
+    "onewire_result": "RESULT[7]",
+    "dmx512": "unused"
    },
    "shared_pin_rationale": ""
   },
@@ -795,7 +814,8 @@ inventory is a hard failure.
     "ws2812": "unused",
     "ps2": "unused",
     "onewire": "unused",
-    "onewire_result": "unused"
+    "onewire_result": "unused",
+    "dmx512": "unused"
    },
    "shared_pin_rationale": ""
   },
@@ -817,7 +837,8 @@ inventory is a hard failure.
     "ws2812": "unused",
     "ps2": "unused",
     "onewire": "unused",
-    "onewire_result": "unused"
+    "onewire_result": "unused",
+    "dmx512": "unused"
    },
    "shared_pin_rationale": ""
   },
@@ -839,7 +860,8 @@ inventory is a hard failure.
     "ws2812": "unused",
     "ps2": "PS2_CLK",
     "onewire": "unused",
-    "onewire_result": "unused"
+    "onewire_result": "unused",
+    "dmx512": "unused"
    },
    "shared_pin_rationale": "Standard SPI and I2C Pmod rows overlap here by Tiny Tapeout's design: one row carries one protocol and one firmware image is loaded per run. The SPI images leave the pin an input (UIO_DIR bit 2 = 0, UIO_OD bit 2 = 0) and sample MISO on uio_in[2]; the I2C images make it open-drain SCL (UIO_OD bit 2). DR 0012 sets the mode per image, so no image sees the other's role."
   },
@@ -861,7 +883,8 @@ inventory is a hard failure.
     "ws2812": "unused",
     "ps2": "PS2_DATA",
     "onewire": "DQ",
-    "onewire_result": "unused"
+    "onewire_result": "unused",
+    "dmx512": "unused"
    },
    "shared_pin_rationale": "Push-pull SCLK (SCK) in the SPI images (UIO_DIR bit 3) and open-drain SDA in the I2C images (UIO_OD bit 3): two electrical roles on one pad, legal only because DR 0012 sets the pin mode at run time per image and one image is loaded per run. Neither role exists while the other profile runs."
   },
@@ -883,7 +906,8 @@ inventory is a hard failure.
     "ws2812": "unused",
     "ps2": "unused",
     "onewire": "unused",
-    "onewire_result": "unused"
+    "onewire_result": "unused",
+    "dmx512": "unused"
    },
    "shared_pin_rationale": ""
   },
@@ -905,7 +929,8 @@ inventory is a hard failure.
     "ws2812": "unused",
     "ps2": "unused",
     "onewire": "unused",
-    "onewire_result": "unused"
+    "onewire_result": "unused",
+    "dmx512": "unused"
    },
    "shared_pin_rationale": ""
   },
@@ -927,7 +952,8 @@ inventory is a hard failure.
     "ws2812": "unused",
     "ps2": "unused",
     "onewire": "unused",
-    "onewire_result": "unused"
+    "onewire_result": "unused",
+    "dmx512": "unused"
    },
    "shared_pin_rationale": ""
   },
@@ -949,7 +975,8 @@ inventory is a hard failure.
     "ws2812": "unused",
     "ps2": "unused",
     "onewire": "unused",
-    "onewire_result": "unused"
+    "onewire_result": "unused",
+    "dmx512": "unused"
    },
    "shared_pin_rationale": ""
   }
@@ -1163,6 +1190,14 @@ inventory is a hard failure.
    ]
   },
   {
+   "file": "firmware/asm/dmx512_tx.asm",
+   "profile": "dmx512",
+   "patterns": [
+    "asm_ports",
+    "uart_tx_mask"
+   ]
+  },
+  {
    "file": "firmware/tools/gen_i2c_sr.py",
    "profile": "i2c_gen",
    "patterns": [
@@ -1226,6 +1261,13 @@ inventory is a hard failure.
    "profile": "bench_onewire",
    "patterns": [
     "bench_onewire"
+   ]
+  },
+  {
+   "file": "verification/test_firmware_dmx512.py",
+   "profile": "bench_dmx512",
+   "patterns": [
+    "bench_uart_tx"
    ]
   },
   {
@@ -1441,6 +1483,19 @@ the DQ bit, and the bench's `DQ_BIT` and pad-model calls are checked by the
 `bench_onewire` profile. The bus itself -- every reset, presence and slot
 timing -- is graded by the independent DS18B20 model
 (`verification/reference_models/onewire.py`), not by these patterns.
+### DMX512 transmitter, multi-protocol extra credit (added by #445)
+
+`dmx512_tx.asm` is the DMX512 (USITT DMX512-A) universe transmitter (issue
+#445, catalog #443). It drives one RS-485 send line through an external
+3.3 V transceiver (a TI THVD1450 on a TX-only Pmod adapter, DE and /RE
+tied high), `TX` on `uo_out[0]` — the same pad as the UART profiles' TX,
+push-pull, and unused in every other phase. The table records that as the
+`dmx512` phase (`TX` on `uo_out[0]`, a driven role), checked by the
+`dmx512` profile (the same shape as `uart_tx`: the first `LDI R1, imm` is
+the pin mask, every ALU-mask LDI is a pin mask, an `AND Rx, R1` isolation
+site exists), and the bench's `TX_PIN, TX_BIT` by the `bench_dmx512`
+profile. The program reads no pin and writes no pin-mode register, so
+like the UART and WS2812 images it has no `pin_modes` entry.
 
 ## Checker behaviour
 

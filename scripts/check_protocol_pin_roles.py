@@ -100,6 +100,7 @@ PHASES = (
     "ps2",
     "onewire",
     "onewire_result",
+    "dmx512",
 )
 UNUSED = "unused"
 # PROG_SER / PROG_MODE are the serial program-load inputs. CRC_BYTE_SEL (an
@@ -132,6 +133,9 @@ PHASE_VOCAB = {
     # open-drain data line, driven low and sampled high.
     "onewire": {"DQ"},
     "onewire_result": {f"RESULT[{i}]" for i in range(8)},
+    # Multi-protocol extra credit (issue #445): the DMX512 transmitter's
+    # line, driven push-pull through an external RS-485 transceiver.
+    "dmx512": {"TX"},
 }
 
 # Extraction patterns this script implements. An inventory entry naming any
@@ -1174,6 +1178,32 @@ class Checker:
             c.err(f"{rel}: no OUT to the onewire_result port; the received bytes "
                   "belong there")
 
+    # -------------------------------------------------------- profile: dmx
+    def prof_dmx512(self, rel, ent, text):
+        """The DMX512 transmitter (issue #445): TX driven on the table's
+        dmx512.TX pin, the same shape as `prof_uart_tx` -- the first
+        `LDI R1, imm` is the TX bit mask / idle level, every ALU-mask LDI
+        must be a pin mask, and an `AND Rx, R1` bit-isolation site must
+        exist. The program reads no pin, so no IN port is allowed."""
+        c = self.concrete
+        ins = self.asm_instrs(text)
+        outs, _ins, _ = self.out_in_ports([("dmx512", ["TX"])], [], "spi_result")
+        self.check_ports(rel, ins, outs, set(), outs, set())
+        mask = self.mask_of("dmx512", "TX")
+        first = next((i for i in ins if i["m"] == "LDI" and i["ops"][0] == "R1"), None)
+        if first is None:
+            c.err(f"{rel}: no `LDI R1, imm` TX bit-mask site found (pattern uart_tx_mask)")
+        else:
+            c.sites += 1
+            v = self.imm(first["ops"][1])
+            if v != mask:
+                c.err(f"{rel}:{first['no']}: TX bit mask LDI R1, {first['ops'][1]} but the table's "
+                      f"dmx512 TX pin {self.role_pin('dmx512', 'TX')} is 0x{mask:02X}")
+        self.check_mask_sites(rel, ins, {mask}, "DMX512 TX")
+        # the bit isolated by AND must come from the R1 mask
+        if not any(i["m"] == "AND" and i["ops"][1] == "R1" for i in ins):
+            c.err(f"{rel}: no `AND Rx, R1` bit-isolation site found")
+
     # ------------------------------------------------------- profile: benches
     def need(self, text, pattern, rel, what, flags=re.M):
         m = re.search(pattern, text, flags)
@@ -1199,6 +1229,11 @@ class Checker:
         m = self.need(text, r'^TX_PIN,\s*TX_BIT\s*=\s*"(\w+)",\s*(\d+)', rel, "TX_PIN, TX_BIT")
         if m:
             self.check_pb(rel, "TX_PIN/TX_BIT", m.group(1), int(m.group(2)), "uart_tx", "TX")
+
+    def prof_bench_dmx512(self, rel, ent, text):
+        m = self.need(text, r'^TX_PIN,\s*TX_BIT\s*=\s*"(\w+)",\s*(\d+)', rel, "TX_PIN, TX_BIT")
+        if m:
+            self.check_pb(rel, "TX_PIN/TX_BIT", m.group(1), int(m.group(2)), "dmx512", "TX")
 
     def prof_bench_ws2812(self, rel, ent, text):
         m = self.need(text, r'^DIN_PIN,\s*DIN_BIT\s*=\s*"(\w+)",\s*(\d+)', rel, "DIN_PIN, DIN_BIT")

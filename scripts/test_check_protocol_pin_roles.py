@@ -435,6 +435,28 @@ def _(fx):
     expect_fail(fx, "firmware/asm/ws2812.asm", "concrete-firmware-bench")
 
 
+@case("DMX512 TX mask LDI mutated")
+def _(fx):
+    fx.mutate("firmware/asm/dmx512_tx.asm", "LDI   R1, 1 ", "LDI   R1, 2 ")
+    expect_fail(fx, "firmware/asm/dmx512_tx.asm", "concrete-firmware-bench")
+
+
+@case("DMX512 bench TX pin mutated")
+def _(fx):
+    fx.mutate("verification/test_firmware_dmx512.py", 'TX_PIN, TX_BIT = "uo_out", 0',
+              'TX_PIN, TX_BIT = "uo_out", 1')
+    expect_fail(fx, "TX_PIN/TX_BIT is uo_out[1]", "concrete-firmware-bench")
+
+
+@case("DMX512 TX moved in the table alone")
+def _(fx):
+    def mv(t):
+        pin(t, "uo_out[0]")["protocol_roles"]["dmx512"] = "unused"
+        pin(t, "uo_out[1]")["protocol_roles"]["dmx512"] = "TX"
+    fx.mutate_table(mv)
+    expect_fail(fx, "firmware/asm/dmx512_tx.asm", "concrete-firmware-bench")
+
+
 @case("PS/2 released-bus image mutated")
 def _(fx):
     fx.mutate("firmware/asm/ps2_device.asm", "LDI   R3, 0x0C\n        OUT   UIO_OUT, R3      ; both lines released ...",
@@ -1163,10 +1185,10 @@ def _(fx):
     metadata = {"prof_info"}
     concrete = {
         "prof_uart_tx", "prof_uart_rx", "prof_spi", "prof_i2c", "prof_i2c_gen",
-        "prof_demo", "prof_ws2812", "prof_ps2", "prof_onewire",
-        "prof_bench_uart", "prof_bench_ws2812", "prof_bench_ps2",
-        "prof_bench_onewire", "prof_bench_spi", "prof_bench_i2c",
-        "prof_bench_i2c_sr", "prof_bench_load", "prof_top",
+        "prof_demo", "prof_ws2812", "prof_ps2", "prof_onewire", "prof_dmx512",
+        "prof_bench_uart", "prof_bench_dmx512", "prof_bench_ws2812",
+        "prof_bench_ps2", "prof_bench_onewire", "prof_bench_spi",
+        "prof_bench_i2c", "prof_bench_i2c_sr", "prof_bench_load", "prof_top",
         "prof_core", "prof_isa_ports",
     }
 
