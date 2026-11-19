@@ -151,6 +151,16 @@
       "sha256_after": "818ef8c44db135e3e52bbb9fa4671be4e53bb240e4e02f0cc12bfdb7b93aeadb",
       "ref": "#271",
       "summary": "two dated notes from the two-key reviews' non-blocking findings on PR #242 (issue #271): a gloss that `uio_out` in the port-11 amendment's 'OUT to port 11 still writes uio_out' is the ISA's port-11 register (as DR 0020 Consequences reads it), not necessarily the top's pad-data net, nothing observable differs; and a citation note that the I2C Fast-mode sketch's UM10204 Rev. 6 Table 10 is Table 11 in Rev. 7.0 with the same t_LOW/t_HIGH minimums. Existing text preserved verbatim; no instruction, control index, latency, flag, reset value or assembler rule changes."
+    },
+    {
+      "path": "rtl/protocol_program_memory.v",
+      "op": "modify",
+      "kind": "no-behaviour-change",
+      "invalidates_row13_evidence": false,
+      "sha256_before": "2b08865ab24d6bac84b390dfa76bab6686b572ba8f19124130bfc34e93dff637",
+      "sha256_after": "d8d32e0b8b26745a77ce2a30024243c8cccb06d6ffa91d38d8cec303b2e33892",
+      "ref": "#261",
+      "summary": "LibreLane-flow-only (`ifdef __librelane__`) x4 buffer between each SRAM macro A_DOUT pin and instr_word, so a macro output always drives exactly one standard-cell input (the macro liberty's 64 fF max-capacitance limit); simulation and the klt/Yosys flow take the plain `assign instr_word = mem_dout`, a wire; no instruction, control index, latency, flag, reset value or readback changes, and a word appears on instr_word in the same cycle as before; plus the comment that says so"
     }
   ],
   "row13_excluded_protocols": {
