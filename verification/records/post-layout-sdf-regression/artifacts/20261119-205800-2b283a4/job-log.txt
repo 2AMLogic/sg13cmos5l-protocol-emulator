@@ -1,0 +1,17 @@
+klt: <scratch>/venv/bin/klt :: klt 0.8.0
+Icarus Verilog version 13.0 (stable) (v13_0)
+cocotb 2.1.0
+Python 3.12.3
+Linux 7.0.0-1014-aws x86_64
+32
+klayout 0.30.13
+pdk: IHP-Open-PDK 2bbec755dc67ca3db0261c3d6163e15735d66710 (depth-1 fetch in the job)
+repo: 2b283a4c501f72aa31be2800ff5cfeb88490f015  mode: sdf 
+f6d9cfc173213050c0ef89a5d15fdf7fc74016e5d444947d247691baf15e1b8f  dl/tt_submission/tt_submission/tt_um_2amlogic_protocol_emulator.v
+bf567373bf425daafbb167d7327caa5be73520088cd73b3a2b41c3afb58fb79b  dl/tt_submission/tt_submission/tt_um_2amlogic_protocol_emulator.gds
+core start 2026-11-19T20:30:50Z
+sdf core exit 0
+core end 2026-11-19T20:31:17Z
+protocols start 2026-11-19T20:31:17Z
+sdf protocols exit 0
+protocols end 2026-11-19T20:35:36Z

@@ -1,0 +1,5 @@
+fault injected: \u_core.wait_cnt[0] stuck at 0 on 2 input pin(s)
+== netlist: <scratch>/src/dl/tt_submission/tt_submission/tt_um_2amlogic_protocol_emulator.v (sha256 f6d9cfc173213050c0ef89a5d15fdf7fc74016e5d444947d247691baf15e1b8f)
+PASS-RUN   test_firmware_ps2: tests=18 failed=0 unparsed=0 rc=0
+MUTANT-RUN test_firmware_ps2: tests=18 failed=14 unparsed=0 rc=2
+OK: the golden run passes and the negative control fails

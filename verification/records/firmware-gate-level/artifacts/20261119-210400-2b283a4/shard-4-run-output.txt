@@ -1,0 +1,20 @@
+fault injected: \u_core.wait_cnt[0] stuck at 0 on 2 input pin(s)
+fault injected: \u_core.rom_exit stuck at 0 on 2 input pin(s)
+fault injected: \pm_crc[0] stuck at 0 on 4 input pin(s)
+fault injected: top-level output uio_oe[3] stuck at 0 (driver disconnected)
+== netlist: <scratch>/src/dl/tt_submission/tt_submission/tt_um_2amlogic_protocol_emulator.v (sha256 f6d9cfc173213050c0ef89a5d15fdf7fc74016e5d444947d247691baf15e1b8f)
+PASS-RUN  test_firmware_uart: tests=3 failed=0 unparsed=0 rc=0
+PASS-RUN  test_firmware_uart_rx: tests=11 failed=0 unparsed=0 rc=0
+PASS-RUN  test_firmware_spi: tests=3 failed=0 unparsed=0 rc=0
+PASS-RUN  test_firmware_i2c: tests=4 failed=0 unparsed=0 rc=0
+PASS-RUN  test_boot_uart: tests=8 failed=0 unparsed=0 rc=0
+PASS-RUN  test_load_integrity: tests=9 failed=0 unparsed=0 rc=0
+MUTANT-RUN test_firmware_uart: tests=3 failed=1 unparsed=0 rc=2
+MUTANT-RUN test_firmware_uart_rx: tests=11 failed=9 unparsed=0 rc=2
+MUTANT-RUN test_firmware_spi: tests=3 failed=1 unparsed=0 rc=2
+MUTANT-RUN test_firmware_i2c: tests=4 failed=2 unparsed=0 rc=2
+MUTANT-RUN test_boot_uart: tests=8 failed=2 unparsed=0 rc=2
+MUTANT-RUN test_load_integrity: tests=9 failed=9 unparsed=0 rc=2
+PAD-FAULT-RUN test_firmware_spi: tests=3 failed=1 unparsed=0 rc=2
+PAD-FAULT-RUN test_firmware_i2c: tests=4 failed=1 unparsed=0 rc=2
+OK: all golden runs pass and all negative controls fail
