@@ -20,6 +20,8 @@ Chronological record of merged pull requests and closed issues, newest first.
 
 ### 2026-11-20
 
+- **PR #516**: docs(manifests): record the klt 0.8.0 pin parenthetical in the item-6 statement as historical
+- **Issue #481** (closed): docs(spec): spec/statistical-claims-na.md still says "the pinned klayout-tools==0.8.0" after #371 removes the pin
 - **PR #513**: feat(records): fail lint on attested-file drift; README is item-10 evidence
 - **Issue #507** (closed): Guide README refreshes trip the T1 item-10 attestation gate (README.md is hash-pinned evidence)
 - **PR #501**: firmware: SWD debug probe on the frozen ISA (issue #452)
