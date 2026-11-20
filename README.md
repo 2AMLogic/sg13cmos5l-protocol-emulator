@@ -25,9 +25,9 @@ first commit because the competition asks for exactly that.
 
 ## Status
 
-**Implementation and verification are underway; the specification remains
-proposed pending two-key ratification.** The repository contains the ISA core,
-SRAM-backed 256×16 program memory, a Python assembler, and UART TX/RX, four-mode
+**Implementation and verification are underway.** The two-key review ratified
+target-spec rows 1–12. Rows 13 and 14 remain proposed. The repository contains the
+ISA core, SRAM-backed 256×16 program memory, a Python assembler, and UART TX/RX, four-mode
 SPI controller, and Standard/Fast-mode I2C controller firmware with DUT-facing
 benches. See [`rtl/README.md`](rtl/README.md) and
 [`firmware/README.md`](firmware/README.md) for the implemented design.
@@ -48,7 +48,8 @@ the count-byte aliasing of
 is now rejected by a count-complement byte,
 [record](verification/records/boot-uart/records/20261011-061440-6ea883e.md), #211;
 [SPI-flash record](verification/records/boot-spi/records/20261010-132616-8372c57.md);
-#139, #140). The serial-load CRC readout is still open (#167).
+#139, #140). During serial load, the host can read both bytes of the running CRC on
+`uo_out` before switching to run mode ([load-integrity evidence](verification/records/load-integrity/records/20261014-115740-25a41c3.md)).
 
 The competition's LibreLane flow has routed the macro-backed core in a 2×2
 Tiny Tapeout die. Its [committed PDN/area record](verification/records/librelane-pdn-bridge/records/20261001-085017-21a2a63.md)
@@ -57,17 +58,11 @@ reports die area 131,620 µm² and passing `gds`, `precheck`, `gl_test`, and
 at the 20 ns (50 MHz) constraint; the remaining timing/specification gaps are
 tracked in [`spec/gap-to-submission.md`](spec/gap-to-submission.md).
 
-The klt flow supports CMOS5L standard cells, and its macro-backed STA leg has
-now run: on the klt flow (OpenSTA via `klt sta`, a pre-CTS, pre-route netlist
-estimate with an ideal clock and no hold repair), setup at 20 ns closes at the
-three macro-characterized corners, but hold fails at all three
-([record](verification/records/sta-corner-sweep/records/20261101-032922-c606644.md);
-run at a post-v0.8.0 klt in a throwaway environment rather than the
-`layout/toolchain.json` pin, with no PDK commit stamp — the re-mint is #394).
-The LibreLane post-route result above remains the timing of record; the two
-flows disagree on hold at different geometry stages, and that disagreement is
-recorded as a finding, not reconciled. The klt place-and-route (die-area) leg
-has still not been run on the macro-backed design (#389).
+The November 20 klt STA run used klayout-tools 0.9.2 and IHP-Open-PDK
+`f7bca326`. With an ideal clock on the pre-route netlist, setup meets 20 ns
+at all three macro-characterized corners. Hold fails at all three. LibreLane
+provides the post-route timing of record. The [STA record](verification/records/sta-corner-sweep/records/20261120-031100-51b7eac.md)
+compares the two measurements. Issue #389 tracks macro-backed klt place-and-route.
 Evidence from the two flows is recorded separately under
 [`spec/decision-records/0002-flow-of-record.md`](spec/decision-records/0002-flow-of-record.md).
 Nothing has been taped out or measured on silicon. Low-speed USB and
@@ -91,9 +86,8 @@ using IHP SG13CMOS5L, not just this repo.
 The full account is in
 [`docs/submission/ai-use.md`](docs/submission/ai-use.md). It covers the agent
 workflow as observed, which checks are mechanical, which decisions belong to
-the operator, the ratification history (the spec is still proposed, and no
-independent human review has taken place), and the limits of AI-generated
-verification.
+the operator, the two-key ratification history, and the limits of agent review and
+AI-generated verification.
 
 ## Target specification
 
@@ -148,31 +142,24 @@ Every recorded result lives under
 [`verification/records/`](verification/records/), one directory per kind of
 measurement, and each record's *Run configuration* names the exact command
 that produced it. The index of all of them, with the bench, the cold-start
-command and the pinned tool and PDK revisions, is
+command and the recorded tool and PDK revisions, is
 [`manifests/evidence/testbenches.txt`](manifests/evidence/testbenches.txt);
 CI fails if a new kind of record appears without a line there. In short:
 
 ```bash
-./scripts/setup-env.sh          # klt at the layout/toolchain.json pin + pinned cocotb
+./scripts/setup-env.sh          # installs klayout-tools and the pinned cocotb packages
 scripts/run-rtl-benches.sh      # every PDK-free RTL bench (Icarus + cocotb)
 npm run lint                    # evidence-record, firmware and inventory checks (manifest: scripts/lint-manifest.txt, runner: scripts/run_lint.py; runs every entry, reports all failures)
 scripts/signoff-report.sh --check-latest   # re-grade the T1 checklist
 ```
 
-Legs that need the PDK (synthesis, DRC/LVS, gate-level and post-layout
-simulation) take `PDK_ROOT` pointing at IHP-Open-PDK `2bbec755dc67`; the
-formal legs need the OSS CAD Suite release pinned in
-[`.github/workflows/ci.yml`](.github/workflows/ci.yml); the GDS and its
-timing come from the `gds` workflow. That `2bbec755dc67` is what the pinned
-`klt` (see [`layout/toolchain.json`](layout/toolchain.json)) currently
-materializes — but the two flows provision the PDK independently: the
-flow of record (the Tiny Tapeout CI `gds` workflow) fetches its own copy via
-`install_sg13cmos5l.sh`, so their revisions can drift apart. klayout-tools
-#2720 (merged 2026-10-12, not in the pinned `klt`) repoints the `klt` fetch at
-IHP-Open-PDK `dev` @ `f7bca326`; that lands with the klt pin bump (#289), and
-reconciling the two flows' PDK revisions (re-runs and re-stamp) is issue
-#290. The environment record is
-[`docs/environment.md`](docs/environment.md).
+For synthesis, DRC/LVS, gate-level simulation and post-layout simulation,
+set `PDK_ROOT` to the IHP-Open-PDK installation used by the record you are
+reproducing. The Tiny Tapeout `gds` workflow provisions the LibreLane PDK
+independently. Issue #290 tracks revision differences across the two flows.
+The formal checks use the OSS CAD Suite release pinned in
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml). For the fleet klt
+version and PDK lookup instructions, see [the environment record](docs/environment.md).
 
 ## Repo layout
 
