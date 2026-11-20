@@ -66,10 +66,14 @@ complete Claim and Result bodies (continuation lines included, indented or
 flush-left wrapping) and refuses to mint a second draft while an untracked one
 for the same leaves is pending.
 
-## Done
+## Migration
 
-The migration is complete: the 112 live `signoff-baseline` predecessors on this
-branch (one distinct full Claim and Result among them) are superseded by one
-live record, `20261120-002909-822afb0`. Adding further experiments to the
-collapsible set remains future work (each needs the interchangeability evidence
-this record's guards enforce).
+The first collapse replaced 112 interchangeable predecessors with
+[`20261120-002909-822afb0`](../../verification/records/signoff-baseline/records/20261120-002909-822afb0.md).
+That run met 4 of 11 T1 items at klt 0.8.0. After the fleet grader changed,
+a [separate run on main](../../verification/records/signoff-baseline/records/20261120-042002-d4b4205.md)
+reproduced the 5-of-11 result of main’s 344 live records at klt 0.9.2.
+The PR then refreshed the item 9 and 10 attestations. All 345 stale records
+had identical input paths, Claims and Results, so `--collapse signoff-baseline`
+minted [one live record](../../verification/records/signoff-baseline/records/20261120-042052-5050f25.md).
+Its measured result is 5 of 11 met, with one item not applicable.
