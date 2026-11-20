@@ -59,10 +59,18 @@ def main() -> int:
     # The repo-relative replacement must name the same artifact the producing
     # run hashed: resolve it against this checkout's root (the envelope sits
     # inside the repo) and require it to be the very file the absolute path
-    # named.
-    repo_root = os.path.dirname(os.path.dirname(os.path.abspath(envelope_path)))
-    while repo_root and not os.path.exists(os.path.join(repo_root, ".git")):
-        repo_root = os.path.dirname(repo_root)
+    # named. Walk the envelope's ancestors starting with its own containing
+    # directory (an envelope at the top of a checkout must find that root);
+    # `.git` may be a directory or the marker file a linked worktree uses.
+    # os.path.dirname("/") is "/", so the walk must stop when the parent
+    # stops changing, or it would spin at the filesystem root forever.
+    repo_root = os.path.dirname(os.path.abspath(envelope_path))
+    while not os.path.exists(os.path.join(repo_root, ".git")):
+        parent = os.path.dirname(repo_root)
+        if parent == repo_root:
+            repo_root = ""
+            break
+        repo_root = parent
     if not repo_root:
         print(f"error: could not locate a repo root above {envelope_path}", file=sys.stderr)
         return 1
