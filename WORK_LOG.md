@@ -20,6 +20,12 @@ Chronological record of merged pull requests and closed issues, newest first.
 
 ### 2026-11-20
 
+- **PR #501**: firmware: SWD debug probe on the frozen ISA (issue #452)
+- **PR #505**: fix: report klt checklist-wording movement in signoff --check-latest
+- **PR #495**: fix(flow): declare the program-memory SRAM macro in the die-area P&R request and record the first measured die area
+- **Issue #452** (closed): Firmware: SWD probe on the existing ISA (multi-protocol extra credit)
+- **Issue #502** (closed): Show checklist wording changes reported by klt in signoff --check-latest
+- **Issue #389** (closed): Follow-up to #371: die-area P&R (ORD-2013 / request.macros) and die-area-baseline re-mint
 - **PR #499**: Re-mint sta-corner-sweep at fleet klt 0.9.2 with a stamped PDK and the live LibreLane hold figure
 - **PR #496**: docs: correct #399's one-for-one round count to four at review, five by merge
 - **PR #493**: docs: record the externally-triggered signoff-baseline red and its standing response
