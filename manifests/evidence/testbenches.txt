@@ -84,7 +84,13 @@
 
 ## Environment, pinned
 
-# klt + cocotb: the klt pin is layout/toolchain.json (klayout-tools==0.8.0, c572046be644);
+# klt + cocotb: klt is NOT pinned by this repo (issue #371, per the 2026-11-09
+# operator ruling 2AMLogic/2am#7038). layout/toolchain.json's klt_install is the
+# bare requirement `klayout-tools`; the fleet version is
+# PIN_KLAYOUT_TOOLS_VERSION in 2AMLogic/2am infra/aws/batch-image-pins.env (0.9.0
+# when this line was written -- read that file, and read each record's own
+# provenance for the version that produced it). The last declared pin was
+# klayout-tools==0.8.0, c572046be644 -- klt-pin: historical.
 # cocotb 2.1.0 and cocotb-tools 0.1.0 are pinned in scripts/setup-env.sh.
 #   ./scripts/setup-env.sh
 # Simulator: Icarus Verilog on PATH (the records name 13.0).
@@ -185,6 +191,7 @@ experiment  firmware-ws2812-gate-level  `PDK_ROOT=<pdk> ./flow/run-ws2812-gate-l
 experiment  firmware-ps2  verification/test_firmware_ps2.py + reference_models/ps2.py; `klt functional-verification verification/request-firmware-ps2.json --format json`; model self-test `python3 verification/test_ps2_model.py` (in `npm run lint`); mutant programs are tests in the bench
 experiment  firmware-ps2-gate-level  `PDK_ROOT=<pdk> ./flow/run-ps2-gate-level.sh` [PDK]; default netlist frozen in post-layout-sdf-regression/artifacts/20261011-114800-e5a0bae/
 experiment  firmware-dmx512  verification/test_firmware_dmx512.py + reference_models/dmx512.py; `klt functional-verification verification/request-firmware-dmx512.json --format json`; model self-test `python3 verification/test_dmx512_model.py` (in `npm run lint`); negative controls are tests in the bench
+experiment  firmware-nec-ir  verification/test_firmware_nec_ir.py + reference_models/nec_ir.py; `klt functional-verification verification/request-firmware-nec-ir.json --format json`; model self-test `python3 verification/test_nec_ir_model.py` (in `npm run lint`); the mutation and stretched-capture controls are tests in the bench
 experiment  firmware-uart-rx  verification/test_firmware_uart_rx.py; `klt functional-verification verification/request-firmware-uart-rx.json --format json`
 experiment  i2c-ack-window  `./verification/formal/run-i2c-ack-window.sh <dir>` (formal toolchain: yosys, yosys-abc, iverilog/vvp, python3, git history; no PDK, no z3); bounded ABC bmc3 on the actual core running the committed i2c_fast/i2c_std images, covers, and 13 firmware mutants per grade each replayed in Icarus (issue #259)
 experiment  isa-lockstep  verification/test_isa_lockstep.py + reference_models/isa.py; `klt functional-verification verification/request-isa-lockstep.json --format json`; controls `python3 verification/isa_lockstep_mutants.py --out <dir>`
