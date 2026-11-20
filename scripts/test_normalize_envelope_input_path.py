@@ -55,6 +55,24 @@ def _fixture_repo(root: Path) -> tuple[Path, Path]:
     return artifacts, artifact
 
 
+def _fixture_directory() -> tempfile.TemporaryDirectory:
+    """Keep the fixture tree outside Git so the missing-root case has no checkout."""
+    preferred = Path(tempfile.gettempdir()).resolve()
+    system_dirs = (Path("/tmp"), Path("/var/tmp"), Path("/dev/shm"))
+    for base in (preferred, *system_dirs, *preferred.parents):
+        base = base.resolve()
+        if any((ancestor / ".git").exists() for ancestor in (base, *base.parents)):
+            continue
+        try:
+            # A full tmpfs can still allow mkdir but refuse file writes.
+            with tempfile.TemporaryFile(dir=base) as probe:
+                probe.write(b"x")
+            return tempfile.TemporaryDirectory(dir=base)
+        except OSError:
+            continue
+    raise RuntimeError("set TMPDIR to a writable directory outside any Git checkout")
+
+
 # Every subprocess case gets this budget: an unbounded Git-root search in the
 # normalizer would hang forever, and a regression must fail the case promptly
 # (issue #491), not stall the suite.
@@ -79,7 +97,7 @@ def _run_normalizer(
 
 
 def main() -> int:
-    with tempfile.TemporaryDirectory() as tmp:
+    with _fixture_directory() as tmp:
         root = Path(tmp)
 
         # Case 1: a correct rewrite -- absolute -> {path, scope: repo}, hash
@@ -181,8 +199,8 @@ def main() -> int:
         norepo = root / "no-repo" / "sub"
         norepo.mkdir(parents=True)
         envelope5 = norepo / "klt-drc.json"
-        body5 = json.dumps({"schema_version": 2, "file": str(artifact)})
-        envelope5.write_text(body5, encoding="utf-8")
+        body5 = json.dumps({"schema_version": 2, "file": str(artifact)}).encode("utf-8")
+        envelope5.write_bytes(body5)
         proc5 = _run_normalizer(
             "case_no_git_ancestor_refused",
             envelope5,
@@ -194,7 +212,7 @@ def main() -> int:
                 "case_no_git_ancestor_refused",
                 proc5.returncode == 1
                 and "could not locate a repo root" in proc5.stderr
-                and envelope5.read_text(encoding="utf-8") == body5,
+                and envelope5.read_bytes() == body5,
                 f"rc={proc5.returncode} stderr={proc5.stderr.strip()[:200]}",
             )
 
