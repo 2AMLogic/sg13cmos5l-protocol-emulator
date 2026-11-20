@@ -457,6 +457,29 @@ def _(fx):
     expect_fail(fx, "firmware/asm/dmx512_tx.asm", "concrete-firmware-bench")
 
 
+@case("NEC IR carrier-image LDI mutated")
+def _(fx):
+    fx.mutate("firmware/asm/nec_ir.asm", "LDI   R1, 0x80        ; 1   carrier-high image / bit-7 mask",
+              "LDI   R1, 0x40        ; 1   carrier-high image / bit-7 mask")
+    expect_fail(fx, "firmware/asm/nec_ir.asm", "concrete-firmware-bench")
+
+
+@case("NEC IR bench TX pin mutated")
+def _(fx):
+    fx.mutate("verification/test_firmware_nec_ir.py", 'TX_PIN, TX_BIT = "uo_out", 7',
+              'TX_PIN, TX_BIT = "uo_out", 6')
+    expect_fail(fx, "TX_PIN/TX_BIT is uo_out[6]", "concrete-firmware-bench")
+
+
+@case("NEC IR TX moved in the table alone")
+def _(fx):
+    def mv(t):
+        pin(t, "uo_out[7]")["protocol_roles"]["nec_ir_tx"] = "unused"
+        pin(t, "uo_out[6]")["protocol_roles"]["nec_ir_tx"] = "IR_TX"
+    fx.mutate_table(mv)
+    expect_fail(fx, "firmware/asm/nec_ir.asm", "concrete-firmware-bench")
+
+
 @case("PS/2 released-bus image mutated")
 def _(fx):
     fx.mutate("firmware/asm/ps2_device.asm", "LDI   R3, 0x0C\n        OUT   UIO_OUT, R3      ; both lines released ...",
@@ -1200,8 +1223,10 @@ def _(fx):
     metadata = {"prof_info"}
     concrete = {
         "prof_uart_tx", "prof_uart_rx", "prof_spi", "prof_i2c", "prof_i2c_gen",
-        "prof_demo", "prof_ws2812", "prof_ps2", "prof_dmx512", "prof_swd",
+        "prof_demo", "prof_ws2812", "prof_ps2", "prof_dmx512", "prof_nec_ir",
+        "prof_swd",
         "prof_bench_uart", "prof_bench_dmx512", "prof_bench_ws2812",
+        "prof_bench_nec_ir",
         "prof_bench_ps2", "prof_bench_swd", "prof_bench_spi",
         "prof_bench_i2c", "prof_bench_i2c_sr", "prof_bench_load", "prof_top",
         "prof_core", "prof_isa_ports",

@@ -51,6 +51,13 @@ firmware/
                          channel slots at 200 cycles/bit 8N2, forever
                          (multi-protocol extra credit, issue #445; catalog
                          #443; firmware on the frozen DR 0017 ISA)
+    nec_ir.asm           NEC infrared remote TRANSMITTER on uo_out[7]:
+                         38 kHz-class carrier (1,316 cycles/period, 439
+                         high) gated into a 9-ms-class leader, 32
+                         pulse-distance bits from a one-word-per-bit table
+                         in program memory, final mark, 60 ms idle, forever
+                         (multi-protocol extra credit, issue #448; catalog
+                         #443; firmware on the frozen DR 0017 ISA)
     swd_probe.asm        SWD debug PROBE (host) on uio[2] (SWCLK) and
                          uio[3] (SWDIO), push-pull with SWDIO released at
                          each turnaround: line reset, 0xE79E JTAG-to-SWD
@@ -780,6 +787,119 @@ Bench: `verification/test_firmware_dmx512.py`
 
 ```bash
 klt functional-verification verification/request-firmware-dmx512.json --format json
+```
+
+### `nec_ir.asm` — NEC infrared remote transmitter (issue #448)
+
+The multi-protocol extra credit's consumer-IR entry (catalog #443):
+firmware on the frozen DR 0017 ISA, no RTL change and no hardware
+peripheral. The 38 kHz carrier is a counted `OUT`/`WAIT` loop on one pin
+(the ISA's own timing determinism is the modulator), and the
+pulse-distance coding is which of two exact space lengths follows each
+mark. One frame every ~128 ms, forever: the leader (9 ms-class mark +
+4.5 ms space), then address, ~address, command and ~command, LSB first
+within each byte. Each of the 32 bits has a 562.5-us-class mark followed by a 562.5-us or a 1,687.5-us
+space. The final mark precedes 60 ms of silence. The carrier line is
+IR_TX = `uo_out[7]` (DR 0010's `nec_ir_tx` role, added by this issue; the
+same pad as WS2812's DIN, one image per run — the choice makes the
+carrier-high image and the bit-7 mask one constant). The receiver-module
+input is IR_RX = `ui_in[4]` (DR 0010's `nec_ir_rx` role): board wiring
+for a 38 kHz demodulating receiver module, read by no committed image
+yet (the RX decode firmware is a follow-up; see the issue).
+
+**Timing, all measured at the pin** by
+`verification/test_firmware_nec_ir.py` against the independent model
+`verification/reference_models/nec_ir.py` (demodulator included). As with
+its siblings the cycle counts are the claim; the microsecond/kilohertz
+figures are arithmetic at target-spec row 4's **unconfirmed** 50 MHz
+clock (20 ns/cycle):
+
+| Interval | Cycles | at unconfirmed 50 MHz | vs the protocol |
+|---|---|---|---|
+| carrier period (rise to rise, every one) | **1,316** | 26.32 us = 37,994 Hz | 38 kHz nominal, −160 ppm |
+| carrier high | **439** | 8.78 us | 1/3 duty (33.35%), the customary NEC choice |
+| in-burst carrier low | **877** | 17.54 us | completes the 1,316-cycle period |
+| leader mark (342 periods) | **449,195** | 8,983.90 us | 9 ms − 0.18% |
+| leader space | **225,000** | 4,500.00 us | 4.5 ms, exact |
+| bit / final mark (22 periods) | **28,075** | 561.50 us | 562.5 us − 0.18% |
+| space of a 0 bit | **28,125** | 562.50 us | 562.5 us, exact |
+| space of a 1 bit | **84,375** | 1,687.50 us | 1,687.5 us, exact |
+| inter-frame idle | **3,000,000** | 60,000.00 us | >= 4.05 ms (the model's frame-separation floor); frame period 110–146 ms by data |
+| one frame (always: a byte and its complement hold 16 ones) | **3,400,670** | 68.01 ms | leader + 16x(28,075+28,125) + 16x(28,075+84,375) + final mark |
+
+**Where the bits come from.** The frame is a table after the code, ONE
+WORD PER BIT (`LDI R0, 0x80` = 1, `LDI R0, 0x00` = 0, `HALT` = end
+marker), read with DR 0012's `PM_DATA_*`: the high byte separates bit
+word from marker, the low byte IS the bit, and `PM_ADDR`'s auto-increment
+is the frame's bit counter. A whole byte cannot survive a carrier burst
+(the burst needs all four registers), so the isolation happens at
+assembly time in the table — which also means a host can load any
+32-bit frame by writing table words, and the bench does (random frames,
+and the mutation control below).
+
+**The leader is two 171-period halves** because the burst counter is
+8-bit and 342 does not fit; the junction completes its carrier low
+(`SUB`+`BNZ`+4x`WAIT`+`JMP`+`LDI`+the rise `OUT`'s own cycle = 877), so
+every one of the 342 periods measures exactly 1,316 cycles — no dropout
+for a demodulator to see.
+
+**The two documented lint warnings.** The marker test (`BNZ
+frame_end`) and the bit test (`BZ bit0`) branch on table bytes — the
+`RCTL PM_DATA_*` reads taint their destination. The marker branch picks
+"one more code word or end of frame" and both targets sit at the same
+10-cycle offset to the next rise; the bit branch picks the bit's OWN
+space length, which is the pulse-distance encoding itself. Each path is
+internally cycle-exact; the difference between them is the protocol. The
+bench asserts the warning count is exactly two.
+
+**What the bench grades.** The model's stated windows (±10% on every
+mark and space, ±5% on the carrier — no NEC transmitter tolerance is
+published) AND the exact cycle counts above, measured edge to edge. The
+mutation control (every carrier-high `WAIT 181` -> `WAIT 175`) drifts
+the carrier 0.5% and the marks 1% — inside every model window, so the
+model still passes and only the exact-cycle assertion catches it: the
+cycle guard is the load-bearing check. A 1.15x-stretched copy of the
+DUT's own capture fails the model's windows, proving the capture-and-
+decode path can fail. Advancing one falling edge in the captured leader by
+100 cycles preserves every period and envelope width. The bench rejects
+the resulting 339-cycle high and measures its paired low as 977 cycles.
+
+**Wiring a fixture.** IR_TX = `uo_out[7]` drives an IR LED through a
+transistor; IR_RX = `ui_in[4]` comes from a 38 kHz demodulating receiver
+module (output idle high, active low — e.g. a TSOP34338-class part):
+
+| Part | Pin | Connect to |
+|---|---|---|
+| NPN transistor (2N3904-class) | base | `uo_out[7]` through 1 kOhm |
+| | emitter | GND |
+| | collector | TSAL6200 cathode through 100 Ω |
+| Vishay TSAL6200 IR LED | anode | 3.3 V |
+| receiver module | Vout | `ui_in[4]` |
+| | Vcc | 3.3 V, 100 nF close to the pin |
+| | GND | GND |
+
+The LED branch targets about 20 mA during each carrier high. Assuming a
+1.2 V LED forward drop and 0.2 V across the saturated transistor, the
+100 Ω resistor gives (3.3 − 1.2 − 0.2) V / 100 Ω = 19 mA.
+[Vishay TSAL6200 datasheet](https://www.vishay.com/docs/81010/tsal6200.pdf)
+
+The transmitter is push-pull into the transistor's base; the module's
+open-collector-style output idles high and pulls low on a burst, which
+is what a receive firmware would sample. Receipt of real hardware,
+bring-up and the RX decode firmware are out of scope here: the claim
+this program makes is the cycle-exact waveform at the pad, verified at
+RTL.
+
+The image is **164 words** of the 256-word store (assembler:
+`python3 firmware/tools/asm.py firmware/asm/nec_ir.asm`; freshness:
+`python3 firmware/tools/check_firmware.py`). Bench:
+`verification/test_firmware_nec_ir.py`
+(`verification/request-firmware-nec-ir.json`), registered in
+`scripts/rtl-bench-inventory.txt`; model self-test
+`verification/test_nec_ir_model.py`.
+
+```bash
+klt functional-verification verification/request-firmware-nec-ir.json --format json
 ```
 
 ### `swd_probe.asm` — SWD debug probe (issue #452)

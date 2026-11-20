@@ -38,3 +38,4 @@ include loadseq
 include loadseq-top
 include reset-release-offsets
 include firmware-dmx512
+include firmware-nec-ir
