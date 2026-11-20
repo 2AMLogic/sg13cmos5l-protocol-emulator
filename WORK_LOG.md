@@ -18,8 +18,25 @@ Chronological record of merged pull requests and closed issues, newest first.
 
 - [2026-09](work_log/WORK_LOG_2026-09.md)
 
+### 2026-11-20
+
+- **PR #499**: Re-mint sta-corner-sweep at fleet klt 0.9.2 with a stamped PDK and the live LibreLane hold figure
+- **PR #496**: docs: correct #399's one-for-one round count to four at review, five by merge
+- **PR #493**: docs: record the externally-triggered signoff-baseline red and its standing response
+- **PR #492**: fix: bound the Git root search in the envelope input-path normalizer
+- **PR #487**: firmware: NEC infrared remote transmitter on the frozen ISA
+- **PR #399**: build: track the fleet klayout-tools version instead of pinning one, and delete the re-mint loop that enforced the pin
+- **Issue #494** (closed): Clarify the four rounds at review and five by merge in the PR #399 baseline note
+- **Issue #491** (closed): Bound the Git root search in the signoff envelope normalizer
+- **Issue #482** (closed): signoff baseline will drift on an unchanged tree at the next klayout-tools release that changes the report shape (post-#371 unpinned klt)
+- **Issue #448** (closed): Firmware: NEC infrared on the existing ISA (multi-protocol extra credit)
+- **Issue #394** (closed): Re-run the macro-backed klt sta sweep at the fleet klayout-tools version, stamping the PDK and correcting the Flow comparison (#377)
+- **Issue #371** (closed): chore: pin a klt containing request.macros (PR #2645) and re-mint the records it stales
+
 ### 2026-11-19
 
+- **PR #484**: refactor: share the UART and DMX512 TX pin checks
+- **Issue #479** (closed): Share the UART and DMX512 TX pin checks
 - **PR #476**: chore: ignore .loom/account-ranking.* token-pool runtime artifacts
 - **PR #474**: docs: claim CAN 2.0A demand lead only on the SE proxy
 - **PR #469**: docs: align signoff-baseline citation label with the linked record id
