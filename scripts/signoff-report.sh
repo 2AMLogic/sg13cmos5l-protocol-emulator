@@ -35,15 +35,21 @@
 #      (`klt signoff --check` reported status "match" -- the grader re-graded
 #      the manifest and found nothing outside the build-identity block
 #      moved, so the same pinned commit verifies from any provisioning
-#      route; klayout-tools #2249/#2258).
+#      route; klayout-tools #2249/#2258). With --diff-vs: the movement
+#      comparison also ran (exit 0 whether non-graded fields moved or
+#      matched -- movement is information, not a gate).
 #   1  Real failure: klt missing / `signoff` missing from its subcommand
 #      list; klt exitted 1 or 2 (usage or
-#      error); no signoff-baseline record committed; or --check-latest
+#      error); no signoff-baseline record committed; --check-latest
 #      found a drift (`klt signoff --check` exitted 3, status "drifted":
 #      a graded field outside the build block -- item status/reason,
 #      citation hash, t1_met_count, ... -- moved since the committed
 #      report; the exact "fails rather than rotting" case that check
-#      exists for). NOTE the exit-code trap: 3 means OPPOSITE things in
+#      exists for); or --diff-vs could not resolve its baseline (no such
+#      record ID / file) or the comparison could not run (unreadable
+#      baseline, invalid JSON -- see the usage block for the mode's
+#      exit-0-whether-moved-or-matched rule). NOTE the exit-code trap: 3
+#      means OPPOSITE things in
 #      the two modes -- render mode's 3 is the normal all-unmet gap state
 #      mapped to success above, but --check mode's 3 is DRIFT and a hard
 #      failure. The two mappings are kept separate below on purpose.
@@ -57,6 +63,36 @@
 #                                            # `klt signoff --check` (the
 #                                            # grader's own comparison, not
 #                                            # a byte-compare)
+#   scripts/signoff-report.sh --diff-vs [X]  # render, then print the
+#                                            # NON-GRADED movement (tiers
+#                                            # doc hash, item text/notes,
+#                                            # added/removed items) between
+#                                            # the fresh render and a
+#                                            # committed report (see below)
+#                                            # via scripts/
+#                                            # signoff_movement_diff.py.
+#                                            # X is optional: a record ID
+#                                            # (artifact under
+#                                            # verification/records/
+#                                            # signoff-baseline/artifacts/)
+#                                            # or a report JSON path; with
+#                                            # no X, the same artifact
+#                                            # --check-latest selects (the
+#                                            # latest record). Movement is
+#                                            # information, not a gate:
+#                                            # exit 0 whether fields moved
+#                                            # or matched. With --diff-vs
+#                                            # the comparison IS the stdout
+#                                            # product (the JSON render is
+#                                            # suppressed unless --out
+#                                            # names a file); pair
+#                                            # `--out FILE --diff-vs` to
+#                                            # mint an artifact and see its
+#                                            # movement in one run. With
+#                                            # --check-latest too, the gate
+#                                            # runs first and a drift still
+#                                            # exits 1 before the movement
+#                                            # is printed.
 #
 # klt resolution: `klt` from $PATH unless $KLT_BIN names another binary
 # (used by environments that provision the pinned klt in an isolated
@@ -74,6 +110,8 @@ RECORDS_GLOB="verification/records/signoff-baseline/records/*.md"
 
 OUT=""
 CHECK_LATEST=0
+DIFF_VS=0
+DIFF_VS_TARGET=""
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --out)
@@ -81,8 +119,14 @@ while [[ $# -gt 0 ]]; do
       OUT="$2"; shift 2 ;;
     --check-latest)
       CHECK_LATEST=1; shift ;;
+    --diff-vs)
+      # Optional value: a record ID or a report JSON path. Taken only when
+      # the next argument exists and does not look like a flag, so
+      # `--diff-vs --out F` parses as diff-vs(default) + --out F.
+      DIFF_VS=1
+      if [[ $# -ge 2 && "$2" != -* ]]; then DIFF_VS_TARGET="$2"; shift 2; else shift; fi ;;
     -h|--help)
-      sed -n '2,40p' "${BASH_SOURCE[0]}"; exit 0 ;;
+      sed -n '2,101p' "${BASH_SOURCE[0]}"; exit 0 ;;
     *)
       echo "error: unknown argument '$1' (see --help)" >&2; exit 1 ;;
   esac
@@ -159,18 +203,28 @@ if [[ -n "$OUT" ]]; then
   cp "$FRESH" "$OUT"
 fi
 
-if [[ "$CHECK_LATEST" -eq 1 ]]; then
-  LATEST_RECORD="$(git ls-files -- "$RECORDS_GLOB" | sort | tail -1)"
-  if [[ -z "$LATEST_RECORD" ]]; then
+# --- latest committed baseline: shared by --check-latest and --diff-vs ---
+# Sets RECORD_ID and COMMITTED (the latest signoff-baseline record's report
+# artifact -- latest by the records glob's sort order, the same selection
+# --check-latest has always made). Exits 1 when the repo has no record or
+# the latest record has no committed artifact.
+resolve_latest_baseline() {
+  local latest
+  latest="$(git ls-files -- "$RECORDS_GLOB" | sort | tail -1)"
+  if [[ -z "$latest" ]]; then
     echo "error: no signoff-baseline evidence record committed under verification/records/signoff-baseline/ -- render one (see manifests/README.md) and commit it before checking." >&2
     exit 1
   fi
-  RECORD_ID="$(basename "$LATEST_RECORD" .md)"
+  RECORD_ID="$(basename "$latest" .md)"
   COMMITTED="verification/records/signoff-baseline/artifacts/$RECORD_ID/signoff-report.json"
   if [[ ! -f "$COMMITTED" ]]; then
     echo "error: latest record $RECORD_ID has no committed report artifact at $COMMITTED." >&2
     exit 1
   fi
+}
+
+if [[ "$CHECK_LATEST" -eq 1 ]]; then
+  resolve_latest_baseline
   # The grader's own comparison (klt signoff --check, klayout-tools #2258):
   # re-grades the manifest and diffs the fresh result against the committed
   # report EXCLUDING the build-identity block, so two legitimate installs of
@@ -216,6 +270,39 @@ PYDRIFT
   rm -f "$CHECK_OUT"
 fi
 
-if [[ -z "$OUT" ]]; then
+if [[ "$DIFF_VS" -eq 1 ]]; then
+  # Non-graded movement vs a committed report (issue #403): the tiers-doc
+  # hash and item text/notes a verdict was graded against can move while
+  # every graded field reproduces, which `klt signoff --check` is
+  # structurally blind to (it compares graded fields only). The comparison
+  # is the stdout product here -- informational, not a gate: exit 0 whether
+  # fields moved or matched (see the usage block for flag interactions).
+  if [[ -n "$DIFF_VS_TARGET" ]]; then
+    if [[ -f "$DIFF_VS_TARGET" ]]; then
+      # An explicit report file wins (paths resolve from the repo root,
+      # where this runner already cd'd).
+      BASELINE="$DIFF_VS_TARGET"
+      BASELINE_LABEL="$DIFF_VS_TARGET"
+    else
+      BASELINE="verification/records/signoff-baseline/artifacts/$DIFF_VS_TARGET/signoff-report.json"
+      BASELINE_LABEL="record $DIFF_VS_TARGET"
+      if [[ ! -f "$BASELINE" ]]; then
+        echo "error: --diff-vs: '$DIFF_VS_TARGET' is neither a readable report file nor a record ID with a committed artifact at $BASELINE." >&2
+        exit 1
+      fi
+    fi
+  else
+    resolve_latest_baseline
+    BASELINE="$COMMITTED"
+    BASELINE_LABEL="latest record $RECORD_ID (the same artifact --check-latest selects)"
+  fi
+  if ! python3 "$SCRIPT_DIR/signoff_movement_diff.py" "$BASELINE" "$FRESH"; then
+    echo "error: movement comparison against $BASELINE_LABEL could not run (see the diagnostic above)." >&2
+    exit 1
+  fi
+  echo "movement comparison vs $BASELINE_LABEL printed above (--diff-vs: informational, not a gate)" >&2
+fi
+
+if [[ -z "$OUT" && "$DIFF_VS" -eq 0 ]]; then
   cat "$FRESH"
 fi

@@ -921,6 +921,40 @@ issue #49's klt pin bump by the time this retirement landed, and that
 record still cited the vendored file by content hash, so it is the one this
 retirement's supersession chain must extend).
 
+**Refresh disclosure rule (issue #403).** A klt move can change the
+checklist a verdict was graded against without moving any graded field:
+`klt signoff --check` compares graded fields only, so the fleet pin's
+0.8.0 → 0.9.0 bump moved `source_doc_content_hash` and the T1 item
+3/4/5/6/8/11 `text` (and item 6's `notes`) while every graded field still
+reproduced — invisible to the `--check-latest` gate and to the 0.9.0
+record's author (the generic tool gap is
+[klayout-tools #6850](https://github.com/2AMLogic/klayout-tools/issues/6850):
+no mode asks which non-graded fields moved between two reports). From the
+next refresh on, a signoff-baseline record must **name in its movement
+list** (alongside `grading_ruleset_id` and the graded movements it already
+carries): the old and new `source_doc_content_hash` — both full hashes —
+whenever it moves, and every item whose `text` or `notes` moved, by tier
+and item id. Never transcribe that by hand — this is exactly the class of
+movement the grader will not tell you about:
+
+```bash
+scripts/signoff-report.sh --diff-vs <record-id>   # fresh render vs that
+                                                  # record's committed
+                                                  # artifact; no arg = the
+                                                  # latest record, the same
+                                                  # one --check-latest
+                                                  # selects
+python3 scripts/signoff_movement_diff.py OLD.json NEW.json   # any two
+                                                  # report files directly
+```
+
+The comparison prints each non-graded movement (source doc/hash
+before → after, per-item text/notes with old/new character counts and a
+short excerpt, added/removed items keyed by tier and id — matching items
+by tier+id regardless of row order) or a single "no non-graded movement"
+line; it is information, not a gate, so it exits 0 whether fields moved
+or matched. Paste its output into the record being minted.
+
 ## Companion links
 
 - Fleet roll-up design (consumes this file): `2AMLogic/2am`#956.

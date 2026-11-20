@@ -59,4 +59,5 @@ python3 scripts/test_check_artifact_manifests.py
 python3 scripts/check_artifact_manifests.py
 python3 scripts/test_check_lint_inventory.py
 python3 scripts/check_lint_inventory.py
+python3 scripts/test_signoff_movement_diff.py
 python3 scripts/check_ratification_gate.py --base-ref origin/main
