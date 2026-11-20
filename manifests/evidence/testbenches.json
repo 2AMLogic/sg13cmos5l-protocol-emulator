@@ -45,7 +45,7 @@
         "role": "testbench",
         "path": "flow/run-die-area-par.sh",
         "passed": true,
-        "content_hash": "sha256:cb587cd5d874320e564b01ef9cd76a68a3b257c1563645a53d2756bbc029214b"
+        "content_hash": "sha256:b851dff2c3f6338fc540930d3d4ada10ac82e59c49c56f5450ae3c4b895f67b8"
       },
       {
         "check": "present",
@@ -108,7 +108,7 @@
         "role": "testbench",
         "path": "scripts/signoff-report.sh",
         "passed": true,
-        "content_hash": "sha256:3b41e9de11ac4a0fc47d7e8c05b9f5e73dd0c599e4a630ab3115932b3734f385"
+        "content_hash": "sha256:10f7a8dfcd33271216bab38736f0554f1599e70696f284c3b575a66334cb1dba"
       },
       {
         "check": "present",
@@ -276,7 +276,7 @@
         "role": "testbench",
         "path": "verification/remint_records.py",
         "passed": true,
-        "content_hash": "sha256:f70c2bf95cca0d3e135576685f0f49381daf5f5a709ff1d2e2d2ed3176b2a47c"
+        "content_hash": "sha256:e64ed364ac417364a07f490e44c58e9585c7ffe0ffdfd6a224be259d80dcce07"
       },
       {
         "check": "present",

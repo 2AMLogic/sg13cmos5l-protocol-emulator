@@ -232,7 +232,9 @@ def collapse_cases(failures: list) -> None:
                       .replace("- **Result**: (fill in)",
                                "- **Result**: **Overall: PASS** (re-run by hand)")
                       .replace("- **Run configuration**: (fill in)",
-                               "- **Run configuration**: re-run by hand"))
+                               "- **Run configuration**: re-run by hand")
+                      .replace("- **Design provenance**: (fill in)",
+                               "- **Design provenance**: rtl re-run by hand"))
             T.record_path(repo, "signoff-baseline", new[0]).write_text(filled, encoding="utf-8")
             T._git(repo, "add", "-A")
             T._git(repo, "commit", "--quiet", "-m", "fill the placeholders")
@@ -361,6 +363,131 @@ def check(name: str, ok: bool, out: str, failures: list) -> None:
     if not ok:
         failures.append(name)
         print("  | " + out.replace("\n", "\n  | "))
+
+
+def lint(repo: Path) -> subprocess.CompletedProcess:
+    return subprocess.run([sys.executable, str(repo / "verification" / "check_records.py"),
+                           "--base-ref", T.BASE_REF, "--require-append-only"],
+                          cwd=repo, capture_output=True, text=True)
+
+
+def commit_leaves(repo: Path, edit) -> None:
+    for rid in LEAF_IDS:
+        p = T.record_path(repo, "signoff-baseline", rid)
+        p.write_text(edit(rid, p.read_text(encoding="utf-8")), encoding="utf-8")
+    T._git(repo, "add", "-A")
+    T._git(repo, "commit", "--quiet", "-m", "edit leaves")
+    stale(repo)
+
+
+def collapse_boundary_cases(failures: list) -> None:
+    """Comparison and replacement share one complete field boundary; an
+    unidentifiable field refuses the mint (#477 review)."""
+    def blank_indented(verdict):
+        def edit(rid, text):
+            v = verdict[rid]
+            return text.replace(
+                "- **Result**: **Overall: PASS** (fixture)",
+                f"\n  - **Result**: Item 9 status\n  {v} (indented)",
+            ).replace(
+                "- **Run configuration**: fixture run, no real simulator invoked",
+                f"\n - **Run configuration**: fixture run {v}",
+            )
+        return edit
+
+    def second_para(field, value, verdict):
+        def edit(rid, text):
+            v = verdict[rid]
+            return text.replace(
+                f"- **{field}**: {value}",
+                f"- **{field}**: Item 9 status\n\n  {v} second paragraph")
+        return edit
+
+    claim = "`docs/baseline.md#the-measurement` -- fixture claim"
+    result = "**Overall: PASS** (fixture)"
+    differ = dict(zip(LEAF_IDS, ("PASS", "FAIL")))
+    same = dict(zip(LEAF_IDS, ("PASS", "PASS")))
+    cases = (
+        ("blank-line indented field bullets", blank_indented),
+        ("a Claim second paragraph", lambda v: second_para("Claim", claim, v)),
+        ("a Result second paragraph", lambda v: second_para("Result", result, v)),
+    )
+    for label, mk in cases:
+        with tempfile.TemporaryDirectory(prefix="remint-collapse-") as d:
+            repo = build_collapsible(Path(d))
+            commit_leaves(repo, mk(differ))
+            code, out = tool(repo, "--collapse", "signoff-baseline")
+            check(f"--collapse mints nothing for conflicting leaves ({label})",
+                  code == 1 and baseline_records(repo) == LEAF_IDS, out, failures)
+        with tempfile.TemporaryDirectory(prefix="remint-collapse-") as d:
+            repo = build_collapsible(Path(d))
+            commit_leaves(repo, mk(same))
+            code, out = tool(repo, "--collapse", "signoff-baseline")
+            new = [r for r in baseline_records(repo) if r not in LEAF_IDS]
+            check(f"--collapse accepts equivalent leaves ({label})",
+                  code == 0 and len(new) == 1, out, failures)
+            if new:
+                text = T.record_path(repo, "signoff-baseline", new[0]).read_text(encoding="utf-8")
+                check(f"draft drops every inherited Result/Run configuration line ({label})",
+                      "(indented)" not in text and "fixture run PASS" not in text
+                      and ("second paragraph" in text) == ("Claim" in label), text, failures)
+                T._git(repo, "add", "-A")
+                T._git(repo, "commit", "--quiet", "-m", "draft")
+                r = lint(repo)
+                check(f"draft fails lint on Result and Run configuration ({label})",
+                      r.returncode == 1 and "`Result`" in r.stdout
+                      and "`Run configuration`" in r.stdout, r.stdout, failures)
+
+    with tempfile.TemporaryDirectory(prefix="remint-collapse-") as d:
+        repo = build_collapsible(Path(d))
+        commit_leaves(repo, lambda rid, t: t + "- **Result**: a second Result bullet\n")
+        code, out = tool(repo, "--collapse", "signoff-baseline")
+        check("--collapse refuses a leaf with a repeated required field",
+              code == 1 and "not identifiable exactly once" in out
+              and baseline_records(repo) == LEAF_IDS, out, failures)
+
+
+def collapse_successor_cases(failures: list) -> None:
+    """The successor cites its own evidence, not the predecessor's."""
+    with tempfile.TemporaryDirectory(prefix="remint-collapse-") as d:
+        repo = build_collapsible(Path(d))
+
+        def edit(rid, text):
+            return (text.replace("- **Links**: Design under test: `rtl/dut.v`",
+                                 f"- **Links**: [verdict](../artifacts/{rid}/report.json)")
+                    .replace("rtl (`rtl/dut.v` @ `" + "0" * 40 + "`)",
+                             "rtl at `" + "0" * 40 + "`"))
+        commit_leaves(repo, edit)
+        code, out = tool(repo, "--collapse", "signoff-baseline")
+        new = [r for r in baseline_records(repo) if r not in LEAF_IDS]
+        check("--collapse mints for leaves with artifact links", code == 0 and len(new) == 1,
+              out, failures)
+        if new:
+            text = T.record_path(repo, "signoff-baseline", new[0]).read_text(encoding="utf-8")
+            prose = text.split("-->", 1)[1]
+            check("successor heading uses the new ID",
+                  f"# Record {new[0]}" in prose and f"# Record {LEAF_IDS[1]}" not in prose,
+                  text, failures)
+            check("record-specific links point at the successor's artifacts",
+                  f"../artifacts/{new[0]}/report.json" in prose
+                  and f"artifacts/{LEAF_IDS[1]}/" not in prose, text, failures)
+            check("run-specific Design provenance must be filled and the old one is historical",
+                  "- **Design provenance**: (fill in)" in prose
+                  and "Historical, from the predecessor" in prose, text, failures)
+            T._git(repo, "add", "-A")
+            T._git(repo, "commit", "--quiet", "-m", "draft")
+            r = lint(repo)
+            check("lint requires Design provenance to be completed",
+                  r.returncode == 1 and "`Design provenance`" in r.stdout, r.stdout, failures)
+
+    with tempfile.TemporaryDirectory(prefix="remint-collapse-") as d:
+        repo = build_collapsible(Path(d))
+        commit_leaves(repo, lambda rid, t: t.replace(
+            "N/A (fixture)", f"N/A, derived from {rid} elsewhere"))
+        code, out = tool(repo, "--collapse", "signoff-baseline")
+        check("--collapse refuses when a kept block cites the predecessor ambiguously",
+              code == 1 and "nothing minted" in out
+              and baseline_records(repo) == LEAF_IDS, out, failures)
 
 
 def main() -> int:
@@ -512,6 +639,8 @@ def main() -> int:
     collapse_cases(failures)
     collapse_wrapped_cases(failures)
     mixed_list_cases(failures)
+    collapse_boundary_cases(failures)
+    collapse_successor_cases(failures)
 
     print()
     if failures:

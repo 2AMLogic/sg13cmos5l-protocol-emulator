@@ -1,0 +1,135 @@
+{
+  "schema_version": 2,
+  "engine": "icarus",
+  "hdl_toplevel": "tt_um_2amlogic_protocol_emulator",
+  "testbench": "test_firmware_swd",
+  "status": "pass",
+  "test_count": 8,
+  "passed_count": 8,
+  "failed_count": 0,
+  "skipped_count": 0,
+  "tests": [
+    {
+      "name": "test_committed_image_is_fresh",
+      "status": "passed",
+      "sim_time_ns": 0.0,
+      "real_time_s": 0.001961231231689453
+    },
+    {
+      "name": "test_probe_reads_idcode_and_dp_register",
+      "status": "passed",
+      "sim_time_ns": 90541.0,
+      "real_time_s": 0.37371182441711426
+    },
+    {
+      "name": "test_wait_and_fault_acks_are_reported",
+      "status": "passed",
+      "sim_time_ns": 181121.0,
+      "real_time_s": 0.9086954593658447
+    },
+    {
+      "name": "test_negative_line_reset_49",
+      "status": "passed",
+      "sim_time_ns": 90561.0,
+      "real_time_s": 0.44423532485961914
+    },
+    {
+      "name": "test_negative_switch_bit_flipped",
+      "status": "passed",
+      "sim_time_ns": 90561.0,
+      "real_time_s": 0.6735372543334961
+    },
+    {
+      "name": "test_negative_no_turnaround_release",
+      "status": "passed",
+      "sim_time_ns": 90561.0,
+      "real_time_s": 0.5687916278839111
+    },
+    {
+      "name": "test_negative_wrong_request_parity",
+      "status": "passed",
+      "sim_time_ns": 90561.0,
+      "real_time_s": 0.5893738269805908
+    },
+    {
+      "name": "test_negative_short_trailing_idle",
+      "status": "passed",
+      "sim_time_ns": 90561.0,
+      "real_time_s": 0.5178065299987793
+    }
+  ],
+  "coverage": null,
+  "trace": null,
+  "environment": {
+    "engine": "icarus",
+    "engine_version": "13.0",
+    "tools": [],
+    "cocotb_version": "2.0.1",
+    "results_xml": {
+      "path": "verification/.klt/functional-verification/results_icarus.xml",
+      "scope": "repo",
+      "sha256": "sha256:bc1a8f1b676a7efd91fe801b0bf46bffda5eab040b3dab9395f8ecd9ceb7f9cb"
+    },
+    "test_log": {
+      "path": "verification/.klt/functional-verification/test_icarus.log",
+      "scope": "repo",
+      "sha256": "sha256:652d6388ddb4e69e75e705050069e6621eae92ba1e2485f33335c9ba6d8d0a15"
+    },
+    "build_log": {
+      "path": "verification/.klt/functional-verification/build_icarus.log",
+      "scope": "repo",
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "random_seed": 1,
+    "source_defines": {},
+    "env": {},
+    "parameters": {},
+    "initial_state": null,
+    "sdf": null,
+    "sources": [
+      {
+        "path": "src/tt_um_2amlogic_protocol_emulator.v",
+        "scope": "repo",
+        "sha256": "8c380b9165a09a60e6be8d8546eac360a733317253f152c15faaa13489e94a29"
+      },
+      {
+        "path": "rtl/protocol_core.v",
+        "scope": "repo",
+        "sha256": "d4bab243a80af56a41b8ef730bc0ecbee889f2c02f4587311d6f9f694636437a"
+      },
+      {
+        "path": "rtl/protocol_boot_rom.v",
+        "scope": "repo",
+        "sha256": "329ed189d457010b259349e5d59e36db09d67422b4909320253929c3e0fdbebe"
+      },
+      {
+        "path": "rtl/protocol_program_memory.v",
+        "scope": "repo",
+        "sha256": "2b08865ab24d6bac84b390dfa76bab6686b572ba8f19124130bfc34e93dff637"
+      },
+      {
+        "path": "rtl/vendor/RM_IHPSG13_1P_256x16_c2_bm_bist.v",
+        "scope": "repo",
+        "sha256": "9d456840a37dff650ee6a09dc1f3d4e2d8d3348fcea7dc305933dd4543feff1a"
+      },
+      {
+        "path": "rtl/vendor/RM_IHPSG13_1P_core_behavioral_bm_bist.v",
+        "scope": "repo",
+        "sha256": "e2e43ec0159cbc34662fe91114e8cb03a697a2a829ad63b0d4f06631908ea787"
+      }
+    ]
+  },
+  "provenance": {
+    "klt_version": "0.9.3.dev2357+gd2567cb5d05c",
+    "klt_git_commit": "d2567cb5d05c3e6193c777c3b908a98c2bd780c0",
+    "klt_reinstall_spec": "klayout-tools @ git+https://github.com/2AMLogic/klayout-tools@d2567cb5d05c3e6193c777c3b908a98c2bd780c0",
+    "klayout_version": "0.30.12",
+    "pdk": null,
+    "deck": null,
+    "input": {
+      "role": "source",
+      "content_hash": "sha256:1df6bb47bbd2129244c779e49715ce7a290cf179b60afe92317041e01e9eae56"
+    },
+    "request_sha256": "2e11bf0c299b3c54d14caedd8cd93c0b756bf6793db262318a95c6eeb7d7d0de"
+  }
+}
