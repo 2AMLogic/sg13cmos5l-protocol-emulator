@@ -52,10 +52,14 @@ SPEC_JSON = "spec/target-spec-ratified.json"
 STATEMENT_MD = "spec/statistical-claims-na.md"
 STATEMENT_JSON = "spec/statistical-claims-na.json"
 
-# Mirror of klayout-tools signoff._NA_STATISTICAL_TEXT_RE at the pinned
-# klayout-tools==0.8.0: a statement row's `class` (and any spec-row string)
-# matching this refuses the item. Kept in sync deliberately; if the pin ever
-# moves and the grader's scan changes, update this to match the new pin.
+# Mirror of klayout-tools signoff._NA_STATISTICAL_TEXT_RE, transcribed from
+# klayout-tools 0.8.0 -- klt-pin: historical; this repo stopped pinning klt
+# on 2026-11-14 (issue #371). A statement row's `class` (and any spec-row
+# string) matching this refuses the item. The fleet version now lives in
+# PIN_KLAYOUT_TOOLS_VERSION in 2AMLogic/2am's infra/aws/batch-image-pins.env
+# (layout/toolchain.json declares only the bare `klayout-tools` requirement);
+# when the fleet version changes, compare this mirror with the grader's scan
+# and update it if the upstream scan changed.
 STATISTICAL_TEXT_RE = re.compile(
     r"σ|\bsigma\b|\bcpk\b|\bppk\b|\byield\b|\bmonte[ _-]?carlo\b"
     r"|\bmismatch\b|\bmatching\b|\boffset\b|\baccuracy\b",
