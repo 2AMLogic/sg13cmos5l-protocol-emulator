@@ -102,8 +102,11 @@ def live_records() -> list[tuple[Path, dict]]:
 def stale_report(records: list[tuple[Path, dict]]) -> list[dict]:
     """One entry per live record with >= 1 stale input:
     {path, experiment, record_id, stale: [(rel, recorded, current)],
-     requests: [rel, ...]}. Missing/untracked inputs are not 'stale' (that
-    is a different failure, left to check_records)."""
+    requests: [rel, ...]}. Missing/untracked inputs are not 'stale' (that
+    is a different failure, left to check_records). Paths in
+    `check_records.FRESHNESS_EXEMPT_INPUT_PATHS` are not compared here
+    either, so this tool never asks for a re-mint the linter does not want
+    (#371); the exemption list is imported, never restated."""
     out = []
     for path, meta in records:
         inputs = (meta.get("provenance") or {}).get("inputs")
@@ -118,6 +121,8 @@ def stale_report(records: list[tuple[Path, dict]]) -> list[dict]:
                 requests.append(rel)
             if cr.live_input_error(path, rel):
                 continue
+            if rel in cr.FRESHNESS_EXEMPT_INPUT_PATHS:
+                continue  # not compared by check_records either (#371)
             current = sha256_of(REPO_ROOT / rel)
             if current != item["content_hash"]:
                 stale.append((rel, item["content_hash"], current))

@@ -30,17 +30,16 @@ estimate closes setup but fails hold), row 12 (stale gate-level and SDF records
 for the Fast-mode I2C images) and row 7 (klt place-and-route not run).
 
 **T1 checklist** (`klt signoff`, record
-`verification/records/signoff-baseline/records/20261119-232345-ad69581.md`,
-klt 0.8.0): **4 of 11 met, 1 `not_applicable`**.
+`verification/records/signoff-baseline/records/20261119-224220-e4ca4ab.md`,
+klt 0.9.2): **5 of 11 met, 1 `not_applicable`**.
 
 | Item | Verdict | What moves it |
 |---|---|---|
-| 1 Design sources, 2 Layout, 9 Testbenches, 10 Hygiene | met | — |
+| 1 Design sources, 2 Layout, 7 Post-layout verification, 9 Testbenches, 10 Hygiene | met | — |
 | 3 DRC clean | unmet, `check_failed` (4,484 findings, all inside the foundry SRAM macro) | #365, after #371 |
 | 4 LVS clean | unmet, `check_failed` | #329: contract drafted (DR 0024, `Proposed`); waits on review and the post-route evidence |
 | 5 Full corner verification | unmet, `no_evidence` | no open issue; see Later |
 | 6 Monte Carlo | `not_applicable` (hash-bound statement `spec/statistical-claims-na.md`, covering the ratified rows 1–12; #348) | re-mint if a row ever turns statistical or rows 13–14 ratify |
-| 7 Post-layout verification | unmet, `unverifiable_provenance` | re-grade after #371 |
 | 8 Characterization report | unmet, `check_failed` | follows the unmet spec rows |
 | 11 Power delivery | unmet, `no_evidence` | #350; LVS half waits on #329 |
 
