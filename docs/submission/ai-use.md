@@ -193,7 +193,7 @@ design detail. Representative issues:
     2026-10-27). The klt STA leg has since run on the macro-backed design:
     setup closes at 20 ns at the three macro-characterized corners and hold
     fails at all three, a pre-CTS, pre-route netlist estimate
-    ([record](../../verification/records/sta-corner-sweep/records/20261101-032922-c606644.md)).
+    ([record](../../verification/records/sta-corner-sweep/records/20261120-031100-51b7eac.md)).
     The GDS still comes from LibreLane alone — the klt place-and-route leg has
     not been run on this design (#389) — and timing now has a klt number that
     disagrees with LibreLane on hold, recorded as a finding.
