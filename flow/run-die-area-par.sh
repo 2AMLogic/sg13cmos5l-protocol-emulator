@@ -12,7 +12,9 @@
 #      `flow/run-sta-corner-sweep.sh` uses), then
 #   2. runs `klt place-and-route` on that netlist with
 #      `target_stage: "place"` -- floorplan (initialize_floorplan at the
-#      stated utilization) through legalized detailed placement -- which
+#      stated utilization) through legalized detailed placement,
+#      declaring each design's program-memory SRAM macro via
+#      `request.macros` (see SRAM_CELL below) -- which
 #      is what reports `die_area_um2` / `core_area_um2` and the effective
 #      `utilization_pct` (issue #21's dependency note asks for "a P&R run
 #      that gets as far as a floorplan"; this run goes one stage further
@@ -83,6 +85,22 @@ IO_LAYER_H="Metal3"
 IO_LAYER_V="Metal2"
 SEED="1"
 TARGET_STAGE="place"
+# Program-memory hard macro, declared to `klt place-and-route` via
+# request.macros (klayout-tools#2645, in every klt release since 0.9.0):
+# without it the floorplan stage dies with OpenROAD ORD-2013 ("LEF master
+# RM_IHPSG13_1P_256x16_c2_bm_bist not found") -- the BLOCKED finding every
+# die-area record from 20261010-110840 to 20261027-190012 carries. The
+# cell/lef/per-corner-lib shape is the one flow/run-sta-corner-sweep.sh
+# already uses for `klt sta` (DR 0007 corner pairing); `instance`/`x_um`/
+# `y_um` are the fixed-placement fields only the place-and-route verb
+# adds on top of that shared shape. The location is the macro's lower-left
+# corner, MACRO_INSET_UM inside the core's own lower-left corner (core
+# margin + inset), orientation R0, no halo -- a conventional, stated-once
+# starting point for a die-area measurement, not an optimized placement.
+SRAM_CELL="RM_IHPSG13_1P_256x16_c2_bm_bist"
+MACRO_INSET_UM="5.0"
+MACRO_X_UM="$(python3 -c "print(${CORE_MARGIN_UM} + ${MACRO_INSET_UM})")"
+MACRO_Y_UM="$MACRO_X_UM"
 # Tiny Tapeout CMOS5L tile geometry (template info.yaml; order of magnitude):
 TILE_W_UM="167"
 TILE_H_UM="108"
@@ -120,6 +138,14 @@ for entry in "${DESIGNS[@]}"; do
   recipe="${entry%% *}"
   top="${entry##* }"
   slug="$(echo "$top" | tr '_' '-')"
+  # The synthesized netlist keeps the module hierarchy, so after
+  # link_design the SRAM instance OpenROAD must place is the hierarchical
+  # path for the top design and the bare name for the program-memory top.
+  case "$top" in
+    protocol_program_memory) macro_instance="u_sram" ;;
+    tt_um_2amlogic_protocol_emulator) macro_instance="u_prog_mem/u_sram" ;;
+    *) echo "FATAL: no macro instance mapped for top ${top}." >&2; exit 1 ;;
+  esac
 
   echo "== ${top}: synthesize (nominal corner) ==" >&2
   "$KLT" synthesize "$recipe" "${PDK_ARGS[@]}" --format json \
@@ -139,12 +165,23 @@ for entry in "${DESIGNS[@]}"; do
   cp "$NETLIST_ABS" "${SCRATCH_DIR}/${NETLIST_BASENAME}"
 
   request_path="${SCRATCH_DIR}/par-${slug}-request.json"
-  python3 - "$request_path" "$top" "${SCRATCH_DIR}/${NETLIST_BASENAME}" <<'PYEOF'
+  python3 - "$request_path" "$top" "${SCRATCH_DIR}/${NETLIST_BASENAME}" \
+    "$macro_instance" "$PDK_ROOT_RESOLVED" "$SRAM_CELL" "$MACRO_X_UM" "$MACRO_Y_UM" <<'PYEOF'
 import json
 import os
 import sys
 
 request_path, top, netlist = sys.argv[1], sys.argv[2], sys.argv[3]
+macro_instance, pdk_root, sram_cell = sys.argv[4], sys.argv[5], sys.argv[6]
+macro_x_um, macro_y_um = float(sys.argv[7]), float(sys.argv[8])
+sram = os.path.join(pdk_root, "ihp-sg13cmos5l", "libs.ref", "sg13cmos5l_sram")
+# Per-corner macro liberty, keyed by the stdcell corner name (DR 0007
+# pairing) -- the same map flow/run-sta-corner-sweep.sh builds.
+macro_lib = {
+    "slow_1p08V_125C": "slow_1p08V_125C",
+    "typ_1p20V_25C": "typ_1p20V_25C",
+    "fast_1p32V_m40C": "fast_1p32V_m55C",
+}
 request = {
     "schema": "klt.place_and_route.request/1",
     "engine": "openroad",
@@ -160,6 +197,20 @@ request = {
     },
     "io": {"layer_h": "Metal3", "layer_v": "Metal2"},
     "constraints": {"clock_port": "clk", "clock_period_ns": 20.0},
+    "macros": [
+        {
+            "cell": sram_cell,
+            "lef": os.path.join(sram, "lef", sram_cell + ".lef"),
+            "lib": {
+                k: os.path.join(sram, "lib", f"{sram_cell}_{v}.lib")
+                for k, v in macro_lib.items()
+            },
+            "instance": macro_instance,
+            "x_um": macro_x_um,
+            "y_um": macro_y_um,
+            "orientation": "R0",
+        }
+    ],
     "seed": 1,
     "target_stage": "place",
 }
