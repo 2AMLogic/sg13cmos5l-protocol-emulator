@@ -430,6 +430,155 @@ capture, PVT corner sweeps, or Monte Carlo.
   are the inventories' hashes. The `signoff` CI job re-attests each before the
   tier re-render. Baselines: `signoff-baseline` `20261028-183910-18198b7` to
   `20261028-183917-18198b7` (one per live head), still **4 of 11**.
+- **2026-11-14 (issue #371): this repo stops pinning klayout-tools and tracks
+  the fleet version; item 7 goes `unmet` -> `met`; 4 of 11 becomes 5 of 11.**
+  Per the 2026-11-09 operator ruling (2AMLogic/2am#7038), `layout/toolchain.json`
+  declares no klayout-tools version and `klt_last_verified_commit` is gone;
+  `scripts/signoff-report.sh`'s commit-equality gate is replaced by recording
+  the grading build, and CI prints `klt --version` instead of asserting one.
+  Under the ruling an evidence record **keeps the version that produced it**, so
+  no record was re-minted for the version move itself, and
+  `verification/check_records.py` no longer compares this file's hash when
+  grading provenance freshness.
+  Items 9 and 10 WERE re-attested, because their envelopes pin by content hash
+  files this change edits (`scripts/setup-env.sh` and `scripts/signoff-report.sh`
+  for item 9; `.github/workflows/ci.yml`, `docs/environment.md`,
+  `verification/check_records.py` and `manifests/evidence/testbenches.txt` for
+  item 10). Both pass at klt `0.9.0`: item 9 with all 27 RTL benches green on
+  the cold start, item 10 with 15 of 15 checks. `manifests/attest/item9.json`'s
+  `pins.tools.klt` now names the version that produced the attestation rather
+  than a repo pin, and its `cold_start` declares a `timeout_s` (the sequential
+  Icarus run does not fit klt's 1800 s default on a shared worker). Item 8's pin
+  follows the regenerated characterization report; item 10's pin is unchanged
+  (its inventory bytes did not move).
+  **The one verdict movement, recorded and not silently adopted: T1 item 7
+  (Post-layout verification) goes `unmet`/`unverifiable_provenance` -> `met`.**
+  The two bullets above both recorded item 7 as stuck because a
+  `functional-verification` envelope carries no `provenance.input.content_hash`
+  for the manifest pin to be compared against, and both said the only levers
+  were an upstream binding or #275 superseding the envelope. The upstream
+  binding landed: klayout-tools#4893 closed 2026-11-04, before v0.9.0 was
+  tagged 2026-11-05, and the grader can now re-hash the cited evidence file.
+  The same citation and the same pin (`sha256:dfb3fe29...`) render `met` with
+  `content_hash_basis: "evidence_file"`, `input_verified: true`. The pin was
+  NOT dropped and no ratified value was relaxed -- the grader checks more than
+  it did, not less. Item 7's body-bias disclosure note is unchanged and stays
+  claimant-enforced. Items 3, 4, 5, 6, 8 and 11 are byte-identical on status
+  and reason; `tier` stays `null`.
+  **Second recorded movement, in envelope SHAPE rather than verdict: T1 item
+  1's envelope and its manifest pin changed basis.** At klt 0.8.0 item 1's
+  envelope recorded `provenance.input` = the inventory, so the manifest pin
+  was `manifests/attest/item1.json`'s hash (the bullet above, 2026-10-28,
+  says "the pins of items 1, 9 and 10 are the inventories' hashes" -- that is
+  now true of items 9 and 10 only). At 0.9.0 the envelope records
+  `provenance.input.paths`, every inventoried file with its own hash, and
+  `provenance.input.content_hash` is a digest over the whole set; item 1's pin
+  is that digest. Nothing about item 1's evidence changed -- its re-attest is
+  17 of 17 checks passed, as before -- but the committed 0.8.0-shaped envelope
+  `--check`s as `drifted` against a 0.9.0 producer, so it had to be
+  regenerated. `scripts/check_evidence_inventories.py` only understood the
+  single-file shape and now reads both, verifying each set member against its
+  own recorded hash and leaving the set digest to `klt signoff --attest
+  --check`, which is what derives it;
+  `scripts/test_check_evidence_inventories.py` covers the new shape.
+  Baselines: `signoff-baseline` `20261114-021001-2ad8b1c` to
+  `20261114-021008-2ad8b1c` (one per live head), **5 of 11**, superseding the
+  `20261108-1200xx-79d0aef` heads directly.
+  **Ordering note for the next person who refreshes these envelopes.** The
+  baseline had to be rendered twice to get here, and only the second render
+  landed. `klt signoff --attest 10` runs `npm run lint`, which runs the record
+  linter, and `-o` writes nothing when a check fails (klayout-tools#5538). So
+  when a file is BOTH an item-10 input and a `signoff-baseline` input --
+  `manifests/evidence/testbenches.txt` and `scripts/check_evidence_inventories.py`
+  both are -- editing it stales the baseline, which fails the linter, which
+  blocks the attestation that has to pin the edited file. The way through is
+  to mint a throwaway baseline round, re-attest item 10, then delete that
+  round and mint the real one: a record added and deleted on the same branch
+  leaves no append-only violation, so no scaffolding evidence lands. The
+  2026-10-28 bullet's "re-mint item 10 FIRST, on a tree whose baseline still
+  holds" only works when nothing else has already staled the baseline.
+  A second attest-time gap found here is filed as klayout-tools#5602: a
+  declared check that invokes `klt` resolves the host's klt, not the attesting
+  one, because the attesting venv's `bin` is stripped from the check's `PATH`.
+- **Items 1, 2, 7, 8, 9 and 10, state as of 2026-11-19 (PR #399, the rebase
+  onto `main`).** Append-only; the bullets above are the earlier states. The
+  branch rebased onto `main` (81 commits after the merge base), merging
+  `main`'s tree: new `firmware-uart-rx` records, the firmware-midi bench set,
+  DR 0010/0024, and `main`'s own baseline round
+  (`20261119-16260N-3e50769`, 4 of 11 at the pre-migration grader). No
+  verdict moved in the merge: the characterization report and envelope were
+  regenerated on the merged tree (`scripts/characterization_report.py`; the
+  regenerated report is byte-identical to the merge's own output -- the
+  report's rows and the `klt_timing` provenance prose are unchanged), the
+  manifest's item-8 pin follows the regenerated envelope, and T1 item 10 was
+  re-attested at klt `0.9.0` because its envelope pinned pre-rebase hashes of
+  `.github/workflows/ci.yml` and `verification/check_records.py` (both files
+  changed on `main`; `--check` reported `drifted`; 15 of 15 checks after
+  re-attest). Items 1 and 9 still re-produce (`--check` status `match`) and
+  their pins are unchanged. **The round superseding both stale rounds
+  (`20261114-02100N-2ad8b1c` and `20261119-16260N-3e50769`) is
+  `signoff-baseline 20261119-174650` .. `20261119-174705-db962c6`, 5 of 11 at
+  klt `0.9.0`** -- the same five items as the branch's 2026-11-14 round, and
+  one
+  more than `main`'s (item 7, the grader change already recorded above; no
+  new evidence). The #5538 ordering was needed again and followed: a
+  throwaway round was minted first so the record linter passed inside the
+  item-10 attestation, then deleted unlanded before this round was minted.
+  Both docs citing a baseline (`docs/submission/verification.md`,
+  `docs/ROADMAP.md`) were re-pointed at this round in the same change.
+- **Items 1, 2, 7, 8, 9 and 10, state as of 2026-11-19 (PR #399, the
+  post-#461 merge).** Append-only; the bullets above are the earlier states.
+  `main` moved again after the rebase round above (PR #461: the
+  firmware-dmx512 bench set, DR-0010 edits and
+  `scripts/check_protocol_pin_roles.py` changes), GitHub reported the PR
+  `CONFLICTING`, and the claim-reconciliation pass routed it to Doctor. The
+  merge changed `manifests/evidence/testbenches.txt` (both sides edited it)
+  and, through the item-10 envelope, `manifests/evidence/hygiene.json`: the
+  merge's conflict resolution set the envelope's `testbenches.txt` pin to the
+  merged file's hash, and the committed envelope re-produces **in place**
+  (`klt signoff --attest 10 --check` status `match` at klt `0.9.0`, 15 of 15
+  checks) -- no re-attest, so the #5538 throwaway ordering did not apply this
+  time. Items 1 and 9 also still re-produce (`--check` status `match`), and
+  `scripts/characterization_report.py --check` passes on the merged tree (the
+  merge changed none of its inputs; nothing was regenerated). **The round
+  superseding both stale rounds (the branch's own
+  `20261119-174650`..`-174705-db962c6` and `main`'s post-#461
+  `20261119-174501`..`-174516-a4bb6ba`) is `signoff-baseline
+  20261119-190101` .. `20261119-190132-7472e91`, 5 of 11 at klt `0.9.0`**
+  -- thirty-two records, one per live record of the two stale rounds. No
+  verdict moves against the branch's own round (the merge moved envelope
+  bytes only); against `main`'s the one-item difference (item 7, the grader
+  change recorded in the bullets above) is the rebase round's recorded
+  finding, not a new one. Both docs citing a baseline
+  (`docs/submission/verification.md`, `docs/ROADMAP.md`) were re-pointed at
+  this round in the same change.
+- **Items 1, 2, 7, 8, 9 and 10, state as of 2026-11-19 (PR #399, the second
+  post-merge round, after PR #457).** Append-only; the bullets above are the
+  earlier states. `main` moved once more after the post-#461 round above
+  (PR #457: the protocol-catalog docs -- `docs/protocols.md`, `README.md`,
+  `docs/info.md` and the two baseline-pointer edits -- plus its item-10
+  envelope re-mint for the README edit and its own three baseline rounds),
+  GitHub reported the PR `CONFLICTING` again, and the claim-reconciliation
+  pass routed it back to Doctor. The merge's two content conflicts
+  (`docs/ROADMAP.md`, `docs/submission/verification.md`) kept this branch's
+  5-of-11 pointers; `manifests/evidence/hygiene.json` merged clean -- the
+  merge took `main`'s re-minted envelope and its `README.md` pin matches the
+  merged README byte for byte, so every item-1/2/9/10 pin verifies against
+  the merged tree (`scripts/check_evidence_inventories.py` PASS) and **no
+  envelope was re-attested; the #5538 throwaway ordering did not apply this
+  time either**. `scripts/characterization_report.py --check` passes on the
+  merged tree (the merge changed none of its inputs; nothing regenerated).
+  **The round superseding both stale rounds (the branch's own
+  `20261119-190101`..`-190132-7472e91`, stale on `hygiene.json` only, and
+  `main`'s post-#457 `20261119-183553`..`-183624-872af7d`, graded at the
+  pre-migration klt 0.8.0 and stale on the branch's pre-#457 inputs) is
+  `signoff-baseline 20261119-193301` .. `20261119-193404-c99dfbf`, 5 of 11
+  at klt `0.9.0`** -- sixty-four records, one per live record of the two
+  stale rounds. No verdict moves against the branch's own round; against
+  `main`'s the one-item difference is the same recorded grader change
+  (item 7, klayout-tools#4893), not new evidence. Both docs citing a
+  baseline (`docs/submission/verification.md`, `docs/ROADMAP.md`) were
+  re-pointed at this round in the same change.
 - **2026-11-19 (issue #348): item 6 cites the `not_applicable` form and
   renders `not_applicable`.** The manifest's item 6 now carries the
   klayout-tools #2865 form: a `not_applicable` object binding two JSON
@@ -446,6 +595,52 @@ capture, PVT corner sweeps, or Monte Carlo.
   (one per live head), **4 of 11 met, 1 not applicable**. Sequencing note:
   PR #399 also re-mints the baseline; whichever lands second re-mints again
   — that is this treadmill working as designed, not a conflict.
+- **2026-11-19, correction to the account of PR #399's post-#457 merge.**
+  Taking the branch's version of `docs/submission/verification.md` kept
+  its 5-of-11 pointer and also carried forward obsolete STA text from
+  `db962c6b`. That text reversed `main`'s correction in `4db5c6d6`.
+  The verification matrix and limitations now cite the live klt (OpenSTA)
+  result again. The netlist estimate closes setup at 20 ns and fails hold at
+  all three macro-characterized corners. LibreLane closes hold after routing.
+- **2026-11-19, PR #399 after the item 6 merge (#467).** The fleet advanced
+  to klt `0.9.2` in 2AMLogic/2am commit `6e7c7778`. The [merged verdict](../verification/records/signoff-baseline/artifacts/20261119-203123-b9a3cc3/signoff-report.json)
+  grades **5 of 11 met and 1 not applicable**. Item 6 gained the hash-bound
+  statement from #348. Item 7 still verifies its existing evidence file.
+  These account for the differences from the two parent rounds. The render
+  at `b9a3cc37` supplies `20261119-202924-b9a3cc3` through `20261119-203123-b9a3cc3`,
+  superseding all 64 branch and 56 main signoff records individually.
+  Item 9 was refreshed because its inventory hashes the signoff script,
+  including the rewrapped comment. klt carried the existing local-only RTL
+  cold-start result and recomputed the other checks. Item 1 and item 10
+  reproduced with their existing envelopes.
+- **2026-11-19 (PR #399, the post-#484 round).** `main` moved twice more
+  after the item 6 round above (PR #468's MIDI re-filing, three merges of
+  PR #462/#452 legs, and PR #484), the claim-reconciliation pass routed the
+  PR back to Doctor as `CONFLICTING`, and the conflict-only merge
+  `e4ca4ab6` kept this branch's 5-of-11 doc pointers while taking main's
+  `firmware-midi` testbench line and characterization row updates. The
+  three manifest content-hash conflicts (`manifests/sg13cmos5l-protocol-emulator.json`
+  item 8, `manifests/evidence/characterization.json`'s input pin,
+  `manifests/evidence/hygiene.json`'s testbenches pin) were re-bound to the
+  merged bytes -- the merged `measurements/characterization.md` and
+  `manifests/evidence/testbenches.txt` hash to neither parent's pin --
+  and `scripts/check_evidence_inventories.py` PASSES on the merged tree
+  (no envelope was re-attested; the pins moved because their inputs are
+  unions, not because any audit changed). The round superseding both live
+  sets (the branch's 120 `20261119-2029xx..203123-b9a3cc3` and main's 112
+  `20261119-2035xx..203629-175a284`, graded at the retired klt `0.8.0` pin)
+  is `signoff-baseline 20261119-223829` .. `20261119-224220-e4ca4ab`, 232
+  records, one per live predecessor, **5 of 11 met, 1 not applicable, at
+  the fleet klt `0.9.2`** (the same release build, git commit
+  `046ba74652fc096bd97071fc3237f7159dd40183`, as the previous branch
+  round, provisioned in a throwaway venv outside the repository). The
+  render is byte-identical to `20261119-203123-b9a3cc3`'s artifact -- the
+  merge moved no graded field; against main's 0.8.0 round the only status
+  difference remains item 7 (the recorded grader change,
+  klayout-tools#4893), not new evidence. Both docs citing a baseline
+  (`docs/submission/verification.md`, `docs/ROADMAP.md`) were re-pointed
+  at this round in the same change.
+
 - **Every citation pins a `content_hash`**, and what it is the hash of
   depends on the cited envelope (clarified 2026-10-10, issue #168; the
   manifests on `main` have always followed this, the sentence here did
@@ -702,9 +897,11 @@ retirement's supersession chain must extend).
   above) and `docs/cli/signoff.md`.
 - Gap-to-T1 tracker (issue #27) — the living checklist that points at
   this manifest's committed report as the verdict of record.
-- Toolchain pin: `layout/toolchain.json` (`klt_install`,
-  `klt_last_verified_commit`); provisioning: `scripts/setup-env.sh`;
-  environment record: `docs/environment.md`.
+- Toolchain declaration: `layout/toolchain.json` (`klt_install`,
+  `klt_required_commands`) — a bare `klayout-tools` requirement since
+  2026-11-14, not a pin, and `klt_last_verified_commit` is gone with it
+  (issue #371, per 2AMLogic/2am#7038); provisioning:
+  `scripts/setup-env.sh`; environment record: `docs/environment.md`.
 
 ## Item 8: characterization report (issue #349)
 
