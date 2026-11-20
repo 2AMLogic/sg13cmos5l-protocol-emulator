@@ -41,9 +41,9 @@ unchanged.
    superseding every stale live leaf, so parallel re-mints converge instead
    of doubling. Other experiments keep one successor per leaf — their
    records assert genuinely distinct runs.
-4. The collapse mint is bookkeeping only; it re-runs nothing. Its
-   **Result** and **Run configuration** are `(fill in)` placeholders that
-   `check_records.py` rejects until the operator who re-ran the experiment
+4. The collapse mint is bookkeeping only; it re-runs nothing. Its **Result**,
+   **Run configuration** and **Design provenance** are `(fill in)` placeholders
+   that `check_records.py` rejects until the operator who re-ran the experiment
    fills them in — the tool never mints a verdict it did not measure.
 
 ## Consequences
