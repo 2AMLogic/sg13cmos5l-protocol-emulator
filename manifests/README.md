@@ -740,7 +740,15 @@ capture, PVT corner sweeps, or Monte Carlo.
   artifact (`--check`: `match`, no checklist movement) — only the two
   envelope files' bytes moved, no graded field. Both docs citing a
   baseline (`docs/submission/verification.md`, `docs/ROADMAP.md`) were
-  re-pointed at this round in the same change.
+  re-pointed at this round in the same change. **PR #506 (main's own
+  README edit and item-10 re-attest) merged mid-flight, so the branch's
+  round and main's `4c3027e` round were both staled by the merge; the
+  round that lands is `signoff-baseline 20261120-103600` ..
+  `20261120-120759-1bdad204`, 5,520 successors — one per live record of
+  BOTH parent rounds — sharing one klt `0.9.2` render at the merge, which
+  matches both parents' artifacts (no graded field moved; the merge
+  combined the two one-line envelope re-attests, and the fresh
+  re-attest on the merged tree wrote byte-identical bytes).**
 
 - **Every citation pins a `content_hash`**, and what it is the hash of
   depends on the cited envelope (clarified 2026-10-10, issue #168; the
