@@ -45,7 +45,7 @@
         "role": "hygiene",
         "path": "README.md",
         "passed": true,
-        "content_hash": "sha256:67dcc912c70da4a3aa310bdc420e1ce6b2cbb44084747d01e03dd3cea36b02fb"
+        "content_hash": "sha256:ff345e214113b25c30d0a2ca7d759dc5d224188438832b18f1314d8da74ad9f0"
       },
       {
         "check": "present",
@@ -73,14 +73,14 @@
         "role": "hygiene",
         "path": "manifests/evidence/testbenches.txt",
         "passed": true,
-        "content_hash": "sha256:a46004d1188329b0e9cd2cc2ad2fc2d6b71342b809a7c60ca8148b6c3a7b3ff7"
+        "content_hash": "sha256:5a3da5f613262abba53db463a321731405d8b2cd42fb46aec8c7216a87a9507e"
       },
       {
         "check": "present",
         "role": "hygiene",
         "path": "scripts/check_evidence_inventories.py",
         "passed": true,
-        "content_hash": "sha256:6fb28630ee24867cbd4e7183d9f4ef5654210ca5df099cb4383c709b04a9b94d"
+        "content_hash": "sha256:23601f7131b3ac5a1bbf2ec63e2d0782edc9e93e1df98e0df3166d47d5a6b087"
       },
       {
         "check": "present",
@@ -143,7 +143,7 @@
     ]
   },
   "provenance": {
-    "klt_version": "0.9.0",
+    "klt_version": "0.9.2",
     "klayout_version": null,
     "pdk": null,
     "deck": null,
