@@ -82,6 +82,28 @@ never be reused for a `--check` invocation: `scripts/signoff-report.sh
 --check-latest` maps `--check`'s `3` to exit `1` for exactly this reason
 (the trap is called out in its header).
 
+**Non-graded checklist movement: what the live check surfaces, and what it
+cannot.** Newer klt builds carry non-graded movement in the same `--check`
+envelope as two optional keys — `doc_drift` (bool) and `doc_drift_fields`
+(entries naming the moved `field`, e.g. an `items.N.text` wording change,
+with its `committed` and `fresh` values). Measured on 2026-11-20 (issue
+#502): builds `0.9.2.dev111+g978f7464fae1` and `0.9.3.dev2366+g5dc34289aca1`
+both emit the fields (the first release carrying them is unverified), and
+`layout/toolchain.json`'s bare `klayout-tools` requirement means the runner
+meets them whenever the current release has them. On such a build
+`scripts/signoff-report.sh --check-latest` surfaces the movement on **both**
+outcomes: a graded match with checklist movement still exits `0` — the
+summary says the graded fields matched and names the movement instead of
+claiming "no drift" — and a graded drift lists the entries (prefixed
+`checklist wording moved:`) alongside the graded `drifted:` lines. The
+movement stays non-graded: it never trips the gate by itself. On an older
+klt the keys are simply absent and the live check reports nothing extra —
+and even on a new build the live check only sees movement of the **current
+manifest against the latest committed record**: comparing two already-saved
+reports (a refresh between records, with no live manifest behind the pair)
+is beyond it, so a refresh author still compares the saved reports
+themselves (issue #403).
+
 ## What the manifest currently declares, and why every row is `unmet`
 
 `kind` is declared `"digital"` (the block is a CPU implemented as RTL on a
