@@ -70,7 +70,7 @@ echo "== sg13cmos5l-protocol-emulator: verification/ environment setup =="
 echo
 
 # ---------------------------------------------------------------------------
-# 1. klt + cocotb/cocotb-tools, pinned to layout/toolchain.json's klt_install
+# 1. klt + cocotb/cocotb-tools, from layout/toolchain.json's klt_install
 # ---------------------------------------------------------------------------
 if ! command -v uv >/dev/null 2>&1; then
   echo "ERROR: 'uv' is not on \$PATH." >&2
@@ -90,14 +90,30 @@ with open(sys.argv[1]) as f:
 print(doc['klt_install'])
 " "$TOOLCHAIN_JSON")"
 
+# Accepted forms, in the order they appeared in this repo's history:
+#   klayout-tools              the fleet-version form, and the one this repo
+#                              uses since 2026-11-14 (issue #371). Per the
+#                              2026-11-09 operator ruling (2AMLogic/2am#7038)
+#                              chip repos no longer pin klayout-tools; they
+#                              track the fleet's release, and each evidence
+#                              record names the version that produced it.
+#   klayout-tools==X.Y.Z       a deliberate local pin (e.g. reproducing an old
+#                              record, or bisecting a regression).
+#   git+https://...@<sha>      a commit-pinned install, for a fix not yet
+#                              released.
+# Still refused: an empty value, and a git reference without `@<sha>` -- a
+# floating *branch* is not reproducible even for one run, whereas a floating
+# PyPI requirement resolves to a tagged release that `klt version` names.
 if [[ -z "$KLT_INSTALL" ]] \
-    || { [[ "$KLT_INSTALL" != git+*@* ]] && [[ ! "$KLT_INSTALL" =~ ^klayout-tools==[0-9]+\.[0-9]+\.[0-9]+$ ]]; }; then
-  echo "ERROR: layout/toolchain.json's klt_install ('$KLT_INSTALL') is not a pinned klt reference (expected 'klayout-tools==X.Y.Z' or 'git+https://...@<sha>')." >&2
-  echo "  Fix: check layout/toolchain.json -- klt_install must never be a floating branch reference." >&2
+    || { [[ "$KLT_INSTALL" != git+*@* ]] \
+         && [[ "$KLT_INSTALL" != "klayout-tools" ]] \
+         && [[ ! "$KLT_INSTALL" =~ ^klayout-tools==[0-9]+\.[0-9]+\.[0-9]+$ ]]; }; then
+  echo "ERROR: layout/toolchain.json's klt_install ('$KLT_INSTALL') is not a klt reference this script accepts (expected 'klayout-tools', 'klayout-tools==X.Y.Z' or 'git+https://...@<sha>')." >&2
+  echo "  Fix: check layout/toolchain.json -- klt_install must never be a floating git branch reference." >&2
   exit 1
 fi
 
-echo "-- klt + cocotb==$COCOTB_VERSION + cocotb-tools==$COCOTB_TOOLS_VERSION (pinned via layout/toolchain.json)"
+echo "-- klt + cocotb==$COCOTB_VERSION + cocotb-tools==$COCOTB_TOOLS_VERSION (klt_install from layout/toolchain.json)"
 echo "   klt_install: $KLT_INSTALL"
 if ! uv tool install --force \
     --with "cocotb==$COCOTB_VERSION" \
