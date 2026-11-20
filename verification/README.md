@@ -771,8 +771,13 @@ Each record is a markdown file, `records/<record-id>.md`, with two parts:
    - `record_id` — must equal the filename stem.
    - `experiment` — the experiment-slug this record belongs to; it must
      equal the name of the experiment directory the record sits in.
-   - `supersedes` — `null`, or the `record_id` of a prior record in the
-     same experiment directory this one corrects/replaces.
+   - `supersedes` — `null`, the `record_id` of a prior record in the
+     same experiment directory this one corrects/replaces, or a non-empty
+     list of such `record_id`s when one record supersedes several
+     interchangeable stale leaves at once (a collapse re-mint, #472). Every
+     named id must exist in the same experiment, differ from the record's
+     own id, sort strictly earlier than it, and appear at most once in the
+     list. Only valid, uniquely named targets receive the freshness exemption.
    - `git_revision` — the full design git revision this record was
      produced against.
    - `provenance` — the klt provenance block:
@@ -810,7 +815,9 @@ Each record is a markdown file, `records/<record-id>.md`, with two parts:
      test, and the raw artifacts under `artifacts/<record-id>/`.
    - **Timestamp / author** — ISO-8601 UTC timestamp and who (human or
      agent) minted the record.
-   - **Supersedes** — `none`, or the prior `<record-id>` this corrects.
+   - **Supersedes** — `none`, the prior `<record-id>` this corrects, or the
+     comma-separated `<record-id>`s it collapses (matching the metadata
+     `supersedes` list, #472).
 
 ## Stale records: report and re-mint
 
@@ -824,6 +831,26 @@ Old records are never touched. The new prose is copied from the old record
 with Record ID, Result, Timestamp and Supersedes rewritten; review the Claim
 and Run configuration before committing. Records with no request file are
 reported and must be re-minted by hand. Self-test: `test_remint_records.py`.
+
+`--collapse EXPERIMENT` (#472, mutually exclusive with `--rerun`) covers the
+hand-re-minted interchangeable-leaf experiments (`signoff-baseline` today):
+it mints ONE record whose `supersedes` lists every stale live leaf, instead
+of one successor per leaf, so two branches that each re-mint in parallel can
+no longer double the live-leaf count on merge (8 → 16 → 32 in one day was
+the measured failure). It is bookkeeping only — nothing is re-run — so the
+minted record's Result, Run configuration and Design provenance are
+`(fill in)` placeholders that `check_records.py` rejects until the operator
+who re-ran the experiment (`scripts/signoff-report.sh` for `signoff-baseline`)
+fills them in; its heading and artifact links name the new record ID, and the
+predecessor's design provenance is kept under Links as history. Fields are
+split with the linter's own bullet recognition (indented bullets and
+blank-line-separated continuation paragraphs belong to their field), and the
+tool refuses to mint when Claim, Result or another required field is missing
+or appears more than once, or a kept block cites the predecessor outside an
+`artifacts/` link. It
+refuses any other experiment, stale leaves that hash request files (use
+`--rerun`), and leaves whose input paths, claim or result are not
+interchangeable.
 
 ## Bulk evidence bytes: artifact store, manifest in git (#344)
 
@@ -878,11 +905,14 @@ on:
   contains `..`; for a live record, also an input that is not a git-tracked
   regular file inside the repo. A superseded record's input file may since
   have been deleted, but its entry must still be well-formed (#183);
-- a `supersedes` value that is neither a record-id string nor null;
-- a `supersedes` value naming a record that does not exist in the same
-  experiment directory, naming the record's own ID, or naming an ID that
-  does not sort strictly earlier than the record's own (this rules out
-  supersession cycles); an invalid supersession exempts nothing;
+- a `supersedes` value that is neither a record-id string, a non-empty
+  list of record-id strings, nor null; a list that names a duplicate id;
+  a list entry that is not a string;
+- a `supersedes` entry (scalar or list) naming a record that does not
+  exist in the same experiment directory, naming the record's own ID, or
+  naming an ID that does not sort strictly earlier than the record's own
+  (this rules out supersession cycles); an invalid supersession exempts
+  nothing. Valid siblings in the same list still exempt their targets;
 - a live record whose `provenance.inputs[].content_hash` no longer matches
   the current working tree (a record is "live" unless a valid supersession
   in its own experiment directory names it; the same record ID superseded in

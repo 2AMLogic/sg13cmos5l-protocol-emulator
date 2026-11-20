@@ -749,6 +749,29 @@ capture, PVT corner sweeps, or Monte Carlo.
   matches both parents' artifacts (no graded field moved; the merge
   combined the two one-line envelope re-attests, and the fresh
   re-attest on the merged tree wrote byte-identical bytes).**
+- **2026-11-20 (issue #481): the "(in the pinned `klayout-tools==0.8.0`)"
+  parenthetical at `spec/statistical-claims-na.md:9` is historical, and the
+  hash-bound statement is deliberately left byte-identical.** The statement
+  landed 2026-11-19 (`6d6fc00b`, issue #348, PR #467) while the repo still
+  pinned `klayout-tools==0.8.0`, so the parenthetical was true when written;
+  PR #399 (issue #371, merged hours later, `5cd78a4e`) removed the pin and
+  staled it. #399's pin-prose enumeration ran 2026-11-14 against a `main`
+  that did not yet have this file, so it was never on that PR's list. Read
+  it as dated context, the way the rest of the repo's pin prose reads:
+  klayout-tools #2865 first shipped in release 0.8.0, and this repo has not
+  pinned klt since #371 (`klt-pin: historical`). **Item 6's
+  `not_applicable` verdict does not depend on the parenthetical** — the
+  substance is "#2865 made `not_applicable` renderable", and 0.8.0 is just
+  the release it shipped in. The statement is not corrected in place
+  because it is hash-bound (`statement_content_hash` in
+  `spec/statistical-claims-na.json`, cited by the manifest's item 6): a
+  prose edit forces a statement re-bind, a manifest re-cite and a
+  signoff-baseline re-mint through the spec two-key gate, which is not
+  worth it for a parenthetical the verdict does not rely on (issue #481
+  option 2). The one other present-tense site the review found —
+  `docs/submission/README.md`'s klt-deck provenance line — already reads
+  `klt 0.8.0` — `klt-pin: historical` on current `main`; the spec file was
+  the only hash-bound straggler.
 
 - **Every citation pins a `content_hash`**, and what it is the hash of
   depends on the cited envelope (clarified 2026-10-10, issue #168; the
