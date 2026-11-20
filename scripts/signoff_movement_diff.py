@@ -91,25 +91,38 @@ def item_label(key: tuple) -> str:
 def clip(s: str, width: int = EXCERPT_WIDTH) -> str:
     return s if len(s) <= width else s[: width - 1] + "…"
 
-def excerpt(old: str, new: str) -> list[str]:
-    """Short word-level diff excerpt; a few changed segments, clipped."""
-    sm = difflib.SequenceMatcher(None, old.split(), new.split(), autojunk=False)
+
+def field_text(value: str | list[str]) -> str:
+    if isinstance(value, str):
+        return value
+    return "\n".join(note for note in value if isinstance(note, str))
+
+
+def excerpt(old: str | list[str], new: str | list[str]) -> list[str]:
+    """Show word changes, or the literal formatting when the words match."""
+    old_words = field_text(old).split()
+    new_words = field_text(new).split()
+    if old_words == new_words:
+        # JSON displays whitespace escapes and the boundaries between notes.
+        # Start near the difference even when the common prefix is long.
+        before, after = (json.dumps(value, ensure_ascii=False) for value in (old, new))
+        first = next((i for i, (a, b) in enumerate(zip(before, after)) if a != b),
+                     min(len(before), len(after)))
+        start = max(0, first - 20)
+        prefix = "…" if start else ""
+        return ["  - " + clip(prefix + before[start:]),
+                "  + " + clip(prefix + after[start:])]
+
+    sm = difflib.SequenceMatcher(None, old_words, new_words, autojunk=False)
     lines: list[str] = []
     for tag, i1, i2, j1, j2 in sm.get_opcodes():
         if tag == "equal" or len(lines) >= 2 * EXCERPT_SEGMENTS:
             continue
-        removed = " ".join(old.split()[i1:i2])
-        added = " ".join(new.split()[j1:j2])
-        if removed:
-            lines.append("  - " + clip(removed))
-        if added:
-            lines.append("  + " + clip(added))
+        if i1 != i2:
+            lines.append("  - " + clip(" ".join(old_words[i1:i2])))
+        if j1 != j2:
+            lines.append("  + " + clip(" ".join(new_words[j1:j2])))
     return lines
-
-
-def notes_text(item: dict) -> str:
-    notes = item.get("notes") or []
-    return "\n".join(n for n in notes if isinstance(n, str))
 
 
 def compare(old: dict, new: dict) -> list[str]:
@@ -136,12 +149,12 @@ def compare(old: dict, new: dict) -> list[str]:
             lines.extend(excerpt(old_t, new_t))
         old_n, new_n = a.get("notes") or [], b.get("notes") or []
         if old_n != new_n:
-            old_nt, new_nt = notes_text(a), notes_text(b)
+            old_nt, new_nt = field_text(old_n), field_text(new_n)
             lines.append(
                 f"moved {label} notes: {len(old_n)} -> {len(new_n)} note(s), "
                 f"{len(old_nt)} -> {len(new_nt)} chars"
             )
-            lines.extend(excerpt(old_nt, new_nt))
+            lines.extend(excerpt(old_n, new_n))
     for key in sorted(set(old_items) - set(new_items), key=sort_key):
         lines.append(f"removed {item_label(key)} ({old_items[key].get('title', '?')})")
     for key in sorted(set(new_items) - set(old_items), key=sort_key):

@@ -80,6 +80,20 @@ class Compare(unittest.TestCase):
         out = self.out(old, new)
         self.assertIn("moved T1 item 6 notes: 0 -> 2 note(s), 0 -> 13 chars", out)
 
+    def test_formatting_only_text_excerpt_shows_the_changed_whitespace(self):
+        prefix = "word " * 80
+        out = self.out(report([item(text=prefix + "a b")]),
+                       report([item(text=prefix + "a\tb")]))
+        self.assertIn("a b", out.splitlines()[1])
+        self.assertIn(r"a\tb", out.splitlines()[2])
+        self.assertLessEqual(len(out.splitlines()[1]), smd.EXCERPT_WIDTH + 4)
+
+    def test_note_boundaries_visible_when_joined_words_are_identical(self):
+        out = self.out(report([item(notes=["one", "two"])]),
+                       report([item(notes=["one\ntwo"])]))
+        self.assertIn('  - ["one", "two"]', out)
+        self.assertIn(r'  + ["one\ntwo"]', out)
+
     def test_row_order_independent(self):
         old = report(items=[item(id_=1), item(id_=2, text="x")])
         new = report(items=[item(id_=2, text="x"), item(id_=1)])

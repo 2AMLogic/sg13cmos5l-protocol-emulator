@@ -108,7 +108,7 @@
         "role": "testbench",
         "path": "scripts/signoff-report.sh",
         "passed": true,
-        "content_hash": "sha256:0bb36e9c1048345c143423d72c9caf9edb9742717808bf346bff7409d8e71ef9"
+        "content_hash": "sha256:9a3160c49d3e707b2084c5c19374704e3837f05d2ab6d4925108969b2b2d0128"
       },
       {
         "check": "present",

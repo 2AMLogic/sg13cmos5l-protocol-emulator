@@ -78,9 +78,9 @@
 #                                            # via scripts/
 #                                            # signoff_movement_diff.py.
 #                                            # X is optional: a record ID
-#                                            # (artifact under
-#                                            # verification/records/
-#                                            # signoff-baseline/artifacts/)
+#                                            # (uses the artifact linked
+#                                            # by the selected record,
+#                                            # including shared reports)
 #                                            # or a report JSON path; with
 #                                            # no X, the same artifact
 #                                            # --check-latest selects (the
@@ -94,7 +94,8 @@
 #                                            # names a file); pair
 #                                            # `--out FILE --diff-vs` to
 #                                            # mint an artifact and see its
-#                                            # movement in one run. With
+#                                            # movement in one run. The output
+#                                            # must differ from any baseline. With
 #                                            # --check-latest too, the gate
 #                                            # runs first and a drift still
 #                                            # exits 1 before the movement
@@ -112,7 +113,8 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 cd "$REPO_ROOT"
 
 MANIFEST="manifests/sg13cmos5l-protocol-emulator.json"
-RECORDS_GLOB="verification/records/signoff-baseline/records/*.md"
+BASELINE_DIR="verification/records/signoff-baseline"
+RECORDS_GLOB="$BASELINE_DIR/records/*.md"
 
 OUT=""
 CHECK_LATEST=0
@@ -132,7 +134,7 @@ while [[ $# -gt 0 ]]; do
       DIFF_VS=1
       if [[ $# -ge 2 && "$2" != -* ]]; then DIFF_VS_TARGET="$2"; shift 2; else shift; fi ;;
     -h|--help)
-      sed -n '2,107p' "${BASH_SOURCE[0]}"; exit 0 ;;
+      sed -n '1d; /^$/q; p' "${BASH_SOURCE[0]}"; exit 0 ;;
     *)
       echo "error: unknown argument '$1' (see --help)" >&2; exit 1 ;;
   esac
@@ -205,32 +207,63 @@ esac
 
 echo "klt signoff rendered OK (exit $KLT_RC; grader: $GRADER_ID)" >&2
 
+# Older records use a code span for the artifact directory or report. Newer
+# records use a Markdown link; several records can share one rendered report.
+resolve_record_report() {
+  local id="$1" record="$BASELINE_DIR/records/$1.md"
+  local id_pattern='[0-9]{8}-[0-9]{6}-[0-9a-f]{7,40}'
+  if [[ ! "$id" =~ ^${id_pattern}$ || ! -f "$record" ]]; then
+    echo "error: no signoff-baseline record for '$id'." >&2
+    return 1
+  fi
+  local linked report
+  linked="$(sed -nE '/^- \*\*Links\*\*:/,/^- \*\*/ {
+    s@.*artifacts/('"$id_pattern"')/(signoff-report\.json|`).*@\1@p
+  }' "$record")"
+  report="$BASELINE_DIR/artifacts/${linked:-$id}/signoff-report.json"
+  if [[ ! -f "$report" ]]; then
+    echo "error: record $id has no report artifact at $report." >&2
+    return 1
+  fi
+  printf '%s\n' "$report"
+}
+
+if [[ "$CHECK_LATEST" -eq 1 || ( "$DIFF_VS" -eq 1 && -z "$DIFF_VS_TARGET" ) ]]; then
+  LATEST="$(git ls-files -- "$RECORDS_GLOB" | sort | tail -1)"
+  if [[ -z "$LATEST" ]]; then
+    echo "error: no signoff-baseline evidence record committed under $BASELINE_DIR." >&2
+    exit 1
+  fi
+  RECORD_ID="$(basename "$LATEST" .md)"
+  COMMITTED="$(resolve_record_report "$RECORD_ID")"
+fi
+
+if [[ "$DIFF_VS" -eq 1 ]]; then
+  if [[ -z "$DIFF_VS_TARGET" ]]; then
+    BASELINE="$COMMITTED"
+    BASELINE_LABEL="latest record $RECORD_ID"
+  elif [[ -f "$DIFF_VS_TARGET" ]]; then
+    BASELINE="$DIFF_VS_TARGET"
+    BASELINE_LABEL="$DIFF_VS_TARGET"
+  else
+    BASELINE="$(resolve_record_report "$DIFF_VS_TARGET")"
+    BASELINE_LABEL="record $DIFF_VS_TARGET"
+  fi
+fi
+
 if [[ -n "$OUT" ]]; then
+  if [[ "$OUT" -ef "${COMMITTED:-}" || "$OUT" -ef "${BASELINE:-}" ]]; then
+    echo "error: --out '$OUT' refers to a comparison input. Choose a different output file." >&2
+    exit 1
+  fi
+  if [[ -d "$OUT" ]]; then
+    echo "error: --out requires a file, got directory '$OUT'." >&2
+    exit 1
+  fi
   cp "$FRESH" "$OUT"
 fi
 
-# --- latest committed baseline: shared by --check-latest and --diff-vs ---
-# Sets RECORD_ID and COMMITTED (the latest signoff-baseline record's report
-# artifact -- latest by the records glob's sort order, the same selection
-# --check-latest has always made). Exits 1 when the repo has no record or
-# the latest record has no committed artifact.
-resolve_latest_baseline() {
-  local latest
-  latest="$(git ls-files -- "$RECORDS_GLOB" | sort | tail -1)"
-  if [[ -z "$latest" ]]; then
-    echo "error: no signoff-baseline evidence record committed under verification/records/signoff-baseline/ -- render one (see manifests/README.md) and commit it before checking." >&2
-    exit 1
-  fi
-  RECORD_ID="$(basename "$latest" .md)"
-  COMMITTED="verification/records/signoff-baseline/artifacts/$RECORD_ID/signoff-report.json"
-  if [[ ! -f "$COMMITTED" ]]; then
-    echo "error: latest record $RECORD_ID has no committed report artifact at $COMMITTED." >&2
-    exit 1
-  fi
-}
-
 if [[ "$CHECK_LATEST" -eq 1 ]]; then
-  resolve_latest_baseline
   # The grader's own comparison (klt signoff --check, klayout-tools #2258):
   # re-grades the manifest and diffs the fresh result against the committed
   # report EXCLUDING the build-identity block, so two legitimate installs of
@@ -314,25 +347,6 @@ if [[ "$DIFF_VS" -eq 1 ]]; then
   # structurally blind to (it compares graded fields only). The comparison
   # is the stdout product here -- informational, not a gate: exit 0 whether
   # fields moved or matched (see the usage block for flag interactions).
-  if [[ -n "$DIFF_VS_TARGET" ]]; then
-    if [[ -f "$DIFF_VS_TARGET" ]]; then
-      # An explicit report file wins (paths resolve from the repo root,
-      # where this runner already cd'd).
-      BASELINE="$DIFF_VS_TARGET"
-      BASELINE_LABEL="$DIFF_VS_TARGET"
-    else
-      BASELINE="verification/records/signoff-baseline/artifacts/$DIFF_VS_TARGET/signoff-report.json"
-      BASELINE_LABEL="record $DIFF_VS_TARGET"
-      if [[ ! -f "$BASELINE" ]]; then
-        echo "error: --diff-vs: '$DIFF_VS_TARGET' is neither a readable report file nor a record ID with a committed artifact at $BASELINE." >&2
-        exit 1
-      fi
-    fi
-  else
-    resolve_latest_baseline
-    BASELINE="$COMMITTED"
-    BASELINE_LABEL="latest record $RECORD_ID (the same artifact --check-latest selects)"
-  fi
   if ! python3 "$SCRIPT_DIR/signoff_movement_diff.py" "$BASELINE" "$FRESH"; then
     echo "error: movement comparison against $BASELINE_LABEL could not run (see the diagnostic above)." >&2
     exit 1
