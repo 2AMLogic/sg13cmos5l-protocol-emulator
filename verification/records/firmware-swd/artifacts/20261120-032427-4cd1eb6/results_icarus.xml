@@ -1,0 +1,13 @@
+<testsuites name="results">
+  <testsuite name="all" package="all">
+    <property name="random_seed" value="1" />
+    <testcase name="test_committed_image_is_fresh" classname="test_firmware_swd" file="&lt;repo&gt;/verification/test_firmware_swd.py" lineno="378" time="0.001961231231689453" sim_time_ns="0.0" ratio_time="0.0" />
+    <testcase name="test_probe_reads_idcode_and_dp_register" classname="test_firmware_swd" file="&lt;repo&gt;/verification/test_firmware_swd.py" lineno="412" time="0.37371182441711426" sim_time_ns="90541.0" ratio_time="242274.9136750452" />
+    <testcase name="test_wait_and_fault_acks_are_reported" classname="test_firmware_swd" file="&lt;repo&gt;/verification/test_firmware_swd.py" lineno="467" time="0.9086954593658447" sim_time_ns="181121.0" ratio_time="199319.80305745086" />
+    <testcase name="test_negative_line_reset_49" classname="test_firmware_swd" file="&lt;repo&gt;/verification/test_firmware_swd.py" lineno="497" time="0.44423532485961914" sim_time_ns="90561.0" ratio_time="203858.16915531826" />
+    <testcase name="test_negative_switch_bit_flipped" classname="test_firmware_swd" file="&lt;repo&gt;/verification/test_firmware_swd.py" lineno="514" time="0.6735372543334961" sim_time_ns="90561.0" ratio_time="134455.81431069513" />
+    <testcase name="test_negative_no_turnaround_release" classname="test_firmware_swd" file="&lt;repo&gt;/verification/test_firmware_swd.py" lineno="544" time="0.5687916278839111" sim_time_ns="90561.0" ratio_time="159216.47851413745" />
+    <testcase name="test_negative_wrong_request_parity" classname="test_firmware_swd" file="&lt;repo&gt;/verification/test_firmware_swd.py" lineno="565" time="0.5893738269805908" sim_time_ns="90561.0" ratio_time="153656.29733500592" />
+    <testcase name="test_negative_short_trailing_idle" classname="test_firmware_swd" file="&lt;repo&gt;/verification/test_firmware_swd.py" lineno="600" time="0.5178065299987793" sim_time_ns="90561.0" ratio_time="174893.50704058039" />
+  </testsuite>
+</testsuites>
