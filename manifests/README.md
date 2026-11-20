@@ -640,6 +640,38 @@ capture, PVT corner sweeps, or Monte Carlo.
   klayout-tools#4893), not new evidence. Both docs citing a baseline
   (`docs/submission/verification.md`, `docs/ROADMAP.md`) were re-pointed
   at this round in the same change.
+- **2026-11-20 (issue #482): the externally-triggered red — a new
+  klayout-tools release stales the baseline with no repo change and no PR
+  in flight, and that is not a regression.** Since the 2026-11-14 ruling
+  (issue #371) `layout/toolchain.json` declares the bare requirement
+  `klayout-tools`, so CI provisions whatever release is current and the
+  grader version moves when PyPI moves, not only when this repo does. A red
+  `signoff` job in CI, or a local `./scripts/signoff-report.sh
+  --check-latest` exiting 1, on a tree with no repo change and no PR in
+  flight therefore reads as: a newer klayout-tools changed the report's
+  shape. That is the documented intended signal — the `ci.yml` comment at
+  the version-print step (`.github/workflows/ci.yml`) says a release that
+  changes a verdict, a rule id or a report shape fails `--check` with the
+  grader's own diff rather than being pre-empted by a version mismatch.
+  Recognise it in one read: the `drifted:` lines name the moved fields, and
+  the decisive question is whether any item **`status` or `reason`** moved.
+  Worked case, observed 2026-11-19 during #399's review: the committed
+  baseline, graded at fleet klt `0.9.2`, against a newer
+  `0.9.3.dev1971+g49a94b0ec95d` reports
+  `drifted: items.{2,3,7}.detail.content_hash_pin: committed=None
+  fresh='verified'` — three `detail` additions, no status or reason moved.
+  Standing response: read the `drifted:` lines first. If no status or
+  reason moved, it is a pure shape addition — re-mint the baseline at the
+  new release per rule 2 of the ruling (2AMLogic/2am#7038): existing
+  records under `verification/records/signoff-baseline/` keep the version
+  that produced them, and one fresh round supersedes the live heads
+  one-for-one (as #399 did four times on 2026-11-19). If a status or a
+  reason moved, it is a real finding — record it and do not re-mint over
+  it; say which of the two cases held in the PR that re-mints. A version
+  ceiling on `klt_install` (`klayout-tools~=0.9.0`) was considered for
+  #399 and rejected as a repo-local version declaration of exactly the kind
+  the ruling removes; the red is accepted instead (recorded here for the
+  trade-off only, decided in `layout/toolchain.json`'s own history).
 
 - **2026-11-20 (PR #483, merging `main` into the 8x4 branch).** The merge
   conflicted in four files and staled five pins at once, so the round runs in
