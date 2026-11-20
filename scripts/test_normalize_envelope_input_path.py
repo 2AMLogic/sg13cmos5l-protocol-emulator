@@ -6,8 +6,10 @@ rewritten path would point `klt signoff`'s `input_verified` freshness check
 at a different artifact and silently falsify a met citation. Each case below
 is one distinction that property needs: a correct rewrite, a refusal when
 the replacement path names a different file, a refusal when the field is not
-an absolute path, and the untouched-hash guarantee (`provenance.input` must
-survive the rewrite byte-for-byte).
+an absolute path, the untouched-hash guarantee (`provenance.input` must
+survive the rewrite byte-for-byte), a rewrite for an envelope sitting at the
+very top of a checkout, and a prompt refusal when no Git root exists above
+the envelope at all.
 
 Method (the same shape as `scripts/test_check_test_results.py`): build a
 fixture repo tree in a temp dir and run the *real* shipped script as a
@@ -53,6 +55,29 @@ def _fixture_repo(root: Path) -> tuple[Path, Path]:
     return artifacts, artifact
 
 
+# Every subprocess case gets this budget: an unbounded Git-root search in the
+# normalizer would hang forever, and a regression must fail the case promptly
+# (issue #491), not stall the suite.
+SUBPROCESS_TIMEOUT_S = 10
+
+
+def _run_normalizer(
+    name: str, envelope: Path, field: str, repo_rel: str
+) -> subprocess.CompletedProcess | None:
+    """Run the real shipped script. On timeout, record the case as failed and
+    return None so the caller skips its (unreachable) result checks."""
+    try:
+        return subprocess.run(
+            [sys.executable, str(NORMALIZER), str(envelope), field, repo_rel],
+            capture_output=True,
+            text=True,
+            timeout=SUBPROCESS_TIMEOUT_S,
+        )
+    except subprocess.TimeoutExpired:
+        _run_case(name, False, f"timed out after {SUBPROCESS_TIMEOUT_S}s")
+        return None
+
+
 def main() -> int:
     with tempfile.TemporaryDirectory() as tmp:
         root = Path(tmp)
@@ -78,20 +103,17 @@ def main() -> int:
             encoding="utf-8",
         )
         repo_rel = "verification/records/x/artifacts/rid/design.gds"
-        proc = subprocess.run(
-            [sys.executable, str(NORMALIZER), str(envelope_path), "file", repo_rel],
-            capture_output=True,
-            text=True,
-        )
-        rewritten = json.loads(envelope_path.read_text(encoding="utf-8"))
-        _run_case(
-            "case_correct_rewrite",
-            proc.returncode == 0
-            and rewritten["file"] == {"path": repo_rel, "scope": "repo"}
-            and rewritten["provenance"]["input"]["content_hash"] == "sha256:deadbeef"
-            and rewritten["status"] == "clean",
-            f"rc={proc.returncode} stderr={proc.stderr.strip()[:200]}",
-        )
+        proc = _run_normalizer("case_correct_rewrite", envelope_path, "file", repo_rel)
+        if proc is not None:
+            rewritten = json.loads(envelope_path.read_text(encoding="utf-8"))
+            _run_case(
+                "case_correct_rewrite",
+                proc.returncode == 0
+                and rewritten["file"] == {"path": repo_rel, "scope": "repo"}
+                and rewritten["provenance"]["input"]["content_hash"] == "sha256:deadbeef"
+                and rewritten["status"] == "clean",
+                f"rc={proc.returncode} stderr={proc.stderr.strip()[:200]}",
+            )
 
         # Case 2: the replacement names a different file -> refuse, envelope
         # left byte-identical.
@@ -99,44 +121,82 @@ def main() -> int:
         envelope2 = artifacts2 / "klt-drc.json"
         body2 = json.dumps({"schema_version": 2, "file": str(artifact)})
         envelope2.write_text(body2, encoding="utf-8")
-        proc2 = subprocess.run(
-            [
-                sys.executable,
-                str(NORMALIZER),
-                str(envelope2),
-                "file",
-                "verification/records/x/artifacts/rid/other.gds",
-            ],
-            capture_output=True,
-            text=True,
-        )
-        _run_case(
+        proc2 = _run_normalizer(
             "case_wrong_target_refused",
-            proc2.returncode == 1 and envelope2.read_text(encoding="utf-8") == body2,
-            f"rc={proc2.returncode}",
+            envelope2,
+            "file",
+            "verification/records/x/artifacts/rid/other.gds",
         )
+        if proc2 is not None:
+            _run_case(
+                "case_wrong_target_refused",
+                proc2.returncode == 1 and envelope2.read_text(encoding="utf-8") == body2,
+                f"rc={proc2.returncode}",
+            )
 
         # Case 3: the field is not an absolute path string -> refuse.
         artifacts3, _artifact3 = _fixture_repo(root / "r3")
         envelope3 = artifacts3 / "klt-drc.json"
         body3 = json.dumps({"schema_version": 2, "file": "already/relative.gds"})
         envelope3.write_text(body3, encoding="utf-8")
-        proc3 = subprocess.run(
-            [
-                sys.executable,
-                str(NORMALIZER),
-                str(envelope3),
-                "file",
-                "verification/records/x/artifacts/rid/design.gds",
-            ],
-            capture_output=True,
-            text=True,
-        )
-        _run_case(
+        proc3 = _run_normalizer(
             "case_non_absolute_refused",
-            proc3.returncode == 1 and envelope3.read_text(encoding="utf-8") == body3,
-            f"rc={proc3.returncode}",
+            envelope3,
+            "file",
+            "verification/records/x/artifacts/rid/design.gds",
         )
+        if proc3 is not None:
+            _run_case(
+                "case_non_absolute_refused",
+                proc3.returncode == 1 and envelope3.read_text(encoding="utf-8") == body3,
+                f"rc={proc3.returncode}",
+            )
+
+        # Case 4: an envelope directly at the top of the checkout -- the
+        # ancestor walk must start with the envelope's own containing
+        # directory, so this is the checkout's root it finds (the old lookup
+        # started one level higher and missed it).
+        repo4 = root / "r4"
+        _artifacts4, artifact4 = _fixture_repo(repo4)
+        envelope4 = repo4 / "klt-drc.json"
+        envelope4.write_text(
+            json.dumps({"schema_version": 2, "file": str(artifact4)}),
+            encoding="utf-8",
+        )
+        repo_rel4 = "verification/records/x/artifacts/rid/design.gds"
+        proc4 = _run_normalizer("case_root_level_envelope", envelope4, "file", repo_rel4)
+        if proc4 is not None:
+            rewritten4 = json.loads(envelope4.read_text(encoding="utf-8"))
+            _run_case(
+                "case_root_level_envelope",
+                proc4.returncode == 0
+                and rewritten4["file"] == {"path": repo_rel4, "scope": "repo"},
+                f"rc={proc4.returncode} stderr={proc4.stderr.strip()[:200]}",
+            )
+
+        # Case 5: no Git root anywhere above the envelope -- the walk must
+        # exhaust the ancestors, hit the missing-root diagnostic, and leave
+        # the envelope byte-identical (the old lookup looped forever at the
+        # filesystem root instead).
+        norepo = root / "no-repo" / "sub"
+        norepo.mkdir(parents=True)
+        envelope5 = norepo / "klt-drc.json"
+        body5 = json.dumps({"schema_version": 2, "file": str(artifact)})
+        envelope5.write_text(body5, encoding="utf-8")
+        proc5 = _run_normalizer(
+            "case_no_git_ancestor_refused",
+            envelope5,
+            "file",
+            "verification/records/x/artifacts/rid/design.gds",
+        )
+        if proc5 is not None:
+            _run_case(
+                "case_no_git_ancestor_refused",
+                proc5.returncode == 1
+                and "could not locate a repo root" in proc5.stderr
+                and envelope5.read_text(encoding="utf-8") == body5,
+                f"rc={proc5.returncode} stderr={proc5.stderr.strip()[:200]}",
+            )
 
     print()
     if FAILURES:
