@@ -34,6 +34,7 @@ python3 scripts/check_datasheet.py
 python3 scripts/test_check_protocol_pin_roles.py
 python3 scripts/check_protocol_pin_roles.py --require-implemented
 python3 scripts/test_normalize_envelope_input_path.py
+python3 scripts/test_signoff_report.py
 python3 scripts/test_check_evidence_inventories.py
 python3 scripts/check_evidence_inventories.py
 python3 scripts/test_check_statistical_claims_na.py
