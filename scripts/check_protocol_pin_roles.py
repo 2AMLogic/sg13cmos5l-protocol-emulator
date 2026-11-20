@@ -705,12 +705,18 @@ class Checker:
         return out_ports, in_ports, res
 
     # ---------------------------------------------------------- profile: uart
-    def prof_uart_tx(self, rel, ent, text):
+    def check_tx_firmware(self, rel, text, phase, label):
+        """The TX-transmitter firmware check shared by `prof_uart_tx` and
+        `prof_dmx512` (DR 0010 gives both the same check shape): TX driven
+        on the table's <phase>.TX pin, the first `LDI R1, imm` is the TX
+        bit mask / idle level, every ALU-mask LDI must be a pin mask, and
+        an `AND Rx, R1` bit-isolation site must exist. The program reads
+        no pin, so no IN port is allowed."""
         c = self.concrete
         ins = self.asm_instrs(text)
-        outs, _ins, _ = self.out_in_ports([("uart_tx", ["TX"])], [], "spi_result")
+        outs, _ins, _ = self.out_in_ports([(phase, ["TX"])], [], "spi_result")
         self.check_ports(rel, ins, outs, set(), outs, set())
-        mask = self.mask_of("uart_tx", "TX")
+        mask = self.mask_of(phase, "TX")
         first = next((i for i in ins if i["m"] == "LDI" and i["ops"][0] == "R1"), None)
         if first is None:
             c.err(f"{rel}: no `LDI R1, imm` TX bit-mask site found (pattern uart_tx_mask)")
@@ -719,11 +725,14 @@ class Checker:
             v = self.imm(first["ops"][1])
             if v != mask:
                 c.err(f"{rel}:{first['no']}: TX bit mask LDI R1, {first['ops'][1]} but the table's "
-                      f"uart_tx TX pin {self.role_pin('uart_tx', 'TX')} is 0x{mask:02X}")
-        self.check_mask_sites(rel, ins, {mask}, "UART TX")
+                      f"{phase} TX pin {self.role_pin(phase, 'TX')} is 0x{mask:02X}")
+        self.check_mask_sites(rel, ins, {mask}, label)
         # the bit isolated by AND must come from the R1 mask
         if not any(i["m"] == "AND" and i["ops"][1] == "R1" for i in ins):
             c.err(f"{rel}: no `AND Rx, R1` bit-isolation site found")
+
+    def prof_uart_tx(self, rel, ent, text):
+        self.check_tx_firmware(rel, text, "uart_tx", "UART TX")
 
     def prev_write(self, ins: list[dict], idx: int, reg: str):
         """(index, instr) of the nearest instruction before `idx` that writes `reg`."""
@@ -1130,29 +1139,9 @@ class Checker:
 
     # -------------------------------------------------------- profile: dmx
     def prof_dmx512(self, rel, ent, text):
-        """The DMX512 transmitter (issue #445): TX driven on the table's
-        dmx512.TX pin, the same shape as `prof_uart_tx` -- the first
-        `LDI R1, imm` is the TX bit mask / idle level, every ALU-mask LDI
-        must be a pin mask, and an `AND Rx, R1` bit-isolation site must
-        exist. The program reads no pin, so no IN port is allowed."""
-        c = self.concrete
-        ins = self.asm_instrs(text)
-        outs, _ins, _ = self.out_in_ports([("dmx512", ["TX"])], [], "spi_result")
-        self.check_ports(rel, ins, outs, set(), outs, set())
-        mask = self.mask_of("dmx512", "TX")
-        first = next((i for i in ins if i["m"] == "LDI" and i["ops"][0] == "R1"), None)
-        if first is None:
-            c.err(f"{rel}: no `LDI R1, imm` TX bit-mask site found (pattern uart_tx_mask)")
-        else:
-            c.sites += 1
-            v = self.imm(first["ops"][1])
-            if v != mask:
-                c.err(f"{rel}:{first['no']}: TX bit mask LDI R1, {first['ops'][1]} but the table's "
-                      f"dmx512 TX pin {self.role_pin('dmx512', 'TX')} is 0x{mask:02X}")
-        self.check_mask_sites(rel, ins, {mask}, "DMX512 TX")
-        # the bit isolated by AND must come from the R1 mask
-        if not any(i["m"] == "AND" and i["ops"][1] == "R1" for i in ins):
-            c.err(f"{rel}: no `AND Rx, R1` bit-isolation site found")
+        """The DMX512 transmitter (issue #445): the same check shape as
+        `prof_uart_tx`, against the table's own dmx512.TX pin."""
+        self.check_tx_firmware(rel, text, "dmx512", "DMX512 TX")
 
     # ------------------------------------------------------- profile: benches
     def need(self, text, pattern, rel, what, flags=re.M):
@@ -1175,15 +1164,19 @@ class Checker:
                 f"{want[0]}[{want[1]}]"
             )
 
-    def prof_bench_uart(self, rel, ent, text):
+    def check_bench_tx_pin(self, rel, text, phase):
+        """The TX bench pin extraction shared by `prof_bench_uart` and
+        `prof_bench_dmx512`: the bench's TX_PIN/TX_BIT against the table's
+        <phase>.TX."""
         m = self.need(text, r'^TX_PIN,\s*TX_BIT\s*=\s*"(\w+)",\s*(\d+)', rel, "TX_PIN, TX_BIT")
         if m:
-            self.check_pb(rel, "TX_PIN/TX_BIT", m.group(1), int(m.group(2)), "uart_tx", "TX")
+            self.check_pb(rel, "TX_PIN/TX_BIT", m.group(1), int(m.group(2)), phase, "TX")
+
+    def prof_bench_uart(self, rel, ent, text):
+        self.check_bench_tx_pin(rel, text, "uart_tx")
 
     def prof_bench_dmx512(self, rel, ent, text):
-        m = self.need(text, r'^TX_PIN,\s*TX_BIT\s*=\s*"(\w+)",\s*(\d+)', rel, "TX_PIN, TX_BIT")
-        if m:
-            self.check_pb(rel, "TX_PIN/TX_BIT", m.group(1), int(m.group(2)), "dmx512", "TX")
+        self.check_bench_tx_pin(rel, text, "dmx512")
 
     def prof_bench_ws2812(self, rel, ent, text):
         m = self.need(text, r'^DIN_PIN,\s*DIN_BIT\s*=\s*"(\w+)",\s*(\d+)', rel, "DIN_PIN, DIN_BIT")
