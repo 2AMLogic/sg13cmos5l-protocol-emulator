@@ -20,6 +20,8 @@ Chronological record of merged pull requests and closed issues, newest first.
 
 ### 2026-11-20
 
+- **PR #513**: feat(records): fail lint on attested-file drift; README is item-10 evidence
+- **Issue #507** (closed): Guide README refreshes trip the T1 item-10 attestation gate (README.md is hash-pinned evidence)
 - **PR #501**: firmware: SWD debug probe on the frozen ISA (issue #452)
 - **PR #505**: fix: report klt checklist-wording movement in signoff --check-latest
 - **PR #495**: fix(flow): declare the program-memory SRAM macro in the die-area P&R request and record the first measured die area
