@@ -538,6 +538,64 @@ def _(fx):
     assert code == 1 and "ps2_device.asm" in out and "UIO_OD" in out, out
 
 
+@case("SWD preloaded image pair mutated")
+def _(fx):
+    fx.mutate("firmware/asm/swd_probe.asm",
+              "        LDI   R0, 0x08         ; image: SWCLK low, SWDIO high",
+              "        LDI   R0, 0x09         ; (mutated)")
+    expect_fail(fx, "the preloaded images are R0=9", "concrete-firmware-bench")
+
+
+@case("SWD per-bit pin image is not an SWCLK x SWDIO combination")
+def _(fx):
+    fx.mutate("firmware/asm/swd_probe.asm",
+              "        LDI   R3, 0x00         ; bit 0 = 0\n        OUT   UIO_OUT, R3",
+              "        LDI   R3, 0x10         ; (mutated)\n        OUT   UIO_OUT, R3")
+    expect_fail(fx, "is not one of", "concrete-firmware-bench")
+
+
+@case("SWD sample isolation does not use the SWDIO-mask register")
+def _(fx):
+    fx.mutate("firmware/asm/swd_probe.asm",
+              "        AND   R3, R0           ; keep the SWDIO bit (R0 = 0x08)",
+              "        AND   R3, R1           ; (mutated)")
+    expect_fail(fx, "IN UIO_IN must be followed by", "concrete-firmware-bench")
+
+
+@case("SWD UIO_DIR release value mutated")
+def _(fx):
+    fx.mutate("firmware/asm/swd_probe.asm",
+              "        LDI   R3, 0x04         ; direction: SWCLK only",
+              "        LDI   R3, 0x05         ; (mutated)")
+    expect_fail(fx, "WCTL UIO_DIR writes 0x05", "concrete-firmware-bench")
+
+
+@case("SWD bench pin constants moved")
+def _(fx):
+    fx.mutate("verification/test_firmware_swd.py",
+              "SWCLK_BIT, SWDIO_BIT = 2, 3", "SWCLK_BIT, SWDIO_BIT = 2, 4")
+    expect_fail(fx, "SWDIO_BIT is uio[4]", "concrete-firmware-bench")
+
+
+@case("SWD pins moved in the table alone")
+def _(fx):
+    def mv(t):
+        pin(t, "uio[2]")["protocol_roles"]["swd"] = "unused"
+        pin(t, "uio[0]")["protocol_roles"]["swd"] = "SWCLK"
+        t["pin_modes"]["swd"]["uio_dir"] = "0x09"
+    fx.mutate_table(mv)
+    expect_fail(fx, "firmware/asm/swd_probe.asm", "concrete-firmware-bench")
+
+
+@case("SWD program does not write the table's UIO_DIR value")
+def _(fx):
+    fx.mutate("firmware/asm/swd_probe.asm",
+              "        WCTL  UIO_DIR, R1      ; push-pull on SWCLK and SWDIO",
+              "        NOP                    ; (mutated)")
+    code, out = fx.run("--require-implemented")
+    assert code == 1 and "swd_probe.asm" in out and "UIO_DIR" in out, out
+
+
 @case("UART RX mask LDI mutated in each RX program")
 def _(fx):
     for stem in ("uart_rx", "uart_rx_115200", "uart_rx_9600"):
@@ -1034,6 +1092,12 @@ def _(fx):
 def _(fx):
     def f(t):
         pin(t, "uio[2]")["protocol_roles"]["spi_transfer"] = "unused"
+        # the rationale is emptied below, so the push-pull swd.SWCLK role
+        # must move off uio[2] too (mixed drive kinds need the rationale,
+        # and the phase still needs its pin; #452)
+        pin(t, "uio[2]")["protocol_roles"]["swd"] = "unused"
+        pin(t, "uio[0]")["protocol_roles"]["swd"] = "SWCLK"
+        t["pin_modes"]["swd"]["uio_dir"] = "0x09"
         pin(t, "uio[2]")["shared_pin_rationale"] = ""
         pin(t, "ui_in[1]")["protocol_roles"]["spi_transfer"] = "MISO"
     fx.mutate_table(f)
@@ -1160,9 +1224,10 @@ def _(fx):
     concrete = {
         "prof_uart_tx", "prof_uart_rx", "prof_spi", "prof_i2c", "prof_i2c_gen",
         "prof_demo", "prof_ws2812", "prof_ps2", "prof_dmx512", "prof_nec_ir",
+        "prof_swd",
         "prof_bench_uart", "prof_bench_dmx512", "prof_bench_ws2812",
         "prof_bench_nec_ir",
-        "prof_bench_ps2", "prof_bench_spi",
+        "prof_bench_ps2", "prof_bench_swd", "prof_bench_spi",
         "prof_bench_i2c", "prof_bench_i2c_sr", "prof_bench_load", "prof_top",
         "prof_core", "prof_isa_ports",
     }
