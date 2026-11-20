@@ -84,6 +84,7 @@ PIN_MODE_PROFILES = {
     "spi": ("spi_transfer",),
     "i2c": ("i2c_transfer",),
     "ps2": ("ps2",),
+    "swd": ("swd",),
 }
 PIN_MODE_REGS = ("uio_dir", "uio_od")
 CTL_INDEX = {"UIO_DIR": "0X00", "UIO_OD": "0X01"}
@@ -98,6 +99,7 @@ PHASES = (
     "ws2812",
     "ps2",
     "dmx512",
+    "swd",
 )
 UNUSED = "unused"
 # PROG_SER / PROG_MODE are the serial program-load inputs. CRC_BYTE_SEL (an
@@ -108,9 +110,9 @@ LOAD_ROLE_PORT = {"PROG_SER": "ui_in", "PROG_MODE": "ui_in",
                   "CRC_BYTE_SEL": "ui_in", "CRC_READOUT": "uo_out"}
 
 # Role classes (what the role does electrically).
-DRIVE_PP = {"TX", "CS", "SCLK", "MOSI", "DIN"} | {f"RESULT[{i}]" for i in range(8)}
+DRIVE_PP = {"TX", "CS", "SCLK", "MOSI", "DIN", "SWCLK", "SWDIO"} | {f"RESULT[{i}]" for i in range(8)}
 DRIVE_OD = {"SCL", "SDA", "PS2_CLK", "PS2_DATA"}
-SAMPLE = {"MISO", "RX"}
+SAMPLE = {"MISO", "RX", "SWDIO"}
 ALL_ROLES = DRIVE_PP | DRIVE_OD | SAMPLE
 
 # Phase role vocabulary (the record's `phases` object must match exactly).
@@ -129,6 +131,11 @@ PHASE_VOCAB = {
     # Multi-protocol extra credit (issue #445): the DMX512 transmitter's
     # line, driven push-pull through an external RS-485 transceiver.
     "dmx512": {"TX"},
+    # Multi-protocol extra credit (issue #452): the SWD probe's two lines.
+    # SWCLK is always driven push-pull; SWDIO is driven push-pull in the
+    # probe's write phases and released (sampled, with a pull-up) for the
+    # target's response phases.
+    "swd": {"SWCLK", "SWDIO"},
 }
 
 # Extraction patterns this script implements. An inventory entry naming any
@@ -151,6 +158,9 @@ PATTERNS = {
     "ps2_images",           # ps2_device.asm: release images, CLK mask, DATA images, bit moves, UIO_OD value
     "ps2_shifts",           # ps2_device.asm: the shift recipe after each IN UIO_IN
     "bench_ps2",            # CLK_BIT, DATA_BIT = n, m
+    "swd_images",           # swd_probe.asm: preloaded image pair, per-bit images, UIO_DIR values, no UIO_OD
+    "swd_sample",           # swd_probe.asm: each IN UIO_IN followed by AND Rx, R0 (the SWDIO mask)
+    "bench_swd",            # SWCLK_BIT, SWDIO_BIT = n, m
     "bench_spi_consts",     # CS/SCLK/MOSI/MISO constants and capture ports
     "bench_i2c_consts",     # SCL/SDA constants, LINE_PIN, CAPTURE_SPECS, i2c_board(scl=, sda=), pad calls
     "bench_i2c_sr_consts",  # imports from test_firmware_i2c, pad calls by named bit, no uio_in write
@@ -1143,6 +1153,78 @@ class Checker:
         `prof_uart_tx`, against the table's own dmx512.TX pin."""
         self.check_tx_firmware(rel, text, "dmx512", "DMX512 TX")
 
+    # -------------------------------------------------------- profile: swd
+    def prof_swd(self, rel, ent, text):
+        """The SWD probe (issue #452, DR 0018 note of 2026-11-19): SWCLK and
+        SWDIO push-pull on the table's swd pins, SWDIO released (its UIO_DIR
+        bit cleared) for the target-driven response phases. Checks the
+        preloaded image pair, every per-bit pin image, the UIO_DIR values
+        and the sample mask against the table's `swd` phase."""
+        c = self.concrete
+        ins = self.asm_instrs(text)
+        clk, dio = self.mask_of("swd", "SWCLK"), self.mask_of("swd", "SWDIO")
+        if not clk or not dio:
+            c.err(f"{rel}: the table's swd phase has no SWCLK / SWDIO pin")
+            return
+        outs, ins_p, _res = self.out_in_ports(
+            [("swd", ["SWCLK", "SWDIO"])], [("swd", ["SWDIO"])], "spi_result")
+        # the probe reports each response sample on the result port UO_OUT
+        # (as every result-carrying image does); the swd phase itself has no
+        # uo_out pin role, so it is allowed here explicitly
+        self.check_ports(rel, ins, outs | {"UO_OUT"}, ins_p, outs, ins_p)
+        images = {0, clk, dio, clk | dio}
+        # the preloaded pair: R0 holds the SWCLK-low/SWDIO-high image (which
+        # doubles as the SWDIO mask), R1 the SWCLK-high/SWDIO-high image
+        first: dict[str, int | None] = {"R0": None, "R1": None}
+        for i in ins:
+            if i["m"] == "LDI" and i["ops"][0] in first and first[i["ops"][0]] is None:
+                first[i["ops"][0]] = self.imm(i["ops"][1])
+        c.sites += 2
+        if first["R0"] != dio or first["R1"] != (clk | dio):
+            c.err(f"{rel}: the preloaded images are R0={first['R0']} R1={first['R1']}; "
+                  f"the SWDIO-high pair is 0x{dio:02X} (SWCLK low) and 0x{clk | dio:02X} "
+                  "(SWCLK high)")
+        # every LDI immediately feeding OUT UIO_OUT is one of the four images
+        for a, b in zip(ins, ins[1:]):
+            if (a["m"] == "LDI" and b["m"] == "OUT"
+                    and b["ops"][0].upper() == "UIO_OUT" and b["ops"][1] == a["ops"][0]):
+                c.sites += 1
+                if self.imm(a["ops"][1]) not in images:
+                    c.err(f"{rel}:{a['no']}: pin image {a['ops'][1]} is not one of "
+                          f"0x00 / 0x{clk:02X} / 0x{dio:02X} / 0x{clk | dio:02X} "
+                          "(the four SWCLK x SWDIO combinations)")
+        # every OUT UIO_OUT reads a preloaded image register or the scratch
+        for i in ins:
+            if i["m"] == "OUT" and i["ops"][0].upper() == "UIO_OUT":
+                c.sites += 1
+                if i["ops"][1] not in ("R0", "R1", "R3"):
+                    c.err(f"{rel}:{i['no']}: OUT UIO_OUT from {i['ops'][1]}; only R0/R1 "
+                          "(the preloaded pair) or R3 (a per-bit image) may drive the lines")
+        # every WCTL UIO_DIR releases SWDIO or drives both; UIO_OD never appears
+        for a, b in zip(ins, ins[1:]):
+            if (a["m"] == "LDI" and b["m"] == "WCTL"
+                    and b["ops"][0].upper() in ("UIO_DIR", "0X00")
+                    and b["ops"][1] == a["ops"][0]):
+                c.sites += 1
+                if self.imm(a["ops"][1]) not in (clk, clk | dio):
+                    c.err(f"{rel}:{a['no']}: WCTL UIO_DIR writes {a['ops'][1]}; the probe "
+                          f"uses 0x{clk:02X} (SWDIO released) and 0x{clk | dio:02X} (both driven)")
+        if any(i["m"] == "WCTL" and i["ops"][0].upper() in ("UIO_OD", "0X01") for i in ins):
+            c.sites += 1
+            c.err(f"{rel}: writes WCTL UIO_OD; the swd profile drives push-pull only")
+        # the swd_sample pattern: each response sample isolates the SWDIO bit
+        # with the mask register that holds the SWDIO-high image (R0)
+        for idx, i in enumerate(ins):
+            if not (i["m"] == "IN" and i["ops"][1].upper() == "UIO_IN"):
+                continue
+            c.sites += 1
+            nxt = ins[idx + 1] if idx + 1 < len(ins) else None
+            if not (nxt and nxt["m"] == "AND" and nxt["ops"][0] == i["ops"][0]
+                    and nxt["ops"][1] == "R0"):
+                c.err(f"{rel}:{i['no']}: IN UIO_IN must be followed by "
+                      f"AND {i['ops'][0]}, R0 (R0 = 0x{dio:02X}, the SWDIO mask) "
+                      "to isolate the sampled bit")
+
     # ------------------------------------------------------- profile: benches
     def need(self, text, pattern, rel, what, flags=re.M):
         m = re.search(pattern, text, flags)
@@ -1188,6 +1270,12 @@ class Checker:
         if m:
             self.check_pb(rel, "CLK_BIT", "uio", int(m.group(1)), "ps2", "PS2_CLK")
             self.check_pb(rel, "DATA_BIT", "uio", int(m.group(2)), "ps2", "PS2_DATA")
+
+    def prof_bench_swd(self, rel, ent, text):
+        m = self.need(text, r'^SWCLK_BIT,\s*SWDIO_BIT\s*=\s*(\d+),\s*(\d+)', rel, "SWCLK_BIT, SWDIO_BIT")
+        if m:
+            self.check_pb(rel, "SWCLK_BIT", "uio", int(m.group(1)), "swd", "SWCLK")
+            self.check_pb(rel, "SWDIO_BIT", "uio", int(m.group(2)), "swd", "SWDIO")
 
     def prof_bench_spi(self, rel, ent, text):
         m = self.need(text, r"^CS_BIT,\s*SCLK_BIT,\s*MOSI_BIT\s*=\s*(\d+),\s*(\d+),\s*(\d+)", rel,
@@ -1543,9 +1631,10 @@ class Checker:
           reset (an error otherwise: a pin would be driven before any
           program asked);
         - each runtime pin's role is a *firmware* convention (issue
-          #155): every inventoried SPI / I2C assembly file must write its
-          profile's `pin_modes` values (`WCTL UIO_DIR` for the push-pull
-          SPI lines, `WCTL UIO_OD` for the open-drain I2C lines), must
+          #155): every inventoried SPI / I2C / PS/2 / SWD assembly file must
+          write its profile's `pin_modes` values (`WCTL UIO_DIR` for the
+          push-pull SPI and SWD lines, `WCTL UIO_OD` for the open-drain I2C
+          and PS/2 lines), must
           write no pin-mode register its profile leaves at 0, and must
           have written its idle image (`OUT UIO_OUT`) first, because
           `uio_out` resets to 0 and a driver or an open-drain pin enabled
@@ -1598,7 +1687,8 @@ class Checker:
                 self.unwired.append(
                     f"prerequisite: {rel} writes bench-debug values to UIO_OUT and also writes "
                     f"{', '.join(modes)}: the debug values would reach uio pads (DR 0012; issue #154)")
-        # Each SPI / I2C image must put its runtime pins in the table's mode:
+        # Each SPI / I2C / PS/2 / SWD image must put its runtime pins in the
+        # table's mode:
         # write the profile's `pin_modes` value to UIO_DIR / UIO_OD, after
         # its first `OUT UIO_OUT` (uio_out resets to 0, so enabling a driver
         # or an open-drain pin first would assert the line), and write no
@@ -1608,7 +1698,7 @@ class Checker:
         what = {"uio_dir": ("UIO_DIR", "push-pull"), "uio_od": ("UIO_OD", "open-drain")}
         for rel, ent in sorted(self.inv.items()):
             prof = ent["profile"]
-            if prof not in ("spi", "i2c", "ps2") or prof not in modes:
+            if prof not in ("spi", "i2c", "ps2", "swd") or prof not in modes:
                 continue
             text = self.read(rel, self.concrete)
             if text is None:
