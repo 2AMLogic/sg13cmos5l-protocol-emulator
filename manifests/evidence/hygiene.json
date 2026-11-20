@@ -80,7 +80,7 @@
         "role": "hygiene",
         "path": "scripts/check_evidence_inventories.py",
         "passed": true,
-        "content_hash": "sha256:6fb28630ee24867cbd4e7183d9f4ef5654210ca5df099cb4383c709b04a9b94d"
+        "content_hash": "sha256:23601f7131b3ac5a1bbf2ec63e2d0782edc9e93e1df98e0df3166d47d5a6b087"
       },
       {
         "check": "present",
