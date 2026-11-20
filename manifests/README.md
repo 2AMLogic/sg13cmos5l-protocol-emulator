@@ -673,6 +673,31 @@ capture, PVT corner sweeps, or Monte Carlo.
   the ruling removes; the red is accepted instead (recorded here for the
   trade-off only, decided in `layout/toolchain.json`'s own history).
 
+- **2026-11-20 (PR #483, merging `main` into the 8x4 branch).** The merge
+  conflicted in four files and staled five pins at once, so the round runs in
+  this order: (1) the item 8 pin and `manifests/evidence/characterization.json`
+  input pin re-bound to what `scripts/characterization_report.py` emits (the
+  text-merged `measurements/characterization.md` is byte-identical to the
+  generator's output, `sha256:a7e99457...`, matching neither parent's pin);
+  (2) `manifests/evidence/design-sources.json` re-attested with `klt signoff
+  --attest 1` (the textual merge had combined `main`'s klt `0.9.0` envelope
+  shape with this branch's 8x4 `info.yaml` hash) and the manifest's item 1 pin
+  re-bound to the fresh envelope; items 9 and 10 `--check` as `match`; (3) the
+  successor round `signoff-baseline 20261120-024000` ..
+  `20261120-024639-8f131ab`, 400 records, one per live predecessor (this
+  branch's 168 `eecd97cc` leaves plus `main`'s 232 `e4ca4ab` leaves), **5 of
+  11 met, 1 not applicable, at klt `0.9.2`** (the release build `main`'s latest
+  round records, run from a throwaway `uvx` environment outside the
+  repository; the fleet pin file itself was not readable from this host). The
+  toolchain-declaration question the merge raised needed no decision: the
+  ruling of 2026-11-09 (2AMLogic/2am#7038) keeps the producing version in the
+  record, so this branch's 0.8.0-graded leaves are superseded by, not
+  reconciled with, the 0.9.2 round, and no repo pin is re-introduced. The
+  merged tree grades identically to `main`'s round; against this branch's
+  `eecd97cc` (klt 0.8.0) round the only status difference is item 7 (grader
+  change, klayout-tools#4893). The two docs citing a baseline were re-pointed
+  at this round.
+
 - **Every citation pins a `content_hash`**, and what it is the hash of
   depends on the cited envelope (clarified 2026-10-10, issue #168; the
   manifests on `main` have always followed this, the sentence here did

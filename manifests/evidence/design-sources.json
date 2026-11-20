@@ -45,7 +45,7 @@
         "role": "source",
         "path": "info.yaml",
         "passed": true,
-        "content_hash": "sha256:038e3988c7d4eaa54a228ad9d9d94fd998504317e3dc2ba98a9117c63cc44b24"
+        "content_hash": "sha256:128372502e02f20cc5003fe59ebb7381df605cfc77da9a336d2abb57918f65ff"
       },
       {
         "check": "present",
@@ -150,7 +150,7 @@
     ]
   },
   "provenance": {
-    "klt_version": "0.9.0",
+    "klt_version": "0.9.2",
     "klayout_version": null,
     "pdk": null,
     "deck": null,
@@ -189,7 +189,7 @@
             "path": "info.yaml",
             "scope": "repo"
           },
-          "content_hash": "sha256:038e3988c7d4eaa54a228ad9d9d94fd998504317e3dc2ba98a9117c63cc44b24"
+          "content_hash": "sha256:128372502e02f20cc5003fe59ebb7381df605cfc77da9a336d2abb57918f65ff"
         },
         {
           "path": {
@@ -269,7 +269,7 @@
           "content_hash": "sha256:7c9c4611974c554c738840692e3d4f7c0bac82f3bd649eb70545f62306add2ed"
         }
       ],
-      "content_hash": "sha256:a6bd1d9f573745aa12c65465893a6bd81040a3b966e69f44acb3190270f98bfa"
+      "content_hash": "sha256:00640885920ccebeb7255aa3cc5b8f88d170570956d9283d46979faa2789cb3b"
     }
   }
 }

@@ -4,7 +4,7 @@
   "evidence": {
     "1": {
       "file": "manifests/evidence/design-sources.json",
-      "content_hash": "sha256:a6bd1d9f573745aa12c65465893a6bd81040a3b966e69f44acb3190270f98bfa"
+      "content_hash": "sha256:00640885920ccebeb7255aa3cc5b8f88d170570956d9283d46979faa2789cb3b"
     },
     "2": {
       "file": "manifests/evidence/layout-gds.json",
@@ -22,11 +22,11 @@
       "not_applicable": {
         "spec": {
           "file": "spec/target-spec-ratified.json",
-          "content_hash": "sha256:f64b320f750aa610245ab412ff21446fb260bcc1958849eba39c908df3f20f9b"
+          "content_hash": "sha256:8a0561c368507f1897f845c585bd13d70c02ac39d35384f5f0cb84166e001fdc"
         },
         "statement": {
           "file": "spec/statistical-claims-na.json",
-          "content_hash": "sha256:e506e819fcda46bb85d0b3c661e4273365928f87e453d810f8808d810f96e5ea"
+          "content_hash": "sha256:b7b7958b56616080c6c40a2b258e01b8f7b8866ff2680e4b92a869d94fb08f0d"
         }
       }
     },
@@ -36,7 +36,7 @@
     },
     "8": {
       "file": "manifests/evidence/characterization.json",
-      "content_hash": "sha256:57f0d096d920811c00033b42c2606eb2eae12a99de09fbd260496e98e2bedafc"
+      "content_hash": "sha256:a7e994574d24fa132e4e85129473ccb4714e42bf5cc026e44e8b8c37af8b8126"
     },
     "9": {
       "file": "manifests/evidence/testbenches.json",

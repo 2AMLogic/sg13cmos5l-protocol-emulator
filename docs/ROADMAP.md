@@ -20,6 +20,9 @@ committed with benches against independent reference models.
 (PR #242, DR 0009). Rows 13 and 14 and DRs 0005, 0007, 0008, 0010–0018 and
 0020–0024 are `Proposed`; the next act is prepared in
 [`spec/ratification-batch-2.md`](../spec/ratification-batch-2.md).
+DR 0026 (2026-11-19, issue #464) supersedes row 7's Target to the 8×4
+allocation the competition rules set and is ratified by the two-key act on
+its own carrying PR.
 
 **Spec rows** (digest in [`spec/gap-to-submission.md`](../spec/gap-to-submission.md),
 which wins over this file on any disagreement): rows 5 and 9 are `met`;
@@ -30,7 +33,7 @@ estimate closes setup but fails hold), row 12 (stale gate-level and SDF records
 for the Fast-mode I2C images) and row 7 (klt place-and-route not run).
 
 **T1 checklist** (`klt signoff`, record
-`verification/records/signoff-baseline/records/20261120-020555-96d2a6b.md`,
+`verification/records/signoff-baseline/records/20261120-032448-0c41b1a.md`,
 klt 0.9.2): **5 of 11 met, 1 `not_applicable`**.
 
 | Item | Verdict | What moves it |
@@ -101,6 +104,10 @@ Unblocked once the netlist evidence refresh (#265) lands and PR #263 merges:
   session. It heads the chain #265 → PR #263 → #262 / #275 → #272 → #304, #290.
 - **Tile size (#273).** Whether `info.yaml` must declare 6×4 or may stay 2×2 is
   a question for the organizers; no agent can send it. Gates row 7, DR 0014.
+  **Answered 2026-11-19:** the rules now direct 8x4 ("Update November 9th",
+  confirmed final for the March 2027 shuttle); the operator ruling on #273
+  settled it, DR 0026 (ratified on its carrying PR) supersedes row 7's
+  Target, and `info.yaml` declares `8x4` (issue #464).
 - **Item 4 acceptance (#329)** waits on review of the contract and evidence.
 - **Second ratification act.** Rows 13 and 14 and the `Proposed` DRs wait for
   two `RATIFY-KEY` reviews on `spec/ratification-batch-2.md`.
