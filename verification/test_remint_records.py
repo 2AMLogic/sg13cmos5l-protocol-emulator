@@ -253,6 +253,96 @@ def collapse_cases(failures: list) -> None:
                   ], out, failures)
 
 
+def wrapped_result(text: str, verdict: str, indent: str) -> str:
+    """Give a leaf's Result a first line shared by every leaf and a wrapped
+    continuation (indented or flush-left) that carries the verdict."""
+    return text.replace(
+        "- **Result**: **Overall: PASS** (fixture)",
+        f"- **Result**: Item 9 status\n{indent}{verdict} (wrapped)\n"
+        f"{indent}run configuration tail",
+    )
+
+
+def collapse_wrapped_cases(failures: list) -> None:
+    for label, indent in (("indented", "  "), ("flush-left", "")):
+        with tempfile.TemporaryDirectory(prefix="remint-collapse-") as d:
+            repo = build_collapsible(Path(d))
+            for rid, verdict in zip(LEAF_IDS, ("PASS", "FAIL")):
+                p = T.record_path(repo, "signoff-baseline", rid)
+                p.write_text(wrapped_result(p.read_text(encoding="utf-8"), verdict, indent),
+                             encoding="utf-8")
+            T._git(repo, "add", "-A")
+            T._git(repo, "commit", "--quiet", "-m", "wrap")
+            stale(repo)
+            code, out = tool(repo, "--collapse", "signoff-baseline")
+            check(f"--collapse refuses leaves whose {label} Result continuations differ",
+                  code == 1 and "not interchangeable" in out
+                  and baseline_records(repo) == LEAF_IDS, out, failures)
+
+        with tempfile.TemporaryDirectory(prefix="remint-collapse-") as d:
+            repo = build_collapsible(Path(d))
+            for rid in LEAF_IDS:
+                p = T.record_path(repo, "signoff-baseline", rid)
+                p.write_text(wrapped_result(p.read_text(encoding="utf-8"), "PASS", indent),
+                             encoding="utf-8")
+            T._git(repo, "add", "-A")
+            T._git(repo, "commit", "--quiet", "-m", "wrap")
+            stale(repo)
+            code, out = tool(repo, "--collapse", "signoff-baseline")
+            new = [r for r in baseline_records(repo) if r not in LEAF_IDS]
+            check(f"--collapse accepts identical {label} wrapped Results", code == 0
+                  and len(new) == 1, out, failures)
+            if new:
+                text = T.record_path(repo, "signoff-baseline", new[0]).read_text(encoding="utf-8")
+                check(f"collapsed record replaces the whole {label} wrapped Result body",
+                      "- **Result**: (fill in)" in text and "PASS (wrapped)" not in text
+                      and "run configuration tail" not in text, text, failures)
+
+    with tempfile.TemporaryDirectory(prefix="remint-collapse-") as d:
+        repo = build_collapsible(Path(d))
+        stale(repo)
+        code, out = tool(repo, "--collapse", "signoff-baseline")
+        first = [r for r in baseline_records(repo) if r not in LEAF_IDS]
+        draft = T.record_path(repo, "signoff-baseline", first[0]) if first else None
+        if draft:
+            edited = draft.read_text(encoding="utf-8") + "\noperator note\n"
+            draft.write_text(edited, encoding="utf-8")
+        code2, out2 = tool(repo, "--collapse", "signoff-baseline")
+        check("a repeat --collapse points at the pending draft and mints nothing",
+              code == 0 and code2 == 1 and "already pending" in out2
+              and bool(draft) and first[0] in out2
+              and [r for r in baseline_records(repo) if r not in LEAF_IDS] == first
+              and draft.read_text(encoding="utf-8") == edited, out2, failures)
+
+
+def mixed_list_cases(failures: list) -> None:
+    """A valid entry beside an invalid sibling still supersedes its target in
+    the minter's liveness view (#472)."""
+    for label, sibs in (("an int", [7]), ("nulls", [None, None]),
+                        ("a duplicate", None)):
+        with tempfile.TemporaryDirectory(prefix="remint-mixed-") as d:
+            repo = build_collapsible(Path(d), leaves=3)
+            ids = [f"20260101-{i:06d}-abc1234" for i in range(3)]
+            sup = ([ids[0], *sibs] if sibs is not None
+                   else [ids[0], ids[0], ids[1]])
+            nid = "20260102-000000-abc1234"
+            T.record_path(repo, "signoff-baseline", nid).write_text(
+                T.make_record(nid, "signoff-baseline", supersedes=sup,
+                              inputs=[("rtl/dut.v", T._sha256_text(T.DUMMY_RTL))]),
+                encoding="utf-8")
+            T._git(repo, "add", "-A")
+            T._git(repo, "commit", "--quiet", "-m", "mixed list")
+            stale(repo)
+            code, out = tool(repo)
+            stale_ids = {l.rsplit("/", 1)[-1][:-3] for l in out.splitlines()
+                         if l.startswith("STALE")}
+            expect = ({ids[2], nid} if sibs is not None else {ids[2], nid})
+            check(f"minter keeps a valid entry beside {label} effective",
+                  "Traceback" not in out and ids[0] not in stale_ids
+                  and (sibs is not None or ids[1] not in stale_ids)
+                  and expect <= stale_ids, out, failures)
+
+
 def tool(repo: Path, *args: str, broker: str | None = None) -> tuple[int, str]:
     env = {k: v for k, v in os.environ.items() if k != "KLT_ARTIFACT_BROKER"}
     if broker:
@@ -420,6 +510,8 @@ def main() -> int:
           rr._sanitize(f"{rr.REPO_ROOT}/a") == "<repo>/a", "", failures)
 
     collapse_cases(failures)
+    collapse_wrapped_cases(failures)
+    mixed_list_cases(failures)
 
     print()
     if failures:

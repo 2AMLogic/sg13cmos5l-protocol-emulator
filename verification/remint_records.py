@@ -112,15 +112,10 @@ def live_records() -> list[tuple[Path, dict]]:
             continue
     superseded = set()
     for path, meta in metas.items():
-        targets = meta.get("supersedes")
-        if not isinstance(targets, (str, list)) or targets == "none":
-            continue
-        if cr.supersedes_type_error(path, targets) is not None:
-            continue
         exp = cr.experiment_key(path)
-        for target in cr.supersedes_ids(targets):
-            if cr.supersession_error(path, target, ids.get(exp, set())) is None:
-                superseded.add((exp, target))
+        for target in cr.effective_supersedes(
+                path, meta.get("supersedes"), ids.get(exp, set())):
+            superseded.add((exp, target))
     return [
         (p, m) for p, m in sorted(metas.items())
         if (cr.experiment_key(p), p.stem) not in superseded
@@ -239,12 +234,18 @@ def allocate_id(old_id: str, exp_dir: Path, now: dt.datetime, short_rev: str,
         when += dt.timedelta(seconds=1)
 
 
+_NEW_BLOCK_RE = re.compile(r"^(?:[-*+]\s|\d+[.)]\s|#|<!--|>|```|\|)")
+
+
 def _split_blocks(body: str) -> list[list[str]]:
-    """Split record prose into top-level bullet blocks (bullet + indented
-    continuation lines); non-bullet lines are blocks of their own."""
+    """Split record prose into top-level bullet blocks: a field bullet plus
+    every continuation line -- indented, or unindented hard-wrapping that
+    follows directly (no blank line, not itself a bullet/heading/comment).
+    Other lines are blocks of their own."""
     blocks: list[list[str]] = []
     for line in body.splitlines():
-        if blocks and line.startswith((" ", "\t")) and line.strip():
+        if blocks and line.strip() and _field_of(blocks[-1]) is not None and (
+                line.startswith((" ", "\t")) or not _NEW_BLOCK_RE.match(line)):
             blocks[-1].append(line)
         else:
             blocks.append([line])
@@ -384,8 +385,19 @@ def _collapse_fingerprint(entry: dict) -> tuple:
     meta = cr._extract_meta_block(text, entry["path"])
     inputs = (meta.get("provenance") or {}).get("inputs")
     paths = tuple(i.get("path") for i in inputs) if isinstance(inputs, list) else ()
-    prose = cr._extract_prose_fields(text)
-    return (paths, prose.get("Claim"), prose.get("Result"))
+    return (paths, _field_text(text, "Claim"), _field_text(text, "Result"))
+
+
+def _field_text(text: str, field: str) -> str | None:
+    """The COMPLETE body of a prose field -- its bullet line and every
+    continuation line, indented or hard-wrapped flush-left -- with each line
+    stripped so the two wrapping styles compare equal."""
+    m = re.search(r"<!--\s*record-meta\s*(.*?)-->", text, re.DOTALL)
+    body = text[m.end():] if m else text
+    for block in _split_blocks(body):
+        if _field_of(block) == field:
+            return "\n".join(line.strip() for line in block)
+    return None
 
 
 def render_collapsed_record(old_text: str, old_meta: dict, new_id: str,
@@ -464,6 +476,29 @@ def mint_collapsed(template: dict, supersede_ids: list[str], new_id: str,
     return new_rec
 
 
+def pending_collapse_drafts(experiment: str, leaf_ids: set[str]) -> list[Path]:
+    """Untracked (not yet committed) records of `experiment` whose
+    `supersedes` already names any of `leaf_ids`: a collapse draft minted by
+    an earlier invocation. Tracked-only discovery cannot see them, so a retry
+    would otherwise mint a second, differently named draft (#472)."""
+    out = run_git("ls-files", "-z", "--others", "--exclude-standard", "--",
+                  f"verification/records/{experiment}/records/*.md")
+    drafts = []
+    for name in out.split("\0"):
+        if not name:
+            continue
+        path = REPO_ROOT / name
+        try:
+            meta = cr._extract_meta_block(path.read_text(encoding="utf-8"), path)
+        except (cr.LintError, OSError):
+            continue
+        if leaf_ids & set(cr.supersedes_ids(meta.get("supersedes"))
+                          if isinstance(meta.get("supersedes"), (str, list))
+                          else []):
+            drafts.append(path)
+    return sorted(drafts)
+
+
 def collapse(experiment: str) -> int:
     """`--collapse EXPERIMENT`: mint ONE record superseding every stale live
     leaf of an interchangeable-leaf experiment (#472). See the module
@@ -484,6 +519,15 @@ def collapse(experiment: str) -> int:
         print(
             f"ERROR: {experiment}: some stale leaves hash request files; re-run "
             f"them with --rerun instead (a collapse mint would skip the runs)"
+        )
+        return 1
+    drafts = pending_collapse_drafts(experiment, {e["record_id"] for e in report})
+    if drafts:
+        print(
+            f"ERROR: {experiment}: a collapse draft is already pending: "
+            f"{', '.join(str(d.relative_to(REPO_ROOT)) for d in drafts)}; fill "
+            f"it in and commit it (edits are preserved), or delete it to start "
+            f"over -- not minting a second one"
         )
         return 1
     fingerprints = {_collapse_fingerprint(e) for e in report}

@@ -611,6 +611,39 @@ def case_supersedes_list_duplicate_id(repo: Path) -> None:
     )
 
 
+def _stale_leaf_with_sibling_list(repo: Path, siblings: list) -> None:
+    """LEAF_1 is stale (rtl changed) and listed beside invalid `siblings`
+    by a fresh collapser: LEAF_1's supersession must still take effect."""
+    new_rtl = DUMMY_RTL + "// v2\n"
+    (repo / "rtl" / "dut.v").write_text(new_rtl, encoding="utf-8")
+    if LEAF_2 in siblings:
+        _add_demo_leaf(repo, LEAF_2)
+    _add_record(
+        repo,
+        "demo",
+        COLLAPSER,
+        make_record(
+            COLLAPSER,
+            "demo",
+            inputs=[("rtl/dut.v", _sha256_text(new_rtl))],
+            supersedes=[LEAF_1, *siblings],
+        ),
+        "fixture: list with a valid entry beside invalid ones",
+    )
+
+
+def case_supersedes_list_valid_beside_int(repo: Path) -> None:
+    _stale_leaf_with_sibling_list(repo, [7])
+
+
+def case_supersedes_list_valid_beside_nulls(repo: Path) -> None:
+    _stale_leaf_with_sibling_list(repo, [None, None])
+
+
+def case_supersedes_list_valid_beside_duplicates(repo: Path) -> None:
+    _stale_leaf_with_sibling_list(repo, [LEAF_1, LEAF_2])
+
+
 def case_supersedes_empty_list(repo: Path) -> None:
     _add_record(
         repo,
@@ -868,6 +901,18 @@ CASES = [
     ),
     # --- #472: the list form of `supersedes` ---
     (
+        "a list of a valid id and nulls reports the nulls without crashing",
+        case_supersedes_list_valid_beside_nulls,
+        1,
+        "list entries must be record-id strings, not NoneType",
+    ),
+    (
+        "a valid id beside a non-string entry is still superseded (no stale error)",
+        case_supersedes_list_valid_beside_int,
+        1,
+        "not int",
+    ),
+    (
         "a supersedes list of two valid earlier records passes",
         case_supersedes_list_valid,
         0,
@@ -969,6 +1014,23 @@ def main() -> int:
     if not REPO_UTILS.exists():
         print(f"FATAL: {REPO_UTILS} not found", file=sys.stderr)
         return 1
+
+    # Per-entry rule (#472): an invalid sibling is reported but never makes
+    # the valid entry's target look live (stale) again.
+    for name, mutate in (
+        ("valid id beside an int stays superseded", case_supersedes_list_valid_beside_int),
+        ("valid id beside nulls stays superseded", case_supersedes_list_valid_beside_nulls),
+        ("duplicate list leaves the uniquely named sibling superseded",
+         case_supersedes_list_valid_beside_duplicates),
+    ):
+        with tempfile.TemporaryDirectory(prefix="record-linter-selftest-") as tmpdir:
+            repo = build_fixture_repo(Path(tmpdir))
+            mutate(repo)
+            exit_code, output = run_linter(repo)
+            if "stale" in output.lower() or "Traceback" in output or exit_code != 1:
+                print(f"FAIL: {name}\n" + "\n".join("  | " + l for l in output.splitlines()))
+                return 1
+            print(f"OK:   {name}")
 
     print(f"== check_records.py self-test ({len(CASES) + len(BASE_SHA_CASES)} cases) ==")
     failures = 0

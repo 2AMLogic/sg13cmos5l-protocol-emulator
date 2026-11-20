@@ -175,11 +175,12 @@ def supersedes_type_error(path: Path, supersedes) -> str | None:
                 f"{path}: record-meta `supersedes` must not be an empty list; "
                 f"supersede nothing with null"
             )
-        bad = next((e for e in supersedes if not isinstance(e, str)), None)
-        if bad is not None:
+        bad = [e for e in supersedes if not isinstance(e, str)]
+        if bad:
+            kinds = ", ".join(sorted({type(e).__name__ for e in bad}))
             return (
                 f"{path}: record-meta `supersedes` list entries must be "
-                f"record-id strings, not {type(bad).__name__}"
+                f"record-id strings, not {kinds}"
             )
         dupes = sorted({e for e in supersedes if supersedes.count(e) > 1})
         if dupes:
@@ -193,6 +194,22 @@ def supersedes_type_error(path: Path, supersedes) -> str | None:
         f"non-empty list of record-id strings, or null, "
         f"not {type(supersedes).__name__}"
     )
+
+
+def effective_supersedes(path: Path, supersedes, known_ids: set) -> set:
+    """The record IDs a `supersedes` value validly supersedes, judged per
+    entry (#472): an invalid sibling (non-string, duplicate, unknown ID)
+    is reported by `supersedes_type_error` / `supersession_error` but never
+    voids the valid entries beside it. Every consumer uses this one rule."""
+    if not isinstance(supersedes, (str, list)) or supersedes == "none":
+        return set()
+    entries = [supersedes] if isinstance(supersedes, str) else [
+        e for e in supersedes if isinstance(e, str)
+    ]
+    return {
+        e for e in entries
+        if e != "none" and supersession_error(path, e, known_ids) is None
+    }
 
 
 def supersession_error(path: Path, supersedes, known_ids: set) -> str | None:
@@ -627,16 +644,10 @@ def main() -> int:
     # exempts its target while its valid siblings still exempt theirs (#472).
     superseded = set()
     for path, meta in metas_by_path.items():
-        targets = meta.get("supersedes")
-        if not isinstance(targets, (str, list)) or targets == "none":
-            continue
-        if supersedes_type_error(path, targets) is not None:
-            continue
         experiment = experiment_key(path)
         known_ids = all_ids_by_experiment.get(experiment, set())
-        for target in supersedes_ids(targets):
-            if supersession_error(path, target, known_ids) is None:
-                superseded.add((experiment, target))
+        for target in effective_supersedes(path, meta.get("supersedes"), known_ids):
+            superseded.add((experiment, target))
 
     for path in record_files:
         errors = lint_record(path, all_ids_by_experiment)

@@ -55,10 +55,21 @@ validates them mechanically). A record superseded by two records (one
 scalar, one list) is simply superseded; no rule forbids the double naming,
 and neither naming record becomes stale for it.
 
-## Not done
+## Per-entry rule and guards
 
-Migrating or collapsing the 32 live leaves already on `main` — they are
-fresh today (nothing they hash has moved), `--collapse` by design refuses
-to supersede fresh leaves, and the next stale event collapses them through
-the new path. Adding further experiments to the collapsible set (each
-needs the interchangeability evidence this record's guards enforce).
+Every consumer (the linter, the re-minter, the docs-citation checker and the
+characterization report) judges each `supersedes` entry on its own: an invalid
+sibling (non-string, duplicate, unknown ID) is reported but never voids the
+valid entries beside it. `check_records.effective_supersedes` is the single
+implementation the linter and re-minter share. `--collapse` compares the
+complete Claim and Result bodies (continuation lines included, indented or
+flush-left wrapping) and refuses to mint a second draft while an untracked one
+for the same leaves is pending.
+
+## Done
+
+The migration is complete: the 112 live `signoff-baseline` predecessors on this
+branch (one distinct full Claim and Result among them) are superseded by one
+live record, `20261120-002909-822afb0`. Adding further experiments to the
+collapsible set remains future work (each needs the interchangeability evidence
+this record's guards enforce).
