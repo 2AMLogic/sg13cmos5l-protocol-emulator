@@ -272,13 +272,10 @@ def rises_of(trace):
 
 
 def response_samples(trace, model):
-    """The probe's report bytes: `uo_out` at the SWCLK rising edge of each
-    sample slot of every transaction (36 for an OK, 3 for a WAIT / FAULT) (the sample write retires
-    one edge before that edge). The slots are located from the model's
-    per-rise phase labels: every complete request frame is a run of exactly
-    8 `request` rises, the next rise is the clocked turnaround cycle, and
-    the 36 after it are the sample slots -- whether the target answered
-    (OK, WAIT, FAULT) or rejected the frame and left the line pulled up."""
+    """Read the retired report byte at each response-slot rise. After the
+    request and turnaround, the model labels 36 response slots for OK and
+    three for WAIT or FAULT. A rejected frame leaves SWDIO pulled high, so
+    the probe takes its full-length read path."""
     edges = rises_of(trace)
     phases = [ph for ph, _ in model.wire]
     assert len(edges) == len(phases), (len(edges), len(phases))
@@ -463,17 +460,22 @@ async def test_probe_reads_idcode_and_dp_register(dut):
     phases = [ph for ph, _ in model.wire]
     prev_ph = None
     returns = 0
+    request_starts = []
     for e, ph in zip(edges, phases):
         oe_bit = (trace[e]["oe"] >> SWDIO_BIT) & 1
         if ph in ("response", "await-turnaround"):
             assert oe_bit == 0, f"SWDIO still driven at {ph} rise, edge {e}"
         elif ph == "request":
+            if prev_ph != "request":
+                request_starts.append(e)
             assert oe_bit == 1, f"SWDIO not driven at request rise, edge {e}"
         elif ph == "post-response" and prev_ph == "response":
             # the return turnaround cycle after the last response bit
             returns += 1
             assert oe_bit == 0, f"SWDIO driven on the return turnaround, edge {e}"
         prev_ph = ph
+    first_start, second_start = request_starts
+    assert second_start - first_start == 328, request_starts
     assert returns == 2, f"{returns} return-turnaround rises graded, wanted 2"
     dut._log.info(
         f"golden: 218 rises, idcode {IDCODE:#010x} + parity, "

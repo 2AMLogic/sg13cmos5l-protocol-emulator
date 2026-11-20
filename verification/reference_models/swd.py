@@ -46,17 +46,15 @@ Protocol implemented, and what is graded
 * **Turnaround**: after the request's park bit the probe must release SWDIO
   (its output-enable low) while SWCLK is low; the target takes the line on
   the next rising edge. A probe still driving there is `no-release`, and the
-  bench's pad model reports the contention of the two drivers besides. After
-  the read parity the target releases, one more clocked cycle returns the
-  line to the probe, and the probe must re-drive SWDIO while SWCLK is low
-  (`redrive-while-high`).
-* **Response** to a well-formed read request: 3 ACK bits, 32 data bits LSB
-  first, one even-parity bit over the data plus itself (0x4BA00477 holds 13
-  ones -> parity 1). ACK OK = 100 sent LSB first (0, 0, 1); WAIT = 010 and
-  FAULT = 001 are configurable per read (`reads`): the target drives only the
-  3 ACK bits and releases on the next rise, so the probe clocks the pull-up
-  through the data phase, as a real target does for a read that did not
-  complete.
+  bench's pad model reports the contention of the two drivers. After the
+  final response bit both sides release SWDIO for one return turnaround
+  cycle. The probe then takes the line while SWCLK is low.
+* **Response**: the three-bit ACK is sent LSB first. OK (numeric 1) is
+  1,0,0 on the wire, WAIT (2) is 0,1,0, and FAULT (4) is 0,0,1.
+  After OK the target sends 32 data bits LSB first, then even parity
+  (0x4BA00477 has 13 set bits, so its parity bit is 1). With
+  CTRL/STAT.ORUNDETECT = 0, WAIT and FAULT go directly from the last ACK
+  bit to the return turnaround.
 * **Trailing idle**: after the last transfer, at least eight SWCLK clocks
   with SWDIO low (driven low by the probe) before SWCLK stops, else
   `trailing-idle-short` (graded at `finish()`).
@@ -403,8 +401,8 @@ class SwdTarget:
             self.drive = self._resp_bits[self._resp_index]
             self._resp_index += 1
             return
-        # every response bit has been launched: this rise is the one after
-        # the read parity -- hand the line back (IHI 0031 B4.3.1)
+        # The probe samples the final bit (read parity or the last error ACK
+        # bit) before this rise. Release SWDIO for the return turnaround.
         self.drive = None
         self._taken = False
         self._state = "post-response"

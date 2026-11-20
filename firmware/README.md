@@ -966,7 +966,7 @@ STA against this core is blocked —
 | one read transaction, back to back (request start rise to the next request's start rise: 8 request bits + turnaround + 36 slots + return turnaround) | **328 core cycles** (46 SWCLK rises) | **6.56 us** | ACK OK (1,0,0), 32 data bits LSB first, even parity |
 | whole program | 218 SWCLK cycles, 1,178 instructions | 23.56 us clocked | 8 trailing idle clocks with SWDIO low before SWCLK stops (ADIv5 B4.1.4) |
 
-**Edge convention for the transaction figure:** rising edges of `uio_out` bit 2 (SWCLK) in `verification.reference_models.isa.run` with SWDIO reading high (an OK answer); the two request start rises (the 119th and 165th) fall on core edges 488 and 816, 328 cycles apart. A WAIT/FAULT transaction is shorter (3 slots, no data) and is not in the table.
+The transaction starts on the first SWCLK rise of the request and ends on the first rise of the next request. In the ISA model (`verification.reference_models.isa.run`), holding SWDIO high selects the successful-read path at the first ACK bit. The 119th and 165th SWCLK rises fall on core edges 488 and 816. The RTL bench checks the same 328-cycle interval with the target driving the full OK code (1,0,0).
 
 ADIv5 sets no numeric SWCLK width minimum for a host-generated clock, so
 no width limit is invented; the model records the widths above and the
