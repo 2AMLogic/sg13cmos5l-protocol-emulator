@@ -1,0 +1,129 @@
+{
+  "schema_version": 2,
+  "engine": "icarus",
+  "hdl_toplevel": "tt_um_2amlogic_protocol_emulator",
+  "testbench": "test_firmware_nec_ir_rx",
+  "status": "pass",
+  "test_count": 7,
+  "passed_count": 7,
+  "failed_count": 0,
+  "skipped_count": 0,
+  "tests": [
+    {
+      "name": "test_envelope_self_check",
+      "status": "passed",
+      "sim_time_ns": 0.0,
+      "real_time_s": 0.0029931068420410156
+    },
+    {
+      "name": "test_committed_image_is_fresh",
+      "status": "passed",
+      "sim_time_ns": 0.0,
+      "real_time_s": 0.0014679431915283203
+    },
+    {
+      "name": "test_good_frames",
+      "status": "passed",
+      "sim_time_ns": 288562281.0,
+      "real_time_s": 465.7420582771301
+    },
+    {
+      "name": "test_discard_policy_and_resync",
+      "status": "passed",
+      "sim_time_ns": 475728961.0,
+      "real_time_s": 731.0858976840973
+    },
+    {
+      "name": "test_timing_edges",
+      "status": "passed",
+      "sim_time_ns": 738990522.0,
+      "real_time_s": 1145.0779922008514
+    },
+    {
+      "name": "test_early_life_and_back_to_back",
+      "status": "passed",
+      "sim_time_ns": 195127201.0,
+      "real_time_s": 310.62572622299194
+    },
+    {
+      "name": "test_negative_mutated_sample_point",
+      "status": "passed",
+      "sim_time_ns": 97855281.0,
+      "real_time_s": 145.24118900299072
+    }
+  ],
+  "coverage": null,
+  "trace": null,
+  "environment": {
+    "engine": "icarus",
+    "engine_version": "13.0",
+    "tools": [],
+    "cocotb_version": "2.0.1",
+    "results_xml": {
+      "path": "verification/.klt/functional-verification/results_icarus.xml",
+      "scope": "repo",
+      "sha256": "sha256:ad184f7fb53a35d7cb12ec4f41cb39b49189349284c3640cd84eb74d7fef58a6"
+    },
+    "test_log": {
+      "path": "verification/.klt/functional-verification/test_icarus.log",
+      "scope": "repo",
+      "sha256": "sha256:4fee605c46cd321b24b6edf19ff24df581dc6d85a2d8e1c83934f110fc163c0d"
+    },
+    "build_log": {
+      "path": "verification/.klt/functional-verification/build_icarus.log",
+      "scope": "repo",
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "random_seed": 1,
+    "source_defines": {},
+    "env": {},
+    "parameters": {},
+    "initial_state": null,
+    "sdf": null,
+    "sources": [
+      {
+        "path": "src/tt_um_2amlogic_protocol_emulator.v",
+        "scope": "repo",
+        "sha256": "8c380b9165a09a60e6be8d8546eac360a733317253f152c15faaa13489e94a29"
+      },
+      {
+        "path": "rtl/protocol_core.v",
+        "scope": "repo",
+        "sha256": "d4bab243a80af56a41b8ef730bc0ecbee889f2c02f4587311d6f9f694636437a"
+      },
+      {
+        "path": "rtl/protocol_boot_rom.v",
+        "scope": "repo",
+        "sha256": "329ed189d457010b259349e5d59e36db09d67422b4909320253929c3e0fdbebe"
+      },
+      {
+        "path": "rtl/protocol_program_memory.v",
+        "scope": "repo",
+        "sha256": "2b08865ab24d6bac84b390dfa76bab6686b572ba8f19124130bfc34e93dff637"
+      },
+      {
+        "path": "rtl/vendor/RM_IHPSG13_1P_256x16_c2_bm_bist.v",
+        "scope": "repo",
+        "sha256": "9d456840a37dff650ee6a09dc1f3d4e2d8d3348fcea7dc305933dd4543feff1a"
+      },
+      {
+        "path": "rtl/vendor/RM_IHPSG13_1P_core_behavioral_bm_bist.v",
+        "scope": "repo",
+        "sha256": "e2e43ec0159cbc34662fe91114e8cb03a697a2a829ad63b0d4f06631908ea787"
+      }
+    ]
+  },
+  "provenance": {
+    "klt_version": "0.9.3.dev2528+g6cf12d3102ca",
+    "klt_git_commit": "6cf12d3102cae85ebe1cf8bbc8c758d2fbc70668",
+    "klt_reinstall_spec": "klayout-tools @ git+https://github.com/2AMLogic/klayout-tools@6cf12d3102cae85ebe1cf8bbc8c758d2fbc70668",
+    "klayout_version": "0.30.12",
+    "pdk": null,
+    "deck": null,
+    "input": {
+      "role": "source",
+      "content_hash": "sha256:1df6bb47bbd2129244c779e49715ce7a290cf179b60afe92317041e01e9eae56"
+    },
+    "request_sha256": "d2f5d81eb8f406d0d217e90623f125072627debc33cba2d08a732e5640abe4ec"
+  }
+}

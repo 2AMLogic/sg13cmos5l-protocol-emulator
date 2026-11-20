@@ -1,0 +1,12 @@
+<testsuites name="results">
+  <testsuite name="all" package="all">
+    <property name="random_seed" value="1" />
+    <testcase name="test_envelope_self_check" classname="test_firmware_nec_ir_rx" file="&lt;repo&gt;/verification/test_firmware_nec_ir_rx.py" lineno="365" time="0.0029931068420410156" sim_time_ns="0.0" ratio_time="0.0" />
+    <testcase name="test_committed_image_is_fresh" classname="test_firmware_nec_ir_rx" file="&lt;repo&gt;/verification/test_firmware_nec_ir_rx.py" lineno="403" time="0.0014679431915283203" sim_time_ns="0.0" ratio_time="0.0" />
+    <testcase name="test_good_frames" classname="test_firmware_nec_ir_rx" file="&lt;repo&gt;/verification/test_firmware_nec_ir_rx.py" lineno="442" time="465.7420582771301" sim_time_ns="288562281.0" ratio_time="619575.3118527617" />
+    <testcase name="test_discard_policy_and_resync" classname="test_firmware_nec_ir_rx" file="&lt;repo&gt;/verification/test_firmware_nec_ir_rx.py" lineno="462" time="731.0858976840973" sim_time_ns="475728961.0" ratio_time="650715.5486202016" />
+    <testcase name="test_timing_edges" classname="test_firmware_nec_ir_rx" file="&lt;repo&gt;/verification/test_firmware_nec_ir_rx.py" lineno="486" time="1145.0779922008514" sim_time_ns="738990522.0" ratio_time="645362.6102617279" />
+    <testcase name="test_early_life_and_back_to_back" classname="test_firmware_nec_ir_rx" file="&lt;repo&gt;/verification/test_firmware_nec_ir_rx.py" lineno="543" time="310.62572622299194" sim_time_ns="195127201.0" ratio_time="628174.6311634282" />
+    <testcase name="test_negative_mutated_sample_point" classname="test_firmware_nec_ir_rx" file="&lt;repo&gt;/verification/test_firmware_nec_ir_rx.py" lineno="563" time="145.24118900299072" sim_time_ns="97855281.0" ratio_time="673743.3208288113" />
+  </testsuite>
+</testsuites>

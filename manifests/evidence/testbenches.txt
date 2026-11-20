@@ -2,6 +2,11 @@
 # committed, with a cold-start invocation a third party can run, and the PDK
 # revision is pinned.
 #
+# Refreshed 2026-11-20 for issue #488 (the NEC infrared receiver): a
+# `firmware-nec-ir-rx` experiment line is added (Icarus cocotb run on the
+# committed receiver image; no gate-level leg is claimed). The PDK revision
+# is unchanged.
+#
 # Refreshed 2026-11-20 for issue #452 (the SWD debug probe): a
 # `firmware-swd` experiment line is added (Icarus cocotb run; no gate-level
 # leg is claimed). The PDK revision is unchanged.
@@ -196,6 +201,7 @@ experiment  firmware-ps2  verification/test_firmware_ps2.py + reference_models/p
 experiment  firmware-ps2-gate-level  `PDK_ROOT=<pdk> ./flow/run-ps2-gate-level.sh` [PDK]; default netlist frozen in post-layout-sdf-regression/artifacts/20261011-114800-e5a0bae/
 experiment  firmware-dmx512  verification/test_firmware_dmx512.py + reference_models/dmx512.py; `klt functional-verification verification/request-firmware-dmx512.json --format json`; model self-test `python3 verification/test_dmx512_model.py` (in `npm run lint`); negative controls are tests in the bench
 experiment  firmware-nec-ir  verification/test_firmware_nec_ir.py + reference_models/nec_ir.py; `klt functional-verification verification/request-firmware-nec-ir.json --format json`; model self-test `python3 verification/test_nec_ir_model.py` (in `npm run lint`); the mutation and stretched-capture controls are tests in the bench
+experiment  firmware-nec-ir-rx  verification/test_firmware_nec_ir_rx.py + reference_models/nec_ir.py (the encoder drives, the envelope conversion and decoder self-checks are bench tests); `klt functional-verification verification/request-firmware-nec-ir-rx.json --format json`; the mutated-sample-point and x1.5-stretched negative controls are tests in the bench; no gate-level leg
 experiment  firmware-swd  verification/test_firmware_swd.py + reference_models/swd.py; `klt functional-verification verification/request-firmware-swd.json --format json`; model self-test `python3 verification/test_swd_model.py` (in `npm run lint`); mutant programs and WAIT/FAULT ACK runs are tests in the bench; no gate-level leg
 experiment  firmware-uart-rx  verification/test_firmware_uart_rx.py; `klt functional-verification verification/request-firmware-uart-rx.json --format json`
 experiment  i2c-ack-window  `./verification/formal/run-i2c-ack-window.sh <dir>` (formal toolchain: yosys, yosys-abc, iverilog/vvp, python3, git history; no PDK, no z3); bounded ABC bmc3 on the actual core running the committed i2c_fast/i2c_std images, covers, and 13 firmware mutants per grade each replayed in Icarus (issue #259)
