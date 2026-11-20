@@ -45,7 +45,7 @@
         "role": "testbench",
         "path": "flow/run-die-area-par.sh",
         "passed": true,
-        "content_hash": "sha256:cb587cd5d874320e564b01ef9cd76a68a3b257c1563645a53d2756bbc029214b"
+        "content_hash": "sha256:b851dff2c3f6338fc540930d3d4ada10ac82e59c49c56f5450ae3c4b895f67b8"
       },
       {
         "check": "present",
