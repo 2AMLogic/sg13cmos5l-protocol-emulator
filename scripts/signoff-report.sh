@@ -35,7 +35,11 @@
 #      (`klt signoff --check` reported status "match" -- the grader re-graded
 #      the manifest and found nothing outside the build-identity block
 #      moved, so the same pinned commit verifies from any provisioning
-#      route; klayout-tools #2249/#2258).
+#      route; klayout-tools #2249/#2258). A newer klt may additionally
+#      report non-graded checklist movement in the same check envelope
+#      (optional doc_drift / doc_drift_fields keys, issue #502); the runner
+#      prints every supplied entry on stderr and STILL exits 0 -- that
+#      movement grades nothing.
 #   1  Real failure: klt missing / `signoff` missing from its subcommand
 #      list; klt exitted 1 or 2 (usage or
 #      error); no signoff-baseline record committed; or --check-latest
@@ -43,7 +47,10 @@
 #      a graded field outside the build block -- item status/reason,
 #      citation hash, t1_met_count, ... -- moved since the committed
 #      report; the exact "fails rather than rotting" case that check
-#      exists for). NOTE the exit-code trap: 3 means OPPOSITE things in
+#      exists for). Documentation (non-graded, issue #502) movement never
+#      trips this on its own -- klt exits 3 only when a graded field moved;
+#      the documentation entries print alongside the graded ones. NOTE the
+#      exit-code trap: 3 means OPPOSITE things in
 #      the two modes -- render mode's 3 is the normal all-unmet gap state
 #      mapped to success above, but --check mode's 3 is DRIFT and a hard
 #      failure. The two mappings are kept separate below on purpose.
@@ -188,9 +195,39 @@ if [[ "$CHECK_LATEST" -eq 1 ]]; then
     --check "$COMMITTED" >"$CHECK_OUT"
   CHECK_RC=$?
   set -e
+  # Non-graded checklist movement rides in the same envelope (issue #502):
+  # klt builds emit it as two OPTIONAL keys, doc_drift (bool) and
+  # doc_drift_fields (list of {field, committed, fresh} -- measured on
+  # 0.9.2.dev111+g978f7464fae1 and 0.9.3.dev2366+g5dc34289aca1, 2026-11-20;
+  # an older envelope simply lacks the keys, and layout/toolchain.json's
+  # bare `klayout-tools` requirement means the runner meets them whenever
+  # the current release carries them). The movement is NOT graded -- check
+  # still exits 0 on it alone -- so it must not move the gate's exit code;
+  # but "no drift" printed over an envelope that says doc_drift: true would
+  # be a lie. Both branches below therefore surface every supplied entry on
+  # stderr, clearly identified ("checklist wording moved:") with the same
+  # committed=/fresh= field formatter as the graded drift.
+  render_doc_drift() {
+    python3 - "$1" <<'PYDOC' || true
+import json, sys
+with open(sys.argv[1]) as f:
+    envelope = json.load(f)
+fields = envelope.get("doc_drift_fields") or []
+for d in fields:
+    print(f"  checklist wording moved: {d.get('field')}: committed={d.get('committed')!r} fresh={d.get('fresh')!r}")
+if envelope.get("doc_drift") and not fields:
+    print("  checklist wording moved: grader set doc_drift but supplied no field details")
+PYDOC
+  }
   case "$CHECK_RC" in
     0)
-      echo "report matches the latest committed record ($RECORD_ID) -- no drift (klt signoff --check: status match; grader build identity excluded from the comparison)." >&2
+      DOC_DRIFT="$(render_doc_drift "$CHECK_OUT")"
+      if [[ -n "$DOC_DRIFT" ]]; then
+        echo "graded fields match the latest committed record ($RECORD_ID) -- no graded drift, but this klt reports checklist wording movement (klt signoff --check: status match with doc_drift; not graded, so the gate stays green; grader build identity excluded from the comparison):" >&2
+        printf '%s\n' "$DOC_DRIFT" >&2
+      else
+        echo "report matches the latest committed record ($RECORD_ID) -- no drift (klt signoff --check: status match; grader build identity excluded from the comparison)." >&2
+      fi
       ;;
     3)
       echo "error: the committed signoff report no longer reproduces (klt signoff --check: status drifted, artifact $COMMITTED)." >&2
@@ -204,6 +241,7 @@ with open(sys.argv[1]) as f:
 for d in envelope.get("drift", []):
     print(f"  drifted: {d.get('field')}: committed={d.get('committed')!r} fresh={d.get('fresh')!r}")
 PYDRIFT
+      render_doc_drift "$CHECK_OUT" >&2
       rm -f "$CHECK_OUT"
       exit 1
       ;;
