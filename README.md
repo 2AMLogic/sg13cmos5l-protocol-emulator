@@ -62,7 +62,9 @@ The November 20 klt STA run used klayout-tools 0.9.2 and IHP-Open-PDK
 `f7bca326`. With an ideal clock on the pre-route netlist, setup meets 20 ns
 at all three macro-characterized corners. Hold fails at all three. LibreLane
 provides the post-route timing of record. The [STA record](verification/records/sta-corner-sweep/records/20261120-031100-51b7eac.md)
-compares the two measurements. Issue #389 tracks macro-backed klt place-and-route.
+compares the two measurements. Issue #389 (macro-backed klt place-and-route) is closed; its
+[die-area record](verification/records/die-area-baseline/records/20261120-021531-bbbae57.md)
+holds the first measured die area.
 Evidence from the two flows is recorded separately under
 [`spec/decision-records/0002-flow-of-record.md`](spec/decision-records/0002-flow-of-record.md).
 Nothing has been taped out or measured on silicon. Low-speed USB and
