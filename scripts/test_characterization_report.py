@@ -105,11 +105,39 @@ class Report(unittest.TestCase):
         with self.assertRaises(cr.Invalid):
             self.build(records=recs, evidence=[{"experiment": "exp", "record_id": "20260101-000000-aaaaaaa"}])
 
+    def test_record_named_in_supersedes_list_rejected(self):
+        # #472: a list-form supersedes makes every named record superseded.
+        recs = [
+            ("20260101-000000-aaaaaaa", None),
+            ("20260101-000005-bbbbbbb", None),
+            ("20260102-000000-ccccccc", ["20260101-000000-aaaaaaa", "20260101-000005-bbbbbbb"]),
+        ]
+        with self.assertRaises(cr.Invalid):
+            self.build(records=recs, evidence=[{"experiment": "exp", "record_id": "20260101-000005-bbbbbbb"}])
+
+    def test_only_valid_siblings_are_superseded(self):
+        a, b, c = ("20260101-000000-aaaaaaa", "20260101-000005-bbbbbbb", "20260102-000000-ccccccc")
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            make_repo(root, records=[(a, [b]), (b, None), (c, [a, b, b, c, None])])
+            self.assertEqual(set(cr.live_records(root)["exp"]), {b, c})
+
     def test_report_cites_latest_after_supersede(self):
         recs = [("20260101-000000-aaaaaaa", None), ("20260102-000000-bbbbbbb", "20260101-000000-aaaaaaa")]
         report, _ = self.build(records=recs)
         self.assertIn("20260102-000000-bbbbbbb", report)
         self.assertNotIn("20260101-000000-aaaaaaa", report)
+
+    def test_report_cites_latest_after_list_supersede(self):
+        recs = [
+            ("20260101-000000-aaaaaaa", None),
+            ("20260101-000005-bbbbbbb", None),
+            ("20260102-000000-ccccccc", ["20260101-000000-aaaaaaa", "20260101-000005-bbbbbbb"]),
+        ]
+        report, _ = self.build(records=recs)
+        self.assertIn("20260102-000000-ccccccc", report)
+        self.assertNotIn("20260101-000000-aaaaaaa", report)
+        self.assertNotIn("20260101-000005-bbbbbbb", report)
 
     def test_met_without_evidence_rejected(self):
         with self.assertRaises(cr.Invalid):
