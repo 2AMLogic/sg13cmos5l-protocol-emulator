@@ -672,6 +672,24 @@ capture, PVT corner sweeps, or Monte Carlo.
   #399 and rejected as a repo-local version declaration of exactly the kind
   the ruling removes; the red is accepted instead (recorded here for the
   trade-off only, decided in `layout/toolchain.json`'s own history).
+- **2026-11-20, correction to the count of #399's one-for-one rounds
+  (issue #494).** The November 20 note above says one fresh round supersedes
+  the live heads one-for-one "(as #399 did four times on 2026-11-19)". That
+  figure is issue #482's, measured at PR #399's then head `7d081f67`, where
+  exactly four complete rounds had landed: `ddfaa191`, `99648430`,
+  `49733137` and `7d081f67`, whose 16, 32, 64 and 120 successors each name
+  every then-live head exactly once. A fifth round landed before #399
+  merged at `5cd78a4e`: `85887e10` superseded all **232** then-live heads
+  one-for-one (the branch's 120 and main's 112 -- the round the post-#484
+  entry above records as `signoff-baseline 20261119-223829` ..
+  `20261119-224220-e4ca4ab`). A reader counting baseline commits with
+  `git log` finds six, not five: `db962c6b`'s eight added records carry
+  November 14 record IDs (`20261114-021001`..`-021008-2ad8b1c`; author
+  date 2026-11-14, committer date 2026-11-19 from the rebase) and supersede
+  November 8 predecessors that were no longer live in its rebase parent,
+  so it is not a one-for-one round of the live heads. Four at #482's
+  snapshot, five by the merge; the November 20 note and its standing
+  response stand unchanged.
 
 - **Every citation pins a `content_hash`**, and what it is the hash of
   depends on the cited envelope (clarified 2026-10-10, issue #168; the
