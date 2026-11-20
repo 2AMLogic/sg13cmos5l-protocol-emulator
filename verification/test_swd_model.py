@@ -141,12 +141,13 @@ def read_request(host: Host, byte: int):
         host.bit(b)
 
 
-def read_transaction(host: Host, byte: int):
+def read_transaction(host: Host, byte: int, slots=36):
     """A whole read transaction from the host side: request, turnaround,
-    36 response clocks, turnaround, retake."""
+    `slots` response clocks (36 for OK: ACK 3 + data 32 + parity 1; 3 for a
+    WAIT or FAULT, which ends after the ACK), turnaround, retake."""
     read_request(host, byte)
     host.release_and_clock_turnaround()
-    host.clock(36)
+    host.clock(slots)
     host.retake()
     return host
 
@@ -190,9 +191,10 @@ class TestGolden(unittest.TestCase):
         self.assertEqual([f.byte for f in target.requests], [0xA5, 0xBD])
         self.assertTrue(all(f.ok for f in target.requests))
         self.assertEqual(target.acks, [ACK_OK, ACK_OK])
-        # the model drove: ACK 001, IDCODE LSB first, even parity, twice
-        want = [0, 0, 1] + bits_of(IDCODE, 32) + [read_value_parity(IDCODE)]
-        want += [0, 0, 1] + bits_of(SECOND, 32) + [read_value_parity(SECOND)]
+        # the model drove: ACK OK (wire order 1,0,0 -- numeric code 0b001
+        # sent LSB first), IDCODE LSB first, even parity, twice
+        want = [1, 0, 0] + bits_of(IDCODE, 32) + [read_value_parity(IDCODE)]
+        want += [1, 0, 0] + bits_of(SECOND, 32) + [read_value_parity(SECOND)]
         self.assertEqual(host.driven, want)
         self.assertEqual(target.report()["trailing_idle_low"], TRAILING_IDLE_MIN)
 
@@ -349,27 +351,83 @@ class TestTurnaroundRules(unittest.TestCase):
 
 
 class TestResponses(unittest.TestCase):
-    def read1(self, ack):
-        target = SwdTarget(reads=[(ack, 0), (ACK_OK, SECOND)])
+    def read2(self, ack):
+        """The first read is OK; the second (a request that can legally
+        fail) answers `ack`. A WAIT or FAULT ends after its three ACK bits
+        (CTRL/STAT.ORUNDETECT = 0)."""
+        target = SwdTarget(reads=[(ACK_OK, IDCODE), (ack, 0)])
+        host = Host(target)
+        connect(host)
+        read_transaction(host, 0xA5)
+        read_transaction(host, 0xBD, slots=3)
+        host.set_dio(img=0)
+        host.clock(TRAILING_IDLE_MIN)
+        target.finish(host.t)
+        return target, host
+
+    def test_ack_wire_order(self):
+        # ADIv5 numeric OK=1, WAIT=2, FAULT=4, sent LSB first (IHI 0031 B4.1.5)
+        from reference_models.swd import ACK_WIRE
+        for name, code in ((ACK_OK, 1), (ACK_WAIT, 2), (ACK_FAULT, 4)):
+            self.assertEqual(sum(b << i for i, b in enumerate(ACK_WIRE[name])), code)
+        self.assertEqual(ACK_WIRE[ACK_OK], (1, 0, 0))
+        self.assertEqual(ACK_WIRE[ACK_FAULT], (0, 0, 1))
+
+    def test_wait_drives_ack_only(self):
+        target, host = self.read2(ACK_WAIT)
+        self.assertEqual(target.violations, [])
+        self.assertEqual(target.acks, [ACK_OK, ACK_WAIT])
+        first = [1, 0, 0] + bits_of(IDCODE, 32) + [read_value_parity(IDCODE)]
+        self.assertEqual(host.driven, first + [0, 1, 0])
+
+    def test_fault_drives_ack_only(self):
+        target, host = self.read2(ACK_FAULT)
+        self.assertEqual(target.violations, [])
+        self.assertEqual(host.driven[-3:], [0, 0, 1])
+        self.assertEqual(len(host.driven), 36 + 3)
+
+    def test_clocking_the_data_phase_after_an_error_is_flagged(self):
+        """A host that clocks 36 response slots after a WAIT keeps clocking
+        a released, pulled-up line: not a legal end of the transfer."""
+        target = SwdTarget(reads=[(ACK_OK, IDCODE), (ACK_WAIT, 0)])
+        host = Host(target)
+        connect(host)
+        read_transaction(host, 0xA5)
+        read_transaction(host, 0xBD, slots=36)
+        kinds = {v.kind for v in target.violations}
+        self.assertIn("line-released-after-transfer", kinds)
+
+
+class TestReturnTurnaround(unittest.TestCase):
+    def test_driving_the_return_turnaround_cycle_is_flagged(self):
+        """The Judge's negative control: the first retake() replaced by
+        set_dio(img=0, oe=True) then clock(1) -- the probe drives the cycle
+        after the read parity. Everything else is the golden shape."""
+        target = SwdTarget()
+        host = Host(target)
+        connect(host)
+        read_request(host, 0xA5)
+        host.release_and_clock_turnaround()
+        host.clock(36)
+        host.set_dio(img=0, oe=True)
+        host.clock(1)
+        read_transaction(host, 0xBD)
+        host.set_dio(img=0)
+        host.clock(TRAILING_IDLE_MIN)
+        target.finish(host.t)
+        self.assertEqual({v.kind for v in target.violations},
+                         {"return-turnaround-driven"})
+
+    def test_released_return_turnaround_passes(self):
+        target = SwdTarget()
         host = Host(target)
         connect(host)
         read_transaction(host, 0xA5)
         read_transaction(host, 0xBD)
-        return target, host
-
-    def test_wait_drives_ack_only(self):
-        target, host = self.read1(ACK_WAIT)
+        host.set_dio(img=0)
+        host.clock(TRAILING_IDLE_MIN)
+        target.finish(host.t)
         self.assertEqual(target.violations, [])
-        self.assertEqual(target.acks, [ACK_WAIT, ACK_OK])
-        # the first answer drove its three ACK bits and released: nothing
-        # more until the second transaction's response
-        second = [0, 0, 1] + bits_of(SECOND, 32) + [read_value_parity(SECOND)]
-        self.assertEqual(host.driven, [0, 1, 0] + second)
-
-    def test_fault_drives_ack_only(self):
-        target, host = self.read1(ACK_FAULT)
-        self.assertEqual(target.violations, [])
-        self.assertEqual(host.driven[0:3], [1, 0, 0])
 
 
 class TestTrailingIdle(unittest.TestCase):

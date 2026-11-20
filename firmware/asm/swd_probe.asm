@@ -25,12 +25,16 @@
 ;      shape;
 ;   6. eight trailing idle clocks with SWDIO low, then SWCLK stops (HALT).
 ; Each response sample is reported on uo_out as it is taken: the masked
-; SWDIO byte (0x08 or 0x00), 36 per transaction, in transaction order --
-; ACK 001, then the data bits LSB first, then the parity bit. The ACK is
-; reported, not branched on: a real probe would check it first (DR 0018's
-; note names the branch the legitimate handshake case and says the word
-; margin absorbs it). WAIT/FAULT ACK values are therefore reported
-; faithfully and not retried.
+; SWDIO byte (0x08 or 0x00), in transaction order -- the ACK in wire order
+; (OK = 1,0,0: numeric 0b001 sent LSB first; WAIT = 0,1,0; FAULT = 0,0,1),
+; then, for an OK only, the 32 data bits LSB first and the parity bit.
+; The probe branches on the first ACK bit (the one sanctioned handshake
+; branch, per transaction): a 1 is an OK and continues; a 0 is a WAIT or
+; FAULT, which with CTRL/STAT.ORUNDETECT = 0 has no data phase, so the
+; probe clocks the remaining two ACK slots and the return turnaround
+; (SWDIO released), re-drives SWDIO low and ends the transfer with the
+; eight trailing idle clocks. No retry. An error on the first request
+; ends the run before the second.
 ;
 ; What does not fit (recorded in DR 0018): the issue's full goal, one word
 ; of AP memory, needs probe-driven write transactions that do not fit this
@@ -44,7 +48,7 @@
 ;   phase                     SWCLK high   SWCLK low   period
 ;   line reset / idle tail      1 cycle     3 cycles    4
 ;   switch / request bits       2 cycles    2 cycles    4
-;   response sample loop        1 cycle     7 cycles    8
+;   response sample loop        1 cycle   4..7 cycles   5..8
 ; SWDIO (probe-driven) changes only while SWCLK is low and is stable across
 ; every rising edge (one full cycle of setup before each rise). The
 ; response is sampled by IN in the SWCLK-low phase BEFORE the rise the
@@ -59,12 +63,14 @@
 ;   R2 = loop counter
 ;   R3 = pin-image / mask / decrement scratch
 ; Only bits 2 and 3 of an image reach a pad: UIO_DIR enables exactly SWCLK
-; and SWDIO. There is no conditional branch on pin data, so the assembler's
-; data-dependent-latency lint stays silent.
+; and SWDIO. The two ACK branches (BZ after AND of an IN sample) are the
+; only conditional branches on pin data; the assembler's data-dependent-
+; latency lint reports exactly those two, the documented handshake case.
 ;
-; 201 stored words of DR 0001's 256; 218 SWCLK rising edges; the run is
-; 1181 instructions (1182 model edges with the run-phase entry priming
-; edge), as DR 0018's note records.
+; 227 stored words of DR 0001's 256; 218 SWCLK rising edges on the OK path;
+; the run is 1178 instructions (1179 model edges with the run-phase entry
+; priming edge). DR 0018's note recorded 201 words / 1181 instructions for
+; the earlier, branch-free image.
 
 ; ------------------------------------------------------------- setup (5)
         LDI   R0, 0x08         ; image: SWCLK low, SWDIO high
@@ -213,14 +219,23 @@ lr2:
         OUT   UIO_OUT, R1      ; the clocked turnaround cycle (rise)
         OUT   UIO_OUT, R0      ; SWCLK left low for sampling
 
-; -------- sample loop 1 (9): ACK 3 + IDCODE 32 + parity 1, all in the
-; -------- SWCLK-low phase before the rise the target may advance on
-        LDI   R2, 36
-s1:
+; -------- ACK slot 0 (6): the first ACK bit decides the transaction. OK is
+; -------- 1,0,0 on the wire (numeric 0b001 sent LSB first); WAIT is 0,1,0 and
+; -------- FAULT 0,0,1, so a zero first bit is never OK. AND sets Z from it.
         IN    R3, UIO_IN       ; sample while SWCLK is low
-        AND   R3, R0           ; keep the SWDIO bit (R0 = 0x08)
+        AND   R3, R0           ; keep the SWDIO bit (R0 = 0x08); Z = not OK
         OUT   UO_OUT, R3       ; report the masked sample
         OUT   UIO_OUT, R1      ; rise (the target may advance SWDIO here)
+        OUT   UIO_OUT, R0      ; fall
+        BZ    ackerr           ; WAIT / FAULT: no data phase, end the transfer
+
+; -------- sample loop 1 (8 per slot): ACK 2 + data 32 + parity 1 = 35
+        LDI   R2, 35
+s1:
+        IN    R3, UIO_IN       ; sample while SWCLK is low
+        AND   R3, R0
+        OUT   UO_OUT, R3       ; report the masked sample
+        OUT   UIO_OUT, R1      ; rise
         OUT   UIO_OUT, R0      ; fall
         LDI   R3, 1
         SUB   R2, R3
@@ -275,12 +290,22 @@ s1:
         OUT   UIO_OUT, R1      ; the clocked turnaround cycle (rise)
         OUT   UIO_OUT, R0      ; SWCLK left low for sampling
 
-; --------------------- sample loop 2 (9): ACK 3 + value 32 + parity 1
-        LDI   R2, 36
+; -------- ACK slot 0 (6): the first ACK bit decides the transaction. OK is
+; -------- 1,0,0 on the wire (numeric 0b001 sent LSB first); WAIT is 0,1,0 and
+; -------- FAULT 0,0,1, so a zero first bit is never OK. AND sets Z from it.
+        IN    R3, UIO_IN       ; sample while SWCLK is low
+        AND   R3, R0           ; keep the SWDIO bit (R0 = 0x08); Z = not OK
+        OUT   UO_OUT, R3       ; report the masked sample
+        OUT   UIO_OUT, R1      ; rise (the target may advance SWDIO here)
+        OUT   UIO_OUT, R0      ; fall
+        BZ    ackerr           ; WAIT / FAULT: no data phase, end the transfer
+
+; -------- sample loop 2 (8 per slot): ACK 2 + data 32 + parity 1 = 35
+        LDI   R2, 35
 s2:
-        IN    R3, UIO_IN
+        IN    R3, UIO_IN       ; sample while SWCLK is low
         AND   R3, R0
-        OUT   UO_OUT, R3
+        OUT   UO_OUT, R3       ; report the masked sample
         OUT   UIO_OUT, R1      ; rise
         OUT   UIO_OUT, R0      ; fall
         LDI   R3, 1
@@ -293,7 +318,30 @@ s2:
         LDI   R3, 0x0C
         WCTL  UIO_DIR, R3      ; re-drive SWDIO push-pull
 
+        JMP   tail
+
+; ------ WAIT / FAULT (either transaction): the target ends after its three
+; ------ ACK bits (CTRL/STAT.ORUNDETECT = 0), so clock the two remaining ACK
+; ------ slots, the return turnaround with SWDIO still released, re-drive
+; ------ SWDIO low and end the transfer. No retry (the agreed scope).
+ackerr:
+        LDI   R2, 2
+erl:
+        IN    R3, UIO_IN
+        AND   R3, R0
+        OUT   UO_OUT, R3       ; report the masked ACK sample
+        OUT   UIO_OUT, R1      ; rise
+        OUT   UIO_OUT, R0      ; fall
+        LDI   R3, 1
+        SUB   R2, R3
+        BNZ   erl
+        OUT   UIO_OUT, R1      ; the return turnaround cycle (rise), released
+        OUT   UIO_OUT, R0      ; fall
+        LDI   R3, 0x0C
+        WCTL  UIO_DIR, R3      ; re-drive SWDIO push-pull
+
 ; --------------- trailing idle x8, SWDIO low before SWCLK stops (9)
+tail:
         LDI   R0, 0x00         ; idle image: SWCLK low, SWDIO low
         LDI   R1, 0x04         ; idle image: SWCLK high, SWDIO low
         OUT   UIO_OUT, R0      ; SWDIO falls low (driven)

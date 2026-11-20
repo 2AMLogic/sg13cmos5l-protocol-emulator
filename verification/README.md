@@ -519,7 +519,7 @@ gates. The host-side loader is issue #118.
 - `test_firmware_swd.py` — the SWD **probe** bench (issue #452; the
   protocol choice is the dated note of 2026-11-19 in DR 0018, fourth
   revision, made after DR 0017's ISA freeze): the committed
-  `firmware/asm/swd_probe.asm` (201 words) plays the debug host on
+  `firmware/asm/swd_probe.asm` (227 words) plays the debug host on
   `uio[2]` (SWCLK) and `uio[3]` (SWDIO), push-pull with SWDIO released at
   each turnaround, and the bench plays the target.
   `reference_models/swd.py`, written from Arm's ADIv5 description and
@@ -536,17 +536,19 @@ gates. The host-side loader is issue #118.
   `uio` pins tied low), so a probe that keeps SWDIO driven into a
   response phase is reported as contention. The golden run decodes both
   request frames (0xA5, 0xBD), answers OK twice, and the probe's 72
-  `uo_out` report bytes read back ACK 001, the IDCODE 0x4BA00477 and its
-  even parity, then ACK 001, 0x12345678 and its parity — with the
+  `uo_out` report bytes read back ACK OK (wire order 1,0,0), the IDCODE
+  0x4BA00477 and its even parity, then ACK OK, 0x12345678 and its parity — with the
   per-phase SWCLK widths held to the committed figures (reset 1/3,
   switch and request 2/2, response high 1) and 218 rising edges. Negative
   controls: five mutant programs (a 49-clock first reset, a flipped
   switch bit, a missing turnaround release — contention, an inverted
   request parity bit — no response, a 3-clock trailing idle), each
-  rejected for its own reason, and two model-configured runs where the
-  target answers WAIT (ACK 010) and FAULT (ACK 001): the committed shape
-  reports the ACK and the pull-up data phase faithfully and does not
-  retry, the choice DR 0018 records. `test_swd_model.py` is the model's
+  rejected for its own reason; the ACK branch removed (data slots clocked
+  after a WAIT) and SWDIO driven on the return turnaround cycle, both
+  rejected; and model-configured runs where the second request answers
+  WAIT (wire 0,1,0) and FAULT (0,0,1): the probe reports the ACK, leaves
+  the return turnaround released, re-drives SWDIO low and ends the
+  transfer, no retry. `test_swd_model.py` is the model's
   simulator-free self-test (`npm run lint`). Driven by `klt
   functional-verification` (`request-firmware-swd.json`); evidence in
   `records/firmware-swd/` (RTL only; no gate-level run is claimed).

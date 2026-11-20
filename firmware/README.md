@@ -910,8 +910,9 @@ Serial Wire Debug as the **host**. The chip generates SWCLK and reads a
 target's SWDIO responses in the turnaround cycles — the first firmware
 here that samples a line the other side clocks back at it. The protocol
 choice and the counted cost model are the dated note of 2026-11-19 in
-DR 0018 (fourth revision): 201 stored words of the 256-word store, 218
-SWCLK rising edges, 1,182 model edges. Pins: SWCLK `uio[2]`, SWDIO
+DR 0018 (fourth revision; the ACK branch below is a later revision of the
+image): 227 stored words of the 256-word store, 218 SWCLK rising edges,
+1,179 model edges. Pins: SWCLK `uio[2]`, SWDIO
 `uio[3]` (DR 0010's `swd` phase, added by this issue), both push-pull
 while driven (`UIO_DIR` 0x0C), SWDIO released at each turnaround cycle
 (its `UIO_DIR` bit cleared) for the target-driven response phases, with a
@@ -924,13 +925,26 @@ bank) and request 0xBD (the RDBUFF bank), each an 8-bit even-parity
 request, one clocked turnaround cycle, 36 response samples (3-bit ACK,
 32 data bits LSB first, even parity) taken by `IN` in the SWCLK-low phase
 *before* the rise the target may advance on (IHI 0031 B4.3.1), a second
-turnaround, SWDIO re-driven — and, after the last transfer, eight idle
-clocks with SWDIO low before SWCLK stops. Every sample is reported on
-`uo_out` as the masked SWDIO byte (0x08 or 0x00), 36 per transaction,
-in transaction order. The ACK is reported, not branched on: WAIT and
-FAULT answers come back faithfully and are not retried — the branch is
-the documented legitimate follow-up (DR 0018's note), not part of this
-image. What does not fit the unrolled schedule is the issue's full goal,
+turnaround with SWDIO still released, then SWDIO re-driven — and, after
+the last transfer, eight idle clocks with SWDIO low before SWCLK stops.
+Every sample is reported on `uo_out` as the masked SWDIO byte (0x08 or
+0x00), in transaction order.
+
+**ACK bit order.** The ADIv5 ACK numeric codes are OK = 0b001,
+WAIT = 0b010, FAULT = 0b100, and the target sends the code LSB first
+(IHI 0031H B4.1.5), so in time order on the wire OK is **1,0,0**, WAIT
+**0,1,0** and FAULT **0,0,1**. The report bytes carry that wire order.
+The probe branches on the *first* ACK bit (the one handshake branch, one
+per transaction; the assembler's data-dependent-latency lint reports
+exactly these two `BZ`s and nothing else): a 1 continues to the data
+phase; a 0 (WAIT or FAULT) clocks the two remaining ACK slots, the return
+turnaround with SWDIO released, re-drives SWDIO low, and ends the transfer
+with the eight trailing idle clocks. With CTRL/STAT.ORUNDETECT = 0 (the
+power-up setting) a WAIT or FAULT has no data phase, so no data slots are
+clocked. There is no retry (agreed scope); an error on the first request
+ends the run before the second. DPIDR must answer OK; the WAIT/FAULT
+cases are exercised on the second request (RDBUFF), which can fail.
+What does not fit the unrolled schedule is the issue's full goal,
 one word of AP memory (probe-driven writes); a table-driven shape is the
 recorded follow-up.
 
@@ -947,10 +961,12 @@ STA against this core is blocked —
 |---|---|---|---|
 | line reset, per SWCLK cycle (SWDIO high) | high **1**, low **3** | 20 / 60 ns | >= 50 cycles with SWDIO high (ADIv5 connection; pyOCD's shape sends it) |
 | switch / request, per bit | high **2**, low **2** | 40 / 40 ns | SWDIO changes only while SWCLK low, stable across every rising edge (1 cycle of setup) |
-| response sample loop, per slot | high **1**, low **5..7** | 20 / 100..140 ns | sample taken in the SWCLK-low phase before the rise (IHI 0031 B4.3.1) |
+| response sample loop, per slot | high **1**, low **4..7** | 20 / 80..140 ns | sample taken in the SWCLK-low phase before the rise (IHI 0031 B4.3.1) |
 | request 0xA5 / 0xBD, 8 bits | 32 | 640 ns | even parity over APnDP/RnW/A2/A3; start 1, stop 0, park 1 |
-| one read transaction (request + turnarounds + 36 slots) | 46 SWCLK cycles | 9.2 us | ACK 001, 32 data bits LSB first, even parity |
-| whole program | 218 SWCLK cycles, 1,181 instructions | 23.62 us clocked | 8 trailing idle clocks with SWDIO low before SWCLK stops (ADIv5 B4.1.4) |
+| one read transaction, back to back (request start rise to the next request's start rise: 8 request bits + turnaround + 36 slots + return turnaround) | **328 core cycles** (46 SWCLK rises) | **6.56 us** | ACK OK (1,0,0), 32 data bits LSB first, even parity |
+| whole program | 218 SWCLK cycles, 1,178 instructions | 23.56 us clocked | 8 trailing idle clocks with SWDIO low before SWCLK stops (ADIv5 B4.1.4) |
+
+**Edge convention for the transaction figure:** rising edges of `uio_out` bit 2 (SWCLK) in `verification.reference_models.isa.run` with SWDIO reading high (an OK answer); the two request start rises (the 119th and 165th) fall on core edges 488 and 816, 328 cycles apart. A WAIT/FAULT transaction is shorter (3 slots, no data) and is not in the table.
 
 ADIv5 sets no numeric SWCLK width minimum for a host-generated clock, so
 no width limit is invented; the model records the widths above and the
@@ -970,7 +986,7 @@ corrected. No conditional branch reads pin data, so the assembler's
 data-dependent-latency lint is silent (0 warnings).
 
 Assemble: `python3 firmware/tools/asm.py firmware/asm/swd_probe.asm`
-(**201 words**, 201 fall-through cycles); freshness:
+(**227 words**, 227 fall-through cycles, 2 warnings: the two ACK-branch `BZ`s); freshness:
 `python3 firmware/tools/check_firmware.py`.
 
 **Wiring a target (direct, same rail).** The chip's I/O is 3.3 V on the
@@ -979,9 +995,9 @@ SWD targets are 3.3 V, so no level shifter is needed — connect directly:
 
 | Signal | Connect to |
 |---|---|
-| SWCLK `uio[2]` | target SWCLK (ARM 20-pin pin 4, or the target's SWD header) |
-| SWDIO `uio[3]` | target SWDIO (ARM 20-pin pin 7), with a pull-up (about 10 kohm) to 3.3 V — ADIv5 requires one; the probe tri-states SWDIO for the turnaround and response phases |
-| GND | target GND (ARM 20-pin pins 1..4 neighborhood; one common is enough at these speeds) |
+| SWCLK `uio[2]` | target SWCLK (ARM 20-pin / SEGGER 20-pin SWD connector pin **9**, or the target's SWD header; pin 4 is GND) |
+| SWDIO `uio[3]` | target SWDIO (20-pin pin **7**), with a pull-up (about 10 kohm) to 3.3 V — ADIv5 requires one; the probe tri-states SWDIO for the turnaround and response phases |
+| GND | target GND (20-pin pin **4**; one common is enough at these speeds; pin 1 is VTref, not ground) |
 
 A 5 V target would need level shifting (out of scope; `docs/info.md`
 "Levels and other buses"). Receipt on real silicon is out of scope here:

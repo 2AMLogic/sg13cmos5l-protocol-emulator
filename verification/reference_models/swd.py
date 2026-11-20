@@ -91,8 +91,10 @@ NS_PER_CYCLE = 20.0
 ACK_OK = "OK"
 ACK_WAIT = "WAIT"
 ACK_FAULT = "FAULT"
-#: ACK encodings on the wire, LSB first (ADIv5: OK=100, WAIT=010, FAULT=001).
-ACK_WIRE = {ACK_OK: (0, 0, 1), ACK_WAIT: (0, 1, 0), ACK_FAULT: (1, 0, 0)}
+#: ACK in time order on the wire (first bit sent first). ADIv5 numeric codes
+#: are OK=0b001, WAIT=0b010, FAULT=0b100, sent LSB first (IHI 0031 B4.1.5),
+#: so the wire carries OK = 1,0,0; WAIT = 0,1,0; FAULT = 0,0,1.
+ACK_WIRE = {ACK_OK: (1, 0, 0), ACK_WAIT: (0, 1, 0), ACK_FAULT: (0, 0, 1)}
 
 
 def request_parity(apn_dp: int, rn_w: int, a2: int, a3: int) -> int:
@@ -195,6 +197,8 @@ class SwdTarget:
         self._read_no = 0
         self._tail_lows = 0
         self._flagged_not_driven = False
+        self._return_turnaround = False
+        self._flagged_released = False
 
     # ------------------------------------------------------------ helpers
     def _v(self, t, kind, detail):
@@ -210,6 +214,8 @@ class SwdTarget:
                       if self._read_no < len(self.reads) else (ACK_OK, 0))
         self._read_no += 1
         bits = list(ACK_WIRE[ack])
+        # WAIT / FAULT end after the ACK (CTRL/STAT.ORUNDETECT = 0, the
+        # power-up setting): no data phase, so no data or parity bits follow.
         if ack == ACK_OK:
             bits += [(value >> i) & 1 for i in range(32)] + [read_value_parity(value)]
         self._resp_bits = bits
@@ -402,9 +408,29 @@ class SwdTarget:
         self.drive = None
         self._taken = False
         self._state = "post-response"
+        self._return_turnaround = True
 
     # -- between transactions ---------------------------------------------
     def _between_rise(self, t: float, swdio: int, host_oe: bool) -> None:
+        if self._return_turnaround:
+            # the cycle after the last response bit is the target-to-host
+            # turnaround (IHI 0031 B4.1.3): the probe must still have SWDIO
+            # released, and takes the line only after it
+            self._return_turnaround = False
+            if host_oe:
+                self._v(t, "return-turnaround-driven",
+                        "the probe drove SWDIO on the turnaround cycle after "
+                        "the last response bit (it must leave the line "
+                        "released for that cycle and re-drive after it)")
+            return
+        if self._state == "post-response" and not host_oe:
+            if not self._flagged_released:
+                self._flagged_released = True
+                self._v(t, "line-released-after-transfer",
+                        "SWDIO was released (pulled high) after the "
+                        "transfer ended; the probe must drive it low for "
+                        "the idle cycles that follow")
+            return
         if host_oe and swdio == 1:
             # the next request's start bit
             self._start_frame(t)

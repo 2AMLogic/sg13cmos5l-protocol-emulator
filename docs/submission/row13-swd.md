@@ -33,9 +33,12 @@ review of PR #456 corrected the arithmetic (two preloaded pin images make
 one `OUT` per SWCLK transition; a loop stores its body once), measured the
 fallback program with the committed assembler and ISA model, and reached
 the opposite verdict: the agreed fallback fits with 55 words spare. The
-committed program reproduces those figures exactly — **201 words, 218 SWCLK
-rising edges, 1,182 model edges** — which is why the fourth revision's
-counts are part of this file's evidence.
+first committed program reproduced those figures exactly — 201 words, 218 SWCLK
+rising edges, 1,182 model edges. Review of PR #501 then added the ACK branch
+(a WAIT or FAULT must end the transfer, not clock a data phase that is not
+there), so the committed program is now **227 words, 218 SWCLK rising edges
+on the OK path, 1,179 model edges**; the 201-word figures are the first
+revision's, kept in its superseded record.
 
 The freeze held: `scripts/check_isa_freeze.py` reports the same eleven
 pinned files and the same eight amendments before and after this work, and
@@ -45,9 +48,9 @@ no RTL, assembler or ISA-model byte changed.
 
 | Item | Where |
 |---|---|
-| Program | [`firmware/asm/swd_probe.asm`](../../firmware/asm/swd_probe.asm) (201 words) |
+| Program | [`firmware/asm/swd_probe.asm`](../../firmware/asm/swd_probe.asm) (227 words) |
 | Independent model | [`verification/reference_models/swd.py`](../../verification/reference_models/swd.py): an **interactive** target written from Arm's ADIv5 description and pyOCD's observable connection shape (constants marked "confirm" — no copy of IHI 0031 is in the repository, the same caveat DR 0018 records). It takes SWDIO at the turnaround rise, advances it on every subsequent rise (the aggressive-but-legal IHI 0031 B4.3.1 corner that catches a probe sampling after the rise), releases after the read parity, and in the same pass grades the line resets, the switch, every request field, the turnarounds, host SWDIO stability and the trailing idle |
-| Model self-test | [`verification/test_swd_model.py`](../../verification/test_swd_model.py) (20 cases, `npm run lint`) |
+| Model self-test | [`verification/test_swd_model.py`](../../verification/test_swd_model.py) (24 cases, `npm run lint`) |
 | Bench | [`verification/test_firmware_swd.py`](../../verification/test_firmware_swd.py) |
 | Pad model | [`verification/uio_pads.py`](../../verification/uio_pads.py): pull-up on SWDIO (ADIv5 requires one), SWCLK pulled low, the other six `uio` pins tied low; contention is flagged, so a probe that keeps SWDIO driven into a response phase is caught electrically |
 | Pin roles | `swd` phase in [DR 0010](../../spec/decision-records/0010-protocol-pin-roles.md): SWCLK `uio[2]`, SWDIO `uio[3]`, `pin_modes` UIO_DIR 0x0C / UIO_OD 0x00, held by the checker's `swd` profile |
@@ -62,23 +65,29 @@ Every figure is read off the pads by the model, in core cycles x 20 ns
 |---|---|---|
 | SWCLK high / low, line resets | 1 / 3 cycles | >= 50 cycles with SWDIO high per reset |
 | SWCLK high / low, switch and requests | 2 / 2 cycles | SWDIO changes only while SWCLK low; stable across every rising edge |
-| SWCLK high, response sample loop | 1 cycle (low 5..7) | samples taken in the SWCLK-low phase before the rise (IHI 0031 B4.3.1) |
+| SWCLK high, response sample loop | 1 cycle (low 4..7) | samples taken in the SWCLK-low phase before the rise (IHI 0031 B4.3.1) |
 | SWCLK rising edges, whole program | 218 | DR 0018's fourth revision |
-| Report bytes | 72 | ACK 001, IDCODE 0x4BA00477 LSB first + even parity, ACK 001, 0x12345678 + even parity |
+| Report bytes | 72 | ACK OK (wire order 1,0,0), IDCODE 0x4BA00477 LSB first + even parity, ACK OK, 0x12345678 + even parity |
 | Trailing idle before SWCLK stops | 8 clocks, SWDIO low | ADIv5's >= 8 |
 
-The scenarios: the golden connection and both DP reads; the target
-answering **WAIT (ACK 010)** and **FAULT (ACK 001)** — the committed shape
-reports the ACK and the pull-up data phase faithfully and does not retry,
-the choice DR 0018 records (the ACK branch is the documented legitimate
-follow-up, absorbed by the 55-word margin, not built here). Five mutant
+The scenarios: the golden connection and both DP reads; the second request
+(RDBUFF, which can legally fail) answered **WAIT (wire 0,1,0)** and
+**FAULT (wire 0,0,1)** — the probe branches on the first ACK bit, reports
+the three ACK samples, releases the return turnaround, re-drives SWDIO low
+and ends the transfer with the eight idle clocks (no data slots, no retry;
+CTRL/STAT.ORUNDETECT = 0), and an error on the first request ends the run
+before the second. ACK wire order: OK numeric 0b001 is sent LSB first, so
+1,0,0. Five mutant
 programs are each rejected for their own reason: a 49-clock first line
 reset (the target stays dormant, `line-reset-short`), a flipped switch bit
 (`switch-sequence`), a missing turnaround release (`no-release` **and** the
 pad model's contention of both drivers), an inverted request parity bit
 (`request-parity`, no response: the probe clocks the pull-up while the
 first transaction stays clean), and a 3-clock trailing idle
-(`trailing-idle-short`).
+(`trailing-idle-short`); two more cover the review's findings: the ACK
+branch removed (data slots clocked after a WAIT,
+`line-released-after-transfer`) and SWDIO driven on the return turnaround
+(`return-turnaround-driven`).
 
 ## What does not fit, on purpose
 

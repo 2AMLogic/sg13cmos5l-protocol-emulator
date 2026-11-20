@@ -35,8 +35,9 @@ What is graded, and by whom
    clocks.
 3. **The bytes.** The 72 `uo_out` report samples the bench captures (one per
    response slot, taken at the SWCLK rising edge of each slot, where the
-   write has retired) must decode, LSB first, to ACK 001 then the IDCODE
-   0x4BA00477 with even parity, and ACK 001 then the model's second value
+   write has retired) must decode, LSB first, to ACK OK (wire order 1,0,0; numeric
+   0b001 sent LSB first) then the IDCODE
+   0x4BA00477 with even parity, and ACK OK then the model's second value
    0x12345678 with even parity -- byte for byte what the model drove.
 4. **The cycle figures.** SWCLK high/low widths are measured per phase in
    core cycles (the model's ns over the 20 ns simulation clock, which *names*
@@ -53,10 +54,12 @@ defect's own reason: a 49-clock first line reset (the target stays dormant,
 turnaround release (`no-release`, and the pad model reports the two drivers'
 contention), a wrong request parity bit (`request-parity`, no response: the
 probe reads the pull-up), and a 3-clock trailing idle (`trailing-idle-short`).
-Two model-configured runs exercise the ACK values a real target may answer
-with, WAIT and FAULT: the committed shape reports them faithfully and does
-not retry (DR 0018 records that choice; the ACK branch is the documented
-legitimate follow-up).
+Model-configured runs exercise the ACK values a real target may answer with
+on a request that can legally fail (the second, RDBUFF): WAIT (wire 0,1,0) and
+FAULT (0,0,1) end after the ACK and turnaround (ORUNDETECT = 0), and the probe
+reports the ACK, releases the return turnaround, re-drives SWDIO low and idles,
+with no retry. Two more negative controls: the ACK branch removed (data slots
+clocked after a WAIT) and SWDIO driven on the return turnaround cycle.
 
 Driven by `klt functional-verification` (`verification/request-firmware-
 swd.json`) at RTL. No gate-level run is claimed by this bench.
@@ -118,7 +121,7 @@ EXPECTED_WIDTHS = {
     "reset2": {"high": (1.0, 1.0), "low": (3.0, 6.0)},
     "idle": {"high": (2.0, 2.0), "low": (2.0, 4.0)},
     "request": {"high": (2.0, 2.0), "low": (2.0, 2.0)},
-    "response": {"high": (1.0, 1.0), "low": (5.0, 7.0)},
+    "response": {"high": (1.0, 1.0), "low": (4.0, 7.0)},
 }
 
 #: response slots per transaction (3 ACK + 32 data + 1 parity; DR 0018)
@@ -270,7 +273,7 @@ def rises_of(trace):
 
 def response_samples(trace, model):
     """The probe's report bytes: `uo_out` at the SWCLK rising edge of each
-    of the 36 sample slots of every transaction (the sample write retires
+    sample slot of every transaction (36 for an OK, 3 for a WAIT / FAULT) (the sample write retires
     one edge before that edge). The slots are located from the model's
     per-rise phase labels: every complete request frame is a run of exactly
     8 `request` rises, the next rise is the clocked turnaround cycle, and
@@ -288,13 +291,18 @@ def response_samples(trace, model):
                 run += 1
             if run >= REQUEST_FRAME_BITS:
                 start = i + run + 1  # skip the turnaround rise
-                span = phases[start : start + RESPONSE_SLOTS]
-                assert len(span) == RESPONSE_SLOTS, "run ended inside a response"
-                out.extend(
-                    trace[edges[k]]["uo"]
-                    for k in range(start, start + RESPONSE_SLOTS)
-                )
-                i = start + RESPONSE_SLOTS
+                if start < len(phases) and phases[start] == "response":
+                    # a target that answered: WAIT / FAULT end after the
+                    # 3 ACK slots, an OK runs to 36
+                    n = 0
+                    while start + n < len(phases) and phases[start + n] == "response":
+                        n += 1
+                else:
+                    n = RESPONSE_SLOTS
+                span = phases[start : start + n]
+                assert len(span) == n, "run ended inside a response"
+                out.extend(trace[edges[k]]["uo"] for k in range(start, start + n))
+                i = start + n
                 continue
         i += 1
     return out
@@ -384,14 +392,14 @@ async def test_committed_image_is_fresh(dut):
     program = asm.assemble_file(SRC)
     drift = asm.check_against(program, HEX.parent)
     assert not drift, f"committed firmware/build/ artifacts drifted: {drift}"
-    assert program.warnings == [], (
-        "the SWD probe must be lint-clean: no branch depends on IN-sampled "
-        "data (DR 0001 'Timing model')"
-    )
+    # exactly the two ACK handshake branches (one per transaction) read
+    # IN-sampled data; the lint documents that case as legitimate
+    assert len(program.warnings) == 2 and all(
+        "BZ branches on flags set by AND" in w for w in program.warnings
+    ), program.warnings
     assert len(program.words) <= 256
-    assert len(program.words) == 201, (
-        f"{len(program.words)} words; DR 0018's note records the counted "
-        "implementation at 201"
+    assert len(program.words) == 227, (
+        f"{len(program.words)} words; the ACK-branching revision is 227"
     )
     text = SRC.read_text(encoding="utf-8")
     code = re.sub(r";.*", "", text)
@@ -413,8 +421,8 @@ async def test_committed_image_is_fresh(dut):
 async def test_probe_reads_idcode_and_dp_register(dut):
     """The golden run: the model connects, decodes both request frames
     (0xA5 then 0xBD, both even-parity DP reads), answers OK twice, and the
-    probe's 72 report bytes decode to ACK 001, the IDCODE 0x4BA00477 and its
-    even parity, then ACK 001, the second value 0x12345678 and its parity."""
+    probe's 72 report bytes decode to ACK OK (1,0,0), the IDCODE 0x4BA00477 and its
+    even parity, then ACK OK, the second value 0x12345678 and its parity."""
     start_clock(dut)
     model = SwdTarget(reads=[(ACK_OK, IDCODE), (ACK_OK, SECOND_VALUE)])
     trace, model, pads, agent = await run_probe(
@@ -431,12 +439,13 @@ async def test_probe_reads_idcode_and_dp_register(dut):
     # the wire, from the trace: switch and request bits bit-exact, LSB first
     assert wire_bits(trace, model, "switch") == bits_of(SWITCH_CODE, 16)
     assert wire_bits(trace, model, "request") == bits_of(0xA5, 8) + bits_of(0xBD, 8)
-    # the report bytes: ACK 001, data LSB first, parity
+    # the report bytes: ACK OK, data LSB first, parity
     bits = samples_bits(response_samples(trace, model))
     assert len(bits) == 72 and "x" not in bits
     ack1, data1, par1 = bits[0:3], bits[3:35], bits[35]
     ack2, data2, par2 = bits[36:39], bits[39:71], bits[71]
-    assert ack1 == [0, 0, 1] and ack2 == [0, 0, 1], (ack1, ack2)
+    # OK is numeric 0b001 sent LSB first: 1,0,0 in time order
+    assert ack1 == [1, 0, 0] and ack2 == [1, 0, 0], (ack1, ack2)
     assert value_of(data1) == IDCODE and par1 == read_value_parity(IDCODE)
     assert value_of(data2) == SECOND_VALUE and par2 == read_value_parity(SECOND_VALUE)
     # cycle figures: DR 0018's recorded counts and widths
@@ -452,12 +461,20 @@ async def test_probe_reads_idcode_and_dp_register(dut):
     # response slot and drove it at every request bit
     edges = rises_of(trace)
     phases = [ph for ph, _ in model.wire]
+    prev_ph = None
+    returns = 0
     for e, ph in zip(edges, phases):
         oe_bit = (trace[e]["oe"] >> SWDIO_BIT) & 1
         if ph in ("response", "await-turnaround"):
             assert oe_bit == 0, f"SWDIO still driven at {ph} rise, edge {e}"
         elif ph == "request":
             assert oe_bit == 1, f"SWDIO not driven at request rise, edge {e}"
+        elif ph == "post-response" and prev_ph == "response":
+            # the return turnaround cycle after the last response bit
+            returns += 1
+            assert oe_bit == 0, f"SWDIO driven on the return turnaround, edge {e}"
+        prev_ph = ph
+    assert returns == 2, f"{returns} return-turnaround rises graded, wanted 2"
     dut._log.info(
         f"golden: 218 rises, idcode {IDCODE:#010x} + parity, "
         f"second {SECOND_VALUE:#010x} + parity, 8 trailing idle clocks"
@@ -465,33 +482,86 @@ async def test_probe_reads_idcode_and_dp_register(dut):
 
 
 @cocotb.test()
-async def test_wait_and_fault_acks_are_reported(dut):
-    """The model answers WAIT (ACK 010) and FAULT (ACK 001) to the first
-    read. The committed shape reports the ACK it sampled and the pull-up bits
-    through the data phase (a target that did not complete a read drives no
-    data), and does not retry -- the choice DR 0018 records. The second read
-    is unaffected. No violation: the probe did nothing wrong."""
-    for ack, wire in ((ACK_WAIT, [0, 1, 0]), (ACK_FAULT, [1, 0, 0])):
+async def test_wait_and_fault_end_the_transfer_cleanly(dut):
+    """The first request (DPIDR) is answered OK. The second request (RDBUFF),
+    which can legally fail, is answered WAIT (wire 0,1,0) or FAULT (0,0,1).
+    With CTRL/STAT.ORUNDETECT = 0 (power-up) the target ends after the ACK
+    and the turnaround: the probe reports the three ACK samples, leaves the
+    return turnaround released, re-drives SWDIO low and clocks eight trailing
+    idles -- no data slots, no violation, no retry."""
+    for ack, wire in ((ACK_WAIT, [0, 1, 0]), (ACK_FAULT, [0, 0, 1])):
         start_clock(dut)
-        model = SwdTarget(reads=[(ack, 0), (ACK_OK, SECOND_VALUE)])
+        model = SwdTarget(reads=[(ACK_OK, IDCODE), (ack, 0)])
         trace, model, pads, _a = await run_probe(
             dut, committed_words(), model, cycles=1300
         )
         info = report(dut, f"{ack.lower()}", model)
         assert_only_driven_swd_pins(pads, ack.lower())
         assert model.violations == [], f"{ack}: {[str(v) for v in model.violations]}"
-        assert info["acks"] == [ack, ACK_OK]
+        assert info["acks"] == [ACK_OK, ack]
+        assert [f.byte for f in model.requests] == [0xA5, 0xBD]
         bits = samples_bits(response_samples(trace, model))
-        assert bits[0:3] == wire, (ack, bits[0:3])
-        # no data was driven: the probe clocked the pull-up through the
-        # first transaction's 33 remaining slots
-        assert bits[3:36] == [1] * 33, (ack, bits[3:36])
-        # the second transaction is clean
-        assert bits[36:39] == [0, 0, 1]
-        assert value_of(bits[39:71]) == SECOND_VALUE
-        assert bits[71] == read_value_parity(SECOND_VALUE)
-        dut._log.info(f"{ack}: reported ACK {wire}, data phase all pull-up, "
-                      f"second read clean")
+        assert len(bits) == 36 + 3, len(bits)
+        assert bits[0:3] == [1, 0, 0]
+        assert value_of(bits[3:35]) == IDCODE
+        assert bits[36:39] == wire, (ack, bits[36:39])
+        assert info["trailing_idle_low"] == 8
+        # the return turnaround after the ACK is released, then SWDIO is
+        # driven (low) for the idle clocks
+        edges = rises_of(trace)
+        phases = [ph for ph, _ in model.wire]
+        prev_ph, returns = None, 0
+        for e, ph in zip(edges, phases):
+            if ph == "post-response" and prev_ph == "response":
+                returns += 1
+                assert (trace[e]["oe"] >> SWDIO_BIT) & 1 == 0
+            prev_ph = ph
+        assert returns == 2, returns
+        dut._log.info(f"{ack}: ACK {wire} reported, transfer ended, no data slots")
+
+
+@cocotb.test()
+async def test_first_request_error_ends_before_the_second(dut):
+    """An error ACK on the very first request ends the run there: one
+    request, three ACK samples, eight trailing idles."""
+    start_clock(dut)
+    model = SwdTarget(reads=[(ACK_FAULT, 0)])
+    trace, model, pads, _a = await run_probe(dut, committed_words(), model, cycles=1300)
+    assert_only_driven_swd_pins(pads, "first-fault")
+    assert model.violations == [], [str(v) for v in model.violations]
+    assert [f.byte for f in model.requests] == [0xA5]
+    assert samples_bits(response_samples(trace, model)) == [0, 0, 1]
+    assert model.report()["trailing_idle_low"] == 8
+
+
+@cocotb.test()
+async def test_negative_error_ack_still_clocks_data_slots(dut):
+    """The second transaction's ACK branch removed: after a WAIT the probe
+    clocks the full 36 slots with SWDIO released, the old behaviour. The
+    model reports the released line after the transfer ended."""
+    text = SRC.read_text(encoding="utf-8")
+    k = text.rindex("        BZ    ackerr")
+    text = text[:k] + "        NOP                    ; (mutant) no ACK branch" + text[k + len("        BZ    ackerr"):]
+    start_clock(dut)
+    model = SwdTarget(reads=[(ACK_OK, IDCODE), (ACK_WAIT, 0)])
+    _t, model, pads, _a = await run_mutant(dut, "no-ack-branch", text, model)
+    assert "line-released-after-transfer" in kinds(model), kinds(model)
+
+
+@cocotb.test()
+async def test_negative_return_turnaround_driven(dut):
+    """The probe re-drives SWDIO before the return turnaround cycle after
+    the first read parity: the target is released from the line one cycle
+    early. The model reports `return-turnaround-driven` and nothing else."""
+    text = mutate(
+        SRC.read_text(encoding="utf-8"),
+        "; -------- turnaround after the read parity + re-drive SWDIO (4)\n",
+        "; -------- turnaround after the read parity + re-drive SWDIO (4)\n"
+        "        LDI   R3, 0x0C         ; (mutant) re-drive before the turnaround\n"
+        "        WCTL  UIO_DIR, R3\n",
+    )
+    _t, model, pads, _a = await run_mutant(dut, "turn-driven", text, SwdTarget())
+    assert kinds(model) == ["return-turnaround-driven"], kinds(model)
 
 
 @cocotb.test()
@@ -592,7 +662,7 @@ async def test_negative_wrong_request_parity(dut):
     assert [f.ok for f in model.requests] == [True, False]
     assert_only_driven_swd_pins(pads, "req-parity")
     bits = samples_bits(response_samples(trace, model))
-    assert bits[0:3] == [0, 0, 1], "the first transaction is unaffected"
+    assert bits[0:3] == [1, 0, 0], "the first transaction is unaffected"
     assert bits[36:72] == [1] * 36, "a rejected request gets all pull-up bits"
     dut._log.info("mutant req-parity: first read clean, second clocks the pull-up")
 
