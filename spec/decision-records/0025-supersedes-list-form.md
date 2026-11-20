@@ -30,8 +30,8 @@ unchanged.
    non-empty list of record-id strings** (#472). Every listed id must exist
    in the same experiment, differ from the record's own id, sort strictly
    earlier than it, and appear at most once. Each entry is judged by the
-   same rules as the scalar form, per entry: a bad entry is an error and
-   exempts its own target only; valid siblings still exempt theirs.
+   same rules as the scalar form. A malformed or repeated entry is an error.
+   Valid siblings still exempt their targets.
 2. Every consumer of the field treats each listed id as superseded:
    `check_records.py` (freshness exemption), `remint_records.py`
    (`live_records()`), `check_docs_records.py` (which ids a doc may cite)
@@ -61,7 +61,7 @@ Every consumer (the linter, the re-minter, the docs-citation checker and the
 characterization report) judges each `supersedes` entry on its own: an invalid
 sibling (non-string, duplicate, unknown ID) is reported but never voids the
 valid entries beside it. `check_records.effective_supersedes` is the single
-implementation the linter and re-minter share. `--collapse` compares the
+implementation all four consumers share. `--collapse` compares the
 complete Claim and Result bodies (continuation lines included, indented or
 flush-left wrapping) and refuses to mint a second draft while an untracked one
 for the same leaves is pending.

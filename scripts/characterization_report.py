@@ -32,6 +32,9 @@ import sys
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(REPO / "verification"))
+from check_records import effective_supersedes
+
 SOURCES = "measurements/characterization-sources.json"
 REPORT = "measurements/characterization.md"
 ENVELOPE = "manifests/evidence/characterization.json"
@@ -54,22 +57,16 @@ def live_records(repo: Path) -> dict[str, dict[str, str]]:
     out: dict[str, dict[str, str]] = {}
     base = repo / "verification" / "records"
     for d in sorted(p for p in base.iterdir() if p.is_dir()):
-        recs: dict[str, str | None] = {}
+        ids: set[str] = set()
+        superseded: set[str] = set()
         for f in sorted((d / "records").glob("*.md")):
             m = re.search(r"<!-- record-meta\n(.*?)\n-->", f.read_text(), re.S)
             if not m:
                 continue
             meta = json.loads(m.group(1))
-            recs[meta["record_id"]] = meta.get("supersedes")
-        superseded: set = set()
-        for v in recs.values():
-            # #472: `supersedes` may be a string or a list of strings; every
-            # named record is superseded.
-            if isinstance(v, str) and v:
-                superseded.add(v)
-            elif isinstance(v, list):
-                superseded.update(t for t in v if isinstance(t, str) and t)
-        out[d.name] = {k: "" for k in recs if k not in superseded}
+            ids.add(f.stem)
+            superseded.update(effective_supersedes(f, meta.get("supersedes"), ids))
+        out[d.name] = dict.fromkeys(sorted(ids - superseded), "")
     return out
 
 

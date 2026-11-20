@@ -115,6 +115,13 @@ class Report(unittest.TestCase):
         with self.assertRaises(cr.Invalid):
             self.build(records=recs, evidence=[{"experiment": "exp", "record_id": "20260101-000005-bbbbbbb"}])
 
+    def test_only_valid_siblings_are_superseded(self):
+        a, b, c = ("20260101-000000-aaaaaaa", "20260101-000005-bbbbbbb", "20260102-000000-ccccccc")
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            make_repo(root, records=[(a, [b]), (b, None), (c, [a, b, b, c, None])])
+            self.assertEqual(set(cr.live_records(root)["exp"]), {b, c})
+
     def test_report_cites_latest_after_supersede(self):
         recs = [("20260101-000000-aaaaaaa", None), ("20260102-000000-bbbbbbb", "20260101-000000-aaaaaaa")]
         report, _ = self.build(records=recs)

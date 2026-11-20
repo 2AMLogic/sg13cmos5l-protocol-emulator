@@ -741,7 +741,7 @@ Each record is a markdown file, `records/<record-id>.md`, with two parts:
      interchangeable stale leaves at once (a collapse re-mint, #472). Every
      named id must exist in the same experiment, differ from the record's
      own id, sort strictly earlier than it, and appear at most once in the
-     list; an entry that breaks a rule is an error and exempts only itself.
+     list. Only valid, uniquely named targets receive the freshness exemption.
    - `git_revision` — the full design git revision this record was
      produced against.
    - `provenance` — the klt provenance block:
@@ -869,8 +869,7 @@ on:
   exist in the same experiment directory, naming the record's own ID, or
   naming an ID that does not sort strictly earlier than the record's own
   (this rules out supersession cycles); an invalid supersession exempts
-  nothing — in the list form each entry is judged on its own, so one bad
-  entry exempts its target while its valid siblings still exempt theirs;
+  nothing. Valid siblings in the same list still exempt their targets;
 - a live record whose `provenance.inputs[].content_hash` no longer matches
   the current working tree (a record is "live" unless a valid supersession
   in its own experiment directory names it; the same record ID superseded in

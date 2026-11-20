@@ -82,6 +82,7 @@ Exit codes: 0 pass, 1 a check failed.
 from __future__ import annotations
 
 import argparse
+from collections import Counter
 import json
 import re
 import stat
@@ -178,62 +179,41 @@ def layout_error(path: Path) -> str | None:
 
 
 def supersedes_ids(supersedes) -> list[str]:
-    """Normalise a record's `supersedes` value to the list of record IDs it
-    names: null / the legacy string `"none"` -> [], a string -> one entry,
-    a list -> its entries (#472). Type validity is `supersedes_type_error`'s
-    to judge; this only flattens."""
-    if supersedes is None or supersedes == "none":
-        return []
-    if isinstance(supersedes, str):
-        return [supersedes]
-    return list(supersedes)
-
-
-def supersedes_type_error(path: Path, supersedes) -> str | None:
-    """None when `supersedes` is null, a record-id string, or a non-empty
-    list of unique record-id strings; else why it is not (#472)."""
-    if supersedes is None or isinstance(supersedes, str):
-        return None
+    """Extract string targets, including repeats, from either schema form."""
     if isinstance(supersedes, list):
-        if not supersedes:
-            return (
-                f"{path}: record-meta `supersedes` must not be an empty list; "
-                f"supersede nothing with null"
-            )
-        bad = [e for e in supersedes if not isinstance(e, str)]
-        if bad:
-            kinds = ", ".join(sorted({type(e).__name__ for e in bad}))
-            return (
-                f"{path}: record-meta `supersedes` list entries must be "
-                f"record-id strings, not {kinds}"
-            )
-        dupes = sorted({e for e in supersedes if supersedes.count(e) > 1})
-        if dupes:
-            return (
-                f"{path}: record-meta `supersedes` names duplicate id(s) "
-                f"{', '.join(dupes)}; each superseded record is listed at most once"
-            )
-        return None
-    return (
-        f"{path}: record-meta `supersedes` must be a record-id string, a "
-        f"non-empty list of record-id strings, or null, "
-        f"not {type(supersedes).__name__}"
-    )
+        return [entry for entry in supersedes if isinstance(entry, str)]
+    if isinstance(supersedes, str) and supersedes != "none":
+        return [supersedes]
+    return []
 
 
-def effective_supersedes(path: Path, supersedes, known_ids: set) -> set:
-    """The record IDs a `supersedes` value validly supersedes, judged per
-    entry (#472): an invalid sibling (non-string, duplicate, unknown ID)
-    is reported by `supersedes_type_error` / `supersession_error` but never
-    voids the valid entries beside it. Every consumer uses this one rule."""
-    if not isinstance(supersedes, (str, list)) or supersedes == "none":
-        return set()
-    entries = [supersedes] if isinstance(supersedes, str) else [
-        e for e in supersedes if isinstance(e, str)
-    ]
+def supersedes_type_errors(path: Path, supersedes) -> list[str]:
+    if supersedes is None or isinstance(supersedes, str):
+        return []
+    if not isinstance(supersedes, list):
+        return [f"{path}: record-meta `supersedes` must be a record-id string, a "
+                f"non-empty list of record-id strings, or null, not {type(supersedes).__name__}"]
+    if not supersedes:
+        return [f"{path}: record-meta `supersedes` must not be an empty list; "
+                f"supersede nothing with null"]
+
+    errors = []
+    kinds = sorted({type(e).__name__ for e in supersedes if not isinstance(e, str)})
+    if kinds:
+        errors.append(f"{path}: record-meta `supersedes` list entries must be "
+                      f"record-id strings, not {', '.join(kinds)}")
+    duplicates = sorted(e for e, count in Counter(supersedes_ids(supersedes)).items() if count > 1)
+    if duplicates:
+        errors.append(f"{path}: record-meta `supersedes` names duplicate id(s) "
+                      f"{', '.join(duplicates)}; each superseded record is listed at most once")
+    return errors
+
+
+def effective_supersedes(path: Path, supersedes, known_ids: set[str]) -> set[str]:
+    """Valid, uniquely named earlier targets within this experiment."""
     return {
-        e for e in entries
-        if e != "none" and supersession_error(path, e, known_ids) is None
+        target for target, count in Counter(supersedes_ids(supersedes)).items()
+        if count == 1 and supersession_error(path, target, known_ids) is None
     }
 
 
@@ -244,11 +224,10 @@ def supersession_error(path: Path, supersedes, known_ids: set) -> str | None:
     #472) iterate `supersedes_ids` and check each entry; the per-entry rules
     are the same for the string and list forms."""
     stem = path.stem
-    experiment = experiment_key(path)
     if supersedes not in known_ids:
         return (
             f"{path}: supersedes `{supersedes}`, which has no record "
-            f"in `{experiment}/records/`"
+            f"in `{path.parent.parent.name}/records/`"
         )
     if supersedes == stem:
         return f"{path}: supersedes itself (`{supersedes}`); a record cannot supersede its own ID"
@@ -476,15 +455,12 @@ def lint_record(path: Path, all_record_ids_by_experiment: dict) -> list[str]:
             errors.append(f"{path}: required field `{field}` is empty/placeholder")
 
     supersedes = meta.get("supersedes")
-    type_problem = supersedes_type_error(path, supersedes)
-    if type_problem:
-        errors.append(type_problem)
-    else:
-        known_ids = all_record_ids_by_experiment.get(experiment, set())
-        for target in supersedes_ids(supersedes):
-            problem = supersession_error(path, target, known_ids)
-            if problem:
-                errors.append(problem)
+    errors.extend(supersedes_type_errors(path, supersedes))
+    known_ids = all_record_ids_by_experiment.get(experiment, set())
+    for target in dict.fromkeys(supersedes_ids(supersedes)):
+        problem = supersession_error(path, target, known_ids)
+        if problem:
+            errors.append(problem)
 
     return errors
 
@@ -669,8 +645,8 @@ def main() -> int:
     # Only a VALID supersession exempts its target: an on-layout record that
     # names an existing, strictly earlier record in its own experiment. A
     # self-supersession, a cycle, or a nested record exempts nothing (#157);
-    # in the list form each entry is judged on its own, so one bad entry
-    # exempts its target while its valid siblings still exempt theirs (#472).
+    # in the list form each entry is judged on its own, so an invalid entry
+    # cannot exempt its target or cancel a valid sibling (#472).
     superseded = set()
     for path, meta in metas_by_path.items():
         experiment = experiment_key(path)

@@ -497,9 +497,7 @@ def pending_collapse_drafts(experiment: str, leaf_ids: set[str]) -> list[Path]:
             meta = cr._extract_meta_block(path.read_text(encoding="utf-8"), path)
         except (cr.LintError, OSError):
             continue
-        if leaf_ids & set(cr.supersedes_ids(meta.get("supersedes"))
-                          if isinstance(meta.get("supersedes"), (str, list))
-                          else []):
+        if not leaf_ids.isdisjoint(cr.supersedes_ids(meta.get("supersedes"))):
             drafts.append(path)
     return sorted(drafts)
 

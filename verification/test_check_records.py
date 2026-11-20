@@ -1109,17 +1109,19 @@ def main() -> int:
 
     # Per-entry rule (#472): an invalid sibling is reported but never makes
     # the valid entry's target look live (stale) again.
-    for name, mutate in (
-        ("valid id beside an int stays superseded", case_supersedes_list_valid_beside_int),
-        ("valid id beside nulls stays superseded", case_supersedes_list_valid_beside_nulls),
+    for name, mutate, expected_stale in (
+        ("valid id beside an int stays superseded", case_supersedes_list_valid_beside_int, set()),
+        ("valid id beside nulls stays superseded", case_supersedes_list_valid_beside_nulls, set()),
         ("duplicate list leaves the uniquely named sibling superseded",
-         case_supersedes_list_valid_beside_duplicates),
+         case_supersedes_list_valid_beside_duplicates, {LEAF_1}),
     ):
         with tempfile.TemporaryDirectory(prefix="record-linter-selftest-") as tmpdir:
             repo = build_fixture_repo(Path(tmpdir))
             mutate(repo)
             exit_code, output = run_linter(repo)
-            if "stale" in output.lower() or "Traceback" in output or exit_code != 1:
+            stale_ids = {rid for rid in (LEAF_1, LEAF_2) for line in output.splitlines()
+                         if f"{rid}.md:" in line and "is stale" in line}
+            if stale_ids != expected_stale or "Traceback" in output or exit_code != 1:
                 print(f"FAIL: {name}\n" + "\n".join("  | " + l for l in output.splitlines()))
                 return 1
             print(f"OK:   {name}")

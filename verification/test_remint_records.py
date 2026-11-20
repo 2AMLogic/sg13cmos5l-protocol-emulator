@@ -258,8 +258,10 @@ def wrapped_result(text: str, verdict: str, indent: str) -> str:
     continuation (indented or flush-left) that carries the verdict."""
     return text.replace(
         "- **Result**: **Overall: PASS** (fixture)",
-        f"- **Result**: Item 9 status\n{indent}{verdict} (wrapped)\n"
-        f"{indent}run configuration tail",
+        f"- **Result**: Item 9 status\n{indent}{verdict} (wrapped)",
+    ).replace(
+        "- **Run configuration**: fixture run, no real simulator invoked",
+        f"- **Run configuration**: fixture run\n{indent}run configuration tail",
     )
 
 
@@ -336,11 +338,9 @@ def mixed_list_cases(failures: list) -> None:
             code, out = tool(repo)
             stale_ids = {l.rsplit("/", 1)[-1][:-3] for l in out.splitlines()
                          if l.startswith("STALE")}
-            expect = ({ids[2], nid} if sibs is not None else {ids[2], nid})
+            expected = {ids[1], ids[2], nid} if sibs is not None else {ids[0], ids[2], nid}
             check(f"minter keeps a valid entry beside {label} effective",
-                  "Traceback" not in out and ids[0] not in stale_ids
-                  and (sibs is not None or ids[1] not in stale_ids)
-                  and expect <= stale_ids, out, failures)
+                  code == 1 and stale_ids == expected, out, failures)
 
 
 def tool(repo: Path, *args: str, broker: str | None = None) -> tuple[int, str]:

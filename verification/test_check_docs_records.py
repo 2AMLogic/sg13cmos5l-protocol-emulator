@@ -49,6 +49,9 @@ def run(docs_text: dict) -> tuple[int, str]:
         write_record(rec, "listy", L1, None)
         write_record(rec, "listy", L2, None)
         write_record(rec, "listy", LISTC, [L1, L2])
+        write_record(rec, "mixed", L1, [L2])
+        write_record(rec, "mixed", L2, None)
+        write_record(rec, "mixed", LISTC, [L1, L2, L2, LISTC, None])
         for name, text in docs_text.items():
             (docs / name).write_text(text)
         p = subprocess.run(
@@ -71,6 +74,9 @@ CASES = [
     ("marker covers only its own line", {"a.md": f"{link('exp', A)} <!-- superseded-ok: h -->\n{link('exp', B)}\n"}, 1, B),
     ("every doc is scanned", {"a.md": "ok\n", "b.md": link("exp", A) + "\n"}, 1, "b.md:1"),
     # #472: every id in a list-form supersedes is superseded.
+    ("duplicate and forward targets remain live", {"a.md": link("mixed", L2)}, 0, ""),
+    ("self target remains live", {"a.md": link("mixed", LISTC)}, 0, ""),
+    ("valid sibling is superseded", {"a.md": link("mixed", L1)}, 1, L1),
     ("leaf named in a supersedes list fails", {"a.md": link("listy", L1) + "\n"}, 1, L1),
     ("second leaf named in a supersedes list fails", {"a.md": f"see `{L2}` here\n"}, 1, L2),
     ("the list-superseding record itself is live", {"a.md": link("listy", LISTC) + "\n"}, 0, ""),

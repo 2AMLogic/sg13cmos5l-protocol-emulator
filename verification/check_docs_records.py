@@ -27,10 +27,13 @@ Standard library only.
 from __future__ import annotations
 
 import argparse
+from collections import defaultdict
 import json
 import re
 import sys
 from pathlib import Path
+
+from check_records import effective_supersedes
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_DOCS = REPO_ROOT / "docs" / "submission"
@@ -44,11 +47,12 @@ META_RE = re.compile(r"<!--\s*record-meta\s*(.*?)-->", re.DOTALL)
 
 def load_records(records_root: Path):
     """Return (all_ids, superseded) as sets of (experiment, id)."""
-    all_ids: set = set()
+    ids_by_experiment = defaultdict(set)
     superseded: set = set()
     for path in sorted(records_root.glob("*/records/*.md")):
         experiment = path.parent.parent.name
-        all_ids.add((experiment, path.stem))
+        known_ids = ids_by_experiment[experiment]
+        known_ids.add(path.stem)
         m = META_RE.search(path.read_text(encoding="utf-8"))
         if not m:
             continue
@@ -56,15 +60,10 @@ def load_records(records_root: Path):
             meta = json.loads(m.group(1))
         except json.JSONDecodeError:
             continue  # check_records.py reports malformed records
-        target = meta.get("supersedes")
-        # #472: `supersedes` may be a string or a list of strings; every
-        # named record is superseded (no longer live for docs to cite).
-        targets = [target] if isinstance(target, str) else (
-            target if isinstance(target, list) else []
-        )
-        for t in targets:
-            if isinstance(t, str) and t not in ("", "none"):
-                superseded.add((experiment, t))
+        # Files are sorted, so every eligible earlier target is already known.
+        for target in effective_supersedes(path, meta.get("supersedes"), known_ids):
+            superseded.add((experiment, target))
+    all_ids = {(exp, rid) for exp, ids in ids_by_experiment.items() for rid in ids}
     return all_ids, superseded
 
 
