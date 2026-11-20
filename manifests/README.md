@@ -712,6 +712,43 @@ capture, PVT corner sweeps, or Monte Carlo.
   so it is not a one-for-one round of the live heads. Four at #482's
   snapshot, five by the merge; the November 20 note and its standing
   response stand unchanged.
+- **2026-11-20 (issue #507): the attestation-pin drift check — an edit to
+  an attested file now fails `npm run lint` locally, not CI's re-attest.**
+  `scripts/check_evidence_inventories.py`'s unrestricted run (the one
+  `npm run lint` and the CI records job use) gained check 5: every
+  per-file pin inside an envelope's `attestation.checks` is re-hashed
+  against the tree, and a mismatch names the file and the re-mint command
+  (`klt signoff --attest N --inventory manifests/attest/itemN.json -o
+  <envelope> --skip-local-only`, then the baseline round it stales). The
+  recurring case is `README.md`: it is hash-pinned T1 item-10 evidence,
+  and a Guide document-maintenance PR that edits it used to pass
+  everything local and fail only CI's `Re-attest T1 item 10` step (exit
+  3), costing a Doctor round, an item-10 re-attest and a baseline round;
+  `CLAUDE.md` now carries the rule that README changes arrive via an
+  issue -> Builder PR that re-attests item 10. The `--inventory`
+  restricted run an attestation itself invokes is deliberately unchanged,
+  so a re-mint never trips on the very pins it is refreshing. Editing the
+  checker stales both envelopes that pin it, so items 9 and 10 were
+  re-attested at the fleet klt `0.9.2` (`--skip-local-only`: same checks
+  and outcomes, only the checker's `content_hash` moved) — the #5538
+  throwaway-baseline ordering was not needed, because `--skip-local-only`
+  carries the `lint` outcome and the attestation never runs the record
+  linter. **The round superseding all 2,760 live `6f54f56` heads
+  one-for-one is `signoff-baseline 20261120-092144` ..
+  `20261120-100743-c749775`, 5 of 11 met, 1 not applicable, at klt
+  `0.9.2`**; the fresh render matches the previous round's committed
+  artifact (`--check`: `match`, no checklist movement) — only the two
+  envelope files' bytes moved, no graded field. Both docs citing a
+  baseline (`docs/submission/verification.md`, `docs/ROADMAP.md`) were
+  re-pointed at this round in the same change. **PR #506 (main's own
+  README edit and item-10 re-attest) merged mid-flight, so the branch's
+  round and main's `4c3027e` round were both staled by the merge; the
+  round that lands is `signoff-baseline 20261120-103600` ..
+  `20261120-120759-1bdad204`, 5,520 successors — one per live record of
+  BOTH parent rounds — sharing one klt `0.9.2` render at the merge, which
+  matches both parents' artifacts (no graded field moved; the merge
+  combined the two one-line envelope re-attests, and the fresh
+  re-attest on the merged tree wrote byte-identical bytes).**
 
 - **Every citation pins a `content_hash`**, and what it is the hash of
   depends on the cited envelope (clarified 2026-10-10, issue #168; the

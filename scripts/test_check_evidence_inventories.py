@@ -70,6 +70,57 @@ def build(root: Path) -> None:
     )
     write(root, "manifests/evidence/testbenches.txt", inv)
     bind(root, 9, "manifests/evidence/testbenches.txt", "testbenches.json")
+    bind_hygiene(root)
+
+
+def bind_hygiene(root: Path) -> None:
+    """An item-10 envelope whose `attestation.checks` hash-pin files -- the
+    shape `klt signoff --attest 10` writes and issue #507's drift check reads.
+    The clean case covers fresh pins; the mutations below drift them."""
+    write(root, "manifests/evidence/hygiene.txt", "# hygiene inventory\n")
+    inv_h = "sha256:" + sha((root / "manifests/evidence/hygiene.txt").read_bytes())
+    env = {
+        "schema_version": 1,
+        "kind": "generic",
+        "status": "pass",
+        "t1_item": 10,
+        "attestation": {
+            "checks": [
+                {
+                    "check": "present",
+                    "role": "hygiene",
+                    "path": "README.md",
+                    "passed": True,
+                    "content_hash": "sha256:" + sha((root / "README.md").read_bytes()),
+                },
+                {
+                    "check": "command",
+                    "role": "audit",
+                    "name": "lint",
+                    "argv": ["npm", "run", "lint"],
+                    "cwd": ".",
+                    "exit_status": 0,
+                    "passed": True,
+                    "local_only": True,
+                },
+            ]
+        },
+        "provenance": {"input": {"path": "hygiene.txt", "content_hash": inv_h}},
+    }
+    write(root, "manifests/evidence/hygiene.json", json.dumps(env))
+    mpath = root / MANIFEST
+    manifest = json.loads(mpath.read_text())
+    manifest["evidence"]["10"] = {
+        "file": "manifests/evidence/hygiene.json",
+        "content_hash": inv_h,
+    }
+    write(root, MANIFEST, json.dumps(manifest))
+
+
+def edit_readme_but_keep_inventory_headings(root: Path) -> None:
+    """Edit README.md in a way no .txt inventory directive notices (the file
+    and its headings are intact) -- only the attestation pin can catch it."""
+    write(root, "README.md", "# block\n\n## License\n\n## Added\n")
 
 
 ARGS: list[str] = []
@@ -194,6 +245,15 @@ CASES = [
      "no longer hashes to the hash the envelope records for it"),
     ("file-set envelope with an empty paths list fails", set_envelope_empty_paths, 1,
      "does not name a file (or file set) in the tree"),
+    ("attested file edited, envelope not re-attested (issue #507)",
+     edit_readme_but_keep_inventory_headings, 1,
+     "`README.md` changed since the envelope attested it"),
+    ("attestation drift names the re-mint command (issue #507)",
+     edit_readme_but_keep_inventory_headings, 1,
+     "klt signoff --attest 10 --inventory manifests/attest/item10.json -o manifests/evidence/hygiene.json"),
+    ("attested file removed fails the pin check (issue #507)",
+     lambda r: (r / "README.md").unlink(), 1,
+     "attestation check pins `README.md`, which is not a file"),
 ]
 
 
@@ -205,6 +265,8 @@ RESTRICTED = [
     ("restricted run passes on a clean tree", lambda r: None, 0, "restricted run"),
     ("restricted run ignores a stale envelope", edit_inventory, 0, "restricted run"),
     ("restricted run still catches an edited file", lambda r: write(r, "rtl/core.v", "module core2; endmodule\n"), 1, "`rtl/core.v` changed"),
+    ("restricted run ignores a drifted attestation pin (issue #507)",
+     edit_readme_but_keep_inventory_headings, 0, "restricted run"),
     ("restricted run on an unknown inventory", lambda r: None, 1, "no such inventory"),
 ]
 
@@ -212,9 +274,9 @@ RESTRICTED = [
 def main() -> int:
     results = [case(*c) for c in CASES]
     ARGS[:] = ["--inventory", "testbenches.txt"]
-    results += [case(*c) for c in RESTRICTED[:3]]
+    results += [case(*c) for c in RESTRICTED[:4]]
     ARGS[:] = ["--inventory", "nope.txt"]
-    results += [case(*c) for c in RESTRICTED[3:]]
+    results += [case(*c) for c in RESTRICTED[4:]]
     ARGS[:] = []
     print(f"{sum(results)}/{len(results)} cases as specified")
     return 0 if all(results) else 1
