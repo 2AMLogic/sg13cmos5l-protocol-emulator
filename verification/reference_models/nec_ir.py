@@ -4,7 +4,7 @@ multi-protocol extra credit, catalog #443).
 Written from the NEC protocol description alone (the SB Projects knowledge
 page `docs/protocols.md` #443 cites for the row: leader 9 ms mark + 4.5 ms
 space, 562.5-us marks, 562.5-us / 1,687.5-us spaces, 32 bits address /
-inverted address / command / inverted command MSB-first, a 9 ms + 2.25 ms +
+inverted address / command / inverted command LSB-first, a 9 ms + 2.25 ms +
 562.5-us repeat code, all on a 38 kHz carrier). It imports nothing from
 `rtl/`, `src/`, `firmware/` or any bench, and knows nothing about this
 design's ISA, clock or cycle counts. Its input is a `waveform.Signal` in
@@ -27,13 +27,11 @@ followed by NEC pulse-distance decoding. The model does both:
    class; the in-burst low of a 1/3-duty carrier is 2/3 of a period, and
    the first low of any space is a whole bit space). Every *complete*
    carrier period inside a mark (rise to next rise, both within the mark)
-   is graded against the carrier window. Two kinds of period are not
-   graded: a mark's final burst, whose low becomes the envelope edge (the
-   period that would span a mark's end does not exist), and a *burst
-   junction* -- a low shorter than a quarter of the nominal period, which
-   is a transmitter restarting its burst counter mid-mark (below any
-   hold-off; the mark continues through it). A mark with no complete
-   carrier period at all is an unmodulated pulse and a violation.
+   is graded against the carrier window, including intervals with a short
+   low. The last falling edge leads into the space and has no following
+   in-mark period. Envelope widths are available for diagnostics even
+   when the carrier fails. Latching a frame or receiving a repeat requires
+   at least one in-band period in every mark.
 
 2. **Decode NEC.** Marks and spaces of the envelope are classified by
    width and checked:
@@ -55,8 +53,8 @@ followed by NEC pulse-distance decoding. The model does both:
    negative control shows. The carrier window is the passband a commodity
    38 kHz module quotes.
 
-A frame is 32 bits, MSB first: address, inverted address, command,
-inverted command. Both complement pairs are checked -- a bad inverted byte
+A frame carries address, inverted address, command and inverted command,
+least-significant bit first in each byte. Both complement pairs are checked -- a bad inverted byte
 is a violation, not a decode guess. A repeat code (leader-class mark +
 2.25-ms-class space + one bit-class mark) is reported as a repeat, not a
 frame. A frame whose 33rd mark arrives early, or whose capture ends
@@ -91,9 +89,6 @@ FRAME_SILENCE_MIN_NS = LEADER_SPACE_NS * (1.0 - TIMING_TOL_PCT / 100.0)
 CARRIER_PERIOD_NS = 1e9 / CARRIER_HZ
 #: A low this long (with no further rise) ends a mark: 0.9 carrier periods.
 DEMOD_GAP_NS = 0.9 * CARRIER_PERIOD_NS
-#: A low shorter than this inside a mark is a burst junction (the mark
-#: continues; the period across it is not graded): a quarter period.
-BURST_JUNCTION_NS = 0.25 * CARRIER_PERIOD_NS
 
 
 def window(nominal: float, tol_pct: float) -> Tuple[float, float]:
@@ -128,29 +123,26 @@ class Frame:
     complete: bool = False
     latched: bool = False
 
+    def _byte_at(self, start: int) -> Optional[int]:
+        if len(self.bits) < start + 8:
+            return None
+        return sum(bit << i for i, bit in enumerate(self.bits[start:start + 8]))
+
     @property
     def addr(self) -> Optional[int]:
-        if len(self.bits) < 8:
-            return None
-        return int("".join(str(b) for b in self.bits[0:8]), 2)
+        return self._byte_at(0)
 
     @property
     def inv_addr(self) -> Optional[int]:
-        if len(self.bits) < 16:
-            return None
-        return int("".join(str(b) for b in self.bits[8:16]), 2)
+        return self._byte_at(8)
 
     @property
     def cmd(self) -> Optional[int]:
-        if len(self.bits) < 24:
-            return None
-        return int("".join(str(b) for b in self.bits[16:24]), 2)
+        return self._byte_at(16)
 
     @property
     def inv_cmd(self) -> Optional[int]:
-        if len(self.bits) < 32:
-            return None
-        return int("".join(str(b) for b in self.bits[24:32]), 2)
+        return self._byte_at(24)
 
 
 @dataclass
@@ -181,11 +173,13 @@ class NecIrDecoder:
         # ---- stage 1: demodulate the envelope off the carrier ----
         marks: List[Tuple[float, float]] = []       # (rise, fall) per mark
         carrier: List[float] = []
+        missing_carrier = set()  # mark starts with no in-band period
         i = 0
         while i < len(rises):
             rise = rises[i]
             last_rise = rise
             j = i
+            in_band = False
             while True:
                 idx = bisect_right(falls, last_rise)
                 fall = falls[idx] if idx < len(falls) else None
@@ -193,30 +187,28 @@ class NecIrDecoder:
                 if fall is None:
                     violations.append(Violation(
                         last_rise, "mark", "the pin is still high when the waveform ends"))
-                    marks.append((rise, t_end))
-                    j += 1
+                    fall = t_end
                     break
-                if nxt is not None and nxt - fall < DEMOD_GAP_NS:
-                    if nxt - fall >= BURST_JUNCTION_NS:
-                        carrier.append(nxt - last_rise)
-                    last_rise = nxt
-                    j += 1
-                    continue
-                marks.append((rise, fall))
+                if nxt is None or nxt - fall >= DEMOD_GAP_NS:
+                    break
+                period = nxt - last_rise
+                carrier.append(period)
+                if _inside(period, CARRIER_WIN):
+                    in_band = True
+                else:
+                    violations.append(Violation(
+                        last_rise, "carrier",
+                        f"carrier period {period:.0f} ns outside {CARRIER_WIN}"))
+                last_rise = nxt
                 j += 1
-                break
-            i = j
-        for p in carrier:
-            if not _inside(p, CARRIER_WIN):
-                violations.append(Violation(
-                    0.0, "carrier",
-                    f"carrier period {p:.0f} ns outside {CARRIER_WIN}"))
-        for (rise, fall) in marks:
-            inner = [r for r in rises if rise < r < fall]
-            if not inner:
+            marks.append((rise, fall))
+            if not in_band:
+                missing_carrier.add(rise)
+            if i == j:
                 violations.append(Violation(
                     rise, "no-carrier",
                     "a mark with no complete carrier period (an unmodulated pulse)"))
+            i = j + 1
         widths = {"leader_mark": [], "leader_space": [], "repeat_space": [],
                   "bit_mark": [], "space0": [], "space1": [], "silence": []}
 
@@ -237,14 +229,18 @@ class NecIrDecoder:
                 space = marks[k + 1][0] - fall
                 if _inside(space, LEADER_SPACE_WIN):
                     widths["leader_space"].append(space)
-                    k = self._decode_frame(marks, k, t_end, widths, violations, frames)
+                    end = self._decode_frame(marks, k, t_end, widths, violations, frames)
+                    if any(t in missing_carrier for t, _ in marks[k:end]):
+                        frames[-1].latched = False
+                    k = end
                     continue
                 if _inside(space, REPEAT_SPACE_WIN):
                     widths["repeat_space"].append(space)
                     # one bit-class mark completes the repeat code
                     if n_rise is not None and _inside(marks[k + 1][1] - n_rise, BIT_MARK_WIN):
                         widths["bit_mark"].append(marks[k + 1][1] - n_rise)
-                        repeats.append(rise)
+                        if rise not in missing_carrier and n_rise not in missing_carrier:
+                            repeats.append(rise)
                         k += 2
                         continue
                     violations.append(Violation(
@@ -401,7 +397,7 @@ def encode_frame(sig: Signal, addr: int, cmd: int, t0: float = 0.0, *,
     bits = []
     for byte in (addr, 0xFF - addr if inv_addr is None else inv_addr,
                  cmd, 0xFF - cmd if inv_cmd is None else inv_cmd):
-        bits.extend((byte >> i) & 1 for i in range(7, -1, -1))
+        bits.extend((byte >> i) & 1 for i in range(8))
     n = 0
     for b in bits:
         if stop_after_bits is not None and n >= stop_after_bits:

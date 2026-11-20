@@ -2,7 +2,7 @@
 extra credit, catalog #443).
 
 The claim: the committed program `firmware/asm/nec_ir.asm` (image
-`firmware/build/nec_ir.hex`, 160 words of the 256-word store), loaded over
+`firmware/build/nec_ir.hex`, 164 words of the 256-word store), loaded over
 the real serial load-phase pins onto the real top
 (`tt_um_2amlogic_protocol_emulator`) and executed by the ISA core, drives
 NEC infrared remote frames on IR_TX = `uo_out[7]`: a 38 kHz-class carrier
@@ -37,8 +37,8 @@ windows are derived from the same arithmetic.
 
 The frame table
 ---------------
-The table after the code holds one word per bit, MSB first (address,
-~address, command, ~command): `LDI R0, 0x80` (word 0x1080) is a 1,
+The table after the code holds one word per bit, LSB first in each byte
+(address, ~address, command, ~command): `LDI R0, 0x80` (word 0x1080) is a 1,
 `LDI R0, 0x00` (0x1000) is a 0, and a `HALT` word (0xF000) ends the
 frame. The code reads the words with DR 0012's `PM_DATA_*` and never
 executes them, so a host can load any 32-bit frame -- including a
@@ -61,6 +61,9 @@ Negative controls (a suite that cannot fail cannot cite its passes)
    by 1.15x. Every mark and space lands 15% off nominal, past the model's
    +-10%, while staying self-consistent -- the timing-only failure mode,
    and proof that the capture-and-decode path can fail.
+3. **Constant-period duty change**: shorten one interior carrier high in
+   the captured leader by 100 cycles and lengthen its low by 100 cycles.
+   All rises and envelope widths stay fixed. The duty check must fail.
 
 Driven by `klt functional-verification`
 (`verification/request-firmware-nec-ir.json`) against
@@ -77,7 +80,9 @@ byte-reproducible.
 import random
 import re
 import sys
+from copy import deepcopy
 from pathlib import Path
+from unittest import TestCase
 
 import cocotb
 from cocotb.clock import Clock
@@ -153,7 +158,7 @@ def report_rows(text):
 
 
 def _byte_bits(value):
-    return [(value >> i) & 1 for i in range(7, -1, -1)]
+    return [(value >> i) & 1 for i in range(8)]
 
 
 class Layout:
@@ -175,8 +180,8 @@ class Layout:
             end += 1
         assert words[end] == END_WORD and len(bits) == 32, "the table is not 32 bits + marker"
         self.bits = bits
-        self.addr = int("".join(map(str, bits[0:8])), 2)
-        self.cmd = int("".join(map(str, bits[16:24])), 2)
+        self.addr = sum(bit << i for i, bit in enumerate(bits[:8]))
+        self.cmd = sum(bit << i for i, bit in enumerate(bits[16:24]))
 
     def image_for(self, addr, cmd, *, inv_addr=None, inv_cmd=None):
         """The image with a different frame's 32 bit words (code equal)."""
@@ -231,22 +236,24 @@ def window_of(ir, cycles):
 
 
 def demod_cycles(ir):
-    """(mark widths, space widths, carrier periods) of the captured pin,
+    """Measure marks, spaces, carrier periods, highs and in-burst lows
     in cycles, with the model's demodulator rule: a low of `GAP_CYCLES` or
     more ends a mark; complete rise-to-rise periods inside a mark are
     carrier periods. Transitions alternate (the pin starts low)."""
     cyc = ir.transition_cycles
     vals = [v for (_t, v) in ir.signal.transitions]
     rises = [i for i, v in enumerate(vals) if v == 1]
-    marks, spaces, periods = [], [], []
+    marks, spaces, periods, highs, lows = [], [], [], [], []
     i = 0
     while i < len(rises):
         ri = rises[i]
         last, j = ri, i
         while True:
             fall = last + 1  # transitions alternate: the fall follows
+            highs.append(cyc[fall] - cyc[last])
             nxt = rises[j + 1] if j + 1 < len(rises) else None
             if nxt is not None and cyc[nxt] - cyc[fall] < GAP_CYCLES:
+                lows.append(cyc[nxt] - cyc[fall])
                 periods.append(cyc[nxt] - cyc[last])
                 last, j = nxt, j + 1
                 continue
@@ -256,7 +263,29 @@ def demod_cycles(ir):
             j += 1
             break
         i = j
-    return marks, spaces, periods
+    return marks, spaces, periods, highs, lows
+
+
+def check_exact_cycles(ir, label, expect_idle):
+    marks, spaces, periods, highs, lows = demod_cycles(ir)
+    want_spaces = {LEADER_SPACE_CYCLES, SPACE0_CYCLES, SPACE1_CYCLES}
+    if expect_idle:
+        want_spaces.add(IDLE_CYCLES)
+    assert set(marks) == {LEADER_MARK_CYCLES, BIT_MARK_CYCLES}, (
+        f"[{label}] envelope marks {sorted(set(marks))}")
+    assert marks.count(LEADER_MARK_CYCLES) == (2 if expect_idle else 1)
+    assert set(spaces) == want_spaces, (
+        f"[{label}] envelope spaces {sorted(set(spaces))}")
+    assert spaces.count(LEADER_SPACE_CYCLES) == 1
+    if expect_idle:
+        assert spaces.count(IDLE_CYCLES) == 1
+    assert set(periods) == {CARRIER_CYCLES}, (
+        f"[{label}] carrier periods {sorted(set(periods))}")
+    assert set(highs) == {CARRIER_HIGH_CYCLES}, (
+        f"[{label}] carrier highs {sorted(set(highs))}")
+    assert set(lows) == {CARRIER_LOW_CYCLES}, (
+        f"[{label}] in-burst carrier lows {sorted(set(lows))}")
+    return len(periods)
 
 
 async def grade(dut, layout, words, addr, cmd, label, expect_idle=False):
@@ -284,26 +313,13 @@ async def grade(dut, layout, words, addr, cmd, label, expect_idle=False):
         f"[{label}] decoded ({frame.addr:#04x}, {frame.cmd:#04x}), "
         f"loaded ({addr:#04x}, {cmd:#04x})")
 
-    marks, spaces, periods = demod_cycles(ir)
-    want_spaces = {LEADER_SPACE_CYCLES, SPACE0_CYCLES, SPACE1_CYCLES}
-    if expect_idle:
-        want_spaces.add(IDLE_CYCLES)
-    assert set(marks) == {LEADER_MARK_CYCLES, BIT_MARK_CYCLES}, (
-        f"[{label}] envelope marks {sorted(set(marks))}")
-    assert marks.count(LEADER_MARK_CYCLES) == (2 if expect_idle else 1)
-    assert set(spaces) == want_spaces, (
-        f"[{label}] envelope spaces {sorted(set(spaces))}")
-    assert spaces.count(LEADER_SPACE_CYCLES) == 1
-    if expect_idle:
-        assert spaces.count(IDLE_CYCLES) == 1
-    assert set(periods) == {CARRIER_CYCLES}, (
-        f"[{label}] carrier periods {sorted(set(periods))}")
+    period_count = check_exact_cycles(ir, label, expect_idle)
     w = result.pulse_widths
     summary = {k: (round(min(v) / 1000, 2), round(max(v) / 1000, 2), len(v))
                for k, v in w.items() if v}
     dut._log.info(
         f"[{label}] frame ({addr:#04x}, {cmd:#04x}) latched; envelope us "
-        f"(min, max, count): {summary}; carrier periods {len(periods)}, "
+        f"(min, max, count): {summary}; carrier periods {period_count}, "
         f"junction included")
     return result, ir
 
@@ -373,6 +389,16 @@ async def test_committed_frame(dut):
     dut._log.info(f"capture-path control x{STRETCH}: {len(bad.violations)} "
                   f"violation(s), kinds {sorted(kinds)} -- as required")
 
+    # Advance the first falling edge inside the leader. The pulse changes
+    # from 439/877 to 339/977 cycles with every rise and space preserved.
+    mutant = deepcopy(ir)
+    t, level = mutant.signal.transitions[1]
+    assert level == 0
+    mutant.signal.transitions[1] = (t - 100 * CLK_PERIOD_NS, level)
+    mutant.transition_cycles[1] -= 100
+    with TestCase().assertRaisesRegex(AssertionError, "carrier highs"):
+        check_exact_cycles(mutant, "short-high, same period", expect_idle=True)
+
 
 @cocotb.test()
 async def test_random_frame(dut):
@@ -384,7 +410,17 @@ async def test_random_frame(dut):
     addr, cmd = rng.randrange(256), rng.randrange(256)
     words = layout.image_for(addr, cmd)
     assert words[: layout.table] == layout.code
-    await grade(dut, layout, words, addr, cmd, f"random {addr:#04x}/{cmd:#04x}")
+    loaded = Layout(CYCLES.read_text(encoding="utf-8"), words)
+    assert (loaded.addr, loaded.cmd) == (addr, cmd)
+    _, ir = await grade(dut, layout, words, addr, cmd, f"random {addr:#04x}/{cmd:#04x}")
+    # Compare the pin spaces directly to a literal vector, independent of
+    # both the table writer and the reference model's byte accessors.
+    assert (addr, cmd) == (0x87, 0x65)
+    wire_bits = "11100001" "00011110" "10100110" "01011001"
+    _, spaces, _, _, _ = demod_cycles(ir)
+    assert spaces == [LEADER_SPACE_CYCLES] + [
+        SPACE1_CYCLES if bit == "1" else SPACE0_CYCLES for bit in wire_bits
+    ]
 
 
 @cocotb.test()
@@ -405,7 +441,7 @@ async def test_negative_mutated_wait(dut):
     ir = await run_and_capture(dut, program.words, cycles)
     t0, t1 = window_of(ir, cycles)
     result = NecIrDecoder().decode(ir.signal, t0, t1)
-    _marks, _spaces, periods = demod_cycles(ir)
+    _, _, periods, _, _ = demod_cycles(ir)
     got = sorted(set(periods))
     assert got == [CARRIER_CYCLES - 6], (
         f"mutant carrier periods {got}; the exact-cycle guard must see the "

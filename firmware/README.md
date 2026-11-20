@@ -789,9 +789,9 @@ peripheral. The 38 kHz carrier is a counted `OUT`/`WAIT` loop on one pin
 (the ISA's own timing determinism is the modulator), and the
 pulse-distance coding is which of two exact space lengths follows each
 mark. One frame every ~128 ms, forever: the leader (9 ms-class mark +
-4.5 ms space), 32 bits — address, ~address, command, ~command, MSB first
-— each a 562.5-us-class mark followed by a 562.5-us or a 1,687.5-us
-space, then the final mark and 60 ms of silence. The carrier line is
+4.5 ms space), then address, ~address, command and ~command, LSB first
+within each byte. Each of the 32 bits has a 562.5-us-class mark followed by a 562.5-us or a 1,687.5-us
+space. The final mark precedes 60 ms of silence. The carrier line is
 IR_TX = `uo_out[7]` (DR 0010's `nec_ir_tx` role, added by this issue; the
 same pad as WS2812's DIN, one image per run — the choice makes the
 carrier-high image and the bit-7 mask one constant). The receiver-module
@@ -810,6 +810,7 @@ clock (20 ns/cycle):
 |---|---|---|---|
 | carrier period (rise to rise, every one) | **1,316** | 26.32 us = 37,994 Hz | 38 kHz nominal, −160 ppm |
 | carrier high | **439** | 8.78 us | 1/3 duty (33.35%), the customary NEC choice |
+| in-burst carrier low | **877** | 17.54 us | completes the 1,316-cycle period |
 | leader mark (342 periods) | **449,195** | 8,983.90 us | 9 ms − 0.18% |
 | leader space | **225,000** | 4,500.00 us | 4.5 ms, exact |
 | bit / final mark (22 periods) | **28,075** | 561.50 us | 562.5 us − 0.18% |
@@ -851,7 +852,9 @@ the carrier 0.5% and the marks 1% — inside every model window, so the
 model still passes and only the exact-cycle assertion catches it: the
 cycle guard is the load-bearing check. A 1.15x-stretched copy of the
 DUT's own capture fails the model's windows, proving the capture-and-
-decode path can fail.
+decode path can fail. Advancing one falling edge in the captured leader by
+100 cycles preserves every period and envelope width. The bench rejects
+the resulting 339-cycle high and measures its paired low as 977 cycles.
 
 **Wiring a fixture.** IR_TX = `uo_out[7]` drives an IR LED through a
 transistor; IR_RX = `ui_in[4]` comes from a 38 kHz demodulating receiver
@@ -861,11 +864,16 @@ module (output idle high, active low — e.g. a TSOP34338-class part):
 |---|---|---|
 | NPN transistor (2N3904-class) | base | `uo_out[7]` through 1 kOhm |
 | | emitter | GND |
-| | collector | IR LED cathode through ~22 Ohm (10–30 mA pulse current) |
-| IR LED | anode | 3.3 V |
+| | collector | TSAL6200 cathode through 100 Ω |
+| Vishay TSAL6200 IR LED | anode | 3.3 V |
 | receiver module | Vout | `ui_in[4]` |
 | | Vcc | 3.3 V, 100 nF close to the pin |
 | | GND | GND |
+
+The LED branch targets about 20 mA during each carrier high. Assuming a
+1.2 V LED forward drop and 0.2 V across the saturated transistor, the
+100 Ω resistor gives (3.3 − 1.2 − 0.2) V / 100 Ω = 19 mA.
+[Vishay TSAL6200 datasheet](https://www.vishay.com/docs/81010/tsal6200.pdf)
 
 The transmitter is push-pull into the transistor's base; the module's
 open-collector-style output idles high and pulls low on a burst, which

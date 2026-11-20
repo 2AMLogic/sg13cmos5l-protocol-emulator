@@ -7,7 +7,7 @@
 ; What it sends, forever: one NEC frame every 128 ms (at row 4's nominal
 ; 50 MHz clock), then the 60 ms of silence NEC's frame cadence allows.
 ; A frame is the leader (9 ms mark + 4.5 ms space), 32 bits -- address,
-; ~address, command, ~command, most significant bit first -- each a
+; ~address, command, ~command, least significant bit first -- each a
 ; 562.5-us-class mark followed by a 562.5-us or a 1,687.5-us space, and a
 ; final mark. The receiving side (an external 38 kHz demodulating receiver
 ; module, idle high) sees the envelope of the carrier; a real remote's
@@ -262,9 +262,9 @@ fe_pi:  WAIT  255             ; 256
         JMP   forever         ; 1
 
 ; ------------------------------------------------------- the frame table
-; Address 0xA5, command 0x3C: both bit values in every byte position of
-; all four bytes (each byte pair a AND ~a holds eight 1s and eight 0s, so
-; the committed frame runs 16 one-spaces and 16 zero-spaces).
+; Within each byte the first word sends bit 0 and the last sends bit 7.
+; Address 0xA5 and command 0x3C each read the same in either direction.
+; The RTL bench also loads asymmetric bytes to exercise the wire order.
 frame:
         LDI   R0, 0x80        ; addr    0xA5 = 1010 0101
         LDI   R0, 0x00        ; 0

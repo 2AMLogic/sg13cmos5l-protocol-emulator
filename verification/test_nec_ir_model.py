@@ -59,19 +59,17 @@ class Nominal(unittest.TestCase):
         self.assertEqual([(f.addr, f.cmd) for f in r.latched_frames],
                          [(ADDR, CMD), (0x00, 0xFF)])
 
-    def test_bit_order_is_msb_first(self):
-        # address 0x80 -> bit 0 is 1, bits 1..7 are 0 and the inverted
-        # address 0x7F -> bits 8..15 are 0,1,1,1,1,1,1,1; command 0x01 ->
-        # bit 23 is 1, inverted command 0xFE -> bit 24 is 1, bit 31 is 0
+    def test_bit_order_is_lsb_first(self):
         sig = Signal(0)
-        end = encode_frame(sig, 0x80, 0x01)
+        end = encode_frame(sig, 0x87, 0x65)
         r = NecIrDecoder().decode(sig, 0.0, end + TRAILER)
-        bits = r.latched_frames[0].bits
-        self.assertEqual(bits[0:8], [1, 0, 0, 0, 0, 0, 0, 0])
-        self.assertEqual(bits[8:16], [0, 1, 1, 1, 1, 1, 1, 1])
-        self.assertEqual(bits[23], 1)
-        self.assertEqual(bits[24], 1)
-        self.assertEqual(bits[31], 0)
+        self.assertEqual(r.violations, [])
+        frame, = r.latched_frames
+        # Literal transmission order for 0x87, 0x78, 0x65, 0x9A.
+        self.assertEqual("".join(map(str, frame.bits)),
+                         "11100001" "00011110" "10100110" "01011001")
+        self.assertEqual((frame.addr, frame.inv_addr, frame.cmd, frame.inv_cmd),
+                         (0x87, 0x78, 0x65, 0x9A))
 
     def test_frame_then_repeat_code(self):
         sig = Signal(0)
@@ -138,6 +136,15 @@ class Rejects(unittest.TestCase):
         r = decoded(carrier_period_ns=29_000.0)  # ~34.5 kHz
         self.assertIn("carrier", kinds(r))
 
+    def test_200_khz_carrier_is_rejected(self):
+        r = decoded(carrier_period_ns=5_000.0)
+        self.assertTrue(r.carrier_periods)
+        for period in r.carrier_periods:
+            self.assertAlmostEqual(period, 5_000.0)
+        self.assertEqual(sum(v.kind == "carrier" for v in r.violations),
+                         len(r.carrier_periods))
+        self.assertEqual(r.latched_frames, [])
+
     def test_mistimed_everything_fails_on_marks(self):
         # every mark and space +15%: the mark windows fail first (marks are
         # quantized to whole carrier periods, so they cannot sit on edges)
@@ -146,15 +153,10 @@ class Rejects(unittest.TestCase):
                     leader_space_ns=4_500_000.0 * 1.15)
         self.assertIn("mark", kinds(r))
 
-    def test_demodulator_ignores_a_short_carrier_dropout(self):
-        # a 100 ns dropout mid-leader (the firmware's two-half leader) is
-        # far under the demodulator hold-off: one mark, no violation
+    def test_in_window_carrier_jitter(self):
         sig = Signal(0, name="ir")
         end = encode_frame(sig, ADDR, CMD)
-        # splice a dropout into the leader: grow the first fall-to-rise
-        # low by 100 ns (the low shrinks nowhere -- the junction period
-        # grows to period + 100 ns, inside the carrier window, exactly the
-        # shape the firmware's two-half leader produces)
+        # Lengthen a single leader low by 100 ns, inside the period window.
         tr = sig.transitions
         first_fall = next(i for i, (t, v) in enumerate(tr) if v == 0)
         tr[first_fall + 1:] = [(t + 100.0, v) for (t, v) in tr[first_fall + 1:]]
