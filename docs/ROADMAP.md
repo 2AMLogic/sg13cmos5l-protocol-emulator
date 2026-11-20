@@ -18,7 +18,7 @@ committed with benches against independent reference models.
 
 **Spec.** Rows 1–12 of `spec/target-spec.md` and DRs 0001–0004 are ratified
 (PR #242, DR 0009). Rows 13 and 14 and DRs 0005, 0007, 0008, 0010–0018 and
-0020–0024 are `Proposed`; the next act is prepared in
+0020–0025 are `Proposed`; the next act is prepared in
 [`spec/ratification-batch-2.md`](../spec/ratification-batch-2.md).
 
 **Spec rows** (digest in [`spec/gap-to-submission.md`](../spec/gap-to-submission.md),

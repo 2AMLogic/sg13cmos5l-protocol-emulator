@@ -77,3 +77,17 @@ The PR then refreshed the item 9 and 10 attestations. All 345 stale records
 had identical input paths, Claims and Results, so `--collapse signoff-baseline`
 minted [one live record](../../verification/records/signoff-baseline/records/20261120-042052-5050f25.md).
 Its measured result is 5 of 11 met, with one item not applicable.
+
+At the branch’s review revision `f5425e19` the guard refused to repeat the
+collapse: the branch’s live record and main’s chain of newer leaves word the
+Claim and Result differently, so the 2,761 stale leaves were not
+interchangeable by the fingerprint’s definition. The operator minted the
+successor
+[`20261120-100345-e66478e`](../../verification/records/signoff-baseline/records/20261120-100345-e66478e.md)
+by hand with the tool’s renderer, listing `5050f25` among its 2,761
+superseded ids. When #477 merged, the same wording difference made
+`--collapse signoff-baseline` refuse the 5,521 stale records, and the Doctor
+wrote [`20261120-164259-6fb3838`](../../verification/records/signoff-baseline/records/20261120-164259-6fb3838.md)
+from a fresh klt 0.9.2 run on the merged revision — the baseline
+`docs/ROADMAP.md` and `docs/submission/verification.md` cite. Its Result
+records 5 of 11 items met, with item 6 not applicable.
