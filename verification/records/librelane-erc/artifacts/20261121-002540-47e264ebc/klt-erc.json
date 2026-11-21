@@ -3966,19 +3966,12 @@
       "erc.net_connectivity:[\"VGND\"]",
       "erc.net_connectivity:[\"VPWR\"]",
       "erc.net_connectivity:[\"VSS!\"]",
-      "erc.net_connectivity:[\"VSS\"]"
+      "erc.net_connectivity:[\"VSS\"]",
+      "erc.supply_short",
+      "erc.supply_short.substrate"
     ],
     "skipped": [],
-    "inapplicable": [
-      {
-        "id": "erc.supply_short",
-        "missing": [
-          "--deck naming the PDK family, so the isolation layers can be measured",
-          "or assert ties[].isolation_boxes"
-        ],
-        "reason": "substrate_isolation_undecidable"
-      }
-    ],
+    "inapplicable": [],
     "unknown": [],
     "nothing_checked": false,
     "nothing_checked_reasons": [],
@@ -3991,17 +3984,9 @@
     ],
     "layers_in_stream_without_declaration": [
       "8/2",
-      "8/29",
       "10/2",
-      "10/29",
-      "16/0",
-      "25/0",
       "30/2",
-      "30/29",
-      "50/2",
-      "63/0",
-      "99/31",
-      "189/4"
+      "63/0"
     ],
     "well_assertion_coverage": [
       {
@@ -4021,7 +4006,11 @@
     "klt_reinstall_spec": "klayout-tools==0.9.2",
     "klayout_version": "0.30.13",
     "pdk": null,
-    "deck": null,
+    "deck": {
+      "name": "sg13cmos5l",
+      "content_hash": "sha256:8b005441745c8f9500d04e0fece081fe5162bb1d562cc8d6e09b60f1f24d1446",
+      "released": true
+    },
     "input": {
       "content_hash": "sha256:2c8fb81d18ab9d6cfd2ed0566e32f16d3cebdbbdff41520afbff29fa0e19c3af",
       "role": "layout"
@@ -4051,6 +4040,981 @@
         "name": "Metal4",
         "label_layer": "50/25",
         "label_text_count": 101
+      }
+    ],
+    "substrate_bodies": [
+      {
+        "kind": "substrate",
+        "id": "vsubs",
+        "ties": [
+          "substrate_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "102070,219320,103220,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "104880,219320,106030,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "107690,219320,108840,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "110500,219320,111650,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "113310,219320,114460,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "116120,219320,117270,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "118930,219320,120080,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "121740,219320,122890,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "124550,219320,125700,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "127360,219320,128510,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "130170,219320,131320,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "132980,219320,134130,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "135790,219320,136940,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "138600,219320,139750,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "141410,219320,142560,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "144220,219320,145370,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "147030,219320,148180,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "149840,219320,150990,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "152650,219320,153800,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "155460,219320,156610,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "158270,219320,159420,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "161080,219320,162230,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "163890,219320,165040,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "166700,219320,167850,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "169510,219320,170660,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "172320,219320,173470,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "175130,219320,176280,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "177940,219320,179090,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "180750,219320,181900,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "183560,219320,184340,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "186140,213765,233060,218595",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "186140,222165,233060,226995",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "186140,230565,233060,235395",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "186140,240305,233060,245135",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "186140,248705,233060,253535",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "186140,258445,233060,263275",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "186140,266845,233060,271675",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "186140,276585,233060,281415",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "186140,284985,233060,289815",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "234860,219320,235640,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "237300,219320,238450,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "240110,219320,241260,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "242920,219320,244070,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "245730,219320,246880,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "248540,219320,249690,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "251350,219320,252500,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "254160,219320,255310,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "256970,219320,258120,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "259780,219320,260930,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "262590,219320,263740,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "2640,103675,416880,108005",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "2640,111235,416880,115440",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "2640,118795,416880,123125",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "2640,126480,416880,130560",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "2640,13080,416880,17160",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "2640,134040,416880,138120",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "2640,141600,416880,145680",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "2640,149035,416880,153240",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "2640,156720,416880,160925",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "2640,164280,81360,168360",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "2640,171840,81360,175920",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "2640,179400,81360,183480",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "2640,186970,81360,191040",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "2640,194520,81360,198600",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "2640,202080,81360,206160",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "2640,20640,416880,24710",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "2640,209650,81360,213720",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "2640,217200,81360,221280",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "2640,224760,81360,228840",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "2640,232320,81360,236400",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "2640,239880,81360,243960",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "2640,247440,81360,251520",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "2640,255000,81360,259080",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "2640,262560,81360,266640",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "2640,270120,81360,274200",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "2640,277690,81360,281760",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "2640,28200,416880,32280",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "2640,285240,81360,289320",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "2640,292800,81360,296880",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "2640,300360,81360,304440",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "2640,307920,416880,310350",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "2640,35760,416880,39965",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "2640,43195,416880,47400",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "2640,50755,416880,55085",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "2640,5530,416880,9590",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "2640,58440,416880,62520",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "2640,65875,416880,70205",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "2640,73560,416880,77640",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "2640,81120,416880,85200",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "2640,88680,416880,92760",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "2640,96115,416880,100445",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "265400,219320,266550,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "268210,219320,269360,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "271020,219320,272170,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "273830,219320,274980,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "276640,219320,277790,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "279450,219320,280600,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "282260,219320,283410,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "285070,219320,286220,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "287880,219320,289030,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "290690,219320,291840,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "293500,219320,294650,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "296310,219320,297460,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "299120,219320,300270,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "301930,219320,303080,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "304740,219320,305890,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "307550,219320,308700,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "310360,219320,311510,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "313170,219320,314320,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "315980,219320,317130,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "318790,219320,319940,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "321600,219320,322750,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "324410,219320,325560,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "327220,219320,328000,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "338160,164155,416880,168360",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "338160,171840,416880,175920",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "338160,179400,416880,183480",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "338160,186960,416880,191040",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "338160,194530,416880,198600",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "338160,202090,416880,206160",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "338160,209640,416880,213710",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "338160,217200,416880,221270",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "338160,224760,416880,228830",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "338160,232330,416880,236390",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "338160,239890,416880,243950",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "338160,247450,416880,251510",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "338160,255010,416880,259070",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "338160,262570,416880,266630",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "338160,270130,416880,274190",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "338160,277690,416880,281750",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "338160,285250,416880,289310",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "338160,292810,416880,296870",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "338160,300370,416880,304430",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "91200,173655,328000,216930",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "91200,219320,91980,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "93640,219320,94790,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "96450,219320,97600,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "99260,219320,100410,292660",
+        "ties": [
+          "nwell_tie"
+        ]
       }
     ]
   },
