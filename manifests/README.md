@@ -749,6 +749,20 @@ capture, PVT corner sweeps, or Monte Carlo.
   matches both parents' artifacts (no graded field moved; the merge
   combined the two one-line envelope re-attests, and the fresh
   re-attest on the merged tree wrote byte-identical bytes).**
+  **Issue #488 (the NEC infrared receiver) registers its
+  `firmware-nec-ir-rx` experiment in `manifests/evidence/testbenches.txt`
+  — an item-10 attested file — so item 10 was re-attested
+  (`klt signoff --attest 10 --skip-local-only`) for the new inventory
+  hash, staling every live `1bdad204` head; the round that lands is
+  `signoff-baseline 20261120-150000` ..
+  `20261120-163159-f2a35f0`, 5,520 successors — one per live record of
+  the parent round — sharing one render at the grading klt
+  `0.9.3.dev2551+gab900d2bca60`. No graded status moved (still 5 of 11
+  met, 1 not applicable); the newer grader fills `items.{2,3,7}.detail`
+  fields the `0.9.2` render left `None` and refreshes non-graded
+  checklist wording (`--check` reports it as documentation drift,
+  issue #502). Both docs citing a baseline were re-pointed in the same
+  change.**
 
 - **Every citation pins a `content_hash`**, and what it is the hash of
   depends on the cited envelope (clarified 2026-10-10, issue #168; the
