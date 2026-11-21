@@ -73,7 +73,7 @@
         "role": "hygiene",
         "path": "manifests/evidence/testbenches.txt",
         "passed": true,
-        "content_hash": "sha256:1ea00e7866c1f2c74e18f14b8bff1d01964db10d0c6d5b5ec532360d5f67f84f"
+        "content_hash": "sha256:6fba76f3349e7f99c834e942f7e5a4fda4c925221db7ba7cff8f3635d6d8bdaf"
       },
       {
         "check": "present",
