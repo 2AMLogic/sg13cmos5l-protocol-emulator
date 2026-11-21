@@ -552,6 +552,26 @@ gates. The host-side loader is issue #118.
   simulator-free self-test (`npm run lint`). Driven by `klt
   functional-verification` (`request-firmware-swd.json`); evidence in
   `records/firmware-swd/` (RTL only; no gate-level run is claimed).
+- `test_firmware_modbus.py` — the Modbus RTU **server** bench (issue
+  #446, multi-protocol extra credit): the committed 236-word image
+  (`modbus_rtu.asm`, 8N2 at 434 cycles/bit) is loaded over the real
+  serial load-phase pins and spoken to as a Modbus master — requests
+  driven on `ui_in[1]`, responses captured off `uo_out[0]` with the
+  RS-485 driver-enable window on `uo_out[1]`. Every response is judged
+  by the independent model `reference_models/modbus_rtu.py` (its own
+  table-driven CRC-16, 8N2 decoder and server behaviour for the fixed
+  two-register map): bytes, per-bit slot stability against the stated
+  +-2.5% bound, character pitch within 4,774+-12 cycles, the 3.5
+  character response latency, and the DE discipline. Coverage: 0x03
+  reads, 0x06 writes with read-back, bad CRC / wrong address /
+  unsupported function / bad count / bad register all met with silence
+  (with liveness proofs between), a truncated frame and the two-frame
+  resync the recorded no-inter-character-timeout cut implies, and a
+  retimed negative control (1.04x: bytes decode, timing fails).
+  `test_modbus_rtu_model.py` is the model's simulator-free self-test
+  (`npm run lint`). Driven by `klt functional-verification`
+  (`request-firmware-modbus.json`); evidence in
+  `records/firmware-modbus/` (RTL only; no gate-level run is claimed).
 - `formal/` — the §2 formal-properties leg (issue #24, distinct from the
   cocotb legs above: no `klt`, no PDK, no simulator — a Yosys+SMTBMC model
   checking harness). `formal/no_data_dependent_latency.sv` is

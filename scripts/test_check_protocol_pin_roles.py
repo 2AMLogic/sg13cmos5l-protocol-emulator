@@ -480,6 +480,38 @@ def _(fx):
     expect_fail(fx, "firmware/asm/nec_ir.asm", "concrete-firmware-bench")
 
 
+@case("Modbus RX mask LDI mutated")
+def _(fx):
+    fx.mutate("firmware/asm/modbus_rtu.asm",
+              "main:   LDI   R1, 2            ; RX mask (ui_in bit 1) and decrement",
+              "main:   LDI   R1, 4            ; RX mask (ui_in bit 1) and decrement")
+    expect_fail(fx, "RX bit mask LDI R1, 4", "concrete-firmware-bench")
+
+
+@case("Modbus TX image writes a pin outside TX/DE")
+def _(fx):
+    fx.mutate("firmware/asm/modbus_rtu.asm",
+              "        LDI   R2, 1            ; idle image: TX high, DE low",
+              "        LDI   R2, 5            ; idle image: TX high, DE low")
+    expect_fail(fx, "can write 0x05", "concrete-firmware-bench")
+
+
+@case("Modbus bench DE pin mutated")
+def _(fx):
+    fx.mutate("verification/test_firmware_modbus.py", "TX_BIT, DE_BIT = 0, 1",
+              "TX_BIT, DE_BIT = 0, 2")
+    expect_fail(fx, "DE_BIT is uo_out[2]", "concrete-firmware-bench")
+
+
+@case("Modbus DE moved in the table alone")
+def _(fx):
+    def mv(t):
+        pin(t, "uo_out[1]")["protocol_roles"]["modbus"] = "unused"
+        pin(t, "uo_out[2]")["protocol_roles"]["modbus"] = "DE"
+    fx.mutate_table(mv)
+    expect_fail(fx, "firmware/asm/modbus_rtu.asm", "concrete-firmware-bench")
+
+
 @case("PS/2 released-bus image mutated")
 def _(fx):
     fx.mutate("firmware/asm/ps2_device.asm", "LDI   R3, 0x0C\n        OUT   UIO_OUT, R3      ; both lines released ...",
@@ -1224,9 +1256,9 @@ def _(fx):
     concrete = {
         "prof_uart_tx", "prof_uart_rx", "prof_spi", "prof_i2c", "prof_i2c_gen",
         "prof_demo", "prof_ws2812", "prof_ps2", "prof_dmx512", "prof_nec_ir",
-        "prof_swd",
+        "prof_swd", "prof_modbus",
         "prof_bench_uart", "prof_bench_dmx512", "prof_bench_ws2812",
-        "prof_bench_nec_ir",
+        "prof_bench_nec_ir", "prof_bench_modbus",
         "prof_bench_ps2", "prof_bench_swd", "prof_bench_spi",
         "prof_bench_i2c", "prof_bench_i2c_sr", "prof_bench_load", "prof_top",
         "prof_core", "prof_isa_ports",
