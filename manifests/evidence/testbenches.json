@@ -276,7 +276,7 @@
         "role": "testbench",
         "path": "verification/remint_records.py",
         "passed": true,
-        "content_hash": "sha256:e64ed364ac417364a07f490e44c58e9585c7ffe0ffdfd6a224be259d80dcce07"
+        "content_hash": "sha256:e2a575445bbaec38ae9c4b959065fd507d1c5b6f7e97142ef67e732a61e7f924"
       },
       {
         "check": "present",

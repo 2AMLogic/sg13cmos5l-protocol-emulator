@@ -18,6 +18,10 @@ Chronological record of merged pull requests and closed issues, newest first.
 
 - [2026-09](work_log/WORK_LOG_2026-09.md)
 
+### 2026-11-21
+
+- **PR #(this PR)**: firmware: CAN 2.0A node on the frozen ISA (issue #450): arbitrated transmit, receive with de-stuffing/CRC-15/ACK
+
 ### 2026-11-20
 
 - **PR #516**: docs(manifests): record the klt 0.8.0 pin parenthetical in the item-6 statement as historical
