@@ -1,0 +1,70 @@
+{
+  "schema": "klt.place_and_route.request/1",
+  "engine": "openroad",
+  "netlist": "/home/ubuntu/GitHub/sg13cmos5l-protocol-emulator/.loom/worktrees/issue-523/flow/power-par-scratch/tt_um_2amlogic_protocol_emulator_synth.v",
+  "hdl_toplevel": "tt_um_2amlogic_protocol_emulator",
+  "pdk": {
+    "cell_library": "sg13cmos5l_stdcell",
+    "corner": "typ_1p20V_25C"
+  },
+  "floorplan": {
+    "method": "utilization",
+    "utilization_pct": 40,
+    "aspect_ratio": 1.0,
+    "core_margin_um": 2.0,
+    "site": "CoreSite"
+  },
+  "io": {
+    "layer_h": "Metal3",
+    "layer_v": "Metal2"
+  },
+  "constraints": {
+    "clock_port": "clk",
+    "clock_period_ns": 20.0
+  },
+  "macros": [
+    {
+      "cell": "RM_IHPSG13_1P_256x16_c2_bm_bist",
+      "lef": "/home/ubuntu/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_sram/lef/RM_IHPSG13_1P_256x16_c2_bm_bist.lef",
+      "lib": {
+        "slow_1p08V_125C": "/home/ubuntu/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_sram/lib/RM_IHPSG13_1P_256x16_c2_bm_bist_slow_1p08V_125C.lib",
+        "typ_1p20V_25C": "/home/ubuntu/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_sram/lib/RM_IHPSG13_1P_256x16_c2_bm_bist_typ_1p20V_25C.lib",
+        "fast_1p32V_m40C": "/home/ubuntu/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_sram/lib/RM_IHPSG13_1P_256x16_c2_bm_bist_fast_1p32V_m55C.lib"
+      },
+      "instance": "u_prog_mem/u_sram",
+      "x_um": 7.0,
+      "y_um": 7.0,
+      "orientation": "R0"
+    }
+  ],
+  "power": {
+    "power_net": "VPWR",
+    "ground_net": "VGND",
+    "straps": [
+      {
+        "layer": "Metal1",
+        "width_um": 0.44,
+        "pitch_um": 7.56,
+        "offset_um": 0.0,
+        "followpins": true
+      },
+      {
+        "layer": "Metal4",
+        "width_um": 2.1,
+        "spacing_um": 2.0,
+        "pitch_um": 44.96,
+        "offset_um": 93.985
+      }
+    ],
+    "connects": [
+      {
+        "layers": [
+          "Metal1",
+          "Metal4"
+        ]
+      }
+    ]
+  },
+  "seed": 1,
+  "target_stage": "place"
+}
