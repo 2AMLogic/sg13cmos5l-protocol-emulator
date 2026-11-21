@@ -38,6 +38,29 @@ recorded rather than silently resolved.
   model, never routing parasitics) — see the script's header for the
   environment requirements (`PDK_ROOT` must be exported for the common
   docker-wrapped `openroad`; `KLT_BIN` can point at a pinned install).
+  Since issue #522 it parses the flow-of-record SDC's IO delays into its
+  request (`input_delay_ns`/`output_delay_ns`), so
+  `constraint_completeness.status` is `complete`; see its header for the
+  `--sdc` override.
+- `run-sta-post-route-sweep.sh` — the post-route sibling of the runner
+  above (issue #522, T1 item 5): a standalone multi-corner `klt sta` in
+  **def mode** over the **flow-of-record post-route geometry** -- the
+  routed DEF, the extracted SPEF and the final SDC of the LibreLane `gds`
+  workflow run (--run-id <id> downloads them, --from <dir> takes a
+  download). One run per macro-characterized corner over the same frozen
+  DEF/SPEF bytes: `geometry_source: "routed"`, `propagated_clock`, SPEF
+  annotated, and boundary constraints parsed from the run's own SDC
+  (uniform IO delays, clock uncertainty, driving cell, output load -- the
+  same source `run-post-layout-sdf.sh` aligns to). Post-run invariants
+  fail the run if any corner is not routed/propagated/constrained/
+  complete; negative slack stays a measured result. The SDC's
+  `set_timing_derate`/`set_clock_transition` are not expressible in the
+  `klt sta` request schema (2AMLogic/klayout-tools#7025, closed as a
+  duplicate of the open #7014/#7015) and are recorded,
+  not applied -- the LibreLane figure and this klt figure stay separately
+  labelled wherever both are quoted. Evidence:
+  `verification/records/sta-corner-sweep/` (record
+  `20261121-021116-a9c989e` is the post-route measurement of record).
 - `run-die-area-par.sh` — the target-spec row-7 die-area leg (issue #21):
   synthesizes both existing tops fresh (`rtl/protocol_program_memory.v`
   and the stub `src/tt_um_2amlogic_protocol_emulator.v`), runs

@@ -36,11 +36,11 @@
     },
     "8": {
       "file": "manifests/evidence/characterization.json",
-      "content_hash": "sha256:f5d7022337e43d43244116c5d034d40765e1f6fea1ad992b6e836ea2f0a4229d"
+      "content_hash": "sha256:2dee06346ffa849298588747b4ab079f0d973940e2760d9776f9642f4fe8143c"
     },
     "9": {
       "file": "manifests/evidence/testbenches.json",
-      "content_hash": "sha256:43ce736b3d133137fe66230b371998fe1cc2c8f50ba67683b4cacd058294321a"
+      "content_hash": "sha256:d0e0ec100fce5dce1bb1838b2595c7eeed134082e174b26fe44ec577b738e3f9"
     },
     "10": {
       "file": "manifests/evidence/hygiene.json",

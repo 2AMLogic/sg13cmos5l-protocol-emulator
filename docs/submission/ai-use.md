@@ -190,13 +190,21 @@ design detail. Representative issues:
     `mismatch` rather than a converter error)
   - request schemas could not declare a hard macro (LEF + liberty + GDS)
     ([#2635](https://github.com/2AMLogic/klayout-tools/issues/2635), closed
-    2026-10-27). The klt STA leg has since run on the macro-backed design:
-    setup closes at 20 ns at the three macro-characterized corners and hold
-    fails at all three, a pre-CTS, pre-route netlist estimate
-    ([record](../../verification/records/sta-corner-sweep/records/20261120-031100-51b7eac.md)).
-    The GDS still comes from LibreLane alone — the klt place-and-route leg has
-    not been run on this design (#389) — and timing now has a klt number that
-    disagrees with LibreLane on hold, recorded as a finding.
+    2026-10-27). The klt STA leg has since run on the macro-backed design,
+    first as a pre-CTS netlist estimate (hold failing at all three
+    macro-characterized corners) and since issue #522 post-route -- `klt
+    sta` def mode over the flow-of-record routed DEF and its own extracted
+    SPEF: setup and hold both close at 20 ns at all three corners
+    ([record](../../verification/records/sta-corner-sweep/records/20261121-021116-a9c989e.md)).
+    The GDS still comes from LibreLane alone — the klt place-and-route leg
+    has not been run on this design (#389) — and the earlier klt-vs-LibreLane
+    hold disagreement is closed as a geometry-stage artifact (no CTS, no
+    routing, no hold repair), recorded in the same record with the residual
+    numeric offset attributed to the SDC directives the request schema
+    cannot express (klayout-tools
+    [#7025](https://github.com/2AMLogic/klayout-tools/issues/7025), closed
+    as a duplicate of the open
+    [#7014](https://github.com/2AMLogic/klayout-tools/issues/7014)/[#7015](https://github.com/2AMLogic/klayout-tools/issues/7015)).
 - Still open:
   - no control over gate-level power-up state
     ([#2998](https://github.com/2AMLogic/klayout-tools/issues/2998))

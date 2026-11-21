@@ -15,6 +15,11 @@ flow/.klt/
 flow/sta-corners/
 flow/sta-sweep/
 flow/sta-corner-sweep-results.json
+# `klt sta` post-route corner-sweep scratch (issue #522): downloaded gds-run
+# artifacts, frozen DEF/SPEF/SDC staging, per-corner request dirs, and the
+# sweep summary
+flow/sta-post-route-sweep/
+flow/sta-post-route-sweep-results.json
 # `klt place-and-route` die-area scratch: per-design request/response
 # docs, frozen netlists, and the summary (issue #21)
 flow/par-scratch/

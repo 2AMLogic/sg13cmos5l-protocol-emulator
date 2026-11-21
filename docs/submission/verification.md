@@ -86,7 +86,7 @@ not interchangeable, so the matrix in section 3 names one for every row.
 | **Formal** | Yosys + `yosys-smtbmc`/Z3, and `yosys-abc` (`scorr` + `pdr`) | none | Proofs hold for the *harness model* only (section 4). |
 | **Zero-delay gate level** | Icarus + cocotb on the **LibreLane** routed netlist (`flow/run-firmware-gate-level.sh`, `flow/run-reset-power-up-gate-level.sh`) | none | Catches synthesis divergence (X-propagation, inferred state). Says nothing about timing. |
 | **SDF-annotated routed simulation** | Same netlist with the LibreLane post-route SDF, three PVT corners (`flow/run-post-layout-sdf.sh`) | back-annotated, with omissions (section 5) | Does a bench's outcome change with real delay. The core bench and three protocol benches only (section 5). |
-| **STA** | **LibreLane** post-route OpenSTA, 20 ns clock, three corners; separately **klt**/OpenSTA (`klt sta`, netlist estimate) at the three macro-characterized corners | n/a | The LibreLane post-route numbers are the timing of record. The klt leg is a second, independent number at an earlier geometry stage (pre-CTS, pre-route, ideal clock, no hold repair): setup closes at 20 ns, hold fails at all three corners ([record](../../verification/records/sta-corner-sweep/records/20261120-031100-51b7eac.md)). The two flows disagree on hold; recorded as a finding, never merged (section 3.6). |
+| **STA** | **LibreLane** post-route OpenSTA, 20 ns clock, three corners; separately **klt**/OpenSTA (`klt sta`, def mode over the flow-of-record routed DEF + its own extracted SPEF) at the three macro-characterized corners | n/a | The LibreLane post-route numbers are the timing of record. The klt leg is a second, independent number on the same post-route geometry (propagated clock, complete SDC-derived boundary constraints): setup and hold both close at 20 ns at all three corners ([record](../../verification/records/sta-corner-sweep/records/20261121-021116-a9c989e.md)). A residual numeric offset vs LibreLane (klt the more optimistic) is the SDC's derates/clock-transition the request schema cannot express; recorded as a finding, never merged (section 3.6). |
 | **Physical signoff** | The Tiny Tapeout `gds`/`precheck` workflow (LibreLane); klt DRC/extract/LVS as a second opinion | n/a | See section 6. |
 | **Synthesis area** | **klt/Yosys** flow (`synthesis-baseline`) and, separately, LibreLane's own synthesis | n/a | Two flows, two numbers, never merged. |
 
@@ -186,7 +186,7 @@ cited gate-level records and the runner's `NETLIST` default
 | 20 ns (50 MHz) closes at all three corners, 0 setup and 0 hold violations. Worst setup +5.785 ns (`nom_slow_1p08V_125C`), worst hold +0.0830 ns (`nom_fast_1p32V_m40C`). Max-slew and max-cap violations: 0 at every corner. | **LibreLane**, post-route OpenSTA | [librelane-corner-timing 20261011-144900](../../verification/records/librelane-corner-timing/records/20261011-144900-e5a0bae.md) |
 | Top: 2,526 instances, 35,224.3836 um^2 | **klt/Yosys** synthesis (typ corner deck, 20 ns recipe) | [synthesis-baseline 20261027-190001](../../verification/records/synthesis-baseline/records/20261027-190001-1ec5186.md) |
 | Placed standard-cell area 46,047.7 um^2 (3,414 instances); LibreLane's own synthesis step reports 2,586 cells, 35,897.26 um^2 | **LibreLane** | the corner-timing record above |
-| klt STA over the three macro-characterized corners (netlist estimate, no placement/CTS/hold repair) | klt | [sta-corner-sweep 20261120-031100](../../verification/records/sta-corner-sweep/records/20261120-031100-51b7eac.md): setup at 20 ns closes at all three (worst +2.867 ns); **hold fails** at all three (worst -0.2266 ns, 23 endpoints each). Produced by the fleet klt `0.9.2` over IHP-Open-PDK `f7bca326`; every figure byte-identical to the klt `0.8.1.dev146` record it supersedes. LibreLane closes hold after routing. |
+| klt STA over the three macro-characterized corners (def mode over the flow-of-record routed DEF + its own extracted SPEF, propagated clock, complete SDC-derived constraints) | klt | [sta-corner-sweep 20261121-021116](../../verification/records/sta-corner-sweep/records/20261121-021116-a9c989e.md): setup and hold both close at 20 ns at all three — worst setup +6.52121 ns, worst hold +0.60123 ns (`slow_1p08V_125C`) / +0.10292 ns worst hold at fast; 0 setup and 0 hold violating endpoints at each. Produced by the fleet klt `0.9.2` over IHP-Open-PDK `f7bca326` on gds run 44797672107; supersedes the netlist-estimate record whose pre-CTS hold failed at all three (worst -0.2266 ns) — LibreLane and klt now agree on the verdict, with a residual offset from the SDC derates klt cannot express (klayout-tools #7025). |
 
 The two area numbers come from different synthesis tools and are reported side
 by side; a mismatch is a finding, not a figure to choose between.
@@ -319,14 +319,20 @@ and the header of `flow/run-post-layout-sdf.sh`:
   session (DR 0009's recorded limit on independence); no independent human
   engineering review has taken place.
 - The macro-backed klt die-area run is outstanding (#389). For STA, klt (OpenSTA)
-  `0.9.2` (the fleet version, re-minted by issue #394 over the klt
-  `0.8.1.dev146` record with every figure byte-identical) produced a pre-CTS,
-  pre-route netlist estimate. Setup closes at 20 ns and hold fails at all three
-  macro-characterized corners. The run stamps the PDK commit (`f7bca326`,
-  read from the install's `.pdk-store.json` because `klt pdk find` prints no
-  version for a bundle-store install).
-  LibreLane closes hold after routing and supplies the timing of record. Section 3.6
-  records the disagreement. [klt STA record](../../verification/records/sta-corner-sweep/records/20261120-031100-51b7eac.md)
+  `0.9.2` (the fleet version) has measured the design both as a pre-CTS,
+  pre-route netlist estimate (hold failing at all three macro-characterized
+  corners; re-minted by issue #394 with every figure byte-identical) and,
+  since issue #522, post-route: `klt sta` def mode over the flow-of-record
+  routed DEF with the run's own extracted SPEF, a propagated clock and the
+  run's own final-SDC boundary constraints. Setup and hold both close at
+  20 ns at all three macro-characterized corners. The run stamps the PDK
+  commit (`f7bca326`, read from the install's `.pdk-store.json` because
+  `klt pdk find` prints no version for a bundle-store install).
+  LibreLane supplies the timing of record; the two flows now agree on the
+  verdict, and section 3.6 records the residual numeric offset (the SDC
+  derates the klt request schema cannot express, klayout-tools #7025, closed
+  as a duplicate of the open #7014/#7015) rather
+  than a hold disagreement. [klt STA record](../../verification/records/sta-corner-sweep/records/20261121-021116-a9c989e.md)
 
 ## Spec grades are unchanged
 

@@ -58,11 +58,15 @@ reports die area 131,620 µm² and passing `gds`, `precheck`, `gl_test`, and
 at the 20 ns (50 MHz) constraint; the remaining timing/specification gaps are
 tracked in [`spec/gap-to-submission.md`](spec/gap-to-submission.md).
 
-The November 20 klt STA run used klayout-tools 0.9.2 and IHP-Open-PDK
-`f7bca326`. With an ideal clock on the pre-route netlist, setup meets 20 ns
-at all three macro-characterized corners. Hold fails at all three. LibreLane
-provides the post-route timing of record. The [STA record](verification/records/sta-corner-sweep/records/20261120-031100-51b7eac.md)
-compares the two measurements. Issue #389 (macro-backed klt place-and-route) is closed; its
+The klt STA leg uses klayout-tools 0.9.2 and IHP-Open-PDK
+`f7bca326`. Its November 20 run was a pre-route netlist estimate (ideal
+clock): setup met 20 ns at all three macro-characterized corners and hold
+failed at all three. Since November 21 (issue #522) the leg times the
+flow-of-record post-route geometry (`klt sta` def mode over the LibreLane
+routed DEF with the run's own extracted SPEF and final SDC): setup and hold
+both meet 20 ns at all three corners. LibreLane remains the post-route
+timing of record; the [STA record](verification/records/sta-corner-sweep/records/20261121-021116-a9c989e.md)
+keeps the two flows' figures separately labelled. Issue #389 (macro-backed klt place-and-route) is closed; its
 [die-area record](verification/records/die-area-baseline/records/20261120-021531-bbbae57.md)
 holds the first measured die area.
 Evidence from the two flows is recorded separately under
