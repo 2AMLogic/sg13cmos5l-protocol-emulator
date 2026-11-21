@@ -1109,7 +1109,7 @@ instruction and the 16-opcode table is exactly full.
 
 ## DALI lighting control
 
-The [222-word image](build/dali_master.cycles.txt) sends direct arc power
+The [226-word image](build/dali_master.cycles.txt) sends direct arc power
 `0x54` to short address zero (`0x0054`), then repeats QUERY ACTUAL LEVEL
 (`0x01A0`). Each valid eight-bit answer appears on `uo_out[7:0]` after its
 stop bits. Until the first answer RESULT is zero. An early, malformed or
@@ -1149,7 +1149,13 @@ The pad bench shifts a single payload boundary by 8,000 cycles in each
 polarity, keeping its neighboring mid-bit edges on time. RESULT holds
 `0x54` through those replies, an early boundary and a late mid-bit edge,
 then updates to `0xA7` on a valid reply. The bench also covers a low final
-stop half, a shortened start, an early reply and silence. Its TX
+stop half, a shortened start, an early reply and silence.
+The receiver's lower bound on the start low and on the final zero's low
+half is tight to the 18,940-cycle minimum. Its last guard poll lands
+18,660–18,910 cycles after the fall on the start path and 18,816–18,859 on
+the final-zero path. The bench shortens each of those two lows to 18,600
+cycles at start-poll offsets of 0, 75, 150 and 225 cycles. RESULT holds in
+all eight runs. Valid 18,940-cycle halves still decode at the same offsets. Its TX
 negative control shortens the first half to 13,232 cycles. Reproduce with
 `python3 verification/test_dali_model.py` and
 `klt functional-verification verification/request-firmware-dali.json --format json`

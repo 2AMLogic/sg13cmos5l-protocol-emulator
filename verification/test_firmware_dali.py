@@ -22,6 +22,9 @@ IMAGE = ROOT / "firmware/build/dali_master.hex"
 TX_BIT, RX_BIT = 0, 1
 PERIOD_NS = 20  # target-spec row 4 (unconfirmed)
 HALF = round(TE)
+SHORT_LOW = 18_600  # observable low pulse below ceil(TE_MIN) = 18,940
+# Core-cycle offsets that walk the 250-cycle start poll through its phases.
+PHASES = (0, 75, 150, 225)
 
 
 def cycle():
@@ -78,6 +81,12 @@ class Gear:
         durations = [half] * len(levels)
         if bad == "short":
             durations[0] = half // 3
+        if bad == "short_start":
+            durations[0] = SHORT_LOW  # start low, 340 cycles under the minimum
+        if bad == "short_final":
+            final = 17  # last data cell, before the four idle stop halves
+            assert levels[final] == 0 and levels[final + 1:] == [1] * 4
+            durations[final] = SHORT_LOW
         shifts = {"late_boundary": (6, 8_000), "early_boundary": (6, -8_000),
                   "late_mid": (7, 3_000)}
         if bad in shifts:
@@ -114,7 +123,7 @@ async def transactions(dut):
     dut._log.info("forward stop to next start: %d cycles", start - stop)
 
     last = 0
-    for gap, half, reply, bad in (
+    for gap, half, reply, bad, *rest in (
         (22, floor(TE_MAX), 0x81, None),
         (9, HALF, 0x3C, "stop"), (10, HALF, 0xF0, "short"),
         (5, HALF, 0xEF, "early"), (None, HALF, 0, "missing"),
@@ -122,9 +131,15 @@ async def transactions(dut):
         (12, HALF, 0x81, "late_boundary"), (12, HALF, 0x7E, "late_boundary"),
         (12, HALF, 0x81, "early_boundary"), (12, HALF, 0x81, "late_mid"),
         (12, HALF, 0xA7, None),
+        *[(12, HALF, 0x82, "short_final", ph) for ph in PHASES],
+        *[(12, HALF, 0x95, "short_start", ph) for ph in PHASES],
+        *[(12, ceil(TE_MIN), 0x82, None, ph) for ph in PHASES],
+        (12, ceil(TE_MIN), 0x95, None, 150),
+        (12, HALF, 0xA7, None),
     ):
         # Watch concurrently even during the reply. An early TX falling edge
         # must be timestamped where it occurred, not mistaken for a later frame.
+        phase = rest[0] if rest else 0
         following = cocotb.start_soon(gear.forward(0x01A0))
         if gap is not None:
             # Idle through both stop bits. Also watch RESULT until the gear
@@ -132,8 +147,8 @@ async def transactions(dut):
             await delay(round(4 * TE))
             assert int(dut.uio_out.value) == 1 << TX_BIT
             offset = (floor if gap == 22 else ceil)((4 + gap) * TE)
-            await delay(offset - round(4 * TE))
-            assert cycle() - query_stop == offset
+            await delay(offset - round(4 * TE) + phase)
+            assert cycle() - query_stop == offset + phase
             await gear.reply(reply, half, bad, last)
             end = cycle()
         start, next_stop = await following
@@ -149,8 +164,8 @@ async def transactions(dut):
                 dut._log.info("no reply: next start %d cycles after stop begins", start - query_stop)
                 assert start - query_stop <= round(26 * TE) + 500, "missed timeout deadline"
         assert int(dut.uo_out.value) == last, f"{bad or 'valid'} reply: RESULT"
-        if bad in ("late_boundary", "early_boundary", "late_mid"):
-            dut._log.info("Rejected %s on %02x, RESULT held %02x", bad, reply, last)
+        if bad in ("late_boundary", "early_boundary", "late_mid", "short_start", "short_final"):
+            dut._log.info("Rejected %s on %02x at phase %d, RESULT held %02x", bad, reply, phase, last)
         query_stop = next_stop
     gear.pads.assert_no_contention()
     assert gear.pads.oe_seen == gear.pads.drove_high == gear.pads.drove_low == 1 << TX_BIT

@@ -117,6 +117,9 @@ window_poll:
 start_low:
         WCTL  PM_ADDR, R1      ; leading one shifts out after eight data bits
         LDI   R2, 74           ; start detection can lag by one 250-cycle poll
+        WAIT  159              ; last guard poll lands 18,660-18,910 cycles after
+                               ; the fall: a 18,600 pulse is always caught, an
+                               ; 18,940 (minimum) one never
 low_guard:
         WAIT  243
         IN    R3, UIO_IN
@@ -218,7 +221,7 @@ mid_edge:
         MOV   R3, R0
         AND   R3, R1
         LDI   R2, 74
-        BZ    low_guard        ; final zero: stop must rise after one half-bit
+        BZ    final_low        ; final zero: stop must rise after one half-bit
 
 ; A last one has no visible stop edge. Check that final high half as well.
         LDI   R2, 93
@@ -276,3 +279,11 @@ idle_poll:
         SUB   R0, R1
         BNZ   idle_block
         JMP   query
+
+; Final zero: the fall was seen by a 24- or 34-cycle poll, so the last guard
+; poll lands 18,816-18,859 cycles after it. A 18,600 stop-side low is always
+; caught and the 18,940 minimum never is.
+final_low:
+        WAIT  255
+        WAIT  42
+        JMP   low_guard
