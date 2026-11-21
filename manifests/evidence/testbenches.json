@@ -3,14 +3,14 @@
   "kind": "generic",
   "status": "pass",
   "t1_item": 9,
-  "summary": "T1 item 9 (Testbenches shipped): 99/99 attestation checks passed (klt signoff --attest)",
+  "summary": "T1 item 9 (Testbenches shipped): 100/100 attestation checks passed (klt signoff --attest)",
   "source": "manifests/attest/item9.json",
   "attestation": {
     "producer": "klt signoff --attest",
     "inventory_schema_version": 1,
     "hash_algorithm": "sha256-raw-bytes",
-    "check_count": 99,
-    "passed_count": 99,
+    "check_count": 100,
+    "passed_count": 100,
     "checks": [
       {
         "check": "present",
@@ -24,14 +24,14 @@
         "role": "testbench",
         "path": "flow/erc-librelane-gds.json",
         "passed": true,
-        "content_hash": "sha256:62c5b36be58a52cb3172851ba4180a3a6be6c57efa467109ca69925dbbe3133a"
+        "content_hash": "sha256:5b6ec2c6b5a150742a3bbdc60768e9ee28f4a6453c9d8fb7e6b518f553496a1e"
       },
       {
         "check": "present",
         "role": "testbench",
         "path": "flow/gen-erc-librelane-gds-spec.py",
         "passed": true,
-        "content_hash": "sha256:b5fe0be925d0f29a5693137f902e28f111d4504accb030fd65f4f1d51d6f7020"
+        "content_hash": "sha256:06596bae19d270d9f935448bf0fe9210e314b8f3f578532c07f593f25d831892"
       },
       {
         "check": "present",
@@ -60,6 +60,13 @@
         "path": "flow/run-post-layout-sdf.sh",
         "passed": true,
         "content_hash": "sha256:8c3790edf3477e25284f77dd5fabbfc2cdfb1a78c18e5309454f15aa681bb9b7"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "flow/run-power-par.sh",
+        "passed": true,
+        "content_hash": "sha256:f5c3f365bc18b54d81641abcc144bcc0c8d5f310bf43161f02a68dbcf7b3106d"
       },
       {
         "check": "present",
@@ -728,7 +735,7 @@
         "path": "manifests/attest/item9.json",
         "scope": "repo"
       },
-      "content_hash": "sha256:d0e0ec100fce5dce1bb1838b2595c7eeed134082e174b26fe44ec577b738e3f9"
+      "content_hash": "sha256:829ff1a44de2c93ddc899fd40d7dd2fda79d876f161165c4df650f92dc0edd17"
     }
   }
 }

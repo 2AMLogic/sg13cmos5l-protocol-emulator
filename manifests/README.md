@@ -773,6 +773,49 @@ capture, PVT corner sweeps, or Monte Carlo.
   `klt 0.8.0` — `klt-pin: historical` on current `main`; the spec file was
   the only hash-bound straggler.
 
+- **2026-11-21 (issue #523): T1 item 11's three parts, state of. Append-only;
+  the bullets above are the earlier states.** klayout-tools#2635 (no way to
+  declare a hard macro) and #4193 (no partial item-11 citation) are both
+  CLOSED, and the paragraph above saying the klt flow "cannot place this
+  design" is history: `die-area-baseline` `20261120-021530-bbbae57` placed
+  both tops through `request.macros`, and this change adds the power leg.
+  **Part 1 (ERC supply) exists and was re-minted**: `librelane-erc`
+  `20261121-002540-47e264ebc` supersedes `20261027-190031-1ec5186` with
+  substance unchanged — the re-mint carries two mechanical changes, the
+  spec stackup names renamed to the LEF spelling (`Metal1`..`Metal4`, so a
+  `power.straps[].layer` matches by exact string the way item 11's grader
+  requires) and a new `--deck sg13cmos5l` on the erc command (a deckless
+  klt 0.9.2 run discloses the substrate-path supply short as
+  `substrate_isolation_undecidable`, klayout-tools#5346, which signoff
+  gates item 11 on; with the deck the substrate pass evaluates — this GDS
+  draws no `nbulay` 32/0, so the substrate is shared and provably
+  un-isolated). **Part 2 (P&R power grid) exists**: `power-par-pdn`
+  `20261121-002216-47e264ebc` is a `klt place-and-route` run of the
+  macro-backed top with a `request.power` block — `power.pdn: true`, straps
+  Metal1 (followpin rail) + Metal4, `power.placed.status: "complete"` with
+  `missing: []` (no warnings), both strap layers covered by the cited ERC
+  spec's stackup. **Part 2's tap-cell statement is the one open gap**: the
+  response renders `tapcell_master: null` with `tapless: false` —
+  `sg13cmos5l_stdcell` ships no tap/endcap master (its own PDK librelane
+  config says so) but is not in klt's `_NO_TAPCELL_LIBRARIES` allowlist,
+  and the request-side `request.library.tapcell: null` declaration does
+  not set `tapless`; filed as klayout-tools#6993. **Part 3 (LVS
+  `power_connectivity.status: "match"`) still waits on #329**, unchanged.
+  **The manifest's item 11 now cites parts 1 and 2** (the two-part
+  evidence list), because the fleet grader renders that partial citation
+  `unmet` / `power_delivery_parts_missing` with `missing_parts: ["lvs"]`
+  (klayout-tools#4193, in klt since 0.9.0) — no longer `wrong_kind`, so
+  the citation states exactly what exists and what is missing; verified by
+  render before committing. `t1_met_count` is unchanged (5): the item is
+  `unmet` either way, and #350 owns the final compound citation once #329
+  lands and #6993 resolves the tap-cell statement. The round superseding
+  the staled `20261120-164259-6fb3838` head is `signoff-baseline
+  20261121-010127-b6c83b033`, minted in the same change; items 9 and 10 were
+  re-attested first (`--skip-local-only`, same checks and outcomes) because
+  item 9's inventory gained `flow/run-power-par.sh` and the
+  `librelane-erc` cold-start row gained `--deck`, and item 10 pins
+  `manifests/evidence/testbenches.txt`.
+
 - **Every citation pins a `content_hash`**, and what it is the hash of
   depends on the cited envelope (clarified 2026-10-10, issue #168; the
   manifests on `main` have always followed this, the sentence here did

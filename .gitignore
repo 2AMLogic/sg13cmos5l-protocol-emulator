@@ -24,6 +24,10 @@ flow/sta-post-route-sweep-results.json
 # docs, frozen netlists, and the summary (issue #21)
 flow/par-scratch/
 flow/die-area-par-results.json
+# `klt place-and-route` power-PDN scratch: probe/full requests, responses,
+# and the summary (issue #523; the die-area runner above stays untouched)
+flow/power-par-scratch/
+flow/power-par-results.json
 # `klt functional-verification` post-route SDF sweep scratch: downloaded
 # gds-workflow artifacts, frozen netlist/SDF staging, per-corner request
 # dirs, and the sweep summary (issue #26)

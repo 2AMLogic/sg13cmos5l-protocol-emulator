@@ -20,7 +20,13 @@ import sys
 import klayout.db as db
 
 TOP = "tt_um_2amlogic_protocol_emulator"
-METALS = [("metal1", 8), ("metal2", 10), ("metal3", 30), ("metal4", 50)]
+# Stackup names use the LEF routing-layer spelling ("Metal1", not
+# "metal1"): T1 item 11's grader covers every `power.straps[].layer` a
+# `klt place-and-route` response reports against this spec's stackup by
+# exact string match on each entry's `name`/`layer`, and OpenROAD names
+# IHP's routing layers with the capital M (issue #523). The names are
+# otherwise internal cross-references (`vias[].between`, `ties[].connect_to`).
+METALS = [("Metal1", 8), ("Metal2", 10), ("Metal3", 30), ("Metal4", 50)]
 
 
 def boxes(region):
@@ -51,10 +57,10 @@ def main(gds, out):
         "stackup": [{"name": "gatpoly", "layer": "5/0", "role": "gate", "active_layer": "1/0"}]
         + [{"name": n, "layer": f"{l}/0", "label_layer": f"{l}/25"} for n, l in METALS],
         "vias": [
-            {"name": "cont", "layer": "6/0", "between": ["gatpoly", "metal1"]},
-            {"name": "via1", "layer": "19/0", "between": ["metal1", "metal2"]},
-            {"name": "via2", "layer": "29/0", "between": ["metal2", "metal3"]},
-            {"name": "via3", "layer": "49/0", "between": ["metal3", "metal4"]},
+            {"name": "cont", "layer": "6/0", "between": ["gatpoly", "Metal1"]},
+            {"name": "via1", "layer": "19/0", "between": ["Metal1", "Metal2"]},
+            {"name": "via2", "layer": "29/0", "between": ["Metal2", "Metal3"]},
+            {"name": "via3", "layer": "49/0", "between": ["Metal3", "Metal4"]},
         ],
         "nets": [
             {"name": "VPWR", "kind": "supply"},
@@ -70,9 +76,9 @@ def main(gds, out):
         ],
         "ties": [
             {"name": "nwell_tie", "well_layer": "31/0", "tap_layer": "1/0",
-             "tap_boxes": boxes(ntap), "connect_to": "metal1", "net": "VPWR"},
+             "tap_boxes": boxes(ntap), "connect_to": "Metal1", "net": "VPWR"},
             {"name": "substrate_tie", "well_layer": None, "well_boxes": boxes(substrate),
-             "tap_layer": "1/0", "tap_requires": ["14/0"], "connect_to": "metal1",
+             "tap_layer": "1/0", "tap_requires": ["14/0"], "connect_to": "Metal1",
              "net": "VGND"},
         ],
     }

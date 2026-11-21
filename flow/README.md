@@ -9,12 +9,12 @@ recorded rather than silently resolved.
 
 ## Contents
 
-- `_klt.sh` — sourced-not-executed helper shared by the three bash runners
+- `_klt.sh` — sourced-not-executed helper shared by the bash runners
   below (`run-sta-corner-sweep.sh`, `run-die-area-par.sh`,
-  `run-post-layout-sdf.sh`): `klt_resolve`, `klt_require_verbs`,
-  `klt_export_pdk_root`, and `klt_response_path` (the `{path, scope}` /
-  `2AMLogic/klayout-tools#2073` unwrap, named in exactly this one place —
-  issue #47).
+  `run-power-par.sh`, `run-post-layout-sdf.sh`): `klt_resolve`,
+  `klt_require_verbs`, `klt_export_pdk_root`, and `klt_response_path`
+  (the `{path, scope}` / `2AMLogic/klayout-tools#2073` unwrap, named in
+  exactly this one place — issue #47).
 - `synthesize-protocol-emulator.json` — a `klt.synthesize.request/1` recipe
   synthesizing `src/tt_um_2amlogic_protocol_emulator.v` against
   `sg13cmos5l_stdcell` via Yosys.
@@ -82,6 +82,27 @@ recorded rather than silently resolved.
   table entry in klt at this pin (a klayout-tools capability gap, recorded
   in the die-area record — not worked around). Same environment
   requirements as the corner sweep (`PDK_ROOT`, `KLT_BIN`,
+  docker-wrapped `openroad`).
+- `run-power-par.sh` — the T1 item-11 part-2 power-PDN leg (issue #523):
+  a separate `klt place-and-route` run of the macro-backed top
+  (`tt_um_2amlogic_protocol_emulator`) carrying a `request.power` block,
+  so the response states the grid the klt flow builds (`power.pdn`, the
+  tap-cell statement, every `straps[].layer`, the DEF-measured
+  `power.placed` audit). `run-die-area-par.sh` above is deliberately
+  untouched — its byte-stable die-area numbers are the measurement of
+  record — and this runner's floorplan/synthesis inputs are a copy of
+  that runner's for the top only. Two steps: a probe (the same request
+  minus `request.library`, rejected up front with the missing-input
+  diagnostic — `sg13cmos5l_stdcell` has no built-in klt power table) and
+  the full run (`power` + `library`: explicit Metal1 followpin rail +
+  Metal4 straps mirroring `src/pdn_cfg.tcl`/`src/config.json`, nothing
+  above Metal4; `power_pins` for the cells' VDD/VSS and the macro's
+  VDD!/VDDARRAY!/VSS!; `tapcell: null` per the PDK's own "no endcap and
+  welltie cells in ihp-sg13cmos5l"; PDK `FILL_CELLS` fillers, inert at
+  `target_stage: "place"`). The summary cross-checks every strap layer
+  against the ERC spec's stackup (`flow/erc-librelane-gds.json`, whose
+  stackup names use the LEF spelling for exactly this comparison). Same
+  environment requirements as the die-area runner (`PDK_ROOT`, `KLT_BIN`,
   docker-wrapped `openroad`).
 - `run-post-layout-sdf.sh` — the T1 item-7 post-route SDF regression
   runner (issue #26): downloads the `gds` workflow's `tt_submission` +
