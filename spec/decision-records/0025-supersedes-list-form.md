@@ -85,9 +85,12 @@ interchangeable by the fingerprint’s definition. The operator minted the
 successor
 [`20261120-100345-e66478e`](../../verification/records/signoff-baseline/records/20261120-100345-e66478e.md)
 by hand with the tool’s renderer, listing `5050f25` among its 2,761
-superseded ids. When #477 merged, the same wording difference made
-`--collapse signoff-baseline` refuse the 5,521 stale records, and the Doctor
-wrote [`20261120-164259-6fb3838`](../../verification/records/signoff-baseline/records/20261120-164259-6fb3838.md)
-from a fresh klt 0.9.2 run on the merged revision — the baseline
-`docs/ROADMAP.md` and `docs/submission/verification.md` cite. Its Result
-records 5 of 11 items met, with item 6 not applicable.
+superseded ids.
+
+PR #477 took in `origin/main` at `6fb3838e7`. A fresh klt 0.9.2 run
+graded that revision and found 5 of 11 items met, with item 6 not applicable.
+The same Claim and Result wording difference made `--collapse signoff-baseline`
+refuse the 5,521 stale records, so the Doctor wrote
+[`20261120-164259-6fb3838`](../../verification/records/signoff-baseline/records/20261120-164259-6fb3838.md)
+from that run. When #477 landed on `main` at `a9c989e05`, both
+`docs/ROADMAP.md` and `docs/submission/verification.md` cited this baseline.
