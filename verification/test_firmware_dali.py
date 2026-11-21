@@ -8,7 +8,7 @@ from cocotb.triggers import Timer, ValueChange, with_timeout
 from cocotb.utils import get_sim_time
 
 from firmware_artifacts import parse_hex_image
-from reference_models.dali import TE, cells, decode_forward, forward_run
+from reference_models.dali import TE, TE_MAX, TE_MIN, cells, decode_forward, forward_run
 from repo_root import find_repo_root
 from test_protocol_emulator import load_program
 from uio_pads import UioPads
@@ -74,10 +74,22 @@ class Gear:
         return start, now
 
     async def reply(self, word, half, bad, last):
-        for i, level in enumerate(cells(word, 8)):
+        levels = cells(word, 8)
+        durations = [half] * len(levels)
+        if bad == "short":
+            durations[0] = half // 3
+        shifts = {"late_boundary": (6, 8_000), "early_boundary": (6, -8_000),
+                  "late_mid": (7, 3_000)}
+        if bad in shifts:
+            # Move one visible edge without moving its neighbors or either stop.
+            edge, offset = shifts[bad]
+            assert levels[edge - 1] != levels[edge]
+            durations[edge - 1] += offset
+            durations[edge] -= offset
+        for i, (level, duration) in enumerate(zip(levels, durations)):
             assert int(self.dut.uo_out.value) == last, "published before backward stop completed"
             self.drive(0 if bad == "stop" and i == 21 else level)
-            await delay(half // 3 if bad == "short" and i == 0 else half)
+            await delay(duration)
         self.drive(1)
 
 
@@ -103,10 +115,13 @@ async def transactions(dut):
 
     last = 0
     for gap, half, reply, bad in (
-        (7, 19_000, 0x54, None), (22, 23_100, 0x81, None),
+        (22, floor(TE_MAX), 0x81, None),
         (9, HALF, 0x3C, "stop"), (10, HALF, 0xF0, "short"),
-        (5, HALF, 0xEF, "early"),
-        (None, HALF, 0, "missing"), (12, HALF, 0xA7, None),
+        (5, HALF, 0xEF, "early"), (None, HALF, 0, "missing"),
+        (7, ceil(TE_MIN), 0x54, None),
+        (12, HALF, 0x81, "late_boundary"), (12, HALF, 0x7E, "late_boundary"),
+        (12, HALF, 0x81, "early_boundary"), (12, HALF, 0x81, "late_mid"),
+        (12, HALF, 0xA7, None),
     ):
         # Watch concurrently even during the reply. An early TX falling edge
         # must be timestamped where it occurred, not mistaken for a later frame.
@@ -134,6 +149,8 @@ async def transactions(dut):
                 dut._log.info("no reply: next start %d cycles after stop begins", start - query_stop)
                 assert start - query_stop <= round(26 * TE) + 500, "missed timeout deadline"
         assert int(dut.uo_out.value) == last, f"{bad or 'valid'} reply: RESULT"
+        if bad in ("late_boundary", "early_boundary", "late_mid"):
+            dut._log.info("Rejected %s on %02x, RESULT held %02x", bad, reply, last)
         query_stop = next_stop
     gear.pads.assert_no_contention()
     assert gear.pads.oe_seen == gear.pads.drove_high == gear.pads.drove_low == 1 << TX_BIT

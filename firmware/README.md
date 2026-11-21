@@ -1109,7 +1109,7 @@ instruction and the 16-opcode table is exactly full.
 
 ## DALI lighting control
 
-The [210-word image](build/dali_master.cycles.txt) sends direct arc power
+The [222-word image](build/dali_master.cycles.txt) sends direct arc power
 `0x54` to short address zero (`0x0054`), then repeats QUERY ACTUAL LEVEL
 (`0x01A0`). Each valid eight-bit answer appears on `uo_out[7:0]` after its
 stop bits. Until the first answer RESULT is zero. An early, malformed or
@@ -1119,9 +1119,12 @@ idle, single-controller bus at startup. [Assembly source](asm/dali_master.asm)
 Manchester coding is bit-banged on the frozen ISA. Each bit contains two
 opposite levels. A rising mid-bit edge encodes one, a falling edge zero.
 The start bit is one, data is MSB first, and the two stop bits are high
-throughout. The receive loop re-synchronizes to each mid-bit edge, samples
-the first half of the next bit, and waits for its complement within a bounded
-window. The only control-space registers used are `UIO_DIR`, `UIO_OD` and
+throughout. The receiver times each visible edge. After a mid-bit edge it
+accepts a boundary one half-bit later or the next mid-bit edge two halves
+later. After a boundary it requires a mid-bit edge one half-bit later.
+It polls every 24 cycles in the one-half-bit window and every 34 cycles in
+the two-half-bit window. These intervals set the sampling resolution.
+The only control-space registers used are `UIO_DIR`, `UIO_OD` and
 `PM_ADDR` (one scratch byte). No Manchester primitive is used.
 
 ### Timing on the RTL
@@ -1138,12 +1141,15 @@ from the end of both stop bits. [Microchip AN1465, pp. 4–6, figures 7–10](ht
 | Forward isolated half-bit | 18,940–23,148 | 20,823–20,837 |
 | Forward two adjacent equal halves | 37,879–46,296 | 41,666–41,669 |
 | Forward stops (4 Te) + gap to next forward (≥22 Te) | ≥541,667 nominal | 541,878 after direct arc, 541,796 on no reply |
-| Query EOF to backward start | 7–22 Te | 145,833 and 458,333 at the two endpoints, rounded to a clock |
-| Backward stops | 4 sender Te, idle high | 76,000 / 83,332 / 92,400 for the fast / nominal / slow gear |
-| Backward EOF to next forward | ≥458,334 nominal | 460,783–476,963 for the three valid replies |
+| Query EOF to backward start | 7–22 Te | 145,834 and 458,333 at the two endpoints, rounded to a clock |
+| Backward stops | 4 sender Te, idle high | 75,760 / 83,332 / 92,592 for the fast / nominal / slow gear |
+| Backward EOF to next forward | ≥458,334 nominal | 460,321–477,031 for the three valid replies |
 
-The pad bench also drives a low final stop half, a shortened start and an
-early reply, then verifies recovery with a different valid byte. Its TX
+The pad bench shifts a single payload boundary by 8,000 cycles in each
+polarity, keeping its neighboring mid-bit edges on time. RESULT holds
+`0x54` through those replies, an early boundary and a late mid-bit edge,
+then updates to `0xA7` on a valid reply. The bench also covers a low final
+stop half, a shortened start, an early reply and silence. Its TX
 negative control shortens the first half to 13,232 cycles. Reproduce with
 `python3 verification/test_dali_model.py` and
 `klt functional-verification verification/request-firmware-dali.json --format json`

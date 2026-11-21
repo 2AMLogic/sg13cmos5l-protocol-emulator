@@ -2,7 +2,7 @@
 ; once, then repeatedly QUERY ACTUAL LEVEL. Only valid replies update RESULT.
 ; Click interface is non-inverting: low on TX sinks the bus, high releases it.
 ; R1 = 1 throughout (TX high / countdown step). PM_ADDR holds the second
-; forward byte, then the RX bit count. No program-memory data access.
+; forward byte, then the RX shift register. No program-memory data access.
         LDI   R1, 1
         OUT   UIO_OUT, R1
         LDI   R3, 0
@@ -115,10 +115,8 @@ window_poll:
         BNZ   query            ; timeout: leave RESULT untouched
 
 start_low:
-        LDI   R0, 0
-        LDI   R3, 8
-        WCTL  PM_ADDR, R3
-        LDI   R2, 72           ; reject a runt start or premature stop transition
+        WCTL  PM_ADDR, R1      ; leading one shifts out after eight data bits
+        LDI   R2, 74           ; start detection can lag by one 250-cycle poll
 low_guard:
         WAIT  243
         IN    R3, UIO_IN
@@ -127,9 +125,9 @@ low_guard:
         BNZ   recover
         SUB   R2, R1
         BNZ   low_guard
-        LDI   R2, 23
+        LDI   R2, 195          ; sample every 24 cycles near the rising edge
 rise_poll:
-        WAIT  243
+        WAIT  17
         IN    R3, UIO_IN
         SHF   R3, RIGHT
         AND   R3, R1
@@ -141,67 +139,85 @@ rose:   RCTL  R3, PM_ADDR
         OR    R3, R3           ; zero: last zero's second half just ended
         BZ    stop_high
 
-; Synchronize each bit to the previous mid-bit edge. At 1.5 Te the next
-; first half is stable across the allowed sender rates. Expect its complement
-; near 2 Te (1.79..2.25 Te including polling quantization).
-rx_bit: LDI   R2, 121
-sample_wait:
-        WAIT  255
-        SUB   R2, R1
-        BNZ   sample_wait
+        LDI   R0, 1            ; start mid-bit rose: RX is high
+
+; R0 bit 0 is the level after the last edge. Bit 1 marks a boundary edge:
+; the next edge must then be a mid-bit one, exactly one sender half later.
+; From a mid-bit edge, either a boundary at 1 Te or a mid-bit at 2 Te is legal.
+; Compare every poll with the last level, including the forbidden intervals.
+rx_run: LDI   R2, 74           ; 74 x 255 cycles before the 1 Te window
+short_guard:
+        WAIT  246
         IN    R3, UIO_IN
         SHF   R3, RIGHT
         AND   R3, R1
-        BZ    first_low
-        LDI   R2, 24
-high_guard:
-        WAIT  243
-        IN    R3, UIO_IN
-        SHF   R3, RIGHT
-        AND   R3, R1
-        BZ    recover
-        SUB   R2, R1
-        BNZ   high_guard
-        LDI   R2, 39
-fall_poll:
-        WAIT  243
-        IN    R3, UIO_IN
-        SHF   R3, RIGHT
-        AND   R3, R1
-        BZ    got_bit
-        SUB   R2, R1
-        BNZ   fall_poll
-        JMP   recover
-first_low:
-        LDI   R2, 24
-data_low_guard:
-        WAIT  243
-        IN    R3, UIO_IN
-        SHF   R3, RIGHT
+        XOR   R3, R0
         AND   R3, R1
         BNZ   recover
         SUB   R2, R1
-        BNZ   data_low_guard
-        LDI   R2, 39
-data_rise_poll:
-        WAIT  243
+        BNZ   short_guard
+        LDI   R2, 180          ; 180 x 24: end near 23,148 cycles
+short_window:
+        WAIT  15
         IN    R3, UIO_IN
         SHF   R3, RIGHT
         AND   R3, R1
-        BNZ   got_bit
+        XOR   R3, R0
+        AND   R3, R1
+        BNZ   short_edge
         SUB   R2, R1
-        BNZ   data_rise_poll
+        BNZ   short_window
+
+        LDI   R3, 2
+        AND   R3, R0
+        BNZ   recover          ; boundary was seen, but no mid-bit edge followed
+        LDI   R2, 57           ; 57 x 256 cycles before the 2 Te window
+long_guard:
+        WAIT  248
+        IN    R3, UIO_IN
+        SHF   R3, RIGHT
+        AND   R3, R1
+        XOR   R3, R0           ; here R0 is just the previous mid-bit level
+        BNZ   recover
+        SUB   R2, R1
+        BNZ   long_guard
+        LDI   R2, 252          ; 252 x 34: end near 46,296 cycles
+long_window:
+        WAIT  26
+        IN    R3, UIO_IN
+        SHF   R3, RIGHT
+        AND   R3, R1
+        XOR   R3, R0
+        BNZ   mid_edge
+        SUB   R2, R1
+        BNZ   long_window
         JMP   recover
-got_bit:
-        SHF   R0, LEFT
-        OR    R0, R3           ; normalized second half is the data bit
+
+short_edge:
+        LDI   R3, 2
+        AND   R3, R0
+        BNZ   mid_edge         ; boundary to mid-bit: append the new level
+        LDI   R3, 3            ; mid-bit to boundary: invert level and set bit 1
+        XOR   R0, R3
+        JMP   rx_run
+
+mid_edge:
+        XOR   R0, R1
+        AND   R0, R1           ; new mid-bit level is the decoded data bit
         RCTL  R3, PM_ADDR
-        SUB   R3, R1
+        LDI   R2, 0x80
+        AND   R2, R3           ; has the leading one reached bit 7?
+        SHF   R3, LEFT
+        OR    R3, R0
         WCTL  PM_ADDR, R3
-        BNZ   rx_bit
+        OR    R2, R2
+        BZ    rx_run
+        MOV   R0, R3           ; complete byte, held until both stops pass
+        LDI   R3, 0
+        WCTL  PM_ADDR, R3      ; a final zero's stop rise goes to stop_high
         MOV   R3, R0
         AND   R3, R1
-        LDI   R2, 72
+        LDI   R2, 74
         BZ    low_guard        ; final zero: stop must rise after one half-bit
 
 ; A last one has no visible stop edge. Check that final high half as well.
