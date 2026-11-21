@@ -186,7 +186,8 @@ class ComparisonInputTests(unittest.TestCase):
         self.report.write_bytes(self.original)
         records = baseline / "records"
         records.mkdir()
-        (records / (self.record_id + ".md")).write_text(
+        self.record = records / (self.record_id + ".md")
+        self.record.write_text(
             f"- **Links**: [Rendered verdict](../artifacts/{artifact_id}/signoff-report.json)\n")
         subprocess.run(["git", "init", "-q"], cwd=self.root, check=True)
         subprocess.run(["git", "add", "."], cwd=self.root, check=True)
@@ -205,6 +206,21 @@ class ComparisonInputTests(unittest.TestCase):
                 result = self.invoke(*args)
                 self.assertEqual(result.returncode, 0, result.stderr)
                 self.assertEqual(result.stdout, path.stdout)
+
+    def test_report_link_and_legacy_directory_select_the_same_artifact_as_path(self):
+        directory = f"artifacts/{self.report.parent.name}/"
+        report_link = f"[Rendered verdict](../{directory}signoff-report.json)"
+        older_directory = f"`artifacts/{self.record_id}/`"
+        path = self.invoke("--diff-vs", self.report)
+        self.assertEqual(path.returncode, 0, path.stderr)
+        for links in [f"{report_link}\n  - See also `{directory}`.",
+                      f"{older_directory}\n  - {report_link}",
+                      f"Committed artifacts: `{directory}`"]:
+            with self.subTest(links=links):
+                self.record.write_text(f"- **Links**: {links}\n")
+                by_id = self.invoke("--diff-vs", self.record_id)
+                self.assertEqual(by_id.returncode, 0, by_id.stderr)
+                self.assertEqual(by_id.stdout, path.stdout)
 
     def test_distinct_output_receives_the_fresh_render(self):
         out = self.root / "new.json"

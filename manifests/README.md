@@ -1064,21 +1064,19 @@ issue #49's klt pin bump by the time this retirement landed, and that
 record still cited the vendored file by content hash, so it is the one this
 retirement's supersession chain must extend).
 
-**Refresh disclosure rule (issue #403).** A klt move can change the
-checklist a verdict was graded against without moving any graded field:
-`klt signoff --check` compares graded fields only, so the fleet pin's
-0.8.0 → 0.9.0 bump moved `source_doc_content_hash` and the T1 item
-3/4/5/6/8/11 `text` (and item 6's `notes`) while every graded field still
-reproduced — invisible to the `--check-latest` gate and to the 0.9.0
-record's author (the generic tool gap is
-[klayout-tools #6850](https://github.com/2AMLogic/klayout-tools/issues/6850):
-no mode asks which non-graded fields moved between two reports). From the
-next refresh on, a signoff-baseline record must **name in its movement
-list** (alongside `grading_ruleset_id` and the graded movements it already
-carries): the old and new `source_doc_content_hash` — both full hashes —
-whenever it moves, and every item whose `text` or `notes` moved, by tier
-and item id. Never transcribe that by hand — this is exactly the class of
-movement the grader will not tell you about:
+**Refresh disclosure rule (issue #403).** Across the committed 0.8.0 and
+0.9.0 reports, T1 item 7 changed from `unmet` to `met` and `t1_met_count`
+rose from 4 to 5. Both reports name the same `source_doc` path. Its
+`source_doc_content_hash` changed, as did the `text` of T1 items 3, 4, 5,
+6, 8 and 11. Only item 6 changed its `notes`.
+
+A signoff-baseline refresh record must give both full hashes whenever
+`source_doc_content_hash` changes and list every changed `text` or `notes`
+field by tier and item ID, alongside `grading_ruleset_id` and graded changes.
+The exit status of `klt signoff --check` reflects graded drift. Some grader
+versions also report checklist wording changes through `doc_drift_fields`,
+even when grades match. Generate the disclosure directly from the two
+reports with either command below. [Upstream issue #6850](https://github.com/2AMLogic/klayout-tools/issues/6850)
 
 ```bash
 scripts/signoff-report.sh --diff-vs <record-id>   # fresh render vs that

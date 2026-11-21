@@ -1,17 +1,14 @@
 #!/usr/bin/env python3
 """Non-graded-field movement comparison for `klt signoff` reports (issue #403).
 
-`klt signoff --check` compares only graded fields (item status/reason,
-citation, `t1_met_count`, ...) and excludes the build block, so a klt move
-that changes the checklist a verdict was graded against -- the tiers doc
-(`source_doc` / `source_doc_content_hash`), an item's `text`, or an item's
-`notes` -- is invisible to the drift gate: the 0.8.0 -> 0.9.0 refresh moved
-all of those while every graded field reproduced. This helper computes that
-comparison directly from two rendered reports, so a refresh author can
-disclose the movement in the signoff-baseline record (the rule is in
-manifests/README.md, "The vendored tiers doc -- provenance and refresh
-rule") instead of noticing it by hand. scripts/signoff-report.sh --diff-vs
-is the wrapper; this module is also runnable directly on two files.
+The committed 0.8.0 and 0.9.0 reports share a `source_doc` path, but the
+hash changed, T1 items 3, 4, 5, 6, 8 and 11 changed text, and only item 6
+changed notes. T1 item 7 also went from unmet to met, raising `t1_met_count`
+from 4 to 5. The exit status of `klt signoff --check` tracks graded drift.
+Some versions also report wording changes through `doc_drift_fields`.
+This helper reads the two reports directly to produce the checklist
+comparison required by manifests/README.md's refresh disclosure rule.
+Run it on two files or via scripts/signoff-report.sh --diff-vs.
 
 Only non-graded fields are compared: `source_doc`,
 `source_doc_content_hash`, per-item `text` and `notes`, and item

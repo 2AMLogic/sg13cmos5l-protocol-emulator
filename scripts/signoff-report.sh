@@ -33,8 +33,8 @@
 #      all-unmet render is the normal gap state, not an error). With
 #      --check-latest: the latest committed record also still reproduces
 #      (`klt signoff --check` reported status "match" -- the grader re-graded
-#      the manifest and found nothing outside the build-identity block
-#      moved, so the same pinned commit verifies from any provisioning
+#      the manifest and found that the graded fields matched, so the
+#      same pinned commit verifies from any provisioning
 #      route; klayout-tools #2249/#2258). A newer klt may additionally
 #      report non-graded checklist movement in the same check envelope
 #      (optional doc_drift / doc_drift_fields keys, issue #502); the runner
@@ -216,11 +216,14 @@ resolve_record_report() {
     echo "error: no signoff-baseline record for '$id'." >&2
     return 1
   fi
-  local linked report
-  linked="$(sed -nE '/^- \*\*Links\*\*:/,/^- \*\*/ {
-    s@.*artifacts/('"$id_pattern"')/(signoff-report\.json|`).*@\1@p
-  }' "$record")"
-  report="$BASELINE_DIR/artifacts/${linked:-$id}/signoff-report.json"
+  local links report artifact_id="$id" artifact_pattern="artifacts/($id_pattern)/"
+  links="$(awk '/^- \*\*/ { in_links = /^- \*\*Links\*\*:/ } in_links' "$record")"
+  # Prefer the explicit report wherever it appears in Links. Older records
+  # can name just the artifact directory in a code span.
+  if [[ "$links" =~ ${artifact_pattern}signoff-report\.json || "$links" =~ ${artifact_pattern}\` ]]; then
+    artifact_id="${BASH_REMATCH[1]}"
+  fi
+  report="$BASELINE_DIR/artifacts/$artifact_id/signoff-report.json"
   if [[ ! -f "$report" ]]; then
     echo "error: record $id has no report artifact at $report." >&2
     return 1
@@ -341,12 +344,9 @@ PYDRIFT
 fi
 
 if [[ "$DIFF_VS" -eq 1 ]]; then
-  # Non-graded movement vs a committed report (issue #403): the tiers-doc
-  # hash and item text/notes a verdict was graded against can move while
-  # every graded field reproduces, which `klt signoff --check` is
-  # structurally blind to (it compares graded fields only). The comparison
-  # is the stdout product here -- informational, not a gate: exit 0 whether
-  # fields moved or matched (see the usage block for flag interactions).
+  # Some klt versions report wording changes in doc_drift_fields. The check
+  # status depends on graded fields. --diff-vs reads both reports directly
+  # and prints checklist movement regardless of the grader version.
   if ! python3 "$SCRIPT_DIR/signoff_movement_diff.py" "$BASELINE" "$FRESH"; then
     echo "error: movement comparison against $BASELINE_LABEL could not run (see the diagnostic above)." >&2
     exit 1
