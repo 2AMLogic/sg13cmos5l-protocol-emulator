@@ -1,0 +1,214 @@
+{
+  "schema_version": 2,
+  "engine": "icarus",
+  "hdl_toplevel": "tt_um_2amlogic_protocol_emulator",
+  "testbench": "sdf_protocol_spi",
+  "status": "pass",
+  "test_count": 3,
+  "passed_count": 3,
+  "failed_count": 0,
+  "skipped_count": 0,
+  "tests": [
+    {
+      "name": "test_committed_images_are_fresh",
+      "status": "passed",
+      "sim_time_ns": 0.0,
+      "real_time_s": 0.011
+    },
+    {
+      "name": "test_all_four_modes_pass_independent_reference_model",
+      "status": "passed",
+      "sim_time_ns": 194664.0,
+      "real_time_s": 4.067
+    },
+    {
+      "name": "test_reference_model_negative_controls_still_fail",
+      "status": "passed",
+      "sim_time_ns": 0.0,
+      "real_time_s": 0.0
+    }
+  ],
+  "coverage": null,
+  "trace": null,
+  "environment": {
+    "engine": "icarus",
+    "engine_version": "13.0",
+    "tools": [],
+    "cocotb_version": "2.1.0",
+    "results_xml": {
+      "path": "flow/post-layout-sdf/protocols/nom_slow_1p08V_125C/spi/.klt/functional-verification/results_icarus.xml",
+      "scope": "repo",
+      "sha256": "sha256:013e224cf4607ddd356aff81d6399e9ca1b1acbabc70d37bd9a3f3cac8051033"
+    },
+    "test_log": {
+      "path": "flow/post-layout-sdf/protocols/nom_slow_1p08V_125C/spi/.klt/functional-verification/test_icarus.log",
+      "scope": "repo",
+      "sha256": "sha256:3ac7e82fde8be352dfa727988bc5369a33bab4c0fecf4f45cd4ffa82290af00c"
+    },
+    "build_log": {
+      "path": "flow/post-layout-sdf/protocols/nom_slow_1p08V_125C/spi/.klt/functional-verification/build_icarus.log",
+      "scope": "repo",
+      "sha256": "sha256:65ccfc91d6217b1801efd1742d2ffcd7f4cc612c8240c1cc9c8aa45e18c23a3d"
+    },
+    "random_seed": 1,
+    "source_defines": {},
+    "env": {},
+    "parameters": {},
+    "initial_state": null,
+    "sdf": {
+      "file": "<repo>/flow/post-layout-sdf/sdf/nom_slow_1p08V_125C.normalized.sdf",
+      "corner": "typ",
+      "entries": "all",
+      "annotated": true,
+      "partial": true,
+      "dropped": {
+        "iopath_cond_expression": {
+          "count": 4443,
+          "reason": "Icarus Verilog's SDF parser accepts only a bare signal or a simple equality as a conditional-path condition; an operator expression (e.g. '(COND ~CLK&~D&SETN (IOPATH ...))', OpenSTA's write_sdf shape for state-dependent arcs) is 'Invalid/malformed COND' and aborts the whole annotation. Those COND-wrapped IOPATH entries were removed before annotation and counted here, and 'arcs' names every affected cell arc. The cell's unconditional arcs are kept, but the state-dependent delay detail of the dropped arcs is NOT represented in this run. Simple 'COND D' / 'COND D==1'b1' entries are left in place",
+          "arcs": [
+            {
+              "celltype": "sg13cmos5l_a21o_1",
+              "from": "B1",
+              "to": "X"
+            },
+            {
+              "celltype": "sg13cmos5l_a21oi_1",
+              "from": "B1",
+              "to": "Y"
+            },
+            {
+              "celltype": "sg13cmos5l_a21oi_2",
+              "from": "B1",
+              "to": "Y"
+            },
+            {
+              "celltype": "sg13cmos5l_a221oi_1",
+              "from": "A1",
+              "to": "Y"
+            },
+            {
+              "celltype": "sg13cmos5l_a221oi_1",
+              "from": "A2",
+              "to": "Y"
+            },
+            {
+              "celltype": "sg13cmos5l_a221oi_1",
+              "from": "B1",
+              "to": "Y"
+            },
+            {
+              "celltype": "sg13cmos5l_a221oi_1",
+              "from": "B2",
+              "to": "Y"
+            },
+            {
+              "celltype": "sg13cmos5l_a221oi_1",
+              "from": "C1",
+              "to": "Y"
+            },
+            {
+              "celltype": "sg13cmos5l_a22oi_1",
+              "from": "A1",
+              "to": "Y"
+            },
+            {
+              "celltype": "sg13cmos5l_a22oi_1",
+              "from": "A2",
+              "to": "Y"
+            },
+            {
+              "celltype": "sg13cmos5l_a22oi_1",
+              "from": "B1",
+              "to": "Y"
+            },
+            {
+              "celltype": "sg13cmos5l_a22oi_1",
+              "from": "B2",
+              "to": "Y"
+            },
+            {
+              "celltype": "sg13cmos5l_mux2_1",
+              "from": "S",
+              "to": "X"
+            },
+            {
+              "celltype": "sg13cmos5l_mux4_1",
+              "from": "S0",
+              "to": "X"
+            },
+            {
+              "celltype": "sg13cmos5l_mux4_1",
+              "from": "S1",
+              "to": "X"
+            },
+            {
+              "celltype": "sg13cmos5l_o21ai_1",
+              "from": "B1",
+              "to": "Y"
+            },
+            {
+              "celltype": "sg13cmos5l_xnor2_1",
+              "from": "A",
+              "to": "Y"
+            },
+            {
+              "celltype": "sg13cmos5l_xnor2_1",
+              "from": "B",
+              "to": "Y"
+            },
+            {
+              "celltype": "sg13cmos5l_xor2_1",
+              "from": "A",
+              "to": "X"
+            },
+            {
+              "celltype": "sg13cmos5l_xor2_1",
+              "from": "B",
+              "to": "X"
+            }
+          ]
+        },
+        "timingcheck": {
+          "count": 263,
+          "reason": "Icarus Verilog implements SDF delay annotation (IOPATH/INTERCONNECT) but not SDF TIMINGCHECK -- every TIMINGCHECK section in the SDF is dropped, so $setup/$hold/$width checks run against the cell library's own placeholder timing, not the characterised limits in the SDF"
+        }
+      }
+    },
+    "sources": [
+      {
+        "path": "flow/post-layout-sdf/netlist/tt_um_2amlogic_protocol_emulator.sim.v",
+        "scope": "repo",
+        "sha256": "f01644919e3b83209ef51e0ee05914ce783fa7d185844ba5797b1d8ad7e047bf"
+      },
+      {
+        "path": null,
+        "scope": "external",
+        "sha256": "b0adbc84c8f78feb01c3d8d9d55e9818ee6502347d336f3a1f846e6a5d64e0a2"
+      },
+      {
+        "path": null,
+        "scope": "external",
+        "sha256": "5491a3edf7468792b5222e7abe057e0583a407c01b2086d4fd44a55b6cf88055"
+      },
+      {
+        "path": "flow/post-layout-sdf/netlist/macro-models.sim.v",
+        "scope": "repo",
+        "sha256": "ff0b95f9fd946e5e004308cd2aba0ba67453cfd595011ae290a50bdab710f8d4"
+      }
+    ]
+  },
+  "provenance": {
+    "klt_version": "0.9.3.dev2575+g6bd18bbc8637",
+    "klt_git_commit": "6bd18bbc8637f6d767b3c24e77bd5db7a39e4bbe",
+    "klt_reinstall_spec": "klayout-tools @ git+https://github.com/2AMLogic/klayout-tools@6bd18bbc8637f6d767b3c24e77bd5db7a39e4bbe",
+    "klayout_version": "0.30.12",
+    "pdk": null,
+    "deck": null,
+    "input": {
+      "role": "source",
+      "content_hash": "sha256:e9182484f3cdbc38d90436df2aee20b2e93f10dbf24211324da9bd83c3f4fd83"
+    },
+    "request_sha256": "802e8c1078ef38018a68f24e9da63ef59ae6604cc241f7de2586f414d41276b7",
+    "sdf_sha256": "f1a943dbc3921091c7decfa46b109f0f0c3087da93d1376afd5b85db81602884"
+  }
+}

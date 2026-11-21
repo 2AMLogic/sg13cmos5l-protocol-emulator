@@ -2,7 +2,7 @@
   "schema_version": 1,
   "status": "ratified",
   "source": "spec/target-spec.md",
-  "source_content_hash": "sha256:71850f2be503ebe8e9a1361bea58ac1653c3e0dd3311fc9128928fade0c5db9c",
+  "source_content_hash": "sha256:f7829e0b1287667dc7710e3109bcf62a739ce177cc806cc3f9a91cdc75c0b081",
   "note": "Machine spec companion for the T1 item 6 not_applicable citation (issue #348), summarizing spec/target-spec.md for the klt signoff grader, which reads JSON only. 'rows' lists exactly the rows the ratification act binds (DR 0004's register, DR 0009's act, PR #242): 1-12. Rows are ids only, never titles -- the grader's conservative statistical scan refuses a spec row that mentions accuracy, matching, offset, yield, sigma or Monte Carlo, and row 10 is titled 'UART bit-timing accuracy'. Rows 13 and 14 are Proposed (2026-10-09), not in DR 0004's register, and deliberately absent; when an act binds them, extend 'rows', extend spec/statistical-claims-na.json to cover them, and re-mint the signoff baseline. source_content_hash freezes the markdown this file summarizes; scripts/check_statistical_claims_na.py fails if it drifts.",
   "rows": [
     {

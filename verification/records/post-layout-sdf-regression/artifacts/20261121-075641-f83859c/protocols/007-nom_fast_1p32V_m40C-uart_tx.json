@@ -1,0 +1,44 @@
+{
+  "corner": "nom_fast_1p32V_m40C",
+  "protocol": "uart_tx",
+  "testbench_module": "sdf_protocol_uart_tx",
+  "bench_module": "test_firmware_uart",
+  "run_rc": 0,
+  "elapsed_s": 41,
+  "sdf_annotated": true,
+  "status": "pass",
+  "tests": {
+    "test_committed_image_is_fresh": "passed",
+    "test_uart_frames_pass_independent_reference_model": "passed",
+    "test_reference_model_negative_control_still_fails": "passed",
+    "test_uart_tx_bit_period_and_drift_in_time_units": "passed"
+  },
+  "pin_delay_ps": {
+    "uo_out": {
+      "count": 68,
+      "zero_delay": 0,
+      "min_delay_ps": 650,
+      "max_delay_ps": 650
+    },
+    "uio_out": {
+      "count": 0,
+      "zero_delay": 0,
+      "min_delay_ps": null,
+      "max_delay_ps": null
+    },
+    "uio_oe": {
+      "count": 0,
+      "zero_delay": 0,
+      "min_delay_ps": null,
+      "max_delay_ps": null
+    }
+  },
+  "captures": 4,
+  "timing_controls": {},
+  "bench_timing_controls": "captured TX waveform stretched 1.025x must fail the row-10 drift bound; the wrapper's time-unit measurement re-runs that control on the timestamped routed waveform of every measured image",
+  "measurements": [
+    "uart_tx_drift"
+  ],
+  "reasons": [],
+  "verdict": "pass"
+}

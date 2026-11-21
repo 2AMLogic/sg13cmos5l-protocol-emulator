@@ -169,15 +169,15 @@ failing `.asm` byte for byte.
 | Claim | Oracle | Level / flow | Record | Repro | Limits |
 |---|---|---|---|---|---|
 | The directed firmware benches (UART TX 3, UART RX 11, SPI 3, I2C 4, I2C Sr 5), control space (10), boot ROM (7), SPI boot (6), primitives (11), UART boot (8, pin-only) and load integrity (9, pin-only) pass on the routed netlist; each of the eleven modules fails on its own stuck-at fault (and the SPI/I2C modules on a `uio_oe[3]` stuck-at-0) | The same oracles as RTL | **Zero-delay**, LibreLane netlist of gds run 38136727636 (`6dd0e9d`) | [firmware-gate-level 20261012-072500](../../verification/records/firmware-gate-level/records/20261012-072500-243b6a4.md): 25 rows, `as_required` on every row | `PDK_ROOT=<pdk> ./flow/run-firmware-gate-level.sh --full --control-space --boot-rom --boot-spi --primitives --boot-uart --load-integrity` | `test_boot_uart` is pin-only on gates (white-box reads and two long runs are skipped). No SDF, no SRAM timing, no pad characterization. Not the constrained-random regression. |
-| The core bench (12 pin-observing tests, 1 skipped) passes at all three corners with real post-route delay | Same bench file, drive/sample aligned to the SDC (`verification/sdf_alignment.py`) | **SDF-annotated**, LibreLane netlist + SDF | [post-layout-sdf-regression 20261011-114802](../../verification/records/post-layout-sdf-regression/records/20261011-114802-e5a0bae.md): 12 passed, 0 failed, 1 skipped at each corner | `KLT_BIN=<klt> PDK_ROOT=<pdk> ./flow/run-post-layout-sdf.sh --from <download>`, where `<download>` is the `GDS_logs` and `tt_submission` artifacts of gds run 38136727636 | Section 5. The skipped test is white-box and is *skipped, not passed*. |
-| UART TX, SPI modes 0-3 and I2C write / repeated START / read / clock stretch pass in all nine (corner, protocol) cells with real post-route delay; the SPI timing negative control fails as required; the I2C repeated-START run fails on the pre-DR 0020 netlist (#244) | `reference_models/{uart,spi,i2c}.py` through the SDF wrappers | **SDF-annotated**, LibreLane netlist + SDF of gds run 38136727636 | [post-layout-sdf-regression 20261011-114800](../../verification/records/post-layout-sdf-regression/records/20261011-114800-e5a0bae.md): runner exit 0, nine of nine cells pass | `KLT_BIN=<klt> PDK_ROOT=<pdk> ./flow/run-post-layout-sdf.sh --suite protocols --from <download>` | Section 5. Boot programs, UART RX, PS/2, WS2812 and the random regression have no SDF run. |
+| The core bench (12 pin-observing tests, 1 skipped) passes at all three corners with real post-route delay | Same bench file, drive/sample aligned to the SDC (`verification/sdf_alignment.py`) | **SDF-annotated**, LibreLane netlist + SDF | [post-layout-sdf-regression 20261014-111000](../../verification/records/post-layout-sdf-regression/records/20261014-111000-25a41c3.md): 12 passed, 0 failed, 1 skipped at each corner | `KLT_BIN=<klt> PDK_ROOT=<pdk> ./flow/run-post-layout-sdf.sh --from <download>`, where `<download>` is the `GDS_logs` and `tt_submission` artifacts of gds run 38136727636 | Section 5. The skipped test is white-box and is *skipped, not passed*. |
+| UART TX, SPI modes 0-3 and I2C write / repeated START / read / clock stretch pass in all nine (corner, protocol) cells with real post-route delay; the SPI timing negative control fails as required; the I2C repeated-START run fails on the pre-DR 0020 netlist (#244) | `reference_models/{uart,spi,i2c}.py` through the SDF wrappers | **SDF-annotated**, LibreLane netlist + SDF of gds run 38136727636 | [post-layout-sdf-regression 20261121-075641](../../verification/records/post-layout-sdf-regression/records/20261121-075641-f83859c.md): runner exit 0, nine of nine cells pass (UART TX 4/4 since #531, which added the time-unit drift measurement) | `KLT_BIN=<klt> PDK_ROOT=<pdk> ./flow/run-post-layout-sdf.sh --suite protocols --from <download>` | Section 5. Boot programs, UART RX, PS/2, WS2812 and the random regression have no SDF run. |
 
 The `6dd0e9d` netlist is current for the design (gds run 38136727636, the
 DR 0020 open-drain fix and the #246 timing-repair config): `git diff
 6dd0e9d..origin/main -- src rtl info.yaml firmware/build/boot` is empty. The
 cited gate-level records and the runner's `NETLIST` default
 (`flow/run-firmware-gate-level.sh`) all name the same frozen copy
-(`post-layout-sdf-regression/artifacts/20261011-114800-e5a0bae/`).
+(`post-layout-sdf-regression/artifacts/20261011-114800-e5a0bae/` <!-- superseded-ok: the frozen netlist copy the runner defaults to; the directory is permanent append-only history and the bytes are byte-identical to the live record's gds artifacts -->).
 
 ### 3.6 Timing, area and signoff (numbers, by flow)
 
@@ -215,7 +215,7 @@ by side; a mismatch is a finding, not a figure to choose between.
 
 ## 5. SDF-annotated run: what the annotation does and does not cover
 
-From [`post-layout-sdf-regression 20261011-114802`](../../verification/records/post-layout-sdf-regression/records/20261011-114802-e5a0bae.md)
+From [`post-layout-sdf-regression 20261121-075641`](../../verification/records/post-layout-sdf-regression/records/20261121-075641-f83859c.md)
 and the header of `flow/run-post-layout-sdf.sh`:
 
 - **SRAM timing is omitted.** The macro runs as a zero-delay `FUNCTIONAL`
@@ -227,7 +227,7 @@ and the header of `flow/run-post-layout-sdf.sh`:
 - **The core bench and three protocol benches run.** Since 2026-10-11 the
   UART TX, SPI and I2C repeated-START firmware benches run on the routed
   netlist with SDF delays at all three corners
-  ([record](../../verification/records/post-layout-sdf-regression/records/20261011-114800-e5a0bae.md),
+  ([record](../../verification/records/post-layout-sdf-regression/records/20261121-075641-f83859c.md),
   #217's harness). The boot programs, UART RX, PS/2, WS2812 and the
   constrained-random regression have no SDF run.
 - **C-flag semantics** have no post-layout evidence: the white-box test is
@@ -259,7 +259,7 @@ and the header of `flow/run-post-layout-sdf.sh`:
   compare against the run's own post-route netlist is `match`
   ([librelane-gds-signoff-check 20261027-190021](../../verification/records/librelane-gds-signoff-check/records/20261027-190021-1ec5186.md)).
 - The T1 verdict of record is `tier: null`, **5 of 11 items met** (items 1, 2, 7, 9, 10) and **1 `not_applicable`**, graded by klt `0.9.2`
-  ([signoff-baseline 20261120-164259-6fb3838](../../verification/records/signoff-baseline/records/20261120-164259-6fb3838.md)).
+  ([signoff-baseline 20261121-081430-f83859c](../../verification/records/signoff-baseline/records/20261121-081430-f83859c.md)).
   Item 3 moved from met to unmet at the klt `0.8.0` deck (`klt-pin: historical`) and has not moved back; item 7
   moved to met at klt `0.9.0` because the grader gained a way to verify its citation's bytes
   (klayout-tools#4893), not because new evidence was produced — see that record's Result.

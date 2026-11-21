@@ -122,9 +122,10 @@ reports but is not a required check on `main`.
   That record supersedes the last failing one
   ([`704a3fb`](../../verification/records/post-layout-sdf-regression/records/20261010-083555-704a3fb.md) <!-- superseded-ok: history of the failed-then-fixed record chain -->),
   whose netlist it shares, and states what it still does not show. A later
-  record on a newer netlist
-  ([`e5a0bae`](../../verification/records/post-layout-sdf-regression/records/20261011-114802-e5a0bae.md))
-  has since superseded it, still passing.
+  record in that chain
+  ([`f83859c`](../../verification/records/post-layout-sdf-regression/records/20261121-075641-f83859c.md),
+  which supersedes the whole `e5a0bae` round) still passes, on a byte-identical
+  netlist.
 - **Independent references.** Protocol firmware is graded against separately
   written reference models
   ([record](../../verification/records/protocol-reference-models/records/20261010-180436-9fb7815.md)).

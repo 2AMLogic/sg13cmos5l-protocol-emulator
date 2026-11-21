@@ -104,7 +104,11 @@ that nominal, so a different period would re-grade, not re-time, them.
 
 Environment: `PE_SDF_PROTOCOL_REPORT` names the JSON file the report is
 written to (after import, after every capture, after every control); unset,
-no report is written.
+no report is written. A wrapper may also file whole measurements into the
+report (`add_measurement`, issue #531): the UART TX wrapper records its
+time-unit bit-period / per-frame-drift measurement, computed from the
+retained pin-transition timestamps of the monitor (`PinDelayMonitor(
+retain=True)`), under `measurements`.
 """
 
 from __future__ import annotations
@@ -234,6 +238,14 @@ class ProtocolReport:
         entry["last"] = detail
         self.write()
 
+    def add_measurement(self, name: str, doc: dict) -> None:
+        """Record one wrapper-defined measurement (issue #531) under
+        `measurements`: `doc` must carry its own units so every figure can
+        be recomputed from the saved raw data it embeds (e.g. the UART
+        wrapper's timestamped TX edges)."""
+        self.doc.setdefault("measurements", {})[name] = doc
+        self.write()
+
     def write(self) -> None:
         if not self.path:
             return
@@ -248,12 +260,25 @@ class PinDelayMonitor:
     """Timestamps every change of the monitored outputs against the last
     `clk` pin edge while it runs. A change that is not strictly before the
     observe point -- or that has no observed edge before it -- is a
-    contract violation."""
+    contract violation.
 
-    def __init__(self, dut, observe_ps: int, sample_ps: int):
+    With `retain=True` the monitor additionally keeps the time and level
+    of every recorded change (`transitions`, issue #531): the UART
+    wrapper's time-unit bit-period / drift measurement is computed from
+    those true pin-transition instants, not from the cycle-quantized
+    observe-point samples the benches' captures grade. `observe_ps` may be
+    `None` for retention-only use (no contract to check against: the
+    unaligned debug mode has no observe point); the delay statistics are
+    still collected whenever a clk edge was seen."""
+
+    def __init__(self, dut, observe_ps, sample_ps, retain: bool = False):
         self.dut = dut
         self.observe_ps = observe_ps
         self.sample_ps = sample_ps
+        self.retain = retain
+        #: pin name -> {"t_ps", "value"} per recorded change, in order
+        #: (populated only when `retain`)
+        self.transitions = []
         self.last_edge_ps = None
         #: name -> (count, zero-delay count, min delay ps, max delay ps)
         self.stats = {name: (0, 0, None, None) for name in MONITORED_OUTPUTS}
@@ -285,7 +310,9 @@ class PinDelayMonitor:
                 return
             self.last_edge_ps = round(get_sim_time("ps"))
 
-    def _record(self, name: str, now_ps: int) -> None:
+    def _record(self, name: str, now_ps: int, value) -> None:
+        if self.retain:
+            self.transitions.append({"pin": name, "t_ps": now_ps, "value": value})
         count, zero, lo, hi = self.stats[name]
         if self.last_edge_ps is None:
             self.violations.append(
@@ -297,7 +324,7 @@ class PinDelayMonitor:
         lo = delay if lo is None else min(lo, delay)
         hi = delay if hi is None else max(hi, delay)
         self.stats[name] = (count + 1, zero + (delay == 0), lo, hi)
-        if delay >= self.observe_ps:
+        if self.observe_ps is not None and delay >= self.observe_ps:
             where = "after the SDC sample point" if delay >= self.sample_ps else "before the SDC sample point"
             self.violations.append(
                 f"{name} changed {delay} ps after the clk edge at {self.last_edge_ps} ps: "
@@ -319,7 +346,7 @@ class PinDelayMonitor:
                 value = str(getattr(dut, name).value)
                 if value != previous[name]:
                     previous[name] = value
-                    self._record(name, now)
+                    self._record(name, now, value)
 
 
 def _scaled(signal, factor):

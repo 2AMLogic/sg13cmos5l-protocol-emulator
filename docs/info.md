@@ -529,7 +529,7 @@ No pin claim here is backed by silicon or by the LibreLane flow.
 ## Evidence not yet in hand
 
 - **Tiny Tapeout LibreLane flow.** The routed-netlist SDF regression of the
-  submitted core ([record](../verification/records/post-layout-sdf-regression/records/20261011-114800-e5a0bae.md),
+  submitted core ([record](../verification/records/post-layout-sdf-regression/records/20261014-111000-25a41c3.md),
   LibreLane run 38136727636, with DR 0015's P1 and P2, the UART-load boot ROM with its count-complement check, the load check's readout and DR 0020's open-drain pad data) passes at all three corners: 12 of the core
   bench's 13 tests pass and the white-box flag test is skipped (it reads
   core internals a flattened netlist does not have), so the C flag has no
