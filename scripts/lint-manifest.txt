@@ -19,7 +19,9 @@ python3 verification/test_uio_pad_resolution.py
 python3 verification/test_spi_flash_model.py
 python3 verification/test_ws2812_model.py
 python3 verification/test_dmx512_model.py
+python3 verification/test_nec_ir_model.py
 python3 verification/test_ps2_model.py
+python3 verification/test_swd_model.py
 python3 firmware/tools/test_mkflash.py
 python3 verification/test_firmware_artifacts.py
 python3 firmware/tools/test_gen_boot_rom.py
@@ -33,6 +35,7 @@ python3 scripts/check_datasheet.py
 python3 scripts/test_check_protocol_pin_roles.py
 python3 scripts/check_protocol_pin_roles.py --require-implemented
 python3 scripts/test_normalize_envelope_input_path.py
+python3 scripts/test_signoff_report.py
 python3 scripts/test_check_evidence_inventories.py
 python3 scripts/check_evidence_inventories.py
 python3 scripts/test_check_statistical_claims_na.py

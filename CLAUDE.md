@@ -14,6 +14,9 @@ designed and verified by AI agents — a **digital** block.
 - **Verification is the product**: no claim without a testbench. Recorded
   results are append-only evidence; a result is not superseded by deletion, it
   is superseded by a later record that says why.
+- **`README.md` is hash-pinned T1 item-10 evidence.** Document-maintenance
+  (Guide) PRs must not edit it; README changes arrive via an issue -> Builder
+  PR that re-attests item 10 per `manifests/README.md`.
 - Spec changes go through `spec/` with a decision record. Agents do not relax
   the ratified spec to make a result pass.
 

@@ -227,10 +227,11 @@ independent reference model, in **RTL simulation (Icarus 13.0 driven by
 claim; any baud/MHz reading is arithmetic at target-spec row 4's 50 MHz
 clock, which is **unconfirmed on the klt flow**: `klt sta` closes setup at
 20 ns at the three macro-characterized corners but **hold fails at all three**
-([record](../verification/records/sta-corner-sweep/records/20261101-032922-c606644.md)),
+([record](../verification/records/sta-corner-sweep/records/20261120-031100-51b7eac.md)),
 a pre-CTS, pre-route netlist estimate with an ideal clock and no hold repair,
-run at a post-v0.8.0 klt in a throwaway environment rather than the
-`layout/toolchain.json` pin and with no PDK commit stamp (the re-mint is #394),
+run at the fleet klt `0.9.2` in a throwaway environment and stamped with the
+PDK commit `f7bca326` (re-minted by #394; every figure byte-identical to the
+klt `0.8.1.dev146` record it supersedes),
 so no wall-clock rate is claimed here. Nothing in this table was run on
 the Tiny Tapeout LibreLane flow or on silicon (see the
 "Evidence not yet in hand" section below).
@@ -264,6 +265,8 @@ The table is mechanically checked against `firmware/asm/`,
 | [`ws2812`](../firmware/asm/ws2812.asm) | WS2812 / WS2812B LED data on `uo_out[7]`, GRB pixels from a table in program memory (target-spec row 13) | 63 per bit (T0H 20, T1H 40); reset 15,499 or more | 60 | 377 | [`test_firmware_ws2812.py`](../verification/test_firmware_ws2812.py) | [firmware-ws2812 20261011-104241-d81097f](../verification/records/firmware-ws2812/records/20261011-104241-d81097f.md) |
 | [`ps2_device`](../firmware/asm/ps2_device.asm) | PS/2 keyboard/mouse device on `uio[2]` (CLK) and `uio[3]` (DATA), open-drain: sends 0xAA, ACKs and echoes host bytes, abandons a frame the host inhibits (target-spec row 13, stretch column) | clock low about 2,006 and high about 2,035..2,083 cycles; 50 us hold-off about 4,016 | 213 | 951 | [`test_firmware_ps2.py`](../verification/test_firmware_ps2.py) | [firmware-ps2 20261011-104232-d81097f](../verification/records/firmware-ps2/records/20261011-104232-d81097f.md) |
 | [`dmx512_tx`](../firmware/asm/dmx512_tx.asm) | DMX512 (USITT DMX512-A) universe transmitter on `uo_out[0]` through an external RS-485 transceiver: BREAK, mark-after-break, 0x00 start code, then 512 channel slots, forever (multi-protocol extra credit, issue #445) | 200 per bit 8N2 (slot 2,200); BREAK 4,609; mark-after-break 605 | 90 | 7873 | [`test_firmware_dmx512.py`](../verification/test_firmware_dmx512.py) | [firmware-dmx512 20261119-165512-70f9559](../verification/records/firmware-dmx512/records/20261119-165512-70f9559.md) |
+| [`nec_ir`](../firmware/asm/nec_ir.asm) | NEC infrared remote transmitter on `uo_out[7]` through a transistor to an IR LED: 38 kHz-class carrier, leader, 32 pulse-distance bits from a one-word-per-bit table, final mark, 60 ms idle, forever; the receiver-module input `ui_in[4]` is board wiring (multi-protocol extra credit, issue #448; RX decode is the follow-up) | carrier 1,316/period (439 high); leader 449,195 + 225,000; marks 28,075; spaces 28,125 / 84,375; idle 3,000,000 | 164 | 10941 | [`test_firmware_nec_ir.py`](../verification/test_firmware_nec_ir.py) | [firmware-nec-ir 20261120-011215-c4b02d7](../verification/records/firmware-nec-ir/records/20261120-011215-c4b02d7.md) |
+| [`swd_probe`](../firmware/asm/swd_probe.asm) | SWD debug **probe** (host) on `uio[2]` (SWCLK) and `uio[3]` (SWDIO), push-pull with SWDIO released at each turnaround: line reset, 0xE79E switch, two DP reads (IDCODE 0xA5, RDBUFF bank 0xBD) reported sample-by-sample on `uo_out` (multi-protocol extra credit, issue #452) | SWCLK high/low 1/3 (resets), 2/2 (switch, requests), response high 1; 218 rising edges | 227 | 227 | [`test_firmware_swd.py`](../verification/test_firmware_swd.py) | [firmware-swd 20261120-064415-20e43c1](../verification/records/firmware-swd/records/20261120-064415-20e43c1.md) |
 | [`demo_roundtrip`](../firmware/asm/demo_roundtrip.asm) | none (assembler and load-phase round-trip coverage program) | n/a | 27 | 30 | [`test_firmware_roundtrip.py`](../verification/test_firmware_roundtrip.py) | [firmware-assembler-roundtrip 20261119-224834-ccce963](../verification/records/firmware-assembler-roundtrip/records/20261119-224834-ccce963.md) |
 <!-- firmware-images:end -->
 
@@ -575,7 +578,7 @@ No pin claim here is backed by silicon or by the LibreLane flow.
   reports 0 setup and 0 hold violations at the three corners, while the klt
   leg's pre-CTS, pre-route netlist estimate closes setup at 20 ns and fails
   hold at all three
-  ([record](../verification/records/sta-corner-sweep/records/20261101-032922-c606644.md)).
+  ([record](../verification/records/sta-corner-sweep/records/20261120-031100-51b7eac.md)).
   Per the project rule that mismatch is a finding, not a number to pick from;
   the two are different geometry stages, so it is not shown to be a tool
   disagreement about the same design state, and neither number is merged with

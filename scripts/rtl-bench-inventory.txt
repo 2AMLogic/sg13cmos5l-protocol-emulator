@@ -31,9 +31,11 @@ include firmware-i2c-ack
 include firmware-roundtrip
 include firmware-ws2812
 include firmware-ps2
+include firmware-swd
 include random-regression
 include isa-lockstep
 include loadseq
 include loadseq-top
 include reset-release-offsets
 include firmware-dmx512
+include firmware-nec-ir
