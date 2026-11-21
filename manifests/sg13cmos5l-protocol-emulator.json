@@ -40,11 +40,21 @@
     },
     "9": {
       "file": "manifests/evidence/testbenches.json",
-      "content_hash": "sha256:723ed89030ce919461bd019a190301d464d012e17cc52be10da8be3b755e95fb"
+      "content_hash": "sha256:7aecfd4319403a326fdcb95959cb8f839c00df8b236bf7badfecf38c9d36481a"
     },
     "10": {
       "file": "manifests/evidence/hygiene.json",
       "content_hash": "sha256:44d194601d68b448aef6e4ca3e2e69cc436f78a15336281965d0c3e432f961c6"
-    }
+    },
+    "11": [
+      {
+        "file": "verification/records/librelane-erc/artifacts/20261121-002540-47e264ebc/klt-erc.json",
+        "content_hash": "sha256:2c8fb81d18ab9d6cfd2ed0566e32f16d3cebdbbdff41520afbff29fa0e19c3af"
+      },
+      {
+        "file": "verification/records/power-par-pdn/artifacts/20261121-002216-47e264ebc/par-tt-um-2amlogic-protocol-emulator-response.json",
+        "content_hash": "sha256:0f9cd5cd474b5961416fdf16a425465ac90bbf983975c712000738434a7bb2fd"
+      }
+    ]
   }
 }
