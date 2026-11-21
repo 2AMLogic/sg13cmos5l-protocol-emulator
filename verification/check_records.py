@@ -78,7 +78,7 @@ Checks, per record `verification/records/<experiment>/records/<record-id>.md`:
    cites a measurement log absent from the tree asserts numbers nothing in
    the tree substantiates, and an untracked local file does not satisfy the
    citation. Destinations outside the experiment's `artifacts/` tree --
-   other repositories' paths, external URLs, fragments -- and paths that
+   paths elsewhere in the repo, external URLs, fragments -- and paths that
    appear only as inline code are out of scope: this check substantiates
    artifact citations, it does not audit general Markdown. It applies to
    live and superseded records alike; a superseded record is frozen

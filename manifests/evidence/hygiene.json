@@ -94,7 +94,7 @@
         "role": "hygiene",
         "path": "verification/check_records.py",
         "passed": true,
-        "content_hash": "sha256:cc33987826d6be9eda8b3638f733a37794d47a4888fea049aec7a03d0bd76526"
+        "content_hash": "sha256:c0717bd41d71815c2bc957bfa0cf226e16933f5ae6760dcf9d6dbd683c6c741f"
       },
       {
         "check": "command",
