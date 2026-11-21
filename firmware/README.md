@@ -1153,7 +1153,7 @@ stop half, a shortened start, an early reply and silence. Its TX
 negative control shortens the first half to 13,232 cycles. Reproduce with
 `python3 verification/test_dali_model.py` and
 `klt functional-verification verification/request-firmware-dali.json --format json`
-from the repository root. [RTL evidence](../verification/records/firmware-dali/records/20261119-151157-bd0e3dc.md)
+from the repository root. [RTL evidence](../verification/records/firmware-dali/records/20261121-050713-754fa04.md)
 
 ### Pmod wiring
 
