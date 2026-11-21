@@ -3,14 +3,14 @@
   "kind": "generic",
   "status": "pass",
   "t1_item": 9,
-  "summary": "T1 item 9 (Testbenches shipped): 98/98 attestation checks passed (klt signoff --attest)",
+  "summary": "T1 item 9 (Testbenches shipped): 102/102 attestation checks passed (klt signoff --attest)",
   "source": "manifests/attest/item9.json",
   "attestation": {
     "producer": "klt signoff --attest",
     "inventory_schema_version": 1,
     "hash_algorithm": "sha256-raw-bytes",
-    "check_count": 98,
-    "passed_count": 98,
+    "check_count": 102,
+    "passed_count": 102,
     "checks": [
       {
         "check": "present",
@@ -253,6 +253,13 @@
       {
         "check": "present",
         "role": "testbench",
+        "path": "verification/reference_models/dali.py",
+        "passed": true,
+        "content_hash": "sha256:3bd0460bd9cd1246b88df7e7de8193c9df9064b36f5de7203fd1ce997db812cf"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
         "path": "verification/reference_models/isa.py",
         "passed": true,
         "content_hash": "sha256:7f9addaa7e5593a878de72671e2d8efd932628fe2e8799696810b6c25f60e84c"
@@ -312,6 +319,13 @@
         "path": "verification/request-control-space.json",
         "passed": true,
         "content_hash": "sha256:c678b465296de376935220aa0593173485a9427ae48d58fae6532cdc0fb77ca0"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "verification/request-firmware-dali.json",
+        "passed": true,
+        "content_hash": "sha256:350522ea6cec27266ad678351566df67d39dea4220664ae3e9bfc5d2aa87b1a7"
       },
       {
         "check": "present",
@@ -508,6 +522,20 @@
         "path": "verification/test_control_space.py",
         "passed": true,
         "content_hash": "sha256:2f544b083effbeb12567de2706e90955e5d9835d671c64c2fc0627f5f1a116c0"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "verification/test_dali_model.py",
+        "passed": true,
+        "content_hash": "sha256:d1db95d04b8940ff6f722c425ceddcf57ebd02789a7ef815761163c88011784e"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "verification/test_firmware_dali.py",
+        "passed": true,
+        "content_hash": "sha256:9cf9830a35146fdae89e9264e1fa13328b0e20ca203515b3de44445a5495481f"
       },
       {
         "check": "present",
@@ -721,7 +749,7 @@
         "path": "manifests/attest/item9.json",
         "scope": "repo"
       },
-      "content_hash": "sha256:43ce736b3d133137fe66230b371998fe1cc2c8f50ba67683b4cacd058294321a"
+      "content_hash": "sha256:d1a4116cc09f9913e4eb60d66b930765639c8ca4e393217d9681eae1bf0e2f37"
     }
   }
 }
