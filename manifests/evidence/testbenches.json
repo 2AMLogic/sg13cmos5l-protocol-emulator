@@ -45,7 +45,7 @@
         "role": "testbench",
         "path": "flow/run-die-area-par.sh",
         "passed": true,
-        "content_hash": "sha256:cb587cd5d874320e564b01ef9cd76a68a3b257c1563645a53d2756bbc029214b"
+        "content_hash": "sha256:b851dff2c3f6338fc540930d3d4ada10ac82e59c49c56f5450ae3c4b895f67b8"
       },
       {
         "check": "present",
@@ -87,7 +87,7 @@
         "role": "testbench",
         "path": "scripts/check_evidence_inventories.py",
         "passed": true,
-        "content_hash": "sha256:699bc6ad2490f73a3551ffe61b7ffddcda882f01f90162f5455ac70aa4f6fbb8"
+        "content_hash": "sha256:23601f7131b3ac5a1bbf2ec63e2d0782edc9e93e1df98e0df3166d47d5a6b087"
       },
       {
         "check": "present",
@@ -101,14 +101,14 @@
         "role": "testbench",
         "path": "scripts/setup-env.sh",
         "passed": true,
-        "content_hash": "sha256:10ea796726cb15062f30cb690aaf4381f020a3f773bbe2ced4598ab767811724"
+        "content_hash": "sha256:59d117fcc6dc8342c81bc69110a9b02914d977b193d687ad9d07bcc6fef757cd"
       },
       {
         "check": "present",
         "role": "testbench",
         "path": "scripts/signoff-report.sh",
         "passed": true,
-        "content_hash": "sha256:f9f3b9c76fc3a5b441d20ac408ab63fdc35470ac76bbbd6894d7027670895ee5"
+        "content_hash": "sha256:10f7a8dfcd33271216bab38736f0554f1599e70696f284c3b575a66334cb1dba"
       },
       {
         "check": "present",
@@ -276,7 +276,7 @@
         "role": "testbench",
         "path": "verification/remint_records.py",
         "passed": true,
-        "content_hash": "sha256:711bc05826c561f1753227f48d00586510d2e175e3600dcf5b6036da67834949"
+        "content_hash": "sha256:e64ed364ac417364a07f490e44c58e9585c7ffe0ffdfd6a224be259d80dcce07"
       },
       {
         "check": "present",
@@ -705,14 +705,14 @@
           "cocotb": "2.1.0",
           "cocotb-tools": "0.1.0",
           "iverilog": "12.0",
-          "klt": "0.8.0",
+          "klt": "0.9.2",
           "yosys": "0.68"
         }
       }
     ]
   },
   "provenance": {
-    "klt_version": "0.8.0",
+    "klt_version": "0.9.2",
     "klayout_version": null,
     "pdk": null,
     "deck": null,
@@ -721,7 +721,7 @@
         "path": "manifests/attest/item9.json",
         "scope": "repo"
       },
-      "content_hash": "sha256:70d44f17d34881c742d237927c531eeda5661c77f64a0001b08eb98c291be9a1"
+      "content_hash": "sha256:43ce736b3d133137fe66230b371998fe1cc2c8f50ba67683b4cacd058294321a"
     }
   }
 }

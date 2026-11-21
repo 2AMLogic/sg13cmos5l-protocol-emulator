@@ -1,0 +1,771 @@
+{
+  "schema_version": 1,
+  "engine": "openroad",
+  "engine_version": "26Q3-1510-g6cb3f2b704",
+  "engine_logs": [
+    {
+      "invocation_id": "1e1526267c4d4a6aa2e279be7ef276d1",
+      "script_name": "pnr_protocol_program_memory_floorplan.tcl",
+      "script_path": {
+        "path": "flow/par-scratch/.klt/place-and-route/pnr_protocol_program_memory_floorplan.tcl",
+        "scope": "repo"
+      },
+      "script_sha256": "1cd51b68a60a6a32a8c94e91582d3568c9a54f01cb3cd191426f083b02df22a2",
+      "metrics_path": {
+        "path": "flow/par-scratch/.klt/place-and-route/protocol_program_memory_floorplan_metrics.json",
+        "scope": "repo"
+      },
+      "outcome": "exited",
+      "returncode": 0,
+      "directory": {
+        "path": "flow/par-scratch/.klt/place-and-route/openroad-logs/1e1526267c4d4a6aa2e279be7ef276d1",
+        "scope": "repo"
+      },
+      "stdout_path": {
+        "path": "flow/par-scratch/.klt/place-and-route/openroad-logs/1e1526267c4d4a6aa2e279be7ef276d1/stdout.log",
+        "scope": "repo"
+      },
+      "stderr_path": {
+        "path": "flow/par-scratch/.klt/place-and-route/openroad-logs/1e1526267c4d4a6aa2e279be7ef276d1/stderr.log",
+        "scope": "repo"
+      },
+      "metadata_path": {
+        "path": "flow/par-scratch/.klt/place-and-route/openroad-logs/1e1526267c4d4a6aa2e279be7ef276d1/invocation.json",
+        "scope": "repo"
+      },
+      "retention_errors": []
+    },
+    {
+      "invocation_id": "3c1c253142f94c98a0f3e434d9595a81",
+      "script_name": "pnr_protocol_program_memory_place.tcl",
+      "script_path": {
+        "path": "flow/par-scratch/.klt/place-and-route/pnr_protocol_program_memory_place.tcl",
+        "scope": "repo"
+      },
+      "script_sha256": "ffe1865e9fa901b322cb9e8d9f609745280a2d93a3a4263b401edd8c47f74a53",
+      "metrics_path": {
+        "path": "flow/par-scratch/.klt/place-and-route/protocol_program_memory_place_metrics.json",
+        "scope": "repo"
+      },
+      "outcome": "exited",
+      "returncode": 0,
+      "directory": {
+        "path": "flow/par-scratch/.klt/place-and-route/openroad-logs/3c1c253142f94c98a0f3e434d9595a81",
+        "scope": "repo"
+      },
+      "stdout_path": {
+        "path": "flow/par-scratch/.klt/place-and-route/openroad-logs/3c1c253142f94c98a0f3e434d9595a81/stdout.log",
+        "scope": "repo"
+      },
+      "stderr_path": {
+        "path": "flow/par-scratch/.klt/place-and-route/openroad-logs/3c1c253142f94c98a0f3e434d9595a81/stderr.log",
+        "scope": "repo"
+      },
+      "metadata_path": {
+        "path": "flow/par-scratch/.klt/place-and-route/openroad-logs/3c1c253142f94c98a0f3e434d9595a81/invocation.json",
+        "scope": "repo"
+      },
+      "retention_errors": []
+    }
+  ],
+  "hdl_toplevel": "protocol_program_memory",
+  "netlist": {
+    "path": "flow/par-scratch/protocol_program_memory_synth.v",
+    "scope": "repo"
+  },
+  "status": "ok",
+  "stage_reached": "place",
+  "seed": 1,
+  "power_basis": {
+    "activity_source": "engine_default",
+    "activity": null,
+    "duty": null,
+    "parasitics": "estimate_only"
+  },
+  "applied": {
+    "placement_density": 0.6,
+    "route_congestion_iterations": null,
+    "route_allow_congestion": false,
+    "signal_layers": null
+  },
+  "coverage": {
+    "metal_density_fill": {
+      "status": "unsupported",
+      "inserted": false,
+      "reason": "no metal density fill is inserted at any stage; standard-cell gap fillers are not metal fill"
+    },
+    "density_compliance": {
+      "status": "unsupported",
+      "evaluated": false,
+      "reason": "metal density rules are not evaluated by place-and-route; a zero route_drc_violation_count does not imply density compliance"
+    }
+  },
+  "interconnect_corner": "nom",
+  "die_area_um2": 84204.4,
+  "core_area_um2": 80967.6,
+  "utilization_pct": 40.6771,
+  "wirelength_um": 15160.1,
+  "worst_slack_ns": 17.908,
+  "total_negative_slack_ns": 0,
+  "fmax_mhz": 478.0,
+  "setup_violation_count": 0,
+  "hold_violation_count": 0,
+  "nominal_hold_slack_ns": 0.02707,
+  "antenna_violation_count": null,
+  "route_drc_violation_count": null,
+  "estimated_power_mw": 0.7873,
+  "clock_skew_ns": null,
+  "worst_setup_slack_ns": null,
+  "worst_hold_slack_ns": null,
+  "corners": null,
+  "congestion": null,
+  "max_transition_violation_count": null,
+  "max_capacitance_violation_count": null,
+  "max_transition_violation_count_vs_library": null,
+  "max_capacitance_violation_count_vs_library": null,
+  "timing_status": "constrained",
+  "stages": [
+    {
+      "name": "floorplan",
+      "die_area_um2": 84204.4,
+      "core_area_um2": 80967.6,
+      "utilization_pct": 40.4597,
+      "worst_slack_ns": 17.6154,
+      "total_negative_slack_ns": 0,
+      "timing_status": "constrained"
+    },
+    {
+      "name": "place",
+      "die_area_um2": 84204.4,
+      "core_area_um2": 80967.6,
+      "utilization_pct": 40.6771,
+      "worst_slack_ns": 17.908,
+      "total_negative_slack_ns": 0,
+      "wirelength_um": 15160.1,
+      "fmax_mhz": 478.0,
+      "estimated_power_mw": 0.7873,
+      "setup_violation_count": 0,
+      "hold_violation_count": 0,
+      "nominal_hold_slack_ns": 0.02707,
+      "timing_status": "constrained"
+    }
+  ],
+  "macros": [
+    {
+      "instance": "u_sram",
+      "lef": "/tmp/issue389-pdk/root/ihp-sg13cmos5l/libs.ref/sg13cmos5l_sram/lef/RM_IHPSG13_1P_256x16_c2_bm_bist.lef",
+      "x_um": 7.0,
+      "y_um": 7.0,
+      "orientation": "R0",
+      "cell": "RM_IHPSG13_1P_256x16_c2_bm_bist",
+      "lib": {
+        "fast_1p32V_m40C": "/tmp/issue389-pdk/root/ihp-sg13cmos5l/libs.ref/sg13cmos5l_sram/lib/RM_IHPSG13_1P_256x16_c2_bm_bist_fast_1p32V_m55C.lib",
+        "slow_1p08V_125C": "/tmp/issue389-pdk/root/ihp-sg13cmos5l/libs.ref/sg13cmos5l_sram/lib/RM_IHPSG13_1P_256x16_c2_bm_bist_slow_1p08V_125C.lib",
+        "typ_1p20V_25C": "/tmp/issue389-pdk/root/ihp-sg13cmos5l/libs.ref/sg13cmos5l_sram/lib/RM_IHPSG13_1P_256x16_c2_bm_bist_typ_1p20V_25C.lib"
+      },
+      "halo": null,
+      "keepout": null
+    }
+  ],
+  "def_path": null,
+  "pins": [
+    {
+      "name": "clk",
+      "edge": "south",
+      "x_um": 120.48,
+      "y_um": 0.36,
+      "layer": "Metal2"
+    },
+    {
+      "name": "fetch_addr[0]",
+      "edge": "north",
+      "x_um": 172.32,
+      "y_um": 289.82,
+      "layer": "Metal2"
+    },
+    {
+      "name": "fetch_addr[1]",
+      "edge": "north",
+      "x_um": 145.44,
+      "y_um": 289.82,
+      "layer": "Metal2"
+    },
+    {
+      "name": "fetch_addr[2]",
+      "edge": "north",
+      "x_um": 143.52,
+      "y_um": 289.82,
+      "layer": "Metal2"
+    },
+    {
+      "name": "fetch_addr[3]",
+      "edge": "north",
+      "x_um": 131.04,
+      "y_um": 289.82,
+      "layer": "Metal2"
+    },
+    {
+      "name": "fetch_addr[4]",
+      "edge": "north",
+      "x_um": 147.36,
+      "y_um": 289.82,
+      "layer": "Metal2"
+    },
+    {
+      "name": "fetch_addr[5]",
+      "edge": "north",
+      "x_um": 148.32,
+      "y_um": 289.82,
+      "layer": "Metal2"
+    },
+    {
+      "name": "fetch_addr[6]",
+      "edge": "north",
+      "x_um": 120.48,
+      "y_um": 289.82,
+      "layer": "Metal2"
+    },
+    {
+      "name": "fetch_addr[7]",
+      "edge": "north",
+      "x_um": 139.68,
+      "y_um": 289.82,
+      "layer": "Metal2"
+    },
+    {
+      "name": "fetch_en",
+      "edge": "north",
+      "x_um": 130.08,
+      "y_um": 289.82,
+      "layer": "Metal2"
+    },
+    {
+      "name": "instr_word[0]",
+      "edge": "west",
+      "x_um": 0.36,
+      "y_um": 7.14,
+      "layer": "Metal3"
+    },
+    {
+      "name": "instr_word[10]",
+      "edge": "south",
+      "x_um": 195.36,
+      "y_um": 0.36,
+      "layer": "Metal2"
+    },
+    {
+      "name": "instr_word[11]",
+      "edge": "south",
+      "x_um": 194.4,
+      "y_um": 0.36,
+      "layer": "Metal2"
+    },
+    {
+      "name": "instr_word[12]",
+      "edge": "south",
+      "x_um": 199.2,
+      "y_um": 0.36,
+      "layer": "Metal2"
+    },
+    {
+      "name": "instr_word[13]",
+      "edge": "south",
+      "x_um": 210.72,
+      "y_um": 0.36,
+      "layer": "Metal2"
+    },
+    {
+      "name": "instr_word[14]",
+      "edge": "south",
+      "x_um": 222.24,
+      "y_um": 0.36,
+      "layer": "Metal2"
+    },
+    {
+      "name": "instr_word[15]",
+      "edge": "south",
+      "x_um": 232.8,
+      "y_um": 0.36,
+      "layer": "Metal2"
+    },
+    {
+      "name": "instr_word[1]",
+      "edge": "south",
+      "x_um": 29.28,
+      "y_um": 0.36,
+      "layer": "Metal2"
+    },
+    {
+      "name": "instr_word[2]",
+      "edge": "south",
+      "x_um": 39.84,
+      "y_um": 0.36,
+      "layer": "Metal2"
+    },
+    {
+      "name": "instr_word[3]",
+      "edge": "south",
+      "x_um": 51.36,
+      "y_um": 0.36,
+      "layer": "Metal2"
+    },
+    {
+      "name": "instr_word[4]",
+      "edge": "south",
+      "x_um": 62.88,
+      "y_um": 0.36,
+      "layer": "Metal2"
+    },
+    {
+      "name": "instr_word[5]",
+      "edge": "south",
+      "x_um": 74.4,
+      "y_um": 0.36,
+      "layer": "Metal2"
+    },
+    {
+      "name": "instr_word[6]",
+      "edge": "south",
+      "x_um": 84.96,
+      "y_um": 0.36,
+      "layer": "Metal2"
+    },
+    {
+      "name": "instr_word[7]",
+      "edge": "south",
+      "x_um": 96.48,
+      "y_um": 0.36,
+      "layer": "Metal2"
+    },
+    {
+      "name": "instr_word[8]",
+      "edge": "south",
+      "x_um": 154.08,
+      "y_um": 0.36,
+      "layer": "Metal2"
+    },
+    {
+      "name": "instr_word[9]",
+      "edge": "south",
+      "x_um": 165.6,
+      "y_um": 0.36,
+      "layer": "Metal2"
+    },
+    {
+      "name": "mode_pin",
+      "edge": "north",
+      "x_um": 123.36,
+      "y_um": 289.82,
+      "layer": "Metal2"
+    },
+    {
+      "name": "pm_addr[0]",
+      "edge": "north",
+      "x_um": 144.48,
+      "y_um": 289.82,
+      "layer": "Metal2"
+    },
+    {
+      "name": "pm_addr[1]",
+      "edge": "north",
+      "x_um": 142.56,
+      "y_um": 289.82,
+      "layer": "Metal2"
+    },
+    {
+      "name": "pm_addr[2]",
+      "edge": "north",
+      "x_um": 153.12,
+      "y_um": 289.82,
+      "layer": "Metal2"
+    },
+    {
+      "name": "pm_addr[3]",
+      "edge": "north",
+      "x_um": 129.12,
+      "y_um": 289.82,
+      "layer": "Metal2"
+    },
+    {
+      "name": "pm_addr[4]",
+      "edge": "north",
+      "x_um": 155.04,
+      "y_um": 289.82,
+      "layer": "Metal2"
+    },
+    {
+      "name": "pm_addr[5]",
+      "edge": "north",
+      "x_um": 141.6,
+      "y_um": 289.82,
+      "layer": "Metal2"
+    },
+    {
+      "name": "pm_addr[6]",
+      "edge": "north",
+      "x_um": 118.56,
+      "y_um": 289.82,
+      "layer": "Metal2"
+    },
+    {
+      "name": "pm_addr[7]",
+      "edge": "north",
+      "x_um": 149.28,
+      "y_um": 289.82,
+      "layer": "Metal2"
+    },
+    {
+      "name": "pm_crc[0]",
+      "edge": "north",
+      "x_um": 128.16,
+      "y_um": 289.82,
+      "layer": "Metal2"
+    },
+    {
+      "name": "pm_crc[10]",
+      "edge": "north",
+      "x_um": 140.64,
+      "y_um": 289.82,
+      "layer": "Metal2"
+    },
+    {
+      "name": "pm_crc[11]",
+      "edge": "north",
+      "x_um": 158.88,
+      "y_um": 289.82,
+      "layer": "Metal2"
+    },
+    {
+      "name": "pm_crc[12]",
+      "edge": "north",
+      "x_um": 159.84,
+      "y_um": 289.82,
+      "layer": "Metal2"
+    },
+    {
+      "name": "pm_crc[13]",
+      "edge": "north",
+      "x_um": 122.4,
+      "y_um": 289.82,
+      "layer": "Metal2"
+    },
+    {
+      "name": "pm_crc[14]",
+      "edge": "north",
+      "x_um": 127.2,
+      "y_um": 289.82,
+      "layer": "Metal2"
+    },
+    {
+      "name": "pm_crc[15]",
+      "edge": "north",
+      "x_um": 138.72,
+      "y_um": 289.82,
+      "layer": "Metal2"
+    },
+    {
+      "name": "pm_crc[1]",
+      "edge": "north",
+      "x_um": 151.2,
+      "y_um": 289.82,
+      "layer": "Metal2"
+    },
+    {
+      "name": "pm_crc[2]",
+      "edge": "north",
+      "x_um": 161.76,
+      "y_um": 289.82,
+      "layer": "Metal2"
+    },
+    {
+      "name": "pm_crc[3]",
+      "edge": "north",
+      "x_um": 135.84,
+      "y_um": 289.82,
+      "layer": "Metal2"
+    },
+    {
+      "name": "pm_crc[4]",
+      "edge": "north",
+      "x_um": 164.64,
+      "y_um": 289.82,
+      "layer": "Metal2"
+    },
+    {
+      "name": "pm_crc[5]",
+      "edge": "north",
+      "x_um": 165.6,
+      "y_um": 289.82,
+      "layer": "Metal2"
+    },
+    {
+      "name": "pm_crc[6]",
+      "edge": "north",
+      "x_um": 157.92,
+      "y_um": 289.82,
+      "layer": "Metal2"
+    },
+    {
+      "name": "pm_crc[7]",
+      "edge": "north",
+      "x_um": 137.76,
+      "y_um": 289.82,
+      "layer": "Metal2"
+    },
+    {
+      "name": "pm_crc[8]",
+      "edge": "north",
+      "x_um": 134.88,
+      "y_um": 289.82,
+      "layer": "Metal2"
+    },
+    {
+      "name": "pm_crc[9]",
+      "edge": "north",
+      "x_um": 154.08,
+      "y_um": 289.82,
+      "layer": "Metal2"
+    },
+    {
+      "name": "pm_crc_clr",
+      "edge": "north",
+      "x_um": 126.24,
+      "y_um": 289.82,
+      "layer": "Metal2"
+    },
+    {
+      "name": "pm_re",
+      "edge": "north",
+      "x_um": 136.8,
+      "y_um": 289.82,
+      "layer": "Metal2"
+    },
+    {
+      "name": "pm_wdata[0]",
+      "edge": "north",
+      "x_um": 150.24,
+      "y_um": 289.82,
+      "layer": "Metal2"
+    },
+    {
+      "name": "pm_wdata[10]",
+      "edge": "north",
+      "x_um": 166.56,
+      "y_um": 289.82,
+      "layer": "Metal2"
+    },
+    {
+      "name": "pm_wdata[11]",
+      "edge": "north",
+      "x_um": 167.52,
+      "y_um": 289.82,
+      "layer": "Metal2"
+    },
+    {
+      "name": "pm_wdata[12]",
+      "edge": "north",
+      "x_um": 125.28,
+      "y_um": 289.82,
+      "layer": "Metal2"
+    },
+    {
+      "name": "pm_wdata[13]",
+      "edge": "north",
+      "x_um": 168.48,
+      "y_um": 289.82,
+      "layer": "Metal2"
+    },
+    {
+      "name": "pm_wdata[14]",
+      "edge": "north",
+      "x_um": 121.44,
+      "y_um": 289.82,
+      "layer": "Metal2"
+    },
+    {
+      "name": "pm_wdata[15]",
+      "edge": "north",
+      "x_um": 160.8,
+      "y_um": 289.82,
+      "layer": "Metal2"
+    },
+    {
+      "name": "pm_wdata[1]",
+      "edge": "north",
+      "x_um": 119.52,
+      "y_um": 289.82,
+      "layer": "Metal2"
+    },
+    {
+      "name": "pm_wdata[2]",
+      "edge": "north",
+      "x_um": 170.4,
+      "y_um": 289.82,
+      "layer": "Metal2"
+    },
+    {
+      "name": "pm_wdata[3]",
+      "edge": "north",
+      "x_um": 133.92,
+      "y_um": 289.82,
+      "layer": "Metal2"
+    },
+    {
+      "name": "pm_wdata[4]",
+      "edge": "north",
+      "x_um": 162.72,
+      "y_um": 289.82,
+      "layer": "Metal2"
+    },
+    {
+      "name": "pm_wdata[5]",
+      "edge": "north",
+      "x_um": 132.0,
+      "y_um": 289.82,
+      "layer": "Metal2"
+    },
+    {
+      "name": "pm_wdata[6]",
+      "edge": "north",
+      "x_um": 152.16,
+      "y_um": 289.82,
+      "layer": "Metal2"
+    },
+    {
+      "name": "pm_wdata[7]",
+      "edge": "north",
+      "x_um": 156.96,
+      "y_um": 289.82,
+      "layer": "Metal2"
+    },
+    {
+      "name": "pm_wdata[8]",
+      "edge": "north",
+      "x_um": 171.36,
+      "y_um": 289.82,
+      "layer": "Metal2"
+    },
+    {
+      "name": "pm_wdata[9]",
+      "edge": "north",
+      "x_um": 132.96,
+      "y_um": 289.82,
+      "layer": "Metal2"
+    },
+    {
+      "name": "pm_we",
+      "edge": "north",
+      "x_um": 163.68,
+      "y_um": 289.82,
+      "layer": "Metal2"
+    },
+    {
+      "name": "rst_n",
+      "edge": "north",
+      "x_um": 156.0,
+      "y_um": 289.82,
+      "layer": "Metal2"
+    },
+    {
+      "name": "run_phase",
+      "edge": "north",
+      "x_um": 146.4,
+      "y_um": 289.82,
+      "layer": "Metal2"
+    },
+    {
+      "name": "serial_in",
+      "edge": "north",
+      "x_um": 124.32,
+      "y_um": 289.82,
+      "layer": "Metal2"
+    },
+    {
+      "name": "serial_loaded",
+      "edge": "north",
+      "x_um": 169.44,
+      "y_um": 289.82,
+      "layer": "Metal2"
+    }
+  ],
+  "pin_abutment": [],
+  "instance_groups": [],
+  "unrouted_def_path": "/home/ubuntu/GitHub/sg13cmos5l-protocol-emulator/.loom/worktrees/issue-389/flow/par-scratch/.klt/place-and-route/protocol_program_memory.place.def",
+  "gds_path": null,
+  "layer_map": null,
+  "def_net_names": null,
+  "min_area_repair": null,
+  "via_pad_trim": null,
+  "gds_dbu_um": null,
+  "verilog_path": null,
+  "spef_sta": null,
+  "power": {
+    "preset": null,
+    "connects_overridden": false,
+    "pdn": false,
+    "global_connect": false,
+    "power_net": null,
+    "ground_net": null,
+    "tapcell_master": null,
+    "tapless": false,
+    "endcap_master": null,
+    "tapcell_distance_um": null,
+    "filler_masters": [],
+    "straps": [],
+    "connects": [],
+    "row_rail": {
+      "emitted": false,
+      "layer": null,
+      "power_net": null,
+      "ground_net": null,
+      "filler_masters": []
+    },
+    "placed": {
+      "evidence": "def",
+      "def_path": "/home/ubuntu/GitHub/sg13cmos5l-protocol-emulator/.loom/worktrees/issue-389/flow/par-scratch/.klt/place-and-route/protocol_program_memory.place.def",
+      "unavailable_reason": null,
+      "status": "absent",
+      "missing": [
+        "special_nets",
+        "followpin_segments",
+        "stripe_segments",
+        "pdn_vias"
+      ],
+      "components": 259,
+      "tapcells": 0,
+      "endcaps": 0,
+      "fillers": 0,
+      "special_nets": []
+    }
+  },
+  "warnings": [
+    "request.power was omitted: no power delivery was requested for this run, and the produced DEF has no a SPECIALNETS section, FOLLOWPIN rail segments, STRIPE strap segments, PDN vias (0 tapcell(s), 0 endcap(s), 0 filler cell(s), 0 power special net(s), 0 FOLLOWPIN rail segment(s), 0 STRIPE strap segment(s), 0 PDN via(s)). The layout has no power delivery, no substrate/well taps and no fill -- its area, timing and DRC numbers are not a signoff result. Supply request.power (see docs/cli/place-and-route.md, 'Power delivery') to build one."
+  ],
+  "provenance": {
+    "klt_version": "0.9.2",
+    "klt_git_commit": "046ba74652fc096bd97071fc3237f7159dd40183",
+    "klt_reinstall_spec": "klayout-tools==0.9.2",
+    "klayout_version": "0.30.13",
+    "pdk": {
+      "name": "ihp-sg13cmos5l",
+      "source": "PDK_ROOT environment variable",
+      "version": null,
+      "ambiguous_sources": [
+        "search root: ~/share/pdk"
+      ]
+    },
+    "deck": {
+      "name": "sg13cmos5l_stdcell__typ_1p20V_25C",
+      "content_hash": "sha256:34163f3e7de9f854afac57332ba06f1739b78e7ac35660a8a5ddd39c570124ad",
+      "released": false,
+      "path": {
+        "path": null,
+        "scope": "external"
+      }
+    },
+    "input": {
+      "content_hash": "sha256:7148e84fe28231492536ea8a22fc66320f7221286ae68f364885972923cbb0d1",
+      "role": "netlist"
+    }
+  }
+}

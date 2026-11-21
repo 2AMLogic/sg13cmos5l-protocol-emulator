@@ -27,20 +27,21 @@ rows 2, 13 and 14 `proposed`; the other nine `unmet`. Most of those reasons are
 limits no simulation closes (no silicon clock, no pad characterization). Work
 can move row 4 (50 MHz closes on 3 of 6 corners on LibreLane; the klt netlist
 estimate closes setup but fails hold), row 12 (stale gate-level and SDF records
-for the Fast-mode I2C images) and row 7 (klt place-and-route not run).
+for the Fast-mode I2C images) and row 7 (klt place-and-route now measures
+8.96 tiles at 41.83% placed utilization, over the 2x2 budget at that
+utilization; the tracker keeps the row unmet).
 
 **T1 checklist** (`klt signoff`, record
-`verification/records/signoff-baseline/records/20261118-105608-ddf2a85.md`,
-klt 0.8.0): **4 of 11 met**.
+`verification/records/signoff-baseline/records/20261120-164259-6fb3838.md`,
+klt 0.9.2): **5 of 11 met, 1 `not_applicable`**.
 
 | Item | Verdict | What moves it |
 |---|---|---|
-| 1 Design sources, 2 Layout, 9 Testbenches, 10 Hygiene | met | — |
+| 1 Design sources, 2 Layout, 7 Post-layout verification, 9 Testbenches, 10 Hygiene | met | — |
 | 3 DRC clean | unmet, `check_failed` (4,484 findings, all inside the foundry SRAM macro) | #365, after #371 |
 | 4 LVS clean | unmet, `check_failed` | #329: contract drafted (DR 0024, `Proposed`); waits on review and the post-route evidence |
 | 5 Full corner verification | unmet, `no_evidence` | no open issue; see Later |
-| 6 Monte Carlo | unmet, `no_evidence` | #348 (record "not applicable") |
-| 7 Post-layout verification | unmet, `unverifiable_provenance` | re-grade after #371 |
+| 6 Monte Carlo | `not_applicable` (hash-bound statement `spec/statistical-claims-na.md`, covering the ratified rows 1–12; #348) | re-mint if a row ever turns statistical or rows 13–14 ratify |
 | 8 Characterization report | unmet, `check_failed` | follows the unmet spec rows |
 | 11 Power delivery | unmet, `no_evidence` | #350; LVS half waits on #329 |
 
@@ -67,8 +68,6 @@ Unblocked once #371 lands:
   change staled nine records. Done when a signoff baseline reads item 3 `met`
   with the exception listed. The same branch note reports item 7 `met` at
   0.9.0, not investigated: the baseline must say why it changed.
-- **Item 6 (#348).** Commit the hash-bound "not applicable" statement for the
-  ratified rows 1–12. Done when a baseline reads item 6 `not_applicable`.
 - **klt STA re-run (#394).** Done when a new `sta-corner-sweep` record names
   the exact PDK commit and quotes the live LibreLane hold figure.
 - **klt place-and-route, signoff-check and ERC re-mints (#389).** Done when

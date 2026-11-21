@@ -86,7 +86,7 @@ not interchangeable, so the matrix in section 3 names one for every row.
 | **Formal** | Yosys + `yosys-smtbmc`/Z3, and `yosys-abc` (`scorr` + `pdr`) | none | Proofs hold for the *harness model* only (section 4). |
 | **Zero-delay gate level** | Icarus + cocotb on the **LibreLane** routed netlist (`flow/run-firmware-gate-level.sh`, `flow/run-reset-power-up-gate-level.sh`) | none | Catches synthesis divergence (X-propagation, inferred state). Says nothing about timing. |
 | **SDF-annotated routed simulation** | Same netlist with the LibreLane post-route SDF, three PVT corners (`flow/run-post-layout-sdf.sh`) | back-annotated, with omissions (section 5) | Does a bench's outcome change with real delay. The core bench and three protocol benches only (section 5). |
-| **STA** | **LibreLane** post-route OpenSTA, 20 ns clock, three corners; separately **klt**/OpenSTA (`klt sta`, netlist estimate) at the three macro-characterized corners | n/a | The LibreLane post-route numbers are the timing of record. The klt leg is a second, independent number at an earlier geometry stage (pre-CTS, pre-route, ideal clock, no hold repair): setup closes at 20 ns, hold fails at all three corners ([record](../../verification/records/sta-corner-sweep/records/20261101-032922-c606644.md)). The two flows disagree on hold; recorded as a finding, never merged (section 3.6). |
+| **STA** | **LibreLane** post-route OpenSTA, 20 ns clock, three corners; separately **klt**/OpenSTA (`klt sta`, netlist estimate) at the three macro-characterized corners | n/a | The LibreLane post-route numbers are the timing of record. The klt leg is a second, independent number at an earlier geometry stage (pre-CTS, pre-route, ideal clock, no hold repair): setup closes at 20 ns, hold fails at all three corners ([record](../../verification/records/sta-corner-sweep/records/20261120-031100-51b7eac.md)). The two flows disagree on hold; recorded as a finding, never merged (section 3.6). |
 | **Physical signoff** | The Tiny Tapeout `gds`/`precheck` workflow (LibreLane); klt DRC/extract/LVS as a second opinion | n/a | See section 6. |
 | **Synthesis area** | **klt/Yosys** flow (`synthesis-baseline`) and, separately, LibreLane's own synthesis | n/a | Two flows, two numbers, never merged. |
 
@@ -186,7 +186,7 @@ cited gate-level records and the runner's `NETLIST` default
 | 20 ns (50 MHz) closes at all three corners, 0 setup and 0 hold violations. Worst setup +5.785 ns (`nom_slow_1p08V_125C`), worst hold +0.0830 ns (`nom_fast_1p32V_m40C`). Max-slew and max-cap violations: 0 at every corner. | **LibreLane**, post-route OpenSTA | [librelane-corner-timing 20261011-144900](../../verification/records/librelane-corner-timing/records/20261011-144900-e5a0bae.md) |
 | Top: 2,526 instances, 35,224.3836 um^2 | **klt/Yosys** synthesis (typ corner deck, 20 ns recipe) | [synthesis-baseline 20261027-190001](../../verification/records/synthesis-baseline/records/20261027-190001-1ec5186.md) |
 | Placed standard-cell area 46,047.7 um^2 (3,414 instances); LibreLane's own synthesis step reports 2,586 cells, 35,897.26 um^2 | **LibreLane** | the corner-timing record above |
-| klt STA over the three macro-characterized corners (netlist estimate, no placement/CTS/hold repair) | klt | [sta-corner-sweep 20261101-032922](../../verification/records/sta-corner-sweep/records/20261101-032922-c606644.md): setup at 20 ns closes at all three (worst +2.867 ns); **hold fails** at all three (worst -0.2266 ns, 23 endpoints each). Run at a post-v0.8.0 klt in a throwaway environment, not the pin. Disagrees with LibreLane on hold; recorded as a finding. |
+| klt STA over the three macro-characterized corners (netlist estimate, no placement/CTS/hold repair) | klt | [sta-corner-sweep 20261120-031100](../../verification/records/sta-corner-sweep/records/20261120-031100-51b7eac.md): setup at 20 ns closes at all three (worst +2.867 ns); **hold fails** at all three (worst -0.2266 ns, 23 endpoints each). Produced by the fleet klt `0.9.2` over IHP-Open-PDK `f7bca326`; every figure byte-identical to the klt `0.8.1.dev146` record it supersedes. LibreLane closes hold after routing. |
 
 The two area numbers come from different synthesis tools and are reported side
 by side; a mismatch is a finding, not a figure to choose between.
@@ -258,9 +258,12 @@ and the header of `flow/run-post-layout-sdf.sh`:
   is the pre-place-and-route netlist and the layout is routed; the
   compare against the run's own post-route netlist is `match`
   ([librelane-gds-signoff-check 20261027-190021](../../verification/records/librelane-gds-signoff-check/records/20261027-190021-1ec5186.md)).
-- The T1 verdict of record is `tier: null`, **4 of 11 items met** (items 1, 2, 9, 10; item 3 moved from met to unmet with the klt `0.8.0` bump)
-  ([signoff-baseline 20261118-105607](../../verification/records/signoff-baseline/records/20261118-105607-ddf2a85.md)).
-  This document does not move that.
+- The T1 verdict of record is `tier: null`, **5 of 11 items met** (items 1, 2, 7, 9, 10) and **1 `not_applicable`**, graded by klt `0.9.2`
+  ([signoff-baseline 20261120-164259-6fb3838](../../verification/records/signoff-baseline/records/20261120-164259-6fb3838.md)).
+  Item 3 moved from met to unmet at the klt `0.8.0` deck (`klt-pin: historical`) and has not moved back; item 7
+  moved to met at klt `0.9.0` because the grader gained a way to verify its citation's bytes
+  (klayout-tools#4893), not because new evidence was produced — see that record's Result.
+  Item 6 is `not_applicable` under the hash-bound statement for ratified rows 1–12 (#348).
 - The template's `gl_test` job checks results with `! grep failure results.xml`
   on the `ihp-cmos5l` branch, which would not match an `<error>` element. The
   repository-owned gate (#215, #216; `scripts/check_test_results.py
@@ -315,15 +318,15 @@ and the header of `flow/run-post-layout-sdf.sh`:
   under separate forge identities, both dispatched by one coordinating
   session (DR 0009's recorded limit on independence); no independent human
   engineering review has taken place.
-- The die-area (place-and-route) leg of the klt flow has still not been run on
-  the macro-backed design (#389), so it claims nothing. The klt STA leg has run
-  and claims a pre-CTS, pre-route netlist estimate only: setup closes at 20 ns
-  at the three macro-characterized corners, hold fails at all three
-  ([record](../../verification/records/sta-corner-sweep/records/20261101-032922-c606644.md);
-  post-v0.8.0 klt in a throwaway environment, not the `layout/toolchain.json`
-  pin, no PDK commit stamp — the re-mint is #394). The LibreLane post-route
-  result remains the timing of record; the hold disagreement between the two
-  flows is recorded as a finding, not reconciled (section 3.6).
+- The macro-backed klt die-area run is outstanding (#389). For STA, klt (OpenSTA)
+  `0.9.2` (the fleet version, re-minted by issue #394 over the klt
+  `0.8.1.dev146` record with every figure byte-identical) produced a pre-CTS,
+  pre-route netlist estimate. Setup closes at 20 ns and hold fails at all three
+  macro-characterized corners. The run stamps the PDK commit (`f7bca326`,
+  read from the install's `.pdk-store.json` because `klt pdk find` prints no
+  version for a bundle-store install).
+  LibreLane closes hold after routing and supplies the timing of record. Section 3.6
+  records the disagreement. [klt STA record](../../verification/records/sta-corner-sweep/records/20261120-031100-51b7eac.md)
 
 ## Spec grades are unchanged
 

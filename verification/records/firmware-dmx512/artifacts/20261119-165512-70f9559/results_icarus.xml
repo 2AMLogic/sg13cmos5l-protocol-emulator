@@ -1,0 +1,7 @@
+<testsuites name="results">
+  <testsuite name="all" package="all">
+    <property name="random_seed" value="1" />
+    <testcase name="test_committed_image_is_fresh" classname="test_firmware_dmx512" file="&lt;repo&gt;/verification/test_firmware_dmx512.py" lineno="227" time="0.0011589527130126953" sim_time_ns="0.0" ratio_time="0.0" />
+    <testcase name="test_dmx512_universe_passes_independent_reference_model" classname="test_firmware_dmx512" file="&lt;repo&gt;/verification/test_firmware_dmx512.py" lineno="273" time="61.71900415420532" sim_time_ns="22942841.0" ratio_time="371730.57657698373" />
+  </testsuite>
+</testsuites>

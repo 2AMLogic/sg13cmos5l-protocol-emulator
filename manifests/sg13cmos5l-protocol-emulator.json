@@ -4,7 +4,7 @@
   "evidence": {
     "1": {
       "file": "manifests/evidence/design-sources.json",
-      "content_hash": "sha256:ae4afb9eba3be835a8f8a433619e575a42d436eaca2f7cf9952788a76dc3b407"
+      "content_hash": "sha256:a6bd1d9f573745aa12c65465893a6bd81040a3b966e69f44acb3190270f98bfa"
     },
     "2": {
       "file": "manifests/evidence/layout-gds.json",
@@ -18,17 +18,29 @@
       "file": "verification/records/librelane-gds-signoff-check/artifacts/20261027-190021-1ec5186/klt-lvs-klt-netlist.json",
       "content_hash": "sha256:e11397622f373fea6a434c2698293408a171db217fd8f9d708b9158890ddf7f4"
     },
+    "6": {
+      "not_applicable": {
+        "spec": {
+          "file": "spec/target-spec-ratified.json",
+          "content_hash": "sha256:f64b320f750aa610245ab412ff21446fb260bcc1958849eba39c908df3f20f9b"
+        },
+        "statement": {
+          "file": "spec/statistical-claims-na.json",
+          "content_hash": "sha256:e506e819fcda46bb85d0b3c661e4273365928f87e453d810f8808d810f96e5ea"
+        }
+      }
+    },
     "7": {
       "file": "verification/records/post-layout-sdf-regression/artifacts/20261011-114800-e5a0bae/klt-functional-verification-nom_typ_1p20V_25C.json",
       "content_hash": "sha256:dfb3fe295ed3b1f1b2ea3dddb89e4052c9272d9c40c4e2b4accfc13281caaa55"
     },
     "8": {
       "file": "manifests/evidence/characterization.json",
-      "content_hash": "sha256:7ccdf10e4a36c37f62aec68b04dc8037553fae815039d4e63559e18dad9ca209"
+      "content_hash": "sha256:f5d7022337e43d43244116c5d034d40765e1f6fea1ad992b6e836ea2f0a4229d"
     },
     "9": {
       "file": "manifests/evidence/testbenches.json",
-      "content_hash": "sha256:70d44f17d34881c742d237927c531eeda5661c77f64a0001b08eb98c291be9a1"
+      "content_hash": "sha256:43ce736b3d133137fe66230b371998fe1cc2c8f50ba67683b4cacd058294321a"
     },
     "10": {
       "file": "manifests/evidence/hygiene.json",

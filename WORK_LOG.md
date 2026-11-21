@@ -18,6 +18,58 @@ Chronological record of merged pull requests and closed issues, newest first.
 
 - [2026-09](work_log/WORK_LOG_2026-09.md)
 
+### 2026-11-20
+
+- **PR #516**: docs(manifests): record the klt 0.8.0 pin parenthetical in the item-6 statement as historical
+- **Issue #481** (closed): docs(spec): spec/statistical-claims-na.md still says "the pinned klayout-tools==0.8.0" after #371 removes the pin
+- **PR #513**: feat(records): fail lint on attested-file drift; README is item-10 evidence
+- **Issue #507** (closed): Guide README refreshes trip the T1 item-10 attestation gate (README.md is hash-pinned evidence)
+- **PR #501**: firmware: SWD debug probe on the frozen ISA (issue #452)
+- **PR #505**: fix: report klt checklist-wording movement in signoff --check-latest
+- **PR #495**: fix(flow): declare the program-memory SRAM macro in the die-area P&R request and record the first measured die area
+- **Issue #452** (closed): Firmware: SWD probe on the existing ISA (multi-protocol extra credit)
+- **Issue #502** (closed): Show checklist wording changes reported by klt in signoff --check-latest
+- **Issue #389** (closed): Follow-up to #371: die-area P&R (ORD-2013 / request.macros) and die-area-baseline re-mint
+- **PR #499**: Re-mint sta-corner-sweep at fleet klt 0.9.2 with a stamped PDK and the live LibreLane hold figure
+- **PR #496**: docs: correct #399's one-for-one round count to four at review, five by merge
+- **PR #493**: docs: record the externally-triggered signoff-baseline red and its standing response
+- **PR #492**: fix: bound the Git root search in the envelope input-path normalizer
+- **PR #487**: firmware: NEC infrared remote transmitter on the frozen ISA
+- **PR #399**: build: track the fleet klayout-tools version instead of pinning one, and delete the re-mint loop that enforced the pin
+- **Issue #494** (closed): Clarify the four rounds at review and five by merge in the PR #399 baseline note
+- **Issue #491** (closed): Bound the Git root search in the signoff envelope normalizer
+- **Issue #482** (closed): signoff baseline will drift on an unchanged tree at the next klayout-tools release that changes the report shape (post-#371 unpinned klt)
+- **Issue #448** (closed): Firmware: NEC infrared on the existing ISA (multi-protocol extra credit)
+- **Issue #394** (closed): Re-run the macro-backed klt sta sweep at the fleet klayout-tools version, stamping the PDK and correcting the Flow comparison (#377)
+- **Issue #371** (closed): chore: pin a klt containing request.macros (PR #2645) and re-mint the records it stales
+
+### 2026-11-19
+
+- **PR #484**: refactor: share the UART and DMX512 TX pin checks
+- **Issue #479** (closed): Share the UART and DMX512 TX pin checks
+- **PR #476**: chore: ignore .loom/account-ranking.* token-pool runtime artifacts
+- **PR #474**: docs: claim CAN 2.0A demand lead only on the SE proxy
+- **PR #469**: docs: align signoff-baseline citation label with the linked record id
+- **PR #468**: records: re-file MIDI evidence in a firmware-midi family, pin UART RX rows
+- **PR #467**: feat(spec): record T1 item 6 as not applicable with a hash-bound statement
+- **PR #461**: firmware: DMX512 universe transmitter on the frozen ISA
+- **PR #457**: docs: protocol catalog ranked by sourced demand and fit
+- **PR #456**: docs: record the SWD probe examination in DR 0018 (agreed fallback fits)
+- **PR #454**: feat: send and monitor MIDI channel messages on the protocol core
+- **Issue #478** (closed): signoff-baseline live-record set inflates on every merge: 56 live records, 54 of them redundant copies
+- **Issue #475** (closed): gitignore: Loom token-pool ranking artifact .loom/account-ranking.codex trips check-main-clean.sh
+- **Issue #473** (closed): docs: protocols.md calls CAN 2.0A the highest-demand build row, contradicting its own demand table
+- **Issue #466** (closed): docs: signoff-baseline citation in submission/verification.md labels a superseded record id
+- **Issue #462** (closed): MIDI evidence record filed under the firmware-uart-rx experiment heads characterization rows 1 and 10
+- **Issue #445** (closed): Firmware: DMX512 on the existing ISA (multi-protocol extra credit)
+- **Issue #444** (closed): Firmware: MIDI on the existing ISA (multi-protocol extra credit)
+- **Issue #443** (closed): Docs: protocol catalog (docs/protocols.md), every candidate protocol ranked by sourced demand and fit
+- **Issue #360** (closed): T1 item 3 (DRC clean): resolve the 4,484 nwell findings in the SRAM macro under the klt 0.8.0 deck
+- **Issue #348** (closed): T1 item 6 (Monte Carlo): record "not applicable" as a hash-bound statement covering every ratified spec row
+- **Issue #278** (closed): Re-stamp SG13CMOS5L PDK pin from klayout-tools (IHP-Open-PDK dev f7bca326)
+- **PR #459**: fix: characterization_report --check misses the stale item 8 manifest pin
+- **Issue #458** (closed): characterization_report.py regeneration leaves the top-manifest item 8 pin stale; --check still passes
+
 ### 2026-11-18
 
 - **Issue #440** (closed): WORK_PLAN omits operator-held curated issues with no priority label (#435 is invisible)

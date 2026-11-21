@@ -9,6 +9,13 @@ verification/records/*/records/*.md (the cited records).
 Outputs: measurements/characterization.md and the generic signoff envelope
 manifests/evidence/characterization.json (status pass only when no row fails).
 
+--check also compares the top-level manifest's item 8 citation
+(manifests/sg13cmos5l-protocol-emulator.json, evidence["8"].content_hash)
+with the freshly built envelope's input hash. The manifest is hand-curated,
+so a regeneration leaves that pin stale; this check surfaces it in the same
+step as the generated-file drift instead of three gates later (issue #458).
+The generation run never writes the manifest.
+
 Usage:
     python3 scripts/characterization_report.py          # regenerate both files
     python3 scripts/characterization_report.py --check  # fail on any drift
@@ -25,10 +32,20 @@ import sys
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(REPO / "verification"))
+from check_records import effective_supersedes
+
 SOURCES = "measurements/characterization-sources.json"
 REPORT = "measurements/characterization.md"
 ENVELOPE = "manifests/evidence/characterization.json"
+MANIFEST = "manifests/sg13cmos5l-protocol-emulator.json"
 VERDICT = {"met": "pass", "unmet": "fail", "proposed": "proposed"}
+REMEDIATION = (
+    "remediate in order: regenerate the report and envelope (rerun without --check), "
+    "review and update the item 8 pin to the envelope's provenance.input.content_hash, "
+    "re-mint the affected signoff-baseline records with scripts/signoff-report.sh, then "
+    "confirm record freshness with python3 verification/check_records.py"
+)
 
 
 class Invalid(Exception):
@@ -40,15 +57,16 @@ def live_records(repo: Path) -> dict[str, dict[str, str]]:
     out: dict[str, dict[str, str]] = {}
     base = repo / "verification" / "records"
     for d in sorted(p for p in base.iterdir() if p.is_dir()):
-        recs: dict[str, str | None] = {}
+        ids: set[str] = set()
+        superseded: set[str] = set()
         for f in sorted((d / "records").glob("*.md")):
             m = re.search(r"<!-- record-meta\n(.*?)\n-->", f.read_text(), re.S)
             if not m:
                 continue
             meta = json.loads(m.group(1))
-            recs[meta["record_id"]] = meta.get("supersedes")
-        superseded = {v for v in recs.values() if v}
-        out[d.name] = {k: "" for k in recs if k not in superseded}
+            ids.add(f.stem)
+            superseded.update(effective_supersedes(f, meta.get("supersedes"), ids))
+        out[d.name] = dict.fromkeys(sorted(ids - superseded), "")
     return out
 
 
@@ -210,6 +228,26 @@ def build(repo: Path) -> tuple[str, str]:
     return report, json.dumps(env, indent=2) + "\n"
 
 
+def manifest_pin_error(expected: str) -> str | None:
+    """Top-manifest item 8 citation vs the freshly built envelope's input hash."""
+    try:
+        manifest = json.loads((REPO / MANIFEST).read_text())
+    except (OSError, json.JSONDecodeError) as e:
+        return f"{MANIFEST} is not readable JSON ({e}); cannot check the item 8 citation"
+    cite = manifest.get("evidence", {}).get("8")
+    if not isinstance(cite, dict) or not isinstance(cite.get("content_hash"), str):
+        return (
+            f"{MANIFEST}: evidence[\"8\"].content_hash is missing; the freshly built "
+            f"envelope records {expected}"
+        )
+    if cite["content_hash"] != expected:
+        return (
+            f"{MANIFEST}: evidence[\"8\"].content_hash pins {cite['content_hash']}, "
+            f"the freshly built envelope records {expected}"
+        )
+    return None
+
+
 def main(argv: list[str]) -> int:
     check = "--check" in argv
     try:
@@ -217,6 +255,7 @@ def main(argv: list[str]) -> int:
     except (Invalid, OSError, KeyError, ValueError) as e:
         print(f"characterization_report: {e}", file=sys.stderr)
         return 1
+    expected = json.loads(env)["provenance"]["input"]["content_hash"]
     bad = False
     for rel, new in ((REPORT, report), (ENVELOPE, env)):
         p = REPO / rel
@@ -226,6 +265,12 @@ def main(argv: list[str]) -> int:
                 bad = True
         else:
             p.write_text(new)
+    if check:
+        err = manifest_pin_error(expected)
+        if err:
+            print(f"characterization_report: {err}", file=sys.stderr)
+            print(f"characterization_report: {REMEDIATION}", file=sys.stderr)
+            bad = True
     return 1 if bad else 0
 
 
