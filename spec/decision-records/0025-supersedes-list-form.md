@@ -63,8 +63,11 @@ sibling (non-string, duplicate, unknown ID) is reported but never voids the
 valid entries beside it. `check_records.effective_supersedes` is the single
 implementation all four consumers share. `--collapse` compares the
 complete Claim and Result bodies (continuation lines included, indented or
-flush-left wrapping) and refuses to mint a second draft while an untracked one
-for the same leaves is pending.
+flush-left wrapping). After a blank line in a required field, an indented
+paragraph continues the field and a field bullet starts the next field.
+`--collapse` refuses an unindented non-field block there because it could
+be either field content or separate record prose. It also refuses to mint a
+second draft while an untracked one for the same leaves is pending.
 
 ## Migration
 
