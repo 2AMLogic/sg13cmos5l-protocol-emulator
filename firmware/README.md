@@ -1159,7 +1159,7 @@ all eight runs. Valid 18,940-cycle halves still decode at the same offsets. Its 
 negative control shortens the first half to 13,232 cycles. Reproduce with
 `python3 verification/test_dali_model.py` and
 `klt functional-verification verification/request-firmware-dali.json --format json`
-from the repository root. [RTL evidence](../verification/records/firmware-dali/records/20261121-050713-754fa04.md)
+from the repository root. [RTL evidence](../verification/records/firmware-dali/records/20261121-083338-c11d39d.md)
 
 ### Pmod wiring
 

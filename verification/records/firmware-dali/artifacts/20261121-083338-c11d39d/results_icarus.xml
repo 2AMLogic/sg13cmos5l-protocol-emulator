@@ -1,0 +1,7 @@
+<testsuites name="results">
+  <testsuite name="all" package="all">
+    <property name="random_seed" value="1" />
+    <testcase name="transactions" classname="test_firmware_dali" file="/home/ubuntu/GitHub/sg13cmos5l-protocol-emulator/.loom/worktrees/doctor-455/verification/test_firmware_dali.py" lineno="115" time="271.78163743019104" sim_time_ns="998147000.0" ratio_time="3672606.4698038357" />
+    <testcase name="half_bit_mutant" classname="test_firmware_dali" file="/home/ubuntu/GitHub/sg13cmos5l-protocol-emulator/.loom/worktrees/doctor-455/verification/test_firmware_dali.py" lineno="174" time="0.14968156814575195" sim_time_ns="337520.0" ratio_time="2254920.2562558735" />
+  </testsuite>
+</testsuites>
