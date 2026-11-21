@@ -75,10 +75,15 @@ def make_record(
     supersedes=None,
     omit_field: str | None = None,
     omit_provenance_key: str | None = None,
+    links: str | None = None,
+    prose_extra: str = "",
 ) -> str:
     """Render a record that satisfies the convention in
     `verification/README.md`, optionally omitting one required prose field
-    so a negative case can be built from it."""
+    so a negative case can be built from it. `links` overrides the default
+    **Links** value and `prose_extra` appends extra prose (e.g. indented
+    sub-bullets) after the field bullets, for the artifact-link cases
+    (#545)."""
     meta = {
         "record_id": record_id,
         "experiment": experiment,
@@ -110,7 +115,7 @@ def make_record(
         ("Statistical convention", "N/A (fixture)"),
         ("Result", "**Overall: PASS** (fixture)"),
         ("klt provenance", "klt 0.0.0-selftest; PDK: n/a; deck content_hash: n/a"),
-        ("Links", "Design under test: `rtl/dut.v`"),
+        ("Links", links if links is not None else "Design under test: `rtl/dut.v`"),
         ("Timestamp / author", "2026-01-01T00:00:00Z, selftest"),
         ("Supersedes", supersedes_prose),
     ]
@@ -124,6 +129,7 @@ def make_record(
         + f"# Record {record_id}\n\n"
         + bullets
         + "\n"
+        + prose_extra
     )
 
 
@@ -790,6 +796,143 @@ def case_experiment_mismatch(repo: Path) -> None:
     )
 
 
+# --- #545: a record's artifact links must resolve -----------------------------
+#
+# PR #455 shipped a record whose **Links** row cited `test_icarus.log`
+# alongside two tracked sibling files, with the log itself absent from the
+# tree; the linter passed it. The cases below pin the regression: the mixed
+# row (so a dangling destination cannot hide behind siblings that resolve),
+# the untracked-local-file loophole, the directory / shared-run / external
+# pass forms, indented links outside **Links**, and superseded records.
+
+LINK_ID = "20260106-000000-abc1234"  # the record under test's own run
+SHARED_ID = "20260105-000000-abc1234"  # a sibling run sharing the artifacts tree
+
+
+def _artifact_dir(repo: Path, experiment: str, run_id: str) -> Path:
+    d = repo / "verification" / "records" / experiment / "artifacts" / run_id
+    d.mkdir(parents=True, exist_ok=True)
+    return d
+
+
+def _mixed_links_row(run_id: str) -> str:
+    return (
+        f"[envelope](../artifacts/{run_id}/klt-functional-verification.json), "
+        f"[results](../artifacts/{run_id}/results_icarus.xml), "
+        f"[pad measurements](../artifacts/{run_id}/test_icarus.log)"
+    )
+
+
+def _record_with_artifact_links(repo: Path, run_id: str, links: str, msg: str,
+                                prose_extra: str = "") -> None:
+    _add_record(
+        repo,
+        "demo",
+        run_id,
+        make_record(
+            run_id,
+            "demo",
+            inputs=[("rtl/dut.v", _sha256_text(DUMMY_RTL))],
+            links=links,
+            prose_extra=prose_extra,
+        ),
+        msg,
+    )
+
+
+def case_artifact_link_missing_log_fails(repo: Path) -> None:
+    """The PR #455 shape: a mixed **Links** row citing two tracked sibling
+    artifacts and one log that is not in the tree at all."""
+    art = _artifact_dir(repo, "demo", LINK_ID)
+    (art / "klt-functional-verification.json").write_text("{}\n", encoding="utf-8")
+    (art / "results_icarus.xml").write_text("<results/>\n", encoding="utf-8")
+    _record_with_artifact_links(
+        repo, LINK_ID, _mixed_links_row(LINK_ID),
+        "fixture: record citing a missing artifact log",
+    )
+
+
+def case_artifact_link_untracked_log_fails(repo: Path) -> None:
+    """The log exists on disk but was never committed: an untracked local
+    file cannot substantiate the citation (the linter reads the git
+    inventory, not the working tree)."""
+    case_artifact_link_missing_log_fails(repo)
+    (
+        _artifact_dir(repo, "demo", LINK_ID) / "test_icarus.log"
+    ).write_text("pad measurements\n", encoding="utf-8")  # deliberately untracked
+
+
+def case_artifact_link_tracked_log_passes(repo: Path) -> None:
+    art = _artifact_dir(repo, "demo", LINK_ID)
+    (art / "klt-functional-verification.json").write_text("{}\n", encoding="utf-8")
+    (art / "results_icarus.xml").write_text("<results/>\n", encoding="utf-8")
+    (art / "test_icarus.log").write_text("pad measurements\n", encoding="utf-8")
+    _record_with_artifact_links(
+        repo, LINK_ID, _mixed_links_row(LINK_ID),
+        "fixture: record with every cited artifact tracked",
+    )
+
+
+def case_artifact_link_valid_forms_pass(repo: Path) -> None:
+    """The legitimate forms a strict checker must not reject: a
+    whole-run-directory link (`[run artifacts](../artifacts/<id>/)`, the
+    `firmware-nec-ir` shape), a shared artifact under a sibling record id,
+    an indented link outside **Links**, an external URL, a fragment-only
+    link, a non-artifact link that does not resolve, and a would-be-dangling
+    artifact path that appears only as inline code."""
+    own = _artifact_dir(repo, "demo", LINK_ID)
+    (own / "klt-functional-verification.json").write_text("{}\n", encoding="utf-8")
+    (own / "test_icarus.log").write_text("pad measurements\n", encoding="utf-8")
+    shared = _artifact_dir(repo, "demo", SHARED_ID)
+    (shared / "results_icarus.xml").write_text("<results/>\n", encoding="utf-8")
+    links = (
+        f"[run artifacts](../artifacts/{LINK_ID}/), "
+        f"[shared results](../artifacts/{SHARED_ID}/results_icarus.xml), "
+        f"[spec](https://example.com/target-spec), [this record](#record), "
+        f"[unrelated](../../../../README-not-committed)"
+    )
+    prose_extra = (
+        f"  - indented bullet: [log](../artifacts/{LINK_ID}/test_icarus.log)\n"
+        f"  - code span, not a link: `../artifacts/{LINK_ID}/never-committed.log`\n"
+    )
+    _record_with_artifact_links(
+        repo, LINK_ID, links,
+        "fixture: every legitimate artifact-link form",
+        prose_extra=prose_extra,
+    )
+
+
+def case_artifact_link_indented_dangling_fails(repo: Path) -> None:
+    """Indented links outside the **Links** field are citations too: a
+    dangling artifact link in a sub-bullet must fail, not hide."""
+    _record_with_artifact_links(
+        repo, LINK_ID, "Design under test: `rtl/dut.v`",
+        "fixture: indented bullet cites a missing artifact log",
+        prose_extra=(
+            f"  - indented bullet: [log](../artifacts/{LINK_ID}/test_icarus.log)\n"
+        ),
+    )
+
+
+def case_superseded_record_artifact_link_checked(repo: Path) -> None:
+    """Supersession freezes a record's provenance hashes, not its
+    citations: a superseded record's dangling artifact link still fails."""
+    case_artifact_link_missing_log_fails(repo)
+    successor = "20260107-000000-abc1234"
+    _add_record(
+        repo,
+        "demo",
+        successor,
+        make_record(
+            successor,
+            "demo",
+            inputs=[("rtl/dut.v", _sha256_text(DUMMY_RTL))],
+            supersedes=LINK_ID,
+        ),
+        "fixture: supersede the record with the dangling artifact link",
+    )
+
+
 CASES = [
     (
         "a gitlink record entry fails cleanly",
@@ -808,6 +951,41 @@ CASES = [
         case_experiment_mismatch,
         1,
         "experiment `other` disagrees with its directory `demo`",
+    ),
+    # --- #545: artifact links must resolve ---
+    (
+        "a mixed Links row with one missing artifact fails",
+        case_artifact_link_missing_log_fails,
+        1,
+        "demo/records/20260106-000000-abc1234.md: artifact link "
+        "`(../artifacts/20260106-000000-abc1234/test_icarus.log)` does not resolve",
+    ),
+    (
+        "an untracked local log does not satisfy the citation",
+        case_artifact_link_untracked_log_fails,
+        1,
+        "demo/records/20260106-000000-abc1234.md: artifact link "
+        "`(../artifacts/20260106-000000-abc1234/test_icarus.log)` does not resolve",
+    ),
+    (
+        "every legitimate artifact-link form passes",
+        case_artifact_link_valid_forms_pass,
+        0,
+        "PASS: all records valid",
+    ),
+    (
+        "a dangling artifact link in an indented bullet fails",
+        case_artifact_link_indented_dangling_fails,
+        1,
+        "demo/records/20260106-000000-abc1234.md: artifact link "
+        "`(../artifacts/20260106-000000-abc1234/test_icarus.log)` does not resolve",
+    ),
+    (
+        "a superseded record's artifact links are still checked",
+        case_superseded_record_artifact_link_checked,
+        1,
+        "demo/records/20260106-000000-abc1234.md: artifact link "
+        "`(../artifacts/20260106-000000-abc1234/test_icarus.log)` does not resolve",
     ),
     # (name, mutation, expected_exit, expected_substring)
     ("valid record passes", case_valid, 0, "PASS: all records valid"),
