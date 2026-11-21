@@ -1,0 +1,35 @@
+{
+  "schema": "klt.sta.request/1",
+  "def": "../../tt_um_2amlogic_protocol_emulator.def",
+  "spef": "../../tt_um_2amlogic_protocol_emulator.spef",
+  "hdl_toplevel": "tt_um_2amlogic_protocol_emulator",
+  "geometry_source": "routed",
+  "pdk": {
+    "cell_library": "sg13cmos5l_stdcell",
+    "corner": "fast_1p32V_m40C"
+  },
+  "constraints": {
+    "clock_port": "clk",
+    "clock_period_ns": 20.0,
+    "propagated_clock": true,
+    "input_delay_ns": 4.0,
+    "output_delay_ns": 4.0,
+    "clock_uncertainty_ns": 0.25,
+    "driving_cell": {
+      "cell": "sg13cmos5l_buf_4",
+      "pin": "X"
+    },
+    "output_load_pf": 0.006
+  },
+  "macros": [
+    {
+      "cell": "RM_IHPSG13_1P_256x16_c2_bm_bist",
+      "lef": "/home/ubuntu/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_sram/lef/RM_IHPSG13_1P_256x16_c2_bm_bist.lef",
+      "lib": {
+        "slow_1p08V_125C": "/home/ubuntu/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_sram/lib/RM_IHPSG13_1P_256x16_c2_bm_bist_slow_1p08V_125C.lib",
+        "typ_1p20V_25C": "/home/ubuntu/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_sram/lib/RM_IHPSG13_1P_256x16_c2_bm_bist_typ_1p20V_25C.lib",
+        "fast_1p32V_m40C": "/home/ubuntu/share/pdk/ihp-sg13cmos5l/libs.ref/sg13cmos5l_sram/lib/RM_IHPSG13_1P_256x16_c2_bm_bist_fast_1p32V_m55C.lib"
+      }
+    }
+  ]
+}

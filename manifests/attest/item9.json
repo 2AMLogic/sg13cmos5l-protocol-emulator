@@ -15,6 +15,7 @@
     "flow/run-reset-power-up-gate-level.sh",
     "flow/run-sram-macro-feasibility.py",
     "flow/run-sta-corner-sweep.sh",
+    "flow/run-sta-post-route-sweep.sh",
     "scripts/check_evidence_inventories.py",
     "scripts/run-rtl-benches.sh",
     "scripts/setup-env.sh",

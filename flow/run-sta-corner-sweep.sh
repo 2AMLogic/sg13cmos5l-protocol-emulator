@@ -56,9 +56,25 @@
 #     PDK_ROOT for the wrapper to mount.
 #   - A resolvable `ihp-sg13cmos5l` PDK (klt pdk find).
 #
+# I/O constraints (issue #522): the request carries `input_delay_ns` /
+# `output_delay_ns` taken from the flow-of-record SDC -- the same source
+# `flow/run-post-layout-sdf.sh` aligns its bench to (the Tiny Tapeout
+# LibreLane `gds` run's own `final/sdc/<top>.sdc`, frozen under the
+# post-layout-sdf-regression artifacts). Without them every top-level
+# output port (`uo_out[*]`, `uio_out[*]`, `uio_oe[*]` -- 24 endpoints) is
+# an unconstrained timing endpoint, `constraint_completeness.status`
+# stays `incomplete` and the reported slack covers register-to-register
+# and SRAM-boundary paths only. The values are PARSED from that SDC --
+# never invented here: the runner fails if the SDC is missing, has no
+# single `create_clock` on `clk`, or carries non-uniform IO delays (the
+# same fail-loud contract run-post-layout-sdf.sh applies). Override the
+# source with --sdc <path> (default: the newest frozen
+# post-layout-sdf-regression SDC).
+#
 # Usage:
 #   ./flow/run-sta-corner-sweep.sh                    # all 6 shipped corners
 #   ./flow/run-sta-corner-sweep.sh slow_1p08V_125C    # a single named corner
+#   ./flow/run-sta-corner-sweep.sh --sdc <frozen.sdc> # another SDC freeze
 #   KLT_BIN=.venv/bin/klt ./flow/run-sta-corner-sweep.sh
 #
 # Writes flow/sta-corner-sweep-results.json (gitignored; the evidence
@@ -99,10 +115,61 @@ ALL_CORNERS=(
   fast_1p32V_m40C
 )
 
-CORNERS=("$@")
+CORNER_ARGS=()
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --sdc)
+      SDC_SRC_ARG="$2"; shift 2 ;;
+    -h|--help)
+      sed -n '2,95p' "${BASH_SOURCE[0]}"; exit 0 ;;
+    *)
+      CORNER_ARGS+=("$1"); shift ;;
+  esac
+done
+CORNERS=("${CORNER_ARGS[@]}")
 if [ "${#CORNERS[@]}" -eq 0 ]; then
   CORNERS=("${ALL_CORNERS[@]}")
 fi
+
+# --- IO delays from the flow-of-record SDC (issue #522) -------------------
+# Same source of truth `flow/run-post-layout-sdf.sh` uses for its drive/
+# sample alignment: the LibreLane `gds` run's own final SDC, taken from
+# the newest freeze under the post-layout-sdf-regression artifacts (or an
+# explicit --sdc). Parsed, never hardcoded; non-uniform IO delays or a
+# missing/unparsable SDC are FATAL -- inventing figures here would
+# silently mis-constrain the sweep.
+if [ -n "${SDC_SRC_ARG:-}" ]; then
+  SDC_FILE="$SDC_SRC_ARG"
+else
+  SDC_FILE="$(find "${REPO_ROOT}"/verification/records/post-layout-sdf-regression/artifacts -mindepth 2 -maxdepth 2 -name "${HDL_TOPLEVEL}.sdc" -type f 2>/dev/null | sort | tail -1)"
+fi
+if [ -z "$SDC_FILE" ]; then
+  echo "FATAL: no flow-of-record SDC found (expected a frozen verification/records/post-layout-sdf-regression/artifacts/*/tt_um_2amlogic_protocol_emulator.sdc, or pass --sdc <path>): no IO delays to constrain the sweep with." >&2
+  exit 1
+fi
+eval "$(python3 - "$SDC_FILE" <<'PYEOF'
+import re
+import sys
+
+text = open(sys.argv[1], encoding="utf-8").read()
+clocks = re.findall(r"create_clock\s+-name\s+clk\s+-period\s+([0-9.]+)", text)
+if len(clocks) != 1:
+    sys.exit(f"FATAL: expected exactly one create_clock -name clk in {sys.argv[1]}, found {clocks}")
+ins = re.findall(r"set_input_delay\s+([0-9.]+)\s+-clock\s+\[get_clocks\s+\{?clk\}?\]\s+-add_delay\s+\[get_ports\s+\{([^}]+)\}\]", text)
+outs = re.findall(r"set_output_delay\s+([0-9.]+)\s+-clock\s+\[get_clocks\s+\{?clk\}?\]\s+-add_delay\s+\[get_ports\s+\{([^}]+)\}\]", text)
+if not ins or not outs:
+    sys.exit(f"FATAL: {sys.argv[1]} has no set_input_delay or no set_output_delay on clk")
+in_vals = sorted({v for v, _ in ins})
+out_vals = sorted({v for v, _ in outs})
+if len(in_vals) > 1 or len(out_vals) > 1:
+    sys.exit(f"FATAL: non-uniform IO delays in {sys.argv[1]}: inputs {in_vals}, outputs {out_vals}")
+print(f"SDC_INPUT_DELAY_NS={in_vals[0]}")
+print(f"SDC_OUTPUT_DELAY_NS={out_vals[0]}")
+print(f"SDC_INPUT_DELAY_PORT_COUNT={len(ins)}")
+print(f"SDC_OUTPUT_DELAY_PORT_COUNT={len(outs)}")
+PYEOF
+)" || exit 1
+echo "== IO delays (from $(basename "$SDC_FILE")): input +${SDC_INPUT_DELAY_NS} ns on ${SDC_INPUT_DELAY_PORT_COUNT} ports, output +${SDC_OUTPUT_DELAY_NS} ns on ${SDC_OUTPUT_DELAY_PORT_COUNT} ports ==" >&2
 
 # shellcheck source=./_klt.sh
 source "${FLOW_DIR}/_klt.sh"
@@ -149,12 +216,13 @@ for corner in "${CORNERS[@]}"; do
   corner_dir="${REQUEST_DIR}/${corner}"
   mkdir -p "${corner_dir}"
   request_path="${corner_dir}/sta-protocol-emulator.json"
-  python3 - "$request_path" "$corner" "$NETLIST_FOR_STA" "$PDK_ROOT_RESOLVED" <<'PYEOF'
+  python3 - "$request_path" "$corner" "$NETLIST_FOR_STA" "$PDK_ROOT_RESOLVED" "$SDC_INPUT_DELAY_NS" "$SDC_OUTPUT_DELAY_NS" <<'PYEOF'
 import json
 import os
 import sys
 
 request_path, corner, netlist_abs, pdk_root = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
+input_delay_ns, output_delay_ns = sys.argv[5], sys.argv[6]
 sram = os.path.join(pdk_root, "ihp-sg13cmos5l", "libs.ref", "sg13cmos5l_sram")
 cell = "RM_IHPSG13_1P_256x16_c2_bm_bist"
 # Per-corner macro liberty, keyed by the stdcell corner name (DR 0007 pairing).
@@ -174,6 +242,8 @@ request = {
     "constraints": {
         "clock_port": "clk",
         "clock_period_ns": 20.0,
+        "input_delay_ns": float(sys.argv[5]),
+        "output_delay_ns": float(sys.argv[6]),
         "wire_load_model": "1k",
         "wire_load_mode": "top",
     },

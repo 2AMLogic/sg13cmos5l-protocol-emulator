@@ -140,8 +140,9 @@ file  .github/workflows/gds.yaml
 #   Spec wording is #44's to change, not this inventory's.)
 # Row 4, core clock: LibreLane post-route OpenSTA at 20 ns, 3 corners
 #   [LL] (experiment librelane-corner-timing). The klt leg has a bench
-#   (sta-corner-sweep) that cannot run while klayout-tools#2635 is open; it
-#   claims no number.
+#   (sta-corner-sweep) that now runs both pre-route (netlist estimate) and
+#   post-route (def mode over the flow-of-record DEF/SPEF, issue #522);
+#   the post-route klt record closes setup and hold at the same 3 corners.
 # Row 5, pin budget: the top is instantiated as the template defines it.
 #   Benches: experiment core-datapath (verification/test_protocol_emulator.py)
 #   and the template's own harness, `npm run test` (cd test && make), plus the
@@ -217,7 +218,7 @@ experiment  random-regression  verification/test_random_regression.py; `klt func
 experiment  reset-pin-through  verification/test_protocol_emulator.py (the same run as core-datapath); `klt functional-verification verification/request-protocol-emulator.json --format json`
 experiment  reset-power-up  `PDK_ROOT=<pdk> ./flow/run-reset-power-up-gate-level.sh` [PDK]; reset coverage `python3 verification/reset_coverage.py` (self-test in `npm run lint`)
 experiment  signoff-baseline  `scripts/signoff-report.sh --check-latest` (grading, not a measurement; CI signoff job)
-experiment  sta-corner-sweep  `./flow/run-sta-corner-sweep.sh [corner]` [PDK]; BLOCKED by klayout-tools#2635, records claim no measurement
+experiment  sta-corner-sweep  `./flow/run-sta-corner-sweep.sh [corner]` (netlist estimate, verilog mode) and `./flow/run-sta-post-route-sweep.sh --run-id <gds-run>` (post-route, def mode over the flow-of-record DEF/SPEF) [PDK]; klayout-tools#2635 closed, both legs run and records claim measurements
 experiment  synthesis-baseline  [PDK] from flow/: `klt synthesize synthesize-protocol-emulator.json --pdk ihp-sg13cmos5l --format json`, same for synthesize-program-memory.json; the boot-ROM-alone figure uses the request frozen in the record's artifacts, run from the repository root
 experiment  uio-pad-model  verification/test_uio_pads.py; `klt functional-verification verification/request-uio-pads.json --format json`; `python3 verification/test_uio_pad_resolution.py`; controls `python3 verification/uio_pad_mutants.py --out <dir>`
 
