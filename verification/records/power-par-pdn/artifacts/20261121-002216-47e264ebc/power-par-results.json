@@ -1,0 +1,127 @@
+{
+  "experiment": "power-par-pdn",
+  "flow": "klt synthesize + klt place-and-route with request.power (OpenROAD, iteration flow of DR 0002)",
+  "hdl_toplevel": "tt_um_2amlogic_protocol_emulator",
+  "probe": {
+    "request": "par-power-probe-request.json",
+    "exit_status": 1,
+    "rejected_without_library": true,
+    "diagnostic_names": [
+      "request.library.power_pins",
+      "request.library.tapcell"
+    ],
+    "diagnostic_log": "par-power-probe-no-library.log"
+  },
+  "power": {
+    "preset": null,
+    "connects_overridden": false,
+    "pdn": true,
+    "global_connect": true,
+    "power_net": "VPWR",
+    "ground_net": "VGND",
+    "tapcell_master": null,
+    "tapless": false,
+    "endcap_master": null,
+    "tapcell_distance_um": null,
+    "filler_masters": [],
+    "straps": [
+      {
+        "layer": "Metal1",
+        "spacing_um": null
+      },
+      {
+        "layer": "Metal4",
+        "spacing_um": 2.0
+      }
+    ],
+    "connects": [
+      {
+        "layers": [
+          "Metal1",
+          "Metal4"
+        ],
+        "max_columns": null,
+        "ongrid": null,
+        "split_cuts": null
+      }
+    ],
+    "row_rail": {
+      "emitted": false,
+      "layer": null,
+      "power_net": null,
+      "ground_net": null,
+      "filler_masters": []
+    },
+    "placed": {
+      "evidence": "def",
+      "def_path": "/home/ubuntu/GitHub/sg13cmos5l-protocol-emulator/.loom/worktrees/issue-523/flow/power-par-scratch/.klt/place-and-route/tt_um_2amlogic_protocol_emulator.place.def",
+      "unavailable_reason": null,
+      "status": "complete",
+      "missing": [],
+      "components": 2785,
+      "tapcells": 0,
+      "endcaps": 0,
+      "fillers": 0,
+      "special_nets": [
+        {
+          "name": "VGND",
+          "use": "GROUND",
+          "followpin_segments": 69,
+          "stripe_segments": 987,
+          "other_segments": 18,
+          "stripe_layers": [
+            "Metal4",
+            "Metal3",
+            "Metal2",
+            "Metal1"
+          ],
+          "vias": 975
+        },
+        {
+          "name": "VPWR",
+          "use": "POWER",
+          "followpin_segments": 68,
+          "stripe_segments": 959,
+          "other_segments": 17,
+          "stripe_layers": [
+            "Metal4",
+            "Metal3",
+            "Metal2",
+            "Metal1"
+          ],
+          "vias": 951
+        }
+      ]
+    }
+  },
+  "placed_stage": {
+    "stage_reached": "place",
+    "die_area_um2": 161592,
+    "core_area_um2": 156242,
+    "utilization_pct": 41.8526,
+    "engine_version": "26Q3-1510-g6cb3f2b704",
+    "deck_name": "sg13cmos5l_stdcell__typ_1p20V_25C"
+  },
+  "strap_layer_erc_stackup_coverage": {
+    "erc_spec": "flow/erc-librelane-gds.json",
+    "stackup": [
+      "10/0",
+      "30/0",
+      "5/0",
+      "50/0",
+      "8/0",
+      "Metal1",
+      "Metal2",
+      "Metal3",
+      "Metal4",
+      "gatpoly"
+    ],
+    "strap_layers": [
+      "Metal1",
+      "Metal4"
+    ],
+    "uncovered_strap_layers": [],
+    "all_covered": true
+  },
+  "warnings": []
+}
