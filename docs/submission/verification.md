@@ -258,8 +258,8 @@ and the header of `flow/run-post-layout-sdf.sh`:
   is the pre-place-and-route netlist and the layout is routed; the
   compare against the run's own post-route netlist is `match`
   ([librelane-gds-signoff-check 20261027-190021](../../verification/records/librelane-gds-signoff-check/records/20261027-190021-1ec5186.md)).
-- The T1 verdict of record is `tier: null`, **5 of 11 items met** (items 1, 2, 7, 9, 10) and **1 `not_applicable`**, graded by klt `0.9.2`
-  ([signoff-baseline 20261121-010127-b6c83b033](../../verification/records/signoff-baseline/records/20261121-010127-b6c83b033.md)).
+- The T1 verdict of record is `tier: null`, **5 of 11 items met** (items 1, 2, 7, 9, 10) and **1 `not_applicable`**, graded by klt `0.9.3.dev2575`
+  ([signoff-baseline 20261121-121745-8ab3406](../../verification/records/signoff-baseline/records/20261121-121745-8ab3406.md)).
   Item 3 moved from met to unmet at the klt `0.8.0` deck (`klt-pin: historical`) and has not moved back; item 7
   moved to met at klt `0.9.0` because the grader gained a way to verify its citation's bytes
   (klayout-tools#4893), not because new evidence was produced — see that record's Result.
