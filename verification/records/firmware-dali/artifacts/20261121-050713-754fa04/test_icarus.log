@@ -1,0 +1,43 @@
+     -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:242  in gpi_load_users                  Loaded entry library: '/usr/lib/x86_64-linux-gnu/libpython3.12.so.1.0'
+     -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:233  in gpi_load_users                  Running entry func 'initialize' from loaded library '/workspace/work/2amlogic-sg13cmos5l-protocol-emulator-3308d5e5/.loom/worktrees/2amlogic-sg13cmos5l-protocol-emulator-3308d5e5/issue-449/.loom-local/doctor455.4dAYvC/venv/lib/python3.12/site-packages/cocotb/simulator.cpython-312-x86_64-linux-gnu.so'
+     -.--ns INFO     pygpi                              ..ib/pygpi/embed.cpp:114  in initialize                      Using Python 3.12.12 interpreter at /workspace/work/2amlogic-sg13cmos5l-protocol-emulator-3308d5e5/.loom/worktrees/2amlogic-sg13cmos5l-protocol-emulator-3308d5e5/issue-449/.loom-local/doctor455.4dAYvC/venv/bin/python
+     -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:74   in gpi_print_registered_impl       GPI: VPI support registered
+     0.00ns INFO     cocotb.initialize                  Seeding Python random module with 1
+     0.00ns INFO     cocotb.initialize                  Initialized cocotb v2.1.0 from /workspace/work/2amlogic-sg13cmos5l-protocol-emulator-3308d5e5/.loom/worktrees/2amlogic-sg13cmos5l-protocol-emulator-3308d5e5/issue-449/.loom-local/doctor455.4dAYvC/venv/lib/python3.12/site-packages/cocotb
+     0.00ns INFO     cocotb.initialize                  Running on Icarus Verilog version 13.0 (stable)
+     0.00ns INFO     cocotb.regression                  Running tests
+     0.00ns INFO     cocotb.regression                  running test_firmware_dali.transactions (1/2)
+14237680.00ns INFO     ..tt_um_2amlogic_protocol_emulator forward 0054: 1Te [20823, 20832, 20833, 20835], 2Te [41666, 41667] cycles
+39241380.00ns INFO     ..tt_um_2amlogic_protocol_emulator forward 01a0: 1Te [20823, 20832, 20833, 20837], 2Te [41666, 41669] cycles
+39241380.00ns INFO     ..tt_um_2amlogic_protocol_emulator forward stop to next start: 541878 cycles
+83632380.00ns INFO     ..tt_um_2amlogic_protocol_emulator forward 01a0: 1Te [20823, 20832, 20833, 20837], 2Te [41666, 41669] cycles
+83632380.00ns INFO     ..tt_um_2amlogic_protocol_emulator reply 81, Te 23148, gap 22 Te: next forward 460321 cycles after stop
+123226300.00ns INFO     ..tt_um_2amlogic_protocol_emulator forward 01a0: 1Te [20823, 20832, 20833, 20837], 2Te [41666, 41669] cycles
+161293600.00ns INFO     ..tt_um_2amlogic_protocol_emulator forward 01a0: 1Te [20823, 20832, 20833, 20837], 2Te [41666, 41669] cycles
+197135760.00ns INFO     ..tt_um_2amlogic_protocol_emulator forward 01a0: 1Te [20823, 20832, 20833, 20837], 2Te [41666, 41669] cycles
+222137820.00ns INFO     ..tt_um_2amlogic_protocol_emulator forward 01a0: 1Te [20823, 20832, 20833, 20837], 2Te [41666, 41669] cycles
+222137820.00ns INFO     ..tt_um_2amlogic_protocol_emulator no reply: next start 541796 cycles after stop begins
+258761520.00ns INFO     ..tt_um_2amlogic_protocol_emulator forward 01a0: 1Te [20823, 20832, 20833, 20837], 2Te [41666, 41669] cycles
+258761520.00ns INFO     ..tt_um_2amlogic_protocol_emulator reply 54, Te 18940, gap 7 Te: next forward 477031 cycles after stop
+297520520.00ns INFO     ..tt_um_2amlogic_protocol_emulator forward 01a0: 1Te [20823, 20832, 20833, 20837], 2Te [41666, 41669] cycles
+297520520.00ns INFO     ..tt_um_2amlogic_protocol_emulator Rejected late_boundary on 81, RESULT held 54
+336694560.00ns INFO     ..tt_um_2amlogic_protocol_emulator forward 01a0: 1Te [20823, 20832, 20833, 20837], 2Te [41666, 41669] cycles
+336694560.00ns INFO     ..tt_um_2amlogic_protocol_emulator Rejected late_boundary on 7e, RESULT held 54
+375452120.00ns INFO     ..tt_um_2amlogic_protocol_emulator forward 01a0: 1Te [20823, 20832, 20833, 20837], 2Te [41666, 41669] cycles
+375452120.00ns INFO     ..tt_um_2amlogic_protocol_emulator Rejected early_boundary on 81, RESULT held 54
+414209900.00ns INFO     ..tt_um_2amlogic_protocol_emulator forward 01a0: 1Te [20823, 20832, 20833, 20837], 2Te [41666, 41669] cycles
+414209900.00ns INFO     ..tt_um_2amlogic_protocol_emulator Rejected late_mid on 81, RESULT held 54
+453647320.00ns INFO     ..tt_um_2amlogic_protocol_emulator forward 01a0: 1Te [20823, 20832, 20833, 20837], 2Te [41666, 41669] cycles
+453647320.00ns INFO     ..tt_um_2amlogic_protocol_emulator reply a7, Te 20833, gap 12 Te: next forward 471904 cycles after stop
+453647320.00ns INFO     cocotb.regression                  test_firmware_dali.transactions passed
+453647320.00ns INFO     cocotb.regression                  running test_firmware_dali.half_bit_mutant (2/2)
+453983560.00ns INFO     ..tt_um_2amlogic_protocol_emulator Short TX half-bit rejected: Manchester interval 13232 cycles outside timing tolerance
+453983560.00ns INFO     cocotb.regression                  test_firmware_dali.half_bit_mutant passed
+453983560.00ns INFO     cocotb.regression                  ********************************************************************************************
+                                                        ** TEST                                STATUS  SIM TIME (ns)  REAL TIME (s)  RATIO (ns/s) **
+                                                        ********************************************************************************************
+                                                        ** test_firmware_dali.transactions      PASS   453647320.00          82.01    5531873.80  **
+                                                        ** test_firmware_dali.half_bit_mutant   PASS      336240.00           0.10    3461756.97  **
+                                                        ********************************************************************************************
+                                                        ** TESTS=2 PASS=2 FAIL=0 SKIP=0                453983560.00          82.10    5529377.40  **
+                                                        ********************************************************************************************

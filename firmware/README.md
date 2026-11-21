@@ -45,6 +45,8 @@ firmware/
                          (target-spec row 13 stretch column, issue #235;
                          protocol chosen by the dated note in DR 0018 after
                          DR 0017's ISA freeze)
+    dali_master.asm      DALI control device on uio[0] (TX) and uio[1] (RX), direct arc power
+                         and QUERY ACTUAL LEVEL for short address zero
     dmx512_tx.asm        DMX512 (USITT DMX512-A) universe transmitter on
                          uo_out[0] through an external RS-485 transceiver:
                          BREAK, mark-after-break, 0x00 start code, 512
@@ -1104,3 +1106,68 @@ loads through the DR 0001 serial load phase and reads back exactly through
 the fetch port the core will execute from — the same out-of-band stance as
 `verification/test_program_memory.py`, because DR 0001 defines no readback
 instruction and the 16-opcode table is exactly full.
+
+## DALI lighting control
+
+The [226-word image](build/dali_master.cycles.txt) sends direct arc power
+`0x54` to short address zero (`0x0054`), then repeats QUERY ACTUAL LEVEL
+(`0x01A0`). Each valid eight-bit answer appears on `uo_out[7:0]` after its
+stop bits. Until the first answer RESULT is zero. An early, malformed or
+missing answer leaves the last result on the pins. The controller assumes an
+idle, single-controller bus at startup. [Assembly source](asm/dali_master.asm)
+
+Manchester coding is bit-banged on the frozen ISA. Each bit contains two
+opposite levels. A rising mid-bit edge encodes one, a falling edge zero.
+The start bit is one, data is MSB first, and the two stop bits are high
+throughout. The receiver times each visible edge. After a mid-bit edge it
+accepts a boundary one half-bit later or the next mid-bit edge two halves
+later. After a boundary it requires a mid-bit edge one half-bit later.
+It polls every 24 cycles in the one-half-bit window and every 34 cycles in
+the two-half-bit window. These intervals set the sampling resolution.
+The only control-space registers used are `UIO_DIR`, `UIO_OD` and
+`PM_ADDR` (one scratch byte). No Manchester primitive is used.
+
+### Timing on the RTL
+
+All times and cycle limits below are **at target-spec row 4's unconfirmed
+50 MHz clock** (20 ns per core cycle). At 1,200 bit/s a half-bit, Te, is
+20,833⅓ cycles. The reference model converts the specified ±10% **rate**
+range to integer cycle limits. Equal-level halves have no intervening pad
+edge, so the bench grades their combined duration. Frame gaps are measured
+from the end of both stop bits. [Microchip AN1465, pp. 4–6, figures 7–10](https://ww1.microchip.com/downloads/en/AppNotes/01465A.pdf)
+
+| Interval | Protocol limit (cycles) | RTL observation (cycles) |
+|---|---:|---:|
+| Forward isolated half-bit | 18,940–23,148 | 20,823–20,837 |
+| Forward two adjacent equal halves | 37,879–46,296 | 41,666–41,669 |
+| Forward stops (4 Te) + gap to next forward (≥22 Te) | ≥541,667 nominal | 541,878 after direct arc, 541,796 on no reply |
+| Query EOF to backward start | 7–22 Te | 145,834 and 458,333 at the two endpoints, rounded to a clock |
+| Backward stops | 4 sender Te, idle high | 75,760 / 83,332 / 92,592 for the fast / nominal / slow gear |
+| Backward EOF to next forward | ≥458,334 nominal | 460,321–477,031 for the three valid replies |
+
+The pad bench shifts a single payload boundary by 8,000 cycles in each
+polarity, keeping its neighboring mid-bit edges on time. RESULT holds
+`0x54` through those replies, an early boundary and a late mid-bit edge,
+then updates to `0xA7` on a valid reply. The bench also covers a low final
+stop half, a shortened start, an early reply and silence.
+The receiver's lower bound on the start low and on the final zero's low
+half is tight to the 18,940-cycle minimum. Its last guard poll lands
+18,660–18,910 cycles after the fall on the start path and 18,816–18,859 on
+the final-zero path. The bench shortens each of those two lows to 18,600
+cycles at start-poll offsets of 0, 75, 150 and 225 cycles. RESULT holds in
+all eight runs. Valid 18,940-cycle halves still decode at the same offsets. Its TX
+negative control shortens the first half to 13,232 cycles. Reproduce with
+`python3 verification/test_dali_model.py` and
+`klt functional-verification verification/request-firmware-dali.json --format json`
+from the repository root. [RTL evidence](../verification/records/firmware-dali/records/20261121-083338-c11d39d.md)
+
+### Pmod wiring
+
+Use a Pmod-to-mikroBUS adapter or jumpers to a **MikroElektronika DALI Click**
+(original board with two TLP181 optocouplers). With J2 at 3.3 V and J1 at
+INT, connect upper-row Pmod pin 1 (`uio[0]`) to **RST / DALI_TX**, pin 2
+(`uio[1]`) to **INT / DALI_RX**, pin 5 to logic GND, and pin 6 to +3.3 V.
+Connect the powered DALI pair to CN2. TX high releases the bus and TX low
+sinks it through U1/M1. RX high reports idle and RX low reports an asserted
+bus. The pad bench models these digital levels. Hardware and analogue
+timing have not been measured. [DALI Click manual, sections 5–6](https://download.mikroe.com/documents/add-on-boards/click/dali/dali-click-manual-v100.pdf)

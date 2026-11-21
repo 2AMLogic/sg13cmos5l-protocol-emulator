@@ -40,7 +40,7 @@
     },
     "9": {
       "file": "manifests/evidence/testbenches.json",
-      "content_hash": "sha256:7aecfd4319403a326fdcb95959cb8f839c00df8b236bf7badfecf38c9d36481a"
+      "content_hash": "sha256:723ed89030ce919461bd019a190301d464d012e17cc52be10da8be3b755e95fb"
     },
     "10": {
       "file": "manifests/evidence/hygiene.json",

@@ -84,6 +84,7 @@ PIN_MODE_PROFILES = {
     "spi": ("spi_transfer",),
     "i2c": ("i2c_transfer",),
     "ps2": ("ps2",),
+    "dali": ("dali",),
     "swd": ("swd",),
 }
 PIN_MODE_REGS = ("uio_dir", "uio_od")
@@ -98,6 +99,8 @@ PHASES = (
     "i2c_result",
     "ws2812",
     "ps2",
+    "dali",
+    "dali_result",
     "dmx512",
     "nec_ir_tx",
     "nec_ir_rx",
@@ -130,6 +133,8 @@ PHASE_VOCAB = {
     "ws2812": {"DIN"},
     # Row 13 stretch (DR 0018 note, issue #235): the PS/2 device's two lines.
     "ps2": {"PS2_CLK", "PS2_DATA"},
+    "dali": {"TX", "RX"},
+    "dali_result": {f"RESULT[{i}]" for i in range(8)},
     # Multi-protocol extra credit (issue #445): the DMX512 transmitter's
     # line, driven push-pull through an external RS-485 transceiver.
     "dmx512": {"TX"},
@@ -164,6 +169,8 @@ PATTERNS = {
     "bench_ws2812",         # DIN_PIN, DIN_BIT = "port", n
     "ps2_images",           # ps2_device.asm: release images, CLK mask, DATA images, bit moves, UIO_OD value
     "ps2_shifts",           # ps2_device.asm: the shift recipe after each IN UIO_IN
+    "dali_levels",          # TX pin images, RX shift and mask
+    "bench_dali",           # TX_BIT, RX_BIT = n, m
     "bench_ps2",            # CLK_BIT, DATA_BIT = n, m
     "swd_images",           # swd_probe.asm: preloaded image pair, per-bit images, UIO_DIR values, no UIO_OD
     "swd_sample",           # swd_probe.asm: each IN UIO_IN followed by AND Rx, R0 (the SWDIO mask)
@@ -1057,6 +1064,33 @@ class Checker:
         # OUT from R1 drives is a dataflow question this text check does not
         # answer; the bench grades every DIN level the program produces.
 
+    # -------------------------------------------------------- profile: dali
+    def prof_dali(self, rel, ent, text):
+        ins = self.asm_instrs(text)
+        outs, inputs, result = self.out_in_ports([("dali", ["TX"])], [("dali", ["RX"])], "dali_result")
+        self.check_ports(rel, ins, outs | result, inputs, outs | result, inputs)
+        tx = self.mask_of("dali", "TX")
+        rx = self.mask_of("dali", "RX")
+        for idx, inst in enumerate(ins):
+            op, args = inst["m"], inst["ops"]
+            if op == "OUT" and args[0] in outs:
+                _, writer = self.prev_write(ins, idx, args[1])
+                value = self.imm(writer["ops"][1]) if writer and writer["m"] == "LDI" else None
+                self.concrete.sites += 1
+                if value not in (0, tx):
+                    self.concrete.err(f"{rel}:{inst['no']}: TX pin image must be zero or 0x{tx:02X}")
+            if op == "IN" and args[1] in inputs:
+                reg = args[0]
+                tail = ins[idx + 1:idx + 3]
+                self.concrete.sites += 1
+                if (rx != 2 or [(i["m"], i["ops"]) for i in tail] !=
+                        [("SHF", [reg, "RIGHT"]), ("AND", [reg, "R1"])]):
+                    self.concrete.err(f"{rel}:{inst['no']}: RX sample must isolate the table's dali.RX bit")
+        # R1 is also the post-shift RX mask, so it must stay one.
+        writes = [i for i in ins if i["m"] in self.WRITES and i["ops"][0] == "R1"]
+        if len(writes) != 1 or writes[0]["m"] != "LDI" or self.imm(writes[0]["ops"][1]) != 1:
+            self.concrete.err(f"{rel}: RX mask R1 must be initialized to one and preserved")
+
     # --------------------------------------------------------- profile: ps2
     def prof_ps2(self, rel, ent, text):
         """Row 13's stretch program (DR 0018 note of 2026-10-11, issue #235):
@@ -1303,6 +1337,12 @@ class Checker:
         m = self.need(text, r'^DIN_PIN,\s*DIN_BIT\s*=\s*"(\w+)",\s*(\d+)', rel, "DIN_PIN, DIN_BIT")
         if m:
             self.check_pb(rel, "DIN_PIN/DIN_BIT", m.group(1), int(m.group(2)), "ws2812", "DIN")
+
+    def prof_bench_dali(self, rel, ent, text):
+        m = self.need(text, r'^TX_BIT,\s*RX_BIT\s*=\s*(\d+),\s*(\d+)', rel, "TX_BIT, RX_BIT")
+        if m:
+            self.check_pb(rel, "TX_BIT", "uio", int(m.group(1)), "dali", "TX")
+            self.check_pb(rel, "RX_BIT", "uio", int(m.group(2)), "dali", "RX")
 
     def prof_bench_ps2(self, rel, ent, text):
         m = self.need(text, r'^CLK_BIT,\s*DATA_BIT\s*=\s*(\d+),\s*(\d+)', rel, "CLK_BIT, DATA_BIT")
@@ -1726,7 +1766,7 @@ class Checker:
                 self.unwired.append(
                     f"prerequisite: {rel} writes bench-debug values to UIO_OUT and also writes "
                     f"{', '.join(modes)}: the debug values would reach uio pads (DR 0012; issue #154)")
-        # Each SPI / I2C / PS/2 / SWD image must put its runtime pins in the
+        # Each SPI / I2C / PS/2 / SWD / DALI image must put its runtime pins in the
         # table's mode:
         # write the profile's `pin_modes` value to UIO_DIR / UIO_OD, after
         # its first `OUT UIO_OUT` (uio_out resets to 0, so enabling a driver
@@ -1737,7 +1777,7 @@ class Checker:
         what = {"uio_dir": ("UIO_DIR", "push-pull"), "uio_od": ("UIO_OD", "open-drain")}
         for rel, ent in sorted(self.inv.items()):
             prof = ent["profile"]
-            if prof not in ("spi", "i2c", "ps2", "swd") or prof not in modes:
+            if prof not in ("spi", "i2c", "ps2", "swd", "dali") or prof not in modes:
                 continue
             text = self.read(rel, self.concrete)
             if text is None:
@@ -1749,7 +1789,7 @@ class Checker:
                 sites = [i for i, x in enumerate(ins) if x["m"] == "WCTL"
                          and x["ops"][0].upper() in (name, CTL_INDEX[name])]
                 self.concrete.sites += 1
-                if not want:
+                if not want and prof != "dali":
                     if sites:
                         self.unwired.append(
                             f"{rel}: writes {name}, but the table's {prof} profile drives no "

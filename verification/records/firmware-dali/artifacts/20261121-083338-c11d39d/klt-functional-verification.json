@@ -1,0 +1,99 @@
+{
+  "schema_version": 2,
+  "engine": "icarus",
+  "hdl_toplevel": "tt_um_2amlogic_protocol_emulator",
+  "testbench": "test_firmware_dali",
+  "status": "pass",
+  "test_count": 2,
+  "passed_count": 2,
+  "failed_count": 0,
+  "skipped_count": 0,
+  "tests": [
+    {
+      "name": "transactions",
+      "status": "passed",
+      "sim_time_ns": 998147000.0,
+      "real_time_s": 271.78163743019104
+    },
+    {
+      "name": "half_bit_mutant",
+      "status": "passed",
+      "sim_time_ns": 337520.0,
+      "real_time_s": 0.14968156814575195
+    }
+  ],
+  "coverage": null,
+  "trace": null,
+  "environment": {
+    "engine": "icarus",
+    "engine_version": "13.0",
+    "tools": [],
+    "cocotb_version": "2.0.1",
+    "results_xml": {
+      "path": "verification/records/firmware-dali/artifacts/20261121-083338-c11d39d/results_icarus.xml",
+      "scope": "repo",
+      "sha256": "sha256:e0c0ca765e5b2d99f031b864420668c2ef51b7ae2e42ab5180adcee46dfdf4f6"
+    },
+    "test_log": {
+      "path": "verification/records/firmware-dali/artifacts/20261121-083338-c11d39d/test_icarus.log",
+      "scope": "repo",
+      "sha256": "sha256:adef854b27ca7198bbf326d17a9ad1df8030cc4374f00d0707fbd7950e25e992"
+    },
+    "build_log": {
+      "path": "verification/records/firmware-dali/artifacts/20261121-083338-c11d39d/build_icarus.log",
+      "scope": "repo",
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "random_seed": 1,
+    "source_defines": {},
+    "env": {},
+    "parameters": {},
+    "initial_state": null,
+    "sdf": null,
+    "sources": [
+      {
+        "path": "src/tt_um_2amlogic_protocol_emulator.v",
+        "scope": "repo",
+        "sha256": "8c380b9165a09a60e6be8d8546eac360a733317253f152c15faaa13489e94a29"
+      },
+      {
+        "path": "rtl/protocol_core.v",
+        "scope": "repo",
+        "sha256": "d4bab243a80af56a41b8ef730bc0ecbee889f2c02f4587311d6f9f694636437a"
+      },
+      {
+        "path": "rtl/protocol_boot_rom.v",
+        "scope": "repo",
+        "sha256": "329ed189d457010b259349e5d59e36db09d67422b4909320253929c3e0fdbebe"
+      },
+      {
+        "path": "rtl/protocol_program_memory.v",
+        "scope": "repo",
+        "sha256": "2b08865ab24d6bac84b390dfa76bab6686b572ba8f19124130bfc34e93dff637"
+      },
+      {
+        "path": "rtl/vendor/RM_IHPSG13_1P_256x16_c2_bm_bist.v",
+        "scope": "repo",
+        "sha256": "9d456840a37dff650ee6a09dc1f3d4e2d8d3348fcea7dc305933dd4543feff1a"
+      },
+      {
+        "path": "rtl/vendor/RM_IHPSG13_1P_core_behavioral_bm_bist.v",
+        "scope": "repo",
+        "sha256": "e2e43ec0159cbc34662fe91114e8cb03a697a2a829ad63b0d4f06631908ea787"
+      }
+    ]
+  },
+  "provenance": {
+    "klt_version": "0.9.3.dev2575+g6bd18bbc8637",
+    "klt_git_commit": "6bd18bbc8637f6d767b3c24e77bd5db7a39e4bbe",
+    "klt_reinstall_spec": "klayout-tools @ git+https://github.com/2AMLogic/klayout-tools@6bd18bbc8637f6d767b3c24e77bd5db7a39e4bbe",
+    "klayout_version": "0.30.12",
+    "pdk": null,
+    "deck": null,
+    "input": {
+      "role": "source",
+      "content_hash": "sha256:1df6bb47bbd2129244c779e49715ce7a290cf179b60afe92317041e01e9eae56"
+    },
+    "request_sha256": "967596ea9373fa05160add2f870fc552f2c0e0dfec0f6167d8e0c9f1f996c78a"
+  }
+}
