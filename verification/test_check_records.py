@@ -968,6 +968,12 @@ CASES = [
         "`(../artifacts/20260106-000000-abc1234/test_icarus.log)` does not resolve",
     ),
     (
+        "a mixed Links row with every artifact tracked passes",
+        case_artifact_link_tracked_log_passes,
+        0,
+        "PASS: all records valid",
+    ),
+    (
         "every legitimate artifact-link form passes",
         case_artifact_link_valid_forms_pass,
         0,
