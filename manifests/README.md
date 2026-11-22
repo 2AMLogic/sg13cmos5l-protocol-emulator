@@ -1064,6 +1064,38 @@ issue #49's klt pin bump by the time this retirement landed, and that
 record still cited the vendored file by content hash, so it is the one this
 retirement's supersession chain must extend).
 
+**Refresh disclosure rule (issue #403).** Across the committed 0.8.0 and
+0.9.0 reports, T1 item 7 changed from `unmet` to `met` and `t1_met_count`
+rose from 4 to 5. Both reports name the same `source_doc` path. Its
+`source_doc_content_hash` changed, as did the `text` of T1 items 3, 4, 5,
+6, 8 and 11. Only item 6 changed its `notes`.
+
+A signoff-baseline refresh record must give both full hashes whenever
+`source_doc_content_hash` changes and list every changed `text` or `notes`
+field by tier and item ID, alongside `grading_ruleset_id` and graded changes.
+The exit status of `klt signoff --check` reflects graded drift. Some grader
+versions also report checklist wording changes through `doc_drift_fields`,
+even when grades match. Generate the disclosure directly from the two
+reports with either command below. [Upstream issue #6850](https://github.com/2AMLogic/klayout-tools/issues/6850)
+
+```bash
+scripts/signoff-report.sh --diff-vs <record-id>   # fresh render vs that
+                                                  # record's committed
+                                                  # artifact; no arg = the
+                                                  # latest record, the same
+                                                  # one --check-latest
+                                                  # selects
+python3 scripts/signoff_movement_diff.py OLD.json NEW.json   # any two
+                                                  # report files directly
+```
+
+The comparison prints each non-graded movement (source doc/hash
+before → after, per-item text/notes with old/new character counts and a
+short excerpt, added/removed items keyed by tier and id — matching items
+by tier+id regardless of row order) or a single "no non-graded movement"
+line; it is information, not a gate, so it exits 0 whether fields moved
+or matched. Paste its output into the record being minted.
+
 ## Companion links
 
 - Fleet roll-up design (consumes this file): `2AMLogic/2am`#956.
