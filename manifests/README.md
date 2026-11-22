@@ -82,6 +82,28 @@ never be reused for a `--check` invocation: `scripts/signoff-report.sh
 --check-latest` maps `--check`'s `3` to exit `1` for exactly this reason
 (the trap is called out in its header).
 
+**Non-graded checklist movement: what the live check surfaces, and what it
+cannot.** Newer klt builds carry non-graded movement in the same `--check`
+envelope as two optional keys — `doc_drift` (bool) and `doc_drift_fields`
+(entries naming the moved `field`, e.g. an `items.N.text` wording change,
+with its `committed` and `fresh` values). Measured on 2026-11-20 (issue
+#502): builds `0.9.2.dev111+g978f7464fae1` and `0.9.3.dev2366+g5dc34289aca1`
+both emit the fields (the first release carrying them is unverified), and
+`layout/toolchain.json`'s bare `klayout-tools` requirement means the runner
+meets them whenever the current release has them. On such a build
+`scripts/signoff-report.sh --check-latest` surfaces the movement on **both**
+outcomes: a graded match with checklist movement still exits `0` — the
+summary says the graded fields matched and names the movement instead of
+claiming "no drift" — and a graded drift lists the entries (prefixed
+`checklist wording moved:`) alongside the graded `drifted:` lines. The
+movement stays non-graded: it never trips the gate by itself. On an older
+klt the keys are simply absent and the live check reports nothing extra —
+and even on a new build the live check only sees movement of the **current
+manifest against the latest committed record**: comparing two already-saved
+reports (a refresh between records, with no live manifest behind the pair)
+is beyond it, so a refresh author still compares the saved reports
+themselves (issue #403).
+
 ## What the manifest currently declares, and why every row is `unmet`
 
 `kind` is declared `"digital"` (the block is a CPU implemented as RTL on a
@@ -672,6 +694,127 @@ capture, PVT corner sweeps, or Monte Carlo.
   #399 and rejected as a repo-local version declaration of exactly the kind
   the ruling removes; the red is accepted instead (recorded here for the
   trade-off only, decided in `layout/toolchain.json`'s own history).
+- **2026-11-20, correction to the count of #399's one-for-one rounds
+  (issue #494).** The November 20 note above says one fresh round supersedes
+  the live heads one-for-one "(as #399 did four times on 2026-11-19)". That
+  figure is issue #482's, measured at PR #399's then head `7d081f67`, where
+  exactly four complete rounds had landed: `ddfaa191`, `99648430`,
+  `49733137` and `7d081f67`, whose 16, 32, 64 and 120 successors each name
+  every then-live head exactly once. A fifth round landed before #399
+  merged at `5cd78a4e`: `85887e10` superseded all **232** then-live heads
+  one-for-one (the branch's 120 and main's 112 -- the round the post-#484
+  entry above records as `signoff-baseline 20261119-223829` ..
+  `20261119-224220-e4ca4ab`). A reader counting baseline commits with
+  `git log` finds six, not five: `db962c6b`'s eight added records carry
+  November 14 record IDs (`20261114-021001`..`-021008-2ad8b1c`; author
+  date 2026-11-14, committer date 2026-11-19 from the rebase) and supersede
+  November 8 predecessors that were no longer live in its rebase parent,
+  so it is not a one-for-one round of the live heads. Four at #482's
+  snapshot, five by the merge; the November 20 note and its standing
+  response stand unchanged.
+- **2026-11-20 (issue #507): the attestation-pin drift check — an edit to
+  an attested file now fails `npm run lint` locally, not CI's re-attest.**
+  `scripts/check_evidence_inventories.py`'s unrestricted run (the one
+  `npm run lint` and the CI records job use) gained check 5: every
+  per-file pin inside an envelope's `attestation.checks` is re-hashed
+  against the tree, and a mismatch names the file and the re-mint command
+  (`klt signoff --attest N --inventory manifests/attest/itemN.json -o
+  <envelope> --skip-local-only`, then the baseline round it stales). The
+  recurring case is `README.md`: it is hash-pinned T1 item-10 evidence,
+  and a Guide document-maintenance PR that edits it used to pass
+  everything local and fail only CI's `Re-attest T1 item 10` step (exit
+  3), costing a Doctor round, an item-10 re-attest and a baseline round;
+  `CLAUDE.md` now carries the rule that README changes arrive via an
+  issue -> Builder PR that re-attests item 10. The `--inventory`
+  restricted run an attestation itself invokes is deliberately unchanged,
+  so a re-mint never trips on the very pins it is refreshing. Editing the
+  checker stales both envelopes that pin it, so items 9 and 10 were
+  re-attested at the fleet klt `0.9.2` (`--skip-local-only`: same checks
+  and outcomes, only the checker's `content_hash` moved) — the #5538
+  throwaway-baseline ordering was not needed, because `--skip-local-only`
+  carries the `lint` outcome and the attestation never runs the record
+  linter. **The round superseding all 2,760 live `6f54f56` heads
+  one-for-one is `signoff-baseline 20261120-092144` ..
+  `20261120-100743-c749775`, 5 of 11 met, 1 not applicable, at klt
+  `0.9.2`**; the fresh render matches the previous round's committed
+  artifact (`--check`: `match`, no checklist movement) — only the two
+  envelope files' bytes moved, no graded field. Both docs citing a
+  baseline (`docs/submission/verification.md`, `docs/ROADMAP.md`) were
+  re-pointed at this round in the same change. **PR #506 (main's own
+  README edit and item-10 re-attest) merged mid-flight, so the branch's
+  round and main's `4c3027e` round were both staled by the merge; the
+  round that lands is `signoff-baseline 20261120-103600` ..
+  `20261120-120759-1bdad204`, 5,520 successors — one per live record of
+  BOTH parent rounds — sharing one klt `0.9.2` render at the merge, which
+  matches both parents' artifacts (no graded field moved; the merge
+  combined the two one-line envelope re-attests, and the fresh
+  re-attest on the merged tree wrote byte-identical bytes).**
+- **2026-11-20 (issue #481): the "(in the pinned `klayout-tools==0.8.0`)"
+  parenthetical at `spec/statistical-claims-na.md:9` is historical, and the
+  hash-bound statement is deliberately left byte-identical.** The statement
+  landed 2026-11-19 (`6d6fc00b`, issue #348, PR #467) while the repo still
+  pinned `klayout-tools==0.8.0`, so the parenthetical was true when written;
+  PR #399 (issue #371, merged hours later, `5cd78a4e`) removed the pin and
+  staled it. #399's pin-prose enumeration ran 2026-11-14 against a `main`
+  that did not yet have this file, so it was never on that PR's list. Read
+  it as dated context, the way the rest of the repo's pin prose reads:
+  klayout-tools #2865 first shipped in release 0.8.0, and this repo has not
+  pinned klt since #371 (`klt-pin: historical`). **Item 6's
+  `not_applicable` verdict does not depend on the parenthetical** — the
+  substance is "#2865 made `not_applicable` renderable", and 0.8.0 is just
+  the release it shipped in. The statement is not corrected in place
+  because it is hash-bound (`statement_content_hash` in
+  `spec/statistical-claims-na.json`, cited by the manifest's item 6): a
+  prose edit forces a statement re-bind, a manifest re-cite and a
+  signoff-baseline re-mint through the spec two-key gate, which is not
+  worth it for a parenthetical the verdict does not rely on (issue #481
+  option 2). The one other present-tense site the review found —
+  `docs/submission/README.md`'s klt-deck provenance line — already reads
+  `klt 0.8.0` — `klt-pin: historical` on current `main`; the spec file was
+  the only hash-bound straggler.
+
+- **2026-11-21 (issue #523): T1 item 11's three parts, state of. Append-only;
+  the bullets above are the earlier states.** klayout-tools#2635 (no way to
+  declare a hard macro) and #4193 (no partial item-11 citation) are both
+  CLOSED, and the paragraph above saying the klt flow "cannot place this
+  design" is history: `die-area-baseline` `20261120-021530-bbbae57` placed
+  both tops through `request.macros`, and this change adds the power leg.
+  **Part 1 (ERC supply) exists and was re-minted**: `librelane-erc`
+  `20261121-002540-47e264ebc` supersedes `20261027-190031-1ec5186` with
+  substance unchanged — the re-mint carries two mechanical changes, the
+  spec stackup names renamed to the LEF spelling (`Metal1`..`Metal4`, so a
+  `power.straps[].layer` matches by exact string the way item 11's grader
+  requires) and a new `--deck sg13cmos5l` on the erc command (a deckless
+  klt 0.9.2 run discloses the substrate-path supply short as
+  `substrate_isolation_undecidable`, klayout-tools#5346, which signoff
+  gates item 11 on; with the deck the substrate pass evaluates — this GDS
+  draws no `nbulay` 32/0, so the substrate is shared and provably
+  un-isolated). **Part 2 (P&R power grid) exists**: `power-par-pdn`
+  `20261121-002216-47e264ebc` is a `klt place-and-route` run of the
+  macro-backed top with a `request.power` block — `power.pdn: true`, straps
+  Metal1 (followpin rail) + Metal4, `power.placed.status: "complete"` with
+  `missing: []` (no warnings), both strap layers covered by the cited ERC
+  spec's stackup. **Part 2's tap-cell statement is the one open gap**: the
+  response renders `tapcell_master: null` with `tapless: false` —
+  `sg13cmos5l_stdcell` ships no tap/endcap master (its own PDK librelane
+  config says so) but is not in klt's `_NO_TAPCELL_LIBRARIES` allowlist,
+  and the request-side `request.library.tapcell: null` declaration does
+  not set `tapless`; filed as klayout-tools#6993. **Part 3 (LVS
+  `power_connectivity.status: "match"`) still waits on #329**, unchanged.
+  **The manifest's item 11 now cites parts 1 and 2** (the two-part
+  evidence list), because the fleet grader renders that partial citation
+  `unmet` / `power_delivery_parts_missing` with `missing_parts: ["lvs"]`
+  (klayout-tools#4193, in klt since 0.9.0) — no longer `wrong_kind`, so
+  the citation states exactly what exists and what is missing; verified by
+  render before committing. `t1_met_count` is unchanged (5): the item is
+  `unmet` either way, and #350 owns the final compound citation once #329
+  lands and #6993 resolves the tap-cell statement. The round superseding
+  the staled `20261120-164259-6fb3838` head is `signoff-baseline
+  20261121-010127-b6c83b033`, minted in the same change; items 9 and 10 were
+  re-attested first (`--skip-local-only`, same checks and outcomes) because
+  item 9's inventory gained `flow/run-power-par.sh` and the
+  `librelane-erc` cold-start row gained `--deck`, and item 10 pins
+  `manifests/evidence/testbenches.txt`.
 
 - **Every citation pins a `content_hash`**, and what it is the hash of
   depends on the cited envelope (clarified 2026-10-10, issue #168; the
@@ -920,6 +1063,47 @@ that record had already been superseded by `20260927-092721-91f489d4` under
 issue #49's klt pin bump by the time this retirement landed, and that
 record still cited the vendored file by content hash, so it is the one this
 retirement's supersession chain must extend).
+
+**Refresh disclosure rule (issue #403).** Across the committed 0.8.0 and
+0.9.0 reports, T1 item 7 changed from `unmet` to `met` and `t1_met_count`
+rose from 4 to 5. Both reports name the same `source_doc` path. Its
+`source_doc_content_hash` changed, as did the `text` of T1 items 3, 4, 5,
+6, 8 and 11. Only item 6 changed its `notes`.
+
+A signoff-baseline refresh record must give both full hashes whenever
+`source_doc_content_hash` changes and list every changed `text` or `notes`
+field by tier and item ID, alongside `grading_ruleset_id` and graded changes.
+The exit status of `klt signoff --check` reflects graded drift — checklist
+movement alone leaves a graded match successful. Builds that emit the
+optional `doc_drift` / `doc_drift_fields` keys report that movement during
+a live check even when grades match; older builds simply omit the keys
+(the exit-code section's "Non-graded checklist movement" paragraph records
+the observed behavior). Distinguish the three comparisons:
+`scripts/signoff-report.sh --check-latest` re-grades the current manifest
+against the latest committed record; its `--diff-vs <record-id>` compares
+a fresh render against a chosen record; and
+`scripts/signoff_movement_diff.py OLD.json NEW.json` compares two
+already-saved reports — the one comparison the live check cannot make,
+since no live manifest sits behind the pair. Generate the disclosure
+directly from the two reports with either command below. [Upstream issue #6850](https://github.com/2AMLogic/klayout-tools/issues/6850)
+
+```bash
+scripts/signoff-report.sh --diff-vs <record-id>   # fresh render vs that
+                                                  # record's committed
+                                                  # artifact; no arg = the
+                                                  # latest record, the same
+                                                  # one --check-latest
+                                                  # selects
+python3 scripts/signoff_movement_diff.py OLD.json NEW.json   # any two
+                                                  # report files directly
+```
+
+The comparison prints each non-graded movement (source doc/hash
+before → after, per-item text/notes with old/new character counts and a
+short excerpt, added/removed items keyed by tier and id — matching items
+by tier+id regardless of row order) or a single "no non-graded movement"
+line; it is information, not a gate, so it exits 0 whether fields moved
+or matched. Paste its output into the record being minted.
 
 ## Companion links
 

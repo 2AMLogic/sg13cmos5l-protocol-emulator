@@ -96,6 +96,12 @@ def make_record(
     }
     if omit_provenance_key is not None:
         meta["provenance"].pop(omit_provenance_key)
+    if isinstance(supersedes, list):
+        supersedes_prose = ", ".join(str(s) for s in supersedes)
+    elif isinstance(supersedes, str):
+        supersedes_prose = supersedes
+    else:
+        supersedes_prose = "none"
     fields = [
         ("Record ID", record_id),
         ("Claim", "`docs/baseline.md#the-measurement` -- fixture claim"),
@@ -106,7 +112,7 @@ def make_record(
         ("klt provenance", "klt 0.0.0-selftest; PDK: n/a; deck content_hash: n/a"),
         ("Links", "Design under test: `rtl/dut.v`"),
         ("Timestamp / author", "2026-01-01T00:00:00Z, selftest"),
-        ("Supersedes", supersedes if isinstance(supersedes, str) else "none"),
+        ("Supersedes", supersedes_prose),
     ]
     bullets = "\n".join(
         f"- **{name}**: {value}" for name, value in fields if name != omit_field
@@ -529,8 +535,10 @@ def case_unicode_lookalike_experiment(repo: Path) -> None:
     )
 
 
-def case_supersedes_is_a_list(repo: Path) -> None:
-    """The Judge's A8g: `supersedes` given as a list used to raise TypeError."""
+def case_supersedes_list_non_string_entry(repo: Path) -> None:
+    """The Judge's A8g revisited for the list form (#472): a list is legal,
+    but only of record-id strings -- a non-string entry must fail cleanly,
+    not crash or be silently accepted."""
     _add_record(
         repo,
         "demo",
@@ -539,9 +547,217 @@ def case_supersedes_is_a_list(repo: Path) -> None:
             NEW_ID,
             "demo",
             inputs=[("rtl/dut.v", _sha256_text(DUMMY_RTL))],
-            supersedes=["20260101-000000-abc1234"],
+            supersedes=["20260101-000000-abc1234", 123],
         ),
-        "fixture: supersedes is a list",
+        "fixture: supersedes list with a non-string entry",
+    )
+
+
+# --- #472: the list form of `supersedes` -------------------------------------
+# One record may supersede several earlier leaves at once (a collapse
+# re-mint), so parallel branches stop doubling the live-leaf count. Every
+# entry obeys the same rules as the scalar form, judged per entry.
+
+
+def _add_demo_leaf(repo: Path, record_id: str) -> None:
+    _add_record(
+        repo,
+        "demo",
+        record_id,
+        make_record(record_id, "demo", inputs=[("rtl/dut.v", _sha256_text(DUMMY_RTL))]),
+        f"fixture: add leaf {record_id}",
+    )
+
+
+LEAF_1 = "20260101-000000-abc1234"  # the fixture repo's initial record
+LEAF_2 = "20260101-000005-abc1234"
+LATER = "20260103-000000-abc1234"
+COLLAPSER = "20260102-000000-abc1234"
+
+
+def case_supersedes_list_valid(repo: Path) -> None:
+    """A list naming two existing, strictly earlier records is valid."""
+    _add_demo_leaf(repo, LEAF_2)
+    _add_record(
+        repo,
+        "demo",
+        COLLAPSER,
+        make_record(
+            COLLAPSER,
+            "demo",
+            inputs=[("rtl/dut.v", _sha256_text(DUMMY_RTL))],
+            supersedes=[LEAF_1, LEAF_2],
+        ),
+        "fixture: one record superseding two leaves",
+    )
+
+
+def case_supersedes_list_exempts_both_from_freshness(repo: Path) -> None:
+    """Every listed id is superseded: both stale leaves are frozen history,
+    only the live collapsing record must be fresh (#472)."""
+    new_rtl = DUMMY_RTL + "// v2\n"
+    (repo / "rtl" / "dut.v").write_text(new_rtl, encoding="utf-8")
+    _add_demo_leaf(repo, LEAF_2)
+    _add_record(
+        repo,
+        "demo",
+        COLLAPSER,
+        make_record(
+            COLLAPSER,
+            "demo",
+            inputs=[("rtl/dut.v", _sha256_text(new_rtl))],
+            supersedes=[LEAF_1, LEAF_2],
+        ),
+        "fixture: collapse a stale leaf pair",
+    )
+
+
+def case_supersedes_list_missing_id(repo: Path) -> None:
+    _add_demo_leaf(repo, LEAF_2)
+    _add_record(
+        repo,
+        "demo",
+        COLLAPSER,
+        make_record(
+            COLLAPSER,
+            "demo",
+            inputs=[("rtl/dut.v", _sha256_text(DUMMY_RTL))],
+            supersedes=[LEAF_1, "20250101-000000-deadbee"],
+        ),
+        "fixture: list names a nonexistent record",
+    )
+
+
+def case_supersedes_list_self_id(repo: Path) -> None:
+    _add_demo_leaf(repo, LEAF_2)
+    _add_record(
+        repo,
+        "demo",
+        COLLAPSER,
+        make_record(
+            COLLAPSER,
+            "demo",
+            inputs=[("rtl/dut.v", _sha256_text(DUMMY_RTL))],
+            supersedes=[LEAF_1, COLLAPSER],
+        ),
+        "fixture: list names its own record",
+    )
+
+
+def case_supersedes_list_later_id(repo: Path) -> None:
+    """A list entry naming a LATER record (which must therefore exist) does
+    not sort strictly earlier -- rejected, and it exempts nothing."""
+    _add_demo_leaf(repo, LEAF_2)
+    _add_demo_leaf(repo, LATER)
+    _add_record(
+        repo,
+        "demo",
+        COLLAPSER,
+        make_record(
+            COLLAPSER,
+            "demo",
+            inputs=[("rtl/dut.v", _sha256_text(DUMMY_RTL))],
+            supersedes=[LEAF_1, LATER],
+        ),
+        "fixture: list names a later record",
+    )
+
+
+def case_supersedes_list_duplicate_id(repo: Path) -> None:
+    _add_demo_leaf(repo, LEAF_2)
+    _add_record(
+        repo,
+        "demo",
+        COLLAPSER,
+        make_record(
+            COLLAPSER,
+            "demo",
+            inputs=[("rtl/dut.v", _sha256_text(DUMMY_RTL))],
+            supersedes=[LEAF_1, LEAF_1],
+        ),
+        "fixture: list names the same record twice",
+    )
+
+
+def _stale_leaf_with_sibling_list(repo: Path, siblings: list) -> None:
+    """LEAF_1 is stale (rtl changed) and listed beside invalid `siblings`
+    by a fresh collapser: LEAF_1's supersession must still take effect."""
+    new_rtl = DUMMY_RTL + "// v2\n"
+    (repo / "rtl" / "dut.v").write_text(new_rtl, encoding="utf-8")
+    if LEAF_2 in siblings:
+        _add_demo_leaf(repo, LEAF_2)
+    _add_record(
+        repo,
+        "demo",
+        COLLAPSER,
+        make_record(
+            COLLAPSER,
+            "demo",
+            inputs=[("rtl/dut.v", _sha256_text(new_rtl))],
+            supersedes=[LEAF_1, *siblings],
+        ),
+        "fixture: list with a valid entry beside invalid ones",
+    )
+
+
+def case_supersedes_list_valid_beside_int(repo: Path) -> None:
+    _stale_leaf_with_sibling_list(repo, [7])
+
+
+def case_supersedes_list_valid_beside_nulls(repo: Path) -> None:
+    _stale_leaf_with_sibling_list(repo, [None, None])
+
+
+def case_supersedes_list_valid_beside_duplicates(repo: Path) -> None:
+    _stale_leaf_with_sibling_list(repo, [LEAF_1, LEAF_2])
+
+
+def case_supersedes_empty_list(repo: Path) -> None:
+    _add_record(
+        repo,
+        "demo",
+        COLLAPSER,
+        make_record(
+            COLLAPSER,
+            "demo",
+            inputs=[("rtl/dut.v", _sha256_text(DUMMY_RTL))],
+            supersedes=[],
+        ),
+        "fixture: empty supersedes list",
+    )
+
+
+def case_scalar_and_list_supersede_mixed(repo: Path) -> None:
+    """Scalar and list supersessions coexist in one experiment, and a list
+    may name a record another record already supersedes (#472 test-plan
+    edge): the double-naming exempts nothing beyond the named ids, and the
+    stale leaves are exempt while both naming records stay live and fresh."""
+    new_rtl = DUMMY_RTL + "// v2\n"
+    (repo / "rtl" / "dut.v").write_text(new_rtl, encoding="utf-8")
+    _add_demo_leaf(repo, LEAF_2)
+    _add_record(
+        repo,
+        "demo",
+        "20260104-000000-abc1234",
+        make_record(
+            "20260104-000000-abc1234",
+            "demo",
+            inputs=[("rtl/dut.v", _sha256_text(new_rtl))],
+            supersedes=LEAF_1,
+        ),
+        "fixture: scalar supersession of leaf 1",
+    )
+    _add_record(
+        repo,
+        "demo",
+        "20260105-000000-abc1234",
+        make_record(
+            "20260105-000000-abc1234",
+            "demo",
+            inputs=[("rtl/dut.v", _sha256_text(new_rtl))],
+            supersedes=[LEAF_1, LEAF_2],
+        ),
+        "fixture: list supersession naming an already-superseded record",
     )
 
 
@@ -746,10 +962,71 @@ CASES = [
         "must match `[a-z0-9][a-z0-9._-]*`",
     ),
     (
-        "a list in supersedes fails cleanly",
-        case_supersedes_is_a_list,
+        "a supersedes list with a non-string entry fails cleanly",
+        case_supersedes_list_non_string_entry,
         1,
-        "`supersedes` must be a record-id string or null, not list",
+        "list entries must be record-id strings, not int",
+    ),
+    # --- #472: the list form of `supersedes` ---
+    (
+        "a list of a valid id and nulls reports the nulls without crashing",
+        case_supersedes_list_valid_beside_nulls,
+        1,
+        "list entries must be record-id strings, not NoneType",
+    ),
+    (
+        "a valid id beside a non-string entry is still superseded (no stale error)",
+        case_supersedes_list_valid_beside_int,
+        1,
+        "not int",
+    ),
+    (
+        "a supersedes list of two valid earlier records passes",
+        case_supersedes_list_valid,
+        0,
+        "PASS: all records valid",
+    ),
+    (
+        "every id in a supersedes list is exempt from freshness",
+        case_supersedes_list_exempts_both_from_freshness,
+        0,
+        "PASS: all records valid",
+    ),
+    (
+        "a supersedes list entry naming a nonexistent record fails",
+        case_supersedes_list_missing_id,
+        1,
+        "which has no record",
+    ),
+    (
+        "a supersedes list entry naming its own record fails",
+        case_supersedes_list_self_id,
+        1,
+        "supersedes itself",
+    ),
+    (
+        "a supersedes list entry naming a later record fails",
+        case_supersedes_list_later_id,
+        1,
+        "does not sort strictly earlier",
+    ),
+    (
+        "a supersedes list naming the same record twice fails",
+        case_supersedes_list_duplicate_id,
+        1,
+        "names duplicate id(s)",
+    ),
+    (
+        "an empty supersedes list fails",
+        case_supersedes_empty_list,
+        1,
+        "must not be an empty list",
+    ),
+    (
+        "scalar and list supersessions coexist; double-naming is harmless",
+        case_scalar_and_list_supersede_mixed,
+        0,
+        "PASS: all records valid",
     ),
     (
         "a stale layout/toolchain.json hash is exempt from freshness",
@@ -829,6 +1106,25 @@ def main() -> int:
     if not REPO_UTILS.exists():
         print(f"FATAL: {REPO_UTILS} not found", file=sys.stderr)
         return 1
+
+    # Per-entry rule (#472): an invalid sibling is reported but never makes
+    # the valid entry's target look live (stale) again.
+    for name, mutate, expected_stale in (
+        ("valid id beside an int stays superseded", case_supersedes_list_valid_beside_int, set()),
+        ("valid id beside nulls stays superseded", case_supersedes_list_valid_beside_nulls, set()),
+        ("duplicate list leaves the uniquely named sibling superseded",
+         case_supersedes_list_valid_beside_duplicates, {LEAF_1}),
+    ):
+        with tempfile.TemporaryDirectory(prefix="record-linter-selftest-") as tmpdir:
+            repo = build_fixture_repo(Path(tmpdir))
+            mutate(repo)
+            exit_code, output = run_linter(repo)
+            stale_ids = {rid for rid in (LEAF_1, LEAF_2) for line in output.splitlines()
+                         if f"{rid}.md:" in line and "is stale" in line}
+            if stale_ids != expected_stale or "Traceback" in output or exit_code != 1:
+                print(f"FAIL: {name}\n" + "\n".join("  | " + l for l in output.splitlines()))
+                return 1
+            print(f"OK:   {name}")
 
     print(f"== check_records.py self-test ({len(CASES) + len(BASE_SHA_CASES)} cases) ==")
     failures = 0

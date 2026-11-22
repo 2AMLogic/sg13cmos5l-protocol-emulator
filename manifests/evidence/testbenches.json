@@ -3,14 +3,14 @@
   "kind": "generic",
   "status": "pass",
   "t1_item": 9,
-  "summary": "T1 item 9 (Testbenches shipped): 98/98 attestation checks passed (klt signoff --attest)",
+  "summary": "T1 item 9 (Testbenches shipped): 99/99 attestation checks passed (klt signoff --attest)",
   "source": "manifests/attest/item9.json",
   "attestation": {
     "producer": "klt signoff --attest",
     "inventory_schema_version": 1,
     "hash_algorithm": "sha256-raw-bytes",
-    "check_count": 98,
-    "passed_count": 98,
+    "check_count": 99,
+    "passed_count": 99,
     "checks": [
       {
         "check": "present",
@@ -24,14 +24,14 @@
         "role": "testbench",
         "path": "flow/erc-librelane-gds.json",
         "passed": true,
-        "content_hash": "sha256:62c5b36be58a52cb3172851ba4180a3a6be6c57efa467109ca69925dbbe3133a"
+        "content_hash": "sha256:5b6ec2c6b5a150742a3bbdc60768e9ee28f4a6453c9d8fb7e6b518f553496a1e"
       },
       {
         "check": "present",
         "role": "testbench",
         "path": "flow/gen-erc-librelane-gds-spec.py",
         "passed": true,
-        "content_hash": "sha256:b5fe0be925d0f29a5693137f902e28f111d4504accb030fd65f4f1d51d6f7020"
+        "content_hash": "sha256:06596bae19d270d9f935448bf0fe9210e314b8f3f578532c07f593f25d831892"
       },
       {
         "check": "present",
@@ -45,7 +45,7 @@
         "role": "testbench",
         "path": "flow/run-die-area-par.sh",
         "passed": true,
-        "content_hash": "sha256:cb587cd5d874320e564b01ef9cd76a68a3b257c1563645a53d2756bbc029214b"
+        "content_hash": "sha256:b851dff2c3f6338fc540930d3d4ada10ac82e59c49c56f5450ae3c4b895f67b8"
       },
       {
         "check": "present",
@@ -60,6 +60,13 @@
         "path": "flow/run-post-layout-sdf.sh",
         "passed": true,
         "content_hash": "sha256:8c3790edf3477e25284f77dd5fabbfc2cdfb1a78c18e5309454f15aa681bb9b7"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "flow/run-power-par.sh",
+        "passed": true,
+        "content_hash": "sha256:f5c3f365bc18b54d81641abcc144bcc0c8d5f310bf43161f02a68dbcf7b3106d"
       },
       {
         "check": "present",
@@ -87,7 +94,7 @@
         "role": "testbench",
         "path": "scripts/check_evidence_inventories.py",
         "passed": true,
-        "content_hash": "sha256:6fb28630ee24867cbd4e7183d9f4ef5654210ca5df099cb4383c709b04a9b94d"
+        "content_hash": "sha256:23601f7131b3ac5a1bbf2ec63e2d0782edc9e93e1df98e0df3166d47d5a6b087"
       },
       {
         "check": "present",
@@ -108,7 +115,7 @@
         "role": "testbench",
         "path": "scripts/signoff-report.sh",
         "passed": true,
-        "content_hash": "sha256:3b41e9de11ac4a0fc47d7e8c05b9f5e73dd0c599e4a630ab3115932b3734f385"
+        "content_hash": "sha256:d9c58fb6887598c7d22314c71303faec872b391f2781e88ff9b465c2d45f96af"
       },
       {
         "check": "present",
@@ -276,7 +283,7 @@
         "role": "testbench",
         "path": "verification/remint_records.py",
         "passed": true,
-        "content_hash": "sha256:5f3280b04be7152692d8f3096c6a6444666d26a662cb7e76d6d83a365aeee730"
+        "content_hash": "sha256:82542d09f3bc40bd3b500cf7e394e48c06995086098be4dd819db16f414a175f"
       },
       {
         "check": "present",
@@ -479,14 +486,14 @@
         "role": "testbench",
         "path": "verification/test_boot_rom.py",
         "passed": true,
-        "content_hash": "sha256:33ef15898b5066c3318ac577089fd909a9eeee2aca5499dca68bff2098d66775"
+        "content_hash": "sha256:544a650a9eca5ebdd8e7a71a791f2b6248e366d099524a6a14b06f719357367f"
       },
       {
         "check": "present",
         "role": "testbench",
         "path": "verification/test_boot_spi.py",
         "passed": true,
-        "content_hash": "sha256:28471f606685e91fb67eccadcbee52949ae0b590cdf4a669437d82f762c68c59"
+        "content_hash": "sha256:38d33a31f6f32979c481ac0983e6d43b6b6a7c8b3c3b381aa6834469f0746580"
       },
       {
         "check": "present",
@@ -605,7 +612,7 @@
         "role": "testbench",
         "path": "verification/test_primitives.py",
         "passed": true,
-        "content_hash": "sha256:fb7ce1bb45f7c5e577574b455b5619c83b83d340a02ccfcbb9df8ad41c159876"
+        "content_hash": "sha256:f3b5ea153670719df37d073341cb33d0ab5cad7755ae3c258d9e03d09cef86fd"
       },
       {
         "check": "present",
@@ -721,7 +728,7 @@
         "path": "manifests/attest/item9.json",
         "scope": "repo"
       },
-      "content_hash": "sha256:43ce736b3d133137fe66230b371998fe1cc2c8f50ba67683b4cacd058294321a"
+      "content_hash": "sha256:7aecfd4319403a326fdcb95959cb8f839c00df8b236bf7badfecf38c9d36481a"
     }
   }
 }

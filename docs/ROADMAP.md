@@ -18,7 +18,7 @@ committed with benches against independent reference models.
 
 **Spec.** Rows 1–12 of `spec/target-spec.md` and DRs 0001–0004 are ratified
 (PR #242, DR 0009). Rows 13 and 14 and DRs 0005, 0007, 0008, 0010–0018 and
-0020–0024 are `Proposed`; the next act is prepared in
+0020–0025 are `Proposed`; the next act is prepared in
 [`spec/ratification-batch-2.md`](../spec/ratification-batch-2.md).
 
 **Spec rows** (digest in [`spec/gap-to-submission.md`](../spec/gap-to-submission.md),
@@ -27,10 +27,12 @@ rows 2, 13 and 14 `proposed`; the other nine `unmet`. Most of those reasons are
 limits no simulation closes (no silicon clock, no pad characterization). Work
 can move row 4 (50 MHz closes on 3 of 6 corners on LibreLane; the klt netlist
 estimate closes setup but fails hold), row 12 (stale gate-level and SDF records
-for the Fast-mode I2C images) and row 7 (klt place-and-route not run).
+for the Fast-mode I2C images) and row 7 (klt place-and-route now measures
+8.96 tiles at 41.83% placed utilization, over the 2x2 budget at that
+utilization; the tracker keeps the row unmet).
 
 **T1 checklist** (`klt signoff`, record
-`verification/records/signoff-baseline/records/20261120-032449-1d15018.md`,
+`verification/records/signoff-baseline/records/20261122-142922-394236c.md`,
 klt 0.9.2): **5 of 11 met, 1 `not_applicable`**.
 
 | Item | Verdict | What moves it |
@@ -41,7 +43,7 @@ klt 0.9.2): **5 of 11 met, 1 `not_applicable`**.
 | 5 Full corner verification | unmet, `no_evidence` | no open issue; see Later |
 | 6 Monte Carlo | `not_applicable` (hash-bound statement `spec/statistical-claims-na.md`, covering the ratified rows 1–12; #348) | re-mint if a row ever turns statistical or rows 13–14 ratify |
 | 8 Characterization report | unmet, `check_failed` | follows the unmet spec rows |
-| 11 Power delivery | unmet, `no_evidence` | #350; LVS half waits on #329 |
+| 11 Power delivery | unmet, `power_delivery_parts_missing` | Signoff cites ERC and place-and-route. LVS power connectivity depends on #329. |
 
 The body of #351 predates the klt 0.8.0 deck: it ticks item 3 and points items
 5, 7 and 8 at issues since closed (#20, #330, #349). Read the table above.
@@ -71,8 +73,9 @@ Unblocked once #371 lands:
 - **klt place-and-route, signoff-check and ERC re-mints (#389).** Done when
   `die-area-baseline`, `librelane-gds-signoff-check` and `librelane-erc` each
   have a record at the new version.
-- **Item 11 (#350).** ERC supply report landed (PR #354); the PDN half follows
-  #389 and the LVS half #329.
+- **Item 11 (#350).** The place-and-route record measures the power grid.
+  The tap-cell statement remains open in klayout-tools#6993, and the LVS
+  power-connectivity report depends on #329.
 
 Unblocked once the netlist evidence refresh (#265) lands and PR #263 merges:
 
