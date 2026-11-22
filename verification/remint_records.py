@@ -219,6 +219,8 @@ def run_request(klt: list[str], request: str) -> tuple[dict, str | None]:
         )
     xml_text = None
     xml = (env.get("environment") or {}).get("results_xml") if isinstance(env, dict) else None
+    if isinstance(xml, dict):  # klt >= 0.9: {path, scope, sha256} document
+        xml = xml.get("path")
     if xml and Path(xml).is_file():
         xml_text = Path(xml).read_text(encoding="utf-8")
     return env, xml_text
