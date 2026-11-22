@@ -852,6 +852,15 @@ refuses any other experiment, stale leaves that hash request files (use
 `--rerun`), and leaves whose input paths, claim or result are not
 interchangeable.
 
+Ordering (#558): merge or rebase onto the current `origin/main` **before**
+minting, then mint once. A base merge that moves a hashed input stales every
+leaf minted against the pre-merge base — PR #497 minted 344 per-leaf
+successors before merging main, and the merge itself staled all of them
+(~41k added lines superseded within the PR; only its 3 collapse records
+stayed live). For the `COLLAPSIBLE_EXPERIMENTS` (`signoff-baseline`), that
+one mint is `--collapse EXPERIMENT` — never one successor per stale live
+leaf.
+
 ## Bulk evidence bytes: artifact store, manifest in git (#344)
 
 New runs of the heavy experiments (`librelane-gds-signoff-check`,

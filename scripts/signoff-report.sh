@@ -321,8 +321,12 @@ PYDOC
     3)
       echo "error: the committed signoff report no longer reproduces (klt signoff --check: status drifted, artifact $COMMITTED)." >&2
       echo "  A graded field outside the build block changed without a fresh" >&2
-      echo "  signoff-baseline record. Re-render (scripts/signoff-report.sh --out), mint a new" >&2
-      echo "  append-only record superseding $RECORD_ID, and commit it with the change." >&2
+      echo "  signoff-baseline record. Merge or rebase onto the current origin/main" >&2
+      echo "  first (a base merge that moves a hashed input stales leaves minted" >&2
+      echo "  against the pre-merge base), then re-render (scripts/signoff-report.sh --out)" >&2
+      echo "  and mint once with python3 verification/remint_records.py --collapse" >&2
+      echo "  signoff-baseline (one record for all stale live leaves, never one" >&2
+      echo "  successor per leaf), and commit it with the change." >&2
       python3 - "$CHECK_OUT" <<'PYDRIFT' >&2 || true
 import json, sys
 with open(sys.argv[1]) as f:
