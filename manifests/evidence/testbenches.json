@@ -122,7 +122,7 @@
         "role": "testbench",
         "path": "scripts/signoff-report.sh",
         "passed": true,
-        "content_hash": "sha256:10f7a8dfcd33271216bab38736f0554f1599e70696f284c3b575a66334cb1dba"
+        "content_hash": "sha256:d9c58fb6887598c7d22314c71303faec872b391f2781e88ff9b465c2d45f96af"
       },
       {
         "check": "present",
@@ -290,7 +290,7 @@
         "role": "testbench",
         "path": "verification/remint_records.py",
         "passed": true,
-        "content_hash": "sha256:e64ed364ac417364a07f490e44c58e9585c7ffe0ffdfd6a224be259d80dcce07"
+        "content_hash": "sha256:82542d09f3bc40bd3b500cf7e394e48c06995086098be4dd819db16f414a175f"
       },
       {
         "check": "present",
@@ -493,14 +493,14 @@
         "role": "testbench",
         "path": "verification/test_boot_rom.py",
         "passed": true,
-        "content_hash": "sha256:33ef15898b5066c3318ac577089fd909a9eeee2aca5499dca68bff2098d66775"
+        "content_hash": "sha256:544a650a9eca5ebdd8e7a71a791f2b6248e366d099524a6a14b06f719357367f"
       },
       {
         "check": "present",
         "role": "testbench",
         "path": "verification/test_boot_spi.py",
         "passed": true,
-        "content_hash": "sha256:28471f606685e91fb67eccadcbee52949ae0b590cdf4a669437d82f762c68c59"
+        "content_hash": "sha256:38d33a31f6f32979c481ac0983e6d43b6b6a7c8b3c3b381aa6834469f0746580"
       },
       {
         "check": "present",
@@ -619,7 +619,7 @@
         "role": "testbench",
         "path": "verification/test_primitives.py",
         "passed": true,
-        "content_hash": "sha256:fb7ce1bb45f7c5e577574b455b5619c83b83d340a02ccfcbb9df8ad41c159876"
+        "content_hash": "sha256:f3b5ea153670719df37d073341cb33d0ab5cad7755ae3c258d9e03d09cef86fd"
       },
       {
         "check": "present",
