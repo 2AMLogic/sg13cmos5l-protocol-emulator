@@ -1,0 +1,8 @@
+16208c16208
+<  sg13cmos5l_or4_1 _4307_ (.A(\u_core.wait_cnt[0] ),
+---
+>  sg13cmos5l_or4_1 _4307_ (.A(1'b0),
+19316c19316
+<  sg13cmos5l_dlygate4sd3_1 hold770 (.A(\u_core.wait_cnt[0] ),
+---
+>  sg13cmos5l_dlygate4sd3_1 hold770 (.A(1'b0),
