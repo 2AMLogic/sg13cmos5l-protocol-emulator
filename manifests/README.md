@@ -1073,10 +1073,19 @@ rose from 4 to 5. Both reports name the same `source_doc` path. Its
 A signoff-baseline refresh record must give both full hashes whenever
 `source_doc_content_hash` changes and list every changed `text` or `notes`
 field by tier and item ID, alongside `grading_ruleset_id` and graded changes.
-The exit status of `klt signoff --check` reflects graded drift. Some grader
-versions also report checklist wording changes through `doc_drift_fields`,
-even when grades match. Generate the disclosure directly from the two
-reports with either command below. [Upstream issue #6850](https://github.com/2AMLogic/klayout-tools/issues/6850)
+The exit status of `klt signoff --check` reflects graded drift — checklist
+movement alone leaves a graded match successful. Builds that emit the
+optional `doc_drift` / `doc_drift_fields` keys report that movement during
+a live check even when grades match; older builds simply omit the keys
+(the exit-code section's "Non-graded checklist movement" paragraph records
+the observed behavior). Distinguish the three comparisons:
+`scripts/signoff-report.sh --check-latest` re-grades the current manifest
+against the latest committed record; its `--diff-vs <record-id>` compares
+a fresh render against a chosen record; and
+`scripts/signoff_movement_diff.py OLD.json NEW.json` compares two
+already-saved reports — the one comparison the live check cannot make,
+since no live manifest sits behind the pair. Generate the disclosure
+directly from the two reports with either command below. [Upstream issue #6850](https://github.com/2AMLogic/klayout-tools/issues/6850)
 
 ```bash
 scripts/signoff-report.sh --diff-vs <record-id>   # fresh render vs that
