@@ -200,12 +200,52 @@ def _sanitize_xml(text: str) -> str:
     return escape_placeholders(_sanitize(text))
 
 
+def _resolve_results_xml(xml: object) -> Path | None:
+    """Anchor klt's `environment.results_xml` on REPO_ROOT (#552).
+
+    klt >= 0.9 reports a `{path, scope, sha256}` document: `scope: "repo"`
+    means `path` is relative to the repo (never this process's cwd), and
+    `scope: "absent"` with a null path means no XML was produced. klt < 0.9
+    reported a bare string (absolute, or repo-relative). Everything else --
+    an unreadable or missing scope, a non-string/empty/absolute repo path,
+    a path escaping REPO_ROOT, a non-string/non-dict value -- raises: klt
+    named the results, so silently dropping them would mint a record that
+    looks complete but is not. Returns None only for a missing value or an
+    explicit absent document."""
+    if xml is None:
+        return None
+    if isinstance(xml, dict):
+        scope, path = xml.get("scope"), xml.get("path")
+        if scope == "absent" and path is None:
+            return None
+        if scope == "repo":
+            if not isinstance(path, str) or not path:
+                raise RuntimeError(f"results_xml: 'repo' scope without a usable path: {xml!r}")
+            rel = Path(path)
+            if rel.is_absolute():
+                raise RuntimeError(f"results_xml: 'repo' scope path is absolute: {xml!r}")
+            target = (REPO_ROOT / rel).resolve()
+            if not target.is_relative_to(REPO_ROOT.resolve()):
+                raise RuntimeError(f"results_xml: 'repo' scope path escapes the repo root: {xml!r}")
+            return target
+        raise RuntimeError(f"results_xml: unreadable scope {scope!r}: {xml!r}")
+    if isinstance(xml, str):
+        if not xml:
+            raise RuntimeError("results_xml: empty path")
+        p = Path(xml)
+        return p if p.is_absolute() else REPO_ROOT / p
+    raise RuntimeError(f"results_xml: unexpected value: {xml!r}")
+
+
 def run_request(klt: list[str], request: str) -> tuple[dict, str | None]:
     """Run one request; return (parsed klt envelope, results-XML text).
 
     The XML is read immediately: klt reuses one `results_xml` path across
     requests, so a later request overwrites it. The snapshot travels with the
-    envelope (and into the cache). Raises on no JSON."""
+    envelope (and into the cache). Raises on no JSON, on a `results_xml`
+    that cannot be resolved (see `_resolve_results_xml`), and on a reported
+    XML missing from disk -- a miss is a real failure, not an optional
+    extra."""
     proc = subprocess.run(
         [*klt, "functional-verification", request, "--format", "json"],
         cwd=REPO_ROOT, capture_output=True, text=True,
@@ -219,10 +259,14 @@ def run_request(klt: list[str], request: str) -> tuple[dict, str | None]:
         )
     xml_text = None
     xml = (env.get("environment") or {}).get("results_xml") if isinstance(env, dict) else None
-    if isinstance(xml, dict):  # klt >= 0.9: {path, scope, sha256} document
-        xml = xml.get("path")
-    if xml and Path(xml).is_file():
-        xml_text = Path(xml).read_text(encoding="utf-8")
+    target = _resolve_results_xml(xml)
+    if target is not None:
+        if not target.is_file():
+            raise RuntimeError(
+                f"klt reported results_xml at {target} for {request}, but no such "
+                f"file exists; refusing to mint a record without its per-test results"
+            )
+        xml_text = target.read_text(encoding="utf-8")
     return env, xml_text
 
 

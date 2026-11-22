@@ -46,6 +46,23 @@ echo \'{"status"''')
 STUB_FAIL = STUB_PASS.replace('"pass"', '"fail"')
 
 
+def stub_with_results(env_results: str, create: bool = True) -> str:
+    """A klt stub whose envelope reports `env_results` verbatim as
+    `environment.results_xml` (a `{path, scope, sha256}` document or a
+    legacy bare string, #552). With `create`, writes the repo-relative XML
+    first; the stub runs with cwd=REPO_ROOT, as the real tool invokes it."""
+    write = ""
+    if create:
+        write = ("mkdir -p verification/.klt\n"
+                 "printf 'xml-doc-for-%s' \"$(basename \"$2\" .json)\""
+                 " > verification/.klt/results.xml\n")
+    return ("#!/bin/sh\n"
+            "case \"$1\" in --version) echo \"klt 9.9.9\"; exit 0;; esac\n"
+            + write
+            + "echo '{\"status\":\"pass\",\"engine\":\"icarus\",\"test_count\":1,"
+              "\"passed_count\":1,\"environment\":{\"results_xml\":" + env_results + "}}'\n")
+
+
 def build(tmp: Path, with_request: bool = True) -> Path:
     repo = tmp / "fixture"
     (repo / "rtl").mkdir(parents=True)
@@ -345,12 +362,13 @@ def mixed_list_cases(failures: list) -> None:
                   code == 1 and stale_ids == expected, out, failures)
 
 
-def tool(repo: Path, *args: str, broker: str | None = None) -> tuple[int, str]:
+def tool(repo: Path, *args: str, broker: str | None = None,
+         cwd: Path | None = None) -> tuple[int, str]:
     env = {k: v for k, v in os.environ.items() if k != "KLT_ARTIFACT_BROKER"}
     if broker:
         env["KLT_ARTIFACT_BROKER"] = broker
     r = subprocess.run([sys.executable, str(repo / "verification" / "remint_records.py"), *args],
-                       cwd=repo, capture_output=True, text=True, env=env)
+                       cwd=cwd or repo, capture_output=True, text=True, env=env)
     return r.returncode, r.stdout + r.stderr
 
 
@@ -488,6 +506,104 @@ def collapse_successor_cases(failures: list) -> None:
         check("--collapse refuses when a kept block cites the predecessor ambiguously",
               code == 1 and "nothing minted" in out
               and baseline_records(repo) == LEAF_IDS, out, failures)
+
+
+def results_xml_cases(failures: list) -> None:
+    """`environment.results_xml` must anchor on REPO_ROOT, never the
+    process's cwd, and a reported-but-unreadable XML is an error, not an
+    optional extra (#552)."""
+    with tempfile.TemporaryDirectory(prefix="remint-selftest-") as d:
+        repo = build(Path(d))
+        stale(repo)
+        (repo / "klt-stub").write_text(stub_with_results(
+            '{"path":"verification/.klt/results.xml","scope":"repo",'
+            '"sha256":"sha256:0000"}'), encoding="utf-8")
+        code, out = tool(repo, "--rerun", "--klt", str(repo / "klt-stub"),
+                         cwd=repo / "rtl")
+        new = [r for r in records(repo) if r != OLD_ID]
+        check("repo-scoped results_xml re-mints from a subdirectory",
+              code == 0 and len(new) == 1 and "MINTED" in out, out, failures)
+        if new:
+            xml = (repo / "verification/records/demo/artifacts" / new[0]
+                   / "results_icarus.xml")
+            check("subdirectory re-mint carries the results XML",
+                  xml.is_file()
+                  and xml.read_text(encoding="utf-8") == "xml-doc-for-request-demo",
+                  out, failures)
+
+    with tempfile.TemporaryDirectory(prefix="remint-selftest-") as d:
+        repo = build(Path(d))
+        stale(repo)
+        (repo / "klt-stub").write_text(
+            stub_with_results('"verification/.klt/results.xml"'), encoding="utf-8")
+        code, out = tool(repo, "--rerun", "--klt", str(repo / "klt-stub"),
+                         cwd=repo / "rtl")
+        new = [r for r in records(repo) if r != OLD_ID]
+        check("legacy relative-string results_xml resolves against REPO_ROOT",
+              code == 0 and len(new) == 1, out, failures)
+        if new:
+            xml = repo / "verification/records/demo/artifacts" / new[0] / "results_icarus.xml"
+            check("legacy string re-mint carries the results XML",
+                  xml.is_file()
+                  and xml.read_text(encoding="utf-8") == "xml-doc-for-request-demo",
+                  out, failures)
+
+    for label, doc in (
+            ("repo-scoped document",
+             '{"path":"verification/.klt/never-written.xml","scope":"repo"}'),
+            ("legacy string", '"verification/.klt/never-written.xml"')):
+        with tempfile.TemporaryDirectory(prefix="remint-selftest-") as d:
+            repo = build(Path(d))
+            stale(repo)
+            (repo / "klt-stub").write_text(
+                stub_with_results(doc, create=False), encoding="utf-8")
+            code, out = tool(repo, "--rerun", "--klt", str(repo / "klt-stub"))
+            check(f"missing results_xml ({label}) fails the re-mint",
+                  code == 1 and records(repo) == [OLD_ID]
+                  and "ERROR" in out and "results_xml" in out, out, failures)
+
+    for label, doc in (
+            ("external scope", '{"path":null,"scope":"external"}'),
+            ("unknown scope", '{"path":"verification/.klt/results.xml","scope":"wat"}'),
+            ("absent scope with a non-null path",
+             '{"path":"verification/.klt/results.xml","scope":"absent"}'),
+            ("missing scope", '{"path":"verification/.klt/results.xml"}')):
+        with tempfile.TemporaryDirectory(prefix="remint-selftest-") as d:
+            repo = build(Path(d))
+            stale(repo)
+            (repo / "klt-stub").write_text(stub_with_results(doc), encoding="utf-8")
+            code, out = tool(repo, "--rerun", "--klt", str(repo / "klt-stub"))
+            check(f"unreadable results_xml ({label}) fails the re-mint",
+                  code == 1 and records(repo) == [OLD_ID]
+                  and "ERROR" in out and "results_xml" in out, out, failures)
+
+    with tempfile.TemporaryDirectory(prefix="remint-selftest-") as d:
+        repo = build(Path(d))
+        stale(repo)
+        (repo.parent / "outside-results.xml").write_text("outside", encoding="utf-8")
+        (repo / "klt-stub").write_text(
+            stub_with_results('{"path":"../outside-results.xml","scope":"repo"}',
+                              create=False), encoding="utf-8")
+        code, out = tool(repo, "--rerun", "--klt", str(repo / "klt-stub"))
+        check("repo-scoped path escaping the repo root fails the re-mint",
+              code == 1 and records(repo) == [OLD_ID]
+              and "ERROR" in out and "results_xml" in out, out, failures)
+
+    with tempfile.TemporaryDirectory(prefix="remint-selftest-") as d:
+        repo = build(Path(d))
+        stale(repo)
+        (repo / "klt-stub").write_text(
+            stub_with_results('{"path":null,"scope":"absent"}', create=False),
+            encoding="utf-8")
+        code, out = tool(repo, "--rerun", "--klt", str(repo / "klt-stub"))
+        new = [r for r in records(repo) if r != OLD_ID]
+        check("absent results_xml (null path) mints a record",
+              code == 0 and len(new) == 1, out, failures)
+        if new:
+            art = repo / "verification/records/demo/artifacts" / new[0]
+            check("absent results_xml mints the envelope only",
+                  (art / "klt-functional-verification.json").is_file()
+                  and not list(art.glob("results_*.xml")), out, failures)
 
 
 def main() -> int:
@@ -641,6 +757,7 @@ def main() -> int:
     mixed_list_cases(failures)
     collapse_boundary_cases(failures)
     collapse_successor_cases(failures)
+    results_xml_cases(failures)
 
     print()
     if failures:
