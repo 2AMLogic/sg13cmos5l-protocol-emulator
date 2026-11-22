@@ -1099,6 +1099,34 @@ BASE_SHA_CASES = [
 ]
 
 
+def _linter_problems(
+    exit_code: int, output: str, expected_exit: int, expected_substring: str = ""
+) -> list[str]:
+    """Problems with one linter run; empty means it behaved as specified."""
+    problems = []
+    if exit_code != expected_exit:
+        problems.append(f"exit {exit_code}, expected {expected_exit}")
+    if expected_substring and expected_substring not in output:
+        problems.append(f"output missing {expected_substring!r}")
+    if "Traceback (most recent call last)" in output:
+        problems.append("linter crashed with a traceback")
+    return problems
+
+
+def _report_case(name: str, problems: list[str], output: str) -> bool:
+    """Report one self-test case; False when it did not behave as specified."""
+    if problems:
+        print(f"FAIL: {name}")
+        for problem in problems:
+            print(f"  - {problem}")
+        print("  --- linter output ---")
+        for line in output.splitlines():
+            print(f"  | {line}")
+        return False
+    print(f"OK:   {name}")
+    return True
+
+
 def main() -> int:
     if not LINTER.exists():
         print(f"FATAL: {LINTER} not found", file=sys.stderr)
@@ -1108,78 +1136,54 @@ def main() -> int:
         return 1
 
     # Per-entry rule (#472): an invalid sibling is reported but never makes
-    # the valid entry's target look live (stale) again.
-    for name, mutate, expected_stale in (
+    # the valid entry's target look live (stale) again. These cases keep
+    # their specialized per-record stale-ID comparisons (#542) and count in
+    # the banner and summary totals.
+    stale_cases = (
         ("valid id beside an int stays superseded", case_supersedes_list_valid_beside_int, set()),
         ("valid id beside nulls stays superseded", case_supersedes_list_valid_beside_nulls, set()),
         ("duplicate list leaves the uniquely named sibling superseded",
          case_supersedes_list_valid_beside_duplicates, {LEAF_1}),
-    ):
+    )
+    total = len(stale_cases) + len(CASES) + len(BASE_SHA_CASES)
+    failures = 0
+
+    print(f"== check_records.py self-test ({total} cases) ==")
+
+    for name, mutate, expected_stale in stale_cases:
         with tempfile.TemporaryDirectory(prefix="record-linter-selftest-") as tmpdir:
             repo = build_fixture_repo(Path(tmpdir))
             mutate(repo)
             exit_code, output = run_linter(repo)
             stale_ids = {rid for rid in (LEAF_1, LEAF_2) for line in output.splitlines()
                          if f"{rid}.md:" in line and "is stale" in line}
-            if stale_ids != expected_stale or "Traceback" in output or exit_code != 1:
-                print(f"FAIL: {name}\n" + "\n".join("  | " + l for l in output.splitlines()))
-                return 1
-            print(f"OK:   {name}")
+            problems = []
+            if stale_ids != expected_stale:
+                problems.append(
+                    f"stale records {sorted(stale_ids)}, expected {sorted(expected_stale)}")
+            problems.extend(_linter_problems(exit_code, output, expected_exit=1))
+            if not _report_case(name, problems, output):
+                failures += 1
 
-    print(f"== check_records.py self-test ({len(CASES) + len(BASE_SHA_CASES)} cases) ==")
-    failures = 0
     for name, mutate, expected_exit, expected_substring in CASES:
         with tempfile.TemporaryDirectory(prefix="record-linter-selftest-") as tmpdir:
             repo = build_fixture_repo(Path(tmpdir))
             mutate(repo)
             exit_code, output = run_linter(repo)
-
-            problems = []
-            if exit_code != expected_exit:
-                problems.append(f"exit {exit_code}, expected {expected_exit}")
-            if expected_substring not in output:
-                problems.append(f"output missing {expected_substring!r}")
-            if "Traceback (most recent call last)" in output:
-                problems.append("linter crashed with a traceback")
-
-            if problems:
+            problems = _linter_problems(exit_code, output, expected_exit, expected_substring)
+            if not _report_case(name, problems, output):
                 failures += 1
-                print(f"FAIL: {name}")
-                for problem in problems:
-                    print(f"  - {problem}")
-                print("  --- linter output ---")
-                for line in output.splitlines():
-                    print(f"  | {line}")
-            else:
-                print(f"OK:   {name}")
 
     for name, mutate, base_sha_of, expected_exit, expected_substring in BASE_SHA_CASES:
         with tempfile.TemporaryDirectory(prefix="record-linter-selftest-") as tmpdir:
             repo = build_fixture_repo(Path(tmpdir))
             mutate(repo)
             exit_code, output = run_linter(repo, "--base-sha", base_sha_of(repo))
-
-            problems = []
-            if exit_code != expected_exit:
-                problems.append(f"exit {exit_code}, expected {expected_exit}")
-            if expected_substring not in output:
-                problems.append(f"output missing {expected_substring!r}")
-            if "Traceback (most recent call last)" in output:
-                problems.append("linter crashed with a traceback")
-
-            if problems:
+            problems = _linter_problems(exit_code, output, expected_exit, expected_substring)
+            if not _report_case(name, problems, output):
                 failures += 1
-                print(f"FAIL: {name}")
-                for problem in problems:
-                    print(f"  - {problem}")
-                print("  --- linter output ---")
-                for line in output.splitlines():
-                    print(f"  | {line}")
-            else:
-                print(f"OK:   {name}")
 
     print()
-    total = len(CASES) + len(BASE_SHA_CASES)
     if failures:
         print(f"FAIL: {failures}/{total} self-test case(s) did not behave as specified")
         return 1
