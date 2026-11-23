@@ -160,7 +160,20 @@ class Ds18b20:
     def __init__(self, rom: Tuple[int, ...], scratchpad: Tuple[int, ...],
                  busy_slots: int = 5, present: bool = True,
                  corrupt_rom_byte: Optional[int] = None,
-                 corrupt_scr_byte: Optional[int] = None):
+                 corrupt_scr_byte: Optional[int] = None,
+                 presence_delay_ns: float = 30 * US,
+                 presence_hold_ns: float = 120 * US,
+                 read_valid_ns: float = 45 * US):
+        # Slave-side timing the bench may tighten to the datasheet's worst
+        # case: presence starts `presence_delay_ns` after the master's
+        # release (datasheet 15..60 us) and lasts `presence_hold_ns` (60..240
+        # us), so the earliest-start/shortest device (15 us, 60 us) is low
+        # only 60..75 us after the release; a 0 data bit is held for
+        # `read_valid_ns` after the read slot's falling edge (the datasheet
+        # guarantees 15 us), after which the line may read as a 1.
+        self.presence_delay_ns = presence_delay_ns
+        self.presence_hold_ns = presence_hold_ns
+        self.read_valid_ns = read_valid_ns
         assert len(rom) == 8 and crc8(rom[:7]) == rom[7]
         assert len(scratchpad) == 9 and crc8(scratchpad[:8]) == scratchpad[8]
         self.rom = tuple(rom)
@@ -312,8 +325,8 @@ class Ds18b20:
             self._slot_fall = None
             self._slot_release = None
             if self.present:
-                delay = 30 * US   # inside presence-delay 15..60 us
-                hold = 120 * US   # inside presence-low 60..240 us
+                delay = self.presence_delay_ns   # datasheet 15..60 us
+                hold = self.presence_hold_ns     # datasheet 60..240 us
                 self._schedule_pull(t + delay, t + delay + hold)
                 self._saw_presence = True
                 self.events.append(("presence", t))
@@ -417,14 +430,16 @@ class Ds18b20:
             self._v(t, "stray-read-slot", f"a read slot during {self._mode!r}")
             return
         if bit == 0:
-            # pull DQ low from now until ~45 us past the slot's falling
-            # edge: past the master's 15 us sample window, gone before its
-            # next slot (a real part releases inside the time slot, so a
-            # transaction that simply stops cannot leave the bus held)
+            # pull DQ low from now until `read_valid_ns` past the slot's
+            # falling edge (default 45 us, past the master's 15 us sample
+            # window; the bench tightens it to the datasheet's 15 us so a
+            # late sample reads a 1). Gone before the next slot either way
+            # (a real part releases inside the time slot, so a transaction
+            # that simply stops cannot leave the bus held)
             fall = self._slot_fall if self._slot_fall is not None else t
             self._pull = True
             self._pull_at = None                       # already pulling
-            self._release_at = max(fall + 45 * US, t)
+            self._release_at = max(fall + self.read_valid_ns, t)
         else:
             self._set_pull(False)
 

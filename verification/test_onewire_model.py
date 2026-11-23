@@ -241,6 +241,36 @@ def _():
     assert not slave.pull
 
 
+@case("worst-case presence (15 us start, 60 us hold) is low only 60..75 us after the release")
+def _():
+    slave = Ds18b20(ROM, SCRATCHPAD, presence_delay_ns=15 * US, presence_hold_ns=60 * US)
+    bus = Bus(slave)
+    bus.low(RESET_LOW_MIN_NS)
+    bus.advance(14 * US)
+    assert not slave.pull
+    bus.advance(2 * US)                  # 16 us after the release
+    assert slave.pull
+    bus.advance(58 * US)                 # 74 us: still low
+    assert slave.pull
+    bus.advance(2 * US)                  # 76 us: gone, a late sample reads 1
+    assert not slave.pull and bus.level() == 1
+
+
+@case("tight read validity: a served 0 is held 15 us from the fall, then released")
+def _():
+    slave = Ds18b20(ROM, SCRATCHPAD, read_valid_ns=15 * US)
+    bus = Bus(slave)
+    reset(bus)
+    send_byte(bus, 0x33)
+    assert ROM[0] & 1 == 0               # first served bit (0x28, LSB first) is 0
+    bus.low(2_000.0)                     # the master's read low
+    assert slave.pull, "a served 0 bit must pull DQ low"
+    bus.advance(12 * US)                 # 14 us after the fall
+    assert slave.pull
+    bus.advance(2 * US)                  # 16 us after the fall: a late sample sees a 1
+    assert not slave.pull and bus.level() == 1
+
+
 # --------------------------------------------------------- the dark path
 
 
