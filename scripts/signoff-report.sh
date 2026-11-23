@@ -323,10 +323,16 @@ PYDOC
       echo "  A graded field outside the build block changed without a fresh" >&2
       echo "  signoff-baseline record. Merge or rebase onto the current origin/main" >&2
       echo "  first (a base merge that moves a hashed input stales leaves minted" >&2
-      echo "  against the pre-merge base), then re-render (scripts/signoff-report.sh --out)" >&2
-      echo "  and mint once with python3 verification/remint_records.py --collapse" >&2
-      echo "  signoff-baseline (one record for all stale live leaves, never one" >&2
-      echo "  successor per leaf), and commit it with the change." >&2
+      echo "  against the pre-merge base), then re-render with" >&2
+      echo "  scripts/signoff-report.sh --out FILE." >&2
+      echo "  When hashed inputs made interchangeable live leaves stale, mint once:" >&2
+      echo "    python3 verification/remint_records.py --collapse signoff-baseline" >&2
+      echo "  (one record for all stale live leaves, never one successor per leaf)." >&2
+      echo "  When no tracked input hash changed (grader-only drift), --collapse" >&2
+      echo "  mints nothing; follow the field-by-field procedure in manifests/README.md" >&2
+      echo "  (issue #482): inspect the drifted: lines, investigate any changed item" >&2
+      echo "  status or reason instead of re-minting over a finding, and re-mint the" >&2
+      echo "  baseline only for pure report-shape additions." >&2
       python3 - "$CHECK_OUT" <<'PYDRIFT' >&2 || true
 import json, sys
 with open(sys.argv[1]) as f:
