@@ -112,13 +112,23 @@ def excerpt(old: str | list[str], new: str | list[str]) -> list[str]:
 
     sm = difflib.SequenceMatcher(None, old_words, new_words, autojunk=False)
     lines: list[str] = []
+    withheld = 0
     for tag, i1, i2, j1, j2 in sm.get_opcodes():
-        if tag == "equal" or len(lines) >= 2 * EXCERPT_SEGMENTS:
+        if tag == "equal":
+            continue
+        if len(lines) >= 2 * EXCERPT_SEGMENTS:
+            withheld += 1
             continue
         if i1 != i2:
             lines.append("  - " + clip(" ".join(old_words[i1:i2])))
         if j1 != j2:
             lines.append("  + " + clip(" ".join(new_words[j1:j2])))
+    if withheld:
+        plural = "" if withheld == 1 else "s"
+        lines.append(
+            f"  ({withheld} further changed segment{plural} not shown; "
+            "see the full texts in the cited artifacts)"
+        )
     return lines
 
 

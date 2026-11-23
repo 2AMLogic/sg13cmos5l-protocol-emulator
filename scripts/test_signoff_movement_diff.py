@@ -125,6 +125,45 @@ class Compare(unittest.TestCase):
             if line.startswith("  "):
                 self.assertLessEqual(len(line), smd.EXCERPT_WIDTH + 3)
 
+    def test_excerpt_names_withheld_changed_segment(self):
+        # Four replacements: the first three fill the six-line cap, the
+        # fourth is withheld and named -- once, although it renders on two
+        # lines if shown.
+        old = report(items=[item(id_=1, text="a0 sep b0 sep c0 sep d0")])
+        new = report(items=[item(id_=1, text="a1 sep b1 sep c1 sep d1")])
+        excerpt_lines = [l for l in self.out(old, new).splitlines()
+                         if l.startswith("  ")]
+        self.assertEqual(excerpt_lines,
+                         ["  - a0", "  + a1", "  - b0", "  + b1",
+                          "  - c0", "  + c1",
+                          "  (1 further changed segment not shown; "
+                          "see the full texts in the cited artifacts)"])
+
+    def test_excerpt_withheld_segments_counted_plural(self):
+        old = report(items=[item(id_=1, text="a0 s b0 s c0 s d0 s e0")])
+        new = report(items=[item(id_=1, text="a1 s b1 s c1 s d1 s e1")])
+        self.assertIn("(2 further changed segments not shown; "
+                      "see the full texts in the cited artifacts)",
+                      self.out(old, new))
+
+    def test_excerpt_cap_reached_exactly_has_no_notice(self):
+        old = report(items=[item(id_=1, text="a0 sep b0 sep c0")])
+        new = report(items=[item(id_=1, text="a1 sep b1 sep c1")])
+        excerpt_lines = [l for l in self.out(old, new).splitlines()
+                         if l.startswith("  ")]
+        self.assertEqual(excerpt_lines,
+                         ["  - a0", "  + a1", "  - b0", "  + b1",
+                          "  - c0", "  + c1"])
+
+    def test_excerpt_width_clip_alone_has_no_notice(self):
+        tail = " ".join(f"t{i}" for i in range(60))
+        old = report(items=[item(id_=1, text="head")])
+        new = report(items=[item(id_=1, text="head " + tail)])
+        excerpt_lines = [l for l in self.out(old, new).splitlines()
+                         if l.startswith("  ")]
+        self.assertEqual(len(excerpt_lines), 1)
+        self.assertTrue(excerpt_lines[0].endswith("…"))
+
 
 class Cli(unittest.TestCase):
     def setUp(self):
