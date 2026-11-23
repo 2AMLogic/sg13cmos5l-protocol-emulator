@@ -62,7 +62,7 @@ TX_IMAGES = (
 
 #: Every committed TX image transmits these payload bytes, in order (the
 #: benches' images; 0x5A's last edge is the bit-9 stop rise, 0xA5's is the
-#: bit-7 data edge, so both stop-bit adjacencies are exercised).
+#: bit-8 data edge, so both stop-bit adjacencies are exercised).
 TX_PAYLOADS = (0x5A, 0xA5)
 
 #: The reference model's own deterministic negative-control scale, re-run
@@ -181,14 +181,6 @@ def _measure_image(stem, cycles_per_bit, clock_period_ps, tx_initial, tx_edges, 
     stretched = Signal(line.initial, name=f"{line.name}*{NEGATIVE_CONTROL_SCALE}")
     stretched.transitions = [(t * NEGATIVE_CONTROL_SCALE, v) for (t, v) in line.transitions]
     stretched_reports = decoder.decode(stretched)
-    assert [r.data for r in stretched_reports] == list(TX_PAYLOADS), (
-        f"{stem}: the {NEGATIVE_CONTROL_SCALE}x control must still decode the bytes"
-    )
-    for r in stretched_reports:
-        assert not decoder.check_frame(r), (
-            f"{stem}: NEGATIVE CONTROL FAILED TO FAIL: a {NEGATIVE_CONTROL_SCALE}x-mistimed "
-            f"copy of the routed waveform passed check_frame at {r.drift_pct:.4f}%"
-        )
     return {
         "image": stem,
         "cycles_per_bit": cycles_per_bit,
@@ -200,7 +192,9 @@ def _measure_image(stem, cycles_per_bit, clock_period_ps, tx_initial, tx_edges, 
             "scale": NEGATIVE_CONTROL_SCALE,
             "decoded": [f"0x{r.data:02x}" for r in stretched_reports],
             "drift_pct": [r.drift_pct for r in stretched_reports],
-            "all_failed_check_frame": True,
+            "all_failed_check_frame": bool(stretched_reports) and all(
+                not decoder.check_frame(r) for r in stretched_reports
+            ),
         },
     }
 
@@ -291,3 +285,11 @@ async def test_uart_tx_bit_period_and_drift_in_time_units(dut):
                 f"{frame['drift_pct']:.4f}% of the bit period (bound 2%); the measurement "
                 "is recorded in the protocol report"
             )
+        control = image["negative_control"]
+        assert control["decoded"] == [f"0x{payload:02x}" for payload in TX_PAYLOADS], (
+            f"{image['image']}: the {control['scale']}x control decoded {control['decoded']}"
+        )
+        assert control["all_failed_check_frame"], (
+            f"{image['image']}: expected every {control['scale']}x control frame to fail "
+            f"the drift check, measured {control['drift_pct']}% of one bit"
+        )
