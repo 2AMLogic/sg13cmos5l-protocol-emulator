@@ -551,8 +551,8 @@ def _(fx):
 @case("SWD per-bit pin image is not an SWCLK x SWDIO combination")
 def _(fx):
     fx.mutate("firmware/asm/swd_probe.asm",
-              "        LDI   R3, 0x00         ; bit 0 = 0\n        OUT   UIO_OUT, R3",
-              "        LDI   R3, 0x10         ; (mutated)\n        OUT   UIO_OUT, R3")
+              "        LDI   R3, 0x00\n        OUT   UIO_OUT, R3      ; SWDIO falls low",
+              "        LDI   R3, 0x10         ; (mutated)\n        OUT   UIO_OUT, R3      ; SWDIO falls low")
     expect_fail(fx, "is not one of", "concrete-firmware-bench")
 
 
