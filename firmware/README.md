@@ -1197,15 +1197,41 @@ firmware/asm/i2s_tx.asm`; freshness: `python3 firmware/tools/check_firmware.py`;
 report `firmware/build/i2s_tx.cycles.txt`). The bench loads other tables
 over the code words, so the table is host-replaceable without touching code.
 
-**External part.** An I2S DAC breakout built on the TI PCM5102A (the
-common "PCM5102 I2S DAC" board), which needs no MCLK: with its SCK input
-tied low it derives the system clock from BCK. Wiring: `uo[6]` -> BCK,
-`uo[5]` -> LRCK, `uo[7]` -> DIN, GND common; SCK to GND, FMT low (I2S),
-XSMT high (unmute). *Not confirmed in this environment*: the PCM5102A
-datasheet (BCK-derived clock, 16-bit I2S, 3.125 MHz BCK inside its range)
-was not re-read here, so confirm those strap settings before building. A
-Digilent Pmod I2S2 is **not** a drop-in: its CS4344 DAC needs an MCLK
-(a fourth, unsupplied output). Bring-up with a real DAC is out of scope
+**External part and Pmod wiring.** A 3.3 V **TI PCM5102A** I2S stereo DAC
+breakout on a Pmod adapter (TI datasheet SLAS859C, May 2012, rev. May
+2015, [pcm5102a.pdf](https://www.ti.com/lit/ds/symlink/pcm5102a.pdf)).
+Confirmed against SLAS859C:
+
+- **No MCLK pin needed (§ 9.3.5.3, *Clock Slave Mode with BCK PLL*).**
+  When **SCK** (pin 12) is held at GND while BCK and LRCK toggle for 16
+  successive LRCK periods, the internal PLL starts automatically and
+  generates the internal system clock from BCK.
+- **Format, bit depth and rate (§ 9.3.2.2, Table 2, § 9.3.5.2, Table 11).**
+  Hardware-control mode accepts 16-, 20-, 24- and 32-bit binary
+  two's-complement MSB-first audio at BCK = 32 fs or 64 fs, with **FMT**
+  (pin 16) = Low selecting Philips I2S (LRCK Low = left, High = right;
+  High selects left-justified). The `32 kHz - 44.1 kHz - 48 kHz`
+  single-rate detector accepts ±4 % tolerance (§ 9.3.5.2), which covers
+  this image's 64-BCK frame (`BCK = 3.125 MHz`, `fs = 48.83 kHz`,
+  `+1.73 %` over 48 kHz at the unconfirmed 50 MHz clock; BCK period
+  320 ns, 160 ns high / 160 ns low vs § 8.6 minimums 20 ns / 9 ns at
+  3.3 V).
+
+| Output Pmod (`uo_out` header) | Signal | PCM5102A (TSSOP-20) | Strap / connection |
+|---|---|---|---|
+| pin 8 (`uo_out[5]`) | WS / LRCLK | 15 LRCK | word clock (low = left) |
+| pin 9 (`uo_out[6]`) | BCLK | 13 BCK | bit clock (64 × fs) |
+| pin 10 (`uo_out[7]`) | SD | 14 DIN | serial audio data, MSB first |
+| pins 5, 11 (GND) | GND | 3 CPGND, 9 AGND, 19 DGND | common ground |
+| pins 6, 12 (3.3 V) | 3V3 | 1 CPVDD, 8 AVDD, 20 DVDD | 3.3 V supply (decouple LDOO pin 18 with 0.1 uF) |
+| — | MCLK strap | 12 SCK | tie to **GND** (enables internal BCK PLL) |
+| — | format strap | 16 FMT | tie to **GND** (I2S format) |
+| — | mute control | 17 XSMT | tie to **3.3 V / AVDD** (soft un-mute, § 9.3.3) |
+| — | filter / de-emph | 11 FLT, 10 DEMP | tie to **GND** (normal latency, de-emphasis off) |
+
+A Digilent Pmod I2S2 is **not** a 3-wire drop-in: its Cirrus CS4344 DAC
+has no BCK PLL and requires an external MCLK (a fourth output this image
+does not generate). Bring-up with a physical DAC is out of scope
 (issue #451): the claim is the cycle-exact behaviour at the pins, verified
 at RTL.
 
