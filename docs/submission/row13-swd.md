@@ -60,7 +60,7 @@ no RTL, assembler or ISA-model byte changed.
 | Bench | [`verification/test_firmware_swd.py`](../../verification/test_firmware_swd.py) |
 | Pad model | [`verification/uio_pads.py`](../../verification/uio_pads.py): pull-up on SWDIO (ADIv5 requires one), SWCLK pulled low, the other six `uio` pins tied low; contention is flagged, so a probe that keeps SWDIO driven into a response phase is caught electrically |
 | Pin roles | `swd` phase in [DR 0010](../../spec/decision-records/0010-protocol-pin-roles.md): SWCLK `uio[2]`, SWDIO `uio[3]`, `pin_modes` UIO_DIR 0x0C / UIO_OD 0x00, held by the checker's `swd` profile |
-| RTL evidence | [`firmware-swd` 20261120-064415-20e43c1](../../verification/records/firmware-swd/records/20261120-064415-20e43c1.md) — no gate-level run is claimed for this leg |
+| RTL evidence | [`firmware-swd` 20261123-171306-ac0bdf0](../../verification/records/firmware-swd/records/20261123-171306-ac0bdf0.md) — no gate-level run is claimed for this leg |
 
 ## What was measured
 
