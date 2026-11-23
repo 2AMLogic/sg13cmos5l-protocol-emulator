@@ -23,7 +23,7 @@ MANIFEST = "manifests/sg13cmos5l-protocol-emulator.json"
 REC = '<!-- record-meta\n{{"record_id": "{rid}", "supersedes": {sup}}}\n-->\n'
 
 
-def make_repo(root: Path, digest_state="met", records=None, evidence=None):
+def make_repo(root: Path, digest_state="met", records=None, evidence=None, owner=None):
     records = records if records is not None else [("20260101-000000-aaaaaaa", None)]
     for rid, sup in records:
         d = root / "verification/records/exp/records"
@@ -36,8 +36,11 @@ def make_repo(root: Path, digest_state="met", records=None, evidence=None):
         f"| 1 | {digest_state} | why | none | [row 1](#x) |\n\n## Spec rows\n"
     )
     ev = evidence if evidence is not None else [{"experiment": "exp"}]
+    row = {"target": "t", "measured": "m", "conditions": "c", "evidence": ev}
+    if owner is not None:
+        row["owner"] = owner
     src = {
-        "rows": {"1": {"target": "t", "measured": "m", "conditions": "c", "evidence": ev}},
+        "rows": {"1": row},
         "clock_ns": 20.0,
         "timing_flow": "f",
         "timing_record": {"experiment": "exp"},
@@ -93,7 +96,7 @@ class Report(unittest.TestCase):
         self.assertIn("66.7", report)  # 1000 / (20 - 5)
 
     def test_failing_row_forces_envelope_fail(self):
-        _, env = self.build(digest_state="unmet")
+        _, env = self.build(digest_state="unmet", owner={"issues": [42]})
         self.assertEqual(json.loads(env)["status"], "fail")
 
     def test_missing_record_rejected(self):
@@ -144,9 +147,73 @@ class Report(unittest.TestCase):
             self.build(evidence=[])
 
     def test_unmet_without_evidence_is_no_evidence(self):
-        report, env = self.build(digest_state="unmet", evidence=[])
+        report, env = self.build(digest_state="unmet", evidence=[], owner={"waits": "DR 9 ratification"})
         self.assertIn("no evidence: why", report)
         self.assertEqual(json.loads(env)["status"], "fail")
+
+    def test_failing_row_without_owner_rejected(self):
+        with self.assertRaises(cr.Invalid) as cm:
+            self.build(digest_state="unmet")
+        self.assertIn("row 1: failing row carries no owner", str(cm.exception))
+
+    def test_failing_row_with_empty_owner_rejected(self):
+        with self.assertRaises(cr.Invalid):
+            self.build(digest_state="unmet", owner={})
+        with self.assertRaises(cr.Invalid):
+            self.build(digest_state="unmet", owner={"issues": []})
+        with self.assertRaises(cr.Invalid):
+            self.build(digest_state="unmet", owner={"issues": [0]})
+        with self.assertRaises(cr.Invalid):
+            self.build(digest_state="unmet", owner={"issues": [7, 7]})
+        with self.assertRaises(cr.Invalid):
+            self.build(digest_state="unmet", owner={"issues": "x"})
+        with self.assertRaises(cr.Invalid):
+            self.build(digest_state="unmet", owner={"waits": "  "})
+
+    def test_owner_issues_render_as_clickable_links(self):
+        report, env = self.build(digest_state="unmet", owner={"issues": [42, 43]})
+        self.assertIn(
+            f"[#42](https://github.com/2AMLogic/sg13cmos5l-protocol-emulator/issues/42)", report
+        )
+        self.assertIn(
+            f"[#43](https://github.com/2AMLogic/sg13cmos5l-protocol-emulator/issues/43)", report
+        )
+        self.assertEqual(json.loads(env)["status"], "fail")
+
+    def test_named_wait_renders(self):
+        report, _ = self.build(digest_state="unmet", owner={"waits": "DR 0005 (SRAM macro) ratification"})
+        self.assertIn("waits on DR 0005 (SRAM macro) ratification", report)
+
+    def test_owner_issues_and_wait_render_together(self):
+        report, _ = self.build(
+            digest_state="unmet", owner={"issues": [7], "waits": "DR 0005 ratification"}
+        )
+        self.assertIn(
+            "waits on DR 0005 ratification; [#7](https://github.com/2AMLogic/sg13cmos5l-protocol-emulator/issues/7)",
+            report,
+        )
+
+    def test_owner_metadata_leaves_verdict_and_failing_rows_intact(self):
+        report, env = self.build(digest_state="unmet", owner={"issues": [42]})
+        self.assertIn("fail: why", report)
+        self.assertIn("Rows not passing: 1.", report)
+        self.assertIn("rows not passing: 1", env)
+        self.assertEqual(json.loads(env)["status"], "fail")
+
+    def test_owner_column_is_the_only_table_difference(self):
+        plain = self.build()
+        owned = self.build(owner={"issues": [42]})
+        strip = lambda r: [  # noqa: E731
+            line.rsplit("|", 2)[0] + "|" for line in r.splitlines() if line.startswith("|")
+        ]
+        self.assertEqual(strip(plain[0]), strip(owned[0]))
+        self.assertNotEqual(plain[0], owned[0])
+
+    def test_passing_row_needs_no_owner(self):
+        report, env = self.build()
+        self.assertIn("| none |", report)
+        self.assertEqual(json.loads(env)["status"], "pass")
+
 
     def test_drift_detected_on_committed_tree(self):
         self.assertEqual(cr.main(["--check"]), 0)
@@ -164,7 +231,7 @@ class PinCheck(unittest.TestCase):
 
     def test_check_passes_with_failing_verdict(self):
         with tempfile.TemporaryDirectory() as t:
-            make_current(Path(t), digest_state="unmet")
+            make_current(Path(t), digest_state="unmet", owner={"issues": [42]})
             code, err = check(Path(t))
         self.assertEqual((code, err), (0, ""))
 
