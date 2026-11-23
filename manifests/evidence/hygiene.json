@@ -73,7 +73,7 @@
         "role": "hygiene",
         "path": "manifests/evidence/testbenches.txt",
         "passed": true,
-        "content_hash": "sha256:f7cdd92fb370457afeae36c98994b6d310237764ecf6d363ab1438f96d325048"
+        "content_hash": "sha256:bb561c8cab80cf01a10c322bc7a681513a4b73da772a1ae6f6b3b5a2a750da40"
       },
       {
         "check": "present",
@@ -140,11 +140,12 @@
         "passed": true,
         "local_only": true
       }
-    ]
+    ],
+    "description": "T1 item 10 (Repo hygiene). hygiene: README, LICENSE, the target spec, the environment doc and the CI workflows. checks: the audit commands CI runs, each of which exits non-zero on failure. evidence-inventories is the restricted run (--inventory) of scripts/check_evidence_inventories.py: the unrestricted run also compares the envelopes with the manifest, which an attestation is what refreshes. lint is `npm run lint` (check_records.py and the unrestricted inventory run included); it is local_only because the CI records job runs it on every push. It cannot be re-run while the manifest pins are being refreshed (it fails until the signoff-baseline record is re-minted, and that record cites this item's envelope), so re-mint this item FIRST on a tree whose baseline still holds (manifests/README.md)."
   },
   "provenance": {
-    "klt_version": "0.9.2",
-    "klayout_version": null,
+    "klt_version": "0.9.3.dev4050+gc38cf9041295",
+    "klayout_version": "0.30.12",
     "pdk": null,
     "deck": null,
     "input": {
