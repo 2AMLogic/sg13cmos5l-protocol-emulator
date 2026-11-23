@@ -116,6 +116,10 @@ LOAD_ROLE_PORT = {"PROG_SER": "ui_in", "PROG_MODE": "ui_in",
 DRIVE_PP = {"TX", "CS", "SCLK", "MOSI", "DIN", "IR_TX", "SWCLK", "SWDIO",
             "CAN_TXD"} | {f"RESULT[{i}]" for i in range(8)}
 DRIVE_OD = {"SCL", "SDA", "PS2_CLK", "PS2_DATA"}
+# DR 0010 can section: the CAN image's UIO_DIR scratch use (issue #450 review).
+CAN_UIO_DIR_WRITE_SITES = 7
+CAN_UIO_DIR_SETUP = 0x05
+
 SAMPLE = {"MISO", "RX", "IR_RX", "SWDIO", "CAN_RXD"}
 ALL_ROLES = DRIVE_PP | DRIVE_OD | SAMPLE
 
@@ -1283,6 +1287,27 @@ class Checker:
                 c.err(f"{rel}:{first['no']}: CAN_RXD mask LDI R3, {first['ops'][1]} but "
                       f"the table's can CAN_RXD pin {self.role_pin('can', 'CAN_RXD')} "
                       f"is 0x{mask:02X}")
+        # DR 0010 records that this image uses UIO_DIR as scratch (no
+        # pin_modes entry can express it): pin the write-site count and the
+        # setup value, so a change to the scratch use must update the record.
+        dir_writes = [i for i in ins
+                      if i["m"] == "WCTL" and i["ops"][0].upper() == "UIO_DIR"]
+        c.sites += 1
+        if len(dir_writes) != CAN_UIO_DIR_WRITE_SITES:
+            c.err(f"{rel}: {len(dir_writes)} `WCTL UIO_DIR` sites but DR 0010's can "
+                  f"section records {CAN_UIO_DIR_WRITE_SITES} (UIO_DIR scratch use); "
+                  "update the record and CAN_UIO_DIR_WRITE_SITES together")
+        first_dir = dir_writes[0] if dir_writes else None
+        prev = None
+        if first_dir is not None:
+            idx0 = ins.index(first_dir)
+            prev = ins[idx0 - 1] if idx0 else None
+        c.sites += 1
+        if not (prev and prev["m"] == "LDI" and prev["ops"][0] == first_dir["ops"][1]
+                and self.imm(prev["ops"][1]) == CAN_UIO_DIR_SETUP):
+            c.err(f"{rel}: the first `WCTL UIO_DIR` is not preceded by `LDI <reg>, "
+                  f"0x{CAN_UIO_DIR_SETUP:02X}` (DR 0010's can section records the "
+                  "scratch counter starting there)")
         for i in ins:
             if i["m"] == "OUT" and i["ops"][0].upper() == "UO_OUT":
                 c.sites += 1

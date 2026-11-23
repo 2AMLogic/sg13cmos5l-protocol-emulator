@@ -1604,9 +1604,22 @@ PROG_SER pad during the load phase and the CAN transceiver's R output
 during the run phase (the load phase ends before any protocol image
 runs, so the two roles never coincide; both are recorded on the pin).
 The table records the `can` phase (`CAN_TXD`, a driven push-pull role;
-`CAN_RXD`, a sampled role). Like the DMX512 and NEC images the program
-writes no pin-mode register (both lines sit on the dedicated ports), so
-no `pin_modes` entry. The bench's `TX_PIN, TX_BIT` and `RX_BIT` constants
+`CAN_RXD`, a sampled role). Both CAN lines sit on the dedicated ports, so
+the image needs no pin-mode value for them -- but, unlike the DMX512 and
+NEC images, it **does write `UIO_DIR`**, as scratch storage: the byte-
+boundary dispatch walks it 0x05 down to 0x00, and it holds the ACK /
+status flag and, briefly, a CRC byte (7 `WCTL UIO_DIR` sites; DR 0012's
+register is the only spare 8-bit state on a 4-register ISA, the trick
+DR 0013's boot loader also uses). The image writes neither `UIO_OD` nor
+`UIO_OUT`, so `uio_od = 0`, `uio_out = 0` and `uio_oe = uio_dir`: every
+set `UIO_DIR` bit drives that `uio` pad low -- `uio[0..2]` through every
+transmitted frame (0x05..0x01), and any pad for about two cycles while
+the CRC byte is parked there. Those pads carry the SPI / I2C / SWD roles
+and the QSPI Pmod header, so nothing may be connected to the `uio` pads
+while this image runs. The `pin_modes` schema holds one `uio_dir` value
+per profile and cannot express a varying one, so `can` has no
+`pin_modes` entry; this paragraph is the record, and `prof_can` pins the
+write-site count and the setup value so the image cannot drift from it. The bench's `TX_PIN, TX_BIT` and `RX_BIT` constants
 are checked by the `bench_can` profile, the pin images (every `OUT
 UO_OUT` reads R1, the `RCTL LINE_OUT` pair register, or R3, the recessive
 constant) by `can_images`, and each sample's bit isolation by
