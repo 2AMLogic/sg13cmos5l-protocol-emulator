@@ -1,0 +1,108 @@
+{
+  "schema_version": 2,
+  "engine": "icarus",
+  "hdl_toplevel": "protocol_program_memory",
+  "testbench": "test_loadseq",
+  "status": "pass",
+  "test_count": 6,
+  "passed_count": 6,
+  "failed_count": 0,
+  "skipped_count": 0,
+  "tests": [
+    {
+      "name": "test_committed_images_load_word_for_word",
+      "status": "passed",
+      "sim_time_ns": 692980.0,
+      "real_time_s": 1.9954943656921387
+    },
+    {
+      "name": "test_asymmetric_one_word_and_full_256",
+      "status": "passed",
+      "sim_time_ns": 45240.0,
+      "real_time_s": 0.12894105911254883
+    },
+    {
+      "name": "test_reset_reload_replays_the_same_initial_sequence",
+      "status": "passed",
+      "sim_time_ns": 44560.0,
+      "real_time_s": 0.1272881031036377
+    },
+    {
+      "name": "test_mode_drop_is_its_own_edge",
+      "status": "passed",
+      "sim_time_ns": 440.0,
+      "real_time_s": 0.0013518333435058594
+    },
+    {
+      "name": "test_mutants_read_back_as_mutated_not_as_image",
+      "status": "passed",
+      "sim_time_ns": 2880.0,
+      "real_time_s": 0.00836634635925293
+    },
+    {
+      "name": "test_generated_sequence_matches_existing_helper_shape",
+      "status": "passed",
+      "sim_time_ns": 0.0,
+      "real_time_s": 0.0003516674041748047
+    }
+  ],
+  "coverage": null,
+  "trace": null,
+  "environment": {
+    "engine": "icarus",
+    "engine_version": "13.0",
+    "tools": [],
+    "cocotb_version": "2.0.1",
+    "results_xml": {
+      "path": "verification/.klt/functional-verification/results_icarus.xml",
+      "scope": "repo",
+      "sha256": "sha256:ea0b2c5523b07ba4273b5dde1cd9c2e3c751355a29110f6d3ae4ed16f334f947"
+    },
+    "test_log": {
+      "path": "verification/.klt/functional-verification/test_icarus.log",
+      "scope": "repo",
+      "sha256": "sha256:62f9242d8eaa230543af7568ce02e946fddbedc45bed8dbe6d253848474863cf"
+    },
+    "build_log": {
+      "path": "verification/.klt/functional-verification/build_icarus.log",
+      "scope": "repo",
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "random_seed": 1,
+    "source_defines": {},
+    "env": {},
+    "parameters": {},
+    "initial_state": null,
+    "sdf": null,
+    "sources": [
+      {
+        "path": "rtl/protocol_program_memory.v",
+        "scope": "repo",
+        "sha256": "2b08865ab24d6bac84b390dfa76bab6686b572ba8f19124130bfc34e93dff637"
+      },
+      {
+        "path": "rtl/vendor/RM_IHPSG13_1P_256x16_c2_bm_bist.v",
+        "scope": "repo",
+        "sha256": "9d456840a37dff650ee6a09dc1f3d4e2d8d3348fcea7dc305933dd4543feff1a"
+      },
+      {
+        "path": "rtl/vendor/RM_IHPSG13_1P_core_behavioral_bm_bist.v",
+        "scope": "repo",
+        "sha256": "e2e43ec0159cbc34662fe91114e8cb03a697a2a829ad63b0d4f06631908ea787"
+      }
+    ]
+  },
+  "provenance": {
+    "klt_version": "0.9.3.dev2575+g6bd18bbc8637",
+    "klt_git_commit": "6bd18bbc8637f6d767b3c24e77bd5db7a39e4bbe",
+    "klt_reinstall_spec": "klayout-tools @ git+https://github.com/2AMLogic/klayout-tools@6bd18bbc8637f6d767b3c24e77bd5db7a39e4bbe",
+    "klayout_version": "0.30.12",
+    "pdk": null,
+    "deck": null,
+    "input": {
+      "role": "source",
+      "content_hash": "sha256:7b68db146417bef232bcadda05816c75912d873e8d7fff775b38e0c82c7285bf"
+    },
+    "request_sha256": "b66da9349d1c1ec679bfebc249795f3cb79fdfbe521fbf0842770fb2286c68d4"
+  }
+}
