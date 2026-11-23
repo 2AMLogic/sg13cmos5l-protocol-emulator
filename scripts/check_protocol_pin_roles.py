@@ -729,27 +729,32 @@ class Checker:
         return out_ports, in_ports, res
 
     # ---------------------------------------------------------- profile: uart
-    def check_tx_firmware(self, rel, text, phase, label):
-        """The TX-transmitter firmware check shared by `prof_uart_tx` and
-        `prof_dmx512` (DR 0010 gives both the same check shape): TX driven
-        on the table's <phase>.TX pin, the first `LDI R1, imm` is the TX
-        bit mask / idle level, every ALU-mask LDI must be a pin mask, and
-        an `AND Rx, R1` bit-isolation site must exist. The program reads
-        no pin, so no IN port is allowed."""
+    def check_tx_firmware(self, rel, text, phase, label, role="TX"):
+        """The TX-transmitter firmware check shared by `prof_uart_tx`,
+        `prof_dmx512` and `prof_nec_ir` (DR 0010 gives all the same check
+        shape): the role's pin driven on the table's <phase>.<role> pin --
+        UART and DMX512 pass TX, NEC passes IR_TX, whose first `LDI R1,
+        imm` is the carrier-high pin image -- the first `LDI R1, imm` is
+        the pin bit mask / idle level, every ALU-mask LDI must be a pin
+        mask, and an `AND Rx, R1` bit-isolation site must exist. The
+        program reads no pin, so no IN port is allowed."""
         c = self.concrete
+        carrier = role == "IR_TX"  # NEC's mask LDI doubles as the carrier image
+        site = "carrier-image" if carrier else "TX bit-mask"
+        mask_what = f"{role} mask" if carrier else "TX bit mask"
         ins = self.asm_instrs(text)
-        outs, _ins, _ = self.out_in_ports([(phase, ["TX"])], [], "spi_result")
+        outs, _ins, _ = self.out_in_ports([(phase, [role])], [], "spi_result")
         self.check_ports(rel, ins, outs, set(), outs, set())
-        mask = self.mask_of(phase, "TX")
+        mask = self.mask_of(phase, role)
         first = next((i for i in ins if i["m"] == "LDI" and i["ops"][0] == "R1"), None)
         if first is None:
-            c.err(f"{rel}: no `LDI R1, imm` TX bit-mask site found (pattern uart_tx_mask)")
+            c.err(f"{rel}: no `LDI R1, imm` {site} site found (pattern uart_tx_mask)")
         else:
             c.sites += 1
             v = self.imm(first["ops"][1])
             if v != mask:
-                c.err(f"{rel}:{first['no']}: TX bit mask LDI R1, {first['ops'][1]} but the table's "
-                      f"{phase} TX pin {self.role_pin(phase, 'TX')} is 0x{mask:02X}")
+                c.err(f"{rel}:{first['no']}: {mask_what} LDI R1, {first['ops'][1]} but the table's "
+                      f"{phase} {role} pin {self.role_pin(phase, role)} is 0x{mask:02X}")
         self.check_mask_sites(rel, ins, {mask}, label)
         # the bit isolated by AND must come from the R1 mask
         if not any(i["m"] == "AND" and i["ops"][1] == "R1" for i in ins):
@@ -1176,23 +1181,7 @@ class Checker:
         `AND Rx, R1` bit-isolation site must exist. The program reads no
         pin: the receiver-module input (nec_ir_rx.IR_RX on ui_in) is board
         wiring no committed image samples yet, so no IN port is allowed."""
-        c = self.concrete
-        ins = self.asm_instrs(text)
-        outs, _ins, _ = self.out_in_ports([("nec_ir_tx", ["IR_TX"])], [], "spi_result")
-        self.check_ports(rel, ins, outs, set(), outs, set())
-        mask = self.mask_of("nec_ir_tx", "IR_TX")
-        first = next((i for i in ins if i["m"] == "LDI" and i["ops"][0] == "R1"), None)
-        if first is None:
-            c.err(f"{rel}: no `LDI R1, imm` carrier-image site found (pattern uart_tx_mask)")
-        else:
-            c.sites += 1
-            v = self.imm(first["ops"][1])
-            if v != mask:
-                c.err(f"{rel}:{first['no']}: IR_TX mask LDI R1, {first['ops'][1]} but the table's "
-                      f"nec_ir_tx IR_TX pin {self.role_pin('nec_ir_tx', 'IR_TX')} is 0x{mask:02X}")
-        self.check_mask_sites(rel, ins, {mask}, "NEC IR TX")
-        if not any(i["m"] == "AND" and i["ops"][1] == "R1" for i in ins):
-            c.err(f"{rel}: no `AND Rx, R1` bit-isolation site found")
+        self.check_tx_firmware(rel, text, "nec_ir_tx", "NEC IR TX", "IR_TX")
 
     # -------------------------------------------------- profile: nec_ir_rx
     def prof_nec_ir_rx(self, rel, ent, text):
@@ -1332,13 +1321,13 @@ class Checker:
                 f"{want[0]}[{want[1]}]"
             )
 
-    def check_bench_tx_pin(self, rel, text, phase):
-        """The TX bench pin extraction shared by `prof_bench_uart` and
-        `prof_bench_dmx512`: the bench's TX_PIN/TX_BIT against the table's
-        <phase>.TX."""
+    def check_bench_tx_pin(self, rel, text, phase, role="TX"):
+        """The TX bench pin extraction shared by `prof_bench_uart`,
+        `prof_bench_dmx512` and `prof_bench_nec_ir`: the bench's
+        TX_PIN/TX_BIT against the table's <phase>.<role> pin."""
         m = self.need(text, r'^TX_PIN,\s*TX_BIT\s*=\s*"(\w+)",\s*(\d+)', rel, "TX_PIN, TX_BIT")
         if m:
-            self.check_pb(rel, "TX_PIN/TX_BIT", m.group(1), int(m.group(2)), phase, "TX")
+            self.check_pb(rel, "TX_PIN/TX_BIT", m.group(1), int(m.group(2)), phase, role)
 
     def prof_bench_uart(self, rel, ent, text):
         self.check_bench_tx_pin(rel, text, "uart_tx")
@@ -1347,9 +1336,7 @@ class Checker:
         self.check_bench_tx_pin(rel, text, "dmx512")
 
     def prof_bench_nec_ir(self, rel, ent, text):
-        m = self.need(text, r'^TX_PIN,\s*TX_BIT\s*=\s*"(\w+)",\s*(\d+)', rel, "TX_PIN, TX_BIT")
-        if m:
-            self.check_pb(rel, "TX_PIN/TX_BIT", m.group(1), int(m.group(2)), "nec_ir_tx", "IR_TX")
+        self.check_bench_tx_pin(rel, text, "nec_ir_tx", "IR_TX")
 
     def prof_bench_nec_ir_rx(self, rel, ent, text):
         m = self.need(text, r'^RX_PIN,\s*RX_BIT\s*=\s*"(\w+)",\s*(\d+)', rel, "RX_PIN, RX_BIT")

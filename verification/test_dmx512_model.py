@@ -130,24 +130,11 @@ class Drift(unittest.TestCase):
         # one packet whose every edge is stretched 1.06x: 6% drift, above
         # the 5% bound, while every byte still samples correctly
         levels = [0x0F, 0x33]
-        sig = Signal(1)
-        encode_packet(START, levels, line=sig, t0=100_000.0,
-                      break_ns=92_000.0 * 1.06, mab_ns=12_000.0 * 1.06)
-        # stretch the slots by rebuilding on the same grid times 1.06
+        # stretch the packet by rebuilding on the same grid times 1.06
         stretched = Signal(1, name="stretched")
-        t = 100_000.0
-        stretched.add(t, 0)
-        t += 92_000.0 * 1.06
-        stretched.add(t, 1)
-        t += 12_000.0 * 1.06
-        for data in [START] + levels:
-            stretched.add(t, 0)
-            t += P * 1.06
-            for k in range(8):
-                stretched.add(t, (data >> k) & 1)
-                t += P * 1.06
-            stretched.add(t, 1)
-            t += 2 * P * 1.06
+        encode_packet(START, levels, period_ns=P * 1.06, line=stretched,
+                      t0=100_000.0, break_ns=92_000.0 * 1.06,
+                      mab_ns=12_000.0 * 1.06)
         r = Dmx512Receiver().decode(stretched)
         pkt = r.packets[0]
         self.assertEqual([s.data for s in pkt.slots], [START] + levels)

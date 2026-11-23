@@ -94,6 +94,7 @@ sys.path.insert(0, str(REPO_ROOT / "firmware" / "tools"))
 
 import asm  # noqa: E402  (the DR 0003 assembler)
 import gen_boot_rom  # noqa: E402  (the ROM generator)
+from test_protocol_emulator import load_program as serial_load  # noqa: E402  (the shared DR 0001 layer-1 loader; `serial_load` name kept for test_reset_power_up's boot.serial_load)
 
 CLK_PERIOD_NS = 10
 RUN_ENTRY_EDGES = 2  # DR 0005: edge 1 primes the fetch, edge 2 retires pc=0
@@ -354,24 +355,6 @@ async def settle(dut, label):
         sample[name] = int(value)
     await Timer(1, unit="ns")
     return sample
-
-
-async def serial_load(dut, words):
-    """DR 0001 layer 1: reset with MODE high, shift `words` in MSB-first on
-    ui_in[0], drop MODE. Returns right after the MODE-drop edge (edge 0)."""
-    dut.ena.value = 1
-    dut.uio_in.value = 0
-    dut.ui_in.value = 0x80
-    dut.rst_n.value = 0
-    await ClockCycles(dut.clk, 10)
-    dut.rst_n.value = 1
-    await RisingEdge(dut.clk)  # the mode-sampling edge
-    for word in words:
-        for bit in range(15, -1, -1):
-            dut.ui_in.value = 0x80 | ((word >> bit) & 1)
-            await RisingEdge(dut.clk)
-    dut.ui_in.value = 0x00  # MODE drop
-    await RisingEdge(dut.clk)  # edge 0
 
 
 async def boot_reset(dut, straps):
