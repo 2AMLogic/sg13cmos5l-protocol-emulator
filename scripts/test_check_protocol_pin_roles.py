@@ -1263,8 +1263,8 @@ def _(fx):
     concrete = {
         "prof_uart_tx", "prof_uart_rx", "prof_spi", "prof_i2c", "prof_i2c_gen",
         "prof_demo", "prof_ws2812", "prof_ps2", "prof_dmx512", "prof_nec_ir",
-        "prof_swd", "prof_i2s", "prof_bench_i2s",
-        "prof_bench_uart", "prof_bench_dmx512", "prof_bench_ws2812",
+        "prof_swd", "prof_can", "prof_i2s", "prof_bench_i2s",
+        "prof_bench_can", "prof_bench_uart", "prof_bench_dmx512", "prof_bench_ws2812",
         "prof_bench_nec_ir",
         "prof_bench_ps2", "prof_bench_swd", "prof_bench_spi",
         "prof_bench_i2c", "prof_bench_i2c_sr", "prof_bench_load", "prof_top",

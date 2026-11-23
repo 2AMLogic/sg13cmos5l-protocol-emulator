@@ -103,6 +103,7 @@ PHASES = (
     "nec_ir_tx",
     "nec_ir_rx",
     "swd",
+    "can",
 )
 UNUSED = "unused"
 # PROG_SER / PROG_MODE are the serial program-load inputs. CRC_BYTE_SEL (an
@@ -113,9 +114,14 @@ LOAD_ROLE_PORT = {"PROG_SER": "ui_in", "PROG_MODE": "ui_in",
                   "CRC_BYTE_SEL": "ui_in", "CRC_READOUT": "uo_out"}
 
 # Role classes (what the role does electrically).
-DRIVE_PP = {"TX", "CS", "SCLK", "MOSI", "DIN", "IR_TX", "SWCLK", "SWDIO", "BCLK", "WS", "SD"} | {f"RESULT[{i}]" for i in range(8)}
+DRIVE_PP = {"TX", "CS", "SCLK", "MOSI", "DIN", "IR_TX", "SWCLK", "SWDIO",
+            "CAN_TXD", "BCLK", "WS", "SD"} | {f"RESULT[{i}]" for i in range(8)}
 DRIVE_OD = {"SCL", "SDA", "PS2_CLK", "PS2_DATA"}
-SAMPLE = {"MISO", "RX", "IR_RX", "SWDIO"}
+# DR 0010 can section: the CAN image's UIO_DIR scratch use (issue #450 review).
+CAN_UIO_DIR_WRITE_SITES = 7
+CAN_UIO_DIR_SETUP = 0x05
+
+SAMPLE = {"MISO", "RX", "IR_RX", "SWDIO", "CAN_RXD"}
 ALL_ROLES = DRIVE_PP | DRIVE_OD | SAMPLE
 
 # Phase role vocabulary (the record's `phases` object must match exactly).
@@ -147,6 +153,10 @@ PHASE_VOCAB = {
     # probe's write phases and released (sampled, with a pull-up) for the
     # target's response phases.
     "swd": {"SWCLK", "SWDIO"},
+    # Multi-protocol extra credit (issue #450): the CAN 2.0A node's two
+    # lines through an external transceiver. CAN_TXD (the transceiver's D
+    # input) is push-pull; CAN_RXD (its R output) is an input.
+    "can": {"CAN_TXD", "CAN_RXD"},
 }
 
 # Extraction patterns this script implements. An inventory entry naming any
@@ -174,6 +184,9 @@ PATTERNS = {
     "swd_images",           # swd_probe.asm: preloaded image pair, per-bit images, UIO_DIR values, no UIO_OD
     "swd_sample",           # swd_probe.asm: each IN UIO_IN followed by AND Rx, R0 (the SWDIO mask)
     "bench_swd",            # SWCLK_BIT, SWDIO_BIT = n, m
+    "can_images",           # can_2a.asm: pin images from LINE_OUT pairs/status words
+    "can_sample",           # can_2a.asm: each IN UI_IN followed by AND Rx, R3 (the RXD mask)
+    "bench_can",            # TX_PIN/TX_BIT + RX_BIT = port, n, n
     "bench_spi_consts",     # CS/SCLK/MOSI/MISO constants and capture ports
     "bench_i2c_consts",     # SCL/SDA constants, LINE_PIN, CAPTURE_SPECS, i2c_board(scl=, sda=), pad calls
     "bench_i2c_sr_consts",  # imports from test_firmware_i2c, pad calls by named bit, no uio_in write
@@ -1311,6 +1324,71 @@ class Checker:
                       f"AND {i['ops'][0]}, R0 (R0 = 0x{dio:02X}, the SWDIO mask) "
                       "to isolate the sampled bit")
 
+    # ------------------------------------------------------ profile: can
+    def prof_can(self, rel, ent, text):
+        """The CAN 2.0A node (issue #450): CAN_TXD driven push-pull on the
+        table's can.CAN_TXD pin (uo_out[0] today, the pad the uart/dmx512
+        transmitters also use -- one image runs at a time), CAN_RXD
+        sampled on can.CAN_RXD (ui_in[0], PROG_SER during the load
+        phase). Checks: the only OUT port is UO_OUT and the only IN port
+        is UI_IN; every OUT UO_OUT reads R1 or R3 (the LINE_OUT pair
+        register or the recessive/status constant register); the first
+        `LDI R3, imm` is 0x01 (both the CAN_RXD mask on ui_in[0] and the
+        loop decrement); and every IN UI_IN is masked with R3."""
+        c = self.concrete
+        ins = self.asm_instrs(text)
+        outs, ins_p, _res = self.out_in_ports(
+            [("can", ["CAN_TXD"])], [("can", ["CAN_RXD"])], "spi_result")
+        self.check_ports(rel, ins, outs | {"UO_OUT"}, ins_p, outs, ins_p)
+        mask = self.mask_of("can", "CAN_RXD")
+        first = next((i for i in ins if i["m"] == "LDI" and i["ops"][0] == "R3"), None)
+        if first is None:
+            c.err(f"{rel}: no `LDI R3, imm` CAN_RXD-mask site found (pattern can_images)")
+        else:
+            c.sites += 1
+            if self.imm(first["ops"][1]) != mask:
+                c.err(f"{rel}:{first['no']}: CAN_RXD mask LDI R3, {first['ops'][1]} but "
+                      f"the table's can CAN_RXD pin {self.role_pin('can', 'CAN_RXD')} "
+                      f"is 0x{mask:02X}")
+        # DR 0010 records that this image uses UIO_DIR as scratch (no
+        # pin_modes entry can express it): pin the write-site count and the
+        # setup value, so a change to the scratch use must update the record.
+        dir_writes = [i for i in ins
+                      if i["m"] == "WCTL" and i["ops"][0].upper() == "UIO_DIR"]
+        c.sites += 1
+        if len(dir_writes) != CAN_UIO_DIR_WRITE_SITES:
+            c.err(f"{rel}: {len(dir_writes)} `WCTL UIO_DIR` sites but DR 0010's can "
+                  f"section records {CAN_UIO_DIR_WRITE_SITES} (UIO_DIR scratch use); "
+                  "update the record and CAN_UIO_DIR_WRITE_SITES together")
+        first_dir = dir_writes[0] if dir_writes else None
+        prev = None
+        if first_dir is not None:
+            idx0 = ins.index(first_dir)
+            prev = ins[idx0 - 1] if idx0 else None
+        c.sites += 1
+        if not (prev and prev["m"] == "LDI" and prev["ops"][0] == first_dir["ops"][1]
+                and self.imm(prev["ops"][1]) == CAN_UIO_DIR_SETUP):
+            c.err(f"{rel}: the first `WCTL UIO_DIR` is not preceded by `LDI <reg>, "
+                  f"0x{CAN_UIO_DIR_SETUP:02X}` (DR 0010's can section records the "
+                  "scratch counter starting there)")
+        for i in ins:
+            if i["m"] == "OUT" and i["ops"][0].upper() == "UO_OUT":
+                c.sites += 1
+                if i["ops"][1] not in ("R1", "R3"):
+                    c.err(f"{rel}:{i['no']}: OUT UO_OUT from {i['ops'][1]}; only R1 "
+                          "(the LINE_OUT pair / status register) or R3 (recessive) "
+                          "may drive CAN_TXD")
+        for idx, i in enumerate(ins):
+            if not (i["m"] == "IN" and i["ops"][1].upper() == "UI_IN"):
+                continue
+            c.sites += 1
+            nxt = ins[idx + 1] if idx + 1 < len(ins) else None
+            if not (nxt and nxt["m"] == "AND" and nxt["ops"][0] == i["ops"][0]
+                    and nxt["ops"][1] == "R3"):
+                c.err(f"{rel}:{i['no']}: IN UI_IN must be followed by "
+                      f"AND {i['ops'][0]}, R3 (R3 = 0x{mask:02X}, the CAN_RXD mask) "
+                      "to isolate the sampled bit")
+
     # ------------------------------------------------------- profile: benches
     def need(self, text, pattern, rel, what, flags=re.M):
         m = re.search(pattern, text, flags)
@@ -1365,6 +1443,18 @@ class Checker:
         if m:
             self.check_pb(rel, "CLK_BIT", "uio", int(m.group(1)), "ps2", "PS2_CLK")
             self.check_pb(rel, "DATA_BIT", "uio", int(m.group(2)), "ps2", "PS2_DATA")
+
+    def prof_bench_can(self, rel, ent, text):
+        m = self.need(text, r'^TX_PIN,\s*TX_BIT\s*=\s*"(\w+)",\s*(\d+)', rel, "TX_PIN, TX_BIT")
+        if m:
+            self.check_pb(rel, "TX_PIN/TX_BIT", m.group(1), int(m.group(2)), "can", "CAN_TXD")
+        m2 = self.need(text, r'^RX_BIT\s*=\s*(\d+)', rel, "RX_BIT")
+        if m2:
+            want = self.role_pin("can", "CAN_RXD")
+            if ("ui_in", int(m2.group(1))) != want:
+                self.concrete.err(
+                    f"{rel}: RX_BIT is ui_in[{m2.group(1)}] but the table assigns "
+                    f"can.CAN_RXD to {want[0]}[{want[1]}]")
 
     def prof_bench_swd(self, rel, ent, text):
         m = self.need(text, r'^SWCLK_BIT,\s*SWDIO_BIT\s*=\s*(\d+),\s*(\d+)', rel, "SWCLK_BIT, SWDIO_BIT")
