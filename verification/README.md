@@ -289,6 +289,16 @@ gates. The host-side loader is issue #118.
   bit-edge, mid-word discard, no mid-run re-entry, 256-word saturation).
   Driven by `klt functional-verification` (see
   `request-program-memory.json`).
+- `program_memory_driver.py` — the shared pin driver for the two
+  module-level `protocol_program_memory` benches (`test_program_memory.py`
+  and `test_firmware_roundtrip.py`, issue #486): reset release with MODE
+  pre-driven and the run-phase ports tied idle, the MSB-first
+  one-bit-per-edge serial shift with the MODE drop on its own edge, the
+  synchronous fetch read, and the post-NBA registered-output read. Each
+  bench imports what it uses and keeps its own assertions;
+  `test_loadseq.py` deliberately drives its own pins and imports nothing
+  from here. Not a testbench itself (`klt functional-verification` never
+  names it); hashed as a provenance input by both benches' records.
 - `test_protocol_models.py` — constrained-random reference-model
   validation bench (verification-plan.md §4, issue #25): drives the
   `reference_models/` package's independent UART/SPI/I2C models with
@@ -812,7 +822,15 @@ Each record is a markdown file, `records/<record-id>.md`, with two parts:
      the run (see the synthesis-baseline record's own "klt provenance"
      bullet for a worked example of that case).
    - **Links** — paths to the driver/testbench script(s), the design under
-     test, and the raw artifacts under `artifacts/<record-id>/`.
+     test, and the raw artifacts under `artifacts/<record-id>/`. Artifact
+     links are checked (#545): an inline Markdown link whose relative
+     destination points into this experiment's `artifacts/` tree must
+     resolve, from the record's own directory, to a tracked file or to a
+     directory containing tracked artifacts. A citation of a log that is
+     absent from the tree — or present only untracked — asserts numbers
+     nothing in the tree substantiates; a shared artifact under a sibling
+     record id's directory and a whole-run-directory link are legitimate
+     and resolve exactly as written.
    - **Timestamp / author** — ISO-8601 UTC timestamp and who (human or
      agent) minted the record.
    - **Supersedes** — `none`, the prior `<record-id>` this corrects, or the
@@ -928,6 +946,15 @@ on:
   every other input of a live record is still compared, and this path is
   still required to be well-formed and git-tracked. The list is
   `FRESHNESS_EXEMPT_INPUT_PATHS` in `check_records.py`;
+- an inline Markdown link, anywhere in a record's body (indented bullets
+  included), whose relative destination points into the record's own
+  experiment `artifacts/` tree but does not resolve from the record's
+  directory to a tracked file or a directory containing tracked artifacts
+  (#545) — the PR #455 false pass: a mixed **Links** row citing two tracked
+  sibling files and a `test_icarus.log` that was never committed linted
+  clean. Destinations outside that tree (other paths, external URLs,
+  fragments) and paths appearing only as inline code are not citations and
+  are not audited; live and superseded records are both checked;
 - **append-only violations**: any file under `verification/records/`
   modified, renamed, or deleted relative to the merge base with
   `origin/main`.

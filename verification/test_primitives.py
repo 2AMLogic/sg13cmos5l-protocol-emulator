@@ -56,14 +56,12 @@ with literal seeds, so every run is byte-reproducible.
 """
 
 import binascii
-import os
 import random
 import sys
 import zlib
 from pathlib import Path
 
 import cocotb
-from cocotb.clock import Clock
 from cocotb.triggers import ClockCycles, ReadOnly, RisingEdge, Timer
 
 try:
@@ -76,10 +74,10 @@ REPO_ROOT = find_repo_root(__file__)
 sys.path.insert(0, str(REPO_ROOT / "firmware" / "tools"))
 
 import asm  # noqa: E402  (the DR 0003 assembler)
+from test_control_space import Prog as _BaseProg, core, expect, settle, start_clock  # noqa: E402  (the shared harness helpers; importing them does not register test_control_space's own tests here)
+from test_protocol_emulator import load_program  # noqa: E402  (the shared DR 0001 layer-1 loader)
 
-CLK_PERIOD_NS = 10
 RUN_ENTRY_EDGES = 2  # DR 0005: edge 1 primes the fetch, edge 2 retires pc=0
-GATE_LEVEL = os.environ.get("GATES") == "yes"
 
 # The index map (DR 0012 / DR 0015 dated notes, 2026-10-10), written out here.
 CRC_CFG, CRC_POLY, CRC_STATE, CRC_BIT, CRC_BYTE, CRC_NEXT = 0x10, 0x11, 0x12, 0x13, 0x14, 0x15
@@ -241,80 +239,23 @@ class LineDecoder:
 
 
 # ---------------------------------------------------------------------------
-# Harness (the same load/run discipline as test_control_space.py).
+# Harness (the control-space bench's helpers, imported; only the DR 0015
+# specifics stay local: the 32-bit pointer writes and this file's own
+# latency table in `edge()`).
 # ---------------------------------------------------------------------------
-class Prog:
-    def __init__(self):
-        self.lines = []
-
-    def add(self, line):
-        self.lines.append(line)
-        return len(self.lines) - 1
-
-    def ldi(self, reg, value):
-        return self.add(f"LDI R{reg}, {value & 0xFF:#04x}")
-
-    def wctl(self, k, reg):
-        return self.add(f"WCTL {k:#04x}, R{reg}")
-
-    def rctl(self, reg, k):
-        return self.add(f"RCTL R{reg}, {k:#04x}")
-
-    def out(self, reg):
-        return self.add(f"OUT UO_OUT, R{reg}")
-
-    def show(self, k, reg=0, poison=0xEE):
-        self.ldi(reg, poison)
-        self.rctl(reg, k)
-        return self.out(reg)
-
+class Prog(_BaseProg):
     def write32(self, k, value, reg=0):
         """Four byte writes at the pointer, byte 0 first."""
         for i in range(4):
-            self.ldi(reg, value >> (8 * i))
+            self.ldi(reg, (value >> (8 * i)) & 0xFF)
             self.wctl(k, reg)
-
-    @property
-    def words(self):
-        key = tuple(self.lines)
-        if getattr(self, "_key", None) != key:
-            program = asm.assemble_text("\n".join(self.lines) + "\n", allow_reserved=True)
-            self._key, self._words = key, list(program.words)
-        return list(self._words)
 
     def edge(self, index):
         return RUN_ENTRY_EDGES + sum(cycles(w) for w in self.words[:index])
 
-    def end_edge(self):
-        return self.edge(len(self.lines))
-
-
-async def settle(dut):
-    await ReadOnly()
-    sample = {"uo_out": int(dut.uo_out.value), "uio_out": int(dut.uio_out.value),
-              "uio_oe": int(dut.uio_oe.value)}
-    await Timer(1, unit="ns")
-    return sample
-
-
-async def load_image(dut, words):
-    dut.ena.value = 1
-    dut.uio_in.value = 0
-    dut.ui_in.value = 0x80
-    dut.rst_n.value = 0
-    await ClockCycles(dut.clk, 10)
-    dut.rst_n.value = 1
-    await RisingEdge(dut.clk)
-    for word in words:
-        for bit in range(15, -1, -1):
-            dut.ui_in.value = 0x80 | ((word >> bit) & 1)
-            await RisingEdge(dut.clk)
-    dut.ui_in.value = 0x00
-    await RisingEdge(dut.clk)  # edge 0
-
 
 async def run_trace(dut, words, edges, per_edge=None):
-    await load_image(dut, words)
+    await load_program(dut, words)
     trace = [await settle(dut)]
     for e in range(1, edges + 1):
         await RisingEdge(dut.clk)
@@ -322,22 +263,6 @@ async def run_trace(dut, words, edges, per_edge=None):
         if per_edge is not None:
             per_edge(e, trace)
     return trace
-
-
-def expect(trace, prog, checks, pin="uo_out"):
-    for index, want, label in checks:
-        e = prog.edge(index)
-        got = trace[e][pin]
-        assert got == want, (f"{label}: {pin} after edge {e} (instruction {index}) is "
-                             f"{got:#04x}, want {want:#04x}")
-
-
-def start_clock(dut):
-    cocotb.start_soon(Clock(dut.clk, CLK_PERIOD_NS, unit="ns").start())
-
-
-def core(dut):
-    return None if GATE_LEVEL else dut.u_core
 
 
 def crc_program(name, data=None, bits=None):
@@ -615,7 +540,7 @@ async def run_line(dut, cfg, data, idle):
         dut.ui_in.value = data[i] if i < len(data) else 0
 
     nslots = 2 * len(data) + 4
-    await load_image(dut, words)
+    await load_program(dut, words)
     present()
     for e in range(1, first_out + nslots * body + 1):
         await RisingEdge(dut.clk)

@@ -7,22 +7,22 @@
    "active_layer": "1/0"
   },
   {
-   "name": "metal1",
+   "name": "Metal1",
    "layer": "8/0",
    "label_layer": "8/25"
   },
   {
-   "name": "metal2",
+   "name": "Metal2",
    "layer": "10/0",
    "label_layer": "10/25"
   },
   {
-   "name": "metal3",
+   "name": "Metal3",
    "layer": "30/0",
    "label_layer": "30/25"
   },
   {
-   "name": "metal4",
+   "name": "Metal4",
    "layer": "50/0",
    "label_layer": "50/25"
   }
@@ -33,31 +33,31 @@
    "layer": "6/0",
    "between": [
     "gatpoly",
-    "metal1"
+    "Metal1"
    ]
   },
   {
    "name": "via1",
    "layer": "19/0",
    "between": [
-    "metal1",
-    "metal2"
+    "Metal1",
+    "Metal2"
    ]
   },
   {
    "name": "via2",
    "layer": "29/0",
    "between": [
-    "metal2",
-    "metal3"
+    "Metal2",
+    "Metal3"
    ]
   },
   {
    "name": "via3",
    "layer": "49/0",
    "between": [
-    "metal3",
-    "metal4"
+    "Metal3",
+    "Metal4"
    ]
   }
  ],
@@ -11737,7 +11737,7 @@
      166.5
     ]
    ],
-   "connect_to": "metal1",
+   "connect_to": "Metal1",
    "net": "VPWR"
   },
   {
@@ -20017,7 +20017,7 @@
    "tap_requires": [
     "14/0"
    ],
-   "connect_to": "metal1",
+   "connect_to": "Metal1",
    "net": "VGND"
   }
  ]

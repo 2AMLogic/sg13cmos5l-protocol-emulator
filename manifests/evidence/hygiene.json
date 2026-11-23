@@ -73,7 +73,7 @@
         "role": "hygiene",
         "path": "manifests/evidence/testbenches.txt",
         "passed": true,
-        "content_hash": "sha256:5a3da5f613262abba53db463a321731405d8b2cd42fb46aec8c7216a87a9507e"
+        "content_hash": "sha256:f7cdd92fb370457afeae36c98994b6d310237764ecf6d363ab1438f96d325048"
       },
       {
         "check": "present",
@@ -94,7 +94,7 @@
         "role": "hygiene",
         "path": "verification/check_records.py",
         "passed": true,
-        "content_hash": "sha256:cc33987826d6be9eda8b3638f733a37794d47a4888fea049aec7a03d0bd76526"
+        "content_hash": "sha256:33ceccee022616c9ebd90a4ca933e9b50683fb900ba39ca74d12db59fb5c7681"
       },
       {
         "check": "command",
