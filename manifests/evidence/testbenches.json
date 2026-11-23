@@ -3,14 +3,14 @@
   "kind": "generic",
   "status": "pass",
   "t1_item": 9,
-  "summary": "T1 item 9 (Testbenches shipped): 98/98 attestation checks passed (klt signoff --attest)",
+  "summary": "T1 item 9 (Testbenches shipped): 100/100 attestation checks passed (klt signoff --attest)",
   "source": "manifests/attest/item9.json",
   "attestation": {
     "producer": "klt signoff --attest",
     "inventory_schema_version": 1,
     "hash_algorithm": "sha256-raw-bytes",
-    "check_count": 98,
-    "passed_count": 98,
+    "check_count": 100,
+    "passed_count": 100,
     "checks": [
       {
         "check": "present",
@@ -24,14 +24,14 @@
         "role": "testbench",
         "path": "flow/erc-librelane-gds.json",
         "passed": true,
-        "content_hash": "sha256:62c5b36be58a52cb3172851ba4180a3a6be6c57efa467109ca69925dbbe3133a"
+        "content_hash": "sha256:5b6ec2c6b5a150742a3bbdc60768e9ee28f4a6453c9d8fb7e6b518f553496a1e"
       },
       {
         "check": "present",
         "role": "testbench",
         "path": "flow/gen-erc-librelane-gds-spec.py",
         "passed": true,
-        "content_hash": "sha256:b5fe0be925d0f29a5693137f902e28f111d4504accb030fd65f4f1d51d6f7020"
+        "content_hash": "sha256:06596bae19d270d9f935448bf0fe9210e314b8f3f578532c07f593f25d831892"
       },
       {
         "check": "present",
@@ -60,6 +60,13 @@
         "path": "flow/run-post-layout-sdf.sh",
         "passed": true,
         "content_hash": "sha256:8c3790edf3477e25284f77dd5fabbfc2cdfb1a78c18e5309454f15aa681bb9b7"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "flow/run-power-par.sh",
+        "passed": true,
+        "content_hash": "sha256:f5c3f365bc18b54d81641abcc144bcc0c8d5f310bf43161f02a68dbcf7b3106d"
       },
       {
         "check": "present",
@@ -108,7 +115,7 @@
         "role": "testbench",
         "path": "scripts/signoff-report.sh",
         "passed": true,
-        "content_hash": "sha256:10f7a8dfcd33271216bab38736f0554f1599e70696f284c3b575a66334cb1dba"
+        "content_hash": "sha256:02cb739ff35219216039b5cc0c30dc054df5997f1a0001407ca52129db800c93"
       },
       {
         "check": "present",
@@ -253,6 +260,13 @@
       {
         "check": "present",
         "role": "testbench",
+        "path": "verification/program_memory_driver.py",
+        "passed": true,
+        "content_hash": "sha256:e594a5534ace7df728f5e8929e7816e3e4c2436407d43e59e39da5e498cdb2b4"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
         "path": "verification/reference_models/isa.py",
         "passed": true,
         "content_hash": "sha256:7f9addaa7e5593a878de72671e2d8efd932628fe2e8799696810b6c25f60e84c"
@@ -276,7 +290,7 @@
         "role": "testbench",
         "path": "verification/remint_records.py",
         "passed": true,
-        "content_hash": "sha256:e64ed364ac417364a07f490e44c58e9585c7ffe0ffdfd6a224be259d80dcce07"
+        "content_hash": "sha256:82542d09f3bc40bd3b500cf7e394e48c06995086098be4dd819db16f414a175f"
       },
       {
         "check": "present",
@@ -479,14 +493,14 @@
         "role": "testbench",
         "path": "verification/test_boot_rom.py",
         "passed": true,
-        "content_hash": "sha256:33ef15898b5066c3318ac577089fd909a9eeee2aca5499dca68bff2098d66775"
+        "content_hash": "sha256:544a650a9eca5ebdd8e7a71a791f2b6248e366d099524a6a14b06f719357367f"
       },
       {
         "check": "present",
         "role": "testbench",
         "path": "verification/test_boot_spi.py",
         "passed": true,
-        "content_hash": "sha256:28471f606685e91fb67eccadcbee52949ae0b590cdf4a669437d82f762c68c59"
+        "content_hash": "sha256:38d33a31f6f32979c481ac0983e6d43b6b6a7c8b3c3b381aa6834469f0746580"
       },
       {
         "check": "present",
@@ -542,7 +556,7 @@
         "role": "testbench",
         "path": "verification/test_firmware_roundtrip.py",
         "passed": true,
-        "content_hash": "sha256:8fe7de1cee955315d29fdd6e5c69381aad7c0cc58e9dbf91e4f0ef264e3534cd"
+        "content_hash": "sha256:72e4a514a5ed4bd9f50cf8569ddad67f0e9ae82fa9e89b630d6fa58ba428fd2e"
       },
       {
         "check": "present",
@@ -605,14 +619,14 @@
         "role": "testbench",
         "path": "verification/test_primitives.py",
         "passed": true,
-        "content_hash": "sha256:fb7ce1bb45f7c5e577574b455b5619c83b83d340a02ccfcbb9df8ad41c159876"
+        "content_hash": "sha256:2c813967b3b2098afefd55f393b85bf32fcf4d5229402a24a3bbed6c4d5f0833"
       },
       {
         "check": "present",
         "role": "testbench",
         "path": "verification/test_program_memory.py",
         "passed": true,
-        "content_hash": "sha256:1071b5eb62455b6f920bc47a4ff9352a3fae1a0842a010f1bc1807d2fafc8a39"
+        "content_hash": "sha256:eb0b5210a6bd725d226444dcc5ee1b5db19ea226e7404e776f86ac3d057e0afd"
       },
       {
         "check": "present",
@@ -721,7 +735,7 @@
         "path": "manifests/attest/item9.json",
         "scope": "repo"
       },
-      "content_hash": "sha256:43ce736b3d133137fe66230b371998fe1cc2c8f50ba67683b4cacd058294321a"
+      "content_hash": "sha256:14b3b4d54e11daebfac1d079046850994e8578b5cbe307ef8f0acb087d035632"
     }
   }
 }

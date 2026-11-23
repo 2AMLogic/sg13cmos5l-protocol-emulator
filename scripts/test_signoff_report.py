@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Self-test for scripts/signoff-report.sh --check-latest's reporting of the
-optional doc_drift / doc_drift_fields check-envelope keys (issue #502). Drives
+optional doc_drift / doc_drift_fields check-envelope keys (issue #502) and
+--diff-vs baseline selection and output protection (issue #403). Drives
 the shell entry point with a fixture klt whose responses are scripted per
 case; the repo's own latest committed signoff-baseline record supplies the
 --check target (the fixture ignores it). Standard library only.
@@ -8,6 +9,7 @@ case; the repo's own latest committed signoff-baseline record supplies the
 
 import json
 import os
+import shutil
 import subprocess
 import tempfile
 import unittest
@@ -15,8 +17,6 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 SCRIPT = Path(__file__).resolve().parent / "signoff-report.sh"
-RECORDS_GLOB = "verification/records/signoff-baseline/records/*.md"
-ARTIFACTS_DIR = Path("verification/records/signoff-baseline/artifacts")
 
 # The fixture stands in for every klt invocation the runner makes. The
 # --check envelope is fully scripted from the environment per test case, so
@@ -39,6 +39,9 @@ if args[:1] == ["--help"]:
     raise SystemExit(0)
 if args[:1] == ["signoff"]:
     if "--check" in args:
+        expected = os.environ.get("KLT_FIXTURE_CHECK_PATH")
+        if expected and not os.path.samefile(expected, args[args.index("--check") + 1]):
+            sys.exit("unexpected --check artifact")
         sys.stdout.write(os.environ["KLT_FIXTURE_CHECK_STDOUT"])
         raise SystemExit(int(os.environ.get("KLT_FIXTURE_CHECK_RC", "0")))
     sys.stdout.write(os.environ.get(
@@ -52,8 +55,9 @@ raise SystemExit(2)
 RENDER_REPORT = '{"schema_version": 1, "status": "self-test render", "items": []}'
 
 
-def run_wrapper(envelope, check_rc, render_rc=0):
-    """Run scripts/signoff-report.sh --check-latest against a scripted klt."""
+def run_wrapper(envelope, check_rc, render_rc=0, *, args=("--check-latest",),
+                script=SCRIPT, check_path=""):
+    """Run the signoff wrapper against a scripted klt."""
     with tempfile.TemporaryDirectory() as d:
         klt = Path(d) / "klt-fixture"
         klt.write_text(FIXTURE_KLT)
@@ -63,33 +67,17 @@ def run_wrapper(envelope, check_rc, render_rc=0):
             KLT_BIN=str(klt),
             KLT_FIXTURE_CHECK_STDOUT=json.dumps(envelope),
             KLT_FIXTURE_CHECK_RC=str(check_rc),
+            KLT_FIXTURE_CHECK_PATH=str(check_path),
             KLT_FIXTURE_RENDER_STDOUT=RENDER_REPORT,
             KLT_FIXTURE_RENDER_RC=str(render_rc),
         )
         return subprocess.run(
-            [str(SCRIPT), "--check-latest"],
+            [str(script), *map(str, args)],
             cwd=str(REPO_ROOT), env=env, capture_output=True,
             text=True, timeout=300)
 
 
 class CheckLatestTests(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        records = subprocess.run(
-            ["git", "ls-files", "--", RECORDS_GLOB],
-            cwd=str(REPO_ROOT), capture_output=True, text=True,
-            check=True).stdout.split()
-        if not records:
-            raise AssertionError(
-                "repo has no committed signoff-baseline records; "
-                "--check-latest cannot be driven")
-        record_id = Path(sorted(records)[-1]).stem
-        artifact = REPO_ROOT / ARTIFACTS_DIR / record_id / "signoff-report.json"
-        if not artifact.is_file():
-            raise AssertionError(
-                f"latest record {record_id} lacks its committed report "
-                f"artifact at {artifact.relative_to(REPO_ROOT)}")
-
     def assert_doc_entry(self, err, field, committed, fresh):
         self.assertIn(
             f"checklist wording moved: {field}: "
@@ -149,6 +137,32 @@ class CheckLatestTests(unittest.TestCase):
             "drifted: t1_met_count: committed=1 fresh=2", res.stderr)
         self.assertNotIn("checklist wording moved", res.stderr)
 
+    def test_drift_hint_qualifies_collapse_and_covers_grader_only_drift(self):
+        envelope = {
+            "status": "drifted",
+            "drift": [
+                {"field": "items.2.detail.content_hash_pin",
+                 "committed": None, "fresh": "verified"},
+            ],
+        }
+        res = run_wrapper(envelope, check_rc=3)
+        self.assertEqual(res.returncode, 1, res.stderr)
+        self.assertIn("origin/main", res.stderr)
+        self.assertIn("scripts/signoff-report.sh --out FILE", res.stderr)
+        self.assertIn(
+            "python3 verification/remint_records.py --collapse signoff-baseline",
+            res.stderr,
+        )
+        self.assertIn("hashed inputs made interchangeable live leaves stale", res.stderr)
+        self.assertIn("grader-only drift", res.stderr)
+        self.assertIn("manifests/README.md", res.stderr)
+        self.assertIn("status or reason", res.stderr)
+        self.assertIn(
+            "drifted: items.2.detail.content_hash_pin: "
+            "committed=None fresh='verified'",
+            res.stderr,
+        )
+
     def test_clean_modern_match_with_empty_doc_fields(self):
         envelope = {
             "status": "match", "doc_drift": False,
@@ -177,6 +191,86 @@ class CheckLatestTests(unittest.TestCase):
         self.assertIn(
             "checklist wording moved: grader set doc_drift "
             "but supplied no field details", res.stderr)
+
+
+class ComparisonInputTests(unittest.TestCase):
+    def setUp(self):
+        temp = tempfile.TemporaryDirectory()
+        self.addCleanup(temp.cleanup)
+        self.root = Path(temp.name)
+        scripts = self.root / "scripts"
+        scripts.mkdir()
+        self.script = scripts / SCRIPT.name
+        shutil.copy2(SCRIPT, self.script)
+        shutil.copy2(SCRIPT.with_name("signoff_movement_diff.py"), scripts)
+        baseline = self.root / "verification/records/signoff-baseline"
+        self.record_id = "20261120-110738-b5f7c15"
+        artifact_id = "20261119-090000-abcdef0"
+        self.report = baseline / "artifacts" / artifact_id / "signoff-report.json"
+        self.report.parent.mkdir(parents=True)
+        self.original = b'{"items": [], "source_doc": "older checklist"}'
+        self.report.write_bytes(self.original)
+        records = baseline / "records"
+        records.mkdir()
+        self.record = records / (self.record_id + ".md")
+        self.record.write_text(
+            f"- **Links**: [Rendered verdict](../artifacts/{artifact_id}/signoff-report.json)\n")
+        subprocess.run(["git", "init", "-q"], cwd=self.root, check=True)
+        subprocess.run(["git", "add", "."], cwd=self.root, check=True)
+
+    def invoke(self, *args):
+        return run_wrapper({"status": "match"}, 0, args=args, script=self.script,
+                           check_path=self.report)
+
+    def test_record_id_and_default_compare_the_linked_shared_report(self):
+        path = self.invoke("--diff-vs", self.report)
+        self.assertEqual(path.returncode, 0, path.stderr)
+        self.assertIn("moved source_doc: older checklist", path.stdout)
+        for args in [("--diff-vs", self.record_id), ("--diff-vs",),
+                     ("--check-latest", "--diff-vs")]:
+            with self.subTest(args=args):
+                result = self.invoke(*args)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual(result.stdout, path.stdout)
+
+    def test_report_link_and_legacy_directory_select_the_same_artifact_as_path(self):
+        directory = f"artifacts/{self.report.parent.name}/"
+        report_link = f"[Rendered verdict](../{directory}signoff-report.json)"
+        older_directory = f"`artifacts/{self.record_id}/`"
+        path = self.invoke("--diff-vs", self.report)
+        self.assertEqual(path.returncode, 0, path.stderr)
+        for links in [f"{report_link}\n  - See also `{directory}`.",
+                      f"{older_directory}\n  - {report_link}",
+                      f"Committed artifacts: `{directory}`"]:
+            with self.subTest(links=links):
+                self.record.write_text(f"- **Links**: {links}\n")
+                by_id = self.invoke("--diff-vs", self.record_id)
+                self.assertEqual(by_id.returncode, 0, by_id.stderr)
+                self.assertEqual(by_id.stdout, path.stdout)
+
+    def test_distinct_output_receives_the_fresh_render(self):
+        out = self.root / "new.json"
+        result = self.invoke("--diff-vs", self.record_id, "--out", out)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("moved source_doc: older checklist", result.stdout)
+        self.assertEqual(out.read_text(), RENDER_REPORT)
+        self.assertEqual(self.report.read_bytes(), self.original)
+
+    def test_out_cannot_overwrite_a_comparison_input(self):
+        symlink = self.root / "report-symlink"
+        symlink.symlink_to(self.report)
+        hardlink = self.root / "report-hardlink"
+        os.link(self.report, hardlink)
+        for args, out in [(("--diff-vs", self.report), self.report),
+                          (("--diff-vs", self.report), symlink),
+                          (("--diff-vs", self.record_id), hardlink),
+                          (("--check-latest",), hardlink)]:
+            with self.subTest(args=args, out=out):
+                result = self.invoke(*args, "--out", out)
+                self.assertEqual(self.report.read_bytes(), self.original)
+                self.assertEqual(result.returncode, 1, result.stderr)
+                self.assertIn("--out", result.stderr)
+                self.assertEqual(result.stdout, "")
 
 
 if __name__ == "__main__":

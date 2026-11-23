@@ -36,15 +36,25 @@
     },
     "8": {
       "file": "manifests/evidence/characterization.json",
-      "content_hash": "sha256:f5d7022337e43d43244116c5d034d40765e1f6fea1ad992b6e836ea2f0a4229d"
+      "content_hash": "sha256:f78838e0a19fdd90b9d064312eecb2f6c3b93be48f72dbe50fb15fec8576fbc5"
     },
     "9": {
       "file": "manifests/evidence/testbenches.json",
-      "content_hash": "sha256:43ce736b3d133137fe66230b371998fe1cc2c8f50ba67683b4cacd058294321a"
+      "content_hash": "sha256:14b3b4d54e11daebfac1d079046850994e8578b5cbe307ef8f0acb087d035632"
     },
     "10": {
       "file": "manifests/evidence/hygiene.json",
       "content_hash": "sha256:44d194601d68b448aef6e4ca3e2e69cc436f78a15336281965d0c3e432f961c6"
-    }
+    },
+    "11": [
+      {
+        "file": "verification/records/librelane-erc/artifacts/20261121-002540-47e264ebc/klt-erc.json",
+        "content_hash": "sha256:2c8fb81d18ab9d6cfd2ed0566e32f16d3cebdbbdff41520afbff29fa0e19c3af"
+      },
+      {
+        "file": "verification/records/power-par-pdn/artifacts/20261121-002216-47e264ebc/par-tt-um-2amlogic-protocol-emulator-response.json",
+        "content_hash": "sha256:0f9cd5cd474b5961416fdf16a425465ac90bbf983975c712000738434a7bb2fd"
+      }
+    ]
   }
 }

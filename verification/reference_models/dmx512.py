@@ -122,7 +122,7 @@ class Violation:
     """One protocol violation the receiver saw, with its time and kind."""
 
     t: float
-    kind: str      # "break", "mab", "stop", "short-pitch", "drift", "trailing"
+    kind: str      # "mab", "stop", "short-pitch", "trailing"
     detail: str
 
     def __repr__(self):
@@ -150,12 +150,10 @@ class Dmx512Receiver:
 
     def __init__(self, period_ns: float = BIT_PERIOD_NS,
                  break_min_ns: float = BREAK_MIN_NS,
-                 mab_min_ns: float = MAB_MIN_NS,
-                 max_slot_drift_pct: float = MAX_SLOT_DRIFT_PCT):
+                 mab_min_ns: float = MAB_MIN_NS):
         self.period = float(period_ns)
         self.break_min = float(break_min_ns)
         self.mab_min = float(mab_min_ns)
-        self.max_slot_drift_pct = float(max_slot_drift_pct)
 
     # ------------------------------------------------------------ decoding
     def decode(self, line: Signal) -> Decode:
@@ -317,32 +315,6 @@ class Dmx512Receiver:
         if report.drift_pct is not None and report.drift_pct > max_slot_drift_pct:
             return False
         return True
-
-    def check_packet(self, packet: Packet, expect_slots: Optional[int] = None,
-                     expect_start_code: Optional[int] = None) -> List[str]:
-        """Structural grading of a whole packet; returns the failures."""
-        problems = []
-        if packet.break_ns < self.break_min:
-            problems.append(
-                f"BREAK {packet.break_ns:.0f} ns is below the receiver "
-                f"limit {self.break_min:.0f} ns")
-        if packet.mab_ns is not None and packet.mab_ns < self.mab_min:
-            problems.append(
-                f"mark-after-break {packet.mab_ns:.0f} ns is below the "
-                f"receiver limit {self.mab_min:.0f} ns")
-        if expect_slots is not None and len(packet.slots) != expect_slots:
-            problems.append(
-                f"packet carries {len(packet.slots)} slots, expected "
-                f"{expect_slots}")
-        if (expect_start_code is not None and packet.slots
-                and packet.slots[0].data != expect_start_code):
-            problems.append(
-                f"start code is 0x{packet.slots[0].data:02x}, expected "
-                f"0x{expect_start_code:02x}")
-        for slot in packet.slots:
-            if not self.check_slot(slot, self.max_slot_drift_pct):
-                problems.append(f"slot {slot.index} out of bounds: {slot}")
-        return problems
 
 
 # ------------------------------------------------------------- transmitter

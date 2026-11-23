@@ -1,0 +1,13 @@
+<testsuites name="results">
+  <testsuite name="all" package="all">
+    <property name="random_seed" value="1" />
+    <testcase name="test_boot_image_chain_and_host_agreement" classname="test_boot_uart" file="&lt;repo&gt;/verification/test_boot_uart.py" lineno="394" time="0.0045011043548583984" sim_time_ns="20.0" ratio_time="4443.353991207161" />
+    <testcase name="test_nominal_load_runs_the_image" classname="test_boot_uart" file="&lt;repo&gt;/verification/test_boot_uart.py" lineno="428" time="15.696379661560059" sim_time_ns="9101420.0" ratio_time="579841.9888051696" />
+    <testcase name="test_row10_tolerance_edges" classname="test_boot_uart" file="&lt;repo&gt;/verification/test_boot_uart.py" lineno="480" time="231.95669174194336" sim_time_ns="126846740.0" ratio_time="546855.2730572638" />
+    <testcase name="test_bad_images_never_run" classname="test_boot_uart" file="&lt;repo&gt;/verification/test_boot_uart.py" lineno="534" time="339.601642370224" sim_time_ns="169111940.00000003" ratio_time="497971.50219797535" />
+    <testcase name="test_garbage_before_the_magic_is_ignored" classname="test_boot_uart" file="&lt;repo&gt;/verification/test_boot_uart.py" lineno="669" time="12.337866306304932" sim_time_ns="7712620.0" ratio_time="625117.8127986907" />
+    <testcase name="test_end_to_end_protocol_program_over_uart" classname="test_boot_uart" file="&lt;repo&gt;/verification/test_boot_uart.py" lineno="684" time="11.066545009613037" sim_time_ns="7023020.0" ratio_time="634617.2173789924" />
+    <testcase name="test_full_image_and_warm_start" classname="test_boot_uart" file="&lt;repo&gt;/verification/test_boot_uart.py" lineno="717" time="76.16978645324707" sim_time_ns="45266420.0" ratio_time="594283.1417518083" />
+    <testcase name="test_fallthroughs_into_the_uart_load" classname="test_boot_uart" file="&lt;repo&gt;/verification/test_boot_uart.py" lineno="750" time="21.50300097465515" sim_time_ns="13121000.0" ratio_time="610193.898770933" />
+  </testsuite>
+</testsuites>

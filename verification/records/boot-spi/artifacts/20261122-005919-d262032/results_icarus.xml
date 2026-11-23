@@ -1,0 +1,11 @@
+<testsuites name="results">
+  <testsuite name="all" package="all">
+    <property name="random_seed" value="1" />
+    <testcase name="test_model_chain_and_prediction" classname="test_boot_spi" file="&lt;repo&gt;/verification/test_boot_spi.py" lineno="514" time="0.2049577236175537" sim_time_ns="20.0" ratio_time="97.58109939452454" />
+    <testcase name="test_good_flash_boots_a_program_that_starts_in_the_reset_state" classname="test_boot_spi" file="&lt;repo&gt;/verification/test_boot_spi.py" lineno="553" time="17.88725519180298" sim_time_ns="2353681.0" ratio_time="131584.24670312743" />
+    <testcase name="test_protocol_programs_boot_from_flash_and_pass_reference_models" classname="test_boot_spi" file="&lt;repo&gt;/verification/test_boot_spi.py" lineno="580" time="16.29180383682251" sim_time_ns="2392281.0000000005" ratio_time="146839.5411558418" />
+    <testcase name="test_blank_or_absent_flash_never_runs" classname="test_boot_spi" file="&lt;repo&gt;/verification/test_boot_spi.py" lineno="694" time="41.03017234802246" sim_time_ns="5969881.000000001" ratio_time="145499.7787814004" />
+    <testcase name="test_corrupt_flash_never_runs" classname="test_boot_spi" file="&lt;repo&gt;/verification/test_boot_spi.py" lineno="711" time="74.72643494606018" sim_time_ns="10596961.0" ratio_time="141810.07039408758" />
+    <testcase name="test_zero_signature_is_refused" classname="test_boot_spi" file="&lt;repo&gt;/verification/test_boot_spi.py" lineno="730" time="16.678470373153687" sim_time_ns="2353881.0" ratio_time="141132.9065157497" />
+  </testsuite>
+</testsuites>
