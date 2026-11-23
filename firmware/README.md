@@ -1098,7 +1098,7 @@ written (`WCTL UIO_DIR` at 7 sites, checked by `prof_can`):
 |---|---|---|
 | setup, byte-boundary dispatch down-count | 0x05, 0x04, 0x03, 0x02, 0x01, 0x00 | up to `uio[0..2]`, per set bit, through every transmitted frame |
 | transmit ACK-slot flag | 0x00 / 0x01 | `uio[0]` when another node ACKed |
-| receive CRC-check byte (two cycles) | the CRC_NEXT byte -- any value 0x00-0xFF | any `uio` pad, for about two cycles |
+| receive CRC-check byte (held across the CRC delimiter) | the CRC_NEXT byte -- 0x00 on a valid frame, non-zero on a CRC error | any `uio` pad, for about 480 cycles (~1.2 bit times) on a CRC-error frame; nothing on a valid frame, where the byte is 0x00 |
 | receive ACK flag | 0x00 (CRC error) / 0x01 (ACK driven) | `uio[0]` when ACK driven |
 
 `uio[0..2]` carry the SPI / I2C / SWD roles and the QSPI Pmod header in
