@@ -11,7 +11,7 @@
     "pdk": null,
     "deck": null,
     "input": {
-      "content_hash": "sha256:4248fcf892d582e3622d358d2ad8079f68962aaaf3f749619f58d8ee0582f71e",
+      "content_hash": "sha256:4c6c81d9503a4423cd17d7b7036dc2bd13a62fddff6f90a74f36862483c76b04",
       "path": {
         "path": "measurements/characterization.md",
         "scope": "repo"
