@@ -1,0 +1,5028 @@
+{
+  "schema_version": 2,
+  "file": {
+    "path": "verification/records/librelane-gds-signoff-check/artifacts/20261017-192526-fef7ac1/tt_um_2amlogic_protocol_emulator.gds",
+    "scope": "repo"
+  },
+  "spec": "flow/erc-librelane-gds.json",
+  "pdk": null,
+  "findings_only": true,
+  "gate_role": "gatpoly",
+  "gate_count": 17935,
+  "antenna_tables_omitted": true,
+  "gates": [],
+  "nets": [
+    {
+      "name": "VPWR",
+      "matched_islands": 1,
+      "expected_islands": 1,
+      "roles": [],
+      "unlabelled_islands": null,
+      "unlabelled_area_um2": null,
+      "unlabelled_bbox": null,
+      "unlabelled_allowed_islands": null
+    },
+    {
+      "name": "VGND",
+      "matched_islands": 1,
+      "expected_islands": 1,
+      "roles": [],
+      "unlabelled_islands": null,
+      "unlabelled_area_um2": null,
+      "unlabelled_bbox": null,
+      "unlabelled_allowed_islands": null
+    },
+    {
+      "name": "VDD",
+      "matched_islands": 1,
+      "expected_islands": 1,
+      "roles": [],
+      "unlabelled_islands": null,
+      "unlabelled_area_um2": null,
+      "unlabelled_bbox": null,
+      "unlabelled_allowed_islands": null
+    },
+    {
+      "name": "VSS",
+      "matched_islands": 1,
+      "expected_islands": 1,
+      "roles": [],
+      "unlabelled_islands": null,
+      "unlabelled_area_um2": null,
+      "unlabelled_bbox": null,
+      "unlabelled_allowed_islands": null
+    },
+    {
+      "name": "VDD!",
+      "matched_islands": 1,
+      "expected_islands": 1,
+      "roles": [],
+      "unlabelled_islands": null,
+      "unlabelled_area_um2": null,
+      "unlabelled_bbox": null,
+      "unlabelled_allowed_islands": null
+    },
+    {
+      "name": "VDDARRAY!",
+      "matched_islands": 1,
+      "expected_islands": 1,
+      "roles": [],
+      "unlabelled_islands": null,
+      "unlabelled_area_um2": null,
+      "unlabelled_bbox": null,
+      "unlabelled_allowed_islands": null
+    },
+    {
+      "name": "VSS!",
+      "matched_islands": 1,
+      "expected_islands": 1,
+      "roles": [],
+      "unlabelled_islands": null,
+      "unlabelled_area_um2": null,
+      "unlabelled_bbox": null,
+      "unlabelled_allowed_islands": null
+    }
+  ],
+  "erc_findings": [
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate10108",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 326480,
+        "bottom": 233615,
+        "right": 327390,
+        "top": 233915
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate10109",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 91810,
+        "bottom": 233615,
+        "right": 92720,
+        "top": 233915
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate10110",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 182820,
+        "bottom": 233615,
+        "right": 183730,
+        "top": 233915
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate10111",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 235470,
+        "bottom": 233615,
+        "right": 236380,
+        "top": 233915
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate10250",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 91810,
+        "bottom": 234345,
+        "right": 92720,
+        "top": 234645
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate10251",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 326480,
+        "bottom": 234345,
+        "right": 327390,
+        "top": 234645
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate10252",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 182820,
+        "bottom": 234345,
+        "right": 183730,
+        "top": 234645
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate10253",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 235470,
+        "bottom": 234345,
+        "right": 236380,
+        "top": 234645
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate10406",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 326480,
+        "bottom": 235755,
+        "right": 327390,
+        "top": 236055
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate10407",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 91810,
+        "bottom": 235755,
+        "right": 92720,
+        "top": 236055
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate10408",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 235470,
+        "bottom": 235755,
+        "right": 236380,
+        "top": 236055
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate10409",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 182820,
+        "bottom": 235755,
+        "right": 183730,
+        "top": 236055
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate10539",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 326480,
+        "bottom": 236485,
+        "right": 327390,
+        "top": 236785
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate10540",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 91810,
+        "bottom": 236485,
+        "right": 92720,
+        "top": 236785
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate10541",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 182820,
+        "bottom": 236485,
+        "right": 183730,
+        "top": 236785
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate10542",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 235470,
+        "bottom": 236485,
+        "right": 236380,
+        "top": 236785
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate10704",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 326480,
+        "bottom": 238915,
+        "right": 327390,
+        "top": 239215
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate10705",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 91810,
+        "bottom": 238915,
+        "right": 92720,
+        "top": 239215
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate10706",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 182820,
+        "bottom": 238915,
+        "right": 183730,
+        "top": 239215
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate10707",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 235470,
+        "bottom": 238915,
+        "right": 236380,
+        "top": 239215
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate10867",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 326480,
+        "bottom": 239645,
+        "right": 327390,
+        "top": 239945
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate10868",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 91810,
+        "bottom": 239645,
+        "right": 92720,
+        "top": 239945
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate10869",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 182820,
+        "bottom": 239645,
+        "right": 183730,
+        "top": 239945
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate10870",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 235470,
+        "bottom": 239645,
+        "right": 236380,
+        "top": 239945
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate11002",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 326480,
+        "bottom": 241055,
+        "right": 327390,
+        "top": 241355
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate11003",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 91810,
+        "bottom": 241055,
+        "right": 92720,
+        "top": 241355
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate11004",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 182820,
+        "bottom": 241055,
+        "right": 183730,
+        "top": 241355
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate11005",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 235470,
+        "bottom": 241055,
+        "right": 236380,
+        "top": 241355
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate11139",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 91810,
+        "bottom": 241785,
+        "right": 92720,
+        "top": 242085
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate11140",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 326480,
+        "bottom": 241785,
+        "right": 327390,
+        "top": 242085
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate11141",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 182820,
+        "bottom": 241785,
+        "right": 183730,
+        "top": 242085
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate11142",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 235470,
+        "bottom": 241785,
+        "right": 236380,
+        "top": 242085
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate11320",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 326480,
+        "bottom": 243195,
+        "right": 327390,
+        "top": 243495
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate11321",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 91810,
+        "bottom": 243195,
+        "right": 92720,
+        "top": 243495
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate11322",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 235470,
+        "bottom": 243195,
+        "right": 236380,
+        "top": 243495
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate11323",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 182820,
+        "bottom": 243195,
+        "right": 183730,
+        "top": 243495
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate11463",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 326480,
+        "bottom": 243925,
+        "right": 327390,
+        "top": 244225
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate11464",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 91810,
+        "bottom": 243925,
+        "right": 92720,
+        "top": 244225
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate11465",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 182820,
+        "bottom": 243925,
+        "right": 183730,
+        "top": 244225
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate11466",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 235470,
+        "bottom": 243925,
+        "right": 236380,
+        "top": 244225
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate11601",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 326480,
+        "bottom": 245335,
+        "right": 327390,
+        "top": 245635
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate11602",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 91810,
+        "bottom": 245335,
+        "right": 92720,
+        "top": 245635
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate11603",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 235470,
+        "bottom": 245335,
+        "right": 236380,
+        "top": 245635
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate11604",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 182820,
+        "bottom": 245335,
+        "right": 183730,
+        "top": 245635
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate11748",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 326480,
+        "bottom": 246065,
+        "right": 327390,
+        "top": 246365
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate11749",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 91810,
+        "bottom": 246065,
+        "right": 92720,
+        "top": 246365
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate11750",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 182820,
+        "bottom": 246065,
+        "right": 183730,
+        "top": 246365
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate11751",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 235470,
+        "bottom": 246065,
+        "right": 236380,
+        "top": 246365
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate11905",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 326480,
+        "bottom": 247475,
+        "right": 327390,
+        "top": 247775
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate11906",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 91810,
+        "bottom": 247475,
+        "right": 92720,
+        "top": 247775
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate11907",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 235470,
+        "bottom": 247475,
+        "right": 236380,
+        "top": 247775
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate11908",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 182820,
+        "bottom": 247475,
+        "right": 183730,
+        "top": 247775
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate12012",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 326480,
+        "bottom": 248205,
+        "right": 327390,
+        "top": 248505
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate12013",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 91810,
+        "bottom": 248205,
+        "right": 92720,
+        "top": 248505
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate12014",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 182820,
+        "bottom": 248205,
+        "right": 183730,
+        "top": 248505
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate12015",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 235470,
+        "bottom": 248205,
+        "right": 236380,
+        "top": 248505
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate12182",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 91810,
+        "bottom": 249615,
+        "right": 92720,
+        "top": 249915
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate12183",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 326480,
+        "bottom": 249615,
+        "right": 327390,
+        "top": 249915
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate12184",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 182820,
+        "bottom": 249615,
+        "right": 183730,
+        "top": 249915
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate12185",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 235470,
+        "bottom": 249615,
+        "right": 236380,
+        "top": 249915
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate12303",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 326480,
+        "bottom": 250345,
+        "right": 327390,
+        "top": 250645
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate12304",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 91810,
+        "bottom": 250345,
+        "right": 92720,
+        "top": 250645
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate12305",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 182820,
+        "bottom": 250345,
+        "right": 183730,
+        "top": 250645
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate12306",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 235470,
+        "bottom": 250345,
+        "right": 236380,
+        "top": 250645
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate12505",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 326480,
+        "bottom": 251755,
+        "right": 327390,
+        "top": 252055
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate12506",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 91810,
+        "bottom": 251755,
+        "right": 92720,
+        "top": 252055
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate12507",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 182820,
+        "bottom": 251755,
+        "right": 183730,
+        "top": 252055
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate12508",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 235470,
+        "bottom": 251755,
+        "right": 236380,
+        "top": 252055
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate12639",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 326480,
+        "bottom": 252485,
+        "right": 327390,
+        "top": 252785
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate12640",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 91810,
+        "bottom": 252485,
+        "right": 92720,
+        "top": 252785
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate12641",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 182820,
+        "bottom": 252485,
+        "right": 183730,
+        "top": 252785
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate12642",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 235470,
+        "bottom": 252485,
+        "right": 236380,
+        "top": 252785
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate12783",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 326480,
+        "bottom": 253895,
+        "right": 327390,
+        "top": 254195
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate12784",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 91810,
+        "bottom": 253895,
+        "right": 92720,
+        "top": 254195
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate12785",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 235470,
+        "bottom": 253895,
+        "right": 236380,
+        "top": 254195
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate12786",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 182820,
+        "bottom": 253895,
+        "right": 183730,
+        "top": 254195
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate12936",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 326480,
+        "bottom": 254625,
+        "right": 327390,
+        "top": 254925
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate12937",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 91810,
+        "bottom": 254625,
+        "right": 92720,
+        "top": 254925
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate12938",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 182820,
+        "bottom": 254625,
+        "right": 183730,
+        "top": 254925
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate12939",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 235470,
+        "bottom": 254625,
+        "right": 236380,
+        "top": 254925
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate13085",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 91810,
+        "bottom": 257055,
+        "right": 92720,
+        "top": 257355
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate13086",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 326480,
+        "bottom": 257055,
+        "right": 327390,
+        "top": 257355
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate13087",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 182820,
+        "bottom": 257055,
+        "right": 183730,
+        "top": 257355
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate13088",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 235470,
+        "bottom": 257055,
+        "right": 236380,
+        "top": 257355
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate13243",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 326480,
+        "bottom": 257785,
+        "right": 327390,
+        "top": 258085
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate13244",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 91810,
+        "bottom": 257785,
+        "right": 92720,
+        "top": 258085
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate13245",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 235470,
+        "bottom": 257785,
+        "right": 236380,
+        "top": 258085
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate13246",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 182820,
+        "bottom": 257785,
+        "right": 183730,
+        "top": 258085
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate13410",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 326480,
+        "bottom": 259195,
+        "right": 327390,
+        "top": 259495
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate13411",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 91810,
+        "bottom": 259195,
+        "right": 92720,
+        "top": 259495
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate13412",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 235470,
+        "bottom": 259195,
+        "right": 236380,
+        "top": 259495
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate13413",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 182820,
+        "bottom": 259195,
+        "right": 183730,
+        "top": 259495
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate13545",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 326480,
+        "bottom": 259925,
+        "right": 327390,
+        "top": 260225
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate13546",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 91810,
+        "bottom": 259925,
+        "right": 92720,
+        "top": 260225
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate13547",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 182820,
+        "bottom": 259925,
+        "right": 183730,
+        "top": 260225
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate13548",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 235470,
+        "bottom": 259925,
+        "right": 236380,
+        "top": 260225
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate13706",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 326480,
+        "bottom": 261335,
+        "right": 327390,
+        "top": 261635
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate13707",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 91810,
+        "bottom": 261335,
+        "right": 92720,
+        "top": 261635
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate13708",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 182820,
+        "bottom": 261335,
+        "right": 183730,
+        "top": 261635
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate13709",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 235470,
+        "bottom": 261335,
+        "right": 236380,
+        "top": 261635
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate13859",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 326480,
+        "bottom": 262065,
+        "right": 327390,
+        "top": 262365
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate13860",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 91810,
+        "bottom": 262065,
+        "right": 92720,
+        "top": 262365
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate13861",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 182820,
+        "bottom": 262065,
+        "right": 183730,
+        "top": 262365
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate13862",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 235470,
+        "bottom": 262065,
+        "right": 236380,
+        "top": 262365
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate13999",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 326480,
+        "bottom": 263475,
+        "right": 327390,
+        "top": 263775
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate14000",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 91810,
+        "bottom": 263475,
+        "right": 92720,
+        "top": 263775
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate14001",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 182820,
+        "bottom": 263475,
+        "right": 183730,
+        "top": 263775
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate14002",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 235470,
+        "bottom": 263475,
+        "right": 236380,
+        "top": 263775
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate14132",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 91810,
+        "bottom": 264205,
+        "right": 92720,
+        "top": 264505
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate14133",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 326480,
+        "bottom": 264205,
+        "right": 327390,
+        "top": 264505
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate14134",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 182820,
+        "bottom": 264205,
+        "right": 183730,
+        "top": 264505
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate14135",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 235470,
+        "bottom": 264205,
+        "right": 236380,
+        "top": 264505
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate14307",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 326480,
+        "bottom": 265615,
+        "right": 327390,
+        "top": 265915
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate14308",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 91810,
+        "bottom": 265615,
+        "right": 92720,
+        "top": 265915
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate14309",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 235470,
+        "bottom": 265615,
+        "right": 236380,
+        "top": 265915
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate14310",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 182820,
+        "bottom": 265615,
+        "right": 183730,
+        "top": 265915
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate14474",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 326480,
+        "bottom": 266345,
+        "right": 327390,
+        "top": 266645
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate14475",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 91810,
+        "bottom": 266345,
+        "right": 92720,
+        "top": 266645
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate14476",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 182820,
+        "bottom": 266345,
+        "right": 183730,
+        "top": 266645
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate14477",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 235470,
+        "bottom": 266345,
+        "right": 236380,
+        "top": 266645
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate14609",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 326480,
+        "bottom": 267755,
+        "right": 327390,
+        "top": 268055
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate14610",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 91810,
+        "bottom": 267755,
+        "right": 92720,
+        "top": 268055
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate14611",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 235470,
+        "bottom": 267755,
+        "right": 236380,
+        "top": 268055
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate14612",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 182820,
+        "bottom": 267755,
+        "right": 183730,
+        "top": 268055
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate14756",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 326480,
+        "bottom": 268485,
+        "right": 327390,
+        "top": 268785
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate14757",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 91810,
+        "bottom": 268485,
+        "right": 92720,
+        "top": 268785
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate14758",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 182820,
+        "bottom": 268485,
+        "right": 183730,
+        "top": 268785
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate14759",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 235470,
+        "bottom": 268485,
+        "right": 236380,
+        "top": 268785
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate14925",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 326480,
+        "bottom": 269895,
+        "right": 327390,
+        "top": 270195
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate14926",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 91810,
+        "bottom": 269895,
+        "right": 92720,
+        "top": 270195
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate14927",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 235470,
+        "bottom": 269895,
+        "right": 236380,
+        "top": 270195
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate14928",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 182820,
+        "bottom": 269895,
+        "right": 183730,
+        "top": 270195
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate15029",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 326480,
+        "bottom": 270625,
+        "right": 327390,
+        "top": 270925
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate15030",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 91810,
+        "bottom": 270625,
+        "right": 92720,
+        "top": 270925
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate15031",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 182820,
+        "bottom": 270625,
+        "right": 183730,
+        "top": 270925
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate15032",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 235470,
+        "bottom": 270625,
+        "right": 236380,
+        "top": 270925
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate15197",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 91810,
+        "bottom": 272035,
+        "right": 92720,
+        "top": 272335
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate15198",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 326480,
+        "bottom": 272035,
+        "right": 327390,
+        "top": 272335
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate15199",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 235470,
+        "bottom": 272035,
+        "right": 236380,
+        "top": 272335
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate15200",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 182820,
+        "bottom": 272035,
+        "right": 183730,
+        "top": 272335
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate15342",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 326480,
+        "bottom": 272765,
+        "right": 327390,
+        "top": 273065
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate15343",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 91810,
+        "bottom": 272765,
+        "right": 92720,
+        "top": 273065
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate15344",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 182820,
+        "bottom": 272765,
+        "right": 183730,
+        "top": 273065
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate15345",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 235470,
+        "bottom": 272765,
+        "right": 236380,
+        "top": 273065
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate15514",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 326480,
+        "bottom": 275195,
+        "right": 327390,
+        "top": 275495
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate15515",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 91810,
+        "bottom": 275195,
+        "right": 92720,
+        "top": 275495
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate15516",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 182820,
+        "bottom": 275195,
+        "right": 183730,
+        "top": 275495
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate15517",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 235470,
+        "bottom": 275195,
+        "right": 236380,
+        "top": 275495
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate15668",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 91810,
+        "bottom": 275925,
+        "right": 92720,
+        "top": 276225
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate15669",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 326480,
+        "bottom": 275925,
+        "right": 327390,
+        "top": 276225
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate15670",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 182820,
+        "bottom": 275925,
+        "right": 183730,
+        "top": 276225
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate15671",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 235470,
+        "bottom": 275925,
+        "right": 236380,
+        "top": 276225
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate15828",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 326480,
+        "bottom": 277335,
+        "right": 327390,
+        "top": 277635
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate15829",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 91810,
+        "bottom": 277335,
+        "right": 92720,
+        "top": 277635
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate15830",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 235470,
+        "bottom": 277335,
+        "right": 236380,
+        "top": 277635
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate15831",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 182820,
+        "bottom": 277335,
+        "right": 183730,
+        "top": 277635
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate15963",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 326480,
+        "bottom": 278065,
+        "right": 327390,
+        "top": 278365
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate15964",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 91810,
+        "bottom": 278065,
+        "right": 92720,
+        "top": 278365
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate15965",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 182820,
+        "bottom": 278065,
+        "right": 183730,
+        "top": 278365
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate15966",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 235470,
+        "bottom": 278065,
+        "right": 236380,
+        "top": 278365
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate16116",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 91810,
+        "bottom": 279475,
+        "right": 92720,
+        "top": 279775
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate16117",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 326480,
+        "bottom": 279475,
+        "right": 327390,
+        "top": 279775
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate16118",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 182820,
+        "bottom": 279475,
+        "right": 183730,
+        "top": 279775
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate16119",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 235470,
+        "bottom": 279475,
+        "right": 236380,
+        "top": 279775
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate16230",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 326480,
+        "bottom": 280205,
+        "right": 327390,
+        "top": 280505
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate16231",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 91810,
+        "bottom": 280205,
+        "right": 92720,
+        "top": 280505
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate16232",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 182820,
+        "bottom": 280205,
+        "right": 183730,
+        "top": 280505
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate16233",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 235470,
+        "bottom": 280205,
+        "right": 236380,
+        "top": 280505
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate16430",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 326480,
+        "bottom": 281615,
+        "right": 327390,
+        "top": 281915
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate16431",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 91810,
+        "bottom": 281615,
+        "right": 92720,
+        "top": 281915
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate16432",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 235470,
+        "bottom": 281615,
+        "right": 236380,
+        "top": 281915
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate16433",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 182820,
+        "bottom": 281615,
+        "right": 183730,
+        "top": 281915
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate16563",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 326480,
+        "bottom": 282345,
+        "right": 327390,
+        "top": 282645
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate16564",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 91810,
+        "bottom": 282345,
+        "right": 92720,
+        "top": 282645
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate16565",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 182820,
+        "bottom": 282345,
+        "right": 183730,
+        "top": 282645
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate16566",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 235470,
+        "bottom": 282345,
+        "right": 236380,
+        "top": 282645
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate16720",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 326480,
+        "bottom": 283755,
+        "right": 327390,
+        "top": 284055
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate16721",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 91810,
+        "bottom": 283755,
+        "right": 92720,
+        "top": 284055
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate16722",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 182820,
+        "bottom": 283755,
+        "right": 183730,
+        "top": 284055
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate16723",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 235470,
+        "bottom": 283755,
+        "right": 236380,
+        "top": 284055
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate16868",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 326480,
+        "bottom": 284485,
+        "right": 327390,
+        "top": 284785
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate16869",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 91810,
+        "bottom": 284485,
+        "right": 92720,
+        "top": 284785
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate16870",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 235470,
+        "bottom": 284485,
+        "right": 236380,
+        "top": 284785
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate16871",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 182820,
+        "bottom": 284485,
+        "right": 183730,
+        "top": 284785
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate17014",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 326480,
+        "bottom": 285895,
+        "right": 327390,
+        "top": 286195
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate17015",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 91810,
+        "bottom": 285895,
+        "right": 92720,
+        "top": 286195
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate17016",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 235470,
+        "bottom": 285895,
+        "right": 236380,
+        "top": 286195
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate17017",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 182820,
+        "bottom": 285895,
+        "right": 183730,
+        "top": 286195
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate17148",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 91810,
+        "bottom": 286625,
+        "right": 92720,
+        "top": 286925
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate17149",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 326480,
+        "bottom": 286625,
+        "right": 327390,
+        "top": 286925
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate17150",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 182820,
+        "bottom": 286625,
+        "right": 183730,
+        "top": 286925
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate17151",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 235470,
+        "bottom": 286625,
+        "right": 236380,
+        "top": 286925
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate17318",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 326480,
+        "bottom": 288035,
+        "right": 327390,
+        "top": 288335
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate17319",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 91810,
+        "bottom": 288035,
+        "right": 92720,
+        "top": 288335
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate17320",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 182820,
+        "bottom": 288035,
+        "right": 183730,
+        "top": 288335
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate17321",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 235470,
+        "bottom": 288035,
+        "right": 236380,
+        "top": 288335
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate17466",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 326480,
+        "bottom": 288765,
+        "right": 327390,
+        "top": 289065
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate17467",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 91810,
+        "bottom": 288765,
+        "right": 92720,
+        "top": 289065
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate17468",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 182820,
+        "bottom": 288765,
+        "right": 183730,
+        "top": 289065
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate17469",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 235470,
+        "bottom": 288765,
+        "right": 236380,
+        "top": 289065
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate17599",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 326480,
+        "bottom": 290175,
+        "right": 327390,
+        "top": 290475
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate17600",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 91810,
+        "bottom": 290175,
+        "right": 92720,
+        "top": 290475
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate17601",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 235470,
+        "bottom": 290175,
+        "right": 236380,
+        "top": 290475
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate17602",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 182820,
+        "bottom": 290175,
+        "right": 183730,
+        "top": 290475
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate17700",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 91810,
+        "bottom": 290905,
+        "right": 92720,
+        "top": 291205
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate17701",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 326480,
+        "bottom": 290905,
+        "right": 327390,
+        "top": 291205
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate17702",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 182820,
+        "bottom": 290905,
+        "right": 183730,
+        "top": 291205
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate17703",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 235470,
+        "bottom": 290905,
+        "right": 236380,
+        "top": 291205
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate8282",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 326480,
+        "bottom": 220775,
+        "right": 327390,
+        "top": 221075
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate8283",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 91810,
+        "bottom": 220775,
+        "right": 92720,
+        "top": 221075
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate8284",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 235470,
+        "bottom": 220775,
+        "right": 236380,
+        "top": 221075
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate8285",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 182820,
+        "bottom": 220775,
+        "right": 183730,
+        "top": 221075
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate8423",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 326480,
+        "bottom": 221505,
+        "right": 327390,
+        "top": 221805
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate8424",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 91810,
+        "bottom": 221505,
+        "right": 92720,
+        "top": 221805
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate8425",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 182820,
+        "bottom": 221505,
+        "right": 183730,
+        "top": 221805
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate8426",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 235470,
+        "bottom": 221505,
+        "right": 236380,
+        "top": 221805
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate8571",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 91810,
+        "bottom": 222915,
+        "right": 92720,
+        "top": 223215
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate8572",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 326480,
+        "bottom": 222915,
+        "right": 327390,
+        "top": 223215
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate8573",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 235470,
+        "bottom": 222915,
+        "right": 236380,
+        "top": 223215
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate8574",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 182820,
+        "bottom": 222915,
+        "right": 183730,
+        "top": 223215
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate8729",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 326480,
+        "bottom": 223645,
+        "right": 327390,
+        "top": 223945
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate8730",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 91810,
+        "bottom": 223645,
+        "right": 92720,
+        "top": 223945
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate8731",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 182820,
+        "bottom": 223645,
+        "right": 183730,
+        "top": 223945
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate8732",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 235470,
+        "bottom": 223645,
+        "right": 236380,
+        "top": 223945
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate8912",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 326480,
+        "bottom": 225055,
+        "right": 327390,
+        "top": 225355
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate8913",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 91810,
+        "bottom": 225055,
+        "right": 92720,
+        "top": 225355
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate8914",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 235470,
+        "bottom": 225055,
+        "right": 236380,
+        "top": 225355
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate8915",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 182820,
+        "bottom": 225055,
+        "right": 183730,
+        "top": 225355
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate9049",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 326480,
+        "bottom": 225785,
+        "right": 327390,
+        "top": 226085
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate9050",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 91810,
+        "bottom": 225785,
+        "right": 92720,
+        "top": 226085
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate9051",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 182820,
+        "bottom": 225785,
+        "right": 183730,
+        "top": 226085
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate9052",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 235470,
+        "bottom": 225785,
+        "right": 236380,
+        "top": 226085
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate9210",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 326480,
+        "bottom": 227195,
+        "right": 327390,
+        "top": 227495
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate9211",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 91810,
+        "bottom": 227195,
+        "right": 92720,
+        "top": 227495
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate9212",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 182820,
+        "bottom": 227195,
+        "right": 183730,
+        "top": 227495
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate9213",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 235470,
+        "bottom": 227195,
+        "right": 236380,
+        "top": 227495
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate9356",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 326480,
+        "bottom": 227925,
+        "right": 327390,
+        "top": 228225
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate9357",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 91810,
+        "bottom": 227925,
+        "right": 92720,
+        "top": 228225
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate9358",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 235470,
+        "bottom": 227925,
+        "right": 236380,
+        "top": 228225
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate9359",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 182820,
+        "bottom": 227925,
+        "right": 183730,
+        "top": 228225
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate9507",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 326480,
+        "bottom": 229335,
+        "right": 327390,
+        "top": 229635
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate9508",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 91810,
+        "bottom": 229335,
+        "right": 92720,
+        "top": 229635
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate9509",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 235470,
+        "bottom": 229335,
+        "right": 236380,
+        "top": 229635
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate9510",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 182820,
+        "bottom": 229335,
+        "right": 183730,
+        "top": 229635
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate9648",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 326480,
+        "bottom": 230065,
+        "right": 327390,
+        "top": 230365
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate9649",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 91810,
+        "bottom": 230065,
+        "right": 92720,
+        "top": 230365
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate9650",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 182820,
+        "bottom": 230065,
+        "right": 183730,
+        "top": 230365
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate9651",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 235470,
+        "bottom": 230065,
+        "right": 236380,
+        "top": 230365
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate9803",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 326480,
+        "bottom": 231475,
+        "right": 327390,
+        "top": 231775
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate9804",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 91810,
+        "bottom": 231475,
+        "right": 92720,
+        "top": 231775
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate9805",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 235470,
+        "bottom": 231475,
+        "right": 236380,
+        "top": 231775
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate9806",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 182820,
+        "bottom": 231475,
+        "right": 183730,
+        "top": 231775
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate9921",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 326480,
+        "bottom": 232205,
+        "right": 327390,
+        "top": 232505
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate9922",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 91810,
+        "bottom": 232205,
+        "right": 92720,
+        "top": 232505
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate9923",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 182820,
+        "bottom": 232205,
+        "right": 183730,
+        "top": 232505
+      },
+      "islands": null
+    },
+    {
+      "rule": "erc.floating_gate",
+      "description": "gate net has no connected geometry above the gate layer (floating/uncontacted gate)",
+      "net": null,
+      "other_net": null,
+      "gate_id": "gate9924",
+      "layer": "gatpoly",
+      "bbox": {
+        "left": 235470,
+        "bottom": 232205,
+        "right": 236380,
+        "top": 232505
+      },
+      "islands": null
+    }
+  ],
+  "erc_finding_count": 256,
+  "erc_status": "violations",
+  "status": "violations",
+  "coverage": {
+    "scope": "antenna",
+    "schema_version": 1,
+    "known": true,
+    "checked": [],
+    "skipped": [
+      {
+        "id": "antenna:[]",
+        "reason": "findings_only"
+      }
+    ],
+    "inapplicable": [
+      {
+        "id": "antenna:[\"gate_reference_level\"]",
+        "reason": "gate_reference_level"
+      }
+    ],
+    "unknown": [],
+    "nothing_checked": true,
+    "nothing_checked_reasons": [
+      "findings_only",
+      "gate_reference_level"
+    ]
+  },
+  "erc_coverage": {
+    "scope": "connectivity",
+    "schema_version": 1,
+    "known": true,
+    "checked": [
+      "erc.floating_gate:[]",
+      "erc.missing_tie:[\"nwell_tie\"]",
+      "erc.missing_tie:[\"substrate_tie\"]",
+      "erc.net_connectivity:[\"VDD!\"]",
+      "erc.net_connectivity:[\"VDD\"]",
+      "erc.net_connectivity:[\"VDDARRAY!\"]",
+      "erc.net_connectivity:[\"VGND\"]",
+      "erc.net_connectivity:[\"VPWR\"]",
+      "erc.net_connectivity:[\"VSS!\"]",
+      "erc.net_connectivity:[\"VSS\"]",
+      "erc.supply_short",
+      "erc.supply_short.substrate"
+    ],
+    "skipped": [],
+    "inapplicable": [],
+    "unknown": [],
+    "nothing_checked": false,
+    "nothing_checked_reasons": [],
+    "missing_tie_checked": true,
+    "checked_by_assertion": [
+      "erc.missing_tie:[\"nwell_tie\"]"
+    ],
+    "checked_by_well_assertion": [
+      "erc.missing_tie:[\"substrate_tie\"]"
+    ],
+    "layers_in_stream_without_declaration": [
+      "8/2",
+      "10/2",
+      "30/2",
+      "63/0"
+    ],
+    "well_assertion_coverage": [
+      {
+        "id": "erc.missing_tie:[\"substrate_tie\"]",
+        "tap_layer": "1/0",
+        "drawn_tap_area_um2": 47499.4474,
+        "uncovered_tap_area_um2": 30712.605,
+        "uncovered_tap_fraction": 0.646589,
+        "extent_uncovered_fraction": 0.568033
+      }
+    ]
+  },
+  "ties_disclosure": null,
+  "provenance": {
+    "klt_version": "0.9.2",
+    "klt_git_commit": "046ba74652fc096bd97071fc3237f7159dd40183",
+    "klt_reinstall_spec": "klayout-tools==0.9.2",
+    "klayout_version": "0.30.13",
+    "pdk": null,
+    "deck": {
+      "name": "sg13cmos5l",
+      "content_hash": "sha256:8b005441745c8f9500d04e0fece081fe5162bb1d562cc8d6e09b60f1f24d1446",
+      "released": true
+    },
+    "input": {
+      "content_hash": "sha256:2c8fb81d18ab9d6cfd2ed0566e32f16d3cebdbbdff41520afbff29fa0e19c3af",
+      "role": "layout"
+    },
+    "spec": {
+      "content_hash": "sha256:5b6ec2c6b5a150742a3bbdc60768e9ee28f4a6453c9d8fb7e6b518f553496a1e"
+    },
+    "devices": [],
+    "net_exclusions": [],
+    "label_layers": [
+      {
+        "name": "Metal1",
+        "label_layer": "8/25",
+        "label_text_count": 28493
+      },
+      {
+        "name": "Metal2",
+        "label_layer": "10/25",
+        "label_text_count": 30140
+      },
+      {
+        "name": "Metal3",
+        "label_layer": "30/25",
+        "label_text_count": 13266
+      },
+      {
+        "name": "Metal4",
+        "label_layer": "50/25",
+        "label_text_count": 101
+      }
+    ],
+    "substrate_bodies": [
+      {
+        "kind": "substrate",
+        "id": "vsubs",
+        "ties": [
+          "substrate_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "102070,219320,103220,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "104880,219320,106030,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "107690,219320,108840,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "110500,219320,111650,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "113310,219320,114460,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "116120,219320,117270,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "118930,219320,120080,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "121740,219320,122890,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "124550,219320,125700,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "127360,219320,128510,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "130170,219320,131320,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "132980,219320,134130,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "135790,219320,136940,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "138600,219320,139750,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "141410,219320,142560,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "144220,219320,145370,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "147030,219320,148180,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "149840,219320,150990,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "152650,219320,153800,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "155460,219320,156610,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "158270,219320,159420,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "161080,219320,162230,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "163890,219320,165040,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "166700,219320,167850,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "169510,219320,170660,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "172320,219320,173470,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "175130,219320,176280,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "177940,219320,179090,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "180750,219320,181900,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "183560,219320,184340,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "186140,213765,233060,218595",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "186140,222165,233060,226995",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "186140,230565,233060,235395",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "186140,240305,233060,245135",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "186140,248705,233060,253535",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "186140,258445,233060,263275",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "186140,266845,233060,271675",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "186140,276585,233060,281415",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "186140,284985,233060,289815",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "234860,219320,235640,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "237300,219320,238450,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "240110,219320,241260,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "242920,219320,244070,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "245730,219320,246880,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "248540,219320,249690,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "251350,219320,252500,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "254160,219320,255310,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "256970,219320,258120,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "259780,219320,260930,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "262590,219320,263740,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "2640,103675,416880,108005",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "2640,111235,416880,115440",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "2640,118795,416880,123125",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "2640,126480,416880,130560",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "2640,13080,416880,17160",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "2640,134040,416880,138120",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "2640,141600,416880,145680",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "2640,149035,416880,153240",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "2640,156720,416880,160925",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "2640,164280,81360,168360",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "2640,171840,81360,175920",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "2640,179400,81360,183480",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "2640,186970,81360,191040",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "2640,194520,81360,198600",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "2640,202080,81360,206160",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "2640,20640,416880,24710",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "2640,209650,81360,213720",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "2640,217200,81360,221280",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "2640,224760,81360,228840",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "2640,232320,81360,236400",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "2640,239880,81360,243960",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "2640,247440,81360,251520",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "2640,255000,81360,259080",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "2640,262560,81360,266640",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "2640,270120,81360,274200",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "2640,277690,81360,281760",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "2640,28200,416880,32280",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "2640,285240,81360,289320",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "2640,292800,81360,296880",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "2640,300360,81360,304440",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "2640,307920,416880,310350",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "2640,35760,416880,39965",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "2640,43195,416880,47400",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "2640,50755,416880,55085",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "2640,5530,416880,9590",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "2640,58440,416880,62520",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "2640,65875,416880,70205",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "2640,73560,416880,77640",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "2640,81120,416880,85200",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "2640,88680,416880,92760",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "2640,96115,416880,100445",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "265400,219320,266550,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "268210,219320,269360,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "271020,219320,272170,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "273830,219320,274980,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "276640,219320,277790,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "279450,219320,280600,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "282260,219320,283410,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "285070,219320,286220,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "287880,219320,289030,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "290690,219320,291840,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "293500,219320,294650,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "296310,219320,297460,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "299120,219320,300270,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "301930,219320,303080,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "304740,219320,305890,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "307550,219320,308700,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "310360,219320,311510,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "313170,219320,314320,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "315980,219320,317130,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "318790,219320,319940,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "321600,219320,322750,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "324410,219320,325560,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "327220,219320,328000,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "338160,164155,416880,168360",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "338160,171840,416880,175920",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "338160,179400,416880,183480",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "338160,186960,416880,191040",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "338160,194530,416880,198600",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "338160,202090,416880,206160",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "338160,209640,416880,213710",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "338160,217200,416880,221270",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "338160,224760,416880,228830",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "338160,232330,416880,236390",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "338160,239890,416880,243950",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "338160,247450,416880,251510",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "338160,255010,416880,259070",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "338160,262570,416880,266630",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "338160,270130,416880,274190",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "338160,277690,416880,281750",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "338160,285250,416880,289310",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "338160,292810,416880,296870",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "338160,300370,416880,304430",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "91200,173655,328000,216930",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "91200,219320,91980,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "93640,219320,94790,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "96450,219320,97600,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      },
+      {
+        "kind": "well",
+        "id": "99260,219320,100410,292660",
+        "ties": [
+          "nwell_tie"
+        ]
+      }
+    ]
+  },
+  "compact": {
+    "gate_count": 17935,
+    "antenna_levels_skipped": 71740,
+    "antenna_reference_levels": 17935,
+    "floating_gate_checked": 17935,
+    "skipped_reason": "findings_only"
+  }
+}

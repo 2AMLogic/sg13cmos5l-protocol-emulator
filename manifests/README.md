@@ -773,6 +773,49 @@ capture, PVT corner sweeps, or Monte Carlo.
   `klt 0.8.0` — `klt-pin: historical` on current `main`; the spec file was
   the only hash-bound straggler.
 
+- **2026-11-21 (issue #523): T1 item 11's three parts, state of. Append-only;
+  the bullets above are the earlier states.** klayout-tools#2635 (no way to
+  declare a hard macro) and #4193 (no partial item-11 citation) are both
+  CLOSED, and the paragraph above saying the klt flow "cannot place this
+  design" is history: `die-area-baseline` `20261120-021530-bbbae57` placed
+  both tops through `request.macros`, and this change adds the power leg.
+  **Part 1 (ERC supply) exists and was re-minted**: `librelane-erc`
+  `20261121-002540-47e264ebc` supersedes `20261027-190031-1ec5186` with
+  substance unchanged — the re-mint carries two mechanical changes, the
+  spec stackup names renamed to the LEF spelling (`Metal1`..`Metal4`, so a
+  `power.straps[].layer` matches by exact string the way item 11's grader
+  requires) and a new `--deck sg13cmos5l` on the erc command (a deckless
+  klt 0.9.2 run discloses the substrate-path supply short as
+  `substrate_isolation_undecidable`, klayout-tools#5346, which signoff
+  gates item 11 on; with the deck the substrate pass evaluates — this GDS
+  draws no `nbulay` 32/0, so the substrate is shared and provably
+  un-isolated). **Part 2 (P&R power grid) exists**: `power-par-pdn`
+  `20261121-002216-47e264ebc` is a `klt place-and-route` run of the
+  macro-backed top with a `request.power` block — `power.pdn: true`, straps
+  Metal1 (followpin rail) + Metal4, `power.placed.status: "complete"` with
+  `missing: []` (no warnings), both strap layers covered by the cited ERC
+  spec's stackup. **Part 2's tap-cell statement is the one open gap**: the
+  response renders `tapcell_master: null` with `tapless: false` —
+  `sg13cmos5l_stdcell` ships no tap/endcap master (its own PDK librelane
+  config says so) but is not in klt's `_NO_TAPCELL_LIBRARIES` allowlist,
+  and the request-side `request.library.tapcell: null` declaration does
+  not set `tapless`; filed as klayout-tools#6993. **Part 3 (LVS
+  `power_connectivity.status: "match"`) still waits on #329**, unchanged.
+  **The manifest's item 11 now cites parts 1 and 2** (the two-part
+  evidence list), because the fleet grader renders that partial citation
+  `unmet` / `power_delivery_parts_missing` with `missing_parts: ["lvs"]`
+  (klayout-tools#4193, in klt since 0.9.0) — no longer `wrong_kind`, so
+  the citation states exactly what exists and what is missing; verified by
+  render before committing. `t1_met_count` is unchanged (5): the item is
+  `unmet` either way, and #350 owns the final compound citation once #329
+  lands and #6993 resolves the tap-cell statement. The round superseding
+  the staled `20261120-164259-6fb3838` head is `signoff-baseline
+  20261121-010127-b6c83b033`, minted in the same change; items 9 and 10 were
+  re-attested first (`--skip-local-only`, same checks and outcomes) because
+  item 9's inventory gained `flow/run-power-par.sh` and the
+  `librelane-erc` cold-start row gained `--deck`, and item 10 pins
+  `manifests/evidence/testbenches.txt`.
+
 - **Every citation pins a `content_hash`**, and what it is the hash of
   depends on the cited envelope (clarified 2026-10-10, issue #168; the
   manifests on `main` have always followed this, the sentence here did
@@ -1020,6 +1063,47 @@ that record had already been superseded by `20260927-092721-91f489d4` under
 issue #49's klt pin bump by the time this retirement landed, and that
 record still cited the vendored file by content hash, so it is the one this
 retirement's supersession chain must extend).
+
+**Refresh disclosure rule (issue #403).** Across the committed 0.8.0 and
+0.9.0 reports, T1 item 7 changed from `unmet` to `met` and `t1_met_count`
+rose from 4 to 5. Both reports name the same `source_doc` path. Its
+`source_doc_content_hash` changed, as did the `text` of T1 items 3, 4, 5,
+6, 8 and 11. Only item 6 changed its `notes`.
+
+A signoff-baseline refresh record must give both full hashes whenever
+`source_doc_content_hash` changes and list every changed `text` or `notes`
+field by tier and item ID, alongside `grading_ruleset_id` and graded changes.
+The exit status of `klt signoff --check` reflects graded drift — checklist
+movement alone leaves a graded match successful. Builds that emit the
+optional `doc_drift` / `doc_drift_fields` keys report that movement during
+a live check even when grades match; older builds simply omit the keys
+(the exit-code section's "Non-graded checklist movement" paragraph records
+the observed behavior). Distinguish the three comparisons:
+`scripts/signoff-report.sh --check-latest` re-grades the current manifest
+against the latest committed record; its `--diff-vs <record-id>` compares
+a fresh render against a chosen record; and
+`scripts/signoff_movement_diff.py OLD.json NEW.json` compares two
+already-saved reports — the one comparison the live check cannot make,
+since no live manifest sits behind the pair. Generate the disclosure
+directly from the two reports with either command below. [Upstream issue #6850](https://github.com/2AMLogic/klayout-tools/issues/6850)
+
+```bash
+scripts/signoff-report.sh --diff-vs <record-id>   # fresh render vs that
+                                                  # record's committed
+                                                  # artifact; no arg = the
+                                                  # latest record, the same
+                                                  # one --check-latest
+                                                  # selects
+python3 scripts/signoff_movement_diff.py OLD.json NEW.json   # any two
+                                                  # report files directly
+```
+
+The comparison prints each non-graded movement (source doc/hash
+before → after, per-item text/notes with old/new character counts and a
+short excerpt, added/removed items keyed by tier and id — matching items
+by tier+id regardless of row order) or a single "no non-graded movement"
+line; it is information, not a gate, so it exits 0 whether fields moved
+or matched. Paste its output into the record being minted.
 
 ## Companion links
 

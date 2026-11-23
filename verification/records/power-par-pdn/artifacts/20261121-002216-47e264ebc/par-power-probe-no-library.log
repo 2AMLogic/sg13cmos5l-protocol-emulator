@@ -1,0 +1,7 @@
+{
+  "schema_version": 1,
+  "error": {
+    "command": "place-and-route",
+    "message": "standard-cell library 'sg13cmos5l_stdcell' is missing 2 required input(s): no power pin-pattern table known for standard-cell library 'sg13cmos5l_stdcell' (supported: gf180mcu_fd_sc_mcu7t5v0, gf180mcu_fd_sc_mcu9t5v0, sg13g2_stdcell, sky130_fd_sc_hd) -- cannot honor request.power [supply request.library.power_pins]; no tapcell master known for standard-cell library 'sg13cmos5l_stdcell' (supported: gf180mcu_fd_sc_mcu7t5v0, gf180mcu_fd_sc_mcu9t5v0, sky130_fd_sc_hd; libraries with no tap/endcap cells at all: sg13g2_stdcell) -- cannot honor request.power [supply request.library.tapcell]"
+  }
+}
