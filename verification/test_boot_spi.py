@@ -99,7 +99,7 @@ from firmware_artifacts import parse_hex_image  # noqa: E402
 from reference_models.spi import MODES, check_burst  # noqa: E402
 from reference_models.spi_flash import SpiFlashModel  # noqa: E402
 from reference_models.uart import UartDecoder  # noqa: E402
-from test_protocol_emulator import load_program  # noqa: E402,F401
+from test_protocol_emulator import load_program  # noqa: E402
 from uio_pads import UioPads, resolve_pin  # noqa: E402
 
 GATE_LEVEL = os.environ.get("GATES") == "yes"
@@ -239,23 +239,6 @@ def start_clock(dut):
 
 def whitebox(dut):
     return None if GATE_LEVEL else dut.u_core
-
-
-async def serial_load(dut, words):
-    """DR 0001 layer 1 (pads are not running during it)."""
-    dut.ena.value = 1
-    dut.uio_in.value = 0
-    dut.ui_in.value = 0x80
-    dut.rst_n.value = 0
-    await ClockCycles(dut.clk, 10)
-    dut.rst_n.value = 1
-    await RisingEdge(dut.clk)
-    for word in words:
-        for bit in range(15, -1, -1):
-            dut.ui_in.value = 0x80 | ((word >> bit) & 1)
-            await RisingEdge(dut.clk)
-    dut.ui_in.value = 0x00
-    await RisingEdge(dut.clk)
 
 
 class Boot:
@@ -424,7 +407,7 @@ async def failing_boot(dut, label, flash_image, miso_pull=None, preload=None):
         f"{label}: the ISA model says the boot ends {result}, expected a halt at spi_fail"
     )
     if preload is not None:
-        await serial_load(dut, preload)
+        await load_program(dut, preload)
         loaded = await br.trace_edges(dut, 12, f"{label}: preload")
         assert loaded[-1]["uo_out"] == 0xFF and loaded[-1]["uio_oe"] == 0xFF, (
             f"premise: the preloaded canary does not drive pins when it runs: {loaded[-1]}"
@@ -462,7 +445,7 @@ async def passing_boot(dut, label, image_words, extra_edges, miso_driver=None, p
     assert mflash.violations == [] and len(mflash.transactions) == 1
     entry_cycles = result["cycles"] + 2  # the RUN's own two cycles
     if pm_preload is not None:
-        await serial_load(dut, pm_preload)
+        await load_program(dut, pm_preload)
     boot = Boot(dut, label, flash_image, miso_driver=miso_driver)
     await boot.reset()
     entry_edge = RUN_ENTRY_EDGES + entry_cycles

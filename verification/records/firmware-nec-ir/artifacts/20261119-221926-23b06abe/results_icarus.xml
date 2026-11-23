@@ -1,0 +1,9 @@
+<testsuites name="results">
+  <testsuite name="all" package="all">
+    <property name="random_seed" value="1" />
+    <testcase name="test_committed_image_is_fresh" classname="test_firmware_nec_ir" file="&lt;repo&gt;/verification/test_firmware_nec_ir.py" lineno="316" time="0.0017621517181396484" sim_time_ns="0.0" ratio_time="0.0" />
+    <testcase name="test_committed_frame" classname="test_firmware_nec_ir" file="&lt;repo&gt;/verification/test_firmware_nec_ir.py" lineno="356" time="396.5213255882263" sim_time_ns="140051281.0" ratio_time="353199.8708827036" />
+    <testcase name="test_random_frame" classname="test_firmware_nec_ir" file="&lt;repo&gt;/verification/test_firmware_nec_ir.py" lineno="377" time="211.1498749256134" sim_time_ns="73067401.0" ratio_time="346045.2014273801" />
+    <testcase name="test_negative_mutated_wait" classname="test_firmware_nec_ir" file="&lt;repo&gt;/verification/test_firmware_nec_ir.py" lineno="390" time="52.90464520454407" sim_time_ns="18097901.0" ratio_time="342085.2919441853" />
+  </testsuite>
+</testsuites>

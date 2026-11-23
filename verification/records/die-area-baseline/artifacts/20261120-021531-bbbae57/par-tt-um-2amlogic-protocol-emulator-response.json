@@ -1,0 +1,554 @@
+{
+  "schema_version": 1,
+  "engine": "openroad",
+  "engine_version": "26Q3-1510-g6cb3f2b704",
+  "engine_logs": [
+    {
+      "invocation_id": "a90565d286c24027bf0fb87fec89ac91",
+      "script_name": "pnr_tt_um_2amlogic_protocol_emulator_floorplan.tcl",
+      "script_path": {
+        "path": "flow/par-scratch/.klt/place-and-route/pnr_tt_um_2amlogic_protocol_emulator_floorplan.tcl",
+        "scope": "repo"
+      },
+      "script_sha256": "01722e7d6a8e6513be3f8b4e070b0baa3401ac92dc9f4b255c4774b30c892290",
+      "metrics_path": {
+        "path": "flow/par-scratch/.klt/place-and-route/tt_um_2amlogic_protocol_emulator_floorplan_metrics.json",
+        "scope": "repo"
+      },
+      "outcome": "exited",
+      "returncode": 0,
+      "directory": {
+        "path": "flow/par-scratch/.klt/place-and-route/openroad-logs/a90565d286c24027bf0fb87fec89ac91",
+        "scope": "repo"
+      },
+      "stdout_path": {
+        "path": "flow/par-scratch/.klt/place-and-route/openroad-logs/a90565d286c24027bf0fb87fec89ac91/stdout.log",
+        "scope": "repo"
+      },
+      "stderr_path": {
+        "path": "flow/par-scratch/.klt/place-and-route/openroad-logs/a90565d286c24027bf0fb87fec89ac91/stderr.log",
+        "scope": "repo"
+      },
+      "metadata_path": {
+        "path": "flow/par-scratch/.klt/place-and-route/openroad-logs/a90565d286c24027bf0fb87fec89ac91/invocation.json",
+        "scope": "repo"
+      },
+      "retention_errors": []
+    },
+    {
+      "invocation_id": "8b200c325590475798a22a9e1583f846",
+      "script_name": "pnr_tt_um_2amlogic_protocol_emulator_place.tcl",
+      "script_path": {
+        "path": "flow/par-scratch/.klt/place-and-route/pnr_tt_um_2amlogic_protocol_emulator_place.tcl",
+        "scope": "repo"
+      },
+      "script_sha256": "681f370088367e0962193b83c7361d4f805f5b58f44b485e1c57419fed4048ae",
+      "metrics_path": {
+        "path": "flow/par-scratch/.klt/place-and-route/tt_um_2amlogic_protocol_emulator_place_metrics.json",
+        "scope": "repo"
+      },
+      "outcome": "exited",
+      "returncode": 0,
+      "directory": {
+        "path": "flow/par-scratch/.klt/place-and-route/openroad-logs/8b200c325590475798a22a9e1583f846",
+        "scope": "repo"
+      },
+      "stdout_path": {
+        "path": "flow/par-scratch/.klt/place-and-route/openroad-logs/8b200c325590475798a22a9e1583f846/stdout.log",
+        "scope": "repo"
+      },
+      "stderr_path": {
+        "path": "flow/par-scratch/.klt/place-and-route/openroad-logs/8b200c325590475798a22a9e1583f846/stderr.log",
+        "scope": "repo"
+      },
+      "metadata_path": {
+        "path": "flow/par-scratch/.klt/place-and-route/openroad-logs/8b200c325590475798a22a9e1583f846/invocation.json",
+        "scope": "repo"
+      },
+      "retention_errors": []
+    }
+  ],
+  "hdl_toplevel": "tt_um_2amlogic_protocol_emulator",
+  "netlist": {
+    "path": "flow/par-scratch/tt_um_2amlogic_protocol_emulator_synth.v",
+    "scope": "repo"
+  },
+  "status": "ok",
+  "stage_reached": "place",
+  "seed": 1,
+  "power_basis": {
+    "activity_source": "engine_default",
+    "activity": null,
+    "duty": null,
+    "parasitics": "estimate_only"
+  },
+  "applied": {
+    "placement_density": 0.6,
+    "route_congestion_iterations": null,
+    "route_allow_congestion": false,
+    "signal_layers": null
+  },
+  "coverage": {
+    "metal_density_fill": {
+      "status": "unsupported",
+      "inserted": false,
+      "reason": "no metal density fill is inserted at any stage; standard-cell gap fillers are not metal fill"
+    },
+    "density_compliance": {
+      "status": "unsupported",
+      "evaluated": false,
+      "reason": "metal density rules are not evaluated by place-and-route; a zero route_drc_violation_count does not imply density compliance"
+    }
+  },
+  "interconnect_corner": "nom",
+  "die_area_um2": 161592,
+  "core_area_um2": 156242,
+  "utilization_pct": 41.8306,
+  "wirelength_um": 100037,
+  "worst_slack_ns": 13.1568,
+  "total_negative_slack_ns": 0,
+  "fmax_mhz": 146.131,
+  "setup_violation_count": 0,
+  "hold_violation_count": 0,
+  "nominal_hold_slack_ns": 0.00338,
+  "antenna_violation_count": null,
+  "route_drc_violation_count": null,
+  "estimated_power_mw": 2.0934,
+  "clock_skew_ns": null,
+  "worst_setup_slack_ns": null,
+  "worst_hold_slack_ns": null,
+  "corners": null,
+  "congestion": null,
+  "max_transition_violation_count": null,
+  "max_capacitance_violation_count": null,
+  "max_transition_violation_count_vs_library": null,
+  "max_capacitance_violation_count_vs_library": null,
+  "timing_status": "constrained",
+  "stages": [
+    {
+      "name": "floorplan",
+      "die_area_um2": 161592,
+      "core_area_um2": 156242,
+      "utilization_pct": 40.5509,
+      "worst_slack_ns": 11.9748,
+      "total_negative_slack_ns": 0,
+      "timing_status": "constrained"
+    },
+    {
+      "name": "place",
+      "die_area_um2": 161592,
+      "core_area_um2": 156242,
+      "utilization_pct": 41.8306,
+      "worst_slack_ns": 13.1568,
+      "total_negative_slack_ns": 0,
+      "wirelength_um": 100037,
+      "fmax_mhz": 146.131,
+      "estimated_power_mw": 2.0934,
+      "setup_violation_count": 0,
+      "hold_violation_count": 0,
+      "nominal_hold_slack_ns": 0.00338,
+      "timing_status": "constrained"
+    }
+  ],
+  "macros": [
+    {
+      "instance": "u_prog_mem/u_sram",
+      "lef": "/tmp/issue389-pdk/root/ihp-sg13cmos5l/libs.ref/sg13cmos5l_sram/lef/RM_IHPSG13_1P_256x16_c2_bm_bist.lef",
+      "x_um": 7.0,
+      "y_um": 7.0,
+      "orientation": "R0",
+      "cell": "RM_IHPSG13_1P_256x16_c2_bm_bist",
+      "lib": {
+        "fast_1p32V_m40C": "/tmp/issue389-pdk/root/ihp-sg13cmos5l/libs.ref/sg13cmos5l_sram/lib/RM_IHPSG13_1P_256x16_c2_bm_bist_fast_1p32V_m55C.lib",
+        "slow_1p08V_125C": "/tmp/issue389-pdk/root/ihp-sg13cmos5l/libs.ref/sg13cmos5l_sram/lib/RM_IHPSG13_1P_256x16_c2_bm_bist_slow_1p08V_125C.lib",
+        "typ_1p20V_25C": "/tmp/issue389-pdk/root/ihp-sg13cmos5l/libs.ref/sg13cmos5l_sram/lib/RM_IHPSG13_1P_256x16_c2_bm_bist_typ_1p20V_25C.lib"
+      },
+      "halo": null,
+      "keepout": null
+    }
+  ],
+  "def_path": null,
+  "pins": [
+    {
+      "name": "clk",
+      "edge": "south",
+      "x_um": 120.48,
+      "y_um": 0.36,
+      "layer": "Metal2"
+    },
+    {
+      "name": "ena",
+      "edge": "south",
+      "x_um": 2.4,
+      "y_um": 0.36,
+      "layer": "Metal2"
+    },
+    {
+      "name": "rst_n",
+      "edge": "east",
+      "x_um": 401.625,
+      "y_um": 217.98,
+      "layer": "Metal3"
+    },
+    {
+      "name": "ui_in[0]",
+      "edge": "east",
+      "x_um": 401.625,
+      "y_um": 210.42,
+      "layer": "Metal3"
+    },
+    {
+      "name": "ui_in[1]",
+      "edge": "east",
+      "x_um": 401.625,
+      "y_um": 216.3,
+      "layer": "Metal3"
+    },
+    {
+      "name": "ui_in[2]",
+      "edge": "east",
+      "x_um": 401.625,
+      "y_um": 199.5,
+      "layer": "Metal3"
+    },
+    {
+      "name": "ui_in[3]",
+      "edge": "east",
+      "x_um": 401.625,
+      "y_um": 198.66,
+      "layer": "Metal3"
+    },
+    {
+      "name": "ui_in[4]",
+      "edge": "east",
+      "x_um": 401.625,
+      "y_um": 202.02,
+      "layer": "Metal3"
+    },
+    {
+      "name": "ui_in[5]",
+      "edge": "east",
+      "x_um": 401.625,
+      "y_um": 214.62,
+      "layer": "Metal3"
+    },
+    {
+      "name": "ui_in[6]",
+      "edge": "east",
+      "x_um": 401.625,
+      "y_um": 200.34,
+      "layer": "Metal3"
+    },
+    {
+      "name": "ui_in[7]",
+      "edge": "east",
+      "x_um": 401.625,
+      "y_um": 196.14,
+      "layer": "Metal3"
+    },
+    {
+      "name": "uio_in[0]",
+      "edge": "east",
+      "x_um": 401.625,
+      "y_um": 202.86,
+      "layer": "Metal3"
+    },
+    {
+      "name": "uio_in[1]",
+      "edge": "east",
+      "x_um": 401.625,
+      "y_um": 195.3,
+      "layer": "Metal3"
+    },
+    {
+      "name": "uio_in[2]",
+      "edge": "east",
+      "x_um": 401.625,
+      "y_um": 211.26,
+      "layer": "Metal3"
+    },
+    {
+      "name": "uio_in[3]",
+      "edge": "east",
+      "x_um": 401.625,
+      "y_um": 193.62,
+      "layer": "Metal3"
+    },
+    {
+      "name": "uio_in[4]",
+      "edge": "east",
+      "x_um": 401.625,
+      "y_um": 203.7,
+      "layer": "Metal3"
+    },
+    {
+      "name": "uio_in[5]",
+      "edge": "east",
+      "x_um": 401.625,
+      "y_um": 192.78,
+      "layer": "Metal3"
+    },
+    {
+      "name": "uio_in[6]",
+      "edge": "east",
+      "x_um": 401.625,
+      "y_um": 204.54,
+      "layer": "Metal3"
+    },
+    {
+      "name": "uio_in[7]",
+      "edge": "east",
+      "x_um": 401.625,
+      "y_um": 212.1,
+      "layer": "Metal3"
+    },
+    {
+      "name": "uio_oe[0]",
+      "edge": "east",
+      "x_um": 401.625,
+      "y_um": 205.38,
+      "layer": "Metal3"
+    },
+    {
+      "name": "uio_oe[1]",
+      "edge": "east",
+      "x_um": 401.625,
+      "y_um": 215.46,
+      "layer": "Metal3"
+    },
+    {
+      "name": "uio_oe[2]",
+      "edge": "east",
+      "x_um": 401.625,
+      "y_um": 190.26,
+      "layer": "Metal3"
+    },
+    {
+      "name": "uio_oe[3]",
+      "edge": "east",
+      "x_um": 401.625,
+      "y_um": 191.1,
+      "layer": "Metal3"
+    },
+    {
+      "name": "uio_oe[4]",
+      "edge": "east",
+      "x_um": 401.625,
+      "y_um": 207.9,
+      "layer": "Metal3"
+    },
+    {
+      "name": "uio_oe[5]",
+      "edge": "east",
+      "x_um": 401.625,
+      "y_um": 188.58,
+      "layer": "Metal3"
+    },
+    {
+      "name": "uio_oe[6]",
+      "edge": "east",
+      "x_um": 401.625,
+      "y_um": 194.46,
+      "layer": "Metal3"
+    },
+    {
+      "name": "uio_oe[7]",
+      "edge": "east",
+      "x_um": 401.625,
+      "y_um": 187.74,
+      "layer": "Metal3"
+    },
+    {
+      "name": "uio_out[0]",
+      "edge": "east",
+      "x_um": 401.625,
+      "y_um": 206.22,
+      "layer": "Metal3"
+    },
+    {
+      "name": "uio_out[1]",
+      "edge": "east",
+      "x_um": 401.625,
+      "y_um": 212.94,
+      "layer": "Metal3"
+    },
+    {
+      "name": "uio_out[2]",
+      "edge": "east",
+      "x_um": 401.625,
+      "y_um": 186.9,
+      "layer": "Metal3"
+    },
+    {
+      "name": "uio_out[3]",
+      "edge": "east",
+      "x_um": 401.625,
+      "y_um": 201.18,
+      "layer": "Metal3"
+    },
+    {
+      "name": "uio_out[4]",
+      "edge": "east",
+      "x_um": 401.625,
+      "y_um": 207.06,
+      "layer": "Metal3"
+    },
+    {
+      "name": "uio_out[5]",
+      "edge": "east",
+      "x_um": 401.625,
+      "y_um": 191.94,
+      "layer": "Metal3"
+    },
+    {
+      "name": "uio_out[6]",
+      "edge": "east",
+      "x_um": 401.625,
+      "y_um": 186.06,
+      "layer": "Metal3"
+    },
+    {
+      "name": "uio_out[7]",
+      "edge": "east",
+      "x_um": 401.625,
+      "y_um": 185.22,
+      "layer": "Metal3"
+    },
+    {
+      "name": "uo_out[0]",
+      "edge": "east",
+      "x_um": 401.625,
+      "y_um": 217.14,
+      "layer": "Metal3"
+    },
+    {
+      "name": "uo_out[1]",
+      "edge": "east",
+      "x_um": 401.625,
+      "y_um": 184.38,
+      "layer": "Metal3"
+    },
+    {
+      "name": "uo_out[2]",
+      "edge": "east",
+      "x_um": 401.625,
+      "y_um": 196.98,
+      "layer": "Metal3"
+    },
+    {
+      "name": "uo_out[3]",
+      "edge": "east",
+      "x_um": 401.625,
+      "y_um": 213.78,
+      "layer": "Metal3"
+    },
+    {
+      "name": "uo_out[4]",
+      "edge": "east",
+      "x_um": 401.625,
+      "y_um": 208.74,
+      "layer": "Metal3"
+    },
+    {
+      "name": "uo_out[5]",
+      "edge": "east",
+      "x_um": 401.625,
+      "y_um": 189.42,
+      "layer": "Metal3"
+    },
+    {
+      "name": "uo_out[6]",
+      "edge": "east",
+      "x_um": 401.625,
+      "y_um": 197.82,
+      "layer": "Metal3"
+    },
+    {
+      "name": "uo_out[7]",
+      "edge": "east",
+      "x_um": 401.625,
+      "y_um": 209.58,
+      "layer": "Metal3"
+    }
+  ],
+  "pin_abutment": [],
+  "instance_groups": [],
+  "unrouted_def_path": "/home/ubuntu/GitHub/sg13cmos5l-protocol-emulator/.loom/worktrees/issue-389/flow/par-scratch/.klt/place-and-route/tt_um_2amlogic_protocol_emulator.place.def",
+  "gds_path": null,
+  "layer_map": null,
+  "def_net_names": null,
+  "min_area_repair": null,
+  "via_pad_trim": null,
+  "gds_dbu_um": null,
+  "verilog_path": null,
+  "spef_sta": null,
+  "power": {
+    "preset": null,
+    "connects_overridden": false,
+    "pdn": false,
+    "global_connect": false,
+    "power_net": null,
+    "ground_net": null,
+    "tapcell_master": null,
+    "tapless": false,
+    "endcap_master": null,
+    "tapcell_distance_um": null,
+    "filler_masters": [],
+    "straps": [],
+    "connects": [],
+    "row_rail": {
+      "emitted": false,
+      "layer": null,
+      "power_net": null,
+      "ground_net": null,
+      "filler_masters": []
+    },
+    "placed": {
+      "evidence": "def",
+      "def_path": "/home/ubuntu/GitHub/sg13cmos5l-protocol-emulator/.loom/worktrees/issue-389/flow/par-scratch/.klt/place-and-route/tt_um_2amlogic_protocol_emulator.place.def",
+      "unavailable_reason": null,
+      "status": "absent",
+      "missing": [
+        "special_nets",
+        "followpin_segments",
+        "stripe_segments",
+        "pdn_vias"
+      ],
+      "components": 2779,
+      "tapcells": 0,
+      "endcaps": 0,
+      "fillers": 0,
+      "special_nets": []
+    }
+  },
+  "warnings": [
+    "request.power was omitted: no power delivery was requested for this run, and the produced DEF has no a SPECIALNETS section, FOLLOWPIN rail segments, STRIPE strap segments, PDN vias (0 tapcell(s), 0 endcap(s), 0 filler cell(s), 0 power special net(s), 0 FOLLOWPIN rail segment(s), 0 STRIPE strap segment(s), 0 PDN via(s)). The layout has no power delivery, no substrate/well taps and no fill -- its area, timing and DRC numbers are not a signoff result. Supply request.power (see docs/cli/place-and-route.md, 'Power delivery') to build one."
+  ],
+  "provenance": {
+    "klt_version": "0.9.2",
+    "klt_git_commit": "046ba74652fc096bd97071fc3237f7159dd40183",
+    "klt_reinstall_spec": "klayout-tools==0.9.2",
+    "klayout_version": "0.30.13",
+    "pdk": {
+      "name": "ihp-sg13cmos5l",
+      "source": "PDK_ROOT environment variable",
+      "version": null,
+      "ambiguous_sources": [
+        "search root: ~/share/pdk"
+      ]
+    },
+    "deck": {
+      "name": "sg13cmos5l_stdcell__typ_1p20V_25C",
+      "content_hash": "sha256:34163f3e7de9f854afac57332ba06f1739b78e7ac35660a8a5ddd39c570124ad",
+      "released": false,
+      "path": {
+        "path": null,
+        "scope": "external"
+      }
+    },
+    "input": {
+      "content_hash": "sha256:0f9cd5cd474b5961416fdf16a425465ac90bbf983975c712000738434a7bb2fd",
+      "role": "netlist"
+    }
+  }
+}

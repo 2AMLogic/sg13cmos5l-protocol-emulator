@@ -29,11 +29,20 @@ Checks:
    measurement cannot land without a bench line, and a line cannot outlive
    its directory.
 3. Every `manifests/evidence/*.json` is a passing `generic` envelope with an
-   integer `t1_item` in {1, 2, 8, 9, 10} (item 8 may also be `fail`), whose `provenance.input` names a file
+   integer `t1_item` in {1, 2, 8, 9, 10} (item 8 may also be `fail`), whose `provenance.input` names a file (or, for a file-set envelope such as klt 0.9.0's item 1, a list of them under `paths`)
    that re-hashes to its `content_hash`, and the manifest cites that envelope
    for that item with the same pin.
 4. The manifest cites items 1, 2, 8, 9 and 10 only through such envelopes (no
    native envelope, which would carry no information about the item).
+5. Every per-file pin inside an envelope's `attestation.checks` (each entry
+   with a `path` and a `content_hash`) still matches the tree (issue #507).
+   `klt signoff --attest` hashes every inventoried file into those pins, but
+   the grader only re-reads them at `--check` time, so an edit to an attested
+   file -- `README.md` is the recurring case -- otherwise lands green here and
+   fails later in CI's re-attest step. A mismatch names the file and the
+   re-mint command. Like checks 2-4 this runs only in the unrestricted run:
+   the restricted (`--inventory`) run is what an attestation itself invokes,
+   and it must not trip mid re-mint on the very pins it is refreshing.
 
 Zero dependencies beyond the Python 3 standard library.
 
@@ -150,6 +159,95 @@ def envelope_input(root: Path, env_path: Path, inp) -> Path | None:
     return None
 
 
+def envelope_input_set(root: Path, env_path: Path, inp) -> list[tuple[Path, str]] | None:
+    """An envelope's cited input(s) as `(file, expected_sha256)` pairs, or
+    `None` if `provenance.input` is not a shape we recognise.
+
+    `klt signoff --attest` emits two shapes, and both appear under
+    `manifests/evidence/`:
+
+    * **one cited file** -- `provenance.input.path` naming the attestation
+      inventory or the audited artifact, with `provenance.input.content_hash`
+      the sha256 of exactly that file. Items 2, 8, 9 and 10 use this.
+    * **a cited file SET** -- `provenance.input.paths`, a list of
+      `{path, content_hash}` entries, with `provenance.input.content_hash` a
+      digest klt computes over the whole set rather than any one file. klt
+      0.9.0 produces this for T1 item 1, whose inventory names source/derived
+      file sets instead of a single artifact; an envelope minted at 0.9.0 is
+      therefore unreadable by the single-file rule alone (issue #371, the move
+      to the fleet klayout-tools version).
+
+    For the set shape this verifies every member against its own recorded
+    hash. The set digest itself is klt's, and `klt signoff --attest --check`
+    is what re-derives it -- this script deliberately does not reimplement
+    another tool's hashing rule.
+    """
+    if not isinstance(inp, dict):
+        return None
+    paths = inp.get("paths")
+    if paths is None:
+        target = envelope_input(root, env_path, inp)
+        want = inp.get("content_hash")
+        if target is None or not isinstance(want, str):
+            return None
+        return [(target, want)]
+    if not isinstance(paths, list) or not paths:
+        return None
+    pairs: list[tuple[Path, str]] = []
+    for entry in paths:
+        if not isinstance(entry, dict):
+            return None
+        target = envelope_input(root, env_path, entry)
+        want = entry.get("content_hash")
+        if target is None or not isinstance(want, str):
+            return None
+        pairs.append((target, want))
+    return pairs
+
+
+def check_attestation_pins(root: Path, rel: str, item: int, env: dict) -> list[str]:
+    """Check 5: every per-file pin in an envelope's `attestation.checks` still
+    holds (issue #507).
+
+    `klt signoff --attest --check` re-hashes these files in CI, so a drifted
+    pin is a real gate failure -- but before this check the unrestricted run
+    passed on a drifted tree, so the drift surfaced only as a late CI failure
+    instead of a local `npm run lint` one. Entries without both a `path` and a
+    `content_hash` (command outcomes, environment pins) carry no file pin and
+    are skipped.
+    """
+    errors: list[str] = []
+    checks = (env.get("attestation") or {}).get("checks")
+    if not isinstance(checks, list):
+        return errors
+    for entry in checks:
+        if not isinstance(entry, dict):
+            continue
+        path = entry.get("path")
+        want = entry.get("content_hash")
+        if not isinstance(path, str) or not isinstance(want, str):
+            continue
+        target = inside(root, path)
+        if target is None or not target.is_file():
+            errors.append(
+                f"{rel}: attestation check pins `{path}`, which is not a file in "
+                f"the tree -- re-attest item {item} per manifests/README.md"
+            )
+            continue
+        if (got := f"sha256:{sha256_hex(target)}") != want:
+            errors.append(
+                f"{rel}: `{path}` changed since the envelope attested it "
+                f"(pinned sha256:{want.removeprefix('sha256:')[:12]}..., "
+                f"now sha256:{got.removeprefix('sha256:')[:12]}...) -- an edit to "
+                f"an attested file must land together with a re-attest of item "
+                f"{item}: klt signoff --attest {item} "
+                f"--inventory manifests/attest/item{item}.json -o {rel} "
+                f"--skip-local-only, then the signoff-baseline round it stales "
+                f"(the re-mint order is manifests/README.md)"
+            )
+    return errors
+
+
 def check_envelopes(root: Path, manifest: dict) -> tuple[list[str], set[int]]:
     errors: list[str] = []
     bound: set[int] = set()
@@ -169,16 +267,21 @@ def check_envelopes(root: Path, manifest: dict) -> tuple[list[str], set[int]]:
             errors.append(f"{rel}: t1_item must be one of {sorted(BOUND_ITEMS)}, got {item!r}")
             continue
         inp = (env.get("provenance") or {}).get("input") or {}
-        target = envelope_input(root, env_path, inp)
+        pairs = envelope_input_set(root, env_path, inp)
         want = inp.get("content_hash")
-        if target is None or not target.is_file():
-            errors.append(f"{rel}: provenance.input.path does not name a file in the tree")
-        elif want != f"sha256:{sha256_hex(target)}":
+        if pairs is None or any(not target.is_file() for target, _ in pairs):
             errors.append(
-                f"{rel}: `{target.relative_to(root).as_posix()}` no longer hashes to the "
-                f"envelope's content_hash -- refresh the envelope, the manifest pin and the "
-                f"signoff record together"
+                f"{rel}: provenance.input does not name a file (or file set) in the tree"
             )
+        else:
+            for target, expected in pairs:
+                if expected != f"sha256:{sha256_hex(target)}":
+                    errors.append(
+                        f"{rel}: `{target.relative_to(root).as_posix()}` no longer hashes to the "
+                        f"hash the envelope records for it -- refresh the envelope, the manifest "
+                        f"pin and the signoff record together"
+                    )
+        errors += check_attestation_pins(root, rel, item, env)
         cite = evidence.get(str(item))
         if not isinstance(cite, dict) or cite.get("file") != rel:
             errors.append(f"{rel}: the manifest does not cite this envelope for item {item}")

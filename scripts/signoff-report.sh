@@ -8,18 +8,24 @@
 #               --format json
 #
 # from the repo root (evidence paths inside the manifest are cwd-relative,
-# so the runner -- not the caller -- owns the working directory), after
-# checking that the `klt` it is about to use is at the exact commit
-# `layout/toolchain.json` pins. The rendered report is the verdict of record
-# for this block's T1 state once committed as an evidence record under
+# so the runner -- not the caller -- owns the working directory). The
+# rendered report is the verdict of record for this block's T1 state once
+# committed as an evidence record under
 # verification/records/signoff-baseline/ (see manifests/README.md).
 #
-# No `--tiers-doc` override: the pinned `klt` (`layout/toolchain.json`)
-# bundles its own copy of `docs/design-evidence-tiers.md` with all eleven
-# T1 items (issue #52 retired the vendored `manifests/design-evidence-tiers.md`
-# once the pin moved past the checklist's item-11 addition -- see
-# manifests/README.md's "The vendored tiers doc" section for the history and
-# retirement record).
+# It does NOT gate on a klt version. Until 2026-11-14 it refused to run
+# unless `klt version --format json`'s git_commit equalled
+# `layout/toolchain.json`'s `klt_last_verified_commit`; the 2026-11-09
+# operator ruling (2AMLogic/2am#7038) retired both the repo-level pin and
+# that check -- a record keeps the version that produced it, and signoff
+# stops checking a record against a repo pin (issue #371). The grading
+# build's full identity is printed to stderr and travels in the rendered
+# report's build block instead.
+#
+# The provisioned `klt` bundles all eleven T1 items in
+# `docs/design-evidence-tiers.md`. Issue #52 retired the vendored copy and
+# the `--tiers-doc` override once the bundled checklist included item 11.
+# See "The vendored tiers doc" in manifests/README.md for the history.
 #
 # Exit codes:
 #   0  Report rendered (klt exitted 0 = every item met, or 3 = at least one
@@ -27,17 +33,29 @@
 #      all-unmet render is the normal gap state, not an error). With
 #      --check-latest: the latest committed record also still reproduces
 #      (`klt signoff --check` reported status "match" -- the grader re-graded
-#      the manifest and found nothing outside the build-identity block
-#      moved, so the same pinned commit verifies from any provisioning
-#      route; klayout-tools #2249/#2258).
-#   1  Real failure: klt missing / not at the pinned commit / `signoff`
-#      missing from its subcommand list; klt exitted 1 or 2 (usage or
-#      error); no signoff-baseline record committed; or --check-latest
+#      the manifest and found that the graded fields matched, so the
+#      same pinned commit verifies from any provisioning
+#      route; klayout-tools #2249/#2258). A newer klt may additionally
+#      report non-graded checklist movement in the same check envelope
+#      (optional doc_drift / doc_drift_fields keys, issue #502); the runner
+#      prints every supplied entry on stderr and STILL exits 0 -- that
+#      movement grades nothing. With --diff-vs: the movement comparison
+#      between two saved reports also ran (exit 0 whether non-graded
+#      fields moved or matched -- movement is information, not a gate).
+#   1  Real failure: klt missing / `signoff` missing from its subcommand
+#      list; klt exitted 1 or 2 (usage or
+#      error); no signoff-baseline record committed; --check-latest
 #      found a drift (`klt signoff --check` exitted 3, status "drifted":
 #      a graded field outside the build block -- item status/reason,
 #      citation hash, t1_met_count, ... -- moved since the committed
 #      report; the exact "fails rather than rotting" case that check
-#      exists for). NOTE the exit-code trap: 3 means OPPOSITE things in
+#      exists for). Documentation (non-graded, issue #502) movement never
+#      trips this on its own -- klt exits 3 only when a graded field moved;
+#      the documentation entries print alongside the graded ones. Also 1:
+#      --diff-vs could not resolve its baseline (no such record ID / file)
+#      or the comparison could not run (unreadable baseline, invalid JSON
+#      -- see the usage block for the mode's exit-0-whether-moved-or-matched
+#      rule). NOTE the exit-code trap: 3 means OPPOSITE things in
 #      the two modes -- render mode's 3 is the normal all-unmet gap state
 #      mapped to success above, but --check mode's 3 is DRIFT and a hard
 #      failure. The two mappings are kept separate below on purpose.
@@ -51,6 +69,37 @@
 #                                            # `klt signoff --check` (the
 #                                            # grader's own comparison, not
 #                                            # a byte-compare)
+#   scripts/signoff-report.sh --diff-vs [X]  # render, then print the
+#                                            # NON-GRADED movement (tiers
+#                                            # doc hash, item text/notes,
+#                                            # added/removed items) between
+#                                            # the fresh render and a
+#                                            # committed report (see below)
+#                                            # via scripts/
+#                                            # signoff_movement_diff.py.
+#                                            # X is optional: a record ID
+#                                            # (uses the artifact linked
+#                                            # by the selected record,
+#                                            # including shared reports)
+#                                            # or a report JSON path; with
+#                                            # no X, the same artifact
+#                                            # --check-latest selects (the
+#                                            # latest record). Movement is
+#                                            # information, not a gate:
+#                                            # exit 0 whether fields moved
+#                                            # or matched. With --diff-vs
+#                                            # the comparison IS the stdout
+#                                            # product (the JSON render is
+#                                            # suppressed unless --out
+#                                            # names a file); pair
+#                                            # `--out FILE --diff-vs` to
+#                                            # mint an artifact and see its
+#                                            # movement in one run. The output
+#                                            # must differ from any baseline. With
+#                                            # --check-latest too, the gate
+#                                            # runs first and a drift still
+#                                            # exits 1 before the movement
+#                                            # is printed.
 #
 # klt resolution: `klt` from $PATH unless $KLT_BIN names another binary
 # (used by environments that provision the pinned klt in an isolated
@@ -64,11 +113,13 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 cd "$REPO_ROOT"
 
 MANIFEST="manifests/sg13cmos5l-protocol-emulator.json"
-TOOLCHAIN_JSON="layout/toolchain.json"
-RECORDS_GLOB="verification/records/signoff-baseline/records/*.md"
+BASELINE_DIR="verification/records/signoff-baseline"
+RECORDS_GLOB="$BASELINE_DIR/records/*.md"
 
 OUT=""
 CHECK_LATEST=0
+DIFF_VS=0
+DIFF_VS_TARGET=""
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --out)
@@ -76,8 +127,14 @@ while [[ $# -gt 0 ]]; do
       OUT="$2"; shift 2 ;;
     --check-latest)
       CHECK_LATEST=1; shift ;;
+    --diff-vs)
+      # Optional value: a record ID or a report JSON path. Taken only when
+      # the next argument exists and does not look like a flag, so
+      # `--diff-vs --out F` parses as diff-vs(default) + --out F.
+      DIFF_VS=1
+      if [[ $# -ge 2 && "$2" != -* ]]; then DIFF_VS_TARGET="$2"; shift 2; else shift; fi ;;
     -h|--help)
-      sed -n '2,40p' "${BASH_SOURCE[0]}"; exit 0 ;;
+      sed -n '1d; /^$/q; p' "${BASH_SOURCE[0]}"; exit 0 ;;
     *)
       echo "error: unknown argument '$1' (see --help)" >&2; exit 1 ;;
   esac
@@ -90,35 +147,43 @@ if ! command -v "$KLT_BIN" >/dev/null 2>&1; then
   exit 1
 fi
 
-# --- pin check: the grading build must be layout/toolchain.json's commit ---
+# --- producer identity: RECORDED, not asserted (issue #371) ---
+# This used to be a gate: it read `klt_last_verified_commit` from
+# layout/toolchain.json and exitted 1 unless `klt version --format json`'s
+# git_commit matched it exactly. The 2026-11-09 operator ruling
+# (2AMLogic/2am#7038) retires that check along with the per-repo pin -- rule 2
+# is that an evidence record keeps the klayout-tools version that produced it,
+# and signoff stops checking that a record matches a repo pin. So the grading
+# build's identity is now REPORTED here (and carried into the rendered
+# report's own build block, which `klt signoff --check` excludes from the
+# comparison) rather than used to refuse the run. A release that actually
+# moves a graded field is still caught -- by --check-latest's drift
+# comparison, which names the field, instead of by a version mismatch that
+# pre-empted it.
 if ! command -v python3 >/dev/null 2>&1; then
-  echo "error: python3 required to read $TOOLCHAIN_JSON" >&2
+  echo "error: python3 required to read '$KLT_BIN version --format json'" >&2
   exit 1
 fi
-PINNED_COMMIT="$(python3 -c "
-import json
-with open('$TOOLCHAIN_JSON') as f:
-    doc = json.load(f)
-print(doc['klt_last_verified_commit'])
-")"
-ACTUAL_COMMIT="$(python3 -c "
+GRADER_ID="$(python3 -c "
 import json, subprocess, sys
 out = subprocess.run(['$KLT_BIN', 'version', '--format', 'json'], capture_output=True, text=True)
 try:
-    print(json.loads(out.stdout)['git_commit'])
+    doc = json.loads(out.stdout)
 except Exception:
     sys.exit(1)
+print('version {} (git_commit {}, tag {}, is_release {}, grading_ruleset_id {})'.format(
+    doc.get('version', '?'),
+    doc.get('git_commit', '?'),
+    doc.get('git_tag') or 'none',
+    doc.get('is_release', '?'),
+    doc.get('grading_ruleset_id', '?'),
+))
 ")" || { echo "error: could not read '$KLT_BIN version --format json'" >&2; exit 1; }
-if [[ "$ACTUAL_COMMIT" != "$PINNED_COMMIT" ]]; then
-  echo "error: $KLT_BIN is at commit $ACTUAL_COMMIT, but $TOOLCHAIN_JSON pins $PINNED_COMMIT." >&2
-  echo "  The committed signoff report is only reproducible on the pinned build. Re-provision:" >&2
-  echo "    ./scripts/setup-env.sh" >&2
-  exit 1
-fi
+echo "-- grading klt: $GRADER_ID" >&2
 
 # --- capability check: layout/toolchain.json's own drift-detect pattern ---
 if ! "$KLT_BIN" --help 2>&1 | grep -q "signoff"; then
-  echo "error: '$KLT_BIN' does not list a 'signoff' subcommand (pinned build at $PINNED_COMMIT is missing a required capability)." >&2
+  echo "error: '$KLT_BIN' does not list a 'signoff' subcommand (the provisioned build is missing a capability layout/toolchain.json's klt_required_commands names). Provisioned build: $GRADER_ID" >&2
   exit 1
 fi
 
@@ -140,24 +205,68 @@ case "$KLT_RC" in
     exit 1 ;;
 esac
 
-echo "klt signoff rendered OK (exit $KLT_RC; grader at pinned commit $PINNED_COMMIT)" >&2
+echo "klt signoff rendered OK (exit $KLT_RC; grader: $GRADER_ID)" >&2
+
+# Older records use a code span for the artifact directory or report. Newer
+# records use a Markdown link; several records can share one rendered report.
+resolve_record_report() {
+  local id="$1" record="$BASELINE_DIR/records/$1.md"
+  local id_pattern='[0-9]{8}-[0-9]{6}-[0-9a-f]{7,40}'
+  if [[ ! "$id" =~ ^${id_pattern}$ || ! -f "$record" ]]; then
+    echo "error: no signoff-baseline record for '$id'." >&2
+    return 1
+  fi
+  local links report artifact_id="$id" artifact_pattern="artifacts/($id_pattern)/"
+  links="$(awk '/^- \*\*/ { in_links = /^- \*\*Links\*\*:/ } in_links' "$record")"
+  # Prefer the explicit report wherever it appears in Links. Older records
+  # can name just the artifact directory in a code span.
+  if [[ "$links" =~ ${artifact_pattern}signoff-report\.json || "$links" =~ ${artifact_pattern}\` ]]; then
+    artifact_id="${BASH_REMATCH[1]}"
+  fi
+  report="$BASELINE_DIR/artifacts/$artifact_id/signoff-report.json"
+  if [[ ! -f "$report" ]]; then
+    echo "error: record $id has no report artifact at $report." >&2
+    return 1
+  fi
+  printf '%s\n' "$report"
+}
+
+if [[ "$CHECK_LATEST" -eq 1 || ( "$DIFF_VS" -eq 1 && -z "$DIFF_VS_TARGET" ) ]]; then
+  LATEST="$(git ls-files -- "$RECORDS_GLOB" | sort | tail -1)"
+  if [[ -z "$LATEST" ]]; then
+    echo "error: no signoff-baseline evidence record committed under $BASELINE_DIR." >&2
+    exit 1
+  fi
+  RECORD_ID="$(basename "$LATEST" .md)"
+  COMMITTED="$(resolve_record_report "$RECORD_ID")"
+fi
+
+if [[ "$DIFF_VS" -eq 1 ]]; then
+  if [[ -z "$DIFF_VS_TARGET" ]]; then
+    BASELINE="$COMMITTED"
+    BASELINE_LABEL="latest record $RECORD_ID"
+  elif [[ -f "$DIFF_VS_TARGET" ]]; then
+    BASELINE="$DIFF_VS_TARGET"
+    BASELINE_LABEL="$DIFF_VS_TARGET"
+  else
+    BASELINE="$(resolve_record_report "$DIFF_VS_TARGET")"
+    BASELINE_LABEL="record $DIFF_VS_TARGET"
+  fi
+fi
 
 if [[ -n "$OUT" ]]; then
+  if [[ "$OUT" -ef "${COMMITTED:-}" || "$OUT" -ef "${BASELINE:-}" ]]; then
+    echo "error: --out '$OUT' refers to a comparison input. Choose a different output file." >&2
+    exit 1
+  fi
+  if [[ -d "$OUT" ]]; then
+    echo "error: --out requires a file, got directory '$OUT'." >&2
+    exit 1
+  fi
   cp "$FRESH" "$OUT"
 fi
 
 if [[ "$CHECK_LATEST" -eq 1 ]]; then
-  LATEST_RECORD="$(git ls-files -- "$RECORDS_GLOB" | sort | tail -1)"
-  if [[ -z "$LATEST_RECORD" ]]; then
-    echo "error: no signoff-baseline evidence record committed under verification/records/signoff-baseline/ -- render one (see manifests/README.md) and commit it before checking." >&2
-    exit 1
-  fi
-  RECORD_ID="$(basename "$LATEST_RECORD" .md)"
-  COMMITTED="verification/records/signoff-baseline/artifacts/$RECORD_ID/signoff-report.json"
-  if [[ ! -f "$COMMITTED" ]]; then
-    echo "error: latest record $RECORD_ID has no committed report artifact at $COMMITTED." >&2
-    exit 1
-  fi
   # The grader's own comparison (klt signoff --check, klayout-tools #2258):
   # re-grades the manifest and diffs the fresh result against the committed
   # report EXCLUDING the build-identity block, so two legitimate installs of
@@ -175,15 +284,55 @@ if [[ "$CHECK_LATEST" -eq 1 ]]; then
     --check "$COMMITTED" >"$CHECK_OUT"
   CHECK_RC=$?
   set -e
+  # Non-graded checklist movement rides in the same envelope (issue #502):
+  # klt builds emit it as two OPTIONAL keys, doc_drift (bool) and
+  # doc_drift_fields (list of {field, committed, fresh} -- measured on
+  # 0.9.2.dev111+g978f7464fae1 and 0.9.3.dev2366+g5dc34289aca1, 2026-11-20;
+  # an older envelope simply lacks the keys, and layout/toolchain.json's
+  # bare `klayout-tools` requirement means the runner meets them whenever
+  # the current release carries them). The movement is NOT graded -- check
+  # still exits 0 on it alone -- so it must not move the gate's exit code;
+  # but "no drift" printed over an envelope that says doc_drift: true would
+  # be a lie. Both branches below therefore surface every supplied entry on
+  # stderr, clearly identified ("checklist wording moved:") with the same
+  # committed=/fresh= field formatter as the graded drift.
+  render_doc_drift() {
+    python3 - "$1" <<'PYDOC' || true
+import json, sys
+with open(sys.argv[1]) as f:
+    envelope = json.load(f)
+fields = envelope.get("doc_drift_fields") or []
+for d in fields:
+    print(f"  checklist wording moved: {d.get('field')}: committed={d.get('committed')!r} fresh={d.get('fresh')!r}")
+if envelope.get("doc_drift") and not fields:
+    print("  checklist wording moved: grader set doc_drift but supplied no field details")
+PYDOC
+  }
   case "$CHECK_RC" in
     0)
-      echo "report matches the latest committed record ($RECORD_ID) -- no drift (klt signoff --check: status match; grader build identity excluded from the comparison)." >&2
+      DOC_DRIFT="$(render_doc_drift "$CHECK_OUT")"
+      if [[ -n "$DOC_DRIFT" ]]; then
+        echo "graded fields match the latest committed record ($RECORD_ID) -- no graded drift, but this klt reports checklist wording movement (klt signoff --check: status match with doc_drift; not graded, so the gate stays green; grader build identity excluded from the comparison):" >&2
+        printf '%s\n' "$DOC_DRIFT" >&2
+      else
+        echo "report matches the latest committed record ($RECORD_ID) -- no drift (klt signoff --check: status match; grader build identity excluded from the comparison)." >&2
+      fi
       ;;
     3)
       echo "error: the committed signoff report no longer reproduces (klt signoff --check: status drifted, artifact $COMMITTED)." >&2
       echo "  A graded field outside the build block changed without a fresh" >&2
-      echo "  signoff-baseline record. Re-render (scripts/signoff-report.sh --out), mint a new" >&2
-      echo "  append-only record superseding $RECORD_ID, and commit it with the change." >&2
+      echo "  signoff-baseline record. Merge or rebase onto the current origin/main" >&2
+      echo "  first (a base merge that moves a hashed input stales leaves minted" >&2
+      echo "  against the pre-merge base), then re-render with" >&2
+      echo "  scripts/signoff-report.sh --out FILE." >&2
+      echo "  When hashed inputs made interchangeable live leaves stale, mint once:" >&2
+      echo "    python3 verification/remint_records.py --collapse signoff-baseline" >&2
+      echo "  (one record for all stale live leaves, never one successor per leaf)." >&2
+      echo "  When no tracked input hash changed (grader-only drift), --collapse" >&2
+      echo "  mints nothing; follow the field-by-field procedure in manifests/README.md" >&2
+      echo "  (issue #482): inspect the drifted: lines, investigate any changed item" >&2
+      echo "  status or reason instead of re-minting over a finding, and re-mint the" >&2
+      echo "  baseline only for pure report-shape additions." >&2
       python3 - "$CHECK_OUT" <<'PYDRIFT' >&2 || true
 import json, sys
 with open(sys.argv[1]) as f:
@@ -191,6 +340,7 @@ with open(sys.argv[1]) as f:
 for d in envelope.get("drift", []):
     print(f"  drifted: {d.get('field')}: committed={d.get('committed')!r} fresh={d.get('fresh')!r}")
 PYDRIFT
+      render_doc_drift "$CHECK_OUT" >&2
       rm -f "$CHECK_OUT"
       exit 1
       ;;
@@ -203,6 +353,17 @@ PYDRIFT
   rm -f "$CHECK_OUT"
 fi
 
-if [[ -z "$OUT" ]]; then
+if [[ "$DIFF_VS" -eq 1 ]]; then
+  # Some klt versions report wording changes in doc_drift_fields. The check
+  # status depends on graded fields. --diff-vs reads both reports directly
+  # and prints checklist movement regardless of the grader version.
+  if ! python3 "$SCRIPT_DIR/signoff_movement_diff.py" "$BASELINE" "$FRESH"; then
+    echo "error: movement comparison against $BASELINE_LABEL could not run (see the diagnostic above)." >&2
+    exit 1
+  fi
+  echo "movement comparison vs $BASELINE_LABEL printed above (--diff-vs: informational, not a gate)" >&2
+fi
+
+if [[ -z "$OUT" && "$DIFF_VS" -eq 0 ]]; then
   cat "$FRESH"
 fi

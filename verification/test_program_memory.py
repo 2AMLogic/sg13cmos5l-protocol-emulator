@@ -54,16 +54,43 @@ Driven by `klt functional-verification` (see
 it, since it takes a cocotb-injected `dut` argument and only runs inside a
 simulator process.
 
+The pin-driving helpers this bench uses (`reset_release`,
+`shift_one_bit`, `load_words`, `fetch_word`, `read_reg`) live in
+`verification/program_memory_driver.py`, shared with the assembler
+round-trip bench (issue #486); the contracts restated below are this
+bench's to assert and are unchanged by the sharing.
+
 The program patterns are deterministic (a fixed-seed LCG plus fixed
 constants) so every run of this bench is byte-reproducible; the
 "Statistical convention" in the evidence record this feeds is
 deterministic, not sampled.
 """
 
+import sys
+from pathlib import Path
+
 import cocotb
 from cocotb.clock import Clock
-from cocotb.triggers import ClockCycles, ReadOnly, RisingEdge, Timer
+from cocotb.triggers import ClockCycles, RisingEdge, Timer
 from cocotb.utils import get_sim_time
+
+try:
+    from program_memory_driver import (
+        fetch_word,
+        load_words,
+        read_reg,
+        reset_release,
+        shift_one_bit,
+    )
+except ImportError:  # module run without verification/ on sys.path
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from program_memory_driver import (
+        fetch_word,
+        load_words,
+        read_reg,
+        reset_release,
+        shift_one_bit,
+    )
 
 CLK_PERIOD_NS = 10  # matches the 1ns/1ps timescale and a 50 MHz nominal
 
@@ -80,100 +107,6 @@ def lcg_words(count, seed=0x1359):
         state = (state * 251 + 0x4F) & 0xFFFF
         words.append(state)
     return words
-
-
-async def reset_release(dut, mode, settle_cycles=0):
-    """Async-reset release with `mode` pre-driven, per DR 0001: "on release
-    of rst_n, the core samples ui_in[7] (MODE)". The next rising edge after
-    release is the mode-sampling edge; `settle_cycles` adds idle edges
-    after it before the caller starts doing anything else.
-
-    Lives here rather than in `_dut.py` (which drives the Tiny Tapeout
-    top's pin names -- `ui_in`, `ena` -- that this module-level DUT does
-    not have); the two reset helpers check different interfaces on
-    purpose.
-    """
-    dut.mode_pin.value = mode
-    dut.serial_in.value = 0
-    # DR 0012's run-phase data-access port (issue #135) is the core's to
-    # drive; this module-level bench has no core, so tie it idle.
-    dut.pm_we.value = 0
-    dut.pm_re.value = 0
-    dut.pm_addr.value = 0
-    dut.pm_wdata.value = 0
-    dut.pm_crc_clr.value = 0
-    dut.fetch_addr.value = 0
-    # DR 0013 (issue #138): the core lowers `fetch_en` while it fetches from
-    # the boot ROM. This bench reads the array through the fetch port, so
-    # it holds the port enabled, as the core does once it runs from memory.
-    dut.fetch_en.value = 1
-    dut.rst_n.value = 0
-    await ClockCycles(dut.clk, 10)
-    dut.rst_n.value = 1
-    await RisingEdge(dut.clk)  # the mode-sampling edge
-    if settle_cycles:
-        await ClockCycles(dut.clk, settle_cycles)
-
-
-async def shift_one_bit(dut, bit):
-    """Present one serial bit and advance exactly one rising edge."""
-    dut.serial_in.value = bit
-    await RisingEdge(dut.clk)
-
-
-async def load_words(dut, words):
-    """Shift `words` into the DUT, MSB-first, one bit per rising edge with
-    MODE held high, then drop MODE on its own edge to exit the load phase.
-
-    The caller must have just finished `reset_release(dut, 1, ...)`; MODE
-    is left low and the DUT in run phase on return."""
-    dut.mode_pin.value = 1
-    for word in words:
-        for b in range(15, -1, -1):
-            await shift_one_bit(dut, (word >> b) & 1)
-    dut.mode_pin.value = 0
-    await RisingEdge(dut.clk)  # the MODE-drop edge: exit to run phase
-
-
-async def fetch_word(dut, addr):
-    """Synchronous fetch read -- the same instruction path the core's
-    fetch-and-execute uses at addresses it will run from.
-
-    DR 0005's one behavioural change: the SRAM macro captures `A_ADDR`
-    at a clock edge and presents the word on `A_DOUT` for the whole
-    following cycle, so a read costs one edge. (The superseded
-    flip-flop array answered combinationally, and this helper's old body
-    was a bare `Timer(1, "ns")` settle.) Awaiting `ReadOnly` after the
-    capturing edge reads the post-NBA `A_DOUT` -- same reason
-    `read_reg()` below documents.
-
-    This is the fetch-ahead contract from the *memory's* side: the
-    address presented during cycle N is the word available in cycle
-    N+1, which is exactly what `rtl/protocol_core.v` exploits by driving
-    the next instruction's address rather than the current one's."""
-    dut.fetch_addr.value = addr
-    await RisingEdge(dut.clk)  # the macro captures A_ADDR on this edge
-    await ReadOnly()           # ...and A_DOUT settles just after it
-    value = int(dut.instr_word.value)
-    await Timer(1, unit="ns")  # leave the read-only region (writable again)
-    return value
-
-
-async def read_reg(dut, name):
-    """Read a registered output (e.g. `run_phase`) after the edge that
-    updates it has fully settled.
-
-    Resuming from `await RisingEdge(dut.clk)` lands this cocotb/Icarus
-    combination in a region where the edge's nonblocking assignments have
-    NOT yet propagated -- an immediate `.value` read returns the pre-edge
-    value, not the post-edge one (observed empirically: every settled read
-    sees the new value, every same-edge read sees the old one). Awaiting
-    `ReadOnly` first reads the post-NBA state. The caller must await some
-    other trigger before its next write (reads are legal, writes are not,
-    in the read-only region).
-    """
-    await ReadOnly()
-    return int(getattr(dut, name).value)
 
 
 @cocotb.test()

@@ -289,6 +289,16 @@ gates. The host-side loader is issue #118.
   bit-edge, mid-word discard, no mid-run re-entry, 256-word saturation).
   Driven by `klt functional-verification` (see
   `request-program-memory.json`).
+- `program_memory_driver.py` — the shared pin driver for the two
+  module-level `protocol_program_memory` benches (`test_program_memory.py`
+  and `test_firmware_roundtrip.py`, issue #486): reset release with MODE
+  pre-driven and the run-phase ports tied idle, the MSB-first
+  one-bit-per-edge serial shift with the MODE drop on its own edge, the
+  synchronous fetch read, and the post-NBA registered-output read. Each
+  bench imports what it uses and keeps its own assertions;
+  `test_loadseq.py` deliberately drives its own pins and imports nothing
+  from here. Not a testbench itself (`klt functional-verification` never
+  names it); hashed as a provenance input by both benches' records.
 - `test_protocol_models.py` — constrained-random reference-model
   validation bench (verification-plan.md §4, issue #25): drives the
   `reference_models/` package's independent UART/SPI/I2C models with
@@ -516,6 +526,42 @@ gates. The host-side loader is issue #118.
   `\u_core.wait_cnt[0]` stuck-at fault. Driven by `klt
   functional-verification` (`request-firmware-ps2.json`); evidence in
   `records/firmware-ps2/` and `records/firmware-ps2-gate-level/`.
+- `test_firmware_swd.py` — the SWD **probe** bench (issue #452; the
+  protocol choice is the dated note of 2026-11-19 in DR 0018, fourth
+  revision, made after DR 0017's ISA freeze): the committed
+  `firmware/asm/swd_probe.asm` (227 words) plays the debug host on
+  `uio[2]` (SWCLK) and `uio[3]` (SWDIO), push-pull with SWDIO released at
+  each turnaround, and the bench plays the target.
+  `reference_models/swd.py`, written from Arm's ADIv5 description and
+  pyOCD's observable connection shape (constants marked "confirm" as DR
+  0018 records), is an *interactive* target: it takes SWDIO at the
+  turnaround rise, advances it on every subsequent rise (the
+  aggressive-but-legal IHI 0031 B4.3.1 corner), releases after the read
+  parity, and in the same pass grades the 50-clock line resets, the
+  0xE79E switch, the idle clocks, every request field (start/stop/park
+  and the even request parity), the turnaround releases and re-drives,
+  host SWDIO stability across rising edges, and the eight trailing idle
+  clocks. The lines come from the silicon-true pad model (`uio_pads.py`,
+  pull-up on SWDIO as ADIv5 requires, SWCLK pulled low, the other six
+  `uio` pins tied low), so a probe that keeps SWDIO driven into a
+  response phase is reported as contention. The golden run decodes both
+  request frames (0xA5, 0xBD), answers OK twice, and the probe's 72
+  `uo_out` report bytes read back ACK OK (wire order 1,0,0), the IDCODE
+  0x4BA00477 and its even parity, then ACK OK, 0x12345678 and its parity — with the
+  per-phase SWCLK widths held to the committed figures (reset 1/3,
+  switch and request 2/2, response high 1) and 218 rising edges. Negative
+  controls: five mutant programs (a 49-clock first reset, a flipped
+  switch bit, a missing turnaround release — contention, an inverted
+  request parity bit — no response, a 3-clock trailing idle), each
+  rejected for its own reason; the ACK branch removed (data slots clocked
+  after a WAIT) and SWDIO driven on the return turnaround cycle, both
+  rejected; and model-configured runs where the second request answers
+  WAIT (wire 0,1,0) and FAULT (0,0,1): the probe reports the ACK, leaves
+  the return turnaround released, re-drives SWDIO low and ends the
+  transfer, no retry. `test_swd_model.py` is the model's
+  simulator-free self-test (`npm run lint`). Driven by `klt
+  functional-verification` (`request-firmware-swd.json`); evidence in
+  `records/firmware-swd/` (RTL only; no gate-level run is claimed).
 - `formal/` — the §2 formal-properties leg (issue #24, distinct from the
   cocotb legs above: no `klt`, no PDK, no simulator — a Yosys+SMTBMC model
   checking harness). `formal/no_data_dependent_latency.sv` is
@@ -735,8 +781,13 @@ Each record is a markdown file, `records/<record-id>.md`, with two parts:
    - `record_id` — must equal the filename stem.
    - `experiment` — the experiment-slug this record belongs to; it must
      equal the name of the experiment directory the record sits in.
-   - `supersedes` — `null`, or the `record_id` of a prior record in the
-     same experiment directory this one corrects/replaces.
+   - `supersedes` — `null`, the `record_id` of a prior record in the
+     same experiment directory this one corrects/replaces, or a non-empty
+     list of such `record_id`s when one record supersedes several
+     interchangeable stale leaves at once (a collapse re-mint, #472). Every
+     named id must exist in the same experiment, differ from the record's
+     own id, sort strictly earlier than it, and appear at most once in the
+     list. Only valid, uniquely named targets receive the freshness exemption.
    - `git_revision` — the full design git revision this record was
      produced against.
    - `provenance` — the klt provenance block:
@@ -771,10 +822,20 @@ Each record is a markdown file, `records/<record-id>.md`, with two parts:
      the run (see the synthesis-baseline record's own "klt provenance"
      bullet for a worked example of that case).
    - **Links** — paths to the driver/testbench script(s), the design under
-     test, and the raw artifacts under `artifacts/<record-id>/`.
+     test, and the raw artifacts under `artifacts/<record-id>/`. Artifact
+     links are checked (#545): an inline Markdown link whose relative
+     destination points into this experiment's `artifacts/` tree must
+     resolve, from the record's own directory, to a tracked file or to a
+     directory containing tracked artifacts. A citation of a log that is
+     absent from the tree — or present only untracked — asserts numbers
+     nothing in the tree substantiates; a shared artifact under a sibling
+     record id's directory and a whole-run-directory link are legitimate
+     and resolve exactly as written.
    - **Timestamp / author** — ISO-8601 UTC timestamp and who (human or
      agent) minted the record.
-   - **Supersedes** — `none`, or the prior `<record-id>` this corrects.
+   - **Supersedes** — `none`, the prior `<record-id>` this corrects, or the
+     comma-separated `<record-id>`s it collapses (matching the metadata
+     `supersedes` list, #472).
 
 ## Stale records: report and re-mint
 
@@ -788,6 +849,35 @@ Old records are never touched. The new prose is copied from the old record
 with Record ID, Result, Timestamp and Supersedes rewritten; review the Claim
 and Run configuration before committing. Records with no request file are
 reported and must be re-minted by hand. Self-test: `test_remint_records.py`.
+
+`--collapse EXPERIMENT` (#472, mutually exclusive with `--rerun`) covers the
+hand-re-minted interchangeable-leaf experiments (`signoff-baseline` today):
+it mints ONE record whose `supersedes` lists every stale live leaf, instead
+of one successor per leaf, so two branches that each re-mint in parallel can
+no longer double the live-leaf count on merge (8 → 16 → 32 in one day was
+the measured failure). It is bookkeeping only — nothing is re-run — so the
+minted record's Result, Run configuration and Design provenance are
+`(fill in)` placeholders that `check_records.py` rejects until the operator
+who re-ran the experiment (`scripts/signoff-report.sh` for `signoff-baseline`)
+fills them in; its heading and artifact links name the new record ID, and the
+predecessor's design provenance is kept under Links as history. Fields are
+split with the linter's own bullet recognition (indented bullets and
+blank-line-separated continuation paragraphs belong to their field), and the
+tool refuses to mint when Claim, Result or another required field is missing
+or appears more than once, or a kept block cites the predecessor outside an
+`artifacts/` link. It
+refuses any other experiment, stale leaves that hash request files (use
+`--rerun`), and leaves whose input paths, claim or result are not
+interchangeable.
+
+Ordering (#558): merge or rebase onto the current `origin/main` **before**
+minting, then mint once. A base merge that moves a hashed input stales every
+leaf minted against the pre-merge base — PR #497 minted 344 per-leaf
+successors before merging main, and the merge itself staled all of them
+(~41k added lines superseded within the PR; only its 3 collapse records
+stayed live). For the `COLLAPSIBLE_EXPERIMENTS` (`signoff-baseline`), that
+one mint is `--collapse EXPERIMENT` — never one successor per stale live
+leaf.
 
 ## Bulk evidence bytes: artifact store, manifest in git (#344)
 
@@ -842,16 +932,38 @@ on:
   contains `..`; for a live record, also an input that is not a git-tracked
   regular file inside the repo. A superseded record's input file may since
   have been deleted, but its entry must still be well-formed (#183);
-- a `supersedes` value that is neither a record-id string nor null;
-- a `supersedes` value naming a record that does not exist in the same
-  experiment directory, naming the record's own ID, or naming an ID that
-  does not sort strictly earlier than the record's own (this rules out
-  supersession cycles); an invalid supersession exempts nothing;
+- a `supersedes` value that is neither a record-id string, a non-empty
+  list of record-id strings, nor null; a list that names a duplicate id;
+  a list entry that is not a string;
+- a `supersedes` entry (scalar or list) naming a record that does not
+  exist in the same experiment directory, naming the record's own ID, or
+  naming an ID that does not sort strictly earlier than the record's own
+  (this rules out supersession cycles); an invalid supersession exempts
+  nothing. Valid siblings in the same list still exempt their targets;
 - a live record whose `provenance.inputs[].content_hash` no longer matches
   the current working tree (a record is "live" unless a valid supersession
   in its own experiment directory names it; the same record ID superseded in
   a different experiment, or in a directory that merely shares the
-  experiment's leaf name, does not count, #157);
+  experiment's leaf name, does not count, #157) — **with one exempt path**,
+  `layout/toolchain.json`: its recorded hash stays in the record as frozen
+  provenance but is not compared against the working tree. The 2026-11-09
+  operator ruling (2AMLogic/2am#7038) retires per-repo klayout-tools pins in
+  favour of one fleet version, and under it a record keeps the toolchain
+  version that produced it instead of being re-minted when the declaration
+  moves; comparing the hash made every edit to that file stale every live
+  record citing it (issue #371). The exemption is per-path, never per-record:
+  every other input of a live record is still compared, and this path is
+  still required to be well-formed and git-tracked. The list is
+  `FRESHNESS_EXEMPT_INPUT_PATHS` in `check_records.py`;
+- an inline Markdown link, anywhere in a record's body (indented bullets
+  included), whose relative destination points into the record's own
+  experiment `artifacts/` tree but does not resolve from the record's
+  directory to a tracked file or a directory containing tracked artifacts
+  (#545) — the PR #455 false pass: a mixed **Links** row citing two tracked
+  sibling files and a `test_icarus.log` that was never committed linted
+  clean. Destinations outside that tree (other paths, external URLs,
+  fragments) and paths appearing only as inline code are not citations and
+  are not audited; live and superseded records are both checked;
 - **append-only violations**: any file under `verification/records/`
   modified, renamed, or deleted relative to the merge base with
   `origin/main`.

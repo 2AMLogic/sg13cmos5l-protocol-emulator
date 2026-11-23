@@ -51,6 +51,21 @@ firmware/
                          channel slots at 200 cycles/bit 8N2, forever
                          (multi-protocol extra credit, issue #445; catalog
                          #443; firmware on the frozen DR 0017 ISA)
+    nec_ir.asm           NEC infrared remote TRANSMITTER on uo_out[7]:
+                         38 kHz-class carrier (1,316 cycles/period, 439
+                         high) gated into a 9-ms-class leader, 32
+                         pulse-distance bits from a one-word-per-bit table
+                         in program memory, final mark, 60 ms idle, forever
+                         (multi-protocol extra credit, issue #448; catalog
+                         #443; firmware on the frozen DR 0017 ISA)
+    swd_probe.asm        SWD debug PROBE (host) on uio[2] (SWCLK) and
+                         uio[3] (SWDIO), push-pull with SWDIO released at
+                         each turnaround: line reset, 0xE79E JTAG-to-SWD
+                         switch, then two DP reads (IDCODE 0xA5, RDBUFF-bank
+                         0xBD) whose ACK/data/parity samples are reported on
+                         uo_out (multi-protocol extra credit, issue #452;
+                         protocol chosen by the dated note in DR 0018 after
+                         DR 0017's ISA freeze)
     onewire_master.asm   1-Wire bus MASTER on uio[3] (DQ, open-drain): reset
                          + presence, Read ROM and Read Scratchpad with the
                          Dallas CRC-8 checked in software, Convert T polled
@@ -860,6 +875,230 @@ Bench: `verification/test_firmware_dmx512.py`
 
 ```bash
 klt functional-verification verification/request-firmware-dmx512.json --format json
+```
+
+### `nec_ir.asm` — NEC infrared remote transmitter (issue #448)
+
+The multi-protocol extra credit's consumer-IR entry (catalog #443):
+firmware on the frozen DR 0017 ISA, no RTL change and no hardware
+peripheral. The 38 kHz carrier is a counted `OUT`/`WAIT` loop on one pin
+(the ISA's own timing determinism is the modulator), and the
+pulse-distance coding is which of two exact space lengths follows each
+mark. One frame every ~128 ms, forever: the leader (9 ms-class mark +
+4.5 ms space), then address, ~address, command and ~command, LSB first
+within each byte. Each of the 32 bits has a 562.5-us-class mark followed by a 562.5-us or a 1,687.5-us
+space. The final mark precedes 60 ms of silence. The carrier line is
+IR_TX = `uo_out[7]` (DR 0010's `nec_ir_tx` role, added by this issue; the
+same pad as WS2812's DIN, one image per run — the choice makes the
+carrier-high image and the bit-7 mask one constant). The receiver-module
+input is IR_RX = `ui_in[4]` (DR 0010's `nec_ir_rx` role): board wiring
+for a 38 kHz demodulating receiver module, read by no committed image
+yet (the RX decode firmware is a follow-up; see the issue).
+
+**Timing, all measured at the pin** by
+`verification/test_firmware_nec_ir.py` against the independent model
+`verification/reference_models/nec_ir.py` (demodulator included). As with
+its siblings the cycle counts are the claim; the microsecond/kilohertz
+figures are arithmetic at target-spec row 4's **unconfirmed** 50 MHz
+clock (20 ns/cycle):
+
+| Interval | Cycles | at unconfirmed 50 MHz | vs the protocol |
+|---|---|---|---|
+| carrier period (rise to rise, every one) | **1,316** | 26.32 us = 37,994 Hz | 38 kHz nominal, −160 ppm |
+| carrier high | **439** | 8.78 us | 1/3 duty (33.35%), the customary NEC choice |
+| in-burst carrier low | **877** | 17.54 us | completes the 1,316-cycle period |
+| leader mark (342 periods) | **449,195** | 8,983.90 us | 9 ms − 0.18% |
+| leader space | **225,000** | 4,500.00 us | 4.5 ms, exact |
+| bit / final mark (22 periods) | **28,075** | 561.50 us | 562.5 us − 0.18% |
+| space of a 0 bit | **28,125** | 562.50 us | 562.5 us, exact |
+| space of a 1 bit | **84,375** | 1,687.50 us | 1,687.5 us, exact |
+| inter-frame idle | **3,000,000** | 60,000.00 us | >= 4.05 ms (the model's frame-separation floor); frame period 110–146 ms by data |
+| one frame (always: a byte and its complement hold 16 ones) | **3,400,670** | 68.01 ms | leader + 16x(28,075+28,125) + 16x(28,075+84,375) + final mark |
+
+**Where the bits come from.** The frame is a table after the code, ONE
+WORD PER BIT (`LDI R0, 0x80` = 1, `LDI R0, 0x00` = 0, `HALT` = end
+marker), read with DR 0012's `PM_DATA_*`: the high byte separates bit
+word from marker, the low byte IS the bit, and `PM_ADDR`'s auto-increment
+is the frame's bit counter. A whole byte cannot survive a carrier burst
+(the burst needs all four registers), so the isolation happens at
+assembly time in the table — which also means a host can load any
+32-bit frame by writing table words, and the bench does (random frames,
+and the mutation control below).
+
+**The leader is two 171-period halves** because the burst counter is
+8-bit and 342 does not fit; the junction completes its carrier low
+(`SUB`+`BNZ`+4x`WAIT`+`JMP`+`LDI`+the rise `OUT`'s own cycle = 877), so
+every one of the 342 periods measures exactly 1,316 cycles — no dropout
+for a demodulator to see.
+
+**The two documented lint warnings.** The marker test (`BNZ
+frame_end`) and the bit test (`BZ bit0`) branch on table bytes — the
+`RCTL PM_DATA_*` reads taint their destination. The marker branch picks
+"one more code word or end of frame" and both targets sit at the same
+10-cycle offset to the next rise; the bit branch picks the bit's OWN
+space length, which is the pulse-distance encoding itself. Each path is
+internally cycle-exact; the difference between them is the protocol. The
+bench asserts the warning count is exactly two.
+
+**What the bench grades.** The model's stated windows (±10% on every
+mark and space, ±5% on the carrier — no NEC transmitter tolerance is
+published) AND the exact cycle counts above, measured edge to edge. The
+mutation control (every carrier-high `WAIT 181` -> `WAIT 175`) drifts
+the carrier 0.5% and the marks 1% — inside every model window, so the
+model still passes and only the exact-cycle assertion catches it: the
+cycle guard is the load-bearing check. A 1.15x-stretched copy of the
+DUT's own capture fails the model's windows, proving the capture-and-
+decode path can fail. Advancing one falling edge in the captured leader by
+100 cycles preserves every period and envelope width. The bench rejects
+the resulting 339-cycle high and measures its paired low as 977 cycles.
+
+**Wiring a fixture.** IR_TX = `uo_out[7]` drives an IR LED through a
+transistor; IR_RX = `ui_in[4]` comes from a 38 kHz demodulating receiver
+module (output idle high, active low — e.g. a TSOP34338-class part):
+
+| Part | Pin | Connect to |
+|---|---|---|
+| NPN transistor (2N3904-class) | base | `uo_out[7]` through 1 kOhm |
+| | emitter | GND |
+| | collector | TSAL6200 cathode through 100 Ω |
+| Vishay TSAL6200 IR LED | anode | 3.3 V |
+| receiver module | Vout | `ui_in[4]` |
+| | Vcc | 3.3 V, 100 nF close to the pin |
+| | GND | GND |
+
+The LED branch targets about 20 mA during each carrier high. Assuming a
+1.2 V LED forward drop and 0.2 V across the saturated transistor, the
+100 Ω resistor gives (3.3 − 1.2 − 0.2) V / 100 Ω = 19 mA.
+[Vishay TSAL6200 datasheet](https://www.vishay.com/docs/81010/tsal6200.pdf)
+
+The transmitter is push-pull into the transistor's base; the module's
+open-collector-style output idles high and pulls low on a burst, which
+is what a receive firmware would sample. Receipt of real hardware,
+bring-up and the RX decode firmware are out of scope here: the claim
+this program makes is the cycle-exact waveform at the pad, verified at
+RTL.
+
+The image is **164 words** of the 256-word store (assembler:
+`python3 firmware/tools/asm.py firmware/asm/nec_ir.asm`; freshness:
+`python3 firmware/tools/check_firmware.py`). Bench:
+`verification/test_firmware_nec_ir.py`
+(`verification/request-firmware-nec-ir.json`), registered in
+`scripts/rtl-bench-inventory.txt`; model self-test
+`verification/test_nec_ir_model.py`.
+
+```bash
+klt functional-verification verification/request-firmware-nec-ir.json --format json
+```
+
+### `swd_probe.asm` — SWD debug probe (issue #452)
+
+The multi-protocol extra credit's debug-probe role: firmware on the frozen
+DR 0017 ISA, no RTL change and no hardware peripheral, speaking Arm's
+Serial Wire Debug as the **host**. The chip generates SWCLK and reads a
+target's SWDIO responses in the turnaround cycles — the first firmware
+here that samples a line the other side clocks back at it. The protocol
+choice and the counted cost model are the dated note of 2026-11-19 in
+DR 0018 (fourth revision; the ACK branch below is a later revision of the
+image): 227 stored words of the 256-word store, 218 SWCLK rising edges,
+1,179 model edges. Pins: SWCLK `uio[2]`, SWDIO
+`uio[3]` (DR 0010's `swd` phase, added by this issue), both push-pull
+while driven (`UIO_DIR` 0x0C), SWDIO released at each turnaround cycle
+(its `UIO_DIR` bit cleared) for the target-driven response phases, with a
+board pull-up on SWDIO as ADIv5 requires.
+
+The schedule: line reset (50 SWCLK cycles, SWDIO high), the 16-bit
+JTAG-to-SWD switch 0xE79E LSB first, a second line reset, two idle clocks
+(SWDIO low), then two DP read transactions — request 0xA5 (the IDCODE
+bank) and request 0xBD (the RDBUFF bank), each an 8-bit even-parity
+request, one clocked turnaround cycle, 36 response samples (3-bit ACK,
+32 data bits LSB first, even parity) taken by `IN` in the SWCLK-low phase
+*before* the rise the target may advance on (IHI 0031 B4.3.1), a second
+turnaround with SWDIO still released, then SWDIO re-driven — and, after
+the last transfer, eight idle clocks with SWDIO low before SWCLK stops.
+Every sample is reported on `uo_out` as the masked SWDIO byte (0x08 or
+0x00), in transaction order.
+
+**ACK bit order.** The ADIv5 ACK numeric codes are OK = 0b001,
+WAIT = 0b010, FAULT = 0b100, and the target sends the code LSB first
+(IHI 0031H B4.1.5), so in time order on the wire OK is **1,0,0**, WAIT
+**0,1,0** and FAULT **0,0,1**. The report bytes carry that wire order.
+The probe branches on the *first* ACK bit (the one handshake branch, one
+per transaction; the assembler's data-dependent-latency lint reports
+exactly these two `BZ`s and nothing else): a 1 continues to the data
+phase; a 0 (WAIT or FAULT) clocks the two remaining ACK slots, the return
+turnaround with SWDIO released, re-drives SWDIO low, and ends the transfer
+with the eight trailing idle clocks. With CTRL/STAT.ORUNDETECT = 0 (the
+power-up setting) a WAIT or FAULT has no data phase, so no data slots are
+clocked. There is no retry (agreed scope); an error on the first request
+ends the run before the second. DPIDR must answer OK; the WAIT/FAULT
+cases are exercised on the second request (RDBUFF), which can fail.
+What does not fit the unrolled schedule is the issue's full goal,
+one word of AP memory (probe-driven writes); a table-driven shape is the
+recorded follow-up.
+
+**Timing, in core cycles** (every instruction is 1 cycle; one `OUT` per
+SWCLK transition). Measured at the pads by
+`verification/test_firmware_swd.py` against the independent target model
+`verification/reference_models/swd.py`. As with the other programs, the
+cycle counts are the claim; every microsecond figure below is arithmetic
+at target-spec row 4's **unconfirmed** 50 MHz core clock (20 ns/cycle;
+STA against this core is blocked —
+`verification/records/sta-corner-sweep/`).
+
+| Interval | Cycles | at unconfirmed 50 MHz | Graded against |
+|---|---|---|---|
+| line reset, per SWCLK cycle (SWDIO high) | high **1**, low **3** | 20 / 60 ns | >= 50 cycles with SWDIO high (ADIv5 connection; pyOCD's shape sends it) |
+| switch / request, per bit | high **2**, low **2** | 40 / 40 ns | SWDIO changes only while SWCLK low, stable across every rising edge (1 cycle of setup) |
+| response sample loop, per slot | high **1**, low **4..7** | 20 / 80..140 ns | sample taken in the SWCLK-low phase before the rise (IHI 0031 B4.3.1) |
+| request 0xA5 / 0xBD, 8 bits | 32 | 640 ns | even parity over APnDP/RnW/A2/A3; start 1, stop 0, park 1 |
+| one read transaction, back to back (request start rise to the next request's start rise: 8 request bits + turnaround + 36 slots + return turnaround) | **328 core cycles** (46 SWCLK rises) | **6.56 us** | ACK OK (1,0,0), 32 data bits LSB first, even parity |
+| whole program | 218 SWCLK cycles, 1,178 instructions | 23.56 us clocked | 8 trailing idle clocks with SWDIO low before SWCLK stops (ADIv5 B4.1.4) |
+
+The transaction starts on the first SWCLK rise of the request and ends on the first rise of the next request. In the ISA model (`verification.reference_models.isa.run`), holding SWDIO high selects the successful-read path at the first ACK bit. The 119th and 165th SWCLK rises fall on core edges 488 and 816. The RTL bench checks the same 328-cycle interval with the target driving the full OK code (1,0,0).
+
+ADIv5 sets no numeric SWCLK width minimum for a host-generated clock, so
+no width limit is invented; the model records the widths above and the
+bench holds the program to them. The ADIv5 constants themselves carry
+DR 0015's "confirm" mark (no copy of IHI 0031 is in this repository) —
+the constants that matter here (50-clock reset, 0xE79E, turnarounds,
+even parities, 8 trailing idles) are cross-checked against pyOCD's and
+CMSIS-DAP's observable behaviour, as DR 0018 records.
+
+**Register shape.** R0 holds the SWCLK-low/SWDIO-high image 0x08, which
+doubles as the SWDIO mask for the sample loop's `AND`; R1 holds the
+SWCLK-high/SWDIO-high image 0x0C, which doubles as the push-pull
+`UIO_DIR` mask; R2 counts; R3 is the per-bit image / decrement scratch.
+Two preloaded images make one `OUT` per SWCLK transition — the stored-word
+arithmetic DR 0018's first draft got wrong and its fourth revision
+corrected. No conditional branch reads pin data, so the assembler's
+data-dependent-latency lint is silent (0 warnings).
+
+Assemble: `python3 firmware/tools/asm.py firmware/asm/swd_probe.asm`
+(**227 words**, 227 fall-through cycles, 2 warnings: the two ACK-branch `BZ`s); freshness:
+`python3 firmware/tools/check_firmware.py`.
+
+**Wiring a target (direct, same rail).** The chip's I/O is 3.3 V on the
+Tiny Tapeout demo board (`docs/info.md`, "External hardware"), and common
+SWD targets are 3.3 V, so no level shifter is needed — connect directly:
+
+| Signal | Connect to |
+|---|---|
+| SWCLK `uio[2]` | target SWCLK (ARM 20-pin / SEGGER 20-pin SWD connector pin **9**, or the target's SWD header; pin 4 is GND) |
+| SWDIO `uio[3]` | target SWDIO (20-pin pin **7**), with a pull-up (about 10 kohm) to 3.3 V — ADIv5 requires one; the probe tri-states SWDIO for the turnaround and response phases |
+| GND | target GND (20-pin pin **4**; one common is enough at these speeds; pin 1 is VTref, not ground) |
+
+A 5 V target would need level shifting (out of scope; `docs/info.md`
+"Levels and other buses"). Receipt on real silicon is out of scope here:
+the claim this program makes is the cycle-exact waveform at the pads
+against the scripted target, verified at RTL (no gate-level run).
+
+Bench: `verification/test_firmware_swd.py`
+(`verification/request-firmware-swd.json`), registered in
+`scripts/rtl-bench-inventory.txt`; model self-test
+`verification/test_swd_model.py`.
+
+```bash
+klt functional-verification verification/request-firmware-swd.json --format json
 ```
 
 ## Source syntax

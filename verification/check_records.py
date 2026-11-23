@@ -27,12 +27,14 @@ Checks, per record `verification/records/<experiment>/records/<record-id>.md`:
    `verification/records/`, never by a directory's leaf name. The experiment
    directory name must match `[a-z0-9][a-z0-9._-]*`, so a Unicode look-alike
    cannot pose as a real experiment (#183 review).
-3. **Supersedes integrity** -- a non-null `supersedes` value must name a
-   record that exists in the same experiment directory, must not be the
-   record's own ID, and must sort strictly earlier than the record's own ID
-   (IDs lead with a timestamp). The ordering rule makes supersession cycles
-   (A supersedes B, B supersedes A) impossible. A supersession that breaks
-   any of these rules is an error and exempts nothing (#157).
+3. **Supersedes integrity** -- a non-null `supersedes` value is either a
+   record-id string or a non-empty list of them (#472). Every named record
+   must exist in the same experiment directory, must not be the record's
+   own ID, must sort strictly earlier than the record's own ID (IDs lead
+   with a timestamp), and must be named at most once. The ordering rule
+   makes supersession cycles (A supersedes B, B supersedes A) impossible.
+   An entry that breaks any of these rules is an error and exempts nothing
+   (#157); valid sibling entries in the same list still exempt theirs.
 4. **Provenance hash freshness** -- for every record that is *not*
    superseded by another record (a "live" record), every
    `provenance.inputs[].content_hash` is recomputed from the working tree
@@ -43,6 +45,11 @@ Checks, per record `verification/records/<experiment>/records/<record-id>.md`:
    experiment directory: record IDs are not unique across experiments (a
    batch mint stamps one ID on many), so the exemption is keyed on
    `(experiment, record_id)`, never on the ID alone (#157).
+   One input path is exempt from the *comparison* (but not from the
+   well-formedness and tracked-file checks): `layout/toolchain.json`, per the
+   2026-11-09 fleet-version ruling (2AMLogic/2am#7038) -- see
+   `FRESHNESS_EXEMPT_INPUT_PATHS` for the reason. Every other input of a live
+   record is still compared.
 5. **Append-only** -- every path under `verification/records/` must be
    either untracked-before (a pure addition) or unchanged, relative to the
    merge-base with `origin/main` (or `--base-ref`). Any modification,
@@ -62,6 +69,20 @@ Checks, per record `verification/records/<experiment>/records/<record-id>.md`:
    path would otherwise skip freshness forever (#183 review). Superseded
    records are frozen history: their inputs must still be well-formed, but
    the file may since have been deleted.
+8. **Artifact links resolve** (#545) -- every inline Markdown link in a
+   record body whose relative destination, resolved from the record's own
+   directory, points into the record's experiment `artifacts/` tree must
+   name a git-tracked regular file, or a directory that contains tracked
+   artifacts (a whole run directory, or another record id's directory in a
+   shared run -- links are resolved exactly as written). A record that
+   cites a measurement log absent from the tree asserts numbers nothing in
+   the tree substantiates, and an untracked local file does not satisfy the
+   citation. Destinations outside the experiment's `artifacts/` tree --
+   paths elsewhere in the repo, external URLs, fragments -- and paths that
+   appear only as inline code are out of scope: this check substantiates
+   artifact citations, it does not audit general Markdown. It applies to
+   live and superseded records alike; a superseded record is frozen
+   history, but the artifact it cites must still be in the tree.
 
 Usage:
     python3 verification/check_records.py
@@ -75,7 +96,9 @@ Exit codes: 0 pass, 1 a check failed.
 from __future__ import annotations
 
 import argparse
+from collections import Counter
 import json
+import posixpath
 import re
 import stat
 import subprocess
@@ -86,9 +109,33 @@ from _repo_utils import REPO_ROOT, run_git, sha256_of
 
 RECORDS_ROOT = REPO_ROOT / "verification" / "records"
 
+# The same root as a repo-relative POSIX path, for resolving link
+# destinations against the git inventory (#545).
+RECORDS_ROOT_POSIX = RECORDS_ROOT.relative_to(REPO_ROOT).as_posix()
+
 RECORD_ID_RE = re.compile(r"^\d{8}-\d{6}-[0-9a-f]{7,40}$")
 EXPERIMENT_RE = re.compile(r"^[a-z0-9][a-z0-9._-]*$")
 CONTENT_HASH_RE = re.compile(r"^sha256:[0-9a-f]{64}$")
+
+# Input paths whose recorded `content_hash` is kept as frozen provenance but is
+# NOT compared against the working tree (check 4). One entry, with its reason:
+#
+#   `layout/toolchain.json` -- the operator ruling of 2026-11-09
+#   (2AMLogic/2am#7038) retires per-repo klayout-tools pins: chip repos track
+#   one fleet version (`PIN_KLAYOUT_TOOLS_VERSION` in 2AMLogic/2am
+#   `infra/aws/batch-image-pins.env`), and under rule 2 an evidence record
+#   *keeps the version that produced it* rather than being re-minted whenever
+#   the toolchain declaration moves. Comparing this file's hash made the
+#   opposite true: any edit to it staled every live record that cites it (nine
+#   of them as of 2026-11-14), forcing a repo-wide re-mint on every bump --
+#   the per-chip loop the ruling exists to delete, and what turned PR #390's
+#   CI red (issue #371).
+#
+# The exemption is deliberately per-path and not a per-record opt-out: every
+# OTHER input of every live record is still compared, so a stale RTL, netlist
+# or GDS hash still fails. Records already citing this file keep their
+# (now inert) entry unedited; new records simply need not list it.
+FRESHNESS_EXEMPT_INPUT_PATHS = frozenset({"layout/toolchain.json"})
 
 REQUIRED_META_KEYS = (
     "record_id",
@@ -150,15 +197,56 @@ def layout_error(path: Path) -> str | None:
     return None
 
 
+def supersedes_ids(supersedes) -> list[str]:
+    """Extract string targets, including repeats, from either schema form."""
+    if isinstance(supersedes, list):
+        return [entry for entry in supersedes if isinstance(entry, str)]
+    if isinstance(supersedes, str) and supersedes != "none":
+        return [supersedes]
+    return []
+
+
+def supersedes_type_errors(path: Path, supersedes) -> list[str]:
+    if supersedes is None or isinstance(supersedes, str):
+        return []
+    if not isinstance(supersedes, list):
+        return [f"{path}: record-meta `supersedes` must be a record-id string, a "
+                f"non-empty list of record-id strings, or null, not {type(supersedes).__name__}"]
+    if not supersedes:
+        return [f"{path}: record-meta `supersedes` must not be an empty list; "
+                f"supersede nothing with null"]
+
+    errors = []
+    kinds = sorted({type(e).__name__ for e in supersedes if not isinstance(e, str)})
+    if kinds:
+        errors.append(f"{path}: record-meta `supersedes` list entries must be "
+                      f"record-id strings, not {', '.join(kinds)}")
+    duplicates = sorted(e for e, count in Counter(supersedes_ids(supersedes)).items() if count > 1)
+    if duplicates:
+        errors.append(f"{path}: record-meta `supersedes` names duplicate id(s) "
+                      f"{', '.join(duplicates)}; each superseded record is listed at most once")
+    return errors
+
+
+def effective_supersedes(path: Path, supersedes, known_ids: set[str]) -> set[str]:
+    """Valid, uniquely named earlier targets within this experiment."""
+    return {
+        target for target, count in Counter(supersedes_ids(supersedes)).items()
+        if count == 1 and supersession_error(path, target, known_ids) is None
+    }
+
+
 def supersession_error(path: Path, supersedes, known_ids: set) -> str | None:
-    """Why `path`'s `supersedes` value is invalid, or None if it is a
-    valid supersession that may exempt its target from freshness."""
+    """Why one target ID named by `path`'s `supersedes` value is invalid, or
+    None if it is a valid supersession that may exempt that target from
+    freshness. Callers with a whole `supersedes` value (which may be a list,
+    #472) iterate `supersedes_ids` and check each entry; the per-entry rules
+    are the same for the string and list forms."""
     stem = path.stem
-    experiment = experiment_key(path)
     if supersedes not in known_ids:
         return (
             f"{path}: supersedes `{supersedes}`, which has no record "
-            f"in `{experiment}/records/`"
+            f"in `{path.parent.parent.name}/records/`"
         )
     if supersedes == stem:
         return f"{path}: supersedes itself (`{supersedes}`); a record cannot supersede its own ID"
@@ -179,17 +267,31 @@ def _tracked_record_files() -> list[Path]:
     return sorted(REPO_ROOT / name for name in out.split("\0") if name)
 
 
-def tracked_symlink_errors() -> list[str]:
-    """Every tracked entry under `verification/records/` with git mode
-    `120000` (a symlink). git versions only the link text, so the target can
-    be edited after merge with no append-only violation (#183 review)."""
+def _tracked_records_entries() -> list[tuple[str, str]]:
+    """One `git ls-files -s -z` scan of everything tracked under
+    `verification/records/`, as `(mode, path)` pairs. Shared by the
+    symlink/mode check and the artifact-link inventory (#545) so the full
+    corpus costs one git process, not one per record or link."""
     out = run_git("ls-files", "-s", "-z", "--", "verification/records/")
-    errors = []
+    entries = []
     for entry in out.split("\0"):
         if not entry:
             continue
         info, _, name = entry.partition("\t")
-        mode = info.split(" ")[0]
+        entries.append((info.split(" ")[0], name))
+    return entries
+
+
+def tracked_symlink_errors(entries: list[tuple[str, str]] | None = None) -> list[str]:
+    """Every tracked entry under `verification/records/` with git mode
+    `120000` (a symlink). git versions only the link text, so the target can
+    be edited after merge with no append-only violation (#183 review).
+    `entries`, when given, is a scan from `_tracked_records_entries()` so
+    callers that also need the artifact-link inventory pay for one scan."""
+    if entries is None:
+        entries = _tracked_records_entries()
+    errors = []
+    for mode, name in entries:
         if mode == "120000":
             errors.append(
                 f"{REPO_ROOT / name}: is a symlink; nothing under "
@@ -228,6 +330,78 @@ def _is_tracked(rel_path: str) -> bool:
         return bool(run_git("ls-files", "-z", "--error-unmatch", "--", rel_path))
     except subprocess.CalledProcessError:
         return False
+
+
+# Inline code spans are data, not citations: a path in backticks is prose
+# about a path, so spans are blanked before links are scanned (#545).
+_CODE_SPAN_RE = re.compile(r"`[^`\n]*`")
+# `[text](dest)` / `![alt](dest)`, with an optional whitespace and a
+# double-quoted title before the closing paren. Deliberately the simple
+# destination grammar (no spaces or angle brackets): the corpus writes no
+# other form, and accepting only what the corpus writes keeps the check
+# exact on historical records.
+_INLINE_LINK_DEST_RE = re.compile(r"!?\[[^\]]*\]\(\s*([^)\s]+)(?:\s+\"[^\"]*\")?\)")
+_SCHEME_RE = re.compile(r"^[A-Za-z][A-Za-z0-9+.-]*:")
+
+
+def _tracked_artifact_targets(
+    entries: list[tuple[str, str]],
+) -> tuple[frozenset[str], frozenset[str]]:
+    """`(files, dirs)` -- every tracked regular file under
+    `verification/records/`, plus every directory prefix that contains one,
+    as repo-relative POSIX paths. A link resolves only against these: an
+    untracked or missing target cannot substantiate a record's claim
+    (#545)."""
+    files = frozenset(name for mode, name in entries if mode == "100644")
+    dirs = set()
+    for name in files:
+        current = posixpath.dirname(name)
+        while current:
+            dirs.add(current)
+            current = posixpath.dirname(current)
+    return files, frozenset(dirs)
+
+
+def artifact_link_errors(
+    path: Path,
+    text: str,
+    tracked_files: frozenset[str],
+    tracked_dirs: frozenset[str],
+) -> list[str]:
+    """Every inline Markdown link in `text` whose relative destination
+    points into THIS record's experiment `artifacts/` tree must resolve,
+    from the record's own directory, to a tracked regular file or to a
+    directory containing tracked artifacts (#545). Links resolve exactly as
+    written, so a shared artifact under a sibling record id's directory and
+    a whole-run-directory link are judged as they read. Everything else --
+    external URLs, fragment-only links, destinations outside the
+    experiment's `artifacts/` tree, and anything inside an inline code span
+    -- is out of scope: this check substantiates artifact citations, it
+    does not audit general Markdown."""
+    try:
+        record_dir = path.parent.relative_to(REPO_ROOT).as_posix()
+    except ValueError:
+        return []
+    artifacts_root = f"{RECORDS_ROOT_POSIX}/{experiment_key(path)}/artifacts"
+    prefix = artifacts_root + "/"
+    errors = []
+    for match in _INLINE_LINK_DEST_RE.finditer(_CODE_SPAN_RE.sub(" ", text)):
+        dest = match.group(1)
+        bare = dest.split("#", 1)[0].strip()
+        if not bare or _SCHEME_RE.match(bare) or bare.startswith(("//", "/", "#")):
+            continue  # fragment-only or non-repository destination
+        resolved = posixpath.normpath(posixpath.join(record_dir, bare))
+        if resolved != artifacts_root and not resolved.startswith(prefix):
+            continue  # outside this experiment's artifacts/ tree: not a citation
+        if resolved in tracked_files or resolved in tracked_dirs:
+            continue
+        errors.append(
+            f"{path}: artifact link `({dest})` does not resolve to a tracked "
+            f"file or artifact directory from this record (`{resolved}` is not "
+            f"in the tree); a record's artifact citation must be committed "
+            f"evidence -- an untracked local file does not satisfy it"
+        )
+    return errors
 
 
 def input_error(path: Path, item) -> str | None:
@@ -320,7 +494,12 @@ def _extract_prose_fields(text: str) -> dict:
     return fields
 
 
-def lint_record(path: Path, all_record_ids_by_experiment: dict) -> list[str]:
+def lint_record(
+    path: Path,
+    all_record_ids_by_experiment: dict,
+    tracked_files: frozenset[str] = frozenset(),
+    tracked_dirs: frozenset[str] = frozenset(),
+) -> list[str]:
     errors = []
     link = symlink_error(path)
     if link:
@@ -332,6 +511,10 @@ def lint_record(path: Path, all_record_ids_by_experiment: dict) -> list[str]:
         errors.append(layout)
         return errors  # experiment identity is meaningless off-layout
     text = path.read_text(encoding="utf-8")
+
+    # Check 8 runs before any early return on metadata: a record with a
+    # broken artifact citation is wrong even when its metadata is too (#545).
+    errors.extend(artifact_link_errors(path, text, tracked_files, tracked_dirs))
 
     experiment = experiment_key(path)  # .../<experiment>/records/<id>.md
 
@@ -386,14 +569,10 @@ def lint_record(path: Path, all_record_ids_by_experiment: dict) -> list[str]:
             errors.append(f"{path}: required field `{field}` is empty/placeholder")
 
     supersedes = meta.get("supersedes")
-    if supersedes is not None and not isinstance(supersedes, str):
-        errors.append(
-            f"{path}: record-meta `supersedes` must be a record-id string or null, "
-            f"not {type(supersedes).__name__}"
-        )
-    elif supersedes not in (None, "none"):
-        known_ids = all_record_ids_by_experiment.get(experiment, set())
-        problem = supersession_error(path, supersedes, known_ids)
+    errors.extend(supersedes_type_errors(path, supersedes))
+    known_ids = all_record_ids_by_experiment.get(experiment, set())
+    for target in dict.fromkeys(supersedes_ids(supersedes)):
+        problem = supersession_error(path, target, known_ids)
         if problem:
             errors.append(problem)
 
@@ -429,6 +608,10 @@ def check_hash_freshness(path: Path, superseded: set) -> list[str]:
         problem = live_input_error(path, rel_path)
         if problem:
             errors.append(problem)
+            continue
+        if rel_path in FRESHNESS_EXEMPT_INPUT_PATHS:
+            # Recorded for provenance, not asserted -- see
+            # FRESHNESS_EXEMPT_INPUT_PATHS (2AMLogic/2am#7038, issue #371).
             continue
         src = REPO_ROOT / rel_path
         current_hash = sha256_of(src)
@@ -544,8 +727,13 @@ def main() -> int:
             "no tracked records under verification/records/**/records/*.md"
         )
 
+    # One scan feeds both the symlink/mode check and the artifact-link
+    # targets: the whole corpus costs one git process, not one per link
+    # (#545).
+    records_entries = _tracked_records_entries() if RECORDS_ROOT.exists() else []
     if RECORDS_ROOT.exists():
-        all_errors.extend(tracked_symlink_errors())
+        all_errors.extend(tracked_symlink_errors(records_entries))
+    tracked_files, tracked_dirs = _tracked_artifact_targets(records_entries)
 
     print(f"== linting {len(record_files)} record(s) ==")
     for error in all_errors:
@@ -575,19 +763,18 @@ def main() -> int:
 
     # Only a VALID supersession exempts its target: an on-layout record that
     # names an existing, strictly earlier record in its own experiment. A
-    # self-supersession, a cycle, or a nested record exempts nothing (#157).
+    # self-supersession, a cycle, or a nested record exempts nothing (#157);
+    # in the list form each entry is judged on its own, so an invalid entry
+    # cannot exempt its target or cancel a valid sibling (#472).
     superseded = set()
     for path, meta in metas_by_path.items():
-        target = meta.get("supersedes")
-        if not isinstance(target, str) or target == "none" or layout_error(path):
-            continue
         experiment = experiment_key(path)
         known_ids = all_ids_by_experiment.get(experiment, set())
-        if supersession_error(path, target, known_ids) is None:
+        for target in effective_supersedes(path, meta.get("supersedes"), known_ids):
             superseded.add((experiment, target))
 
     for path in record_files:
-        errors = lint_record(path, all_ids_by_experiment)
+        errors = lint_record(path, all_ids_by_experiment, tracked_files, tracked_dirs)
         errors += check_hash_freshness(path, superseded)
         if errors:
             print(f"FAIL: {path.relative_to(REPO_ROOT)}")
