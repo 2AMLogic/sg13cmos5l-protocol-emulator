@@ -612,7 +612,7 @@
         "role": "testbench",
         "path": "verification/test_primitives.py",
         "passed": true,
-        "content_hash": "sha256:f3b5ea153670719df37d073341cb33d0ab5cad7755ae3c258d9e03d09cef86fd"
+        "content_hash": "sha256:2c813967b3b2098afefd55f393b85bf32fcf4d5229402a24a3bbed6c4d5f0833"
       },
       {
         "check": "present",
