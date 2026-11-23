@@ -1,0 +1,17 @@
+NOT THE ORIGINAL LOG -- pointer only.
+
+Record 20261121-083338-c11d39d cites this path as its "pad measurements" log.
+The log that run produced was never committed and is not recoverable. This
+file exists only so the record's artifact link resolves (the artifact-link
+record linter, #545, requires every cited artifact to be in the tree); it
+contains no measurements and substantiates nothing.
+
+The evidence for the figures that record quotes is the superseding record
+20261123-032854-a42f198, a fresh run of the same request on byte-identical
+inputs, with its own committed log:
+
+  verification/records/firmware-dali/artifacts/20261123-032854-a42f198/test_icarus.log
+
+Do not read that log as this run's log: its sha256 differs from the
+test_log sha256 inside this directory's klt-functional-verification.json,
+because it is a different run (host paths in it were also scrubbed).
