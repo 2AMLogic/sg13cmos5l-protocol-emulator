@@ -68,12 +68,48 @@ Protocol implemented, and what is graded
   DR 0018's table by the bench.
 
 Time is nanoseconds throughout; `on_pad` times need only be monotonic.
+
+Memory-access-port mode (issue #500)
+------------------------------------
+Constructed with `ap=MemAp(...)`, the target answers by *decoding* each
+request instead of replaying a script, and it accepts write requests. What it
+models, from ADIv5 (IHI 0031 chapter B2, "DP registers", and the MEM-AP
+register map of chapter C2) alone -- every register address and field
+below carries the same "confirm" mark as the constants above, since no copy
+of IHI 0031 is in this repository:
+
+* DP reads at A[3:2] = 0b00 (DPIDR, the IDCODE) and 0b11 (RDBUFF); DP writes
+  at 0b10 (SELECT). Any other DP register is `unmodeled-register`.
+* **SELECT has no reset value** (IHI 0031 marks it UNKNOWN after reset), so
+  an AP access before a SELECT write is `ap-not-selected`: a probe cannot
+  skip the write. Only APSEL = 0 and APBANKSEL = 0 name this MEM-AP's TAR /
+  DRW window; DPBANKSEL is ignored (DP register 0x4 is not modeled).
+* The MEM-AP's **word-access starting state**: CSW is *not written* by the
+  probe, so the model starts with CSW.Size = 0b010 (32-bit word) and
+  CSW.AddrInc = 0b00 (no auto-increment) -- the state a DRW access at a
+  word-aligned TAR needs. CSW (AP 0x00) reads back that start value; a real
+  part may reset CSW differently (implementation-defined: the model records
+  the assumption, it does not prove it for silicon).
+* **TAR has no reset value either**: a DRW access before a TAR write is
+  `tar-unset`; a TAR that is not word aligned is `tar-unaligned`.
+* **A DRW read is posted** (IHI 0031 B2.2.7 / C2): the read returns the
+  *previous* read-buffer value and starts the access at TAR; the addressed
+  word is only available from the read buffer, through a DP RDBUFF read (or
+  the next AP read). The read buffer starts at `posted_initial`, deliberately
+  different from every fixture word, so a probe that reports the DRW read as
+  the result is told apart from one that reads RDBUFF.
+* **Write data**: 32 bits LSB first plus even parity, driven by the probe
+  from the cycle after the return turnaround. A wrong parity bit is
+  `write-parity` and the write is discarded (AP / DP state unchanged); a write
+  answered WAIT or FAULT has no data phase and never changes state.
+* `acks={n: ACK_*}` makes the nth well-formed request (1-based) answer WAIT or
+  FAULT, so a rejected write can be exercised.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 #: DR 0018's recorded ADIv5 / pyOCD constants (all "confirm": no IHI 0031 in-repo).
 RESET_MIN_CYCLES = 50          # line reset: >= 50 SWCLK cycles with SWDIO high
@@ -85,6 +121,18 @@ REQUEST_BITS = 8               # start, APnDP, RnW, A2, A3, parity, stop, park
 RESPONSE_BITS = 36             # ACK 3 + read data 32 + parity 1
 #: One core cycle at target-spec row 4's target 50 MHz clock (unconfirmed).
 NS_PER_CYCLE = 20.0
+
+WRITE_BITS = 33                # write data: 32 bits + parity
+
+#: ADIv5 register addresses as (A[3:2]) decoded values (all "confirm").
+DP_DPIDR_READ = 0b00           # DP address 0x0, read: DPIDR
+DP_SELECT_WRITE = 0b10         # DP address 0x8, write: SELECT
+DP_RDBUFF_READ = 0b11          # DP address 0xC, read: RDBUFF
+AP_CSW = 0b00                  # AP address 0x0 (bank 0): CSW
+AP_TAR = 0b01                  # AP address 0x4 (bank 0): TAR
+AP_DRW = 0b11                  # AP address 0xC (bank 0): DRW
+#: CSW word-access starting state: Size = 0b010 (32-bit), AddrInc = 0b00.
+CSW_START = 0x00000002
 
 ACK_OK = "OK"
 ACK_WAIT = "WAIT"
@@ -145,6 +193,27 @@ class Request:
                 f"stop={self.stop} park={self.park}")
 
 
+@dataclass
+class MemAp:
+    """The DP and the single MEM-AP behind the target (see the module
+    docstring for the semantics); holds the state a probe's transactions
+    change and the log the bench grades."""
+
+    idcode: int = 0x4BA00477
+    mem: Dict[int, int] = field(default_factory=dict)
+    #: the AP read buffer after reset: what the first DRW read returns
+    posted_initial: int = 0xA5A5C3C3
+    select: Optional[int] = None
+    tar: Optional[int] = None
+    csw: int = CSW_START
+    rdbuff: int = 0
+    #: ("write"|"read", register name, value) in transaction order
+    log: List[Tuple[str, str, int]] = field(default_factory=list)
+
+    def __post_init__(self):
+        self.rdbuff = self.posted_initial & 0xFFFFFFFF
+
+
 class SwdTarget:
     """The scripted SWD target and, in the same pass, the grader of what the
     probe did to the lines.
@@ -162,7 +231,14 @@ class SwdTarget:
     """
 
     def __init__(self, reads: Optional[List[Tuple[str, int]]] = None,
-                 idcode: int = 0x4BA00477):
+                 idcode: int = 0x4BA00477, ap: Optional[MemAp] = None,
+                 acks: Optional[Dict[int, str]] = None):
+        self.ap = ap
+        self.ack_overrides: Dict[int, str] = dict(acks or {})
+        #: pending write: the request and its collected data bits
+        self._wreq: Optional[Request] = None
+        self._wbits: List[int] = []
+        self.ack_log: List[str] = []
         first = (ACK_OK, idcode & 0xFFFFFFFF)
         self.reads: List[Tuple[str, int]] = list(reads) if reads else [first, (ACK_OK, 0x12345678)]
         self.violations: List[Violation] = []
@@ -207,10 +283,15 @@ class SwdTarget:
         entry = table.setdefault(self._state, [value, value])
         entry[0], entry[1] = min(entry[0], value), max(entry[0], value)
 
-    def _launch_response(self) -> None:
-        ack, value = (self.reads[self._read_no]
-                      if self._read_no < len(self.reads) else (ACK_OK, 0))
+    def _launch_response(self, t: float = 0.0, f: Optional["Request"] = None) -> None:
         self._read_no += 1
+        n = self._read_no
+        if self.ap is not None and f is not None:
+            self._launch_ap_response(t, f, n)
+            return
+        ack, value = (self.reads[n - 1]
+                      if n - 1 < len(self.reads) else (ACK_OK, 0))
+        self.ack_log.append(ack)
         bits = list(ACK_WIRE[ack])
         # WAIT / FAULT end after the ACK (CTRL/STAT.ORUNDETECT = 0, the
         # power-up setting): no data phase, so no data or parity bits follow.
@@ -218,6 +299,94 @@ class SwdTarget:
             bits += [(value >> i) & 1 for i in range(32)] + [read_value_parity(value)]
         self._resp_bits = bits
         self._resp_index = 0
+
+    def _launch_ap_response(self, t: float, f: "Request", n: int) -> None:
+        """Decode the request against the DP / MEM-AP and build the response:
+        an ACK for a write (its data phase follows from the probe), an ACK and
+        the register value for a read."""
+        ap = self.ap
+        ack = self.ack_overrides.get(n, ACK_OK)
+        self.ack_log.append(ack)
+        reg = (f.a3 << 1) | f.a2
+        bits = list(ACK_WIRE[ack])
+        if f.rn_w == 0:
+            if ack == ACK_OK:
+                self._wreq = f
+                self._wbits = []
+            self._resp_bits = bits
+            self._resp_index = 0
+            return
+        value = 0
+        if ack == ACK_OK:
+            value = self._ap_read(t, f, reg)
+            bits += [(value >> i) & 1 for i in range(32)] + [read_value_parity(value)]
+        self._resp_bits = bits
+        self._resp_index = 0
+
+    def _ap_selected(self, t: float, what: str) -> bool:
+        ap = self.ap
+        if ap.select is None:
+            self._v(t, "ap-not-selected",
+                    f"{what} before any SELECT write: SELECT has no reset "
+                    "value, so no AP is selected")
+            return False
+        if (ap.select >> 24) != 0 or ((ap.select >> 4) & 0xF) != 0:
+            self._v(t, "ap-not-selected",
+                    f"{what} with SELECT {ap.select:#010x}: this MEM-AP answers "
+                    "APSEL 0, APBANKSEL 0 only")
+            return False
+        return True
+
+    def _ap_read(self, t: float, f: "Request", reg: int) -> int:
+        ap = self.ap
+        if f.apn_dp == 0:
+            if reg == DP_DPIDR_READ:
+                ap.log.append(("read", "DPIDR", ap.idcode))
+                return ap.idcode
+            if reg == DP_RDBUFF_READ:
+                ap.log.append(("read", "RDBUFF", ap.rdbuff))
+                return ap.rdbuff
+            self._v(t, "unmodeled-register",
+                    f"DP read at A[3:2]={reg:#04b} is not modeled")
+            return 0
+        if reg == AP_DRW:
+            returned = ap.rdbuff
+            if self._ap_selected(t, "an AP DRW read"):
+                if ap.tar is None:
+                    self._v(t, "tar-unset",
+                            "a DRW access before any TAR write: TAR has no reset value")
+                    ap.rdbuff = 0
+                elif ap.tar & 3:
+                    self._v(t, "tar-unaligned",
+                            f"TAR {ap.tar:#010x} is not word aligned (CSW.Size = word)")
+                    ap.rdbuff = 0
+                else:
+                    ap.rdbuff = ap.mem.get(ap.tar, 0) & 0xFFFFFFFF
+            else:
+                ap.rdbuff = 0
+            ap.log.append(("read", "DRW", returned))
+            return returned
+        if reg == AP_CSW:
+            self._ap_selected(t, "an AP CSW read")
+            ap.log.append(("read", "CSW", ap.csw))
+            return ap.csw
+        self._v(t, "unmodeled-register",
+                f"AP read at A[3:2]={reg:#04b} is not modeled")
+        return 0
+
+    def _ap_write(self, t: float, f: "Request", value: int) -> None:
+        ap = self.ap
+        reg = (f.a3 << 1) | f.a2
+        if f.apn_dp == 0 and reg == DP_SELECT_WRITE:
+            ap.select = value
+            ap.log.append(("write", "SELECT", value))
+        elif f.apn_dp == 1 and reg == AP_TAR:
+            if self._ap_selected(t, "an AP TAR write"):
+                ap.tar = value
+                ap.log.append(("write", "TAR", value))
+        else:
+            self._v(t, "unmodeled-register",
+                    f"a write at APnDP={f.apn_dp} A[3:2]={reg:#04b} is not modeled")
 
     # ---------------------------------------------------------- main loop
     def on_pad(self, t: float, swclk: int, swdio: int, host_oe: bool) -> None:
@@ -271,6 +440,8 @@ class SwdTarget:
             self._reset_rise(t, swdio, which="second")
         elif state == "idle":
             self._idle_rise(t, swdio, host_oe)
+        elif state == "write-data":
+            self._wdata_rise(t, swdio, host_oe)
         elif state in ("post-response", "no-response"):
             self._between_rise(t, swdio, host_oe)
 
@@ -371,14 +542,14 @@ class SwdTarget:
                             "reads the pull-up through the response phase")
             self._state = "no-response"
             return
-        if f.rn_w != 1:
+        if f.rn_w != 1 and self.ap is None:
             self._v(t, "write-request",
                     "a write request (RnW 0) was sent; this scripted target "
                     "answers reads only (DR 0018: probe-driven writes do not "
                     "fit the unrolled schedule)")
             self._state = "no-response"
             return
-        self._launch_response()
+        self._launch_response(t, f)
         self._await_takeover = True
         self._state = "await-turnaround"
 
@@ -420,6 +591,8 @@ class SwdTarget:
                         "the probe drove SWDIO on the turnaround cycle after "
                         "the last response bit (it must leave the line "
                         "released for that cycle and re-drive after it)")
+            if self._wreq is not None:
+                self._state = "write-data"
             return
         if self._state == "post-response" and not host_oe:
             if not self._flagged_released:
@@ -435,6 +608,26 @@ class SwdTarget:
         elif host_oe and swdio == 0:
             self._tail_lows += 1
 
+    def _wdata_rise(self, t: float, swdio: int, host_oe: bool) -> None:
+        """One write-data bit: 32 data bits LSB first, then even parity, all
+        driven by the probe."""
+        if not host_oe:
+            self._v(t, "write-data-not-driven",
+                    "a write-data bit rose while the probe was not driving SWDIO")
+        self._wbits.append(swdio)
+        if len(self._wbits) < WRITE_BITS:
+            return
+        f, bits = self._wreq, self._wbits
+        self._wreq, self._wbits = None, []
+        value = sum(b << i for i, b in enumerate(bits[:32]))
+        self._state = "post-response"
+        if bits[32] != read_value_parity(value):
+            self._v(t, "write-parity",
+                    f"write data {value:#010x} carried parity {bits[32]}, "
+                    f"expected {read_value_parity(value)}; the write is discarded")
+            return
+        self._ap_write(t, f, value)
+
     def finish(self, t_end: float) -> None:
         """Grade what only the end of a run shows: the trailing idle."""
         if not self.connected:
@@ -449,6 +642,8 @@ class SwdTarget:
     @property
     def acks(self) -> List[str]:
         """The ACK name the model answered each well-formed request with."""
+        if self.ap is not None:
+            return list(self.ack_log)
         names = []
         for i, f in enumerate(f for f in self.requests if f.ok):
             ack = (self.reads[i] if i < len(self.reads) else (ACK_OK, 0))[0]
@@ -471,5 +666,6 @@ class SwdTarget:
             "swclk_high_cycles": cyc(self.widths),
             "swclk_low_cycles": cyc(self.low_widths),
             "trailing_idle_low": self._tail_lows,
+            "ap_log": list(self.ap.log) if self.ap is not None else None,
             "violations": [str(v) for v in self.violations],
         }

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Simulator-free self-test of `reference_models/swd.py` (issue #452).
+"""Simulator-free self-test of `reference_models/swd.py` (issues #452, #500).
 
 Hand-built probe waveforms with expected results worked out from the ADIv5
 description the model is written from (and DR 0018's recorded constants), not
@@ -9,7 +9,11 @@ and each request field is crossed in turn and must be reported for its own
 reason; the turnaround rules are exercised both ways (a probe that keeps
 SWDIO driven, a probe that re-drives during the clock high); the WAIT and
 FAULT ACKs drive their three bits and release; and the trailing idle rule is
-graded at finish(). Run by `npm run lint`. Stdlib only.
+graded at finish(). The memory-access-port mode (issue #500) is exercised
+the same way: write transactions with their 33-bit data phase, a posted DRW
+read against RDBUFF, SELECT / TAR with no reset value, a write whose parity
+is wrong or whose ACK is a WAIT or FAULT, and a probe that does not drive the
+write data. Run by `npm run lint`. Stdlib only.
 """
 
 import sys
@@ -22,9 +26,11 @@ from reference_models.swd import (  # noqa: E402
     ACK_FAULT,
     ACK_OK,
     ACK_WAIT,
+    CSW_START,
     RESET_MIN_CYCLES,
     SWITCH_CODE,
     TRAILING_IDLE_MIN,
+    MemAp,
     SwdTarget,
     read_value_parity,
     request_parity,
@@ -149,6 +155,28 @@ def read_transaction(host: Host, byte: int, slots=36):
     host.release_and_clock_turnaround()
     host.clock(slots)
     host.retake()
+    return host
+
+
+def write_transaction(host: Host, byte: int, value: int, parity=None,
+                      drive_data=True, ack_only=False):
+    """A whole write transaction from the host side: request, turnaround, the
+    3-bit ACK, the return turnaround and retake, then (unless `ack_only`) the
+    33 write bits the host drives: 32 data bits LSB first and even parity
+    (`parity` overrides it). `drive_data=False` leaves SWDIO released."""
+    read_request(host, byte)
+    host.release_and_clock_turnaround()
+    host.clock(3)
+    host.retake()
+    if ack_only:
+        return host
+    if not drive_data:
+        host.set_dio(oe=False)
+    p = read_value_parity(value) if parity is None else parity
+    for b in bits_of(value, 32) + [p]:
+        host.bit(b)
+    if not drive_data:
+        host.set_dio(oe=True)
     return host
 
 
@@ -455,6 +483,149 @@ class TestTrailingIdle(unittest.TestCase):
         target = self.finish_after(0)
         kinds = {v.kind for v in target.violations}
         self.assertEqual(kinds, {"trailing-idle-short"})
+
+
+#: ADIv5 request bytes (even request parity), worked out by hand from the
+#: frame: start, APnDP, RnW, A2, A3, parity, stop, park -- LSB first.
+REQ_DPIDR = 0xA5      # DP read A=0x0
+REQ_SELECT = 0xB1     # DP write A=0x8 (A3=1)
+REQ_TAR = 0x8B        # AP write A=0x4 (A2=1)
+REQ_DRW = 0x9F        # AP read A=0xC
+REQ_RDBUFF = 0xBD     # DP read A=0xC
+REQ_CTRLSTAT = 0x8D   # DP read A=0x4: not modeled
+MEM = {0x20000000: 0x11111111, 0x20000004: 0xCAFEF00D}
+POSTED = 0xA5A5C3C3
+TAR = 0x20000004
+
+
+def ap_target(**kw):
+    return SwdTarget(ap=MemAp(idcode=IDCODE, mem=MEM, posted_initial=POSTED), **kw)
+
+
+def kinds_of(target):
+    return sorted({v.kind for v in target.violations})
+
+
+class TestMemAp(unittest.TestCase):
+    def connected(self, **kw):
+        target = ap_target(**kw)
+        host = Host(target)
+        connect(host)
+        return target, host
+
+    def finish(self, target, host):
+        host.set_dio(img=0)
+        host.clock(TRAILING_IDLE_MIN)
+        target.finish(host.t)
+
+    def test_request_bytes_match_the_frame_layout(self):
+        # start 1, APnDP, RnW, A2, A3, parity, stop 0, park 1, LSB first
+        def byte(apn, rnw, a2, a3):
+            par = request_parity(apn, rnw, a2, a3)
+            return sum(b << i for i, b in enumerate([1, apn, rnw, a2, a3, par, 0, 1]))
+        self.assertEqual(byte(0, 1, 0, 0), REQ_DPIDR)
+        self.assertEqual(byte(0, 0, 0, 1), REQ_SELECT)
+        self.assertEqual(byte(1, 0, 1, 0), REQ_TAR)
+        self.assertEqual(byte(1, 1, 1, 1), REQ_DRW)
+        self.assertEqual(byte(0, 1, 1, 1), REQ_RDBUFF)
+
+    def test_posted_read_then_rdbuff_returns_the_addressed_word(self):
+        target, host = self.connected()
+        read_transaction(host, REQ_DPIDR)
+        write_transaction(host, REQ_SELECT, 0)
+        write_transaction(host, REQ_TAR, TAR)
+        read_transaction(host, REQ_DRW)
+        read_transaction(host, REQ_RDBUFF)
+        self.finish(target, host)
+        self.assertEqual(target.violations, [])
+        self.assertEqual(target.acks, [ACK_OK] * 5)
+        self.assertEqual(target.ap.log, [
+            ("read", "DPIDR", IDCODE),
+            ("write", "SELECT", 0),
+            ("write", "TAR", TAR),
+            ("read", "DRW", POSTED),          # the stale buffer, NOT the word
+            ("read", "RDBUFF", MEM[TAR]),     # the addressed word
+        ])
+        self.assertNotEqual(POSTED, MEM[TAR])
+        # what the model drove: the writes answer ACK only, the reads add data
+        want = [1, 0, 0] + bits_of(IDCODE, 32) + [read_value_parity(IDCODE)]
+        want += [1, 0, 0] + [1, 0, 0]
+        want += [1, 0, 0] + bits_of(POSTED, 32) + [read_value_parity(POSTED)]
+        want += [1, 0, 0] + bits_of(MEM[TAR], 32) + [read_value_parity(MEM[TAR])]
+        self.assertEqual(host.driven, want)
+        phases = [ph for ph, _ in target.wire]
+        self.assertEqual(phases.count("write-data"), 66)
+        self.assertEqual(target.report()["trailing_idle_low"], TRAILING_IDLE_MIN)
+
+    def test_csw_starts_in_word_access_state(self):
+        # the documented starting state: Size = word (0b010), AddrInc = off
+        self.assertEqual(CSW_START & 0x7, 0b010)
+        self.assertEqual((CSW_START >> 4) & 0x3, 0b00)
+        self.assertEqual(MemAp().csw, CSW_START)
+
+    def test_wrong_write_parity_discards_the_write(self):
+        target, host = self.connected()
+        read_transaction(host, REQ_DPIDR)
+        write_transaction(host, REQ_SELECT, 0, parity=1)   # right parity is 0
+        self.finish(target, host)
+        self.assertEqual(kinds_of(target), ["write-parity"])
+        self.assertIsNone(target.ap.select)
+        self.assertNotIn(("write", "SELECT", 0), target.ap.log)
+
+    def test_tar_write_before_select_is_refused(self):
+        target, host = self.connected()
+        write_transaction(host, REQ_TAR, TAR)
+        self.finish(target, host)
+        self.assertEqual(kinds_of(target), ["ap-not-selected"])
+        self.assertIsNone(target.ap.tar)
+
+    def test_drw_before_tar_is_refused(self):
+        target, host = self.connected()
+        write_transaction(host, REQ_SELECT, 0)
+        read_transaction(host, REQ_DRW)
+        self.finish(target, host)
+        self.assertEqual(kinds_of(target), ["tar-unset"])
+
+    def test_unaligned_tar_is_refused(self):
+        target, host = self.connected()
+        write_transaction(host, REQ_SELECT, 0)
+        write_transaction(host, REQ_TAR, TAR + 2)
+        read_transaction(host, REQ_DRW)
+        read_transaction(host, REQ_RDBUFF)
+        self.finish(target, host)
+        self.assertIn("tar-unaligned", kinds_of(target))
+
+    def test_other_ap_in_select_is_not_this_ap(self):
+        target, host = self.connected()
+        write_transaction(host, REQ_SELECT, 0x01000000)    # APSEL 1
+        write_transaction(host, REQ_TAR, TAR)
+        self.finish(target, host)
+        self.assertEqual(kinds_of(target), ["ap-not-selected"])
+
+    def test_rejected_write_changes_nothing_and_has_no_data_phase(self):
+        for ack in (ACK_WAIT, ACK_FAULT):
+            target, host = self.connected(acks={2: ack})
+            read_transaction(host, REQ_DPIDR)
+            write_transaction(host, REQ_SELECT, 0, ack_only=True)
+            self.finish(target, host)
+            self.assertEqual(target.violations, [], ack)
+            self.assertEqual(target.acks, [ACK_OK, ack])
+            self.assertIsNone(target.ap.select)
+            self.assertEqual([e[1] for e in target.ap.log], ["DPIDR"])
+            self.assertEqual([ph for ph, _ in target.wire].count("write-data"), 0)
+
+    def test_write_data_must_be_driven(self):
+        target, host = self.connected()
+        read_transaction(host, REQ_DPIDR)
+        write_transaction(host, REQ_SELECT, 0, drive_data=False)
+        self.finish(target, host)
+        self.assertIn("write-data-not-driven", kinds_of(target))
+
+    def test_unmodeled_register_is_flagged(self):
+        target, host = self.connected()
+        read_transaction(host, REQ_CTRLSTAT)
+        self.finish(target, host)
+        self.assertEqual(kinds_of(target), ["unmodeled-register"])
 
 
 if __name__ == "__main__":

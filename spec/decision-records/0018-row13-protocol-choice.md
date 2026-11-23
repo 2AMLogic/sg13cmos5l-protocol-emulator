@@ -700,3 +700,82 @@ conclusion shape the issue itself anticipated when it set the fallback.
   analysis.
 - Row 13's stretch column keeps its remaining candidate (the SWD target),
   still subject to its own examination.
+
+## Dated note 2026-11-23 (issue #500): the table-driven probe measured — the memory-word read fits
+
+This note closes the measurement the 2026-11-19 note left open ("whether a
+table-driven probe fits the memory-word read is an open measurement"). It
+changes no decision above and relaxes nothing in the ratified spec: it
+records one assembled image, measured with the committed assembler, and
+the bench that exercises it. DR 0017's freeze is untouched (no RTL, ISA
+or assembler byte changed; `scripts/check_isa_freeze.py` passes).
+
+### The image and its section counts
+
+`firmware/asm/swd_probe.asm` now holds the complete probe: line reset, the
+0xE79E switch, a second line reset, two idle clocks, then five transactions
+— DP IDCODE read (0xA5), DP SELECT write (0xB1, 0x00000000), AP TAR write
+(0x8B, 0x20000004), the posted AP DRW read (0x9F) and the DP RDBUFF read
+(0xBD) — and eight trailing idle clocks. **245 stored words of 256; 11
+spare.** Every stored instruction and table entry is counted once:
+
+| Section | Stored words |
+|---|---|
+| setup, first line reset (50 clocks) | 10 |
+| switch loop (`PM_ADDR` setup, 16-bit table pass, 8-word loop) | 11 |
+| second line reset, two idle clocks | 17 |
+| transaction engine: start word, the one transmit loop (8), the word after the request, turnaround, ACK slot, response loop (8), return turnaround and re-drive, the word after the response | 44 |
+| WAIT / FAULT path (`ackerr`) | 13 |
+| trailing idle (8 clocks) and `HALT` | 10 |
+| **code** | **105** |
+| table: 16 switch bits | 16 |
+| table: 5 start words + 40 request bits + 5 words after the request + 5 words after the response | 55 |
+| table: 2 x 33 write-data bits + 2 words after the write data | 68 |
+| table: end word | 1 |
+| **table** | **140** |
+
+(The code rows add to 105 — 10 + 11 + 17 + 44 + 13 + 10 — and, with the
+140 table words, to the 245 that `python3 firmware/tools/asm.py
+firmware/asm/swd_probe.asm` reports.) The shape is the one the 2026-11-19 note measured for a single
+data phase: each probe-driven bit is one stored `LDI` word the program never
+executes, read through DR 0012's `PM_ADDR` / `PM_DATA_HI` / `PM_DATA_LO`, and
+one 8-word loop sends the request bits and the write-data bits of every
+transaction. A start word, a word after the request and a word after the
+response (all table data) make the sequence, kind and length of each
+transaction data too, so one copy of the engine serves reads and writes
+alike. That is why the five transactions fit where the unrolled schedule
+(≈180 words per write) could not.
+
+### What the bench shows (RTL)
+
+`verification/test_firmware_swd.py`, against `verification/reference_models/
+swd.py` extended with a DP and one MEM-AP (`MemAp`): the probe connects,
+reads the IDCODE, writes SELECT and TAR (each 33 data bits, checked from the
+pads), issues the posted DRW read — whose data is the read buffer's previous
+value 0xA5A5C3C3, deliberately different from the word — and fetches the
+addressed word 0xCAFEF00D through RDBUFF; the golden run ends with eight
+low-data idle clocks and zero contention. Mutants (a flipped SELECT or TAR
+write parity bit, a broken ACK-to-write-data handoff, and the earlier
+connection / turnaround / request-parity / trailing-idle set) each fail for
+their own reason; each of the five transactions answered WAIT or FAULT ends
+the run with no data phase, changes no model state for a rejected write, and
+never returns the word. The record is under `verification/records/
+firmware-swd/`; the superseded 227-word records stay in place.
+
+### What is assumed, not established
+
+- **ADIv5 constants stay "confirm"**, as above: no copy of IHI 0031 is in
+  the repository. The register addresses (DPIDR A=0x0, SELECT A=0x8, RDBUFF
+  A=0xC, MEM-AP TAR 0x04, DRW 0x0C), SELECT and TAR having no reset value, and
+  the posted DRW read are written into the model from the ADIv5 description;
+  a fetched copy must be checked against them before the model certifies
+  anything about silicon.
+- **The MEM-AP's word-access starting state** is a model assumption: CSW is
+  not written by the probe, and the model starts with CSW.Size = 0b010 and
+  CSW.AddrInc = 0b00. A real part's CSW reset is implementation-defined.
+- SELECT is written 0x00000000 (APSEL 0, bank 0), so its payload is the
+  all-zero word; TAR is word aligned. Auto-increment bursts, multi-drop and
+  retry stay out of scope.
+- Cycle figures name target-spec row 4's unconfirmed 50 MHz clock; the claim
+  is the cycle count. No gate-level run is claimed, and the two-flow rule
+  stands: nothing here is a synthesis or timing number.

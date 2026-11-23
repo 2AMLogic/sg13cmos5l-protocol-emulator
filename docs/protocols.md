@@ -48,7 +48,7 @@ than the demonstrated loop rate is flagged **tight** in its row.
 Every estimate below is *an estimate, not assembled* — no program in this
 file has been written or run. Anchors from the committed, measured images in
 [`docs/info.md`](info.md#protocols-as-firmware): `uart_tx` 34 words,
-`ws2812` 60, `ps2_device` 213, `swd_probe` 227, `i2c_fast` 245; DR
+`ws2812` 60, `ps2_device` 213, `swd_probe` 245, `i2c_fast` 245; DR
 [`0011`](../spec/decision-records/0011-stretch-protocols-feasibility.md)'s
 hand-counted low-speed USB TX schedule is 168 words for eight bit-copies.
 For protocols needing data buffering: the ISA has four registers and
