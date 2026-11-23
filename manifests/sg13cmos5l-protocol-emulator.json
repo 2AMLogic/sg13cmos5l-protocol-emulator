@@ -22,11 +22,11 @@
       "not_applicable": {
         "spec": {
           "file": "spec/target-spec-ratified.json",
-          "content_hash": "sha256:f64b320f750aa610245ab412ff21446fb260bcc1958849eba39c908df3f20f9b"
+          "content_hash": "sha256:6a9e64888f18fe8c3079b2e5f570801bb2dc41ce28391d159f494a88b09f1007"
         },
         "statement": {
           "file": "spec/statistical-claims-na.json",
-          "content_hash": "sha256:e506e819fcda46bb85d0b3c661e4273365928f87e453d810f8808d810f96e5ea"
+          "content_hash": "sha256:0145cc0973f3d293a4c8e8633c1c56087ccbe303596a1463d6918a83d3a8072d"
         }
       }
     },
