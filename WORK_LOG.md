@@ -20,6 +20,10 @@ Chronological record of merged pull requests and closed issues, newest first.
 
 ### 2026-11-20
 
+- **PR #477**: feat: collapse parallel evidence re-mints via a list-form supersedes
+- **Issue #472** (closed): Evidence hygiene: signoff-baseline leaf count doubles on every concurrent merge (8 to 16 to 32 in one day)
+- **PR #518**: docs: mark the STATISTICAL_TEXT_RE mirror comment's klt source as historical
+- **Issue #517** (closed): docs: check_statistical_claims_na.py's mirror comment still reads "at the pinned klayout-tools==0.8.0"
 - **PR #516**: docs(manifests): record the klt 0.8.0 pin parenthetical in the item-6 statement as historical
 - **Issue #481** (closed): docs(spec): spec/statistical-claims-na.md still says "the pinned klayout-tools==0.8.0" after #371 removes the pin
 - **PR #513**: feat(records): fail lint on attested-file drift; README is item-10 evidence
