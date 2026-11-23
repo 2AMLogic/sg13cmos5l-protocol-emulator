@@ -51,6 +51,12 @@ firmware/
                          channel slots at 200 cycles/bit 8N2, forever
                          (multi-protocol extra credit, issue #445; catalog
                          #443; firmware on the frozen DR 0017 ISA)
+    i2s_tx.asm           I2S (Philips) controller / transmitter: 16-bit
+                         stereo, 32-BCLK slots, BCLK uo_out[6], WS
+                         uo_out[5], SD uo_out[7]; streams a 16-frame
+                         sine table from program memory forever
+                         (multi-protocol extra credit, issue #451; catalog
+                         #443; firmware on the frozen DR 0017 ISA)
     nec_ir.asm           NEC infrared remote TRANSMITTER on uo_out[7]:
                          38 kHz-class carrier (1,316 cycles/period, 439
                          high) gated into a 9-ms-class leader, 32
@@ -1141,6 +1147,77 @@ Bench: `verification/test_firmware_can.py`
 
 ```bash
 klt functional-verification verification/request-firmware-can.json --format json
+```
+
+### `i2s_tx.asm` — I2S audio transmitter (issue #451)
+
+The multi-protocol extra credit's frame-clocked entry (catalog #443):
+firmware on the frozen DR 0017 ISA, no RTL change, no new instruction and
+no hardware peripheral. The core is the I2S controller: it drives BCLK, WS
+and SD and reads no pin. Philips framing, 16-bit stereo in 32-BCLK slots
+(64 BCLK per frame): WS and SD change on BCLK's falling edge, the receiver
+samples SD on the rising edge, WS changes one BCLK **before** the slot's
+MSB (so the MSB is one BCLK after the WS edge), MSB first, 16 data bits
+then 16 zero pad bits, WS low = left. Pins are DR 0010's `i2s` phase: SD
+`uo_out[7]`, BCLK `uo_out[6]`, WS `uo_out[5]`, all push-pull.
+
+The samples are a 16-frame stereo table in the last 64 words of program
+memory (`LDI R0, b` words, never executed, read with `PM_DATA_HI` /
+`PM_DATA_LO`; no data directive exists, DR 0003): left a full-scale sine
+(it includes the extremes 0x7FFF and 0x8000), right the same sine at twice
+the frequency and half amplitude. The table wrap is undone branch-free by
+ORing 0xC0 into `PM_ADDR` during the right slot's pad.
+
+**Timing: exactly 16 core cycles per BCLK (8 low, 8 high).** The figures
+below are core cycles, graded at the pins by
+`verification/test_firmware_i2s.py` against the independent receiver model
+`verification/reference_models/i2s.py`; every frequency is arithmetic at
+target-spec row 4's **unconfirmed** 50 MHz clock (20 ns/cycle; STA against
+this core is blocked, `verification/records/sta-corner-sweep/`).
+
+| Interval | Cycles | at unconfirmed 50 MHz | Graded against |
+|---|---|---|---|
+| BCLK period | **16** (8 low + 8 high) | 320 ns, 3.125 MHz | the bench: every BCLK edge on the 8-cycle grid |
+| WS / SD change | on the cycle BCLK falls | -- | the model's set-up and hold limits |
+| slot (32 BCLK) | **512** | 10.24 us | the model's slot-length check; L/R alternation |
+| frame (64 BCLK) | **1,024** | 20.48 us, fs = 48,828.125 Hz | the committed run's 18 frames |
+| fs error vs 48 kHz | -- | **+1.73 %** (a rate error, not a framing error) | recorded, not graded |
+
+Why not exactly 48 kHz: a 64-BCLK frame at 48 kHz needs 3.072 MHz, i.e.
+16.28 cycles per BCLK, and the core has only integer cycles. Other
+reachable rows (2k cycles per BCLK, 64 BCLK per frame) at 50 MHz: 17 cycles
+-> 2.941 MHz, fs 45.96 kHz (unequal phases); 32 cycles -> 1.5625 MHz, fs
+24.41 kHz. This image uses 16.
+
+The image is **256 words** of the 256-word store: 154 code words, 38 NOP
+alignment words (never run; the table must start at 0xC0 so that
+`PM_ADDR |= 0xC0` is the wrap, and the assembler has no `.org`), and the
+64-word table (assembler: `python3 firmware/tools/asm.py
+firmware/asm/i2s_tx.asm`; freshness: `python3 firmware/tools/check_firmware.py`;
+report `firmware/build/i2s_tx.cycles.txt`). The bench loads other tables
+over the code words, so the table is host-replaceable without touching code.
+
+**External part.** An I2S DAC breakout built on the TI PCM5102A (the
+common "PCM5102 I2S DAC" board), which needs no MCLK: with its SCK input
+tied low it derives the system clock from BCK. Wiring: `uo[6]` -> BCK,
+`uo[5]` -> LRCK, `uo[7]` -> DIN, GND common; SCK to GND, FMT low (I2S),
+XSMT high (unmute). *Not confirmed in this environment*: the PCM5102A
+datasheet (BCK-derived clock, 16-bit I2S, 3.125 MHz BCK inside its range)
+was not re-read here, so confirm those strap settings before building. A
+Digilent Pmod I2S2 is **not** a drop-in: its CS4344 DAC needs an MCLK
+(a fourth, unsupplied output). Bring-up with a real DAC is out of scope
+(issue #451): the claim is the cycle-exact behaviour at the pins, verified
+at RTL.
+
+Bench: `verification/test_firmware_i2s.py`
+(`verification/request-firmware-i2s.json`), registered in
+`scripts/rtl-bench-inventory.txt`; model self-test
+`verification/test_i2s_model.py`. Negative controls (each rejected for its
+own reason): no one-BCLK delay (left-justified), a 31-BCLK slot, a
+17-cycle BCLK period, and a re-graded capture with SD delayed 0.4 T.
+
+```bash
+klt functional-verification verification/request-firmware-i2s.json --format json
 ```
 
 ## Source syntax

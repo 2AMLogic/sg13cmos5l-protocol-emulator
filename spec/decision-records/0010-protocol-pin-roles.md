@@ -1670,6 +1670,24 @@ UO_OUT` reads R1, the `RCTL LINE_OUT` pair register, or R3, the recessive
 constant) by `can_images`, and each sample's bit isolation by
 `can_sample`.
 
+### I2S transmitter, multi-protocol extra credit (added by #451)
+
+*Amendment note, 2026-11-23 (the record's Status is unchanged).*
+`i2s_tx.asm` is an I2S (Philips) controller that streams 16-bit stereo
+samples to a DAC (issue #451, catalog #443). It drives three signals on
+dedicated outputs and reads nothing: `SD` on `uo_out[7]` (the same pad as
+the WS2812 profile's DIN and the NEC profile's IR_TX), `WS` on `uo_out[5]`
+and `BCLK` on `uo_out[6]`, all push-pull, each unused in every other phase
+but the `RESULT[n]` readout phases that already cover all of `uo_out`. The
+table records that as the `i2s` phase (`BCLK`, `WS`, `SD`, driven roles),
+checked by the `i2s` profile and the `i2s_images` pattern, and the bench's
+`BCLK_PIN/BCLK_BIT`, `WS_PIN/WS_BIT`, `SD_PIN/SD_BIT` by the `bench_i2s`
+profile. The program writes no pin-mode register (every pin is a dedicated
+output), so like the UART, WS2812, DMX512 and NEC images it has **no**
+`pin_modes` entry. The three pins are the upper three `uo_out` bits so that
+SD, which is isolated from the shifted byte by one `AND` with 0x80, needs no
+move into place; WS and BCLK are single-bit ORs.
+
 ## Checker behaviour
 
 `scripts/check_protocol_pin_roles.py` (tests:
@@ -1772,21 +1790,3 @@ direction the target plan needs), [DR 0013](0013-program-loading.md) (boot
 UART on option B), issues #94 (this), #133 (target pin plan), #155 (the pin
 moves), #135 (DR 0012 RTL), #75 (open-drain), #23 (firmware epic), #104 (I2C on the
 real core; physical pad wiring explicitly out of scope there).
-
-### I2S transmitter, multi-protocol extra credit (added by #451)
-
-*Amendment note, 2026-11-23 (the record's Status is unchanged).*
-`i2s_tx.asm` is an I2S (Philips) controller that streams 16-bit stereo
-samples to a DAC (issue #451, catalog #443). It drives three signals on
-dedicated outputs and reads nothing: `SD` on `uo_out[7]` (the same pad as
-the WS2812 profile's DIN and the NEC profile's IR_TX), `WS` on `uo_out[5]`
-and `BCLK` on `uo_out[6]`, all push-pull, each unused in every other phase
-but the `RESULT[n]` readout phases that already cover all of `uo_out`. The
-table records that as the `i2s` phase (`BCLK`, `WS`, `SD`, driven roles),
-checked by the `i2s` profile and the `i2s_images` pattern, and the bench's
-`BCLK_PIN/BCLK_BIT`, `WS_PIN/WS_BIT`, `SD_PIN/SD_BIT` by the `bench_i2s`
-profile. The program writes no pin-mode register (every pin is a dedicated
-output), so like the UART, WS2812, DMX512 and NEC images it has **no**
-`pin_modes` entry. The three pins are the upper three `uo_out` bits so that
-SD, which is isolated from the shifted byte by one `AND` with 0x80, needs no
-move into place; WS and BCLK are single-bit ORs.
