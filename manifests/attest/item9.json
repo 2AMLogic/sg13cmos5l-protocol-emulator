@@ -39,6 +39,7 @@
     "verification/isa_lockstep_mutants.py",
     "verification/load_integrity_mutants.py",
     "verification/primitives_mutants.py",
+    "verification/program_memory_driver.py",
     "verification/reference_models/dali.py",
     "verification/reference_models/isa.py",
     "verification/reference_models/ps2.py",

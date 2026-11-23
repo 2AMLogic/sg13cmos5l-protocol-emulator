@@ -3,14 +3,14 @@
   "kind": "generic",
   "status": "pass",
   "t1_item": 9,
-  "summary": "T1 item 9 (Testbenches shipped): 103/103 attestation checks passed (klt signoff --attest)",
+  "summary": "T1 item 9 (Testbenches shipped): 104/104 attestation checks passed (klt signoff --attest)",
   "source": "manifests/attest/item9.json",
   "attestation": {
     "producer": "klt signoff --attest",
     "inventory_schema_version": 1,
     "hash_algorithm": "sha256-raw-bytes",
-    "check_count": 103,
-    "passed_count": 103,
+    "check_count": 104,
+    "passed_count": 104,
     "checks": [
       {
         "check": "present",
@@ -256,6 +256,13 @@
         "path": "verification/primitives_mutants.py",
         "passed": true,
         "content_hash": "sha256:ebdf98918b96313880a1130bda8857f9b1f34523a75bb5d05e48839d34682975"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "verification/program_memory_driver.py",
+        "passed": true,
+        "content_hash": "sha256:e594a5534ace7df728f5e8929e7816e3e4c2436407d43e59e39da5e498cdb2b4"
       },
       {
         "check": "present",
@@ -577,7 +584,7 @@
         "role": "testbench",
         "path": "verification/test_firmware_roundtrip.py",
         "passed": true,
-        "content_hash": "sha256:8fe7de1cee955315d29fdd6e5c69381aad7c0cc58e9dbf91e4f0ef264e3534cd"
+        "content_hash": "sha256:72e4a514a5ed4bd9f50cf8569ddad67f0e9ae82fa9e89b630d6fa58ba428fd2e"
       },
       {
         "check": "present",
@@ -647,7 +654,7 @@
         "role": "testbench",
         "path": "verification/test_program_memory.py",
         "passed": true,
-        "content_hash": "sha256:1071b5eb62455b6f920bc47a4ff9352a3fae1a0842a010f1bc1807d2fafc8a39"
+        "content_hash": "sha256:eb0b5210a6bd725d226444dcc5ee1b5db19ea226e7404e776f86ac3d057e0afd"
       },
       {
         "check": "present",
@@ -756,7 +763,7 @@
         "path": "manifests/attest/item9.json",
         "scope": "repo"
       },
-      "content_hash": "sha256:723ed89030ce919461bd019a190301d464d012e17cc52be10da8be3b755e95fb"
+      "content_hash": "sha256:b0f385ed6cb50e5405bbdbb7fb6b2e99a1ec5e54e94aaf76a9f78c2cf9203f7d"
     }
   }
 }
