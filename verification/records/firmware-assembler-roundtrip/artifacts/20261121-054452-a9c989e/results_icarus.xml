@@ -1,0 +1,8 @@
+<testsuites name="results">
+  <testsuite name="all" package="all">
+    <property name="random_seed" value="1" />
+    <testcase name="test_committed_image_is_fresh" classname="test_firmware_roundtrip" file="&lt;repo&gt;/verification/test_firmware_roundtrip.py" lineno="156" time="0.00051116943359375" sim_time_ns="0.0" ratio_time="0.0" />
+    <testcase name="test_assembled_program_loads_through_program_memory" classname="test_firmware_roundtrip" file="&lt;repo&gt;/verification/test_firmware_roundtrip.py" lineno="168" time="0.01269221305847168" sim_time_ns="4711.0" ratio_time="371172.46443129523" />
+    <testcase name="test_cycle_report_cross_checks_against_image" classname="test_firmware_roundtrip" file="&lt;repo&gt;/verification/test_firmware_roundtrip.py" lineno="208" time="0.000152587890625" sim_time_ns="0.0" ratio_time="0.0" />
+  </testsuite>
+</testsuites>

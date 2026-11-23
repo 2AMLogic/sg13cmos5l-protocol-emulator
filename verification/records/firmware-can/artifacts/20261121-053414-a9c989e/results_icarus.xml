@@ -1,0 +1,14 @@
+<testsuites name="results">
+  <testsuite name="all" package="all">
+    <property name="random_seed" value="1" />
+    <testcase name="test_committed_image_is_fresh" classname="test_firmware_can" file="&lt;repo&gt;/verification/test_firmware_can.py" lineno="232" time="0.010852336883544922" sim_time_ns="0.0" ratio_time="0.0" />
+    <testcase name="test_can_tx_frame_acked" classname="test_firmware_can" file="&lt;repo&gt;/verification/test_firmware_can.py" lineno="259" time="1.7050833702087402" sim_time_ns="993190.0" ratio_time="582487.6468523714" />
+    <testcase name="test_can_tx_noack" classname="test_firmware_can" file="&lt;repo&gt;/verification/test_firmware_can.py" lineno="326" time="1.6674389839172363" sim_time_ns="993190.0000000001" ratio_time="595637.9871044789" />
+    <testcase name="test_can_arbitration" classname="test_firmware_can" file="&lt;repo&gt;/verification/test_firmware_can.py" lineno="340" time="2.9620938301086426" sim_time_ns="1721190.0" ratio_time="581072.0722296872" />
+    <testcase name="test_can_rx_ok_and_ack" classname="test_firmware_can" file="&lt;repo&gt;/verification/test_firmware_can.py" lineno="418" time="2.8344147205352783" sim_time_ns="1745189.9999999995" ratio_time="615714.4144631104" />
+    <testcase name="test_can_rx_crc_error" classname="test_firmware_can" file="&lt;repo&gt;/verification/test_firmware_can.py" lineno="481" time="2.7408478260040283" sim_time_ns="1745190.0" ratio_time="636733.6352796972" />
+    <testcase name="test_can_rx_stuff_error" classname="test_firmware_can" file="&lt;repo&gt;/verification/test_firmware_can.py" lineno="531" time="2.710390090942383" sim_time_ns="1745189.999999999" ratio_time="643888.8652346014" />
+    <testcase name="test_transmit_sample_point" classname="test_firmware_can" file="&lt;repo&gt;/verification/test_firmware_can.py" lineno="590" time="3.345125913619995" sim_time_ns="2018390.0" ratio_time="603382.3694892725" />
+    <testcase name="test_rx_bit_rate_tolerance" classname="test_firmware_can" file="&lt;repo&gt;/verification/test_firmware_can.py" lineno="656" time="6.286680459976196" sim_time_ns="3962430.0" ratio_time="630289.7093667464" />
+  </testsuite>
+</testsuites>
