@@ -42,6 +42,7 @@ import test_firmware_uart as bench
 from firmware_artifacts import parse_hex_image
 from reference_models.uart import UART_FRAME_BITS, UartDecoder
 from reference_models.waveform import Signal
+from sdf_tx_edges import tx_level_changes
 from test_protocol_emulator import load_program
 
 PROTOCOL = "uart_tx"
@@ -127,10 +128,10 @@ def _measure_image(stem, cycles_per_bit, clock_period_ps, tx_initial, tx_edges, 
     frames = []
     for report, payload in zip(reports, TX_PAYLOADS):
         assert report.stop_ok, f"{stem}: framing error, stop bit sampled 0"
-        assert decoder.check_frame(report), (
-            f"{stem}: row-10 drift bound failed at {report.drift_pct:.4f}% of the "
-            f"bit period (bound 2%)"
-        )
+        # An over-limit frame is *recorded* (`within_bound`) and the bound is
+        # asserted by the test only after every image's measurement is filed,
+        # so the excursion's timestamps survive the failure (#531 test plan).
+        within_bound = bool(decoder.check_frame(report))
         t_start_ps = round(report.t_start * 1000.0)
         window_ps = UART_FRAME_BITS * nominal_bit_period_ps
         edges_ps = [t for (t, _level) in tx_edges if t_start_ps <= t <= t_start_ps + window_ps]
@@ -169,6 +170,7 @@ def _measure_image(stem, cycles_per_bit, clock_period_ps, tx_initial, tx_edges, 
             "drift_ps": drift_ps,
             "drift_pct": drift_pct,
             "model_drift_pct": report.drift_pct,
+            "within_bound": within_bound,
         })
         log(
             f"{stem} 0x{payload:02x}: start {t_start_ps} ps, last edge {last_edge_ps} ps "
@@ -263,11 +265,9 @@ async def test_uart_tx_bit_period_and_drift_in_time_units(dut):
             f"contract: {monitor.violations[:3]}"
         )
         REPORT.add_capture(run_cycles, monitor)
-        tx_edges = [
-            (event["t_ps"], _tx_bit(event["value"]))
-            for event in monitor.transitions
-            if event["pin"] == "uo_out"
-        ]
+        # Bit-0 *changes* only: one list feeds both the decoder and the
+        # published edge list, so a non-TX `uo_out` event cannot skew either.
+        tx_edges = tx_level_changes(monitor.transitions, tx_initial)
         assert tx_edges, f"{stem}: no uo_out transition observed at the pins"
         images.append(
             _measure_image(stem, cycles_per_bit, clock_period_ps, tx_initial, tx_edges, dut._log.info)
@@ -284,3 +284,10 @@ async def test_uart_tx_bit_period_and_drift_in_time_units(dut):
         "pin": "uo_out[0]",
         "images": images,
     })
+    for image in images:
+        for frame in image["frames"]:
+            assert frame["within_bound"], (
+                f"{image['image']} {frame['payload_hex']}: row-10 drift bound failed at "
+                f"{frame['drift_pct']:.4f}% of the bit period (bound 2%); the measurement "
+                "is recorded in the protocol report"
+            )
