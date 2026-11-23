@@ -605,8 +605,27 @@ def test_i2c_pair_generator_has_no_drift():
     assert r.returncode == 0, f"gen_i2c_pair.py --check drift:\n{r.stdout}{r.stderr}"
 
 
+def test_i2c_pair_slots_are_comment_only():
+    # issue #554: gen_i2c_pair.py emits every instruction and directive of
+    # the pair from one shared stream (PairBuilder.raw/wait/note); SLOTS
+    # carries per-mode PROSE only. If an executable line or a .cyclesec /
+    # .endcyclesec directive sneaks back into a (fast, std) tuple, the two
+    # programs can silently drift apart instruction by instruction again.
+    # The generator asserts this at build time; this test checks the module
+    # directly so a regression fails even before --check compares bytes.
+    import gen_i2c_pair  # noqa: E402  (path-shimmed sibling import)
+    for name, pair in gen_i2c_pair.SLOTS.items():
+        for mode, block in zip(("fast", "std"), pair):
+            for line in block.split("\n"):
+                stripped = line.strip()
+                assert not stripped or stripped.startswith(";"), (
+                    f"SLOTS['{name}'][{mode}] must be comment-only, "
+                    f"got {line!r}")
+
+
 ALL_TESTS = [
     test_i2c_pair_generator_has_no_drift,
+    test_i2c_pair_slots_are_comment_only,
     test_nop, test_ldi, test_mov_rr_ops, test_shf, test_in, test_out,
     test_wait, test_branches, test_halt, test_case_insensitive_mnemonics_and_operands,
     test_label_resolution_absolute, test_forward_reference, test_program_size_limit,
