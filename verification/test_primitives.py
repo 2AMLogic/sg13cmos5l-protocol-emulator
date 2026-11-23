@@ -76,6 +76,7 @@ REPO_ROOT = find_repo_root(__file__)
 sys.path.insert(0, str(REPO_ROOT / "firmware" / "tools"))
 
 import asm  # noqa: E402  (the DR 0003 assembler)
+from test_protocol_emulator import load_program  # noqa: E402  (the shared DR 0001 layer-1 loader)
 
 CLK_PERIOD_NS = 10
 RUN_ENTRY_EDGES = 2  # DR 0005: edge 1 primes the fetch, edge 2 retires pc=0
@@ -297,24 +298,8 @@ async def settle(dut):
     return sample
 
 
-async def load_image(dut, words):
-    dut.ena.value = 1
-    dut.uio_in.value = 0
-    dut.ui_in.value = 0x80
-    dut.rst_n.value = 0
-    await ClockCycles(dut.clk, 10)
-    dut.rst_n.value = 1
-    await RisingEdge(dut.clk)
-    for word in words:
-        for bit in range(15, -1, -1):
-            dut.ui_in.value = 0x80 | ((word >> bit) & 1)
-            await RisingEdge(dut.clk)
-    dut.ui_in.value = 0x00
-    await RisingEdge(dut.clk)  # edge 0
-
-
 async def run_trace(dut, words, edges, per_edge=None):
-    await load_image(dut, words)
+    await load_program(dut, words)
     trace = [await settle(dut)]
     for e in range(1, edges + 1):
         await RisingEdge(dut.clk)
@@ -615,7 +600,7 @@ async def run_line(dut, cfg, data, idle):
         dut.ui_in.value = data[i] if i < len(data) else 0
 
     nslots = 2 * len(data) + 4
-    await load_image(dut, words)
+    await load_program(dut, words)
     present()
     for e in range(1, first_out + nslots * body + 1):
         await RisingEdge(dut.clk)

@@ -467,7 +467,9 @@ def _(fx):
 def _(fx):
     fx.mutate("firmware/asm/nec_ir.asm", "LDI   R1, 0x80        ; 1   carrier-high image / bit-7 mask",
               "LDI   R1, 0x40        ; 1   carrier-high image / bit-7 mask")
-    expect_fail(fx, "firmware/asm/nec_ir.asm", "concrete-firmware-bench")
+    # the diagnostic must still identify the carrier image through the
+    # #526 consolidation, not just any wrong mask
+    expect_fail(fx, "IR_TX mask LDI R1, 0x40", "concrete-firmware-bench")
 
 
 @case("NEC IR bench TX pin mutated")
