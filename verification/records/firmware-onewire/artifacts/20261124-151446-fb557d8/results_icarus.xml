@@ -1,0 +1,18 @@
+<testsuites name="results">
+  <testsuite name="all" package="all">
+    <property name="random_seed" value="1" />
+    <testcase name="test_committed_image_is_fresh" classname="test_firmware_onewire" file="&lt;repo&gt;/verification/test_firmware_onewire.py" lineno="466" time="0.0018961429595947266" sim_time_ns="0.0" ratio_time="0.0" />
+    <testcase name="test_read_rom_convert_read_scratchpad" classname="test_firmware_onewire" file="&lt;repo&gt;/verification/test_firmware_onewire.py" lineno="493" time="68.22406363487244" sim_time_ns="15080860.0" ratio_time="221048.98472056835" />
+    <testcase name="test_no_presence_is_reported" classname="test_firmware_onewire" file="&lt;repo&gt;/verification/test_firmware_onewire.py" lineno="522" time="4.529541730880737" sim_time_ns="1080860.0" ratio_time="238624.58151805887" />
+    <testcase name="test_bad_scratchpad_crc_is_reported" classname="test_firmware_onewire" file="&lt;repo&gt;/verification/test_firmware_onewire.py" lineno="542" time="65.67924380302429" sim_time_ns="15080859.999999998" ratio_time="229613.78856961778" />
+    <testcase name="test_bad_rom_crc_is_reported" classname="test_firmware_onewire" file="&lt;repo&gt;/verification/test_firmware_onewire.py" lineno="564" time="28.596856832504272" sim_time_ns="6280860.0" ratio_time="219634.62756721347" />
+    <testcase name="test_idle_bus_is_released" classname="test_firmware_onewire" file="&lt;repo&gt;/verification/test_firmware_onewire.py" lineno="584" time="63.62543249130249" sim_time_ns="15080860.0" ratio_time="237025.6579719365" />
+    <testcase name="test_negative_temperature" classname="test_firmware_onewire" file="&lt;repo&gt;/verification/test_firmware_onewire.py" lineno="599" time="63.22476816177368" sim_time_ns="15080860.0" ratio_time="238527.72320829224" />
+    <testcase name="test_temperature_decode_is_signed" classname="test_firmware_onewire" file="&lt;repo&gt;/verification/test_firmware_onewire.py" lineno="619" time="1.1205673217773438e-05" sim_time_ns="0.0" ratio_time="0.0" />
+    <testcase name="test_negative_reset_too_short" classname="test_firmware_onewire" file="&lt;repo&gt;/verification/test_firmware_onewire.py" lineno="635" time="4.344162940979004" sim_time_ns="1080860.0" ratio_time="248807.4261221004" />
+    <testcase name="test_negative_write1_too_short" classname="test_firmware_onewire" file="&lt;repo&gt;/verification/test_firmware_onewire.py" lineno="655" time="61.8330819606781" sim_time_ns="15080860.0" ratio_time="243896.30149101198" />
+    <testcase name="test_negative_crc_check_disabled" classname="test_firmware_onewire" file="&lt;repo&gt;/verification/test_firmware_onewire.py" lineno="674" time="64.75516390800476" sim_time_ns="15080860.0" ratio_time="232890.46139123072" />
+    <testcase name="test_negative_late_read_sample" classname="test_firmware_onewire" file="&lt;repo&gt;/verification/test_firmware_onewire.py" lineno="716" time="25.531574487686157" sim_time_ns="6081820.0" ratio_time="238207.79258769384" />
+    <testcase name="test_negative_late_presence_sample" classname="test_firmware_onewire" file="&lt;repo&gt;/verification/test_firmware_onewire.py" lineno="744" time="5.119251489639282" sim_time_ns="1280860.0" ratio_time="250204.54701088602" />
+  </testsuite>
+</testsuites>
