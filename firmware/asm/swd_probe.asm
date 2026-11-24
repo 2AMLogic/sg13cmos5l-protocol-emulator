@@ -142,7 +142,7 @@ sw:
         SUB   R2, R3
         BNZ   sw
 
-; --------------- second line reset, SWDIO high, >= 50 cycles (7)
+; --------------- second line reset, SWDIO high, >= 50 cycles (6)
         OUT   UIO_OUT, R0      ; SWCLK falls; SWDIO stays high
         LDI   R2, 50           ; R3 is still 1 from the switch loop's SUB
 lr2:
