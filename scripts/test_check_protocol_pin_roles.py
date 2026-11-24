@@ -620,8 +620,8 @@ def _(fx):
 @case("SWD per-bit pin image is not an SWCLK x SWDIO combination")
 def _(fx):
     fx.mutate("firmware/asm/swd_probe.asm",
-              "        LDI   R3, 0x00         ; bit 0 = 0\n        OUT   UIO_OUT, R3",
-              "        LDI   R3, 0x10         ; (mutated)\n        OUT   UIO_OUT, R3")
+              "        LDI   R3, 0x00\n        OUT   UIO_OUT, R3      ; SWDIO falls low",
+              "        LDI   R3, 0x10         ; (mutated)\n        OUT   UIO_OUT, R3      ; SWDIO falls low")
     expect_fail(fx, "is not one of", "concrete-firmware-bench")
 
 
@@ -843,6 +843,41 @@ def _(fx):
     fx.mutate("firmware/tools/gen_i2c_sr.py", '"LDI   R3, 0x04       ; poll mask"',
               '"LDI   R3, 0x02       ; poll mask"')
     expect_fail(fx, "firmware/tools/gen_i2c_sr.py", "concrete-firmware-bench")
+
+
+# CAN 2.0A (issue #584): DR 0010's can section records that the image uses
+# UIO_DIR as scratch, pinned by CAN_UIO_DIR_WRITE_SITES = 7 sites and the
+# setup immediate LDI <reg>, 0x05 before the first write. Both guards need
+# negative evidence: a silent drift between can_2a.asm and the record must
+# not pass the checker.
+@case("CAN UIO_DIR scratch: an 8th WCTL site fails the DR 0010 record")
+def _(fx):
+    fx.mutate("firmware/asm/can_2a.asm",
+              "\tWCTL  UIO_DIR, R2\n\tRCTL  R1, PM_DATA_HI\n",
+              "\tWCTL  UIO_DIR, R2\n\tWCTL  UIO_DIR, R2\n\tRCTL  R1, PM_DATA_HI\n")
+    expect_fail(fx, "8 `WCTL UIO_DIR` sites but DR 0010's can section records 7",
+                "concrete-firmware-bench")
+
+
+@case("CAN UIO_DIR scratch: a deleted 6th WCTL site fails the DR 0010 record")
+def _(fx):
+    # The first site (and its LDI R2, 0x05 setup) stays, so only the count
+    # guard fires; the anchor is the unique XOR-zeroed release site.
+    fx.mutate("firmware/asm/can_2a.asm",
+              "\tXOR   R2, R2\n\tWCTL  UIO_DIR, R2\n",
+              "\tXOR   R2, R2\n")
+    expect_fail(fx, "6 `WCTL UIO_DIR` sites but DR 0010's can section records 7",
+                "concrete-firmware-bench")
+
+
+@case("CAN UIO_DIR scratch: a wrong first-site setup immediate fails")
+def _(fx):
+    fx.mutate("firmware/asm/can_2a.asm",
+              "\tLDI   R2, 0x05\n\tWCTL  UIO_DIR, R2\n",
+              "\tLDI   R2, 0x06\n\tWCTL  UIO_DIR, R2\n")
+    expect_fail(fx,
+                "the first `WCTL UIO_DIR` is not preceded by `LDI <reg>, 0x05`",
+                "concrete-firmware-bench")
 
 
 # ------------------------------------------------- concrete: bench sites

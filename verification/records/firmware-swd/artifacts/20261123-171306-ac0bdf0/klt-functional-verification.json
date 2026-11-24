@@ -1,0 +1,160 @@
+{
+  "schema_version": 4,
+  "engine": "icarus",
+  "hdl_toplevel": "tt_um_2amlogic_protocol_emulator",
+  "testbench": "test_firmware_swd",
+  "status": "pass",
+  "test_count": 12,
+  "passed_count": 12,
+  "failed_count": 0,
+  "skipped_count": 0,
+  "tests": [
+    {
+      "name": "test_committed_image_is_fresh",
+      "status": "passed",
+      "sim_time_ns": 0.0,
+      "real_time_s": 0.0012962818145751953
+    },
+    {
+      "name": "test_probe_reads_one_ap_memory_word",
+      "status": "passed",
+      "sim_time_ns": 142621.0,
+      "real_time_s": 0.3476266860961914
+    },
+    {
+      "name": "test_wait_and_fault_end_the_transfer_cleanly",
+      "status": "passed",
+      "sim_time_ns": 1426401.0,
+      "real_time_s": 5.964899063110352
+    },
+    {
+      "name": "test_negative_error_ack_still_clocks_data_slots",
+      "status": "passed",
+      "sim_time_ns": 142641.0,
+      "real_time_s": 0.41235899925231934
+    },
+    {
+      "name": "test_negative_return_turnaround_driven",
+      "status": "passed",
+      "sim_time_ns": 142641.0,
+      "real_time_s": 0.36954402923583984
+    },
+    {
+      "name": "test_negative_line_reset_49",
+      "status": "passed",
+      "sim_time_ns": 142641.0,
+      "real_time_s": 0.3520965576171875
+    },
+    {
+      "name": "test_negative_switch_bit_flipped",
+      "status": "passed",
+      "sim_time_ns": 142641.0,
+      "real_time_s": 0.35650181770324707
+    },
+    {
+      "name": "test_negative_no_turnaround_release",
+      "status": "passed",
+      "sim_time_ns": 142641.0,
+      "real_time_s": 0.36746740341186523
+    },
+    {
+      "name": "test_negative_wrong_request_parity",
+      "status": "passed",
+      "sim_time_ns": 142641.0,
+      "real_time_s": 0.3641326427459717
+    },
+    {
+      "name": "test_negative_write_parity_flipped",
+      "status": "passed",
+      "sim_time_ns": 285281.0,
+      "real_time_s": 1.0129220485687256
+    },
+    {
+      "name": "test_negative_write_ack_to_data_handoff",
+      "status": "passed",
+      "sim_time_ns": 142641.0,
+      "real_time_s": 0.35872387886047363
+    },
+    {
+      "name": "test_negative_short_trailing_idle",
+      "status": "passed",
+      "sim_time_ns": 142641.0,
+      "real_time_s": 0.3571510314941406
+    }
+  ],
+  "coverage": null,
+  "trace": null,
+  "environment": {
+    "engine": "icarus",
+    "engine_version": "13.0",
+    "tools": [],
+    "cocotb_version": "2.0.1",
+    "results_xml": {
+      "path": "verification/.klt/functional-verification/results_icarus.xml",
+      "scope": "repo",
+      "sha256": "sha256:29d688239aa53ba96a1965e2c14fe68a985710ce0dfe6345a629b8db33719fd3"
+    },
+    "test_log": {
+      "path": "verification/.klt/functional-verification/test_icarus.log",
+      "scope": "repo",
+      "sha256": "sha256:91532ef5451ac22d89dfdcb26da487c3bf887dadefdb710568950d1bc2c2b899"
+    },
+    "build_log": {
+      "path": "verification/.klt/functional-verification/build_icarus.log",
+      "scope": "repo",
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "random_seed": 1,
+    "source_defines": [],
+    "env": {},
+    "parameters": {},
+    "plusargs": [],
+    "initial_state": null,
+    "sdf": null,
+    "sources": [
+      {
+        "path": "src/tt_um_2amlogic_protocol_emulator.v",
+        "scope": "repo",
+        "sha256": "8c380b9165a09a60e6be8d8546eac360a733317253f152c15faaa13489e94a29"
+      },
+      {
+        "path": "rtl/protocol_core.v",
+        "scope": "repo",
+        "sha256": "d4bab243a80af56a41b8ef730bc0ecbee889f2c02f4587311d6f9f694636437a"
+      },
+      {
+        "path": "rtl/protocol_boot_rom.v",
+        "scope": "repo",
+        "sha256": "329ed189d457010b259349e5d59e36db09d67422b4909320253929c3e0fdbebe"
+      },
+      {
+        "path": "rtl/protocol_program_memory.v",
+        "scope": "repo",
+        "sha256": "2b08865ab24d6bac84b390dfa76bab6686b572ba8f19124130bfc34e93dff637"
+      },
+      {
+        "path": "rtl/vendor/RM_IHPSG13_1P_256x16_c2_bm_bist.v",
+        "scope": "repo",
+        "sha256": "9d456840a37dff650ee6a09dc1f3d4e2d8d3348fcea7dc305933dd4543feff1a"
+      },
+      {
+        "path": "rtl/vendor/RM_IHPSG13_1P_core_behavioral_bm_bist.v",
+        "scope": "repo",
+        "sha256": "e2e43ec0159cbc34662fe91114e8cb03a697a2a829ad63b0d4f06631908ea787"
+      }
+    ]
+  },
+  "provenance": {
+    "klt_version": "0.9.3.dev4134+g52738a1dd8b3",
+    "klt_git_commit": "52738a1dd8b3153e137caad8d6016504bd8d49c2",
+    "klt_reinstall_spec": null,
+    "klayout_version": "0.30.12",
+    "pdk": null,
+    "deck": null,
+    "input": {
+      "role": "source",
+      "content_hash": "sha256:1df6bb47bbd2129244c779e49715ce7a290cf179b60afe92317041e01e9eae56"
+    },
+    "request_sha256": "2e11bf0c299b3c54d14caedd8cd93c0b756bf6793db262318a95c6eeb7d7d0de"
+  }
+}
