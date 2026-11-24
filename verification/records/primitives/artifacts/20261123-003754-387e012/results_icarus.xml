@@ -1,0 +1,16 @@
+<testsuites name="results">
+  <testsuite name="all" package="all">
+    <property name="random_seed" value="1" />
+    <testcase name="test_crc_catalogue_check_values" classname="test_primitives" file="&lt;repo&gt;/verification/test_primitives.py" lineno="301" time="0.4552733898162842" sim_time_ns="49131.0" ratio_time="107915.37809803855" />
+    <testcase name="test_crc_random_messages" classname="test_primitives" file="&lt;repo&gt;/verification/test_primitives.py" lineno="318" time="0.8603999614715576" sim_time_ns="130201.0" ratio_time="151326.1341589496" />
+    <testcase name="test_crc_bit_steps" classname="test_primitives" file="&lt;repo&gt;/verification/test_primitives.py" lineno="336" time="0.33668971061706543" sim_time_ns="53841.0" ratio_time="159912.816763314" />
+    <testcase name="test_lfsr_prbs" classname="test_primitives" file="&lt;repo&gt;/verification/test_primitives.py" lineno="355" time="0.1326589584350586" sim_time_ns="30471.00000000003" ratio_time="229694.2502749763" />
+    <testcase name="test_crc_registers_pointer_and_masking" classname="test_primitives" file="&lt;repo&gt;/verification/test_primitives.py" lineno="414" time="0.09438633918762207" sim_time_ns="23651.0" ratio_time="250576.5156649027" />
+    <testcase name="test_line_usb_nrzi_stuff6" classname="test_primitives" file="&lt;repo&gt;/verification/test_primitives.py" lineno="590" time="0.04834771156311035" sim_time_ns="10591.0" ratio_time="219058.97213304733" />
+    <testcase name="test_line_hdlc_stuff5" classname="test_primitives" file="&lt;repo&gt;/verification/test_primitives.py" lineno="604" time="0.0874478816986084" sim_time_ns="18981.0" ratio_time="217055.00043349882" />
+    <testcase name="test_line_can_stuff5_equal" classname="test_primitives" file="&lt;repo&gt;/verification/test_primitives.py" lineno="618" time="0.042170047760009766" sim_time_ns="9491.0" ratio_time="225064.95733686126" />
+    <testcase name="test_line_stuff_slot_ignores_rs_and_registers" classname="test_primitives" file="&lt;repo&gt;/verification/test_primitives.py" lineno="630" time="0.06036496162414551" sim_time_ns="15631.0" ratio_time="258941.60419291517" />
+    <testcase name="test_fixed_latency_is_data_independent" classname="test_primitives" file="&lt;repo&gt;/verification/test_primitives.py" lineno="714" time="0.20631122589111328" sim_time_ns="51281.0" ratio_time="248561.365376526" />
+    <testcase name="test_no_flag_side_effects_and_unassigned" classname="test_primitives" file="&lt;repo&gt;/verification/test_primitives.py" lineno="742" time="0.07842087745666504" sim_time_ns="17701.0" ratio_time="225717.953867342" />
+  </testsuite>
+</testsuites>

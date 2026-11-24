@@ -529,39 +529,71 @@ gates. The host-side loader is issue #118.
 - `test_firmware_swd.py` — the SWD **probe** bench (issue #452; the
   protocol choice is the dated note of 2026-11-19 in DR 0018, fourth
   revision, made after DR 0017's ISA freeze): the committed
-  `firmware/asm/swd_probe.asm` (227 words) plays the debug host on
+  `firmware/asm/swd_probe.asm` (256 words, table-driven; issue #500
+  extends it from the 227-word IDCODE-and-DP-read fallback to one AP
+  memory-word read) plays the debug host on
   `uio[2]` (SWCLK) and `uio[3]` (SWDIO), push-pull with SWDIO released at
   each turnaround, and the bench plays the target.
   `reference_models/swd.py`, written from Arm's ADIv5 description and
   pyOCD's observable connection shape (constants marked "confirm" as DR
   0018 records), is an *interactive* target: it takes SWDIO at the
   turnaround rise, advances it on every subsequent rise (the
-  aggressive-but-legal IHI 0031 B4.3.1 corner), releases after the read
-  parity, and in the same pass grades the 50-clock line resets, the
-  0xE79E switch, the idle clocks, every request field (start/stop/park
-  and the even request parity), the turnaround releases and re-drives,
-  host SWDIO stability across rising edges, and the eight trailing idle
-  clocks. The lines come from the silicon-true pad model (`uio_pads.py`,
-  pull-up on SWDIO as ADIv5 requires, SWCLK pulled low, the other six
-  `uio` pins tied low), so a probe that keeps SWDIO driven into a
-  response phase is reported as contention. The golden run decodes both
-  request frames (0xA5, 0xBD), answers OK twice, and the probe's 72
-  `uo_out` report bytes read back ACK OK (wire order 1,0,0), the IDCODE
-  0x4BA00477 and its even parity, then ACK OK, 0x12345678 and its parity — with the
-  per-phase SWCLK widths held to the committed figures (reset 1/3,
-  switch and request 2/2, response high 1) and 218 rising edges. Negative
-  controls: five mutant programs (a 49-clock first reset, a flipped
-  switch bit, a missing turnaround release — contention, an inverted
-  request parity bit — no response, a 3-clock trailing idle), each
-  rejected for its own reason; the ACK branch removed (data slots clocked
-  after a WAIT) and SWDIO driven on the return turnaround cycle, both
-  rejected; and model-configured runs where the second request answers
-  WAIT (wire 0,1,0) and FAULT (0,0,1): the probe reports the ACK, leaves
-  the return turnaround released, re-drives SWDIO low and ends the
-  transfer, no retry. `test_swd_model.py` is the model's
+  aggressive-but-legal IHI 0031 B4.3.1 corner), releases after the response,
+  and in the same pass grades the 50-clock line resets, the 0xE79E switch,
+  the idle clocks, every request field (start/stop/park and the even
+  request parity), the turnaround releases and re-drives, the 33-bit write
+  data (value, even parity, SWDIO driven), host SWDIO stability across
+  rising edges, and the eight trailing idle clocks. Its `MemAp` decodes the
+  requests against a DP and one MEM-AP: SELECT and TAR have no reset value,
+  the DRW read is *posted* (it returns the read buffer's previous value,
+  deliberately different from the word) and only DP RDBUFF returns the
+  addressed word; the MEM-AP's word-access starting state (CSW.Size = word,
+  no auto-increment) is documented in the model. The lines come from the
+  silicon-true pad model (`uio_pads.py`, pull-up on SWDIO as ADIv5
+  requires, SWCLK pulled low, the other six `uio` pins tied low), so a
+  probe that keeps SWDIO driven into a response phase is reported as
+  contention. The golden run decodes the five requests (0xA5, 0xB1, 0x8B,
+  0x9F, 0xBD), checks both write payloads from the pads (SELECT
+  0x00000000, TAR 0x20000004, each with its even parity), and the probe's
+  `uo_out` report bytes read back the IDCODE, the stale posted value
+  0xA5A5C3C3 from the DRW read and the addressed word 0xCAFEF00D from
+  RDBUFF, each with ACK OK (wire order 1,0,0) and even parity, with the
+  per-phase SWCLK widths held to the committed figures and 356 rising
+  edges. Negative controls (each rejected for its own reason): a 49-clock
+  first reset, a flipped switch bit, a missing turnaround release
+  (contention), an inverted request parity bit (no response), a flipped
+  SELECT or TAR write-data parity bit (`write-parity`, the write discarded
+  and the later access failing for it), a broken ACK-to-write-data handoff
+  (`write-data-not-driven`), a 3-clock trailing idle, the ACK branch
+  removed and SWDIO driven on the return turnaround cycle; and
+  model-configured runs where each of the five transactions in turn is
+  answered WAIT (wire 0,1,0) or FAULT (0,0,1): the probe reports the ACK,
+  leaves the return turnaround released, re-drives SWDIO low and ends the
+  transfer, no retry, a rejected write changes no model state and the
+  memory word never appears. `test_swd_model.py` is the model's
   simulator-free self-test (`npm run lint`). Driven by `klt
   functional-verification` (`request-firmware-swd.json`); evidence in
   `records/firmware-swd/` (RTL only; no gate-level run is claimed).
+- `test_firmware_modbus.py` — the Modbus RTU **server** bench (issue
+  #446, multi-protocol extra credit): the committed 236-word image
+  (`modbus_rtu.asm`, 8N2 at 434 cycles/bit) is loaded over the real
+  serial load-phase pins and spoken to as a Modbus master — requests
+  driven on `ui_in[1]`, responses captured off `uo_out[0]` with the
+  RS-485 driver-enable window on `uo_out[1]`. Every response is judged
+  by the independent model `reference_models/modbus_rtu.py` (its own
+  table-driven CRC-16, 8N2 decoder and server behaviour for the fixed
+  two-register map): bytes, per-bit slot stability against the stated
+  +-2.5% bound, character pitch within 4,774+-12 cycles, the 3.5
+  character response latency, and the DE discipline. Coverage: 0x03
+  reads, 0x06 writes with read-back, bad CRC / wrong address /
+  unsupported function / bad count / bad register all met with silence
+  (with liveness proofs between), a truncated frame and the two-frame
+  resync the recorded no-inter-character-timeout cut implies, and a
+  retimed negative control (1.04x: bytes decode, timing fails).
+  `test_modbus_rtu_model.py` is the model's simulator-free self-test
+  (`npm run lint`). Driven by `klt functional-verification`
+  (`request-firmware-modbus.json`); evidence in
+  `records/firmware-modbus/` (RTL only; no gate-level run is claimed).
 - `formal/` — the §2 formal-properties leg (issue #24, distinct from the
   cocotb legs above: no `klt`, no PDK, no simulator — a Yosys+SMTBMC model
   checking harness). `formal/no_data_dependent_latency.sv` is
@@ -846,9 +878,11 @@ produced it. `--rerun [--only EXPERIMENT] [--klt CMD]` re-runs just those
 requests with `klt functional-verification` and mints superseding records
 (new ID, `supersedes` = the stale record, artifacts under `artifacts/<new-id>/`).
 Old records are never touched. The new prose is copied from the old record
-with Record ID, Result, Timestamp and Supersedes rewritten; review the Claim
-and Run configuration before committing. Records with no request file are
-reported and must be re-minted by hand. Self-test: `test_remint_records.py`.
+with Record ID, Result, Timestamp and Supersedes rewritten and the Links
+block's `artifacts/<old-id>/` references retargeted to `artifacts/<new-id>/`
+(#588); review the Claim and Run configuration before committing. Records
+with no request file are reported and must be re-minted by hand. Self-test:
+`test_remint_records.py`.
 
 `--collapse EXPERIMENT` (#472, mutually exclusive with `--rerun`) covers the
 hand-re-minted interchangeable-leaf experiments (`signoff-baseline` today):
@@ -861,14 +895,25 @@ minted record's Result, Run configuration and Design provenance are
 who re-ran the experiment (`scripts/signoff-report.sh` for `signoff-baseline`)
 fills them in; its heading and artifact links name the new record ID, and the
 predecessor's design provenance is kept under Links as history. Fields are
-split with the linter's own bullet recognition (indented bullets and
-blank-line-separated continuation paragraphs belong to their field), and the
-tool refuses to mint when Claim, Result or another required field is missing
-or appears more than once, or a kept block cites the predecessor outside an
+split with the linter's own bullet recognition, including indented field
+bullets. Indent continuation paragraphs after a blank line. If a blank line
+after a required field is followed by an unindented block other than a field
+bullet, `--collapse` cannot tell whether it continues the field and refuses
+to mint. The tool also refuses to mint when a required field is missing or
+appears more than once, or a kept block cites the predecessor outside an
 `artifacts/` link. It
 refuses any other experiment, stale leaves that hash request files (use
 `--rerun`), and leaves whose input paths, claim or result are not
 interchangeable.
+
+Ordering (#558): merge or rebase onto the current `origin/main` **before**
+minting, then mint once. A base merge that moves a hashed input stales every
+leaf minted against the pre-merge base — PR #497 minted 344 per-leaf
+successors before merging main, and the merge itself staled all of them
+(~41k added lines superseded within the PR; only its 3 collapse records
+stayed live). For the `COLLAPSIBLE_EXPERIMENTS` (`signoff-baseline`), that
+one mint is `--collapse EXPERIMENT` — never one successor per stale live
+leaf.
 
 ## Bulk evidence bytes: artifact store, manifest in git (#344)
 

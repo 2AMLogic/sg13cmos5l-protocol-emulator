@@ -58,6 +58,14 @@ what they said before is in this file's history (PRs #148, #149, #170). The UART
 RX move followed in #178 (below). The Status line above is unchanged; this
 record is still Proposed.
 
+**Update 2026-11-21 (issue #446).** The Modbus RTU server image adds a
+`modbus` phase: `RX` on `ui_in[1]` (the uart_rx profile's pad, fed by the
+RS-485 transceiver's R output), `TX` on `uo_out[0]` (the uart_tx/dmx512
+pad, to the transceiver's D input) and the transceiver's driver-enable on
+`uo_out[1]` (`DE`, DE and /RE tied). No `uio` pin is touched: the image
+writes neither `UIO_DIR` nor `UIO_OD`, so it has no `pin_modes` entry.
+See "Modbus RTU server" below.
+
 ### Load phase (reset released with `ui_in[7]` high)
 
 | Pin | Role |
@@ -263,8 +271,8 @@ per image (DR 0012) and one image is loaded per run:
 3. Both registers reset to 0, so whatever ran before a reset, every `uio`
    pin is an input until the new image writes its own mode.
 
-The checker holds every SPI and I2C image to its profile's `pin_modes` and
-reports any pin-mode write the profile does not declare. The section below
+The checker holds every SPI, I2C, PS/2 and 1-Wire image to its profile's
+`pin_modes` and reports any pin-mode write the profile does not declare. The section below
 is the analysis of the pre-#155 plan and is kept as history.
 
 ### SPI `MISO` and I2C `SCL` both on `uio[0]` — electrical compatibility (pre-#155 plan)
@@ -326,100 +334,1310 @@ inventory is a hard failure.
   "open_drain_mask": "0x00",
   "push_pull_mask": "0x00",
   "pin_modes": {
-    "uart": {"uio_dir": "0x00", "uio_od": "0x00"},
-    "spi": {"uio_dir": "0x0B", "uio_od": "0x00"},
-    "i2c": {"uio_dir": "0x00", "uio_od": "0x0C"},
-    "ps2": {"uio_dir": "0x00", "uio_od": "0x0C"},
-    "swd": {"uio_dir": "0x0C", "uio_od": "0x00"},
-    "dali": {"uio_dir": "0x01", "uio_od": "0x00"}
+    "uart": {
+      "uio_dir": "0x00",
+      "uio_od": "0x00"
+    },
+    "spi": {
+      "uio_dir": "0x0B",
+      "uio_od": "0x00"
+    },
+    "i2c": {
+      "uio_dir": "0x00",
+      "uio_od": "0x0C"
+    },
+    "ps2": {
+      "uio_dir": "0x00",
+      "uio_od": "0x0C"
+    },
+    "dali": {
+      "uio_dir": "0x01",
+      "uio_od": "0x00"
+    },
+    "onewire": {
+      "uio_dir": "0x00",
+      "uio_od": "0x08"
+    },
+    "swd": {
+      "uio_dir": "0x0C",
+      "uio_od": "0x00"
+    }
   },
-  "bench_debug": {"uart_rx": {"port": "uio", "bits": {"SAMPLE_MARK": 1, "FRAME_ERROR": 2}}},
+  "bench_debug": {
+    "uart_rx": {
+      "port": "uio",
+      "bits": {
+        "SAMPLE_MARK": 1,
+        "FRAME_ERROR": 2
+      }
+    }
+  },
   "phases": {
-    "uart_tx": ["TX"],
-    "uart_rx": ["RX"],
-    "uart_rx_result": ["RESULT[0]", "RESULT[1]", "RESULT[2]", "RESULT[3]", "RESULT[4]", "RESULT[5]", "RESULT[6]", "RESULT[7]"],
-    "spi_transfer": ["CS", "SCLK", "MOSI", "MISO"],
-    "spi_result": ["RESULT[0]", "RESULT[1]", "RESULT[2]", "RESULT[3]", "RESULT[4]", "RESULT[5]", "RESULT[6]", "RESULT[7]"],
-    "i2c_transfer": ["SCL", "SDA"],
-    "i2c_result": ["RESULT[0]", "RESULT[1]", "RESULT[2]", "RESULT[3]", "RESULT[4]", "RESULT[5]", "RESULT[6]", "RESULT[7]"],
-    "ws2812": ["DIN"],
-    "ps2": ["PS2_CLK", "PS2_DATA"],
-    "dmx512": ["TX"],
-    "nec_ir_tx": ["IR_TX"],
-    "nec_ir_rx": ["IR_RX"],
-    "swd": ["SWCLK", "SWDIO"],
-    "dali": ["TX", "RX"],
-    "dali_result": ["RESULT[0]", "RESULT[1]", "RESULT[2]", "RESULT[3]", "RESULT[4]", "RESULT[5]", "RESULT[6]", "RESULT[7]"]
+    "uart_tx": [
+      "TX"
+    ],
+    "uart_rx": [
+      "RX"
+    ],
+    "uart_rx_result": [
+      "RESULT[0]",
+      "RESULT[1]",
+      "RESULT[2]",
+      "RESULT[3]",
+      "RESULT[4]",
+      "RESULT[5]",
+      "RESULT[6]",
+      "RESULT[7]"
+    ],
+    "spi_transfer": [
+      "CS",
+      "SCLK",
+      "MOSI",
+      "MISO"
+    ],
+    "spi_result": [
+      "RESULT[0]",
+      "RESULT[1]",
+      "RESULT[2]",
+      "RESULT[3]",
+      "RESULT[4]",
+      "RESULT[5]",
+      "RESULT[6]",
+      "RESULT[7]"
+    ],
+    "i2c_transfer": [
+      "SCL",
+      "SDA"
+    ],
+    "i2c_result": [
+      "RESULT[0]",
+      "RESULT[1]",
+      "RESULT[2]",
+      "RESULT[3]",
+      "RESULT[4]",
+      "RESULT[5]",
+      "RESULT[6]",
+      "RESULT[7]"
+    ],
+    "ws2812": [
+      "DIN"
+    ],
+    "ps2": [
+      "PS2_CLK",
+      "PS2_DATA"
+    ],
+    "dali": [
+      "TX",
+      "RX"
+    ],
+    "dali_result": [
+      "RESULT[0]",
+      "RESULT[1]",
+      "RESULT[2]",
+      "RESULT[3]",
+      "RESULT[4]",
+      "RESULT[5]",
+      "RESULT[6]",
+      "RESULT[7]"
+    ],
+    "onewire": [
+      "DQ"
+    ],
+    "onewire_result": [
+      "RESULT[0]",
+      "RESULT[1]",
+      "RESULT[2]",
+      "RESULT[3]",
+      "RESULT[4]",
+      "RESULT[5]",
+      "RESULT[6]",
+      "RESULT[7]"
+    ],
+    "dmx512": [
+      "TX"
+    ],
+    "i2s": [
+      "BCLK",
+      "WS",
+      "SD"
+    ],
+    "nec_ir_tx": [
+      "IR_TX"
+    ],
+    "nec_ir_rx": [
+      "IR_RX"
+    ],
+    "swd": [
+      "SWCLK",
+      "SWDIO"
+    ],
+    "can": [
+      "CAN_TXD",
+      "CAN_RXD"
+    ],
+    "modbus": [
+      "RX",
+      "TX",
+      "DE"
+    ]
   },
   "pins": [
-    {"pin": "ui_in[0]", "port": "ui_in", "bit": 0, "electrical_role": "input", "load_role": "PROG_SER", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "uart_rx": "unused", "uart_rx_result": "unused", "spi_transfer": "unused", "spi_result": "unused", "i2c_transfer": "unused", "i2c_result": "unused", "ws2812": "unused", "ps2": "unused", "dmx512": "unused", "nec_ir_tx": "unused", "nec_ir_rx": "unused", "swd": "unused", "dali": "unused", "dali_result": "unused"}, "shared_pin_rationale": ""},
-    {"pin": "ui_in[1]", "port": "ui_in", "bit": 1, "electrical_role": "input", "load_role": "CRC_BYTE_SEL", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "uart_rx": "RX", "uart_rx_result": "unused", "spi_transfer": "unused", "spi_result": "unused", "i2c_transfer": "unused", "i2c_result": "unused", "ws2812": "unused", "ps2": "unused", "dmx512": "unused", "nec_ir_tx": "unused", "nec_ir_rx": "unused", "swd": "unused", "dali": "unused", "dali_result": "unused"}, "shared_pin_rationale": ""},
-    {"pin": "ui_in[2]", "port": "ui_in", "bit": 2, "electrical_role": "input", "load_role": "none", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "uart_rx": "unused", "uart_rx_result": "unused", "spi_transfer": "unused", "spi_result": "unused", "i2c_transfer": "unused", "i2c_result": "unused", "ws2812": "unused", "ps2": "unused", "dmx512": "unused", "nec_ir_tx": "unused", "nec_ir_rx": "unused", "swd": "unused", "dali": "unused", "dali_result": "unused"}, "shared_pin_rationale": ""},
-    {"pin": "ui_in[3]", "port": "ui_in", "bit": 3, "electrical_role": "input", "load_role": "none", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "uart_rx": "unused", "uart_rx_result": "unused", "spi_transfer": "unused", "spi_result": "unused", "i2c_transfer": "unused", "i2c_result": "unused", "ws2812": "unused", "ps2": "unused", "dmx512": "unused", "nec_ir_tx": "unused", "nec_ir_rx": "unused", "swd": "unused", "dali": "unused", "dali_result": "unused"}, "shared_pin_rationale": ""},
-    {"pin": "ui_in[4]", "port": "ui_in", "bit": 4, "electrical_role": "input", "load_role": "none", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "uart_rx": "unused", "uart_rx_result": "unused", "spi_transfer": "unused", "spi_result": "unused", "i2c_transfer": "unused", "i2c_result": "unused", "ws2812": "unused", "ps2": "unused", "dmx512": "unused", "nec_ir_tx": "unused", "nec_ir_rx": "IR_RX", "swd": "unused", "dali": "unused", "dali_result": "unused"}, "shared_pin_rationale": ""},
-    {"pin": "ui_in[5]", "port": "ui_in", "bit": 5, "electrical_role": "input", "load_role": "none", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "uart_rx": "unused", "uart_rx_result": "unused", "spi_transfer": "unused", "spi_result": "unused", "i2c_transfer": "unused", "i2c_result": "unused", "ws2812": "unused", "ps2": "unused", "dmx512": "unused", "nec_ir_tx": "unused", "nec_ir_rx": "unused", "swd": "unused", "dali": "unused", "dali_result": "unused"}, "shared_pin_rationale": ""},
-    {"pin": "ui_in[6]", "port": "ui_in", "bit": 6, "electrical_role": "input", "load_role": "none", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "uart_rx": "unused", "uart_rx_result": "unused", "spi_transfer": "unused", "spi_result": "unused", "i2c_transfer": "unused", "i2c_result": "unused", "ws2812": "unused", "ps2": "unused", "dmx512": "unused", "nec_ir_tx": "unused", "nec_ir_rx": "unused", "swd": "unused", "dali": "unused", "dali_result": "unused"}, "shared_pin_rationale": ""},
-    {"pin": "ui_in[7]", "port": "ui_in", "bit": 7, "electrical_role": "input", "load_role": "PROG_MODE", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "uart_rx": "unused", "uart_rx_result": "unused", "spi_transfer": "unused", "spi_result": "unused", "i2c_transfer": "unused", "i2c_result": "unused", "ws2812": "unused", "ps2": "unused", "dmx512": "unused", "nec_ir_tx": "unused", "nec_ir_rx": "unused", "swd": "unused", "dali": "unused", "dali_result": "unused"}, "shared_pin_rationale": ""},
-    {"pin": "uo_out[0]", "port": "uo_out", "bit": 0, "electrical_role": "push_pull", "load_role": "CRC_READOUT", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "TX", "uart_rx": "unused", "uart_rx_result": "RESULT[0]", "spi_transfer": "unused", "spi_result": "RESULT[0]", "i2c_transfer": "unused", "i2c_result": "RESULT[0]", "ws2812": "unused", "ps2": "unused", "dmx512": "TX", "nec_ir_tx": "unused", "nec_ir_rx": "unused", "swd": "unused", "dali": "unused", "dali_result": "RESULT[0]"}, "shared_pin_rationale": ""},
-    {"pin": "uo_out[1]", "port": "uo_out", "bit": 1, "electrical_role": "push_pull", "load_role": "CRC_READOUT", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "uart_rx": "unused", "uart_rx_result": "RESULT[1]", "spi_transfer": "unused", "spi_result": "RESULT[1]", "i2c_transfer": "unused", "i2c_result": "RESULT[1]", "ws2812": "unused", "ps2": "unused", "dmx512": "unused", "nec_ir_tx": "unused", "nec_ir_rx": "unused", "swd": "unused", "dali": "unused", "dali_result": "RESULT[1]"}, "shared_pin_rationale": ""},
-    {"pin": "uo_out[2]", "port": "uo_out", "bit": 2, "electrical_role": "push_pull", "load_role": "CRC_READOUT", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "uart_rx": "unused", "uart_rx_result": "RESULT[2]", "spi_transfer": "unused", "spi_result": "RESULT[2]", "i2c_transfer": "unused", "i2c_result": "RESULT[2]", "ws2812": "unused", "ps2": "unused", "dmx512": "unused", "nec_ir_tx": "unused", "nec_ir_rx": "unused", "swd": "unused", "dali": "unused", "dali_result": "RESULT[2]"}, "shared_pin_rationale": ""},
-    {"pin": "uo_out[3]", "port": "uo_out", "bit": 3, "electrical_role": "push_pull", "load_role": "CRC_READOUT", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "uart_rx": "unused", "uart_rx_result": "RESULT[3]", "spi_transfer": "unused", "spi_result": "RESULT[3]", "i2c_transfer": "unused", "i2c_result": "RESULT[3]", "ws2812": "unused", "ps2": "unused", "dmx512": "unused", "nec_ir_tx": "unused", "nec_ir_rx": "unused", "swd": "unused", "dali": "unused", "dali_result": "RESULT[3]"}, "shared_pin_rationale": ""},
-    {"pin": "uo_out[4]", "port": "uo_out", "bit": 4, "electrical_role": "push_pull", "load_role": "CRC_READOUT", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "uart_rx": "unused", "uart_rx_result": "RESULT[4]", "spi_transfer": "unused", "spi_result": "RESULT[4]", "i2c_transfer": "unused", "i2c_result": "RESULT[4]", "ws2812": "unused", "ps2": "unused", "dmx512": "unused", "nec_ir_tx": "unused", "nec_ir_rx": "unused", "swd": "unused", "dali": "unused", "dali_result": "RESULT[4]"}, "shared_pin_rationale": ""},
-    {"pin": "uo_out[5]", "port": "uo_out", "bit": 5, "electrical_role": "push_pull", "load_role": "CRC_READOUT", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "uart_rx": "unused", "uart_rx_result": "RESULT[5]", "spi_transfer": "unused", "spi_result": "RESULT[5]", "i2c_transfer": "unused", "i2c_result": "RESULT[5]", "ws2812": "unused", "ps2": "unused", "dmx512": "unused", "nec_ir_tx": "unused", "nec_ir_rx": "unused", "swd": "unused", "dali": "unused", "dali_result": "RESULT[5]"}, "shared_pin_rationale": ""},
-    {"pin": "uo_out[6]", "port": "uo_out", "bit": 6, "electrical_role": "push_pull", "load_role": "CRC_READOUT", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "uart_rx": "unused", "uart_rx_result": "RESULT[6]", "spi_transfer": "unused", "spi_result": "RESULT[6]", "i2c_transfer": "unused", "i2c_result": "RESULT[6]", "ws2812": "unused", "ps2": "unused", "dmx512": "unused", "nec_ir_tx": "unused", "nec_ir_rx": "unused", "swd": "unused", "dali": "unused", "dali_result": "RESULT[6]"}, "shared_pin_rationale": ""},
-    {"pin": "uo_out[7]", "port": "uo_out", "bit": 7, "electrical_role": "push_pull", "load_role": "CRC_READOUT", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "uart_rx": "unused", "uart_rx_result": "RESULT[7]", "spi_transfer": "unused", "spi_result": "RESULT[7]", "i2c_transfer": "unused", "i2c_result": "RESULT[7]", "ws2812": "DIN", "ps2": "unused", "dmx512": "unused", "nec_ir_tx": "IR_TX", "nec_ir_rx": "unused", "swd": "unused", "dali": "unused", "dali_result": "RESULT[7]"}, "shared_pin_rationale": ""},
-    {"pin": "uio[0]", "port": "uio", "bit": 0, "electrical_role": "runtime", "load_role": "none", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "uart_rx": "unused", "uart_rx_result": "unused", "spi_transfer": "CS", "spi_result": "unused", "i2c_transfer": "unused", "i2c_result": "unused", "ws2812": "unused", "ps2": "unused", "dmx512": "unused", "nec_ir_tx": "unused", "nec_ir_rx": "unused", "swd": "unused", "dali": "TX", "dali_result": "unused"}, "shared_pin_rationale": ""},
-    {"pin": "uio[1]", "port": "uio", "bit": 1, "electrical_role": "runtime", "load_role": "none", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "uart_rx": "unused", "uart_rx_result": "unused", "spi_transfer": "MOSI", "spi_result": "unused", "i2c_transfer": "unused", "i2c_result": "unused", "ws2812": "unused", "ps2": "unused", "dmx512": "unused", "nec_ir_tx": "unused", "nec_ir_rx": "unused", "swd": "unused", "dali": "RX", "dali_result": "unused"}, "shared_pin_rationale": "The SPI image drives MOSI. The DALI image samples the isolated receiver here with UIO_DIR bit 1 clear."},
-    {"pin": "uio[2]", "port": "uio", "bit": 2, "electrical_role": "runtime", "load_role": "none", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "uart_rx": "unused", "uart_rx_result": "unused", "spi_transfer": "MISO", "spi_result": "unused", "i2c_transfer": "SCL", "i2c_result": "unused", "ws2812": "unused", "ps2": "PS2_CLK", "dmx512": "unused", "nec_ir_tx": "unused", "nec_ir_rx": "unused", "swd": "SWCLK", "dali": "unused", "dali_result": "unused"}, "shared_pin_rationale": "Standard SPI and I2C Pmod rows overlap here by Tiny Tapeout's design: one row carries one protocol and one firmware image is loaded per run. The SPI images leave the pin an input (UIO_DIR bit 2 = 0, UIO_OD bit 2 = 0) and sample MISO on uio_in[2]; the I2C images make it open-drain SCL (UIO_OD bit 2); the SWD images drive it push-pull as SWCLK (UIO_DIR bit 2). DR 0012 sets the mode per image, so no image sees the other's role."},
-    {"pin": "uio[3]", "port": "uio", "bit": 3, "electrical_role": "runtime", "load_role": "none", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "uart_rx": "unused", "uart_rx_result": "unused", "spi_transfer": "SCLK", "spi_result": "unused", "i2c_transfer": "SDA", "i2c_result": "unused", "ws2812": "unused", "ps2": "PS2_DATA", "dmx512": "unused", "nec_ir_tx": "unused", "nec_ir_rx": "unused", "swd": "SWDIO", "dali": "unused", "dali_result": "unused"}, "shared_pin_rationale": "Push-pull SCLK (SCK) in the SPI images (UIO_DIR bit 3), open-drain SDA in the I2C images (UIO_OD bit 3), and SWDIO in the SWD images -- push-pull while the probe drives it (UIO_DIR bit 3), released for the target's response phases (added by #452): several electrical roles on one pad, legal only because DR 0012 sets the pin mode at run time per image and one image is loaded per run. No role exists while another profile runs."},
-    {"pin": "uio[4]", "port": "uio", "bit": 4, "electrical_role": "input", "load_role": "none", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "uart_rx": "unused", "uart_rx_result": "unused", "spi_transfer": "unused", "spi_result": "unused", "i2c_transfer": "unused", "i2c_result": "unused", "ws2812": "unused", "ps2": "unused", "dmx512": "unused", "nec_ir_tx": "unused", "nec_ir_rx": "unused", "swd": "unused", "dali": "unused", "dali_result": "unused"}, "shared_pin_rationale": ""},
-    {"pin": "uio[5]", "port": "uio", "bit": 5, "electrical_role": "input", "load_role": "none", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "uart_rx": "unused", "uart_rx_result": "unused", "spi_transfer": "unused", "spi_result": "unused", "i2c_transfer": "unused", "i2c_result": "unused", "ws2812": "unused", "ps2": "unused", "dmx512": "unused", "nec_ir_tx": "unused", "nec_ir_rx": "unused", "swd": "unused", "dali": "unused", "dali_result": "unused"}, "shared_pin_rationale": ""},
-    {"pin": "uio[6]", "port": "uio", "bit": 6, "electrical_role": "input", "load_role": "none", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "uart_rx": "unused", "uart_rx_result": "unused", "spi_transfer": "unused", "spi_result": "unused", "i2c_transfer": "unused", "i2c_result": "unused", "ws2812": "unused", "ps2": "unused", "dmx512": "unused", "nec_ir_tx": "unused", "nec_ir_rx": "unused", "swd": "unused", "dali": "unused", "dali_result": "unused"}, "shared_pin_rationale": ""},
-    {"pin": "uio[7]", "port": "uio", "bit": 7, "electrical_role": "input", "load_role": "none", "metadata_class": "generic_isa_capability", "protocol_roles": {"uart_tx": "unused", "uart_rx": "unused", "uart_rx_result": "unused", "spi_transfer": "unused", "spi_result": "unused", "i2c_transfer": "unused", "i2c_result": "unused", "ws2812": "unused", "ps2": "unused", "dmx512": "unused", "nec_ir_tx": "unused", "nec_ir_rx": "unused", "swd": "unused", "dali": "unused", "dali_result": "unused"}, "shared_pin_rationale": ""}
+    {
+      "pin": "ui_in[0]",
+      "port": "ui_in",
+      "bit": 0,
+      "electrical_role": "input",
+      "load_role": "PROG_SER",
+      "metadata_class": "generic_isa_capability",
+      "protocol_roles": {
+        "uart_tx": "unused",
+        "uart_rx": "unused",
+        "uart_rx_result": "unused",
+        "spi_transfer": "unused",
+        "spi_result": "unused",
+        "i2c_transfer": "unused",
+        "i2c_result": "unused",
+        "ws2812": "unused",
+        "ps2": "unused",
+        "dali": "unused",
+        "dali_result": "unused",
+        "onewire": "unused",
+        "onewire_result": "unused",
+        "dmx512": "unused",
+        "i2s": "unused",
+        "nec_ir_tx": "unused",
+        "nec_ir_rx": "unused",
+        "swd": "unused",
+        "can": "CAN_RXD",
+        "modbus": "unused"
+      },
+      "shared_pin_rationale": "PROG_SER during the load phase; CAN_RXD (run phase) is the CAN transceiver's R output read by the issue #450 image -- the load phase ends before any protocol image runs, so the two roles never coincide"
+    },
+    {
+      "pin": "ui_in[1]",
+      "port": "ui_in",
+      "bit": 1,
+      "electrical_role": "input",
+      "load_role": "CRC_BYTE_SEL",
+      "metadata_class": "generic_isa_capability",
+      "protocol_roles": {
+        "uart_tx": "unused",
+        "uart_rx": "RX",
+        "uart_rx_result": "unused",
+        "spi_transfer": "unused",
+        "spi_result": "unused",
+        "i2c_transfer": "unused",
+        "i2c_result": "unused",
+        "ws2812": "unused",
+        "ps2": "unused",
+        "dali": "unused",
+        "dali_result": "unused",
+        "onewire": "unused",
+        "onewire_result": "unused",
+        "dmx512": "unused",
+        "i2s": "unused",
+        "nec_ir_tx": "unused",
+        "nec_ir_rx": "unused",
+        "swd": "unused",
+        "can": "unused",
+        "modbus": "RX"
+      },
+      "shared_pin_rationale": ""
+    },
+    {
+      "pin": "ui_in[2]",
+      "port": "ui_in",
+      "bit": 2,
+      "electrical_role": "input",
+      "load_role": "none",
+      "metadata_class": "generic_isa_capability",
+      "protocol_roles": {
+        "uart_tx": "unused",
+        "uart_rx": "unused",
+        "uart_rx_result": "unused",
+        "spi_transfer": "unused",
+        "spi_result": "unused",
+        "i2c_transfer": "unused",
+        "i2c_result": "unused",
+        "ws2812": "unused",
+        "ps2": "unused",
+        "dali": "unused",
+        "dali_result": "unused",
+        "onewire": "unused",
+        "onewire_result": "unused",
+        "dmx512": "unused",
+        "i2s": "unused",
+        "nec_ir_tx": "unused",
+        "nec_ir_rx": "unused",
+        "swd": "unused",
+        "can": "unused",
+        "modbus": "unused"
+      },
+      "shared_pin_rationale": ""
+    },
+    {
+      "pin": "ui_in[3]",
+      "port": "ui_in",
+      "bit": 3,
+      "electrical_role": "input",
+      "load_role": "none",
+      "metadata_class": "generic_isa_capability",
+      "protocol_roles": {
+        "uart_tx": "unused",
+        "uart_rx": "unused",
+        "uart_rx_result": "unused",
+        "spi_transfer": "unused",
+        "spi_result": "unused",
+        "i2c_transfer": "unused",
+        "i2c_result": "unused",
+        "ws2812": "unused",
+        "ps2": "unused",
+        "dali": "unused",
+        "dali_result": "unused",
+        "onewire": "unused",
+        "onewire_result": "unused",
+        "dmx512": "unused",
+        "i2s": "unused",
+        "nec_ir_tx": "unused",
+        "nec_ir_rx": "unused",
+        "swd": "unused",
+        "can": "unused",
+        "modbus": "unused"
+      },
+      "shared_pin_rationale": ""
+    },
+    {
+      "pin": "ui_in[4]",
+      "port": "ui_in",
+      "bit": 4,
+      "electrical_role": "input",
+      "load_role": "none",
+      "metadata_class": "generic_isa_capability",
+      "protocol_roles": {
+        "uart_tx": "unused",
+        "uart_rx": "unused",
+        "uart_rx_result": "unused",
+        "spi_transfer": "unused",
+        "spi_result": "unused",
+        "i2c_transfer": "unused",
+        "i2c_result": "unused",
+        "ws2812": "unused",
+        "ps2": "unused",
+        "dali": "unused",
+        "dali_result": "unused",
+        "onewire": "unused",
+        "onewire_result": "unused",
+        "dmx512": "unused",
+        "i2s": "unused",
+        "nec_ir_tx": "unused",
+        "nec_ir_rx": "IR_RX",
+        "swd": "unused",
+        "can": "unused",
+        "modbus": "unused"
+      },
+      "shared_pin_rationale": ""
+    },
+    {
+      "pin": "ui_in[5]",
+      "port": "ui_in",
+      "bit": 5,
+      "electrical_role": "input",
+      "load_role": "none",
+      "metadata_class": "generic_isa_capability",
+      "protocol_roles": {
+        "uart_tx": "unused",
+        "uart_rx": "unused",
+        "uart_rx_result": "unused",
+        "spi_transfer": "unused",
+        "spi_result": "unused",
+        "i2c_transfer": "unused",
+        "i2c_result": "unused",
+        "ws2812": "unused",
+        "ps2": "unused",
+        "dali": "unused",
+        "dali_result": "unused",
+        "onewire": "unused",
+        "onewire_result": "unused",
+        "dmx512": "unused",
+        "i2s": "unused",
+        "nec_ir_tx": "unused",
+        "nec_ir_rx": "unused",
+        "swd": "unused",
+        "can": "unused",
+        "modbus": "unused"
+      },
+      "shared_pin_rationale": ""
+    },
+    {
+      "pin": "ui_in[6]",
+      "port": "ui_in",
+      "bit": 6,
+      "electrical_role": "input",
+      "load_role": "none",
+      "metadata_class": "generic_isa_capability",
+      "protocol_roles": {
+        "uart_tx": "unused",
+        "uart_rx": "unused",
+        "uart_rx_result": "unused",
+        "spi_transfer": "unused",
+        "spi_result": "unused",
+        "i2c_transfer": "unused",
+        "i2c_result": "unused",
+        "ws2812": "unused",
+        "ps2": "unused",
+        "dali": "unused",
+        "dali_result": "unused",
+        "onewire": "unused",
+        "onewire_result": "unused",
+        "dmx512": "unused",
+        "i2s": "unused",
+        "nec_ir_tx": "unused",
+        "nec_ir_rx": "unused",
+        "swd": "unused",
+        "can": "unused",
+        "modbus": "unused"
+      },
+      "shared_pin_rationale": ""
+    },
+    {
+      "pin": "ui_in[7]",
+      "port": "ui_in",
+      "bit": 7,
+      "electrical_role": "input",
+      "load_role": "PROG_MODE",
+      "metadata_class": "generic_isa_capability",
+      "protocol_roles": {
+        "uart_tx": "unused",
+        "uart_rx": "unused",
+        "uart_rx_result": "unused",
+        "spi_transfer": "unused",
+        "spi_result": "unused",
+        "i2c_transfer": "unused",
+        "i2c_result": "unused",
+        "ws2812": "unused",
+        "ps2": "unused",
+        "dali": "unused",
+        "dali_result": "unused",
+        "onewire": "unused",
+        "onewire_result": "unused",
+        "dmx512": "unused",
+        "i2s": "unused",
+        "nec_ir_tx": "unused",
+        "nec_ir_rx": "unused",
+        "swd": "unused",
+        "can": "unused",
+        "modbus": "unused"
+      },
+      "shared_pin_rationale": ""
+    },
+    {
+      "pin": "uo_out[0]",
+      "port": "uo_out",
+      "bit": 0,
+      "electrical_role": "push_pull",
+      "load_role": "CRC_READOUT",
+      "metadata_class": "generic_isa_capability",
+      "protocol_roles": {
+        "uart_tx": "TX",
+        "uart_rx": "unused",
+        "uart_rx_result": "RESULT[0]",
+        "spi_transfer": "unused",
+        "spi_result": "RESULT[0]",
+        "i2c_transfer": "unused",
+        "i2c_result": "RESULT[0]",
+        "ws2812": "unused",
+        "ps2": "unused",
+        "dali": "unused",
+        "dali_result": "RESULT[0]",
+        "onewire": "unused",
+        "onewire_result": "RESULT[0]",
+        "dmx512": "TX",
+        "i2s": "unused",
+        "nec_ir_tx": "unused",
+        "nec_ir_rx": "unused",
+        "swd": "unused",
+        "can": "CAN_TXD",
+        "modbus": "TX"
+      },
+      "shared_pin_rationale": "One image runs at a time: the UART/DMX512 transmitters and the CAN node (issue #450) each drive this pad from their own image; the result[0] role belongs to the echo images"
+    },
+    {
+      "pin": "uo_out[1]",
+      "port": "uo_out",
+      "bit": 1,
+      "electrical_role": "push_pull",
+      "load_role": "CRC_READOUT",
+      "metadata_class": "generic_isa_capability",
+      "protocol_roles": {
+        "uart_tx": "unused",
+        "uart_rx": "unused",
+        "uart_rx_result": "RESULT[1]",
+        "spi_transfer": "unused",
+        "spi_result": "RESULT[1]",
+        "i2c_transfer": "unused",
+        "i2c_result": "RESULT[1]",
+        "ws2812": "unused",
+        "ps2": "unused",
+        "dali": "unused",
+        "dali_result": "RESULT[1]",
+        "onewire": "unused",
+        "onewire_result": "RESULT[1]",
+        "dmx512": "unused",
+        "i2s": "unused",
+        "nec_ir_tx": "unused",
+        "nec_ir_rx": "unused",
+        "swd": "unused",
+        "can": "unused",
+        "modbus": "DE"
+      },
+      "shared_pin_rationale": ""
+    },
+    {
+      "pin": "uo_out[2]",
+      "port": "uo_out",
+      "bit": 2,
+      "electrical_role": "push_pull",
+      "load_role": "CRC_READOUT",
+      "metadata_class": "generic_isa_capability",
+      "protocol_roles": {
+        "uart_tx": "unused",
+        "uart_rx": "unused",
+        "uart_rx_result": "RESULT[2]",
+        "spi_transfer": "unused",
+        "spi_result": "RESULT[2]",
+        "i2c_transfer": "unused",
+        "i2c_result": "RESULT[2]",
+        "ws2812": "unused",
+        "ps2": "unused",
+        "dali": "unused",
+        "dali_result": "RESULT[2]",
+        "onewire": "unused",
+        "onewire_result": "RESULT[2]",
+        "dmx512": "unused",
+        "i2s": "unused",
+        "nec_ir_tx": "unused",
+        "nec_ir_rx": "unused",
+        "swd": "unused",
+        "can": "unused",
+        "modbus": "unused"
+      },
+      "shared_pin_rationale": ""
+    },
+    {
+      "pin": "uo_out[3]",
+      "port": "uo_out",
+      "bit": 3,
+      "electrical_role": "push_pull",
+      "load_role": "CRC_READOUT",
+      "metadata_class": "generic_isa_capability",
+      "protocol_roles": {
+        "uart_tx": "unused",
+        "uart_rx": "unused",
+        "uart_rx_result": "RESULT[3]",
+        "spi_transfer": "unused",
+        "spi_result": "RESULT[3]",
+        "i2c_transfer": "unused",
+        "i2c_result": "RESULT[3]",
+        "ws2812": "unused",
+        "ps2": "unused",
+        "dali": "unused",
+        "dali_result": "RESULT[3]",
+        "onewire": "unused",
+        "onewire_result": "RESULT[3]",
+        "dmx512": "unused",
+        "i2s": "unused",
+        "nec_ir_tx": "unused",
+        "nec_ir_rx": "unused",
+        "swd": "unused",
+        "can": "unused",
+        "modbus": "unused"
+      },
+      "shared_pin_rationale": ""
+    },
+    {
+      "pin": "uo_out[4]",
+      "port": "uo_out",
+      "bit": 4,
+      "electrical_role": "push_pull",
+      "load_role": "CRC_READOUT",
+      "metadata_class": "generic_isa_capability",
+      "protocol_roles": {
+        "uart_tx": "unused",
+        "uart_rx": "unused",
+        "uart_rx_result": "RESULT[4]",
+        "spi_transfer": "unused",
+        "spi_result": "RESULT[4]",
+        "i2c_transfer": "unused",
+        "i2c_result": "RESULT[4]",
+        "ws2812": "unused",
+        "ps2": "unused",
+        "dali": "unused",
+        "dali_result": "RESULT[4]",
+        "onewire": "unused",
+        "onewire_result": "RESULT[4]",
+        "dmx512": "unused",
+        "i2s": "unused",
+        "nec_ir_tx": "unused",
+        "nec_ir_rx": "unused",
+        "swd": "unused",
+        "can": "unused",
+        "modbus": "unused"
+      },
+      "shared_pin_rationale": ""
+    },
+    {
+      "pin": "uo_out[5]",
+      "port": "uo_out",
+      "bit": 5,
+      "electrical_role": "push_pull",
+      "load_role": "CRC_READOUT",
+      "metadata_class": "generic_isa_capability",
+      "protocol_roles": {
+        "uart_tx": "unused",
+        "uart_rx": "unused",
+        "uart_rx_result": "RESULT[5]",
+        "spi_transfer": "unused",
+        "spi_result": "RESULT[5]",
+        "i2c_transfer": "unused",
+        "i2c_result": "RESULT[5]",
+        "ws2812": "unused",
+        "ps2": "unused",
+        "dali": "unused",
+        "dali_result": "RESULT[5]",
+        "onewire": "unused",
+        "onewire_result": "RESULT[5]",
+        "dmx512": "unused",
+        "i2s": "WS",
+        "nec_ir_tx": "unused",
+        "nec_ir_rx": "unused",
+        "swd": "unused",
+        "can": "unused",
+        "modbus": "unused"
+      },
+      "shared_pin_rationale": ""
+    },
+    {
+      "pin": "uo_out[6]",
+      "port": "uo_out",
+      "bit": 6,
+      "electrical_role": "push_pull",
+      "load_role": "CRC_READOUT",
+      "metadata_class": "generic_isa_capability",
+      "protocol_roles": {
+        "uart_tx": "unused",
+        "uart_rx": "unused",
+        "uart_rx_result": "RESULT[6]",
+        "spi_transfer": "unused",
+        "spi_result": "RESULT[6]",
+        "i2c_transfer": "unused",
+        "i2c_result": "RESULT[6]",
+        "ws2812": "unused",
+        "ps2": "unused",
+        "dali": "unused",
+        "dali_result": "RESULT[6]",
+        "onewire": "unused",
+        "onewire_result": "RESULT[6]",
+        "dmx512": "unused",
+        "i2s": "BCLK",
+        "nec_ir_tx": "unused",
+        "nec_ir_rx": "unused",
+        "swd": "unused",
+        "can": "unused",
+        "modbus": "unused"
+      },
+      "shared_pin_rationale": ""
+    },
+    {
+      "pin": "uo_out[7]",
+      "port": "uo_out",
+      "bit": 7,
+      "electrical_role": "push_pull",
+      "load_role": "CRC_READOUT",
+      "metadata_class": "generic_isa_capability",
+      "protocol_roles": {
+        "uart_tx": "unused",
+        "uart_rx": "unused",
+        "uart_rx_result": "RESULT[7]",
+        "spi_transfer": "unused",
+        "spi_result": "RESULT[7]",
+        "i2c_transfer": "unused",
+        "i2c_result": "RESULT[7]",
+        "ws2812": "DIN",
+        "ps2": "unused",
+        "dali": "unused",
+        "dali_result": "RESULT[7]",
+        "onewire": "unused",
+        "onewire_result": "RESULT[7]",
+        "dmx512": "unused",
+        "i2s": "SD",
+        "nec_ir_tx": "IR_TX",
+        "nec_ir_rx": "unused",
+        "swd": "unused",
+        "can": "unused",
+        "modbus": "unused"
+      },
+      "shared_pin_rationale": ""
+    },
+    {
+      "pin": "uio[0]",
+      "port": "uio",
+      "bit": 0,
+      "electrical_role": "runtime",
+      "load_role": "none",
+      "metadata_class": "generic_isa_capability",
+      "protocol_roles": {
+        "uart_tx": "unused",
+        "uart_rx": "unused",
+        "uart_rx_result": "unused",
+        "spi_transfer": "CS",
+        "spi_result": "unused",
+        "i2c_transfer": "unused",
+        "i2c_result": "unused",
+        "ws2812": "unused",
+        "ps2": "unused",
+        "dali": "TX",
+        "dali_result": "unused",
+        "onewire": "unused",
+        "onewire_result": "unused",
+        "dmx512": "unused",
+        "i2s": "unused",
+        "nec_ir_tx": "unused",
+        "nec_ir_rx": "unused",
+        "swd": "unused",
+        "can": "unused",
+        "modbus": "unused"
+      },
+      "shared_pin_rationale": ""
+    },
+    {
+      "pin": "uio[1]",
+      "port": "uio",
+      "bit": 1,
+      "electrical_role": "runtime",
+      "load_role": "none",
+      "metadata_class": "generic_isa_capability",
+      "protocol_roles": {
+        "uart_tx": "unused",
+        "uart_rx": "unused",
+        "uart_rx_result": "unused",
+        "spi_transfer": "MOSI",
+        "spi_result": "unused",
+        "i2c_transfer": "unused",
+        "i2c_result": "unused",
+        "ws2812": "unused",
+        "ps2": "unused",
+        "dali": "RX",
+        "dali_result": "unused",
+        "onewire": "unused",
+        "onewire_result": "unused",
+        "dmx512": "unused",
+        "i2s": "unused",
+        "nec_ir_tx": "unused",
+        "nec_ir_rx": "unused",
+        "swd": "unused",
+        "can": "unused",
+        "modbus": "unused"
+      },
+      "shared_pin_rationale": "The SPI image drives MOSI. The DALI image samples the isolated receiver here with UIO_DIR bit 1 clear."
+    },
+    {
+      "pin": "uio[2]",
+      "port": "uio",
+      "bit": 2,
+      "electrical_role": "runtime",
+      "load_role": "none",
+      "metadata_class": "generic_isa_capability",
+      "protocol_roles": {
+        "uart_tx": "unused",
+        "uart_rx": "unused",
+        "uart_rx_result": "unused",
+        "spi_transfer": "MISO",
+        "spi_result": "unused",
+        "i2c_transfer": "SCL",
+        "i2c_result": "unused",
+        "ws2812": "unused",
+        "ps2": "PS2_CLK",
+        "dali": "unused",
+        "dali_result": "unused",
+        "onewire": "unused",
+        "onewire_result": "unused",
+        "dmx512": "unused",
+        "i2s": "unused",
+        "nec_ir_tx": "unused",
+        "nec_ir_rx": "unused",
+        "swd": "SWCLK",
+        "can": "unused",
+        "modbus": "unused"
+      },
+      "shared_pin_rationale": "Standard SPI and I2C Pmod rows overlap here by Tiny Tapeout's design: one row carries one protocol and one firmware image is loaded per run. The SPI images leave the pin an input (UIO_DIR bit 2 = 0, UIO_OD bit 2 = 0) and sample MISO on uio_in[2]; the I2C images make it open-drain SCL (UIO_OD bit 2); the SWD images drive it push-pull as SWCLK (UIO_DIR bit 2). DR 0012 sets the mode per image, so no image sees the other's role."
+    },
+    {
+      "pin": "uio[3]",
+      "port": "uio",
+      "bit": 3,
+      "electrical_role": "runtime",
+      "load_role": "none",
+      "metadata_class": "generic_isa_capability",
+      "protocol_roles": {
+        "uart_tx": "unused",
+        "uart_rx": "unused",
+        "uart_rx_result": "unused",
+        "spi_transfer": "SCLK",
+        "spi_result": "unused",
+        "i2c_transfer": "SDA",
+        "i2c_result": "unused",
+        "ws2812": "unused",
+        "ps2": "PS2_DATA",
+        "dali": "unused",
+        "dali_result": "unused",
+        "onewire": "DQ",
+        "onewire_result": "unused",
+        "dmx512": "unused",
+        "i2s": "unused",
+        "nec_ir_tx": "unused",
+        "nec_ir_rx": "unused",
+        "swd": "SWDIO",
+        "can": "unused",
+        "modbus": "unused"
+      },
+      "shared_pin_rationale": "Push-pull SCLK (SCK) in the SPI images (UIO_DIR bit 3), open-drain SDA in the I2C images (UIO_OD bit 3), and SWDIO in the SWD images -- push-pull while the probe drives it (UIO_DIR bit 3), released for the target's response phases (added by #452): several electrical roles on one pad, legal only because DR 0012 sets the pin mode at run time per image and one image is loaded per run. No role exists while another profile runs."
+    },
+    {
+      "pin": "uio[4]",
+      "port": "uio",
+      "bit": 4,
+      "electrical_role": "input",
+      "load_role": "none",
+      "metadata_class": "generic_isa_capability",
+      "protocol_roles": {
+        "uart_tx": "unused",
+        "uart_rx": "unused",
+        "uart_rx_result": "unused",
+        "spi_transfer": "unused",
+        "spi_result": "unused",
+        "i2c_transfer": "unused",
+        "i2c_result": "unused",
+        "ws2812": "unused",
+        "ps2": "unused",
+        "dali": "unused",
+        "dali_result": "unused",
+        "onewire": "unused",
+        "onewire_result": "unused",
+        "dmx512": "unused",
+        "i2s": "unused",
+        "nec_ir_tx": "unused",
+        "nec_ir_rx": "unused",
+        "swd": "unused",
+        "can": "unused",
+        "modbus": "unused"
+      },
+      "shared_pin_rationale": ""
+    },
+    {
+      "pin": "uio[5]",
+      "port": "uio",
+      "bit": 5,
+      "electrical_role": "input",
+      "load_role": "none",
+      "metadata_class": "generic_isa_capability",
+      "protocol_roles": {
+        "uart_tx": "unused",
+        "uart_rx": "unused",
+        "uart_rx_result": "unused",
+        "spi_transfer": "unused",
+        "spi_result": "unused",
+        "i2c_transfer": "unused",
+        "i2c_result": "unused",
+        "ws2812": "unused",
+        "ps2": "unused",
+        "dali": "unused",
+        "dali_result": "unused",
+        "onewire": "unused",
+        "onewire_result": "unused",
+        "dmx512": "unused",
+        "i2s": "unused",
+        "nec_ir_tx": "unused",
+        "nec_ir_rx": "unused",
+        "swd": "unused",
+        "can": "unused",
+        "modbus": "unused"
+      },
+      "shared_pin_rationale": ""
+    },
+    {
+      "pin": "uio[6]",
+      "port": "uio",
+      "bit": 6,
+      "electrical_role": "input",
+      "load_role": "none",
+      "metadata_class": "generic_isa_capability",
+      "protocol_roles": {
+        "uart_tx": "unused",
+        "uart_rx": "unused",
+        "uart_rx_result": "unused",
+        "spi_transfer": "unused",
+        "spi_result": "unused",
+        "i2c_transfer": "unused",
+        "i2c_result": "unused",
+        "ws2812": "unused",
+        "ps2": "unused",
+        "dali": "unused",
+        "dali_result": "unused",
+        "onewire": "unused",
+        "onewire_result": "unused",
+        "dmx512": "unused",
+        "i2s": "unused",
+        "nec_ir_tx": "unused",
+        "nec_ir_rx": "unused",
+        "swd": "unused",
+        "can": "unused",
+        "modbus": "unused"
+      },
+      "shared_pin_rationale": ""
+    },
+    {
+      "pin": "uio[7]",
+      "port": "uio",
+      "bit": 7,
+      "electrical_role": "input",
+      "load_role": "none",
+      "metadata_class": "generic_isa_capability",
+      "protocol_roles": {
+        "uart_tx": "unused",
+        "uart_rx": "unused",
+        "uart_rx_result": "unused",
+        "spi_transfer": "unused",
+        "spi_result": "unused",
+        "i2c_transfer": "unused",
+        "i2c_result": "unused",
+        "ws2812": "unused",
+        "ps2": "unused",
+        "dali": "unused",
+        "dali_result": "unused",
+        "onewire": "unused",
+        "onewire_result": "unused",
+        "dmx512": "unused",
+        "i2s": "unused",
+        "nec_ir_tx": "unused",
+        "nec_ir_rx": "unused",
+        "swd": "unused",
+        "can": "unused",
+        "modbus": "unused"
+      },
+      "shared_pin_rationale": ""
+    }
   ],
   "inventory": [
-    {"file": "firmware/asm/midi_tx.asm", "profile": "uart_tx", "patterns": ["asm_ports", "uart_tx_mask"]},
-    {"file": "firmware/asm/uart_tx.asm", "profile": "uart_tx", "patterns": ["asm_ports", "uart_tx_mask"]},
-    {"file": "firmware/asm/uart_tx_9600.asm", "profile": "uart_tx", "patterns": ["asm_ports", "uart_tx_mask"]},
-    {"file": "firmware/asm/uart_tx_115200.asm", "profile": "uart_tx", "patterns": ["asm_ports", "uart_tx_mask"]},
-    {"file": "firmware/asm/midi_rx.asm", "profile": "uart_rx", "patterns": ["asm_ports", "uart_rx_mask", "uart_rx_debug"]},
-    {"file": "firmware/asm/uart_rx.asm", "profile": "uart_rx", "patterns": ["asm_ports", "uart_rx_mask", "uart_rx_debug"]},
-    {"file": "firmware/asm/uart_rx_115200.asm", "profile": "uart_rx", "patterns": ["asm_ports", "uart_rx_mask", "uart_rx_debug"]},
-    {"file": "firmware/asm/uart_rx_9600.asm", "profile": "uart_rx", "patterns": ["asm_ports", "uart_rx_mask", "uart_rx_debug"]},
-    {"file": "firmware/asm/spi_mode0.asm", "profile": "spi", "patterns": ["asm_ports", "spi_images", "spi_miso_mask"]},
-    {"file": "firmware/asm/spi_mode1.asm", "profile": "spi", "patterns": ["asm_ports", "spi_images", "spi_miso_mask"]},
-    {"file": "firmware/asm/spi_mode2.asm", "profile": "spi", "patterns": ["asm_ports", "spi_images", "spi_miso_mask"]},
-    {"file": "firmware/asm/spi_mode3.asm", "profile": "spi", "patterns": ["asm_ports", "spi_images", "spi_miso_mask"]},
-    {"file": "firmware/asm/spi_mode0_burst3.asm", "profile": "spi", "patterns": ["asm_ports", "spi_images"]},
-    {"file": "firmware/asm/i2c_fast.asm", "profile": "i2c", "patterns": ["asm_ports", "i2c_idle_start", "i2c_alu_masks", "i2c_in_masks"]},
-    {"file": "firmware/asm/i2c_std.asm", "profile": "i2c", "patterns": ["asm_ports", "i2c_idle_start", "i2c_alu_masks", "i2c_in_masks"]},
-    {"file": "firmware/asm/i2c_fast_sr.asm", "profile": "i2c", "patterns": ["asm_ports", "i2c_idle_start", "i2c_alu_masks", "i2c_in_masks"]},
-    {"file": "firmware/asm/i2c_fast_sr_poll.asm", "profile": "i2c", "patterns": ["asm_ports", "i2c_idle_start", "i2c_alu_masks", "i2c_in_masks", "i2c_poll_mask"]},
-    {"file": "firmware/asm/i2c_std_sr.asm", "profile": "i2c", "patterns": ["asm_ports", "i2c_idle_start", "i2c_alu_masks", "i2c_in_masks"]},
-    {"file": "firmware/asm/i2c_std_sr_poll.asm", "profile": "i2c", "patterns": ["asm_ports", "i2c_idle_start", "i2c_alu_masks", "i2c_in_masks", "i2c_poll_mask"]},
-    {"file": "firmware/asm/demo_roundtrip.asm", "profile": "demo", "patterns": ["asm_ports"]},
-    {"file": "firmware/asm/ws2812.asm", "profile": "ws2812", "patterns": ["asm_ports", "ws2812_din"]},
-    {"file": "firmware/asm/dali_master.asm", "profile": "dali", "patterns": ["asm_ports", "dali_levels"]},
-    {"file": "firmware/asm/ps2_device.asm", "profile": "ps2", "patterns": ["asm_ports", "ps2_images", "ps2_shifts"]},
-    {"file": "firmware/tools/gen_i2c_sr.py", "profile": "i2c_gen", "patterns": ["gen_strings", "i2c_idle_start", "i2c_alu_masks", "i2c_poll_mask"]},
-    {"file": "firmware/tools/asm.py", "profile": "isa_ports", "patterns": ["isa_port_table"]},
-    {"file": "verification/test_firmware_uart.py", "profile": "bench_uart", "patterns": ["bench_uart_tx"]},
-    {"file": "verification/test_firmware_spi.py", "profile": "bench_spi", "patterns": ["bench_spi_consts"]},
-    {"file": "verification/test_firmware_i2c.py", "profile": "bench_i2c", "patterns": ["bench_i2c_consts"]},
-    {"file": "verification/test_firmware_i2c_sr.py", "profile": "bench_i2c_sr", "patterns": ["bench_i2c_sr_consts"]},
-    {"file": "verification/test_firmware_ws2812.py", "profile": "bench_ws2812", "patterns": ["bench_ws2812"]},
-    {"file": "verification/test_firmware_dali.py", "profile": "bench_dali", "patterns": ["bench_dali"]},
-    {"file": "verification/test_firmware_ps2.py", "profile": "bench_ps2", "patterns": ["bench_ps2"]},
-    {"file": "firmware/asm/swd_probe.asm", "profile": "swd", "patterns": ["asm_ports", "swd_images", "swd_sample"]},
-    {"file": "verification/test_firmware_swd.py", "profile": "bench_swd", "patterns": ["bench_swd"]},
-    {"file": "firmware/asm/dmx512_tx.asm", "profile": "dmx512", "patterns": ["asm_ports", "uart_tx_mask"]},
-    {"file": "verification/test_firmware_dmx512.py", "profile": "bench_dmx512", "patterns": ["bench_uart_tx"]},
-    {"file": "firmware/asm/nec_ir.asm", "profile": "nec_ir", "patterns": ["asm_ports", "uart_tx_mask"]},
-    {"file": "verification/test_firmware_nec_ir.py", "profile": "bench_nec_ir", "patterns": ["bench_uart_tx"]},
-    {"file": "verification/test_protocol_emulator.py", "profile": "bench_load", "patterns": ["bench_load_pins"]},
-    {"file": "src/tt_um_2amlogic_protocol_emulator.v", "profile": "top", "patterns": ["top_load_wiring", "top_uio_oe", "top_port_passthrough"]},
-    {"file": "rtl/protocol_core.v", "profile": "core", "patterns": ["core_uio_out_reset"]},
-    {"file": "info.yaml", "profile": "info", "patterns": ["info_pinout"]}
+    {
+      "file": "firmware/asm/midi_tx.asm",
+      "profile": "uart_tx",
+      "patterns": [
+        "asm_ports",
+        "uart_tx_mask"
+      ]
+    },
+    {
+      "file": "firmware/asm/uart_tx.asm",
+      "profile": "uart_tx",
+      "patterns": [
+        "asm_ports",
+        "uart_tx_mask"
+      ]
+    },
+    {
+      "file": "firmware/asm/uart_tx_9600.asm",
+      "profile": "uart_tx",
+      "patterns": [
+        "asm_ports",
+        "uart_tx_mask"
+      ]
+    },
+    {
+      "file": "firmware/asm/uart_tx_115200.asm",
+      "profile": "uart_tx",
+      "patterns": [
+        "asm_ports",
+        "uart_tx_mask"
+      ]
+    },
+    {
+      "file": "firmware/asm/midi_rx.asm",
+      "profile": "uart_rx",
+      "patterns": [
+        "asm_ports",
+        "uart_rx_mask",
+        "uart_rx_debug"
+      ]
+    },
+    {
+      "file": "firmware/asm/uart_rx.asm",
+      "profile": "uart_rx",
+      "patterns": [
+        "asm_ports",
+        "uart_rx_mask",
+        "uart_rx_debug"
+      ]
+    },
+    {
+      "file": "firmware/asm/uart_rx_115200.asm",
+      "profile": "uart_rx",
+      "patterns": [
+        "asm_ports",
+        "uart_rx_mask",
+        "uart_rx_debug"
+      ]
+    },
+    {
+      "file": "firmware/asm/uart_rx_9600.asm",
+      "profile": "uart_rx",
+      "patterns": [
+        "asm_ports",
+        "uart_rx_mask",
+        "uart_rx_debug"
+      ]
+    },
+    {
+      "file": "firmware/asm/spi_mode0.asm",
+      "profile": "spi",
+      "patterns": [
+        "asm_ports",
+        "spi_images",
+        "spi_miso_mask"
+      ]
+    },
+    {
+      "file": "firmware/asm/spi_mode1.asm",
+      "profile": "spi",
+      "patterns": [
+        "asm_ports",
+        "spi_images",
+        "spi_miso_mask"
+      ]
+    },
+    {
+      "file": "firmware/asm/spi_mode2.asm",
+      "profile": "spi",
+      "patterns": [
+        "asm_ports",
+        "spi_images",
+        "spi_miso_mask"
+      ]
+    },
+    {
+      "file": "firmware/asm/spi_mode3.asm",
+      "profile": "spi",
+      "patterns": [
+        "asm_ports",
+        "spi_images",
+        "spi_miso_mask"
+      ]
+    },
+    {
+      "file": "firmware/asm/spi_mode0_burst3.asm",
+      "profile": "spi",
+      "patterns": [
+        "asm_ports",
+        "spi_images"
+      ]
+    },
+    {
+      "file": "firmware/asm/i2c_fast.asm",
+      "profile": "i2c",
+      "patterns": [
+        "asm_ports",
+        "i2c_idle_start",
+        "i2c_alu_masks",
+        "i2c_in_masks"
+      ]
+    },
+    {
+      "file": "firmware/asm/i2c_std.asm",
+      "profile": "i2c",
+      "patterns": [
+        "asm_ports",
+        "i2c_idle_start",
+        "i2c_alu_masks",
+        "i2c_in_masks"
+      ]
+    },
+    {
+      "file": "firmware/asm/i2c_fast_sr.asm",
+      "profile": "i2c",
+      "patterns": [
+        "asm_ports",
+        "i2c_idle_start",
+        "i2c_alu_masks",
+        "i2c_in_masks"
+      ]
+    },
+    {
+      "file": "firmware/asm/i2c_fast_sr_poll.asm",
+      "profile": "i2c",
+      "patterns": [
+        "asm_ports",
+        "i2c_idle_start",
+        "i2c_alu_masks",
+        "i2c_in_masks",
+        "i2c_poll_mask"
+      ]
+    },
+    {
+      "file": "firmware/asm/i2c_std_sr.asm",
+      "profile": "i2c",
+      "patterns": [
+        "asm_ports",
+        "i2c_idle_start",
+        "i2c_alu_masks",
+        "i2c_in_masks"
+      ]
+    },
+    {
+      "file": "firmware/asm/i2c_std_sr_poll.asm",
+      "profile": "i2c",
+      "patterns": [
+        "asm_ports",
+        "i2c_idle_start",
+        "i2c_alu_masks",
+        "i2c_in_masks",
+        "i2c_poll_mask"
+      ]
+    },
+    {
+      "file": "firmware/asm/demo_roundtrip.asm",
+      "profile": "demo",
+      "patterns": [
+        "asm_ports"
+      ]
+    },
+    {
+      "file": "firmware/asm/ws2812.asm",
+      "profile": "ws2812",
+      "patterns": [
+        "asm_ports",
+        "ws2812_din"
+      ]
+    },
+    {
+      "file": "firmware/asm/dali_master.asm",
+      "profile": "dali",
+      "patterns": [
+        "asm_ports",
+        "dali_levels"
+      ]
+    },
+    {
+      "file": "firmware/asm/ps2_device.asm",
+      "profile": "ps2",
+      "patterns": [
+        "asm_ports",
+        "ps2_images",
+        "ps2_shifts"
+      ]
+    },
+    {
+      "file": "firmware/tools/gen_i2c_sr.py",
+      "profile": "i2c_gen",
+      "patterns": [
+        "gen_strings",
+        "i2c_idle_start",
+        "i2c_alu_masks",
+        "i2c_poll_mask"
+      ]
+    },
+    {
+      "file": "firmware/tools/asm.py",
+      "profile": "isa_ports",
+      "patterns": [
+        "isa_port_table"
+      ]
+    },
+    {
+      "file": "verification/test_firmware_uart.py",
+      "profile": "bench_uart",
+      "patterns": [
+        "bench_uart_tx"
+      ]
+    },
+    {
+      "file": "verification/test_firmware_spi.py",
+      "profile": "bench_spi",
+      "patterns": [
+        "bench_spi_consts"
+      ]
+    },
+    {
+      "file": "verification/test_firmware_i2c.py",
+      "profile": "bench_i2c",
+      "patterns": [
+        "bench_i2c_consts"
+      ]
+    },
+    {
+      "file": "verification/test_firmware_i2c_sr.py",
+      "profile": "bench_i2c_sr",
+      "patterns": [
+        "bench_i2c_sr_consts"
+      ]
+    },
+    {
+      "file": "verification/test_firmware_ws2812.py",
+      "profile": "bench_ws2812",
+      "patterns": [
+        "bench_ws2812"
+      ]
+    },
+    {
+      "file": "verification/test_firmware_dali.py",
+      "profile": "bench_dali",
+      "patterns": [
+        "bench_dali"
+      ]
+    },
+    {
+      "file": "firmware/asm/i2s_tx.asm",
+      "profile": "i2s",
+      "patterns": [
+        "asm_ports",
+        "i2s_images"
+      ]
+    },
+    {
+      "file": "verification/test_firmware_i2s.py",
+      "profile": "bench_i2s",
+      "patterns": [
+        "bench_i2s"
+      ]
+    },
+    {
+      "file": "verification/test_firmware_ps2.py",
+      "profile": "bench_ps2",
+      "patterns": [
+        "bench_ps2"
+      ]
+    },
+    {
+      "file": "firmware/asm/onewire_master.asm",
+      "profile": "onewire",
+      "patterns": [
+        "asm_ports",
+        "onewire_images",
+        "onewire_in_mask"
+      ]
+    },
+    {
+      "file": "verification/test_firmware_onewire.py",
+      "profile": "bench_onewire",
+      "patterns": [
+        "bench_onewire"
+      ]
+    },
+    {
+      "file": "firmware/asm/swd_probe.asm",
+      "profile": "swd",
+      "patterns": [
+        "asm_ports",
+        "swd_images",
+        "swd_sample"
+      ]
+    },
+    {
+      "file": "verification/test_firmware_swd.py",
+      "profile": "bench_swd",
+      "patterns": [
+        "bench_swd"
+      ]
+    },
+    {
+      "file": "firmware/asm/modbus_rtu.asm",
+      "profile": "modbus",
+      "patterns": [
+        "asm_ports",
+        "modbus_images"
+      ]
+    },
+    {
+      "file": "verification/test_firmware_modbus.py",
+      "profile": "bench_modbus",
+      "patterns": [
+        "bench_modbus"
+      ]
+    },
+    {
+      "file": "firmware/asm/dmx512_tx.asm",
+      "profile": "dmx512",
+      "patterns": [
+        "asm_ports",
+        "uart_tx_mask"
+      ]
+    },
+    {
+      "file": "verification/test_firmware_dmx512.py",
+      "profile": "bench_dmx512",
+      "patterns": [
+        "bench_uart_tx"
+      ]
+    },
+    {
+      "file": "firmware/asm/nec_ir.asm",
+      "profile": "nec_ir",
+      "patterns": [
+        "asm_ports",
+        "uart_tx_mask"
+      ]
+    },
+    {
+      "file": "verification/test_firmware_nec_ir.py",
+      "profile": "bench_nec_ir",
+      "patterns": [
+        "bench_uart_tx"
+      ]
+    },
+    {
+      "file": "verification/test_protocol_emulator.py",
+      "profile": "bench_load",
+      "patterns": [
+        "bench_load_pins"
+      ]
+    },
+    {
+      "file": "src/tt_um_2amlogic_protocol_emulator.v",
+      "profile": "top",
+      "patterns": [
+        "top_load_wiring",
+        "top_uio_oe",
+        "top_port_passthrough"
+      ]
+    },
+    {
+      "file": "rtl/protocol_core.v",
+      "profile": "core",
+      "patterns": [
+        "core_uio_out_reset"
+      ]
+    },
+    {
+      "file": "info.yaml",
+      "profile": "info",
+      "patterns": [
+        "info_pinout"
+      ]
+    },
+    {
+      "file": "firmware/asm/can_2a.asm",
+      "profile": "can",
+      "patterns": [
+        "asm_ports",
+        "can_images",
+        "can_sample"
+      ]
+    },
+    {
+      "file": "verification/test_firmware_can.py",
+      "profile": "bench_can",
+      "patterns": [
+        "bench_can"
+      ]
+    }
   ]
 }
 ```
@@ -440,11 +1658,14 @@ inventory is a hard failure.
 | `i2c_poll_mask` | the `LDI R3, imm` before each `pollN: IN` equals the SCL mask |
 | `gen_strings` | the instruction string literals of `firmware/tools/gen_i2c_sr.py`, parsed with `ast` and the same line grammar as assembly |
 | `ws2812_din` | first `LDI R2, imm` in `ws2812.asm` (the DIN pin image, which is also the bit-7 mask) equals the `ws2812` DIN pin's mask; an `AND Rx, R2` bit-isolation site exists; `R2` is never reloaded; every `OUT UO_OUT` is from `R1` or `R2` (added by #141) |
+| `i2s_images` | in `i2s_tx.asm`: every `OUT UO_OUT` is from `R1` (the pin image); every `LDI` immediately feeding `AND`/`OR`/`XOR` is one of the `i2s` profile's SD, BCLK or WS masks (or the table-base constant that is ORed into `PM_ADDR` and written straight back with `WCTL PM_ADDR`); every `LDI R1, imm` is 0, the WS mask or the SD mask (or the table base written to `PM_ADDR`); all three masks are used and an `AND Rx, R0` SD-isolation site exists (added by #451) |
 | `ps2_images` | in `ps2_device.asm`: every `LDI R3, imm` that feeds `OUT UIO_OUT, R3` is the released image `CLK | DATA`; every `LDI R3, imm` that feeds `OR R3, R1` is the `CLK` mask; no `LDI R1, imm` sets the `CLK` bit, and `LDI R1` at `tx_stop` is the `DATA` mask; every run of `ADD Rx, Rx` is as long as the `DATA` bit number (it moves a bit into place); `WCTL UIO_OD` writes the `ps2` profile's `pin_modes` value (added by #235) |
 | `ps2_shifts` | each `IN Rx, UIO_IN` in `ps2_device.asm` is followed by one of three shift recipes, whose counts the checker derives from the table: the bus state (`DATA << 1 | CLK`, which needs `CLK` one bit below `DATA`), the `CLK` bit alone, or the `DATA` bit moved to bit 7 (added by #235) |
 | `swd_images` | in `swd_probe.asm`: the preloaded image registers hold the SWDIO-high pair (R0 = SWDIO, R1 = SWCLK\|SWDIO), every `LDI` immediately feeding `OUT UIO_OUT` is one of the four SWCLK x SWDIO images, every `OUT UIO_OUT` reads R0/R1 (the preloaded pair) or R3 (a per-bit image), every `WCTL UIO_DIR` value is SWCLK alone (SWDIO released) or SWCLK\|SWDIO (both driven), and `WCTL UIO_OD` never appears (added by #452) |
 | `swd_sample` | each `IN Rx, UIO_IN` in `swd_probe.asm` is followed by `AND Rx, R0`, the SWDIO-mask register that isolates the sampled bit (added by #452) |
-| `bench_*` | the named module-level constants and capture specs of each bench (`TX_PIN/TX_BIT`, `CS_BIT…`, `MISO_PIN/MISO_BIT`, `SCL_PIN/SDA_PIN`, `DIN_PIN/DIN_BIT` (#141), `CLK_BIT/DATA_BIT` (#235), `SWCLK_BIT/SWDIO_BIT` (#452); since issue #136 also `LINE_PIN`, `CAPTURE_SPECS`, the `i2c_board(dut, scl=SCL_BIT, sda=SDA_BIT)` wiring of the pad model, and every `pads.*` call naming a pad as `SCL_BIT`/`SDA_BIT`, in place of the removed `_RELEASED`, `_ACK_PULL`, `(sda_drive << N)` and `per_scl`/`per_sda`; since issue #155 the SPI bench's `CAPTURE_SPECS` port and bit for CS/SCLK/MOSI, `LINE_PIN`, the `spi_board(dut, cs=CS_BIT, sclk=SCLK_BIT, mosi=MOSI_BIT, miso=MISO_BIT)` wiring and its `pads.*` calls by named bit), and `load_program`'s `ui_in` assignments |
+| `modbus_images` | in `modbus_rtu.asm`: the first `LDI R1, imm` is the `RX` bit mask, each `IN Rx, UI_IN` sample has its `AND Rx, Ry` mask from the nearest `LDI Ry`, and every `OUT UO_OUT, Rx` is a recognised image -- a constant (`LDI`: the idle `TX`, driver-enable `DE`, or stop `TX\|DE` image) or the isolated-TX-bit OR of a driver image -- whose values use only the TX and DE bits (added by #446) |
+| `bench_modbus` | the Modbus bench's `RX_BIT` and `TX_BIT, DE_BIT` constants name the table's `modbus` pins (added by #446) |
+| `bench_*` | the named module-level constants and capture specs of each bench (`TX_PIN/TX_BIT`, `CS_BIT…`, `MISO_PIN/MISO_BIT`, `SCL_PIN/SDA_PIN`, `DIN_PIN/DIN_BIT` (#141), `CLK_BIT/DATA_BIT` (#235), `SWCLK_BIT/SWDIO_BIT` (#452), `BCLK_PIN/BCLK_BIT`, `WS_PIN/WS_BIT`, `SD_PIN/SD_BIT` (#451); since issue #136 also `LINE_PIN`, `CAPTURE_SPECS`, the `i2c_board(dut, scl=SCL_BIT, sda=SDA_BIT)` wiring of the pad model, and every `pads.*` call naming a pad as `SCL_BIT`/`SDA_BIT`, in place of the removed `_RELEASED`, `_ACK_PULL`, `(sda_drive << N)` and `per_scl`/`per_sda`; since issue #155 the SPI bench's `CAPTURE_SPECS` port and bit for CS/SCLK/MOSI, `LINE_PIN`, the `spi_board(dut, cs=CS_BIT, sclk=SCLK_BIT, mosi=MOSI_BIT, miso=MISO_BIT)` wiring and its `pads.*` calls by named bit), and `load_program`'s `ui_in` assignments |
 | `top_load_wiring` / `top_uio_oe` / `top_port_passthrough` | `.mode_pin(ui_in[n])`, `.serial_in(ui_in[n])`, `assign uio_oe = …;`, whole-bus `.port_*` connections |
 | `core_uio_out_reset` | the `port_uio_out <= 8'hXX;` reset literal |
 | `isa_port_table` | `firmware/tools/asm.py` port codes 00/01/10/11 |
@@ -584,6 +1805,24 @@ checker's `ps2_shifts` pattern holds each read's bit-isolation shifts to the
 table; as with the other profiles, the bench grades what the program does on
 the pads.
 
+### 1-Wire master, multi-protocol extra credit (added by #447)
+
+`onewire_master.asm` is the 1-Wire entry of the multi-protocol extra-credit
+catalog (#443). It is a 1-Wire **bus master** for one DS18B20: a single
+open-drain DQ line on `uio[3]` (the I2C Pmod's SDA position, the row that
+carries pull-ups), with the external 4.7 kΩ pull-up the `firmware/README.md`
+wiring table names. The table records that as the `onewire` phase (`DQ`, a
+driven open-drain role) plus the `onewire_result` phase (`RESULT[n]` on all
+of `uo_out`, the received-byte publication convention the I2C/SPI programs
+use), and as an `onewire` entry in `pin_modes` (`UIO_DIR` 0x00, `UIO_OD`
+0x08). `uio[3]`'s existing `shared_pin_rationale` covers 1-Wire the same way
+it covers the other profiles: one row, one protocol, one image, DR 0012 sets
+the mode. The `onewire_images` pattern holds every pin image the program
+writes to 0 or the DQ mask, `onewire_in_mask` holds each DQ sample's mask to
+the DQ bit, and the bench's `DQ_BIT` and pad-model calls are checked by the
+`bench_onewire` profile. The bus itself -- every reset, presence and slot
+timing -- is graded by the independent DS18B20 model
+(`verification/reference_models/onewire.py`), not by these patterns.
 ### DMX512 transmitter, multi-protocol extra credit (added by #445)
 
 `dmx512_tx.asm` is the DMX512 (USITT DMX512-A) universe transmitter (issue
@@ -634,6 +1873,74 @@ image). The bench's `SWCLK_BIT, SWDIO_BIT` constants are checked by the
 sample's bit isolation by `swd_sample`. The board supplies a pull-up on
 SWDIO, as ADIv5 requires, so the released line rests high.
 
+### CAN 2.0A node, multi-protocol extra credit (added by #450)
+
+`can_2a.asm` is the classic-CAN node (issue #450, multi-protocol extra
+credit, catalog #443): CAN_TXD on `uo_out[0]` -- the pad the UART and
+DMX512 transmitters also use, so its existing one-image-at-a-time
+rationale covers CAN -- and CAN_RXD on `ui_in[0]`, the serial-load
+PROG_SER pad during the load phase and the CAN transceiver's R output
+during the run phase (the load phase ends before any protocol image
+runs, so the two roles never coincide; both are recorded on the pin).
+The table records the `can` phase (`CAN_TXD`, a driven push-pull role;
+`CAN_RXD`, a sampled role). Both CAN lines sit on the dedicated ports, so
+the image needs no pin-mode value for them -- but, unlike the DMX512 and
+NEC images, it **does write `UIO_DIR`**, as scratch storage: the byte-
+boundary dispatch walks it 0x05 down to 0x00, and it holds the ACK /
+status flag and, briefly, a CRC byte (7 `WCTL UIO_DIR` sites; DR 0012's
+register is the only spare 8-bit state on a 4-register ISA, the trick
+DR 0013's boot loader also uses). The image writes neither `UIO_OD` nor
+`UIO_OUT`, so `uio_od = 0`, `uio_out = 0` and `uio_oe = uio_dir`: every
+set `UIO_DIR` bit drives that `uio` pad low -- `uio[0..2]` through every
+transmitted frame (0x05..0x01), and any pad for about 480 cycles (~1.2 bit
+times, `firmware/build/can_2a.cycles.txt` addresses 0xC7-0xD2) while the
+non-zero CRC byte of a CRC-error frame is parked there (0x00 on a valid frame). Those pads carry the SPI / I2C / SWD roles
+and the QSPI Pmod header, so nothing may be connected to the `uio` pads
+while this image runs. The `pin_modes` schema holds one `uio_dir` value
+per profile and cannot express a varying one, so `can` has no
+`pin_modes` entry; this paragraph is the record, and `prof_can` pins the
+write-site count and the setup value so the image cannot drift from it. The bench's `TX_PIN, TX_BIT` and `RX_BIT` constants
+are checked by the `bench_can` profile, the pin images (every `OUT
+UO_OUT` reads R1, the `RCTL LINE_OUT` pair register, or R3, the recessive
+constant) by `can_images`, and each sample's bit isolation by
+`can_sample`.
+
+### Modbus RTU server, multi-protocol extra credit (added by #446)
+
+`modbus_rtu.asm` is the Modbus RTU **server** program (issue #446): all
+three line-side signals go through an external RS-485 transceiver, so the
+pads carry the transceiver's digital sides -- `RX` is `ui_in[1]` (sampled,
+idle high; the uart_rx profile's pad), `TX` is `uo_out[0]` (idle high on
+the line while DE is low; the uart_tx and dmx512 profiles' pad) and `DE`
+is `uo_out[1]`, the driver-enable wired to the transceiver's DE and /RE
+together: high while this server transmits its response, low while it
+listens. The table records the `modbus` phase with those three roles; all
+three are push-pull or input roles on pads that already play those parts
+in other images, and the image never writes `UIO_DIR` or `UIO_OD` (no
+`pin_modes` entry: every `uio` pin stays an input). The bench's
+`RX_BIT` and `TX_BIT, DE_BIT` constants are checked by the `bench_modbus`
+profile, the RX mask's `LDI` and each sample's `IN`/`AND` site plus the
+role-clean `uo_out` images (idle, driver-enable, stop, or the isolated TX
+bit OR a driver image) by `modbus_images`.
+
+### I2S transmitter, multi-protocol extra credit (added by #451)
+
+*Amendment note, 2026-11-23 (the record's Status is unchanged).*
+`i2s_tx.asm` is an I2S (Philips) controller that streams 16-bit stereo
+samples to a DAC (issue #451, catalog #443). It drives three signals on
+dedicated outputs and reads nothing: `SD` on `uo_out[7]` (the same pad as
+the WS2812 profile's DIN and the NEC profile's IR_TX), `WS` on `uo_out[5]`
+and `BCLK` on `uo_out[6]`, all push-pull, each unused in every other phase
+but the `RESULT[n]` readout phases that already cover all of `uo_out`. The
+table records that as the `i2s` phase (`BCLK`, `WS`, `SD`, driven roles),
+checked by the `i2s` profile and the `i2s_images` pattern, and the bench's
+`BCLK_PIN/BCLK_BIT`, `WS_PIN/WS_BIT`, `SD_PIN/SD_BIT` by the `bench_i2s`
+profile. The program writes no pin-mode register (every pin is a dedicated
+output), so like the UART, WS2812, DMX512 and NEC images it has **no**
+`pin_modes` entry. The three pins are the upper three `uo_out` bits so that
+SD, which is isolated from the shifted byte by one `AND` with 0x80, needs no
+move into place; WS and BCLK are single-bit ORs.
+
 ## Checker behaviour
 
 `scripts/check_protocol_pin_roles.py` (tests:
@@ -656,8 +1963,9 @@ SWDIO, as ADIv5 requires, so the released line rests high.
    and unmet prerequisites. On the committed tree it lists nothing. The top
    level is DR 0012's pin-mode rule (#135), so an open-drain role is wired by
    the firmware image that uses it: each I2C image releases the lines and
-   then sets `UIO_OD`, and since #155 each SPI image writes its idle image
-   and then sets `UIO_DIR`. The UART receive programs' bench-debug writes to
+   then sets `UIO_OD`, since #155 each SPI image writes its idle image
+   and then sets `UIO_DIR`, and the PS/2 and 1-Wire images release DQ and
+   set `UIO_OD` (#447). The UART receive programs' bench-debug writes to
    `UIO_OUT` are not listed, because those programs write no pin-mode
    register (see "UART receive" above). They would be listed if one did.
 
