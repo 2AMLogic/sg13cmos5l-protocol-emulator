@@ -1712,8 +1712,9 @@ register is the only spare 8-bit state on a 4-register ISA, the trick
 DR 0013's boot loader also uses). The image writes neither `UIO_OD` nor
 `UIO_OUT`, so `uio_od = 0`, `uio_out = 0` and `uio_oe = uio_dir`: every
 set `UIO_DIR` bit drives that `uio` pad low -- `uio[0..2]` through every
-transmitted frame (0x05..0x01), and any pad for about two cycles while
-the CRC byte is parked there. Those pads carry the SPI / I2C / SWD roles
+transmitted frame (0x05..0x01), and any pad for about 480 cycles (~1.2 bit
+times, `firmware/build/can_2a.cycles.txt` addresses 0xC7-0xD2) while the
+non-zero CRC byte of a CRC-error frame is parked there (0x00 on a valid frame). Those pads carry the SPI / I2C / SWD roles
 and the QSPI Pmod header, so nothing may be connected to the `uio` pads
 while this image runs. The `pin_modes` schema holds one `uio_dir` value
 per profile and cannot express a varying one, so `can` has no
