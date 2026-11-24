@@ -457,6 +457,43 @@ def _(fx):
     expect_fail(fx, "firmware/asm/dmx512_tx.asm", "concrete-firmware-bench")
 
 
+@case("I2S SD mask LDI mutated")
+def _(fx):
+    fx.mutate("firmware/asm/i2s_tx.asm", "LDI   R1, 0x80          ; s9\n        AND   R1, R0            ; s10  SD for the MSB",
+              "LDI   R1, 0x40          ; s9\n        AND   R1, R0            ; s10  SD for the MSB")
+    expect_fail(fx, "firmware/asm/i2s_tx.asm", "concrete-firmware-bench")
+
+
+@case("I2S WS mask LDI mutated")
+def _(fx):
+    fx.mutate("firmware/asm/i2s_tx.asm", "LDI   R2, 0x20          ; s11\n        OR    R1, R2            ; s12  + WS\n        LDI   R3, 1",
+              "LDI   R2, 0x10          ; s11\n        OR    R1, R2            ; s12  + WS\n        LDI   R3, 1")
+    expect_fail(fx, "firmware/asm/i2s_tx.asm", "concrete-firmware-bench")
+
+
+@case("I2S pin driven from a register other than R1")
+def _(fx):
+    fx.mutate("firmware/asm/i2s_tx.asm", "OUT   UO_OUT, R1        ; s8   BCLK rises\n        LDI   R1, 0x80          ; s9\n        AND   R1, R0            ; s10  SD for the MSB",
+              "OUT   UO_OUT, R2        ; s8   BCLK rises\n        LDI   R1, 0x80          ; s9\n        AND   R1, R0            ; s10  SD for the MSB")
+    expect_fail(fx, "OUT UO_OUT from R2", "concrete-firmware-bench")
+
+
+@case("I2S bench BCLK pin mutated")
+def _(fx):
+    fx.mutate("verification/test_firmware_i2s.py", 'BCLK_PIN, BCLK_BIT = "uo_out", 6',
+              'BCLK_PIN, BCLK_BIT = "uo_out", 4')
+    expect_fail(fx, "BCLK_PIN/BCLK_BIT is uo_out[4]", "concrete-firmware-bench")
+
+
+@case("I2S WS moved in the table alone")
+def _(fx):
+    def mv(t):
+        pin(t, "uo_out[5]")["protocol_roles"]["i2s"] = "unused"
+        pin(t, "uo_out[4]")["protocol_roles"]["i2s"] = "WS"
+    fx.mutate_table(mv)
+    expect_fail(fx, "firmware/asm/i2s_tx.asm", "concrete-firmware-bench")
+
+
 @case("NEC IR carrier-image LDI mutated")
 def _(fx):
     fx.mutate("firmware/asm/nec_ir.asm", "LDI   R1, 0x80        ; 1   carrier-high image / bit-7 mask",
@@ -480,6 +517,38 @@ def _(fx):
         pin(t, "uo_out[6]")["protocol_roles"]["nec_ir_tx"] = "IR_TX"
     fx.mutate_table(mv)
     expect_fail(fx, "firmware/asm/nec_ir.asm", "concrete-firmware-bench")
+
+
+@case("Modbus RX mask LDI mutated")
+def _(fx):
+    fx.mutate("firmware/asm/modbus_rtu.asm",
+              "main:   LDI   R1, 2            ; RX mask (ui_in bit 1) and decrement",
+              "main:   LDI   R1, 4            ; RX mask (ui_in bit 1) and decrement")
+    expect_fail(fx, "RX bit mask LDI R1, 4", "concrete-firmware-bench")
+
+
+@case("Modbus TX image writes a pin outside TX/DE")
+def _(fx):
+    fx.mutate("firmware/asm/modbus_rtu.asm",
+              "        LDI   R2, 1            ; idle image: TX high, DE low",
+              "        LDI   R2, 5            ; idle image: TX high, DE low")
+    expect_fail(fx, "can write 0x05", "concrete-firmware-bench")
+
+
+@case("Modbus bench DE pin mutated")
+def _(fx):
+    fx.mutate("verification/test_firmware_modbus.py", "TX_BIT, DE_BIT = 0, 1",
+              "TX_BIT, DE_BIT = 0, 2")
+    expect_fail(fx, "DE_BIT is uo_out[2]", "concrete-firmware-bench")
+
+
+@case("Modbus DE moved in the table alone")
+def _(fx):
+    def mv(t):
+        pin(t, "uo_out[1]")["protocol_roles"]["modbus"] = "unused"
+        pin(t, "uo_out[2]")["protocol_roles"]["modbus"] = "DE"
+    fx.mutate_table(mv)
+    expect_fail(fx, "firmware/asm/modbus_rtu.asm", "concrete-firmware-bench")
 
 
 @case("PS/2 released-bus image mutated")
@@ -1226,9 +1295,9 @@ def _(fx):
     concrete = {
         "prof_uart_tx", "prof_uart_rx", "prof_spi", "prof_i2c", "prof_i2c_gen",
         "prof_demo", "prof_ws2812", "prof_ps2", "prof_dmx512", "prof_nec_ir",
-        "prof_swd", "prof_can",
+        "prof_swd", "prof_can", "prof_modbus", "prof_i2s", "prof_bench_i2s",
         "prof_bench_can", "prof_bench_uart", "prof_bench_dmx512", "prof_bench_ws2812",
-        "prof_bench_nec_ir",
+        "prof_bench_nec_ir", "prof_bench_modbus",
         "prof_bench_ps2", "prof_bench_swd", "prof_bench_spi",
         "prof_bench_i2c", "prof_bench_i2c_sr", "prof_bench_load", "prof_top",
         "prof_core", "prof_isa_ports",

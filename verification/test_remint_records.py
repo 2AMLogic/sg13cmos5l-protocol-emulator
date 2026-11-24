@@ -413,12 +413,12 @@ def collapse_boundary_cases(failures: list) -> None:
             )
         return edit
 
-    def second_para(field, value, verdict):
+    def second_para(field, value, verdict, paragraph="  {verdict} second paragraph"):
         def edit(rid, text):
-            v = verdict[rid]
+            tail = paragraph.format(verdict=verdict[rid])
             return text.replace(
                 f"- **{field}**: {value}",
-                f"- **{field}**: Item 9 status\n\n  {v} second paragraph")
+                f"- **{field}**: Item 9 status\n\n{tail}")
         return edit
 
     claim = "`docs/baseline.md#the-measurement` -- fixture claim"
@@ -455,6 +455,21 @@ def collapse_boundary_cases(failures: list) -> None:
                 check(f"draft fails lint on Result and Run configuration ({label})",
                       r.returncode == 1 and "`Result`" in r.stdout
                       and "`Run configuration`" in r.stdout, r.stdout, failures)
+
+    for label, field, value, verdicts, paragraph in (
+        ("flush-left prose", "Result", result, differ, "{verdict} second paragraph"),
+        ("blockquote", "Result", result, differ, "> {verdict}"),
+        ("fenced code", "Result", result, differ, "```\n{verdict}\n```"),
+        ("matching prose", "Run configuration", "fixture run, no real simulator invoked",
+         same, "{verdict} second paragraph"),
+    ):
+        with tempfile.TemporaryDirectory(prefix="remint-collapse-") as d:
+            repo = build_collapsible(Path(d))
+            commit_leaves(repo, second_para(field, value, verdicts, paragraph))
+            code, out = tool(repo, "--collapse", "signoff-baseline")
+            check(f"--collapse refuses {label} after a blank line in {field}",
+                  code == 1 and f"`{field}`" in out and "ambiguous" in out
+                  and baseline_records(repo) == LEAF_IDS, out, failures)
 
     with tempfile.TemporaryDirectory(prefix="remint-collapse-") as d:
         repo = build_collapsible(Path(d))

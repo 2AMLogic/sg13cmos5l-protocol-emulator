@@ -51,6 +51,12 @@ firmware/
                          channel slots at 200 cycles/bit 8N2, forever
                          (multi-protocol extra credit, issue #445; catalog
                          #443; firmware on the frozen DR 0017 ISA)
+    i2s_tx.asm           I2S (Philips) controller / transmitter: 16-bit
+                         stereo, 32-BCLK slots, BCLK uo_out[6], WS
+                         uo_out[5], SD uo_out[7]; streams a 16-frame
+                         sine table from program memory forever
+                         (multi-protocol extra credit, issue #451; catalog
+                         #443; firmware on the frozen DR 0017 ISA)
     nec_ir.asm           NEC infrared remote TRANSMITTER on uo_out[7]:
                          38 kHz-class carrier (1,316 cycles/period, 439
                          high) gated into a 9-ms-class leader, 32
@@ -1013,6 +1019,129 @@ Bench: `verification/test_firmware_swd.py`
 klt functional-verification verification/request-firmware-swd.json --format json
 ```
 
+### `modbus_rtu.asm` — Modbus RTU server (issue #446)
+
+The multi-protocol extra credit's industrial entry: firmware on the frozen
+DR 0017 ISA, no RTL change and no hardware peripheral, speaking **Modbus
+RTU as a server** (slave address `0x11`) over an external RS-485
+transceiver. The chip receives requests on one pin, computes the
+CRC-16/MODBUS in software, keeps a small holding-register map in program
+memory, and drives the response — plus the transceiver's driver-enable —
+on two output pins. The first firmware here that answers requests: both
+directions of a protocol in one 236-word image.
+
+**Framing: 8N2 at 434 cycles per bit** (115,207 baud at the unconfirmed
+50 MHz nominal, +0.006% on 115,200 — target-spec row 4, unconfirmed, the
+same stance as every figure below). The issue allows 8E1 or 8N2; 8N2 is
+built because the even-parity bit costs this ISA a **fifth live value**
+in the transmit loop (byte, mask, image, DE constant, parity
+accumulator — four registers), and neither the 17-words-per-byte parity
+fold nor the map fits the 256-word store beside the CRC engine. 8E1 is
+the recorded cut; the Modbus serial-line spec permits no parity with two
+stop bits.
+
+**The register map and the server's scope.** Two 16-bit holding
+registers (addresses `0x0000`-`0x0001`, power-on values `0xDEAD`
+`0xBEEF`) live in program memory at words `0xFC`-`0xFD` — DR 0012's
+run-time PM access is the data memory this ISA lacks; the frame buffer
+at `0xF0`-`0xF8` holds each request byte in the high half of its own
+word (a byte is fetched with one `RCTL PM_DATA_HI` and a 1-cycle dummy
+`RCTL PM_DATA_LO` that advances the pointer, so no half-of-word state
+exists anywhere). The server answers:
+
+- **0x03** for start `0x0000` count `0x0002` only — the whole map, a
+  fixed 9-byte response (`11 03 04 DE AD BE EF crc*`). Any other
+  start/count: silence.
+- **0x06** for registers 0-1 — the map word is written and the request
+  is echoed verbatim (its CRC was checked on arrival). Any other
+  register: silence.
+- A frame with a bad CRC, another slave's address (`0x11` only; the
+  broadcast address `0x00` is a recorded cut), or any other function
+  code: silence. The CRC check covers all eight request bytes and tests
+  the residual for exactly `0x0000` (the transmitted CRC bytes *are* the
+  running CRC, low byte first) — no received CRC byte is ever compared.
+
+The exception reply (`fc|0x80` with code 1/2/3) is a recorded cut: the
+issue's word-budget fallback names it first, and with the CRC engine
+(27 words/bit-loop twice-shared), the receive path and the response
+builder, the 236-word image leaves no room. A CRC-valid unicast request
+is never answered with a wrong frame — the unserved ones get silence.
+
+**Timing, all in core cycles at the unconfirmed row-4 clock.** Every bit
+slot is exactly 434 cycles: the `.cyclesec` sections of the committed
+report pin each span (the receive bit loop's whole body is 434; the
+transmit bit loop's body is 434; the start, stop and stop-tail sections
+are the documented partial spans the table below completes). On the RTL
+the character-to-character pitch measures **4,766** cycles — `11 x 434 -
+ 8`: the fetch's two PM accesses retire a few cycles faster against the
+fetch-ahead than the static count, a fixed, deterministic arbitration
+effect, every character the same (the bench allows `4,774 +- 12`).
+
+| Interval | Cycles | at unconfirmed 50 MHz | Graded against |
+|---|---|---|---|
+| one bit | **434** | 8.68 us | 115,207 baud nominal; the model's +-2.5% slot bound (a receiver re-anchors every start edge) |
+| one character (start + 8 data + 2 stops) | **4,774** (RTL 4,766) | 95.48 us | 8N2, back to back |
+| 3.5-character silent interval before the response | **16,709** | 334.2 us | `>= 3.5 x 11 x 434`, counted `WAIT` loop |
+| request last stop -> response first start | **~19,636** | 392.7 us (~4.11 chars) | `>= 3.5` characters; then ~2,900 cycles of CRC/address/dispatch/build |
+| DE rise -> first start bit | **441** | 8.82 us | `>=` a quarter bit (driver-enable setup) |
+| last stop bit end -> DE fall | **~640** | ~12.8 us | `>=` a quarter bit (disable hold) |
+| first sample after the start edge | **651** | 13.02 us | 1.5 bit periods: the centre of data bit 0, +-3 cycles of poll granularity |
+
+**The 18 lint warnings, by class** (the committed report's `WARNING`
+lines, asserted exactly by the bench; every one sits between characters
+or between frames — none between a character's samples, none producing
+protocol timing): the start-edge poll (`BNZ poll`, 2: the byte loop's
+re-arm and the byte-count branch after the store) — the sanctioned
+handshake uart_rx carries, taken *before* a byte's first sample; the two
+stop-bit framing checks (`BNZ main`, 2) — after the byte's last sample;
+the CRC engine's three loop branches (CRC state, bit counter, byte
+counter, 3) — between frames, where path lengths are not protocol
+timing; the engine's continuation selector (PM_ADDR position, 1); the
+transmit loop's two counters (2); the CRC residual test (1), the
+address test (1), the function dispatch (2) and the request-validation
+branches (4: the 0x03 start/count tests and the 0x06 register tests) —
+all between frames on PM-read-derived values.
+
+**Wiring a fixture.** The same 3.3 V TI **THVD1450** RS-485 transceiver
+the DMX512 row uses, on the shared RS-485 Pmod — this time with the
+driver actually switched:
+
+| THVD1450 pin | Signal | Connect to |
+|---|---|---|
+| 8 VCC | supply | 3.3 V |
+| 7 B | line complement (D-) | Modbus pair (A/B) |
+| 6 A | line true (D+) | Modbus pair |
+| 5 GND | common | board GND and line common |
+| 4 D | driver input | `uo_out[0]` (the board pin carrying it) |
+| 3 DE | driver enable | `uo_out[1]` |
+| 2 /RE | receiver enable | `uo_out[1]` (tied to DE: one pin flips direction) |
+| 1 R | receiver output | `ui_in[1]` |
+
+Terminate 120 ohm across A-B at the master end (the bus's single
+termination point). DE tied to /RE is the classic half-duplex direction
+pin: high while this server transmits its response, low while it
+listens — the bench grades the DE window around every response frame
+(setup `>=` a quarter bit before the first start edge, hold `>=` a
+quarter bit after the last stop bit). A real master and a bias network
+are bring-up, out of scope here (issue #446): the claim is the
+cycle-exact line behaviour at the pads, verified at RTL.
+
+Bench: `verification/test_firmware_modbus.py`
+(`verification/request-firmware-modbus.json`), registered in
+`scripts/rtl-bench-inventory.txt`; model
+`verification/reference_models/modbus_rtu.py` (its own table-driven
+CRC-16, frame builder, 8N2 decoder and server behaviour — the expected
+response bytes come from the model, never from the firmware's encoding);
+pin roles in DR 0010's `modbus` phase (RX `ui_in[1]`, TX `uo_out[0]`,
+DE `uo_out[1]`). The image is **236 words** of the 256-word store, and
+the code must stay below word `0xF0` where the frame buffer lives
+(assembler: `python3 firmware/tools/asm.py firmware/asm/modbus_rtu.asm`;
+freshness: `python3 firmware/tools/check_firmware.py`).
+
+```bash
+klt functional-verification verification/request-firmware-modbus.json --format json
+```
+
 ### `can_2a.asm` — CAN 2.0A node (issue #450)
 
 The multi-protocol extra credit's automotive-bus entry (catalog #443):
@@ -1141,6 +1270,103 @@ Bench: `verification/test_firmware_can.py`
 
 ```bash
 klt functional-verification verification/request-firmware-can.json --format json
+```
+
+### `i2s_tx.asm` — I2S audio transmitter (issue #451)
+
+The multi-protocol extra credit's frame-clocked entry (catalog #443):
+firmware on the frozen DR 0017 ISA, no RTL change, no new instruction and
+no hardware peripheral. The core is the I2S controller: it drives BCLK, WS
+and SD and reads no pin. Philips framing, 16-bit stereo in 32-BCLK slots
+(64 BCLK per frame): WS and SD change on BCLK's falling edge, the receiver
+samples SD on the rising edge, WS changes one BCLK **before** the slot's
+MSB (so the MSB is one BCLK after the WS edge), MSB first, 16 data bits
+then 16 zero pad bits, WS low = left. Pins are DR 0010's `i2s` phase: SD
+`uo_out[7]`, BCLK `uo_out[6]`, WS `uo_out[5]`, all push-pull.
+
+The samples are a 16-frame stereo table in the last 64 words of program
+memory (`LDI R0, b` words, never executed, read with `PM_DATA_HI` /
+`PM_DATA_LO`; no data directive exists, DR 0003): left a full-scale sine
+(it includes the extremes 0x7FFF and 0x8000), right the same sine at twice
+the frequency and half amplitude. The table wrap is undone branch-free by
+ORing 0xC0 into `PM_ADDR` during the right slot's pad.
+
+**Timing: exactly 16 core cycles per BCLK (8 low, 8 high).** The figures
+below are core cycles, graded at the pins by
+`verification/test_firmware_i2s.py` against the independent receiver model
+`verification/reference_models/i2s.py`; every frequency is arithmetic at
+target-spec row 4's **unconfirmed** 50 MHz clock (20 ns/cycle; STA against
+this core is blocked, `verification/records/sta-corner-sweep/`).
+
+| Interval | Cycles | at unconfirmed 50 MHz | Graded against |
+|---|---|---|---|
+| BCLK period | **16** (8 low + 8 high) | 320 ns, 3.125 MHz | the bench: every BCLK edge on the 8-cycle grid |
+| WS / SD change | on the cycle BCLK falls | -- | the model's set-up and hold limits |
+| slot (32 BCLK) | **512** | 10.24 us | the model's slot-length check; L/R alternation |
+| frame (64 BCLK) | **1,024** | 20.48 us, fs = 48,828.125 Hz | the committed run's 18 frames |
+| fs error vs 48 kHz | -- | **+1.73 %** (a rate error, not a framing error) | recorded, not graded |
+
+Why not exactly 48 kHz: a 64-BCLK frame at 48 kHz needs 3.072 MHz, i.e.
+16.28 cycles per BCLK, and the core has only integer cycles. Other
+reachable rows (2k cycles per BCLK, 64 BCLK per frame) at 50 MHz: 17 cycles
+-> 2.941 MHz, fs 45.96 kHz (unequal phases); 32 cycles -> 1.5625 MHz, fs
+24.41 kHz. This image uses 16.
+
+The image is **256 words** of the 256-word store: 154 code words, 38 NOP
+alignment words (never run; the table must start at 0xC0 so that
+`PM_ADDR |= 0xC0` is the wrap, and the assembler has no `.org`), and the
+64-word table (assembler: `python3 firmware/tools/asm.py
+firmware/asm/i2s_tx.asm`; freshness: `python3 firmware/tools/check_firmware.py`;
+report `firmware/build/i2s_tx.cycles.txt`). The bench loads other tables
+over the code words, so the table is host-replaceable without touching code.
+
+**External part and Pmod wiring.** A 3.3 V **TI PCM5102A** I2S stereo DAC
+breakout on a Pmod adapter (TI datasheet SLAS859C, May 2012, rev. May
+2015, [pcm5102a.pdf](https://www.ti.com/lit/ds/symlink/pcm5102a.pdf)).
+Confirmed against SLAS859C:
+
+- **No MCLK pin needed (§ 9.3.5.3, *Clock Slave Mode with BCK PLL*).**
+  When **SCK** (pin 12) is held at GND while BCK and LRCK toggle for 16
+  successive LRCK periods, the internal PLL starts automatically and
+  generates the internal system clock from BCK.
+- **Format, bit depth and rate (§ 9.3.2.2, Table 2, § 9.3.5.2, Table 11).**
+  Hardware-control mode accepts 16-, 20-, 24- and 32-bit binary
+  two's-complement MSB-first audio at BCK = 32 fs or 64 fs, with **FMT**
+  (pin 16) = Low selecting Philips I2S (LRCK Low = left, High = right;
+  High selects left-justified). The `32 kHz - 44.1 kHz - 48 kHz`
+  single-rate detector accepts ±4 % tolerance (§ 9.3.5.2), which covers
+  this image's 64-BCK frame (`BCK = 3.125 MHz`, `fs = 48.83 kHz`,
+  `+1.73 %` over 48 kHz at the unconfirmed 50 MHz clock; BCK period
+  320 ns, 160 ns high / 160 ns low vs § 8.6 minimums 20 ns / 9 ns at
+  3.3 V).
+
+| Output Pmod (`uo_out` header) | Signal | PCM5102A (TSSOP-20) | Strap / connection |
+|---|---|---|---|
+| pin 8 (`uo_out[5]`) | WS / LRCLK | 15 LRCK | word clock (low = left) |
+| pin 9 (`uo_out[6]`) | BCLK | 13 BCK | bit clock (64 × fs) |
+| pin 10 (`uo_out[7]`) | SD | 14 DIN | serial audio data, MSB first |
+| pins 5, 11 (GND) | GND | 3 CPGND, 9 AGND, 19 DGND | common ground |
+| pins 6, 12 (3.3 V) | 3V3 | 1 CPVDD, 8 AVDD, 20 DVDD | 3.3 V supply (decouple LDOO pin 18 with 0.1 uF) |
+| — | MCLK strap | 12 SCK | tie to **GND** (enables internal BCK PLL) |
+| — | format strap | 16 FMT | tie to **GND** (I2S format) |
+| — | mute control | 17 XSMT | tie to **3.3 V / AVDD** (soft un-mute, § 9.3.3) |
+| — | filter / de-emph | 11 FLT, 10 DEMP | tie to **GND** (normal latency, de-emphasis off) |
+
+A Digilent Pmod I2S2 is **not** a 3-wire drop-in: its Cirrus CS4344 DAC
+has no BCK PLL and requires an external MCLK (a fourth output this image
+does not generate). Bring-up with a physical DAC is out of scope
+(issue #451): the claim is the cycle-exact behaviour at the pins, verified
+at RTL.
+
+Bench: `verification/test_firmware_i2s.py`
+(`verification/request-firmware-i2s.json`), registered in
+`scripts/rtl-bench-inventory.txt`; model self-test
+`verification/test_i2s_model.py`. Negative controls (each rejected for its
+own reason): no one-BCLK delay (left-justified), a 31-BCLK slot, a
+17-cycle BCLK period, and a re-graded capture with SD delayed 0.4 T.
+
+```bash
+klt functional-verification verification/request-firmware-i2s.json --format json
 ```
 
 ## Source syntax

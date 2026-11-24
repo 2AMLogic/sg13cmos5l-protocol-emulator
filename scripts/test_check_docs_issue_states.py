@@ -95,5 +95,45 @@ class Digest(unittest.TestCase):
         self.assertTrue(c.check_gap_digest.digest_issues(text))
 
 
+class Owners(unittest.TestCase):
+    OPEN = {"kind": "issue", "state": "open", "merged": False}
+    CLOSED = {"kind": "issue", "state": "closed", "merged": False}
+    PR = {"kind": "pr", "state": "open", "merged": False}
+    SRC = {"rows": {
+        "2": {"owner": {"waits": "DR 0005 ratification"}},
+        "10": {"owner": {"issues": [3]}},
+        "1": {"owner": {"issues": [1, 2]}},
+        "3": {"evidence": []},
+        "4": {"owner": {"issues": [2, 4, 5]}},
+    }}
+
+    def run_owners(self, live):
+        return c.owner_problems(self.SRC, live.get)
+
+    def test_all_open(self):
+        live = {n: self.OPEN for n in (1, 2, 3, 4, 5)}
+        allrefs, bad = self.run_owners(live)
+        self.assertEqual(bad, [])
+        self.assertEqual([(r, n) for r, n, _ in allrefs],
+                         [("1", 1), ("1", 2), ("4", 2), ("4", 4), ("4", 5), ("10", 3)])
+
+    def test_shared_closed_missing_pr_and_wait_only(self):
+        live = {1: self.OPEN, 2: self.CLOSED, 3: self.OPEN, 4: self.PR}  # 5 missing
+        _, bad = self.run_owners(live)
+        self.assertEqual(bad, [("1", 2, "closed"), ("4", 2, "closed"),
+                               ("4", 4, "is a pull request"), ("4", 5, "does not exist")])
+
+    def test_lookup_failure_propagates(self):
+        def boom(num):
+            raise c.subprocess.CalledProcessError(1, "gh", stderr="rate limited")
+        with self.assertRaises(c.subprocess.CalledProcessError):
+            c.owner_problems(self.SRC, boom)
+
+    def test_committed_sources_have_owners(self):
+        import json
+        refs = c.owner_refs(json.loads(c.DEFAULT_SOURCES.read_text(encoding="utf-8")))
+        self.assertTrue(refs)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=1)
