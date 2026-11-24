@@ -99,6 +99,7 @@ PHASES = (
     "ws2812",
     "ps2",
     "dmx512",
+    "i2s",
     "nec_ir_tx",
     "nec_ir_rx",
     "swd",
@@ -114,7 +115,7 @@ LOAD_ROLE_PORT = {"PROG_SER": "ui_in", "PROG_MODE": "ui_in",
 
 # Role classes (what the role does electrically).
 DRIVE_PP = {"TX", "CS", "SCLK", "MOSI", "DIN", "IR_TX", "SWCLK", "SWDIO",
-            "CAN_TXD"} | {f"RESULT[{i}]" for i in range(8)}
+            "CAN_TXD", "BCLK", "WS", "SD"} | {f"RESULT[{i}]" for i in range(8)}
 DRIVE_OD = {"SCL", "SDA", "PS2_CLK", "PS2_DATA"}
 # DR 0010 can section: the CAN image's UIO_DIR scratch use (issue #450 review).
 CAN_UIO_DIR_WRITE_SITES = 7
@@ -139,6 +140,9 @@ PHASE_VOCAB = {
     # Multi-protocol extra credit (issue #445): the DMX512 transmitter's
     # line, driven push-pull through an external RS-485 transceiver.
     "dmx512": {"TX"},
+    # Multi-protocol extra credit (issue #451): the I2S transmitter's three
+    # lines, all driven push-pull on uo_out (no pin is read).
+    "i2s": {"BCLK", "WS", "SD"},
     # Multi-protocol extra credit (issue #448): the NEC infrared
     # transmitter's carrier line (push-pull through a transistor to an IR
     # LED) and the demodulating receiver module's input.
@@ -170,6 +174,8 @@ PATTERNS = {
     "i2c_poll_mask",        # `LDI R3, imm` before `pollN: IN`
     "gen_strings",          # instruction string literals of gen_i2c_sr.py
     "ws2812_din",           # first `LDI R2, imm` == DIN pin image; every OUT UO_OUT from R1/R2
+    "i2s_images",           # i2s_tx.asm: OUT UO_OUT only from R1; ALU-mask LDIs are the table's SD/BCLK/WS masks (or the PM_ADDR wrap constant); R1 images are 0 / WS / SD
+    "bench_i2s",            # BCLK_PIN, BCLK_BIT / WS_PIN, WS_BIT / SD_PIN, SD_BIT = "port", n
     "bench_uart_tx",        # TX_PIN, TX_BIT = "port", n
     "bench_ws2812",         # DIN_PIN, DIN_BIT = "port", n
     "ps2_images",           # ps2_device.asm: release images, CLK mask, DATA images, bit moves, UIO_OD value
@@ -1189,6 +1195,63 @@ class Checker:
         wiring no committed image samples yet, so no IN port is allowed."""
         self.check_tx_firmware(rel, text, "nec_ir_tx", "NEC IR TX", "IR_TX")
 
+    # -------------------------------------------------------- profile: i2s
+    def prof_i2s(self, rel, ent, text):
+        """The I2S transmitter (issue #451): BCLK, WS and SD all driven on
+        the table's i2s pins and nothing read. Every `OUT UO_OUT` comes from
+        R1 (the pin image); every `LDI Rn, imm` feeding an AND/OR/XOR is one
+        of the table's three pin masks (as either operand: `AND R1, R0` after
+        `LDI R1, SD` isolates SD), or the PM_ADDR wrap constant when the
+        result goes straight to `WCTL PM_ADDR`; every `LDI R1, imm` is an
+        image of the idle/pad levels (0, the WS mask) or the SD mask, or the
+        table-base constant that goes to `WCTL PM_ADDR`. The three masks
+        must each be used (SD isolated by `AND Rx, R0`, BCLK and WS ORed in)."""
+        c = self.concrete
+        ins = self.asm_instrs(text)
+        outs, _ins, _ = self.out_in_ports([("i2s", ["BCLK", "WS", "SD"])], [], "spi_result")
+        self.check_ports(rel, ins, outs, set(), outs, set())
+        m = {r: self.mask_of("i2s", r) for r in ("BCLK", "WS", "SD")}
+        pin_masks = set(m.values())
+        used = set()
+
+        def pm_addr_next(idx, reg, hops):
+            """True when `reg` reaches a `WCTL PM_ADDR, reg` within `hops`
+            instructions (no other write to it in between)."""
+            for k in ins[idx + 1: idx + 1 + hops]:
+                if k["m"] == "WCTL" and k["ops"][0].upper() == "PM_ADDR" and k["ops"][1] == reg:
+                    return True
+                if k["m"] in self.WRITES and k["ops"][0] == reg:
+                    return False
+            return False
+
+        for idx, i in enumerate(ins):
+            if i["m"] == "OUT" and i["ops"][0].upper() == "UO_OUT":
+                c.sites += 1
+                if i["ops"][1].upper() != "R1":
+                    c.err(f"{rel}:{i['no']}: OUT UO_OUT from {i['ops'][1]}; only R1 (the pin image) may drive the pins")
+            nxt = ins[idx + 1] if idx + 1 < len(ins) else None
+            if i["m"] == "LDI" and nxt is not None and nxt["m"] in ("AND", "OR", "XOR") \
+                    and i["ops"][0] in nxt["ops"]:
+                v = self.imm(i["ops"][1])
+                c.sites += 1
+                if v in pin_masks:
+                    used.add(v)
+                elif not pm_addr_next(idx + 1, nxt["ops"][0], 3):
+                    c.err(f"{rel}:{i['no']}: ALU mask LDI {i['ops'][0]}, {i['ops'][1]} feeding {nxt['m']} is not one of "
+                          f"the table's i2s pin masks {sorted(f'0x{x:02X}' for x in pin_masks)} "
+                          "(nor a PM_ADDR wrap constant)")
+            if i["m"] == "LDI" and i["ops"][0] == "R1":
+                v = self.imm(i["ops"][1])
+                c.sites += 1
+                if v not in (0, m["WS"], m["SD"]) and not pm_addr_next(idx, "R1", 1):
+                    c.err(f"{rel}:{i['no']}: pin image LDI R1, {i['ops'][1]} is not 0, the table's WS mask "
+                          f"0x{m['WS']:02X} or SD mask 0x{m['SD']:02X}")
+        for role in ("BCLK", "WS", "SD"):
+            if m[role] not in used:
+                c.err(f"{rel}: no ALU-mask site uses the table's i2s {role} mask 0x{m[role]:02X} (pattern i2s_images)")
+        if not any(i["m"] == "AND" and i["ops"][1] == "R0" for i in ins):
+            c.err(f"{rel}: no `AND Rx, R0` SD-isolation site found")
+
     # -------------------------------------------------------- profile: swd
     def prof_swd(self, rel, ent, text):
         """The SWD probe (issue #452, DR 0018 note of 2026-11-19): SWCLK and
@@ -1360,6 +1423,12 @@ class Checker:
 
     def prof_bench_dmx512(self, rel, ent, text):
         self.check_bench_tx_pin(rel, text, "dmx512")
+
+    def prof_bench_i2s(self, rel, ent, text):
+        for name, role in (("BCLK", "BCLK"), ("WS", "WS"), ("SD", "SD")):
+            m = self.need(text, rf'^{name}_PIN,\s*{name}_BIT\s*=\s*"(\w+)",\s*(\d+)', rel, f"{name}_PIN, {name}_BIT")
+            if m:
+                self.check_pb(rel, f"{name}_PIN/{name}_BIT", m.group(1), int(m.group(2)), "i2s", role)
 
     def prof_bench_nec_ir(self, rel, ent, text):
         self.check_bench_tx_pin(rel, text, "nec_ir_tx", "IR_TX")
