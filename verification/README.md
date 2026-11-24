@@ -861,10 +861,12 @@ minted record's Result, Run configuration and Design provenance are
 who re-ran the experiment (`scripts/signoff-report.sh` for `signoff-baseline`)
 fills them in; its heading and artifact links name the new record ID, and the
 predecessor's design provenance is kept under Links as history. Fields are
-split with the linter's own bullet recognition (indented bullets and
-blank-line-separated continuation paragraphs belong to their field), and the
-tool refuses to mint when Claim, Result or another required field is missing
-or appears more than once, or a kept block cites the predecessor outside an
+split with the linter's own bullet recognition, including indented field
+bullets. Indent continuation paragraphs after a blank line. If a blank line
+after a required field is followed by an unindented block other than a field
+bullet, `--collapse` cannot tell whether it continues the field and refuses
+to mint. The tool also refuses to mint when a required field is missing or
+appears more than once, or a kept block cites the predecessor outside an
 `artifacts/` link. It
 refuses any other experiment, stale leaves that hash request files (use
 `--rerun`), and leaves whose input paths, claim or result are not
