@@ -41,7 +41,7 @@ parity, and the one whose transmit loop fits the ISA's four registers
 
 Negative control (a suite that cannot fail cannot cite its passes)
 -------------------------------------------------------------------
-The bench's own captured response waveform, retimed by 1.051x, must
+The bench's own captured response waveform, retimed by 1.04x, must
 FAIL the model's bit-timing grading while the bytes still decode --
 the case only the timing measurement catches, the same control the
 DMX bench uses.
@@ -483,7 +483,7 @@ async def test_modbus_truncated_then_recovery(dut):
 @cocotb.test()
 async def test_capture_path_negative_control(dut):
     """This bench's own capture-and-grade path can fail: the DUT's
-    captured response waveform, retimed by 1.051x, still decodes to the
+    captured response waveform, retimed by 1.04x, still decodes to the
     right bytes but must FAIL the model's bit-timing grading -- the
     case only the timing measurement catches."""
     state = ServerState()
