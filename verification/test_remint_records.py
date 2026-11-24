@@ -656,6 +656,14 @@ def main() -> int:
               len(new) == 1 and "MINTED" in out, out, failures)
         if new:
             text = T.record_path(repo, "demo", new[0]).read_text(encoding="utf-8")
+            prose = text.split("-->", 1)[1]
+            check("re-minted record's H1 equals its Record ID",
+                  f"\n# Record {new[0]}\n" in prose
+                  and f"- **Record ID**: {new[0]}" in prose
+                  and f"# Record {OLD_ID}" not in prose, text, failures)
+            check("Supersedes and Links still name the predecessor",
+                  f"- **Supersedes**: `{OLD_ID}`" in text
+                  and f"records/{OLD_ID}.md" in text, text, failures)
             check("new record supersedes old, rehashed, artifacts written",
                   f'"supersedes": "{OLD_ID}"' in text and T._sha256_text(NEW_RTL) in text
                   and (repo / "verification/records/demo/artifacts" / new[0]

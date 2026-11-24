@@ -28,10 +28,11 @@ With `--rerun`, for every stale record that names request file(s):
    `&lt;repo&gt;`/`&lt;home&gt;` so it stays well-formed),
    with `supersedes` = the stale record's ID, `git_revision` = HEAD, and every
    input hash recomputed from the tree. The old record is never edited or
-   deleted. The new record's prose is the old record's, with Record ID,
-   Result, Timestamp / author and Supersedes rewritten and a "Re-mint" note
-   added to Links -- review it, and edit the Claim if the claim moved, before
-   committing. A failing request mints nothing.
+   deleted. The new record's prose is the old record's, with the
+   `# Record` heading, Record ID, Result, Timestamp / author and Supersedes
+   rewritten and a "Re-mint" note added to Links -- review it, and edit the
+   Claim if the claim moved, before committing. A failing request mints
+   nothing.
 
 `--only EXPERIMENT` restricts to one experiment; `--klt CMD` picks the klt
 executable (default `klt`; use `uvx --from klayout-tools==X.Y.Z klt`
@@ -328,6 +329,13 @@ def _field_of(block: list[str]) -> str | None:
     return m.group(1).strip() if m else None
 
 
+def _is_record_heading(line: str, old_id: str) -> bool:
+    """True if `line` is exactly the `# Record <old_id>` H1. One shared
+    match for both renderers, so the plain and collapse re-mints rewrite
+    the heading the same way."""
+    return bool(re.fullmatch(r"#\s+Record\s+" + re.escape(old_id), line.strip()))
+
+
 def _content_lines(block: list[str]) -> list[str]:
     """The block without its trailing blank lines."""
     end = len(block)
@@ -425,6 +433,9 @@ def render_record(old_text: str, old_meta: dict, new_id: str, revision: str,
                     f"({ids_listed}; superseded, untouched); {where_link}."
                 )
             out.extend(_trailing_blanks(block))
+        elif _is_record_heading(block[0], old_id):
+            out.append(f"# Record {new_id}")
+            out.extend(block[1:])
         else:
             out.extend(block)
     return head + "\n".join(out).rstrip("\n") + "\n"
@@ -587,7 +598,7 @@ def render_collapsed_record(old_text: str, old_meta: dict, new_id: str,
         elif old_id in "\n".join(block):
             # A record-specific reference the tool does not know how to
             # retarget would leave the reader inspecting the predecessor.
-            if re.fullmatch(r"#\s+Record\s+" + re.escape(old_id), block[0].strip()):
+            if _is_record_heading(block[0], old_id):
                 out.append(f"# Record {new_id}")
                 out.extend(block[1:])
             else:
