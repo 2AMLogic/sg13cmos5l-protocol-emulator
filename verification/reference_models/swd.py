@@ -104,6 +104,12 @@ of IHI 0031 is in this repository:
   answered WAIT or FAULT has no data phase and never changes state.
 * `acks={n: ACK_*}` makes the nth well-formed request (1-based) answer WAIT or
   FAULT, so a rejected write can be exercised.
+* **A protocol error** (`ACK_NONE`: no answer, the line reads 1,1,1; `ACK_BAD`:
+  1,0,1): the probe must not take SWDIO for the possible 32 + 1 data bits that
+  follow the turnaround (`driven-after-bad-ack` otherwise: a probe that treats
+  1,1,1 as OK drives its write data into a line nobody acknowledged). The
+  target never expects a data phase and the probe issues no further request;
+  a longer release is allowed (Arm's CMSIS-DAP backs off 33 clocks too).
 """
 
 from __future__ import annotations
@@ -137,10 +143,16 @@ CSW_START = 0x00000002
 ACK_OK = "OK"
 ACK_WAIT = "WAIT"
 ACK_FAULT = "FAULT"
+#: Not ACK codes: a target that does not answer (SWDIO released, the pull-up
+#: reads 1,1,1) and one that drives 1,0,1 (two ones: neither OK nor WAIT nor
+#: FAULT). Only the 1,0,0 wire pattern is OK.
+ACK_NONE = "NONE"
+ACK_BAD = "BAD"
 #: ACK in time order on the wire (first bit sent first). ADIv5 numeric codes
 #: are OK=0b001, WAIT=0b010, FAULT=0b100, sent LSB first (IHI 0031 B4.1.5),
 #: so the wire carries OK = 1,0,0; WAIT = 0,1,0; FAULT = 0,0,1.
-ACK_WIRE = {ACK_OK: (1, 0, 0), ACK_WAIT: (0, 1, 0), ACK_FAULT: (0, 0, 1)}
+ACK_WIRE = {ACK_OK: (1, 0, 0), ACK_WAIT: (0, 1, 0), ACK_FAULT: (0, 0, 1),
+            ACK_NONE: (None, None, None), ACK_BAD: (1, 0, 1)}
 
 
 def request_parity(apn_dp: int, rn_w: int, a2: int, a3: int) -> int:
@@ -273,6 +285,9 @@ class SwdTarget:
         self._flagged_not_driven = False
         self._return_turnaround = False
         self._flagged_released = False
+        self._protocol_error = False
+        self._backoff = 0
+        self._flagged_backoff = False
 
     # ------------------------------------------------------------ helpers
     def _v(self, t, kind, detail):
@@ -309,6 +324,11 @@ class SwdTarget:
         self.ack_log.append(ack)
         reg = (f.a3 << 1) | f.a2
         bits = list(ACK_WIRE[ack])
+        if ack in (ACK_NONE, ACK_BAD):
+            self._protocol_error = True
+            self._resp_bits = bits
+            self._resp_index = 0
+            return
         if f.rn_w == 0:
             if ack == ACK_OK:
                 self._wreq = f
@@ -367,9 +387,15 @@ class SwdTarget:
             ap.log.append(("read", "DRW", returned))
             return returned
         if reg == AP_CSW:
-            self._ap_selected(t, "an AP CSW read")
-            ap.log.append(("read", "CSW", ap.csw))
-            return ap.csw
+            # An AP register read is posted like DRW: it returns the pending
+            # read-buffer value and queues CSW for the next read.
+            returned = ap.rdbuff
+            if self._ap_selected(t, "an AP CSW read"):
+                ap.rdbuff = ap.csw
+            else:
+                ap.rdbuff = 0
+            ap.log.append(("read", "CSW", returned))
+            return returned
         self._v(t, "unmodeled-register",
                 f"AP read at A[3:2]={reg:#04b} is not modeled")
         return 0
@@ -442,6 +468,8 @@ class SwdTarget:
             self._idle_rise(t, swdio, host_oe)
         elif state == "write-data":
             self._wdata_rise(t, swdio, host_oe)
+        elif state == "ack-backoff":
+            self._backoff_rise(t, host_oe)
         elif state in ("post-response", "no-response"):
             self._between_rise(t, swdio, host_oe)
 
@@ -591,10 +619,15 @@ class SwdTarget:
                         "the probe drove SWDIO on the turnaround cycle after "
                         "the last response bit (it must leave the line "
                         "released for that cycle and re-drive after it)")
-            if self._wreq is not None:
+            if self._protocol_error:
+                self._state = "ack-backoff"
+                self._backoff = WRITE_BITS
+            elif self._wreq is not None:
                 self._state = "write-data"
             return
         if self._state == "post-response" and not host_oe:
+            if self._protocol_error:
+                return  # a longer release after a bad ACK is allowed
             if not self._flagged_released:
                 self._flagged_released = True
                 self._v(t, "line-released-after-transfer",
@@ -607,6 +640,18 @@ class SwdTarget:
             self._start_frame(t)
         elif host_oe and swdio == 0:
             self._tail_lows += 1
+
+    def _backoff_rise(self, t: float, host_oe: bool) -> None:
+        """The 33 cycles after a bad ACK's turnaround, where a data phase could
+        be: the probe must leave SWDIO released."""
+        if host_oe and not self._flagged_backoff:
+            self._flagged_backoff = True
+            self._v(t, "driven-after-bad-ack",
+                    "the probe drove SWDIO in the possible data phase after an "
+                    "ACK that was not 1,0,0 (it must back off, released)")
+        self._backoff -= 1
+        if self._backoff <= 0:
+            self._state = "post-response"
 
     def _wdata_rise(self, t: float, swdio: int, host_oe: bool) -> None:
         """One write-data bit: 32 data bits LSB first, then even parity, all

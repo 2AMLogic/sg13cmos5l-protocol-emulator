@@ -529,7 +529,7 @@ gates. The host-side loader is issue #118.
 - `test_firmware_swd.py` — the SWD **probe** bench (issue #452; the
   protocol choice is the dated note of 2026-11-19 in DR 0018, fourth
   revision, made after DR 0017's ISA freeze): the committed
-  `firmware/asm/swd_probe.asm` (245 words, table-driven; issue #500
+  `firmware/asm/swd_probe.asm` (256 words, table-driven; issue #500
   extends it from the 227-word IDCODE-and-DP-read fallback to one AP
   memory-word read) plays the debug host on
   `uio[2]` (SWCLK) and `uio[3]` (SWDIO), push-pull with SWDIO released at

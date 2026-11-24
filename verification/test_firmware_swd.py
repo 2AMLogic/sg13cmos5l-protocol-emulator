@@ -73,7 +73,9 @@ from cocotb.triggers import First, ReadOnly, RisingEdge, Timer, ValueChange
 from cocotb.utils import get_sim_time
 
 from reference_models.swd import (
+    ACK_BAD,
     ACK_FAULT,
+    ACK_NONE,
     ACK_OK,
     ACK_WAIT,
     REQUEST_BITS,
@@ -113,18 +115,18 @@ SWD_MASK = (1 << SWCLK_BIT) | (1 << SWDIO_BIT)
 
 #: The committed figures for this program (core cycles; the measured values
 #: `firmware/README.md` records).
-EXPECTED_WORDS = 245
+EXPECTED_WORDS = 256
 #: clock edges per run: the committed run is well under this; the slack is HALT
 CYCLES = 3200
 EXPECTED_RISES = 356
 #: the core edge (counted from the run-phase entry) of the last SWCLK fall
-EXPECTED_LAST_FALL = 2595
+EXPECTED_LAST_FALL = 2615
 #: per-phase SWCLK high/low widths in cycles, as measured on the pads
 #: (boundary transitions included).
 EXPECTED_WIDTHS = {
     "reset1": {"high": (1.0, 1.0), "low": (3.0, 11.0)},
     "switch": {"high": (7.0, 7.0), "low": (2.0, 2.0)},
-    "reset2": {"high": (1.0, 1.0), "low": (3.0, 6.0)},
+    "reset2": {"high": (1.0, 1.0), "low": (2.0, 6.0)},
     "idle": {"high": (2.0, 2.0), "low": (2.0, 11.0)},
     "request": {"high": (7.0, 7.0), "low": (2.0, 2.0)},
     "response": {"high": (1.0, 1.0), "low": (4.0, 7.0)},
@@ -464,12 +466,14 @@ async def test_committed_image_is_fresh(dut):
     program = asm.assemble_file(SRC)
     drift = asm.check_against(program, HEX.parent)
     assert not drift, f"committed firmware/build/ artifacts drifted: {drift}"
-    # The lint flags six branches. One reads the target's ACK from the pin (the
-    # sanctioned handshake branch, the BZ). Five branch on a table byte or on
-    # a count that was read from the table (the program's own constant data,
-    # the NEC IR program's shape).
-    assert len(program.warnings) == 6, program.warnings
-    assert sum("BZ branches on flags set by AND" in w for w in program.warnings) == 1
+    # The lint flags nine branches. Three read the target's ACK from the pin
+    # (the sanctioned handshake branches: BZ ackerr after the first ACK bit,
+    # BNZ ackbad after each of the other two). The other six branch on a table
+    # byte or on a count that was read from the table (the program's own
+    # constant data, the NEC IR program's shape): the BNZ tail / BNZ txn words,
+    # BZ ret (a write has no target data), BNZ txq, and the SUB loop counters.
+    assert len(program.warnings) == 9, program.warnings
+    assert sum("BZ branches on flags set by AND" in w for w in program.warnings) == 2
     assert len(program.words) <= 256
     assert len(program.words) == EXPECTED_WORDS, (
         f"{len(program.words)} words; the table-driven AP-read image is "
@@ -640,6 +644,58 @@ async def test_wait_and_fault_end_the_transfer_cleanly(dut):
 
 
 @cocotb.test()
+async def test_bad_ack_keeps_swdio_released_and_ends_the_run(dut):
+    """A target that does not answer a write (SWDIO left to the pull-up: ACK
+    1,1,1) or answers 1,0,1 -- neither is an OK (1,0,0) -- on DP SELECT or on
+    AP TAR. The probe must not drive the write data: SWDIO stays released
+    through the possible 33-bit data phase after the turnaround, no further
+    request is issued, and the run ends with the eight trailing idle clocks.
+    Nothing is written to the model."""
+    for n, name in ((2, "DP SELECT"), (3, "AP TAR")):
+        for ack in (ACK_NONE, ACK_BAD):
+            start_clock(dut)
+            model = ap_target(acks={n: ack})
+            trace, model, pads, _a = await run_probe(
+                dut, committed_words(), model, cycles=CYCLES)
+            tag = f"txn{n}-{ack.lower()}"
+            info = report(dut, tag, model)
+            assert_only_driven_swd_pins(pads, tag)
+            assert model.violations == [], f"{tag}: {[str(v) for v in model.violations]}"
+            assert info["acks"] == [ACK_OK] * (n - 1) + [ack], info["acks"]
+            assert [f.byte for f in model.requests] == REQUEST_BYTES[:n], (
+                f"{tag}: the probe issued a request after the bad ACK")
+            assert info["trailing_idle_low"] == 8, tag
+            assert model.ap.select is None or n == 3
+            assert model.ap.tar is None, f"{tag}: TAR written after a bad ACK"
+            edges = rises_of(trace)
+            phases = [ph for ph, _ in model.wire]
+            backoff = [e for e, ph in zip(edges, phases) if ph == "ack-backoff"]
+            assert len(backoff) == WRITE_FRAME_BITS, (tag, len(backoff))
+            for e in backoff:
+                assert (trace[e]["oe"] >> SWDIO_BIT) & 1 == 0, (
+                    f"{tag}: SWDIO driven in the possible data phase, edge {e}")
+            # only the accepted SELECT's data phase is ever driven
+            assert phases.count("write-data") == (WRITE_FRAME_BITS if n == 3 else 0), tag
+            dut._log.info(f"{tag}: SWDIO released for the data phase, run ended")
+
+
+@cocotb.test()
+async def test_negative_bad_ack_accepted_as_ok(dut):
+    """The second and third ACK bits not checked (the ACK loop's branch
+    removed): a silent target's pull-up (1,1,1) passes as OK and the probe
+    drives the SELECT write data into the line nobody acknowledged. The
+    model reports `driven-after-bad-ack`."""
+    text = SRC.read_text(encoding="utf-8")
+    k = text.index("        BNZ   ackbad")
+    text = text[:k] + "        NOP                    ; (mutant) ACK slots 1 and 2 unchecked" \
+        + text[k + len("        BNZ   ackbad"):]
+    start_clock(dut)
+    model = ap_target(acks={2: ACK_NONE})
+    _t, model, pads, _a = await run_mutant(dut, "bad-ack-accepted", text, model)
+    assert "driven-after-bad-ack" in kinds(model), kinds(model)
+
+
+@cocotb.test()
 async def test_negative_error_ack_still_clocks_data_slots(dut):
     """The ACK branch removed: after a WAIT to the last read the probe clocks
     the full 36 slots with SWDIO released, the old behaviour. The model
@@ -664,12 +720,12 @@ async def test_negative_return_turnaround_driven(dut):
         "        OUT   UIO_OUT, R0      ; fall\n"
         "        LDI   R3, 0x0C\n"
         "        WCTL  UIO_DIR, R3      ; re-drive SWDIO push-pull\n"
-        "\n; ---- the word after the response",
+        "\n; ---- R2 = 33 after a write",
         "        LDI   R3, 0x0C         ; (mutant) re-drive before the turnaround\n"
         "        WCTL  UIO_DIR, R3\n"
         "        OUT   UIO_OUT, R1      ; the return turnaround cycle (rise)\n"
         "        OUT   UIO_OUT, R0      ; fall\n"
-        "\n; ---- the word after the response",
+        "\n; ---- R2 = 33 after a write",
     )
     _t, model, pads, _a = await run_mutant(dut, "turn-driven", text, ap_target())
     assert kinds(model) == ["return-turnaround-driven"], kinds(model)
@@ -796,7 +852,7 @@ async def test_negative_write_ack_to_data_handoff(dut):
     k = base.index("; ---- AP TAR write")
     old = "        LDI   R0, 2            ; after the request: a response, 2 slots after the first ACK bit\n"
     new = "        LDI   R0, 3            ; (mutant) one slot too many\n"
-    text = base[:k] + mutate(base[k:], old, new)
+    text = base[:k] + mutate_nth(base[k:], old, new, 0)
     trace, model, pads, _a = await run_mutant(dut, "handoff", text, ap_target())
     got = kinds(model)
     assert "write-data-not-driven" in got, got

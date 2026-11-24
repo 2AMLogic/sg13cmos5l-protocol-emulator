@@ -43,8 +43,10 @@ there), so the fallback program was **227 words, 218 SWCLK rising edges
 on the OK path, 1,179 model edges**; the 201-word figures are the first
 revision's, kept in its superseded record. Issue #500 then measured the
 open question that note left: a **table-driven** probe, with the five
-transactions of a memory-word read, is **245 words** (105 code, 140 table),
-**356 SWCLK rising edges**, and fits with 11 words spare.
+transactions of a memory-word read, was **245 words** (105 code, 140 table),
+**356 SWCLK rising edges**, with 11 words spare; the review's full-ACK check
+(a silent or invalid ACK never gets write data) uses them: **256 words**
+(116 code, 140 table), the same 356 rising edges.
 
 The freeze held: `scripts/check_isa_freeze.py` reports the same eleven
 pinned files and the same eight amendments before and after this work, and
@@ -54,9 +56,9 @@ no RTL, assembler or ISA-model byte changed.
 
 | Item | Where |
 |---|---|
-| Program | [`firmware/asm/swd_probe.asm`](../../firmware/asm/swd_probe.asm) (245 words, table-driven) |
+| Program | [`firmware/asm/swd_probe.asm`](../../firmware/asm/swd_probe.asm) (256 words, table-driven) |
 | Independent model | [`verification/reference_models/swd.py`](../../verification/reference_models/swd.py): an **interactive** target written from Arm's ADIv5 description and pyOCD's observable connection shape (constants marked "confirm" — no copy of IHI 0031 is in the repository, the same caveat DR 0018 records). It takes SWDIO at the turnaround rise, advances it on every subsequent rise (the aggressive-but-legal IHI 0031 B4.3.1 corner that catches a probe sampling after the rise), releases after the response, decodes the requests against a DP and one MEM-AP (`MemAp`: SELECT and TAR have no reset value, the DRW read is posted, only RDBUFF returns the addressed word, CSW starts in the word-access state), takes the 33-bit write data, and in the same pass grades the line resets, the switch, every request field, the turnarounds, host SWDIO stability and the trailing idle |
-| Model self-test | [`verification/test_swd_model.py`](../../verification/test_swd_model.py) (35 cases, `npm run lint`) |
+| Model self-test | [`verification/test_swd_model.py`](../../verification/test_swd_model.py) (37 cases, `npm run lint`) |
 | Bench | [`verification/test_firmware_swd.py`](../../verification/test_firmware_swd.py) |
 | Pad model | [`verification/uio_pads.py`](../../verification/uio_pads.py): pull-up on SWDIO (ADIv5 requires one), SWCLK pulled low, the other six `uio` pins tied low; contention is flagged, so a probe that keeps SWDIO driven into a response phase is caught electrically |
 | Pin roles | `swd` phase in [DR 0010](../../spec/decision-records/0010-protocol-pin-roles.md): SWCLK `uio[2]`, SWDIO `uio[3]`, `pin_modes` UIO_DIR 0x0C / UIO_OD 0x00, held by the checker's `swd` profile |
@@ -70,11 +72,11 @@ Every figure is read off the pads by the model, in core cycles x 20 ns
 
 | Quantity | Measured | Held against |
 |---|---|---|
-| Stored words | 245 of 256 (105 code, 140 table) | DR 0001's program memory |
+| Stored words | 256 of 256 (116 code, 140 table) | DR 0001's program memory |
 | SWCLK high / low, line resets | 1 / 3 cycles | >= 50 cycles with SWDIO high per reset |
 | SWCLK high / low, switch, requests, write data | 7 / 2 cycles | SWDIO changes only while SWCLK low; stable across every rising edge |
 | SWCLK high, response sample loop | 1 cycle (low 4..7) | samples taken in the SWCLK-low phase before the rise (IHI 0031 B4.3.1) |
-| SWCLK rising edges, whole program | 356; last SWCLK fall at core edge 2,595 | the bench |
+| SWCLK rising edges, whole program | 356; last SWCLK fall at core edge 2,615 | the bench |
 | Write payloads, from the pads | SELECT 0x00000000 and TAR 0x20000004, each LSB first + even parity (33 bits) | the model's DP / MEM-AP decode |
 | Report bytes (five transactions) | ACK OK (wire order 1,0,0) each; IDCODE 0x4BA00477; **DRW read 0xA5A5C3C3 (the stale buffer, not the word)**; **RDBUFF 0xCAFEF00D (the addressed word)**; each read with even parity | independent model; posted-read semantics |
 | Trailing idle before SWCLK stops | 8 clocks, SWDIO low | ADIv5's >= 8 |

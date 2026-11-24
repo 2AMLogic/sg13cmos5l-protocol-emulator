@@ -121,7 +121,7 @@ lr1:
         BNZ   lr1
 
 ; ---- JTAG-to-SWD switch 0xE79E, LSB first, 16 table entries (3 + 8)
-        LDI   R3, 105           ; word address of the first table entry
+        LDI   R3, 116           ; word address of the first table entry
         WCTL  PM_ADDR, R3      ; the table pointer
         LDI   R2, 16
 sw:
@@ -136,8 +136,7 @@ sw:
 
 ; --------------- second line reset, SWDIO high, >= 50 cycles (7)
         OUT   UIO_OUT, R0      ; SWCLK falls; SWDIO stays high
-        LDI   R2, 50
-        LDI   R3, 1            ; reload the decrement constant
+        LDI   R2, 50           ; R3 is still 1 from the switch loop's SUB
 lr2:
         OUT   UIO_OUT, R1
         OUT   UIO_OUT, R0
@@ -194,6 +193,7 @@ txq:
 ; -------- ACK slot 0 (6): the first ACK bit decides the transaction. OK is
 ; -------- 1,0,0 on the wire (numeric 0b001 sent LSB first); WAIT is 0,1,0 and
 ; -------- FAULT 0,0,1, so a zero first bit is never OK. AND sets Z from it.
+; -------- R2 still holds the word read after the request: 2 ACK slots remain.
         IN    R3, UIO_IN       ; sample while SWCLK is low
         AND   R3, R0           ; keep the SWDIO bit (R0 = 0x08); Z = not OK
         OUT   UO_OUT, R3       ; report the masked sample
@@ -201,8 +201,29 @@ txq:
         OUT   UIO_OUT, R0      ; fall
         BZ    ackerr           ; WAIT / FAULT: no data phase, end the transfer
 
-; -------- sample loop (8 per slot): the rest of the ACK, and for a read the
-; -------- 32 data bits and the parity bit: R2 slots (35 read, 2 write)
+; -------- ACK slots 1 and 2 (9): an OK is 1,0,0, so both must be ZERO. A
+; -------- one here (a silent target leaves the pulled-up line at 1,1,1; 1,0,1
+; -------- and 1,1,0 are not ACK codes) is a protocol error: no data is driven.
+ackl:
+        IN    R3, UIO_IN
+        AND   R3, R0           ; Z = the bit is 0
+        OUT   UO_OUT, R3       ; report the masked ACK sample
+        OUT   UIO_OUT, R1      ; rise
+        OUT   UIO_OUT, R0      ; fall
+        BNZ   ackbad           ; not OK: keep SWDIO released, end the run
+        LDI   R3, 1
+        SUB   R2, R3
+        BNZ   ackl
+
+; ---- the word after the ACK (4): 0x18xx = a read, low byte = the 33 data
+; ---- slots (32 + parity); 0x10xx = a write, low byte = the 33 write-data
+; ---- bits that follow the turnaround
+        RCTL  R3, PM_DATA_HI
+        RCTL  R2, PM_DATA_LO
+        AND   R3, R0
+        BZ    ret              ; a write: no target data, straight to the turnaround
+
+; -------- sample loop (8 per slot): a read's 32 data bits and the parity bit
 rx:
         IN    R3, UIO_IN       ; sample while SWCLK is low
         AND   R3, R0
@@ -214,25 +235,29 @@ rx:
         BNZ   rx
 
 ; -------- turnaround after the last response bit + re-drive SWDIO (4)
+ret:
         OUT   UIO_OUT, R1      ; the return turnaround cycle (rise)
         OUT   UIO_OUT, R0      ; fall
         LDI   R3, 0x0C
         WCTL  UIO_DIR, R3      ; re-drive SWDIO push-pull
 
-; ---- the word after the response: 0x10xx = write data follows (low byte
-; ---- = 33 bits), 0x18xx = none (a read): the transaction is complete
-        RCTL  R3, PM_DATA_HI
-        RCTL  R2, PM_DATA_LO
-        AND   R3, R0
-        BNZ   txn
-        JMP   txq              ; send the 33 write-data bits
+; ---- R2 = 33 after a write (send its data bits), 0 after a read (done) (3)
+        AND   R2, R2
+        BNZ   txq              ; send the 33 write-data bits
+        JMP   txn              ; a read is complete: the next transaction
 
-; ------ WAIT / FAULT (any transaction): the target ends after its three
-; ------ ACK bits (CTRL/STAT.ORUNDETECT = 0), so clock the two remaining ACK
-; ------ slots, the return turnaround with SWDIO still released, re-drive
-; ------ SWDIO low and end the transfer. No retry (the agreed scope).
+; ------ not OK (any transaction): ackbad = ACK slot 1 or 2 was a one, so the
+; ------ code is no ACK and the target may or may not drive a data phase; keep
+; ------ SWDIO RELEASED for the rest of the ACK, the possible 33 data bits and
+; ------ the turnaround (35 slots), drive nothing, issue no further request.
+; ------ ackerr = WAIT / FAULT (any transaction): the target ends after its
+; ------ three ACK bits (CTRL/STAT.ORUNDETECT = 0), so clock the two remaining
+; ------ ACK slots (R2 = 2), the return turnaround with SWDIO still released,
+; ------ re-drive SWDIO low and end the transfer. No retry (the agreed scope).
+ackbad:
+        LDI   R2, 35
+        JMP   erl
 ackerr:
-        LDI   R2, 2
 erl:
         IN    R3, UIO_IN
         AND   R3, R0
@@ -296,8 +321,8 @@ idle:
         LDI   R2, 0x0C         ; request bit 5 = 1  (word 0x180C)
         LDI   R0, 0x04         ; request bit 6 = 0  (word 0x1004)
         LDI   R2, 0x0C         ; request bit 7 = 1  (word 0x180C)
-        LDI   R0, 35           ; after the request: a response, 35 slots after the first ACK bit
-        LDI   R2, 0            ; after the response: no write data
+        LDI   R0, 2            ; after the request: a response, 2 slots after the first ACK bit
+        LDI   R2, 33           ; after the ACK: a read, 33 data slots (32 + parity)
 ; ---- DP SELECT write: request 0xb1 LSB first
         LDI   R0, 8            ; start word: another transaction, 8 request bits
         LDI   R2, 0x0C         ; request bit 0 = 1  (word 0x180C)
@@ -309,7 +334,7 @@ idle:
         LDI   R0, 0x04         ; request bit 6 = 0  (word 0x1004)
         LDI   R2, 0x0C         ; request bit 7 = 1  (word 0x180C)
         LDI   R0, 2            ; after the request: a response, 2 slots after the first ACK bit
-        LDI   R0, 33           ; after the response: write data follows, 33 bits
+        LDI   R0, 33           ; after the ACK: a write, 33 data bits follow the turnaround
         LDI   R0, 0x04         ; data bit 0 = 0  (word 0x1004)
         LDI   R0, 0x04         ; data bit 1 = 0  (word 0x1004)
         LDI   R0, 0x04         ; data bit 2 = 0  (word 0x1004)
@@ -355,7 +380,7 @@ idle:
         LDI   R0, 0x04         ; request bit 6 = 0  (word 0x1004)
         LDI   R2, 0x0C         ; request bit 7 = 1  (word 0x180C)
         LDI   R0, 2            ; after the request: a response, 2 slots after the first ACK bit
-        LDI   R0, 33           ; after the response: write data follows, 33 bits
+        LDI   R0, 33           ; after the ACK: a write, 33 data bits follow the turnaround
         LDI   R0, 0x04         ; data bit 0 = 0  (word 0x1004)
         LDI   R0, 0x04         ; data bit 1 = 0  (word 0x1004)
         LDI   R2, 0x0C         ; data bit 2 = 1  (word 0x180C)
@@ -400,8 +425,8 @@ idle:
         LDI   R0, 0x04         ; request bit 5 = 0  (word 0x1004)
         LDI   R0, 0x04         ; request bit 6 = 0  (word 0x1004)
         LDI   R2, 0x0C         ; request bit 7 = 1  (word 0x180C)
-        LDI   R0, 35           ; after the request: a response, 35 slots after the first ACK bit
-        LDI   R2, 0            ; after the response: no write data
+        LDI   R0, 2            ; after the request: a response, 2 slots after the first ACK bit
+        LDI   R2, 33           ; after the ACK: a read, 33 data slots (32 + parity)
 ; ---- DP RDBUFF read: request 0xbd LSB first
         LDI   R0, 8            ; start word: another transaction, 8 request bits
         LDI   R2, 0x0C         ; request bit 0 = 1  (word 0x180C)
@@ -412,7 +437,7 @@ idle:
         LDI   R2, 0x0C         ; request bit 5 = 1  (word 0x180C)
         LDI   R0, 0x04         ; request bit 6 = 0  (word 0x1004)
         LDI   R2, 0x0C         ; request bit 7 = 1  (word 0x180C)
-        LDI   R0, 35           ; after the request: a response, 35 slots after the first ACK bit
-        LDI   R2, 0            ; after the response: no write data
+        LDI   R0, 2            ; after the request: a response, 2 slots after the first ACK bit
+        LDI   R2, 33           ; after the ACK: a read, 33 data slots (32 + parity)
 ; ---- end of the table
         LDI   R2, 0            ; start word: end

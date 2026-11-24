@@ -23,7 +23,9 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from reference_models.swd import (  # noqa: E402
+    ACK_BAD,
     ACK_FAULT,
+    ACK_NONE,
     ACK_OK,
     ACK_WAIT,
     CSW_START,
@@ -492,6 +494,7 @@ REQ_SELECT = 0xB1     # DP write A=0x8 (A3=1)
 REQ_TAR = 0x8B        # AP write A=0x4 (A2=1)
 REQ_DRW = 0x9F        # AP read A=0xC
 REQ_RDBUFF = 0xBD     # DP read A=0xC
+REQ_CSW = 0x87        # AP read A=0x0 (CSW)
 REQ_CTRLSTAT = 0x8D   # DP read A=0x4: not modeled
 MEM = {0x20000000: 0x11111111, 0x20000004: 0xCAFEF00D}
 POSTED = 0xA5A5C3C3
@@ -557,6 +560,30 @@ class TestMemAp(unittest.TestCase):
         self.assertEqual(phases.count("write-data"), 66)
         self.assertEqual(target.report()["trailing_idle_low"], TRAILING_IDLE_MIN)
 
+    def test_csw_read_is_posted_like_drw(self):
+        # AP reads are posted: DRW -> CSW -> RDBUFF returns the buffer one
+        # read late each time (Arm's DAP handling of consecutive AP reads).
+        self.assertEqual(request_parity(1, 1, 0, 0), 0)
+        byte = sum(b << i for i, b in enumerate([1, 1, 1, 0, 0, 0, 0, 1]))
+        self.assertEqual(byte, REQ_CSW)
+        target, host = self.connected()
+        write_transaction(host, REQ_SELECT, 0)
+        write_transaction(host, REQ_TAR, TAR)
+        read_transaction(host, REQ_DRW)
+        read_transaction(host, REQ_CSW)
+        read_transaction(host, REQ_RDBUFF)
+        self.finish(target, host)
+        self.assertEqual(target.violations, [])
+        self.assertEqual(target.ap.log[2:], [
+            ("read", "DRW", POSTED),
+            ("read", "CSW", MEM[TAR]),        # DRW's queued word, not CSW
+            ("read", "RDBUFF", CSW_START),    # CSW's value, one read late
+        ])
+        want = [1, 0, 0] * 2 + [1, 0, 0] + bits_of(POSTED, 32) + [read_value_parity(POSTED)]
+        want += [1, 0, 0] + bits_of(MEM[TAR], 32) + [read_value_parity(MEM[TAR])]
+        want += [1, 0, 0] + bits_of(CSW_START, 32) + [read_value_parity(CSW_START)]
+        self.assertEqual(host.driven, want)
+
     def test_csw_starts_in_word_access_state(self):
         # the documented starting state: Size = word (0b010), AddrInc = off
         self.assertEqual(CSW_START & 0x7, 0b010)
@@ -613,6 +640,32 @@ class TestMemAp(unittest.TestCase):
             self.assertIsNone(target.ap.select)
             self.assertEqual([e[1] for e in target.ap.log], ["DPIDR"])
             self.assertEqual([ph for ph, _ in target.wire].count("write-data"), 0)
+
+    def test_bad_ack_needs_the_probe_to_stay_released(self):
+        # No answer (1,1,1) or 1,0,1: not an OK. The probe that drives write
+        # data anyway is reported; one that stays released through the
+        # possible 33-bit data phase, then idles low, is clean.
+        for ack in (ACK_NONE, ACK_BAD):
+            target, host = self.connected(acks={2: ack})
+            read_transaction(host, REQ_DPIDR)
+            write_transaction(host, REQ_SELECT, 0)
+            self.finish(target, host)
+            self.assertIn("driven-after-bad-ack", kinds_of(target), ack)
+            self.assertIsNone(target.ap.select)
+
+            target, host = self.connected(acks={2: ack})
+            read_transaction(host, REQ_DPIDR)
+            read_request(host, REQ_SELECT)
+            host.release_and_clock_turnaround()
+            host.clock(3 + 1 + 33 + 2)      # ACK, turnaround, data slots, spare
+            host.set_dio(img=0, oe=True)
+            host.clock(TRAILING_IDLE_MIN)
+            target.finish(host.t)
+            self.assertEqual(target.violations, [], ack)
+            self.assertEqual(target.acks, [ACK_OK, ack])
+            self.assertEqual(len(target.requests), 2, "no request after the bad ACK")
+            self.assertIsNone(target.ap.select)
+            self.assertEqual(target.report()["trailing_idle_low"], TRAILING_IDLE_MIN)
 
     def test_write_data_must_be_driven(self):
         target, host = self.connected()

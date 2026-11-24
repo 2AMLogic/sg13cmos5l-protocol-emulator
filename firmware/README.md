@@ -916,8 +916,8 @@ choice and the counted cost model are the dated notes in DR 0018. Issue
 #452 landed the fallback image (IDCODE and one DP read, 227 stored words,
 unrolled at four words per request bit); issue #500 replaced it with the
 **table-driven image** below, which reads one word of AP memory:
-**245 stored words** of the 256-word store (105 code, 140 table), **356
-SWCLK rising edges**, the last SWCLK fall at core edge 2,595. Pins: SWCLK
+**256 stored words** of the 256-word store (116 code, 140 table; the store
+is full), **356 SWCLK rising edges**, the last SWCLK fall at core edge 2,615. Pins: SWCLK
 `uio[2]`, SWDIO `uio[3]` (DR 0010's `swd` phase), both push-pull while
 driven (`UIO_DIR` 0x0C), SWDIO released at each turnaround cycle (its
 `UIO_DIR` bit cleared) for the target-driven response phases, with a board
@@ -951,22 +951,32 @@ SWDIO mask it is the SWCLK-low pin image; the *low* byte is the SWCLK-high
 image. One 8-word loop (`txq`) sends the request bits and the write-data
 bits of every transaction. Control words in the same table drive a small
 engine: a start word (another transaction, 8 request bits, or the end), a
-word after the request (a response follows: 35 slots for a read, 2 for a
-write), and a word after the response (write data follows: 33 bits, or the
-transaction is complete). The sequence, the kind and the length of every
-transaction are therefore data, and the code is 105 words. That is the
+word after the request (a response follows: the 2 ACK slots after the first
+bit), a word after the ACK (a read: 33 data slots; a write: the 33 write-data
+bits that follow the turnaround) and, after a write's data, the
+transaction-complete word. The sequence, the kind and the length of every
+transaction are therefore data, and the code is 116 words. That is the
 measurement DR 0018's note left open: the unrolled schedule needed about 180
 words per write; stored as data a bit costs one word, and the five
-transactions fit with **11 words spare**.
+transactions fit in the 256-word store (issue #500 first had 11 words spare;
+the full-ACK check below uses all of them).
 
 **ACK bit order.** The ADIv5 ACK numeric codes are OK = 0b001,
 WAIT = 0b010, FAULT = 0b100, and the target sends the code LSB first
 (IHI 0031H B4.1.5), so in time order on the wire OK is **1,0,0**, WAIT
 **0,1,0** and FAULT **0,0,1**. The report bytes carry that wire order.
-The probe branches on the *first* ACK bit (the one handshake branch): a 1
-continues; a 0 (WAIT or FAULT) clocks the two remaining ACK slots, the
-return turnaround with SWDIO released, re-drives SWDIO low, and ends the run
-with the eight trailing idle clocks. With CTRL/STAT.ORUNDETECT = 0 (the
+The probe branches on the *first* ACK bit: a 0 (WAIT or FAULT) clocks the
+two remaining ACK slots, the return turnaround with SWDIO released,
+re-drives SWDIO low, and ends the run with the eight trailing idle clocks.
+A 1 is then checked against the whole OK code: each of the other two ACK
+bits must be **0**. A silent target leaves the pulled-up line at 1,1,1 and
+1,0,1 / 1,1,0 are not ACK codes; either is a protocol error, so the probe
+never drives write data into it: it keeps SWDIO **released** for the rest of
+the ACK, the possible 33 data bits and the turnaround (35 slots, as Arm's
+CMSIS-DAP backs off a protocol error), then re-drives SWDIO low, ends the run
+with the eight trailing idle clocks and issues no further request. The model's
+`ACK_NONE` / `ACK_BAD` targets and the `driven-after-bad-ack` rule grade it,
+and a mutant with the check removed is rejected. With CTRL/STAT.ORUNDETECT = 0 (the
 power-up setting) a WAIT or FAULT has no data phase — a rejected **write**
 sends no data — so no data slots are clocked. There is no retry (agreed
 scope): an error on any transaction ends the run there, so a rejected SELECT
@@ -994,12 +1004,12 @@ blocked — `verification/records/sta-corner-sweep/`).
 
 | Interval | Cycles | at unconfirmed 50 MHz | Graded against |
 |---|---|---|---|
-| line reset, per SWCLK cycle (SWDIO high) | high **1**, low **3** | 20 / 60 ns | >= 50 cycles with SWDIO high (ADIv5 connection; pyOCD's shape sends it) |
+| line reset, per SWCLK cycle (SWDIO high) | high **1**, low **3** (**2** on the second reset's first cycle) | 20 / 60 ns | >= 50 cycles with SWDIO high (ADIv5 connection; pyOCD's shape sends it) |
 | switch / request / write-data, per bit (table loop) | high **7**, low **2** | 140 / 40 ns | SWDIO changes only while SWCLK low, stable across every rising edge (2 cycles of setup) |
 | response sample loop, per slot | high **1**, low **4..7** | 20 / 80..140 ns | sample taken in the SWCLK-low phase before the rise (IHI 0031 B4.3.1) |
 | request, 8 bits | 72 | 1.44 us | even parity over APnDP/RnW/A2/A3; start 1, stop 0, park 1 |
 | write data, 33 bits | 297 | 5.94 us | 32 bits LSB first + even parity |
-| whole program | 356 SWCLK cycles; last SWCLK fall at core edge 2,595 | 51.9 us clocked | 8 trailing idle clocks with SWDIO low before SWCLK stops (ADIv5 B4.1.4) |
+| whole program | 356 SWCLK cycles; last SWCLK fall at core edge 2,615 | 52.3 us clocked | 8 trailing idle clocks with SWDIO low before SWCLK stops (ADIv5 B4.1.4) |
 
 The table loop's SWCLK-high phase is long (7 cycles) because the next bit's
 table read, mask and `OUT` sit between two rising edges; ADIv5 sets no
@@ -1017,16 +1027,17 @@ R1 holds the SWCLK-high/SWDIO-high image 0x0C, which doubles as the
 push-pull `UIO_DIR` mask; R2 counts (and receives the count words from the
 table); R3 is the per-bit image / table-byte / decrement scratch.
 
-**Lint.** The assembler's data-dependent-latency lint reports **six**
-branches. One (`BZ ackerr`, after an `AND` of an `IN` sample) reads the
-target's ACK from the pin — the documented handshake case. Five branch on a
-table byte or on a loop count read from the table (`BNZ tail`, the two
-`BNZ txn` after control words, the loop-count `SUB`s of `txq` and `rx`): the
+**Lint.** The assembler's data-dependent-latency lint reports **nine**
+branches. Three (`BZ ackerr` after the first ACK bit, `BNZ ackbad` after each
+of the other two) read the target's ACK from the pin — the documented
+handshake case. Six branch on a table byte or on a loop count read from the
+table (`BNZ tail`, `BNZ txn` after a control word, `BZ ret` for a write,
+`BNZ txq`, the loop-count `SUB`s of `txq`, `ackl` and `rx`): the
 data is the program's own constant table, so the schedule is fixed at
 assemble time, the same reading as the NEC IR program's.
 
 Assemble: `python3 firmware/tools/asm.py firmware/asm/swd_probe.asm`
-(**245 words**, 250 fall-through cycles, 6 warnings as above); freshness:
+(**256 words**, 261 fall-through cycles, 9 warnings as above); freshness:
 `python3 firmware/tools/check_firmware.py`.
 
 **Wiring a target (direct, same rail).** The chip's I/O is 3.3 V on the
