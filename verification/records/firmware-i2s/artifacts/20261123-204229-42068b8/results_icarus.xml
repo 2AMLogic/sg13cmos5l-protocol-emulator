@@ -1,0 +1,12 @@
+<testsuites name="results">
+  <testsuite name="all" package="all">
+    <property name="random_seed" value="1" />
+    <testcase name="test_committed_image_is_fresh" classname="test_firmware_i2s" file="&lt;repo&gt;/verification/test_firmware_i2s.py" lineno="244" time="0.0018804073333740234" sim_time_ns="0.0" ratio_time="0.0" />
+    <testcase name="test_committed_stream" classname="test_firmware_i2s" file="&lt;repo&gt;/verification/test_firmware_i2s.py" lineno="267" time="1.5133552551269531" sim_time_ns="450781.0" ratio_time="297868.5926340439" />
+    <testcase name="test_extremes_and_random_tables" classname="test_firmware_i2s" file="&lt;repo&gt;/verification/test_firmware_i2s.py" lineno="283" time="4.615813255310059" sim_time_ns="1352401.0" ratio_time="292993.0058249627" />
+    <testcase name="test_negative_no_one_bclk_delay" classname="test_firmware_i2s" file="&lt;repo&gt;/verification/test_firmware_i2s.py" lineno="300" time="0.579596996307373" sim_time_ns="184561.0" ratio_time="318429.87657949014" />
+    <testcase name="test_negative_short_slot" classname="test_firmware_i2s" file="&lt;repo&gt;/verification/test_firmware_i2s.py" lineno="317" time="0.562568187713623" sim_time_ns="184561.00000000023" ratio_time="328068.67510601494" />
+    <testcase name="test_negative_stretched_period" classname="test_firmware_i2s" file="&lt;repo&gt;/verification/test_firmware_i2s.py" lineno="327" time="0.5594372749328613" sim_time_ns="184561.0" ratio_time="329904.7243896098" />
+    <testcase name="test_capture_path_control" classname="test_firmware_i2s" file="&lt;repo&gt;/verification/test_firmware_i2s.py" lineno="337" time="0.5036981105804443" sim_time_ns="164081.0" ratio_time="325752.66127347335" />
+  </testsuite>
+</testsuites>

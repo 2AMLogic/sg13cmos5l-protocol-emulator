@@ -102,9 +102,12 @@ PHASES = (
     "onewire",
     "onewire_result",
     "dmx512",
+    "i2s",
     "nec_ir_tx",
     "nec_ir_rx",
     "swd",
+    "can",
+    "modbus",
 )
 UNUSED = "unused"
 # PROG_SER / PROG_MODE are the serial program-load inputs. CRC_BYTE_SEL (an
@@ -115,9 +118,14 @@ LOAD_ROLE_PORT = {"PROG_SER": "ui_in", "PROG_MODE": "ui_in",
                   "CRC_BYTE_SEL": "ui_in", "CRC_READOUT": "uo_out"}
 
 # Role classes (what the role does electrically).
-DRIVE_PP = {"TX", "CS", "SCLK", "MOSI", "DIN", "IR_TX", "SWCLK", "SWDIO"} | {f"RESULT[{i}]" for i in range(8)}
+DRIVE_PP = {"TX", "CS", "SCLK", "MOSI", "DIN", "IR_TX", "SWCLK", "SWDIO", "DE",
+            "CAN_TXD", "BCLK", "WS", "SD"} | {f"RESULT[{i}]" for i in range(8)}
 DRIVE_OD = {"SCL", "SDA", "PS2_CLK", "PS2_DATA", "DQ"}
-SAMPLE = {"MISO", "RX", "IR_RX", "SWDIO"}
+# DR 0010 can section: the CAN image's UIO_DIR scratch use (issue #450 review).
+CAN_UIO_DIR_WRITE_SITES = 7
+CAN_UIO_DIR_SETUP = 0x05
+
+SAMPLE = {"MISO", "RX", "IR_RX", "SWDIO", "CAN_RXD"}
 ALL_ROLES = DRIVE_PP | DRIVE_OD | SAMPLE
 
 # Phase role vocabulary (the record's `phases` object must match exactly).
@@ -140,6 +148,9 @@ PHASE_VOCAB = {
     # Multi-protocol extra credit (issue #445): the DMX512 transmitter's
     # line, driven push-pull through an external RS-485 transceiver.
     "dmx512": {"TX"},
+    # Multi-protocol extra credit (issue #451): the I2S transmitter's three
+    # lines, all driven push-pull on uo_out (no pin is read).
+    "i2s": {"BCLK", "WS", "SD"},
     # Multi-protocol extra credit (issue #448): the NEC infrared
     # transmitter's carrier line (push-pull through a transistor to an IR
     # LED) and the demodulating receiver module's input.
@@ -150,6 +161,15 @@ PHASE_VOCAB = {
     # probe's write phases and released (sampled, with a pull-up) for the
     # target's response phases.
     "swd": {"SWCLK", "SWDIO"},
+    # Multi-protocol extra credit (issue #446): the Modbus RTU server's
+    # three line-side signals, all through an external RS-485
+    # transceiver: the received line, the driven line, and the
+    # transceiver's driver-enable (DE and /RE tied).
+    "modbus": {"RX", "TX", "DE"},
+    # Multi-protocol extra credit (issue #450): the CAN 2.0A node's two
+    # lines through an external transceiver. CAN_TXD (the transceiver's D
+    # input) is push-pull; CAN_RXD (its R output) is an input.
+    "can": {"CAN_TXD", "CAN_RXD"},
 }
 
 # Extraction patterns this script implements. An inventory entry naming any
@@ -167,6 +187,8 @@ PATTERNS = {
     "i2c_poll_mask",        # `LDI R3, imm` before `pollN: IN`
     "gen_strings",          # instruction string literals of gen_i2c_sr.py
     "ws2812_din",           # first `LDI R2, imm` == DIN pin image; every OUT UO_OUT from R1/R2
+    "i2s_images",           # i2s_tx.asm: OUT UO_OUT only from R1; ALU-mask LDIs are the table's SD/BCLK/WS masks (or the PM_ADDR wrap constant); R1 images are 0 / WS / SD
+    "bench_i2s",            # BCLK_PIN, BCLK_BIT / WS_PIN, WS_BIT / SD_PIN, SD_BIT = "port", n
     "bench_uart_tx",        # TX_PIN, TX_BIT = "port", n
     "bench_ws2812",         # DIN_PIN, DIN_BIT = "port", n
     "ps2_images",           # ps2_device.asm: release images, CLK mask, DATA images, bit moves, UIO_OD value
@@ -175,6 +197,12 @@ PATTERNS = {
     "swd_images",           # swd_probe.asm: preloaded image pair, per-bit images, UIO_DIR values, no UIO_OD
     "swd_sample",           # swd_probe.asm: each IN UIO_IN followed by AND Rx, R0 (the SWDIO mask)
     "bench_swd",            # SWCLK_BIT, SWDIO_BIT = n, m
+    "modbus_images",        # modbus_rtu.asm: RX mask LDI, IN/AND sample
+                            #  sites, and role-clean uo_out images
+    "bench_modbus",         # RX_BIT / TX_BIT / DE_BIT = n
+    "can_images",           # can_2a.asm: pin images from LINE_OUT pairs/status words
+    "can_sample",           # can_2a.asm: each IN UI_IN followed by AND Rx, R3 (the RXD mask)
+    "bench_can",            # TX_PIN/TX_BIT + RX_BIT = port, n, n
     "onewire_images",       # onewire_master.asm: every LDI -> OUT UIO_OUT pin image is 0 or the DQ mask
     "onewire_in_mask",      # onewire_master.asm: each IN UIO_IN sample is masked with the DQ bit
     "bench_onewire",        # DQ_BIT = n; pads calls name DQ_BIT; no uio_in writes
@@ -1226,6 +1254,63 @@ class Checker:
         wiring no committed image samples yet, so no IN port is allowed."""
         self.check_tx_firmware(rel, text, "nec_ir_tx", "NEC IR TX", "IR_TX")
 
+    # -------------------------------------------------------- profile: i2s
+    def prof_i2s(self, rel, ent, text):
+        """The I2S transmitter (issue #451): BCLK, WS and SD all driven on
+        the table's i2s pins and nothing read. Every `OUT UO_OUT` comes from
+        R1 (the pin image); every `LDI Rn, imm` feeding an AND/OR/XOR is one
+        of the table's three pin masks (as either operand: `AND R1, R0` after
+        `LDI R1, SD` isolates SD), or the PM_ADDR wrap constant when the
+        result goes straight to `WCTL PM_ADDR`; every `LDI R1, imm` is an
+        image of the idle/pad levels (0, the WS mask) or the SD mask, or the
+        table-base constant that goes to `WCTL PM_ADDR`. The three masks
+        must each be used (SD isolated by `AND Rx, R0`, BCLK and WS ORed in)."""
+        c = self.concrete
+        ins = self.asm_instrs(text)
+        outs, _ins, _ = self.out_in_ports([("i2s", ["BCLK", "WS", "SD"])], [], "spi_result")
+        self.check_ports(rel, ins, outs, set(), outs, set())
+        m = {r: self.mask_of("i2s", r) for r in ("BCLK", "WS", "SD")}
+        pin_masks = set(m.values())
+        used = set()
+
+        def pm_addr_next(idx, reg, hops):
+            """True when `reg` reaches a `WCTL PM_ADDR, reg` within `hops`
+            instructions (no other write to it in between)."""
+            for k in ins[idx + 1: idx + 1 + hops]:
+                if k["m"] == "WCTL" and k["ops"][0].upper() == "PM_ADDR" and k["ops"][1] == reg:
+                    return True
+                if k["m"] in self.WRITES and k["ops"][0] == reg:
+                    return False
+            return False
+
+        for idx, i in enumerate(ins):
+            if i["m"] == "OUT" and i["ops"][0].upper() == "UO_OUT":
+                c.sites += 1
+                if i["ops"][1].upper() != "R1":
+                    c.err(f"{rel}:{i['no']}: OUT UO_OUT from {i['ops'][1]}; only R1 (the pin image) may drive the pins")
+            nxt = ins[idx + 1] if idx + 1 < len(ins) else None
+            if i["m"] == "LDI" and nxt is not None and nxt["m"] in ("AND", "OR", "XOR") \
+                    and i["ops"][0] in nxt["ops"]:
+                v = self.imm(i["ops"][1])
+                c.sites += 1
+                if v in pin_masks:
+                    used.add(v)
+                elif not pm_addr_next(idx + 1, nxt["ops"][0], 3):
+                    c.err(f"{rel}:{i['no']}: ALU mask LDI {i['ops'][0]}, {i['ops'][1]} feeding {nxt['m']} is not one of "
+                          f"the table's i2s pin masks {sorted(f'0x{x:02X}' for x in pin_masks)} "
+                          "(nor a PM_ADDR wrap constant)")
+            if i["m"] == "LDI" and i["ops"][0] == "R1":
+                v = self.imm(i["ops"][1])
+                c.sites += 1
+                if v not in (0, m["WS"], m["SD"]) and not pm_addr_next(idx, "R1", 1):
+                    c.err(f"{rel}:{i['no']}: pin image LDI R1, {i['ops'][1]} is not 0, the table's WS mask "
+                          f"0x{m['WS']:02X} or SD mask 0x{m['SD']:02X}")
+        for role in ("BCLK", "WS", "SD"):
+            if m[role] not in used:
+                c.err(f"{rel}: no ALU-mask site uses the table's i2s {role} mask 0x{m[role]:02X} (pattern i2s_images)")
+        if not any(i["m"] == "AND" and i["ops"][1] == "R0" for i in ins):
+            c.err(f"{rel}: no `AND Rx, R0` SD-isolation site found")
+
     # -------------------------------------------------------- profile: swd
     def prof_swd(self, rel, ent, text):
         """The SWD probe (issue #452, DR 0018 note of 2026-11-19): SWCLK and
@@ -1298,6 +1383,71 @@ class Checker:
                       f"AND {i['ops'][0]}, R0 (R0 = 0x{dio:02X}, the SWDIO mask) "
                       "to isolate the sampled bit")
 
+    # ------------------------------------------------------ profile: can
+    def prof_can(self, rel, ent, text):
+        """The CAN 2.0A node (issue #450): CAN_TXD driven push-pull on the
+        table's can.CAN_TXD pin (uo_out[0] today, the pad the uart/dmx512
+        transmitters also use -- one image runs at a time), CAN_RXD
+        sampled on can.CAN_RXD (ui_in[0], PROG_SER during the load
+        phase). Checks: the only OUT port is UO_OUT and the only IN port
+        is UI_IN; every OUT UO_OUT reads R1 or R3 (the LINE_OUT pair
+        register or the recessive/status constant register); the first
+        `LDI R3, imm` is 0x01 (both the CAN_RXD mask on ui_in[0] and the
+        loop decrement); and every IN UI_IN is masked with R3."""
+        c = self.concrete
+        ins = self.asm_instrs(text)
+        outs, ins_p, _res = self.out_in_ports(
+            [("can", ["CAN_TXD"])], [("can", ["CAN_RXD"])], "spi_result")
+        self.check_ports(rel, ins, outs | {"UO_OUT"}, ins_p, outs, ins_p)
+        mask = self.mask_of("can", "CAN_RXD")
+        first = next((i for i in ins if i["m"] == "LDI" and i["ops"][0] == "R3"), None)
+        if first is None:
+            c.err(f"{rel}: no `LDI R3, imm` CAN_RXD-mask site found (pattern can_images)")
+        else:
+            c.sites += 1
+            if self.imm(first["ops"][1]) != mask:
+                c.err(f"{rel}:{first['no']}: CAN_RXD mask LDI R3, {first['ops'][1]} but "
+                      f"the table's can CAN_RXD pin {self.role_pin('can', 'CAN_RXD')} "
+                      f"is 0x{mask:02X}")
+        # DR 0010 records that this image uses UIO_DIR as scratch (no
+        # pin_modes entry can express it): pin the write-site count and the
+        # setup value, so a change to the scratch use must update the record.
+        dir_writes = [i for i in ins
+                      if i["m"] == "WCTL" and i["ops"][0].upper() == "UIO_DIR"]
+        c.sites += 1
+        if len(dir_writes) != CAN_UIO_DIR_WRITE_SITES:
+            c.err(f"{rel}: {len(dir_writes)} `WCTL UIO_DIR` sites but DR 0010's can "
+                  f"section records {CAN_UIO_DIR_WRITE_SITES} (UIO_DIR scratch use); "
+                  "update the record and CAN_UIO_DIR_WRITE_SITES together")
+        first_dir = dir_writes[0] if dir_writes else None
+        prev = None
+        if first_dir is not None:
+            idx0 = ins.index(first_dir)
+            prev = ins[idx0 - 1] if idx0 else None
+        c.sites += 1
+        if not (prev and prev["m"] == "LDI" and prev["ops"][0] == first_dir["ops"][1]
+                and self.imm(prev["ops"][1]) == CAN_UIO_DIR_SETUP):
+            c.err(f"{rel}: the first `WCTL UIO_DIR` is not preceded by `LDI <reg>, "
+                  f"0x{CAN_UIO_DIR_SETUP:02X}` (DR 0010's can section records the "
+                  "scratch counter starting there)")
+        for i in ins:
+            if i["m"] == "OUT" and i["ops"][0].upper() == "UO_OUT":
+                c.sites += 1
+                if i["ops"][1] not in ("R1", "R3"):
+                    c.err(f"{rel}:{i['no']}: OUT UO_OUT from {i['ops'][1]}; only R1 "
+                          "(the LINE_OUT pair / status register) or R3 (recessive) "
+                          "may drive CAN_TXD")
+        for idx, i in enumerate(ins):
+            if not (i["m"] == "IN" and i["ops"][1].upper() == "UI_IN"):
+                continue
+            c.sites += 1
+            nxt = ins[idx + 1] if idx + 1 < len(ins) else None
+            if not (nxt and nxt["m"] == "AND" and nxt["ops"][0] == i["ops"][0]
+                    and nxt["ops"][1] == "R3"):
+                c.err(f"{rel}:{i['no']}: IN UI_IN must be followed by "
+                      f"AND {i['ops'][0]}, R3 (R3 = 0x{mask:02X}, the CAN_RXD mask) "
+                      "to isolate the sampled bit")
+
     # ------------------------------------------------------- profile: benches
     def need(self, text, pattern, rel, what, flags=re.M):
         m = re.search(pattern, text, flags)
@@ -1333,6 +1483,12 @@ class Checker:
     def prof_bench_dmx512(self, rel, ent, text):
         self.check_bench_tx_pin(rel, text, "dmx512")
 
+    def prof_bench_i2s(self, rel, ent, text):
+        for name, role in (("BCLK", "BCLK"), ("WS", "WS"), ("SD", "SD")):
+            m = self.need(text, rf'^{name}_PIN,\s*{name}_BIT\s*=\s*"(\w+)",\s*(\d+)', rel, f"{name}_PIN, {name}_BIT")
+            if m:
+                self.check_pb(rel, f"{name}_PIN/{name}_BIT", m.group(1), int(m.group(2)), "i2s", role)
+
     def prof_bench_nec_ir(self, rel, ent, text):
         self.check_bench_tx_pin(rel, text, "nec_ir_tx", "IR_TX")
 
@@ -1347,6 +1503,18 @@ class Checker:
             self.check_pb(rel, "CLK_BIT", "uio", int(m.group(1)), "ps2", "PS2_CLK")
             self.check_pb(rel, "DATA_BIT", "uio", int(m.group(2)), "ps2", "PS2_DATA")
 
+    def prof_bench_can(self, rel, ent, text):
+        m = self.need(text, r'^TX_PIN,\s*TX_BIT\s*=\s*"(\w+)",\s*(\d+)', rel, "TX_PIN, TX_BIT")
+        if m:
+            self.check_pb(rel, "TX_PIN/TX_BIT", m.group(1), int(m.group(2)), "can", "CAN_TXD")
+        m2 = self.need(text, r'^RX_BIT\s*=\s*(\d+)', rel, "RX_BIT")
+        if m2:
+            want = self.role_pin("can", "CAN_RXD")
+            if ("ui_in", int(m2.group(1))) != want:
+                self.concrete.err(
+                    f"{rel}: RX_BIT is ui_in[{m2.group(1)}] but the table assigns "
+                    f"can.CAN_RXD to {want[0]}[{want[1]}]")
+
     def prof_bench_swd(self, rel, ent, text):
         m = self.need(text, r'^SWCLK_BIT,\s*SWDIO_BIT\s*=\s*(\d+),\s*(\d+)', rel, "SWCLK_BIT, SWDIO_BIT")
         if m:
@@ -1360,6 +1528,117 @@ class Checker:
         # bench must not write uio_in itself
         self.pad_calls(rel, text, required=(("pull_low", "DQ_BIT"), ("release", "DQ_BIT")),
                        names=("DQ_BIT",))
+
+    # ------------------------------------------------- profile: modbus
+    def modbus_image_values(self, ins: list[dict], idx: int):
+        """The set of values `OUT UO_OUT, <reg>` at ins[idx] can write when
+        the source is one of the two recognised Modbus image shapes; else
+        None.
+
+          constant   nearest write is `LDI reg, imm` (the idle image
+                     tx_mask, the driver-enable de_mask, the stop image
+                     tx_mask|de_mask)                    -> {imm}
+          data bit   nearest write is `OR reg, Ra` whose operands' nearest
+                     writes are `LDI Ra, imm2` (imm2 a driver image) and
+                     `AND reg, Rb` with `LDI Rb, tx_mask` (the isolated
+                     TX bit)                             -> {imm2, imm2|tx_mask}
+        """
+        reg = ins[idx]["ops"][1]
+        j, w = self.prev_write(ins, idx, reg)
+        if w is None:
+            return None
+        if w["m"] == "LDI":
+            v = self.imm(w["ops"][1])
+            return None if v is None else {v}
+        if w["m"] == "OR":
+            ja, a = self.prev_write(ins, j, w["ops"][1])
+            if not a or a["m"] != "LDI":
+                return None
+            base = self.imm(a["ops"][1])
+            if base is None:
+                return None
+            jb, b = self.prev_write(ins, j, reg)
+            if not b or b["m"] != "AND":
+                return None
+            jc, cc = self.prev_write(ins, jb, b["ops"][1])
+            bit = self.imm(cc["ops"][1]) if cc and cc["m"] == "LDI" else None
+            if bit is None:
+                return None
+            return {base, base | bit}
+        return None
+
+    def prof_modbus(self, rel, ent, text):
+        """The Modbus RTU server (issue #446): RX sampled from the table's
+        modbus.RX pin (the RS-485 transceiver's R output), TX driven on
+        modbus.TX (its D input) and the driver-enable bit on modbus.DE
+        (DE and /RE tied). Checks the RX mask's LDI site, the IN/AND
+        sample sites, and that every uo_out image is role-clean: the idle
+        image (TX high, DE low), the driver-enable image (DE, TX low) and
+        the stop image (both), or the data-bit image built from the
+        isolated TX bit OR a driver image."""
+        c = self.concrete
+        ins = self.asm_instrs(text)
+        outs, in_ports = set(), set()
+        for role, direction in (("TX", "out"), ("DE", "out"), ("RX", "in")):
+            pb = self.role_pin("modbus", role)
+            if pb:
+                (outs if direction == "out" else in_ports).add(
+                    PORT_ASM[(pb[0], direction)])
+        self.check_ports(rel, ins, outs, in_ports, outs, in_ports)
+        rx_mask = self.mask_of("modbus", "RX")
+        tx_mask = self.mask_of("modbus", "TX")
+        de_mask = self.mask_of("modbus", "DE")
+        first = next((i for i in ins if i["m"] == "LDI" and i["ops"][0] == "R1"), None)
+        if first is None:
+            c.err(f"{rel}: no `LDI R1, imm` RX bit-mask site found (pattern modbus_images)")
+        else:
+            c.sites += 1
+            if self.imm(first["ops"][1]) != rx_mask:
+                c.err(f"{rel}:{first['no']}: RX bit mask LDI R1, {first['ops'][1]} but the "
+                      f"table's modbus RX pin {self.role_pin('modbus', 'RX')} is 0x{rx_mask:02X}")
+        pb = self.role_pin("modbus", "RX")
+        if pb is not None:
+            before = c.sites
+            self.in_and_sites(rel, ins, lambda _i: (rx_mask, "modbus RX mask"),
+                              port=PORT_ASM[(pb[0], "in")])
+            if c.sites == before:
+                c.err(f"{rel}: no `IN Rx, {PORT_ASM[(pb[0], 'in')]}` ... `AND Rx, Ry` "
+                      f"RX sample site found (pattern modbus_images)")
+        allowed = {tx_mask, de_mask, tx_mask | de_mask}
+        saw_enable = saw_data = False
+        for idx, i in enumerate(ins):
+            if not (i["m"] == "OUT" and i["ops"][0].upper() == "UO_OUT"):
+                continue
+            c.sites += 1
+            vals = self.modbus_image_values(ins, idx)
+            if vals is None:
+                c.err(f"{rel}:{i['no']}: OUT UO_OUT, {i['ops'][1]} is not a recognised modbus "
+                      f"image shape (a constant image or the isolated-TX-bit OR; pattern "
+                      f"modbus_images)")
+                continue
+            bad = sorted(v for v in vals if v not in allowed)
+            if bad:
+                c.err(f"{rel}:{i['no']}: OUT UO_OUT, {i['ops'][1]} can write "
+                      f"{', '.join(f'0x{v:02X}' for v in bad)}; the modbus profile allows only "
+                      f"the idle 0x{tx_mask:02X}, driver-enable 0x{de_mask:02X} and stop "
+                      f"0x{tx_mask | de_mask:02X} images (pattern modbus_images)")
+            if de_mask in vals or (tx_mask | de_mask) in vals:
+                saw_enable = True
+            if len(vals) > 1:
+                saw_data = True
+        if not saw_enable:
+            c.err(f"{rel}: no OUT UO_OUT drives the DE image 0x{de_mask:02X}")
+        if not saw_data:
+            c.err(f"{rel}: no OUT UO_OUT drives a data-bit image (the isolated-TX-bit OR)")
+
+    def prof_bench_modbus(self, rel, ent, text):
+        m = self.need(text, r"^RX_BIT\s*=\s*(\d+)", rel, "RX_BIT")
+        if m:
+            self.check_pb(rel, "RX_BIT", "ui_in", int(m.group(1)), "modbus", "RX")
+        m = self.need(text, r"^TX_BIT,\s*DE_BIT\s*=\s*(\d+),\s*(\d+)", rel, "TX_BIT, DE_BIT")
+        if m:
+            self.check_pb(rel, "TX_BIT", "uo_out", int(m.group(1)), "modbus", "TX")
+            self.check_pb(rel, "DE_BIT", "uo_out", int(m.group(2)), "modbus", "DE")
 
     def prof_bench_spi(self, rel, ent, text):
         m = self.need(text, r"^CS_BIT,\s*SCLK_BIT,\s*MOSI_BIT\s*=\s*(\d+),\s*(\d+),\s*(\d+)", rel,

@@ -65,6 +65,10 @@ Chronological record of merged pull requests and closed issues, newest first.
 - **PR #498**: feat(signoff): add --diff-vs non-graded movement comparison for baseline refreshes
 - **Issue #403** (closed): signoff baseline: name the tiers-doc (source_doc_content_hash) movement when the klt version moves, as the 0.8.0->0.9.0 refresh did not
 
+### 2026-11-21
+
+- **PR #(this PR)**: firmware: CAN 2.0A node on the frozen ISA (issue #450): arbitrated transmit, receive with de-stuffing/CRC-15/ACK
+
 ### 2026-11-20
 
 - **PR #477**: feat: collapse parallel evidence re-mints via a list-form supersedes
