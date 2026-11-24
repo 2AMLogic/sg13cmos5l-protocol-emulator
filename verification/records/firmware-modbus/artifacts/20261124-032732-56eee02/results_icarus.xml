@@ -1,0 +1,10 @@
+<testsuites name="results">
+  <testsuite name="all" package="all">
+    <property name="random_seed" value="1" />
+    <testcase name="test_committed_image_is_fresh" classname="test_firmware_modbus" file="&lt;repo&gt;/verification/test_firmware_modbus.py" lineno="332" time="0.002588987350463867" sim_time_ns="0.0" ratio_time="0.0" />
+    <testcase name="test_modbus_read_and_write" classname="test_firmware_modbus" file="&lt;repo&gt;/verification/test_firmware_modbus.py" lineno="362" time="32.31493592262268" sim_time_ns="11034941.0" ratio_time="341481.13511420524" />
+    <testcase name="test_modbus_silence_and_liveness" classname="test_firmware_modbus" file="&lt;repo&gt;/verification/test_firmware_modbus.py" lineno="419" time="45.4967679977417" sim_time_ns="15362641.0" ratio_time="337664.44686274306" />
+    <testcase name="test_modbus_truncated_then_recovery" classname="test_firmware_modbus" file="&lt;repo&gt;/verification/test_firmware_modbus.py" lineno="455" time="18.94195246696472" sim_time_ns="6325361.0" ratio_time="333933.9495773522" />
+    <testcase name="test_capture_path_negative_control" classname="test_firmware_modbus" file="&lt;repo&gt;/verification/test_firmware_modbus.py" lineno="483" time="6.697882175445557" sim_time_ns="2379601.0" ratio_time="355276.62889078876" />
+  </testsuite>
+</testsuites>
