@@ -341,13 +341,17 @@ def _trailing_blanks(block: list[str]) -> list[str]:
 
 
 def _require_fields(body: str, names: tuple[str, ...] = _COLLAPSE_REQUIRED) -> None:
-    """Raise unless each of `names` is exactly one bullet in `body` (a
-    missing or repeated field cannot be compared or replaced safely)."""
+    """Require exactly one bullet with an unambiguous end for each named field."""
     counts: dict[str, int] = {}
+    field_before_blank = None
     for block in _split_blocks(body):
         f = _field_of(block)
         if f is not None:
             counts[f] = counts.get(f, 0) + 1
+        elif field_before_blank in names:
+            raise ValueError(f"ambiguous unindented block after `{field_before_blank}`: "
+                             "indent field continuations after a blank line")
+        field_before_blank = f if not block[-1].strip() else None
     bad = [n for n in names if counts.get(n, 0) != 1]
     if bad:
         raise ValueError("field(s) not identifiable exactly once: "

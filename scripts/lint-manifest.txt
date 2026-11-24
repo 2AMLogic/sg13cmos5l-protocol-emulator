@@ -19,6 +19,7 @@ python3 verification/test_uio_pad_resolution.py
 python3 verification/test_spi_flash_model.py
 python3 verification/test_ws2812_model.py
 python3 verification/test_dmx512_model.py
+python3 verification/test_i2s_model.py
 python3 verification/test_nec_ir_model.py
 python3 verification/test_ps2_model.py
 python3 verification/test_swd_model.py

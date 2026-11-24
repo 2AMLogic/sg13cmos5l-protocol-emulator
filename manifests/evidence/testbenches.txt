@@ -2,6 +2,10 @@
 # committed, with a cold-start invocation a third party can run, and the PDK
 # revision is pinned.
 #
+# Refreshed 2026-11-23 for issue #451 (the I2S audio transmitter): a
+# `firmware-i2s` experiment line is added (Icarus cocotb run; no gate-level
+# leg is claimed). The PDK revision is unchanged.
+#
 # Refreshed 2026-11-21 for issue #450 (the CAN 2.0A node): a
 # `firmware-can` experiment line is added (Icarus cocotb run). The PDK
 # revision is unchanged.
@@ -203,6 +207,7 @@ experiment  firmware-nec-ir  verification/test_firmware_nec_ir.py + reference_mo
 experiment  firmware-swd  verification/test_firmware_swd.py + reference_models/swd.py; `klt functional-verification verification/request-firmware-swd.json --format json`; model self-test `python3 verification/test_swd_model.py` (in `npm run lint`); mutant programs and WAIT/FAULT ACK runs are tests in the bench; no gate-level leg
 experiment  firmware-modbus  verification/test_firmware_modbus.py + reference_models/modbus_rtu.py; `klt functional-verification verification/request-firmware-modbus.json --format json`; model self-test `python3 verification/test_modbus_rtu_model.py` (in `npm run lint`); the retimed-capture negative control (test_capture_path_negative_control) is a test in the bench; no gate-level leg
 experiment  firmware-can  verification/test_firmware_can.py + reference_models/can_2a.py; `klt functional-verification verification/request-firmware-can.json --format json`; model self-test `python3 verification/test_can_2a_model.py`; generator gate `python3 firmware/tools/test_gen_can_2a.py` (CAN 2.0A node, issue #450)
+experiment  firmware-i2s  verification/test_firmware_i2s.py + reference_models/i2s.py; `klt functional-verification verification/request-firmware-i2s.json --format json`; model self-test `python3 verification/test_i2s_model.py` (in `npm run lint`); mutant programs and the delayed-SD capture control are tests in the bench; no gate-level leg (issue #451)
 experiment  firmware-uart-rx  verification/test_firmware_uart_rx.py; `klt functional-verification verification/request-firmware-uart-rx.json --format json`
 experiment  i2c-ack-window  `./verification/formal/run-i2c-ack-window.sh <dir>` (formal toolchain: yosys, yosys-abc, iverilog/vvp, python3, git history; no PDK, no z3); bounded ABC bmc3 on the actual core running the committed i2c_fast/i2c_std images, covers, and 13 firmware mutants per grade each replayed in Icarus (issue #259)
 experiment  isa-lockstep  verification/test_isa_lockstep.py + reference_models/isa.py; `klt functional-verification verification/request-isa-lockstep.json --format json`; controls `python3 verification/isa_lockstep_mutants.py --out <dir>`
