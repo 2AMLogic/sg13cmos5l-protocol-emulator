@@ -44,14 +44,19 @@ Time base. The simulation clock is 20 ns, target-spec row 4's **target**
 
 Negative controls (a suite that cannot fail cannot cite its passes)
 -------------------------------------------------------------------
-Three mutant programs, each assembled in memory from the committed source
+Five mutant programs, each assembled in memory from the committed source
 with one defect, run on the same DUT and bus and must be rejected for the
-defect's own reason: a reset 250 cycles short of 480 us (the model flags
-`reset-low-short`, the device never answers, the master must report no
-presence), a write-1 low pulse of ~0.2 us (below the 1 us minimum, flagged
-`write1-low-width`), and the scratchpad CRC check disabled (a corrupted
-scratchpad is then wrongly reported as ok -- only the byte comparison can
-catch that one, and does).
+defect's own reason: a reset 250 cycles short of 480 us (`reset-short`; the
+model flags `reset-low-short`, the device never answers, the master must
+report no presence), a write-1 low pulse of ~0.2 us (`write1-short`; below
+the 1 us minimum, flagged `write1-low-width`), the scratchpad CRC check
+disabled (`crc-disabled`; a corrupted scratchpad is then wrongly reported as
+ok -- only the byte comparison can catch that one, and does), every read
+sample ~17 us after the falling edge (`late-read`; every pulse stays legal,
+the sample-point grade flags it and the worst-case slave corrupts the bytes
+into a ROM CRC error), and the presence sample ~120 us after the reset
+release (`late-presence`; outside the 60..75 us window, the answered device
+goes unseen and the master reports no presence).
 
 Driven by `klt functional-verification` (`verification/request-firmware-
 onewire.json`) at RTL. All of it is pin-observable, so the same file runs
