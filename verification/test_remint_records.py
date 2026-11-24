@@ -693,6 +693,35 @@ def rerun_links_cases(failures: list) -> None:
     check("a Links line with no artifact reference is left unchanged",
           "[bench](../../../test_firmware_swd.py)" in rendered, rendered, failures)
 
+    # Re-mint of an already-re-minted record: the predecessor's Links block
+    # carries inherited `Re-mint of` bullets naming ANCESTORS' artifact dirs.
+    # They are history and must survive byte-identical; only the record's own
+    # top-level citations retarget (#588 review).
+    anc1, anc2 = "20250101-000001-aaa1111", "20250101-000002-bbb2222"
+    inherited = [
+        f"  - Re-mint of `records/20241231-000000-ccc0000.md` (superseded, untouched); artifacts `artifacts/{anc1}/`.",
+        f"  - Re-mint of `records/{anc1}.md` (superseded, untouched); artifacts `artifacts/{anc2}/`.",
+        f"  - Re-mint of `records/{anc2}.md` (superseded, untouched); artifacts `artifacts/{OLD_ID}/`.",
+    ]
+    chain_text = T.make_record(
+        OLD_ID, "demo", inputs=[("rtl/protocol_core.v", "0" * 64)],
+        links=(f"[klt result](../artifacts/{OLD_ID}/klt-functional-verification.json), "
+               f"[test cases](../artifacts/{OLD_ID}/results_icarus.xml)\n"
+               + "\n".join(inherited)))
+    chained = rr.render_record(
+        chain_text, meta, new_id, "0" * 40, env, names,
+        datetime_mod.datetime(2026, 1, 2, tzinfo=datetime_mod.timezone.utc),
+        ["rtl/protocol_core.v"], "9.9.9")
+    check("a multi-hop re-mint retargets the top-level [klt result]/[test cases]",
+          f"[klt result](../artifacts/{new_id}/klt-functional-verification.json)" in chained
+          and f"[test cases](../artifacts/{new_id}/results_icarus.xml)" in chained,
+          chained, failures)
+    check("inherited Re-mint lineage bullets are byte-identical after the mint",
+          all(b in chained.split("\n") for b in inherited), chained, failures)
+    check("the new Re-mint note is appended after the inherited bullets",
+          chained.index(inherited[-1])
+          < chained.index(f"  - Re-mint of `records/{OLD_ID}.md`"), chained, failures)
+
 
 def main() -> int:
     failures: list = []

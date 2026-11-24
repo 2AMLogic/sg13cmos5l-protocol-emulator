@@ -31,7 +31,7 @@ With `--rerun`, for every stale record that names request file(s):
    deleted. The new record's prose is the old record's, with Record ID,
    Result, Timestamp / author and Supersedes rewritten, the copied Links
    block's `artifacts/<old-id>/` references retargeted to
-   `artifacts/<new-id>/` (#588), and a "Re-mint" note added to Links --
+   `artifacts/<new-id>/` (#588; inherited `Re-mint of` lineage bullets are left byte-identical), and a "Re-mint" note added to Links --
    review it, and edit the Claim if the claim moved, before
    committing. A failing request mints nothing.
 
@@ -343,13 +343,21 @@ def _trailing_blanks(block: list[str]) -> list[str]:
 
 
 def _retarget_artifact_refs(lines: list[str], old_ids: list[str],
-                            new_id: str) -> list[str]:
+                            new_id: str, own_lines_only: bool = False) -> list[str]:
     """Point record-specific references (artifact directories) at the
     successor's own `artifacts/<new-id>/`; the predecessor stays cited only
-    as history (#588)."""
+    as history (#588).
+
+    `own_lines_only` leaves indented continuation lines untouched. In a Links
+    block those are the inherited `Re-mint of ...` lineage bullets, whose
+    `artifacts/<id>/` paths name the *ancestors'* directories and are history,
+    not this record's own citations (rewriting them would assert that an
+    ancestor's re-mint produced the successor's artifacts)."""
     out = lines
     for old_id in old_ids:
-        out = [l.replace(f"artifacts/{old_id}/", f"artifacts/{new_id}/") for l in out]
+        out = [l if (own_lines_only and l[:1].isspace())
+               else l.replace(f"artifacts/{old_id}/", f"artifacts/{new_id}/")
+               for l in out]
     return out
 
 
@@ -426,7 +434,8 @@ def render_record(old_text: str, old_meta: dict, new_id: str, revision: str,
             out.append(replacements[field])
             out.extend(_trailing_blanks(block))
         elif field == "Links":
-            out.extend(_retarget_artifact_refs(_content_lines(block), old_ids, new_id))
+            out.extend(_retarget_artifact_refs(_content_lines(block), old_ids, new_id,
+                                               own_lines_only=True))
             if len(old_ids) == 1:
                 out.append(
                     f"  - Re-mint of `records/{old_id}.md` (superseded, untouched); "
@@ -570,8 +579,8 @@ def render_collapsed_record(old_text: str, old_meta: dict, new_id: str,
         ),
     }
 
-    def retarget(lines: list[str]) -> list[str]:
-        return _retarget_artifact_refs(lines, [old_id], new_id)
+    def retarget(lines: list[str], own_lines_only: bool = False) -> list[str]:
+        return _retarget_artifact_refs(lines, [old_id], new_id, own_lines_only)
 
     out = []
     for block in _split_blocks(body):
@@ -580,7 +589,7 @@ def render_collapsed_record(old_text: str, old_meta: dict, new_id: str,
             out.append(replacements[field])
             out.extend(_trailing_blanks(block))
         elif field == "Links":
-            out.extend(retarget(_content_lines(block)))
+            out.extend(retarget(_content_lines(block), own_lines_only=True))
             out.append(
                 f"  - Collapse re-mint of {len(supersede_ids)} stale live leaves "
                 f"({ids_listed}; superseded, untouched) by "
