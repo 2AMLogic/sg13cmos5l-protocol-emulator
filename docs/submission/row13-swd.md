@@ -62,7 +62,7 @@ no RTL, assembler or ISA-model byte changed.
 | Bench | [`verification/test_firmware_swd.py`](../../verification/test_firmware_swd.py) |
 | Pad model | [`verification/uio_pads.py`](../../verification/uio_pads.py): pull-up on SWDIO (ADIv5 requires one), SWCLK pulled low, the other six `uio` pins tied low; contention is flagged, so a probe that keeps SWDIO driven into a response phase is caught electrically |
 | Pin roles | `swd` phase in [DR 0010](../../spec/decision-records/0010-protocol-pin-roles.md): SWCLK `uio[2]`, SWDIO `uio[3]`, `pin_modes` UIO_DIR 0x0C / UIO_OD 0x00, held by the checker's `swd` profile |
-| RTL evidence | [`firmware-swd` 20261124-030130-a4b5bbf](../../verification/records/firmware-swd/records/20261124-030130-a4b5bbf.md) — no gate-level run is claimed for this leg |
+| RTL evidence | [`firmware-swd` 20261124-133654-4ea3d38](../../verification/records/firmware-swd/records/20261124-133654-4ea3d38.md) — no gate-level run is claimed for this leg |
 
 ## What was measured
 
@@ -73,7 +73,7 @@ Every figure is read off the pads by the model, in core cycles x 20 ns
 | Quantity | Measured | Held against |
 |---|---|---|
 | Stored words | 256 of 256 (116 code, 140 table) | DR 0001's program memory |
-| SWCLK high / low, line resets | 1 / 3 cycles | >= 50 cycles with SWDIO high per reset |
+| SWCLK high / low, line resets | 1 / 3 cycles (2 low on the second reset's first clock) | >= 50 cycles with SWDIO high per reset |
 | SWCLK high / low, switch, requests, write data | 7 / 2 cycles | SWDIO changes only while SWCLK low; stable across every rising edge |
 | SWCLK high, response sample loop | 1 cycle (low 4..7) | samples taken in the SWCLK-low phase before the rise (IHI 0031 B4.3.1) |
 | SWCLK rising edges, whole program | 356; last SWCLK fall at core edge 2,615 | the bench |
