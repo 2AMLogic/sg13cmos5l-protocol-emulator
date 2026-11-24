@@ -878,9 +878,11 @@ produced it. `--rerun [--only EXPERIMENT] [--klt CMD]` re-runs just those
 requests with `klt functional-verification` and mints superseding records
 (new ID, `supersedes` = the stale record, artifacts under `artifacts/<new-id>/`).
 Old records are never touched. The new prose is copied from the old record
-with Record ID, Result, Timestamp and Supersedes rewritten; review the Claim
-and Run configuration before committing. Records with no request file are
-reported and must be re-minted by hand. Self-test: `test_remint_records.py`.
+with Record ID, Result, Timestamp and Supersedes rewritten and the Links
+block's `artifacts/<old-id>/` references retargeted to `artifacts/<new-id>/`
+(#588); review the Claim and Run configuration before committing. Records
+with no request file are reported and must be re-minted by hand. Self-test:
+`test_remint_records.py`.
 
 `--collapse EXPERIMENT` (#472, mutually exclusive with `--rerun`) covers the
 hand-re-minted interchangeable-leaf experiments (`signoff-baseline` today):
