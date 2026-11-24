@@ -529,36 +529,48 @@ gates. The host-side loader is issue #118.
 - `test_firmware_swd.py` — the SWD **probe** bench (issue #452; the
   protocol choice is the dated note of 2026-11-19 in DR 0018, fourth
   revision, made after DR 0017's ISA freeze): the committed
-  `firmware/asm/swd_probe.asm` (227 words) plays the debug host on
+  `firmware/asm/swd_probe.asm` (256 words, table-driven; issue #500
+  extends it from the 227-word IDCODE-and-DP-read fallback to one AP
+  memory-word read) plays the debug host on
   `uio[2]` (SWCLK) and `uio[3]` (SWDIO), push-pull with SWDIO released at
   each turnaround, and the bench plays the target.
   `reference_models/swd.py`, written from Arm's ADIv5 description and
   pyOCD's observable connection shape (constants marked "confirm" as DR
   0018 records), is an *interactive* target: it takes SWDIO at the
   turnaround rise, advances it on every subsequent rise (the
-  aggressive-but-legal IHI 0031 B4.3.1 corner), releases after the read
-  parity, and in the same pass grades the 50-clock line resets, the
-  0xE79E switch, the idle clocks, every request field (start/stop/park
-  and the even request parity), the turnaround releases and re-drives,
-  host SWDIO stability across rising edges, and the eight trailing idle
-  clocks. The lines come from the silicon-true pad model (`uio_pads.py`,
-  pull-up on SWDIO as ADIv5 requires, SWCLK pulled low, the other six
-  `uio` pins tied low), so a probe that keeps SWDIO driven into a
-  response phase is reported as contention. The golden run decodes both
-  request frames (0xA5, 0xBD), answers OK twice, and the probe's 72
-  `uo_out` report bytes read back ACK OK (wire order 1,0,0), the IDCODE
-  0x4BA00477 and its even parity, then ACK OK, 0x12345678 and its parity — with the
-  per-phase SWCLK widths held to the committed figures (reset 1/3,
-  switch and request 2/2, response high 1) and 218 rising edges. Negative
-  controls: five mutant programs (a 49-clock first reset, a flipped
-  switch bit, a missing turnaround release — contention, an inverted
-  request parity bit — no response, a 3-clock trailing idle), each
-  rejected for its own reason; the ACK branch removed (data slots clocked
-  after a WAIT) and SWDIO driven on the return turnaround cycle, both
-  rejected; and model-configured runs where the second request answers
-  WAIT (wire 0,1,0) and FAULT (0,0,1): the probe reports the ACK, leaves
-  the return turnaround released, re-drives SWDIO low and ends the
-  transfer, no retry. `test_swd_model.py` is the model's
+  aggressive-but-legal IHI 0031 B4.3.1 corner), releases after the response,
+  and in the same pass grades the 50-clock line resets, the 0xE79E switch,
+  the idle clocks, every request field (start/stop/park and the even
+  request parity), the turnaround releases and re-drives, the 33-bit write
+  data (value, even parity, SWDIO driven), host SWDIO stability across
+  rising edges, and the eight trailing idle clocks. Its `MemAp` decodes the
+  requests against a DP and one MEM-AP: SELECT and TAR have no reset value,
+  the DRW read is *posted* (it returns the read buffer's previous value,
+  deliberately different from the word) and only DP RDBUFF returns the
+  addressed word; the MEM-AP's word-access starting state (CSW.Size = word,
+  no auto-increment) is documented in the model. The lines come from the
+  silicon-true pad model (`uio_pads.py`, pull-up on SWDIO as ADIv5
+  requires, SWCLK pulled low, the other six `uio` pins tied low), so a
+  probe that keeps SWDIO driven into a response phase is reported as
+  contention. The golden run decodes the five requests (0xA5, 0xB1, 0x8B,
+  0x9F, 0xBD), checks both write payloads from the pads (SELECT
+  0x00000000, TAR 0x20000004, each with its even parity), and the probe's
+  `uo_out` report bytes read back the IDCODE, the stale posted value
+  0xA5A5C3C3 from the DRW read and the addressed word 0xCAFEF00D from
+  RDBUFF, each with ACK OK (wire order 1,0,0) and even parity, with the
+  per-phase SWCLK widths held to the committed figures and 356 rising
+  edges. Negative controls (each rejected for its own reason): a 49-clock
+  first reset, a flipped switch bit, a missing turnaround release
+  (contention), an inverted request parity bit (no response), a flipped
+  SELECT or TAR write-data parity bit (`write-parity`, the write discarded
+  and the later access failing for it), a broken ACK-to-write-data handoff
+  (`write-data-not-driven`), a 3-clock trailing idle, the ACK branch
+  removed and SWDIO driven on the return turnaround cycle; and
+  model-configured runs where each of the five transactions in turn is
+  answered WAIT (wire 0,1,0) or FAULT (0,0,1): the probe reports the ACK,
+  leaves the return turnaround released, re-drives SWDIO low and ends the
+  transfer, no retry, a rejected write changes no model state and the
+  memory word never appears. `test_swd_model.py` is the model's
   simulator-free self-test (`npm run lint`). Driven by `klt
   functional-verification` (`request-firmware-swd.json`); evidence in
   `records/firmware-swd/` (RTL only; no gate-level run is claimed).
