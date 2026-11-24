@@ -1070,6 +1070,129 @@ Bench: `verification/test_firmware_swd.py`
 klt functional-verification verification/request-firmware-swd.json --format json
 ```
 
+### `modbus_rtu.asm` — Modbus RTU server (issue #446)
+
+The multi-protocol extra credit's industrial entry: firmware on the frozen
+DR 0017 ISA, no RTL change and no hardware peripheral, speaking **Modbus
+RTU as a server** (slave address `0x11`) over an external RS-485
+transceiver. The chip receives requests on one pin, computes the
+CRC-16/MODBUS in software, keeps a small holding-register map in program
+memory, and drives the response — plus the transceiver's driver-enable —
+on two output pins. The first firmware here that answers requests: both
+directions of a protocol in one 236-word image.
+
+**Framing: 8N2 at 434 cycles per bit** (115,207 baud at the unconfirmed
+50 MHz nominal, +0.006% on 115,200 — target-spec row 4, unconfirmed, the
+same stance as every figure below). The issue allows 8E1 or 8N2; 8N2 is
+built because the even-parity bit costs this ISA a **fifth live value**
+in the transmit loop (byte, mask, image, DE constant, parity
+accumulator — four registers), and neither the 17-words-per-byte parity
+fold nor the map fits the 256-word store beside the CRC engine. 8E1 is
+the recorded cut; the Modbus serial-line spec permits no parity with two
+stop bits.
+
+**The register map and the server's scope.** Two 16-bit holding
+registers (addresses `0x0000`-`0x0001`, power-on values `0xDEAD`
+`0xBEEF`) live in program memory at words `0xFC`-`0xFD` — DR 0012's
+run-time PM access is the data memory this ISA lacks; the frame buffer
+at `0xF0`-`0xF8` holds each request byte in the high half of its own
+word (a byte is fetched with one `RCTL PM_DATA_HI` and a 1-cycle dummy
+`RCTL PM_DATA_LO` that advances the pointer, so no half-of-word state
+exists anywhere). The server answers:
+
+- **0x03** for start `0x0000` count `0x0002` only — the whole map, a
+  fixed 9-byte response (`11 03 04 DE AD BE EF crc*`). Any other
+  start/count: silence.
+- **0x06** for registers 0-1 — the map word is written and the request
+  is echoed verbatim (its CRC was checked on arrival). Any other
+  register: silence.
+- A frame with a bad CRC, another slave's address (`0x11` only; the
+  broadcast address `0x00` is a recorded cut), or any other function
+  code: silence. The CRC check covers all eight request bytes and tests
+  the residual for exactly `0x0000` (the transmitted CRC bytes *are* the
+  running CRC, low byte first) — no received CRC byte is ever compared.
+
+The exception reply (`fc|0x80` with code 1/2/3) is a recorded cut: the
+issue's word-budget fallback names it first, and with the CRC engine
+(27 words/bit-loop twice-shared), the receive path and the response
+builder, the 236-word image leaves no room. A CRC-valid unicast request
+is never answered with a wrong frame — the unserved ones get silence.
+
+**Timing, all in core cycles at the unconfirmed row-4 clock.** Every bit
+slot is exactly 434 cycles: the `.cyclesec` sections of the committed
+report pin each span (the receive bit loop's whole body is 434; the
+transmit bit loop's body is 434; the start, stop and stop-tail sections
+are the documented partial spans the table below completes). On the RTL
+the character-to-character pitch measures **4,766** cycles — `11 x 434 -
+ 8`: the fetch's two PM accesses retire a few cycles faster against the
+fetch-ahead than the static count, a fixed, deterministic arbitration
+effect, every character the same (the bench allows `4,774 +- 12`).
+
+| Interval | Cycles | at unconfirmed 50 MHz | Graded against |
+|---|---|---|---|
+| one bit | **434** | 8.68 us | 115,207 baud nominal; the model's +-2.5% slot bound (a receiver re-anchors every start edge) |
+| one character (start + 8 data + 2 stops) | **4,774** (RTL 4,766) | 95.48 us | 8N2, back to back |
+| 3.5-character silent interval before the response | **16,709** | 334.2 us | `>= 3.5 x 11 x 434`, counted `WAIT` loop |
+| request last stop -> response first start | **~19,636** | 392.7 us (~4.11 chars) | `>= 3.5` characters; then ~2,900 cycles of CRC/address/dispatch/build |
+| DE rise -> first start bit | **441** | 8.82 us | `>=` a quarter bit (driver-enable setup) |
+| last stop bit end -> DE fall | **~640** | ~12.8 us | `>=` a quarter bit (disable hold) |
+| first sample after the start edge | **651** | 13.02 us | 1.5 bit periods: the centre of data bit 0, +-3 cycles of poll granularity |
+
+**The 18 lint warnings, by class** (the committed report's `WARNING`
+lines, asserted exactly by the bench; every one sits between characters
+or between frames — none between a character's samples, none producing
+protocol timing): the start-edge poll (`BNZ poll`, 2: the byte loop's
+re-arm and the byte-count branch after the store) — the sanctioned
+handshake uart_rx carries, taken *before* a byte's first sample; the two
+stop-bit framing checks (`BNZ main`, 2) — after the byte's last sample;
+the CRC engine's three loop branches (CRC state, bit counter, byte
+counter, 3) — between frames, where path lengths are not protocol
+timing; the engine's continuation selector (PM_ADDR position, 1); the
+transmit loop's two counters (2); the CRC residual test (1), the
+address test (1), the function dispatch (2) and the request-validation
+branches (4: the 0x03 start/count tests and the 0x06 register tests) —
+all between frames on PM-read-derived values.
+
+**Wiring a fixture.** The same 3.3 V TI **THVD1450** RS-485 transceiver
+the DMX512 row uses, on the shared RS-485 Pmod — this time with the
+driver actually switched:
+
+| THVD1450 pin | Signal | Connect to |
+|---|---|---|
+| 8 VCC | supply | 3.3 V |
+| 7 B | line complement (D-) | Modbus pair (A/B) |
+| 6 A | line true (D+) | Modbus pair |
+| 5 GND | common | board GND and line common |
+| 4 D | driver input | `uo_out[0]` (the board pin carrying it) |
+| 3 DE | driver enable | `uo_out[1]` |
+| 2 /RE | receiver enable | `uo_out[1]` (tied to DE: one pin flips direction) |
+| 1 R | receiver output | `ui_in[1]` |
+
+Terminate 120 ohm across A-B at the master end (the bus's single
+termination point). DE tied to /RE is the classic half-duplex direction
+pin: high while this server transmits its response, low while it
+listens — the bench grades the DE window around every response frame
+(setup `>=` a quarter bit before the first start edge, hold `>=` a
+quarter bit after the last stop bit). A real master and a bias network
+are bring-up, out of scope here (issue #446): the claim is the
+cycle-exact line behaviour at the pads, verified at RTL.
+
+Bench: `verification/test_firmware_modbus.py`
+(`verification/request-firmware-modbus.json`), registered in
+`scripts/rtl-bench-inventory.txt`; model
+`verification/reference_models/modbus_rtu.py` (its own table-driven
+CRC-16, frame builder, 8N2 decoder and server behaviour — the expected
+response bytes come from the model, never from the firmware's encoding);
+pin roles in DR 0010's `modbus` phase (RX `ui_in[1]`, TX `uo_out[0]`,
+DE `uo_out[1]`). The image is **236 words** of the 256-word store, and
+the code must stay below word `0xF0` where the frame buffer lives
+(assembler: `python3 firmware/tools/asm.py firmware/asm/modbus_rtu.asm`;
+freshness: `python3 firmware/tools/check_firmware.py`).
+
+```bash
+klt functional-verification verification/request-firmware-modbus.json --format json
+```
+
 ### `can_2a.asm` — CAN 2.0A node (issue #450)
 
 The multi-protocol extra credit's automotive-bus entry (catalog #443):

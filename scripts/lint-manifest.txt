@@ -23,6 +23,7 @@ python3 verification/test_i2s_model.py
 python3 verification/test_nec_ir_model.py
 python3 verification/test_ps2_model.py
 python3 verification/test_swd_model.py
+python3 verification/test_modbus_rtu_model.py
 python3 verification/test_can_2a_model.py
 python3 firmware/tools/test_mkflash.py
 python3 verification/test_firmware_artifacts.py
