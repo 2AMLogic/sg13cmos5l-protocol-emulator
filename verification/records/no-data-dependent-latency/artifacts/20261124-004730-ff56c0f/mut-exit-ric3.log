@@ -1,0 +1,47 @@
+[00:46:33 INFO] the model to be checked: <art>/mut-exit.aig
+[00:46:33 INFO] origin ts has 682 vars, 72 inputs, 117 latches, 0 constraints, 1959 clauses and 5670 lits in cnf
+[00:46:33 INFO] trivial simplified ts: 450 vars, 53 inputs, 117 latches, 0 constraints, 1698 clauses and 6008 lits in cnf
+[00:46:33 INFO] scorr: eliminates 6 latchs out of 117 in 0.02s
+[00:46:33 INFO] scorr: simplified ts: 383 vars, 5 inputs, 111 latches, 0 constraints, 1475 clauses and 4987 lits in cnf
+[00:46:33 INFO] frts: eliminates 1 out of 383 vars in 0.00s
+[00:46:33 INFO] frts: simplified ts: 365 vars, 3 inputs, 111 latches, 0 constraints, 1443 clauses and 4918 lits in cnf
+[00:46:33 INFO] preprocessed ts has 365 vars, 3 inputs, 111 latches, 0 constraints, 1443 clauses and 4918 lits in cnf
+[00:46:33 INFO] IC3 found no counterexample up to depth 0
+[00:46:33 INFO] IC3 found no counterexample up to depth 1
+[00:46:33 INFO] IC3 found no counterexample up to depth 2
+[00:46:33 INFO] IC3 found a counterexample at depth 4
+[00:46:33 INFO] obligations: [1, 1, 1, 2, 52]
+[00:46:33 INFO] frames [5]: 111 5 9 51 1 
+[00:46:33 INFO] SolverStatistic {
+    num_solve: 293,
+    avg_solve_time: 2.274µs,
+    avg_decide_var: 5.787108,
+    num_simplify_subsume: 0,
+    num_simplify_self_subsume: 0,
+}
+[00:46:33 INFO] Statistic {
+    time: 0.04s,
+    num_mic: 85,
+    avg_mic_cube_len: 1.223529,
+    avg_po_cube_len: 5.840830,
+    mic_drop: success: 3, fail: 101, success rate: 2.88%,
+    num_down: 104,
+    num_down_sat: 23,
+    ctp: success: 0, fail: 24, success rate: 0.00%,
+    block: Block {
+        overall_time: 1.455956ms,
+        get_bad_time: 8 times in 9.171000µs,
+        blocked_time: 139 times in 451.555000µs,
+        get_pred_time: 649.118µs,
+        mic_time: 177.108µs,
+        push_time: 64.506µs,
+    },
+    propagate: Propagate {
+        overall_time: 155.433µs,
+        push_inf_time: 350.513µs,
+    },
+    xor_gen: success: 0, fail: 0, success rate: NaN%,
+    num_auxiliary_var: 0,
+    test: success: 0, fail: 0, success rate: NaN%,
+}
+SAT

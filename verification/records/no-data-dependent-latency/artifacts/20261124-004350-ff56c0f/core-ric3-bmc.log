@@ -1,0 +1,46 @@
+[00:43:37 INFO] the model to be checked: <art>/core.aig
+[00:43:37 INFO] origin ts has 4859 vars, 1177 inputs, 530 latches, 0 constraints, 13274 clauses and 39512 lits in cnf
+[00:43:37 INFO] trivial simplified ts: 3110 vars, 1112 inputs, 530 latches, 0 constraints, 10478 clauses and 41419 lits in cnf
+[00:43:38 INFO] scorr: eliminates 7 latchs out of 530 in 0.24s
+[00:43:38 INFO] scorr: simplified ts: 2819 vars, 891 inputs, 522 latches, 0 constraints, 9512 clauses and 37097 lits in cnf
+[00:43:38 INFO] frts: eliminates 14 out of 2819 vars in 0.00s
+[00:43:38 INFO] frts: simplified ts: 2753 vars, 891 inputs, 522 latches, 0 constraints, 9378 clauses and 36989 lits in cnf
+[00:43:38 INFO] preprocessed ts has 2753 vars, 891 inputs, 522 latches, 0 constraints, 9378 clauses and 36989 lits in cnf
+[00:43:38 INFO] BMC found no counterexample up to depth 0
+[00:43:38 INFO] BMC found no counterexample up to depth 1
+[00:43:38 INFO] BMC found no counterexample up to depth 2
+[00:43:38 INFO] BMC found no counterexample up to depth 3
+[00:43:38 INFO] BMC found no counterexample up to depth 4
+[00:43:38 INFO] BMC found no counterexample up to depth 5
+[00:43:38 INFO] BMC found no counterexample up to depth 6
+[00:43:38 INFO] BMC found no counterexample up to depth 7
+[00:43:38 INFO] BMC found no counterexample up to depth 8
+[00:43:38 INFO] BMC found no counterexample up to depth 9
+[00:43:38 INFO] BMC found no counterexample up to depth 10
+[00:43:38 INFO] BMC found no counterexample up to depth 11
+[00:43:38 INFO] BMC found no counterexample up to depth 12
+[00:43:38 INFO] BMC found no counterexample up to depth 13
+[00:43:39 INFO] BMC found no counterexample up to depth 14
+[00:43:39 INFO] BMC found no counterexample up to depth 15
+[00:43:39 INFO] BMC found no counterexample up to depth 16
+[00:43:39 INFO] BMC found no counterexample up to depth 17
+[00:43:39 INFO] BMC found no counterexample up to depth 18
+[00:43:39 INFO] BMC found no counterexample up to depth 19
+[00:43:39 INFO] BMC found no counterexample up to depth 20
+[00:43:40 INFO] BMC found no counterexample up to depth 21
+[00:43:40 INFO] BMC found no counterexample up to depth 22
+[00:43:41 INFO] BMC found no counterexample up to depth 23
+[00:43:41 INFO] BMC found no counterexample up to depth 24
+[00:43:41 INFO] BMC found no counterexample up to depth 25
+[00:43:41 INFO] BMC found no counterexample up to depth 26
+[00:43:42 INFO] BMC found no counterexample up to depth 27
+[00:43:43 INFO] BMC found no counterexample up to depth 28
+[00:43:43 INFO] BMC found no counterexample up to depth 29
+[00:43:44 INFO] BMC found no counterexample up to depth 30
+[00:43:44 INFO] BMC found no counterexample up to depth 31
+[00:43:44 INFO] BMC found no counterexample up to depth 32
+[00:43:45 INFO] BMC found no counterexample up to depth 33
+[00:43:46 INFO] BMC found no counterexample up to depth 34
+[00:43:46 INFO] BMC found no counterexample up to depth 35
+[00:43:46 INFO] bmc reached bound 35, stopping search
+UNKNOWN

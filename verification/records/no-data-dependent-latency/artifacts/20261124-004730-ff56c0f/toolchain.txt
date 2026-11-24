@@ -1,0 +1,5 @@
+Yosys 0.67+post (git sha1 b8e7da6f40ae8f552c116bf6c359b07c6533e159, Release, GNU c++ 13.3.0)
+UC Berkeley, ABC 1.01 (yosys-abc)
+Z3 version 5.4.1 - 64 bit (z3-solver==5.4.1.0 in worktree venv)
+rIC3 1.5.2 (git commit 84dea02dfdef4519979afb1930269e1db7df3bf1, https://github.com/gipsyh/rIC3, compiled with rustc 1.100.0 (0ef1bc386 2026-11-09))
+Linux x86_64
