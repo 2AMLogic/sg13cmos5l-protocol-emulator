@@ -40,7 +40,7 @@ What is graded, and by whom
    data (the stale buffer value), then the RDBUFF read's data (the fixture
    word at TAR), each with its ACK and even parity, byte for byte what the
    model drove.
-4. **The cycle figures.** Image size (245 stored words of 256), rising-edge
+4. **The cycle figures.** Image size (256 stored words of 256), rising-edge
    count, and the SWCLK high/low widths per phase are measured and held
    against the figures `firmware/README.md` records.
 

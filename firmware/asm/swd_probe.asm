@@ -34,13 +34,18 @@
 ; SWDIO byte (0x08 or 0x00), in transaction order -- the ACK in wire order
 ; (OK = 1,0,0: numeric 0b001 sent LSB first; WAIT = 0,1,0; FAULT = 0,0,1),
 ; then, for a read with an OK, the 32 data bits LSB first and the parity bit.
-; The probe branches on the first ACK bit (the one sanctioned handshake
-; branch): a 1 is an OK and continues; a 0 is a WAIT or FAULT, which with
-; CTRL/STAT.ORUNDETECT = 0 has no data phase (a rejected write sends no
-; data), so the probe clocks the remaining two ACK slots and the return
-; turnaround (SWDIO released), re-drives SWDIO low and ends the run with the
-; eight trailing idle clocks. No retry. An error on any transaction ends the
-; run there: the later transactions, and so the memory read, are not issued.
+; The probe requires the COMPLETE OK code (1,0,0) before it drives write
+; data. The first ACK bit is the first handshake branch: a 0 is a WAIT or
+; FAULT, which with CTRL/STAT.ORUNDETECT = 0 has no data phase (a rejected
+; write sends no data), so the probe clocks the remaining two ACK slots and
+; the return turnaround (SWDIO released), re-drives SWDIO low and ends the
+; run with the eight trailing idle clocks. A 1 first bit continues into ACK
+; slots 1 and 2, which must both be 0: a 1 in either (a silent target's
+; pulled-up 1,1,1, or the invalid 1,0,1 / 1,1,0) is no ACK, so the probe
+; keeps SWDIO released for 35 slots (the rest of the ACK, a possible data
+; phase and the turnaround), drives nothing and ends the run. No retry. An
+; error on any transaction ends the run there: the later transactions, and
+; so the memory read, are not issued.
 ;
 ; Table-driven shape. The first fallback image (227 stored words) unrolled
 ; four words per request bit; a 33-bit write data phase did not fit beside
@@ -57,10 +62,10 @@
 ; also carries the control words the engine reads between the passes:
 ;   start word  0x10xx  another transaction follows, xx = 8 request bits
 ;               0x18xx  the end of the table
-;   after the request   0x10xx  a response follows, xx = the slots after the
-;                               first ACK bit (35 for a read, 2 for a write)
-;   after the response  0x10xx  write data follows, xx = 33 bits
-;                       0x18xx  none: the transaction is complete
+;   after the request   0x10xx  a response follows, xx = 2: the ACK slots
+;                               after the first ACK bit (every transaction)
+;   after the ACK       0x18xx  a read, xx = 33 data slots (32 + parity)
+;                       0x10xx  a write, xx = 33 write-data bits
 ;   after write data    0x18xx  the transaction is complete
 ; so the sequence of transactions, their kind and their length are all data.
 ; The table pointer PM_ADDR advances on every low-byte read and is never
@@ -72,7 +77,8 @@
 ; widths are the committed program's, and the bench measures them on the pads:
 ;
 ;   phase                     SWCLK high   SWCLK low   period
-;   line reset                  1 cycle     3 cycles    4
+;   line reset                  1 cycle     3 cycles    4   (the second reset's
+;                                                first low phase is 2 cycles)
 ;   switch / request bits       7 cycles    2 cycles    9   (table loop)
 ;   write-data bits             7 cycles    2 cycles    9   (table loop)
 ;   idle tail                   2 cycles    2 cycles    4
@@ -93,17 +99,19 @@
 ; Only bits 2 and 3 of an image reach a pad: UIO_DIR enables exactly SWCLK
 ; and SWDIO.
 ;
-; Lint. The assembler's data-dependent-latency lint reports six branches. One
-; (BZ ackerr, after AND of an IN sample) reads the target's ACK from the pin:
-; the documented handshake case. The other five branch on a table byte or on
-; a loop count read from the table (BNZ tail, BNZ txn after the two control
-; words, and the loop-count SUBs of txq and rx): the data is the program's own
+; Lint. The assembler's data-dependent-latency lint reports nine branches.
+; Three (BZ ackerr after the first ACK bit, and BNZ ackbad after each of ACK
+; slots 1 and 2) read the target's ACK from the pin: the documented handshake
+; case. The other six branch on a table byte or on a loop count read from the
+; table (BNZ tail, BNZ txn after a control word, BZ ret for a write, and the
+; loop-count SUBs of txq, ackl and rx): the data is the program's own
 ; constant table, so the schedule is fixed at assemble time -- the NEC IR
 ; program's shape and the same documented reading of the lint.
 ;
-; 245 stored words of DR 0001's 256 (105 code, 140 table); 356 SWCLK rising
-; edges on the all-OK path; the last SWCLK fall is at core edge 2595. DR
-; 0018's note recorded the 227-word fallback image this one replaces.
+; 256 stored words of DR 0001's 256 (116 code, 140 table; none spare); 356
+; SWCLK rising edges on the all-OK path; the last SWCLK fall is at core edge
+; 2615. DR 0018's note recorded the 227-word fallback image this one
+; replaces.
 
 ; ------------------------------------------------------------- setup (5)
         LDI   R0, 0x08         ; image: SWCLK low, SWDIO high; also the mask
@@ -176,8 +184,9 @@ txq:
         BNZ   txq
 
 ; ---- the word after a transmit pass: 0x10xx = a response follows (low
-; ---- byte = the response samples after the first ACK bit: 35 for a read,
-; ---- 2 for a write), 0x18xx = the transaction is complete
+; ---- byte = 2, the ACK slots after the first ACK bit; the 33 data slots of a
+; ---- read or write-data bits of a write are counted by the word after the
+; ---- ACK), 0x18xx = the transaction is complete
         RCTL  R3, PM_DATA_HI
         RCTL  R2, PM_DATA_LO
         AND   R3, R0

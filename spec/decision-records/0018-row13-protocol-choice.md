@@ -716,27 +716,28 @@ or assembler byte changed; `scripts/check_isa_freeze.py` passes).
 0xE79E switch, a second line reset, two idle clocks, then five transactions
 — DP IDCODE read (0xA5), DP SELECT write (0xB1, 0x00000000), AP TAR write
 (0x8B, 0x20000004), the posted AP DRW read (0x9F) and the DP RDBUFF read
-(0xBD) — and eight trailing idle clocks. **245 stored words of 256; 11
-spare.** Every stored instruction and table entry is counted once:
+(0xBD) — and eight trailing idle clocks. **256 stored words of 256; none
+spare** (116 code, 140 table; an earlier 245-word image, 105 code, was extended to require the full OK acknowledgement before write data). Every stored instruction and table entry is counted once:
 
 | Section | Stored words |
 |---|---|
 | setup, first line reset (50 clocks) | 10 |
 | switch loop (`PM_ADDR` setup, 16-bit table pass, 8-word loop) | 11 |
-| second line reset, two idle clocks | 17 |
-| transaction engine: start word, the one transmit loop (8), the word after the request, turnaround, ACK slot, response loop (8), return turnaround and re-drive, the word after the response | 44 |
-| WAIT / FAULT path (`ackerr`) | 13 |
+| second line reset, two idle clocks | 16 |
+| transaction engine: start word, the one transmit loop (8), the word after the request, turnaround, ACK slot 0, ACK slots 1 and 2 (`ackl`, 9), the word after the ACK, response loop (8), return turnaround and re-drive, the write-or-done dispatch | 55 |
+| not-OK path (`ackbad`, `ackerr` sharing one ACK-slot loop) | 14 |
 | trailing idle (8 clocks) and `HALT` | 10 |
-| **code** | **105** |
+| **code** | **116** |
 | table: 16 switch bits | 16 |
-| table: 5 start words + 40 request bits + 5 words after the request + 5 words after the response | 55 |
+| table: 5 start words + 40 request bits + 5 words after the request + 5 words after the ACK | 55 |
 | table: 2 x 33 write-data bits + 2 words after the write data | 68 |
 | table: end word | 1 |
 | **table** | **140** |
 
-(The code rows add to 105 — 10 + 11 + 17 + 44 + 13 + 10 — and, with the
-140 table words, to the 245 that `python3 firmware/tools/asm.py
-firmware/asm/swd_probe.asm` reports.) The shape is the one the 2026-11-19 note measured for a single
+(The code rows add to 116 — 10 + 11 + 16 + 55 + 14 + 10 — and, with the
+140 table words, to the 256 that `python3 firmware/tools/asm.py
+firmware/asm/swd_probe.asm` reports, along with 261 fall-through cycles and
+9 lint warnings.) The shape is the one the 2026-11-19 note measured for a single
 data phase: each probe-driven bit is one stored `LDI` word the program never
 executes, read through DR 0012's `PM_ADDR` / `PM_DATA_HI` / `PM_DATA_LO`, and
 one 8-word loop sends the request bits and the write-data bits of every
@@ -759,8 +760,14 @@ write parity bit, a broken ACK-to-write-data handoff, and the earlier
 connection / turnaround / request-parity / trailing-idle set) each fail for
 their own reason; each of the five transactions answered WAIT or FAULT ends
 the run with no data phase, changes no model state for a rejected write, and
-never returns the word. The record is under `verification/records/
-firmware-swd/`; the superseded 227-word records stay in place.
+never returns the word. A write is driven data only after a complete OK
+acknowledgement (1,0,0): a silent target (1,1,1) or an invalid code (1,0,1)
+on SELECT or TAR keeps SWDIO released through the 33 possible data-phase
+cycles (checked on `uio_oe` at the pads), drives no write data, issues no
+further request and ends with the eight trailing idle clocks, leaving the
+model's SELECT and TAR unset; a mutant that accepts such an ACK fails. The
+record is under `verification/records/firmware-swd/`; the superseded 227-word
+and 245-word records stay in place.
 
 ### What is assumed, not established
 
