@@ -1,0 +1,119 @@
+{
+  "schema_version": 2,
+  "engine": "icarus",
+  "hdl_toplevel": "tt_um_2amlogic_protocol_emulator",
+  "testbench": "test_firmware_onewire",
+  "status": "pass",
+  "test_count": 13,
+  "passed_count": 13,
+  "failed_count": 0,
+  "skipped_count": 0,
+  "tests": [
+    {
+      "name": "test_committed_image_is_fresh",
+      "status": "passed",
+      "sim_time_ns": 0.0,
+      "real_time_s": 0.002
+    },
+    {
+      "name": "test_read_rom_convert_read_scratchpad",
+      "status": "passed",
+      "sim_time_ns": 15080860.0,
+      "real_time_s": 49.507
+    },
+    {
+      "name": "test_no_presence_is_reported",
+      "status": "passed",
+      "sim_time_ns": 1080860.0,
+      "real_time_s": 3.221
+    },
+    {
+      "name": "test_bad_scratchpad_crc_is_reported",
+      "status": "passed",
+      "sim_time_ns": 15080859.999999998,
+      "real_time_s": 49.105
+    },
+    {
+      "name": "test_bad_rom_crc_is_reported",
+      "status": "passed",
+      "sim_time_ns": 6280860.0,
+      "real_time_s": 20.505
+    },
+    {
+      "name": "test_idle_bus_is_released",
+      "status": "passed",
+      "sim_time_ns": 15080860.0,
+      "real_time_s": 49.412
+    },
+    {
+      "name": "test_negative_temperature",
+      "status": "passed",
+      "sim_time_ns": 15080860.0,
+      "real_time_s": 49.797
+    },
+    {
+      "name": "test_temperature_decode_is_signed",
+      "status": "passed",
+      "sim_time_ns": 0.0,
+      "real_time_s": 0.0
+    },
+    {
+      "name": "test_negative_reset_too_short",
+      "status": "passed",
+      "sim_time_ns": 1080860.0,
+      "real_time_s": 3.372
+    },
+    {
+      "name": "test_negative_write1_too_short",
+      "status": "passed",
+      "sim_time_ns": 15080860.0,
+      "real_time_s": 49.966
+    },
+    {
+      "name": "test_negative_crc_check_disabled",
+      "status": "passed",
+      "sim_time_ns": 15080860.0,
+      "real_time_s": 50.432
+    },
+    {
+      "name": "test_negative_late_read_sample",
+      "status": "passed",
+      "sim_time_ns": 6081820.0,
+      "real_time_s": 19.452
+    },
+    {
+      "name": "test_negative_late_presence_sample",
+      "status": "passed",
+      "sim_time_ns": 1280860.0,
+      "real_time_s": 3.9
+    }
+  ],
+  "coverage": null,
+  "trace": null,
+  "environment": {
+    "engine": "icarus",
+    "engine_version": "13.0",
+    "tools": [],
+    "cocotb_version": "2.1.0",
+    "results_xml": {
+      "path": "verification/.klt/functional-verification/results_icarus.xml",
+      "scope": "repo",
+      "sha256": "sha256:94ff6d31895dc60e7b30c34b8da473401e9c5dc8e48e09b9f1facf66cc65d897"
+    },
+    "test_log": {
+      "path": "verification/.klt/functional-verification/test_icarus.log",
+      "scope": "repo",
+      "sha256": "sha256:0c7b1b357a1cdb1b8af2e6357cc1abbb142d1e493af674080d4e9bc76e7b9ad6"
+    },
+    "build_log": {
+      "path": "verification/.klt/functional-verification/build_icarus.log",
+      "scope": "repo",
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "random_seed": 1,
+    "source_defines": {},
+    "env": {},
+    "initial_state": null,
+    "sdf": null
+  }
+}
