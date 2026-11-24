@@ -4,16 +4,18 @@
 Stdlib only (no pytest, no simulator): `python3 firmware/tools/test_gen_can_2a.py`,
 listed in `scripts/lint-manifest.txt`. Two layers:
 
-1. **A cycle-accurate ISA interpreter** for the frozen DR 0017 ISA (DR 0001
-   opcodes and timing; DR 0012 control space including the fixed 2-cycle
-   `RCTL PM_DATA_HI` stall; DR 0015's P1 CRC engine and P2 LINE unit with
-   the same next-state equations as `rtl/protocol_core.v`). It executes
-   the generated program word by word against a scripted CAN bus on
-   CAN_TXD = uo_out[0] / CAN_RXD = ui_in[0] and records the TXD waveform.
+1. **The frozen ISA** (DR 0001 opcodes and timing; DR 0012 control space
+   including the fixed 2-cycle `RCTL PM_DATA_HI` stall; DR 0015's P1 CRC
+   engine and P2 LINE unit) executed by the independent model
+   `verification/reference_models/isa.py` -- the `Machine` that
+   `verification/test_isa_lockstep.py` compares cycle by cycle against
+   the RTL. A thin runner steps it one clock edge per cycle against a
+   scripted CAN bus on CAN_TXD = uo_out[0] / CAN_RXD = ui_in[0] and
+   records the TXD waveform.
 2. **An independent CAN 2.0A model** (two CRC-15 implementations, a
-   stuffer/destuffer, frame encode/decode) that grades the recorded
-   waveform, exactly as the cocotb bench does against
-   `verification/reference_models/can_2a.py`.
+   stuffer/destuffer, frame encode/decode), imported read-only from
+   `verification/reference_models/can_2a.py`, that grades the recorded
+   waveform, exactly as the cocotb bench does.
 
 The two layers meet only at the waveform and the status words, so a timing
 or logic error anywhere in the program shows up as a failing bit window, a
@@ -24,15 +26,17 @@ RTL-level evidence.
 
 from __future__ import annotations
 
-import random
 import sys
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
+sys.path.insert(0, str(HERE.parents[1] / "verification"))
 
 import asm  # noqa: E402  (the committed assembler)
 import gen_can_2a as gen  # noqa: E402
+from reference_models.can_2a import encode_frame  # noqa: E402
+from reference_models.isa import Machine  # noqa: E402
 
 BIT = gen.BIT
 SP = gen.SP
@@ -52,309 +56,40 @@ def check(name, fn):
 
 
 # ======================================================================
-# An independent CAN 2.0A model (the grader)
+# The cycle-accurate runner: the lockstep-verified Machine on the bus
 # ======================================================================
-def crc15_lfsr(bits):
-    """CRC-15, poly 0x4599, seed 0, MSB-first (a bitwise shift register)."""
-    state = 0
-    for b in bits:
-        fb = ((state >> 14) & 1) ^ b
-        state = ((state << 1) & 0x7FFF) ^ (0x4599 if fb else 0)
-    return state
+class MachineRunner:
+    """`Machine` (one clock edge per `step()`) driving the scripted bus.
 
+    `Machine` primes its fetch on the first edge after run-phase entry
+    (the DR 0005 amendment quoted in DR 0001's note) and commits each
+    instruction's architectural effects at the end of its last edge, so
+    with the priming edge skipped, machine edge k+1 is waveform cycle k:
+    each cycle appends one TXD sample of the post-edge `uo_out`, then
+    consults the bus once as `bus(cycle, uo_out)` -- the level it returns
+    is the `ui_in` the next retiring `IN` samples, the same edge-sampling
+    contract the RTL implements.
+    """
 
-def crc15_rem(bits):
-    """The same CRC as bit-by-bit polynomial long division of the message
-    followed by fifteen zero bits (a second, independent method: the
-    quotient is never formed, the remainder register just absorbs the
-    appended zeros -- verified against `crc15_lfsr` in the self-test)."""
-    work = 0
-    for b in list(bits) + [0] * 15:
-        top = (work >> 14) & 1
-        work = ((work << 1) | b) & 0x7FFF
-        if top:
-            work ^= 0x4599
-    return work
-
-
-def stuff(bits):
-    out, run, last = [], 0, None
-    for b in bits:
-        if run == 5:
-            s = 1 - last
-            out.append(s)
-            run, last = 1, s
-        out.append(b)
-        run = run + 1 if b == last else 1
-        last = b
-    return out
-
-
-def frame_bits(cid, data, rtr=0):
-    bits = [0] + [(cid >> i) & 1 for i in range(10, -1, -1)]
-    bits += [rtr, 0, 0]
-    bits += [(len(data) >> i) & 1 for i in range(3, -1, -1)]
-    for b in data:
-        bits += [(b >> i) & 1 for i in range(7, -1, -1)]
-    return bits
-
-
-def encode_frame(cid, data, rtr=0):
-    """Returns the stuffed wire bits (SOF..CRC sequence) and the ten tail
-    bits (CRC delimiter, ACK slot, ACK delimiter, EOF x7)."""
-    bits = frame_bits(cid, data, rtr)
-    crc = crc15_lfsr(bits)
-    bits += [(crc >> i) & 1 for i in range(14, -1, -1)]
-    return stuff(bits), [1] * 10, bits
-
-
-def decode_destuffed(bits):
-    """Fields of a destuffed SOF..CRC-sequence bit list, and the CRC verdict."""
-    cid = 0
-    for k in range(11):
-        cid = (cid << 1) | bits[1 + k]
-    dlc = (bits[15] << 3) | (bits[16] << 2) | (bits[17] << 1) | bits[18]
-    data = [sum(bits[19 + 8 * m + k] << (7 - k) for k in range(8))
-            for m in range(dlc)]
-    return {"id": cid, "rtr": bits[12], "dlc": dlc, "data": data,
-            "crc_ok": crc15_rem(bits) == 0}
-
-
-def destuff(bits):
-    out, run, last = [], 0, None
-    for i, b in enumerate(bits):
-        if run == 5:
-            if b == last:
-                return out, i  # stuff error at i
-            run, last = 1, b
-            continue
-        out.append(b)
-        run = run + 1 if b == last else 1
-        last = b
-    return out, None
-
-
-# ======================================================================
-# The cycle-accurate core (DR 0001 + DR 0012 + DR 0015 semantics)
-# ======================================================================
-class Halted(Exception):
-    pass
-
-
-class Core:
     def __init__(self, words, bus):
-        self.pm = list(words) + [0] * (256 - len(words))
+        self.m = Machine(words)
         self.bus = bus
-        self.r = [0, 0, 0, 0]
-        self.z = False
-        self.c = False
-        self.pc = 0
-        self.cycle = 0
+        self.txd = []           # uo_out bit 0 per cycle
         self.uo_out = 0x00      # DR 0012: uo_out resets 0 (dominant!)
-        self.uio_dir = 0
-        self.uio_od = 0
-        self.pm_addr = 0
-        self.pm_lo = 0
-        self.crc_wm1 = 0
-        self.crc_refl = 0
-        self.crc_inv = 0
-        self.crc_ptr = 0
-        self.crc_poly = 0
-        self.crc_state = 0
-        self.line_cfg = 0
-        self.line_lvl = 0
-        self.line_prev = 0
-        self.line_cnt = 0
-        self.line_stuf = 0
-        self.txd = []           # uo_out bit 0 per cycle (post-write)
         self.halted_at = None
 
-    @property
-    def crc_mask(self):
-        return (1 << (self.crc_wm1 + 1)) - 1
-
-    def _crc_step(self, d):
-        fb = d ^ ((self.crc_state >> (0 if self.crc_refl else self.crc_wm1)) & 1)
-        sh = ((self.crc_state & self.crc_mask) >> 1) if self.crc_refl \
-            else (self.crc_state << 1)
-        self.crc_state = (sh ^ (self.crc_poly if fb else 0)) & 0xFFFFFFFF
-
-    def _byte(self, v, ptr):
-        return (v >> (8 * ptr)) & 0xFF
-
-    def _rctl(self, k):
-        if k == 0x00:
-            return self.uio_dir
-        if k == 0x01:
-            return self.uio_od
-        if k == 0x02:
-            return self.pm_addr
-        if k == 0x04:
-            v = self.pm_lo
-            self.pm_addr = (self.pm_addr + 1) & 0xFF
-            return v
-        if k == 0x10:
-            return (self.crc_inv << 6) | (self.crc_refl << 5) | self.crc_wm1
-        if k == 0x11:
-            v = self._byte(self.crc_poly, self.crc_ptr)
-            self.crc_ptr = (self.crc_ptr + 1) & 3
-            return v
-        if k == 0x12:
-            v = self._byte(self.crc_state, self.crc_ptr) & \
-                self._byte(self.crc_mask, self.crc_ptr)
-            self.crc_ptr = (self.crc_ptr + 1) & 3
-            return v
-        if k == 0x15:
-            v = self.crc_state ^ (self.crc_mask if self.crc_inv else 0)
-            b = self._byte(v, self.crc_ptr) & self._byte(self.crc_mask, self.crc_ptr)
-            self.crc_ptr = (self.crc_ptr + 1) & 3
-            return b
-        if k == 0x16:
-            return self.line_cfg & 0x7F
-        if k == 0x18:
-            return ((~self.line_lvl & 1) << 1) | self.line_lvl
-        if k == 0x19:
-            return self.line_stuf
-        return 0x00
-
-    def _wctl(self, k, val):
-        if k == 0x00:
-            self.uio_dir = val
-        elif k == 0x01:
-            self.uio_od = val
-        elif k == 0x02:
-            self.pm_addr = val
-        elif k == 0x10:
-            self.crc_wm1 = val & 0x1F
-            self.crc_refl = (val >> 5) & 1
-            self.crc_inv = (val >> 6) & 1
-            self.crc_ptr = 0
-        elif k == 0x11:
-            self.crc_poly = (self.crc_poly & ~(0xFF << (8 * self.crc_ptr))) | \
-                (val << (8 * self.crc_ptr))
-            self.crc_ptr = (self.crc_ptr + 1) & 3
-        elif k == 0x12:
-            self.crc_state = (self.crc_state & ~(0xFF << (8 * self.crc_ptr))) | \
-                (val << (8 * self.crc_ptr))
-            self.crc_ptr = (self.crc_ptr + 1) & 3
-        elif k == 0x13:
-            self._crc_step(val & 1)
-        elif k == 0x16:
-            self.line_cfg = val & 0x7F
-            self.line_lvl = (val >> 7) & 1
-            self.line_cnt = 0
-            self.line_stuf = 0
-        elif k == 0x17:
-            cfg = self.line_cfg
-            ones = (cfg >> 2 & 3) == 1
-            equal = (cfg >> 2 & 3) == 2
-            n = (cfg >> 4) & 0x7
-            due = (ones or equal) and self.line_cnt == n
-            e = (1 - self.line_prev) if (due and equal) else (val & 1)
-            run = e if ones else (1 if e == self.line_prev else 0)
-            self.line_cnt = (self.line_cnt + 1) if run else (1 if not ones else 0)
-            mode = cfg & 0x3
-            if mode == 1:
-                self.line_lvl = (self.line_lvl ^ (0 if e else 1)) & 1
-            elif mode == 2:
-                self.line_lvl = (self.line_lvl ^ e) & 1
-            else:
-                self.line_lvl = e
-            self.line_prev = e
-            self.line_stuf = 1 if due else 0
-
     def run(self):
-        try:
-            while self.cycle < LIMIT:
-                self.step()
-        except Halted:
-            pass
-
-    def step(self):
-        word = self.pm[self.pc & 0xFF]
-        op = (word >> 12) & 0xF
-        rd = (word >> 10) & 0x3
-        rs = (word >> 8) & 0x3
-        imm = word & 0xFF
-        rd_val, rs_val = self.r[rd], self.r[rs]
-        stalls = 0
-        rxd = self.ui0
-
-        if op == 0x0:
-            pass
-        elif op == 0x1:
-            self.r[rd] = imm
-        elif op == 0x2:
-            self.r[rd] = rs_val
-        elif op == 0x3:
-            v = rd_val + rs_val
-            self.c = v > 0xFF
-            self.r[rd] = v & 0xFF
-            self.z = (v & 0xFF) == 0
-        elif op == 0x4:
-            self.c = rd_val < rs_val
-            self.r[rd] = (rd_val - rs_val) & 0xFF
-            self.z = self.r[rd] == 0
-        elif op == 0x5:
-            self.r[rd] = rd_val & rs_val
-            self.z = self.r[rd] == 0
-        elif op == 0x6:
-            self.r[rd] = rd_val | rs_val
-            self.z = self.r[rd] == 0
-        elif op == 0x7:
-            self.r[rd] = rd_val ^ rs_val
-            self.z = self.r[rd] == 0
-        elif op == 0x8:
-            if rs & 1:
-                self.c = bool((rd_val >> 7) & 1)
-                self.r[rd] = (rd_val << 1) & 0xFF
-            else:
-                self.c = bool(rd_val & 1)
-                self.r[rd] = rd_val >> 1
-        elif op == 0x9:                                   # IN
-            if rs == 0b00:
-                self.r[rd] = self.ui0                     # UI_IN
-            elif rs == 0b01:
-                self.r[rd] = self.ui0                     # UIO_IN (unused)
-            elif rs == 0b10:                              # RCTL
-                self.r[rd] = self._rctl(imm)
-                if imm == 0x03:                           # PM_DATA_HI read
-                    self.pm_lo = self.pm[self.pm_addr] & 0xFF
-                    stalls = 1
-        elif op == 0xA:                                   # OUT
-            if rs == 0b10:
-                self.uo_out = rd_val                      # UO_OUT
-            elif rs == 0b00:                              # WCTL
-                self._wctl(imm, rd_val)
-                if imm == 0x04:                           # PM_DATA_LO write
-                    stalls = 1
-        elif op == 0xB:
-            stalls = imm                                  # WAIT imm
-        elif op == 0xC:
-            self.pc = imm & 0xFF
-            self._tick()
-            return
-        elif op == 0xD:
-            self.pc = imm & 0xFF if self.z else ((self.pc + 1) & 0xFF)
-            self._tick()
-            return
-        elif op == 0xE:
-            self.pc = ((self.pc + 1) & 0xFF) if self.z else (imm & 0xFF)
-            self._tick()
-            return
-        elif op == 0xF:
-            self.halted_at = self.cycle
-            raise Halted()
-
-        self.pc = (self.pc + 1) & 0xFF
-        for _ in range(stalls):
-            self._tick()
-        self._tick()
-
-    def _tick(self):
-        self.txd.append(self.uo_out & 1)
-        self.cycle += 1
-        self.ui0 = self.bus(self.cycle, self.uo_out) & 1
+        """Run the program to HALT (or the cycle limit)."""
+        self.m.step(ui_in=1)                # run-phase entry: prime the fetch
+        lvl = 1
+        while not self.m.halted and len(self.txd) < LIMIT:
+            row = self.m.step(ui_in=lvl)
+            self.uo_out = row.uo_out
+            if self.m.halted:               # HALT retires: no cycle follows it
+                self.halted_at = len(self.txd)
+                break
+            self.txd.append(row.uo_out & 1)
+            lvl = self.bus(len(self.txd), row.uo_out) & 1
 
 
 # ======================================================================
@@ -398,13 +133,6 @@ class Bench:
                 lvl &= 0
         return lvl
 
-    def ack_dut_frame(self, n_bits_wire):
-        """ACK the DUT's next transmission: dominant during its ACK slot."""
-        assert self.dut_sof is not None
-        # wire bits + CRC delimiter, then the ACK slot bit
-        ack_start = self.dut_sof + 1 + (n_bits_wire + 1) * BIT
-        self.ack_frames.append((ack_start + 2, ack_start + BIT - 2))
-
 
 def run_scenario(other_on_sof=None, ack=True, rx_after_tx=None, limit_note=""):
     """Run the generated program to HALT (or the cycle limit).
@@ -415,8 +143,7 @@ def run_scenario(other_on_sof=None, ack=True, rx_after_tx=None, limit_note=""):
     text = gen.generate()
     prog = asm.assemble_text(text)
     bench = Bench()
-    core = Core(prog.words, bench.bus)
-    wire, tail, _ = encode_frame(gen.TX_ID, gen.TX_DATA)
+    wire, tail = encode_frame(gen.TX_ID, bytes(gen.TX_DATA))
     n_wire = len(wire)
 
     state = {"prev": 1, "frame_sof": None, "idle": 20 * BIT}
@@ -455,8 +182,7 @@ def run_scenario(other_on_sof=None, ack=True, rx_after_tx=None, limit_note=""):
             bench.rx_frame = (cycle + rx_after_tx[0], rx_after_tx[1])
         return lvl
 
-    core.bus = wrapped
-    core.ui0 = 1
+    core = MachineRunner(prog.words, wrapped)
     core.run()
     return core, bench, wire, tail
 
@@ -471,20 +197,6 @@ def test_assembles():
         f"{len(prog.instructions)} words exceeds DR 0001's 256-word store"
     for sec in ("can_tx_bit", "can_tx_crc1", "can_tx_crc0", "can_rx_bit"):
         assert f".cyclesec {sec}" in text, f"missing .cyclesec {sec}"
-
-
-def test_crc15_implementations_agree():
-    rnd = random.Random(7)
-    for _ in range(60):
-        n = rnd.randrange(1, 130)
-        bits = [rnd.randrange(2) for _ in range(n)]
-        assert crc15_lfsr(bits) == crc15_rem(bits)
-    # the algebraic property the RX check relies on: data + its CRC
-    # feeds through to a zero remainder
-    bits = frame_bits(0x123, [0xAB, 0xCD, 0x5A])
-    crc = crc15_lfsr(bits)
-    full = bits + [(crc >> i) & 1 for i in range(14, -1, -1)]
-    assert crc15_rem(full) == 0
 
 
 def test_tx_waveform_and_windows():
@@ -517,7 +229,7 @@ def test_tx_noack():
 
 
 def test_arbitration_loss_and_retransmit():
-    win_wire, win_tail, _ = encode_frame(0x5A1, [0xC3])   # lower ID: wins
+    win_wire, win_tail = encode_frame(0x5A1, bytes([0xC3]))   # lower ID: wins
     winner = win_wire + win_tail
     core, bench, wire, tail = run_scenario(other_on_sof=winner, ack=True)
     sof = bench.dut_sof
@@ -544,7 +256,7 @@ def test_arbitration_loss_and_retransmit():
 
 
 def test_rx_ok_and_ack():
-    rx_wire, rx_tail, _ = encode_frame(0x123, [0xAB, 0xCD, 0x5A])
+    rx_wire, rx_tail = encode_frame(0x123, bytes([0xAB, 0xCD, 0x5A]))
     rx_bits = rx_wire + rx_tail
     core, bench, wire, tail = run_scenario(ack=True, rx_after_tx=(2 * BIT, rx_bits))
     assert core.halted_at is not None, "the DUT never HALTed after the RX frame"
@@ -558,7 +270,7 @@ def test_rx_ok_and_ack():
 
 
 def test_rx_crc_error():
-    rx_wire, rx_tail, _ = encode_frame(0x123, [0xAB, 0xCD, 0x5A])
+    rx_wire, rx_tail = encode_frame(0x123, bytes([0xAB, 0xCD, 0x5A]))
     rx_wire[-1] ^= 1                      # corrupt the last CRC bit
     rx_bits = rx_wire + rx_tail
     core, bench, wire, tail = run_scenario(ack=True, rx_after_tx=(2 * BIT, rx_bits))
@@ -575,7 +287,7 @@ def test_rx_stuff_error():
     # six equal bits inside the data field: take a valid frame and flip a
     # stuff bit to extend a run -- find the first stuff bit and make it
     # equal to the run it breaks
-    rx_wire, rx_tail, _ = encode_frame(0x123, [0xAB, 0xCD, 0x5A])
+    rx_wire, rx_tail = encode_frame(0x123, bytes([0xAB, 0xCD, 0x5A]))
     run, last, out = 0, None, list(rx_wire)
     done = False
     for i, b in enumerate(rx_wire):
@@ -595,7 +307,6 @@ def test_rx_stuff_error():
 
 def main() -> int:
     check("generator output assembles", test_assembles)
-    check("crc15 implementations agree", test_crc15_implementations_agree)
     check("tx waveform and bit windows", test_tx_waveform_and_windows)
     check("tx noack status", test_tx_noack)
     check("arbitration loss and retransmit", test_arbitration_loss_and_retransmit)
