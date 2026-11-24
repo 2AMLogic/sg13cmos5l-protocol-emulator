@@ -104,6 +104,7 @@ PHASES = (
     "nec_ir_rx",
     "swd",
     "can",
+    "modbus",
 )
 UNUSED = "unused"
 # PROG_SER / PROG_MODE are the serial program-load inputs. CRC_BYTE_SEL (an
@@ -114,7 +115,7 @@ LOAD_ROLE_PORT = {"PROG_SER": "ui_in", "PROG_MODE": "ui_in",
                   "CRC_BYTE_SEL": "ui_in", "CRC_READOUT": "uo_out"}
 
 # Role classes (what the role does electrically).
-DRIVE_PP = {"TX", "CS", "SCLK", "MOSI", "DIN", "IR_TX", "SWCLK", "SWDIO",
+DRIVE_PP = {"TX", "CS", "SCLK", "MOSI", "DIN", "IR_TX", "SWCLK", "SWDIO", "DE",
             "CAN_TXD", "BCLK", "WS", "SD"} | {f"RESULT[{i}]" for i in range(8)}
 DRIVE_OD = {"SCL", "SDA", "PS2_CLK", "PS2_DATA"}
 # DR 0010 can section: the CAN image's UIO_DIR scratch use (issue #450 review).
@@ -153,6 +154,11 @@ PHASE_VOCAB = {
     # probe's write phases and released (sampled, with a pull-up) for the
     # target's response phases.
     "swd": {"SWCLK", "SWDIO"},
+    # Multi-protocol extra credit (issue #446): the Modbus RTU server's
+    # three line-side signals, all through an external RS-485
+    # transceiver: the received line, the driven line, and the
+    # transceiver's driver-enable (DE and /RE tied).
+    "modbus": {"RX", "TX", "DE"},
     # Multi-protocol extra credit (issue #450): the CAN 2.0A node's two
     # lines through an external transceiver. CAN_TXD (the transceiver's D
     # input) is push-pull; CAN_RXD (its R output) is an input.
@@ -184,6 +190,9 @@ PATTERNS = {
     "swd_images",           # swd_probe.asm: preloaded image pair, per-bit images, UIO_DIR values, no UIO_OD
     "swd_sample",           # swd_probe.asm: each IN UIO_IN followed by AND Rx, R0 (the SWDIO mask)
     "bench_swd",            # SWCLK_BIT, SWDIO_BIT = n, m
+    "modbus_images",        # modbus_rtu.asm: RX mask LDI, IN/AND sample
+                            #  sites, and role-clean uo_out images
+    "bench_modbus",         # RX_BIT / TX_BIT / DE_BIT = n
     "can_images",           # can_2a.asm: pin images from LINE_OUT pairs/status words
     "can_sample",           # can_2a.asm: each IN UI_IN followed by AND Rx, R3 (the RXD mask)
     "bench_can",            # TX_PIN/TX_BIT + RX_BIT = port, n, n
@@ -1461,6 +1470,117 @@ class Checker:
         if m:
             self.check_pb(rel, "SWCLK_BIT", "uio", int(m.group(1)), "swd", "SWCLK")
             self.check_pb(rel, "SWDIO_BIT", "uio", int(m.group(2)), "swd", "SWDIO")
+
+    # ------------------------------------------------- profile: modbus
+    def modbus_image_values(self, ins: list[dict], idx: int):
+        """The set of values `OUT UO_OUT, <reg>` at ins[idx] can write when
+        the source is one of the two recognised Modbus image shapes; else
+        None.
+
+          constant   nearest write is `LDI reg, imm` (the idle image
+                     tx_mask, the driver-enable de_mask, the stop image
+                     tx_mask|de_mask)                    -> {imm}
+          data bit   nearest write is `OR reg, Ra` whose operands' nearest
+                     writes are `LDI Ra, imm2` (imm2 a driver image) and
+                     `AND reg, Rb` with `LDI Rb, tx_mask` (the isolated
+                     TX bit)                             -> {imm2, imm2|tx_mask}
+        """
+        reg = ins[idx]["ops"][1]
+        j, w = self.prev_write(ins, idx, reg)
+        if w is None:
+            return None
+        if w["m"] == "LDI":
+            v = self.imm(w["ops"][1])
+            return None if v is None else {v}
+        if w["m"] == "OR":
+            ja, a = self.prev_write(ins, j, w["ops"][1])
+            if not a or a["m"] != "LDI":
+                return None
+            base = self.imm(a["ops"][1])
+            if base is None:
+                return None
+            jb, b = self.prev_write(ins, j, reg)
+            if not b or b["m"] != "AND":
+                return None
+            jc, cc = self.prev_write(ins, jb, b["ops"][1])
+            bit = self.imm(cc["ops"][1]) if cc and cc["m"] == "LDI" else None
+            if bit is None:
+                return None
+            return {base, base | bit}
+        return None
+
+    def prof_modbus(self, rel, ent, text):
+        """The Modbus RTU server (issue #446): RX sampled from the table's
+        modbus.RX pin (the RS-485 transceiver's R output), TX driven on
+        modbus.TX (its D input) and the driver-enable bit on modbus.DE
+        (DE and /RE tied). Checks the RX mask's LDI site, the IN/AND
+        sample sites, and that every uo_out image is role-clean: the idle
+        image (TX high, DE low), the driver-enable image (DE, TX low) and
+        the stop image (both), or the data-bit image built from the
+        isolated TX bit OR a driver image."""
+        c = self.concrete
+        ins = self.asm_instrs(text)
+        outs, in_ports = set(), set()
+        for role, direction in (("TX", "out"), ("DE", "out"), ("RX", "in")):
+            pb = self.role_pin("modbus", role)
+            if pb:
+                (outs if direction == "out" else in_ports).add(
+                    PORT_ASM[(pb[0], direction)])
+        self.check_ports(rel, ins, outs, in_ports, outs, in_ports)
+        rx_mask = self.mask_of("modbus", "RX")
+        tx_mask = self.mask_of("modbus", "TX")
+        de_mask = self.mask_of("modbus", "DE")
+        first = next((i for i in ins if i["m"] == "LDI" and i["ops"][0] == "R1"), None)
+        if first is None:
+            c.err(f"{rel}: no `LDI R1, imm` RX bit-mask site found (pattern modbus_images)")
+        else:
+            c.sites += 1
+            if self.imm(first["ops"][1]) != rx_mask:
+                c.err(f"{rel}:{first['no']}: RX bit mask LDI R1, {first['ops'][1]} but the "
+                      f"table's modbus RX pin {self.role_pin('modbus', 'RX')} is 0x{rx_mask:02X}")
+        pb = self.role_pin("modbus", "RX")
+        if pb is not None:
+            before = c.sites
+            self.in_and_sites(rel, ins, lambda _i: (rx_mask, "modbus RX mask"),
+                              port=PORT_ASM[(pb[0], "in")])
+            if c.sites == before:
+                c.err(f"{rel}: no `IN Rx, {PORT_ASM[(pb[0], 'in')]}` ... `AND Rx, Ry` "
+                      f"RX sample site found (pattern modbus_images)")
+        allowed = {tx_mask, de_mask, tx_mask | de_mask}
+        saw_enable = saw_data = False
+        for idx, i in enumerate(ins):
+            if not (i["m"] == "OUT" and i["ops"][0].upper() == "UO_OUT"):
+                continue
+            c.sites += 1
+            vals = self.modbus_image_values(ins, idx)
+            if vals is None:
+                c.err(f"{rel}:{i['no']}: OUT UO_OUT, {i['ops'][1]} is not a recognised modbus "
+                      f"image shape (a constant image or the isolated-TX-bit OR; pattern "
+                      f"modbus_images)")
+                continue
+            bad = sorted(v for v in vals if v not in allowed)
+            if bad:
+                c.err(f"{rel}:{i['no']}: OUT UO_OUT, {i['ops'][1]} can write "
+                      f"{', '.join(f'0x{v:02X}' for v in bad)}; the modbus profile allows only "
+                      f"the idle 0x{tx_mask:02X}, driver-enable 0x{de_mask:02X} and stop "
+                      f"0x{tx_mask | de_mask:02X} images (pattern modbus_images)")
+            if de_mask in vals or (tx_mask | de_mask) in vals:
+                saw_enable = True
+            if len(vals) > 1:
+                saw_data = True
+        if not saw_enable:
+            c.err(f"{rel}: no OUT UO_OUT drives the DE image 0x{de_mask:02X}")
+        if not saw_data:
+            c.err(f"{rel}: no OUT UO_OUT drives a data-bit image (the isolated-TX-bit OR)")
+
+    def prof_bench_modbus(self, rel, ent, text):
+        m = self.need(text, r"^RX_BIT\s*=\s*(\d+)", rel, "RX_BIT")
+        if m:
+            self.check_pb(rel, "RX_BIT", "ui_in", int(m.group(1)), "modbus", "RX")
+        m = self.need(text, r"^TX_BIT,\s*DE_BIT\s*=\s*(\d+),\s*(\d+)", rel, "TX_BIT, DE_BIT")
+        if m:
+            self.check_pb(rel, "TX_BIT", "uo_out", int(m.group(1)), "modbus", "TX")
+            self.check_pb(rel, "DE_BIT", "uo_out", int(m.group(2)), "modbus", "DE")
 
     def prof_bench_spi(self, rel, ent, text):
         m = self.need(text, r"^CS_BIT,\s*SCLK_BIT,\s*MOSI_BIT\s*=\s*(\d+),\s*(\d+),\s*(\d+)", rel,
