@@ -43,10 +43,19 @@ scheduled `digest-issue-state` workflow (and on `workflow_dispatch`),
 deliberately not as a PR gate; the offline shape check is
 `scripts/check_gap_digest.py`, which is in `npm run lint`.
 
+`--characterization-owners [FILE]` is a third mode (issue #536): it reads the
+structured source `measurements/characterization-sources.json` and, for every
+`rows.<n>.owner.issues` entry, reports row, issue number and live state (one
+line per occurrence, so a shared owner prints once per row). Exit 1 if any
+owner is closed, missing or a pull request; a wait-only row has no issue and
+is skipped. On demand only (network + authenticated `gh`), never CI:
+`scripts/characterization_report.py` stays offline.
+
 Usage:
     python3 scripts/check_docs_issue_states.py [--docs DIR] [--repo OWNER/NAME]
+    python3 scripts/check_docs_issue_states.py --characterization-owners [FILE] [--repo OWNER/NAME]
     python3 scripts/check_docs_issue_states.py --digest [FILE] [--repo OWNER/NAME]
-Exit codes: 0 no mismatch, 1 at least one mismatch, 2 `gh` failed.
+Exit codes: 0 no mismatch, 1 at least one mismatch, 2 `gh` failed (or a lookup could not complete).
 Standard library only (plus the `gh` CLI on PATH).
 """
 
@@ -235,6 +244,50 @@ def gh_lookup(repo: str):
     return lookup
 
 
+DEFAULT_SOURCES = REPO_ROOT / "measurements" / "characterization-sources.json"
+
+
+def owner_refs(sources: dict) -> list[tuple[str, int]]:
+    """(row, issue number) for every owner.issues entry, in row order."""
+    rows = sources.get("rows", {})
+    return [(row, num)
+            for row in sorted(rows, key=lambda r: (not str(r).isdigit(), int(r) if str(r).isdigit() else 0, str(r)))
+            for num in (rows[row].get("owner") or {}).get("issues", [])]
+
+
+def owner_problems(sources: dict, lookup) -> tuple[list[tuple[str, int, str]], list[tuple[str, int, str]]]:
+    """(all, bad): (row, number, verdict) per owner reference; bad = not an open issue.
+
+    `lookup(num)` returns `live_state`'s dict, or None if the number does not exist.
+    """
+    out = []
+    for row, num in owner_refs(sources):
+        live = lookup(num)
+        if live is None:
+            what = "does not exist"
+        elif live["kind"] != "issue":
+            what = "is a pull request"
+        else:
+            what = live["state"]
+        out.append((row, num, what))
+    return out, [o for o in out if o[2] != "open"]
+
+
+def main_owners(path: Path, repo_arg: str | None) -> int:
+    try:
+        repo = repo_arg or default_repo()
+        allrefs, bad = owner_problems(json.loads(path.read_text(encoding="utf-8")), gh_lookup(repo))
+    except (subprocess.CalledProcessError, FileNotFoundError, OSError, ValueError) as exc:
+        detail = getattr(exc, "stderr", "") or str(exc)
+        print(f"ERROR: owner lookup failed: {detail.strip()}", file=sys.stderr)
+        return 2
+    for row, num, what in allrefs:
+        tag = "OK      " if what == "open" else "MISMATCH"
+        print(f"{tag} {path.name} row {row}: owner #{num} {what if what != 'open' else 'is open'}")
+    print(f"\nchecked {len(allrefs)} owner reference(s) in {path.name} against {repo}: {len(bad)} not open")
+    return 1 if bad else 0
+
+
 def main_digest(path: Path, repo_arg: str | None) -> int:
     try:
         repo = repo_arg or default_repo()
@@ -255,7 +308,11 @@ def main() -> int:
     ap.add_argument("--repo", help="OWNER/NAME (default: this checkout's GitHub repository)")
     ap.add_argument("--digest", nargs="?", type=Path, const=check_gap_digest.DEFAULT_PATH,
                     metavar="FILE", help="check the gap-to-submission.md digest's issue numbers instead")
+    ap.add_argument("--characterization-owners", nargs="?", type=Path, const=DEFAULT_SOURCES,
+                    metavar="FILE", help="check that every owner issue in characterization-sources.json is open")
     args = ap.parse_args()
+    if args.characterization_owners:
+        return main_owners(args.characterization_owners, args.repo)
     if args.digest:
         return main_digest(args.digest, args.repo)
     try:
