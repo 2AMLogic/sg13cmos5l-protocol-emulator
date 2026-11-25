@@ -1,0 +1,7 @@
+<testsuites name="results">
+  <testsuite name="all" package="all">
+    <property name="random_seed" value="1" />
+    <testcase name="transactions" classname="test_firmware_dali" file="&lt;repo&gt;/verification/test_firmware_dali.py" lineno="118" time="414.91592288017273" sim_time_ns="1510589460.0" ratio_time="3640712.1942058043" />
+    <testcase name="half_bit_mutant" classname="test_firmware_dali" file="&lt;repo&gt;/verification/test_firmware_dali.py" lineno="184" time="0.14807868003845215" sim_time_ns="338800.0" ratio_time="2287972.852756538" />
+  </testsuite>
+</testsuites>

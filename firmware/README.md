@@ -1664,7 +1664,7 @@ interval. Its TX
 negative control shortens the first half to 13,232 cycles. Reproduce with
 `python3 verification/test_dali_model.py` and
 `klt functional-verification verification/request-firmware-dali.json --format json`
-from the repository root. [RTL evidence](../verification/records/firmware-dali/records/20261123-032854-a42f198.md)
+from the repository root. [RTL evidence](../verification/records/firmware-dali/records/20261125-031328-c5463e8.md)
 
 ### Pmod wiring
 
