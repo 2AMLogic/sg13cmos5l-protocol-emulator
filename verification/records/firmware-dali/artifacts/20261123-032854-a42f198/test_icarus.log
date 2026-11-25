@@ -1,0 +1,70 @@
+     -.--ns INFO     gpi                                ..mbed/gpi_embed.cpp:93   in _embed_init_python              Using Python 3.13.0rc1 interpreter at <klt-env>/bin/python
+     -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:79   in gpi_print_registered_impl       VPI registered
+     0.00ns INFO     cocotb                             Running on Icarus Verilog version 13.0 (stable)
+     0.00ns INFO     cocotb                             Seeding Python random module with supplied seed 1
+     0.00ns INFO     cocotb                             Initialized cocotb v2.0.1 from <klt-env>/lib/python3.13/site-packages/cocotb
+     0.00ns INFO     cocotb.regression                  pytest not found, install it to enable better AssertionError messages
+     0.00ns INFO     cocotb                             Running tests
+     0.00ns INFO     cocotb.regression                  running test_firmware_dali.transactions (1/2)
+14238960.00ns INFO     ..tt_um_2amlogic_protocol_emulator forward 0054: 1Te [20823, 20832, 20833, 20835], 2Te [41666, 41667] cycles
+39242660.00ns INFO     ..tt_um_2amlogic_protocol_emulator forward 01a0: 1Te [20823, 20832, 20833, 20837], 2Te [41666, 41669] cycles
+39242660.00ns INFO     ..tt_um_2amlogic_protocol_emulator forward stop to next start: 541878 cycles
+83633500.00ns INFO     ..tt_um_2amlogic_protocol_emulator forward 01a0: 1Te [20823, 20832, 20833, 20837], 2Te [41666, 41669] cycles
+83633500.00ns INFO     ..tt_um_2amlogic_protocol_emulator reply 81, Te 23148, gap 22 Te: next forward 460313 cycles after stop
+123227500.00ns INFO     ..tt_um_2amlogic_protocol_emulator forward 01a0: 1Te [20823, 20832, 20833, 20837], 2Te [41666, 41669] cycles
+161293000.00ns INFO     ..tt_um_2amlogic_protocol_emulator forward 01a0: 1Te [20823, 20832, 20833, 20837], 2Te [41666, 41669] cycles
+197135160.00ns INFO     ..tt_um_2amlogic_protocol_emulator forward 01a0: 1Te [20823, 20832, 20833, 20837], 2Te [41666, 41669] cycles
+222137220.00ns INFO     ..tt_um_2amlogic_protocol_emulator forward 01a0: 1Te [20823, 20832, 20833, 20837], 2Te [41666, 41669] cycles
+222137220.00ns INFO     ..tt_um_2amlogic_protocol_emulator no reply: next start 541796 cycles after stop begins
+258760720.00ns INFO     ..tt_um_2amlogic_protocol_emulator forward 01a0: 1Te [20823, 20832, 20833, 20837], 2Te [41666, 41669] cycles
+258760720.00ns INFO     ..tt_um_2amlogic_protocol_emulator reply 54, Te 18940, gap 7 Te: next forward 477021 cycles after stop
+297520040.00ns INFO     ..tt_um_2amlogic_protocol_emulator forward 01a0: 1Te [20823, 20832, 20833, 20837], 2Te [41666, 41669] cycles
+297520040.00ns INFO     ..tt_um_2amlogic_protocol_emulator Rejected late_boundary on 81 at phase 0, RESULT held 54
+336693920.00ns INFO     ..tt_um_2amlogic_protocol_emulator forward 01a0: 1Te [20823, 20832, 20833, 20837], 2Te [41666, 41669] cycles
+336693920.00ns INFO     ..tt_um_2amlogic_protocol_emulator Rejected late_boundary on 7e at phase 0, RESULT held 54
+375451800.00ns INFO     ..tt_um_2amlogic_protocol_emulator forward 01a0: 1Te [20823, 20832, 20833, 20837], 2Te [41666, 41669] cycles
+375451800.00ns INFO     ..tt_um_2amlogic_protocol_emulator Rejected early_boundary on 81 at phase 0, RESULT held 54
+414209900.00ns INFO     ..tt_um_2amlogic_protocol_emulator forward 01a0: 1Te [20823, 20832, 20833, 20837], 2Te [41666, 41669] cycles
+414209900.00ns INFO     ..tt_um_2amlogic_protocol_emulator Rejected late_mid on 81 at phase 0, RESULT held 54
+453646960.00ns INFO     ..tt_um_2amlogic_protocol_emulator forward 01a0: 1Te [20823, 20832, 20833, 20837], 2Te [41666, 41669] cycles
+453646960.00ns INFO     ..tt_um_2amlogic_protocol_emulator reply a7, Te 20833, gap 12 Te: next forward 471886 cycles after stop
+492785300.00ns INFO     ..tt_um_2amlogic_protocol_emulator forward 01a0: 1Te [20823, 20832, 20833, 20837], 2Te [41666, 41669] cycles
+492785300.00ns INFO     ..tt_um_2amlogic_protocol_emulator Rejected short_final on 82 at phase 0, RESULT held a7
+531925080.00ns INFO     ..tt_um_2amlogic_protocol_emulator forward 01a0: 1Te [20823, 20832, 20833, 20837], 2Te [41666, 41669] cycles
+531925080.00ns INFO     ..tt_um_2amlogic_protocol_emulator Rejected short_final on 82 at phase 75, RESULT held a7
+571066300.00ns INFO     ..tt_um_2amlogic_protocol_emulator forward 01a0: 1Te [20823, 20832, 20833, 20837], 2Te [41666, 41669] cycles
+571066300.00ns INFO     ..tt_um_2amlogic_protocol_emulator Rejected short_final on 82 at phase 150, RESULT held a7
+610209360.00ns INFO     ..tt_um_2amlogic_protocol_emulator forward 01a0: 1Te [20823, 20832, 20833, 20837], 2Te [41666, 41669] cycles
+610209360.00ns INFO     ..tt_um_2amlogic_protocol_emulator Rejected short_final on 82 at phase 225, RESULT held a7
+648924860.00ns INFO     ..tt_um_2amlogic_protocol_emulator forward 01a0: 1Te [20823, 20832, 20833, 20837], 2Te [41666, 41669] cycles
+648924860.00ns INFO     ..tt_um_2amlogic_protocol_emulator Rejected short_start on 95 at phase 0, RESULT held a7
+687640360.00ns INFO     ..tt_um_2amlogic_protocol_emulator forward 01a0: 1Te [20823, 20832, 20833, 20837], 2Te [41666, 41669] cycles
+687640360.00ns INFO     ..tt_um_2amlogic_protocol_emulator Rejected short_start on 95 at phase 75, RESULT held a7
+726355860.00ns INFO     ..tt_um_2amlogic_protocol_emulator forward 01a0: 1Te [20823, 20832, 20833, 20837], 2Te [41666, 41669] cycles
+726355860.00ns INFO     ..tt_um_2amlogic_protocol_emulator Rejected short_start on 95 at phase 150, RESULT held a7
+765076360.00ns INFO     ..tt_um_2amlogic_protocol_emulator forward 01a0: 1Te [20823, 20832, 20833, 20837], 2Te [41666, 41669] cycles
+765076360.00ns INFO     ..tt_um_2amlogic_protocol_emulator Rejected short_start on 95 at phase 225, RESULT held a7
+803783520.00ns INFO     ..tt_um_2amlogic_protocol_emulator forward 01a0: 1Te [20823, 20832, 20833, 20837], 2Te [41666, 41669] cycles
+803783520.00ns INFO     ..tt_um_2amlogic_protocol_emulator reply 82, Te 18940, gap 12 Te: next forward 477037 cycles after stop
+842491840.00ns INFO     ..tt_um_2amlogic_protocol_emulator forward 01a0: 1Te [20823, 20832, 20833, 20837], 2Te [41666, 41669] cycles
+842491840.00ns INFO     ..tt_um_2amlogic_protocol_emulator reply 82, Te 18940, gap 12 Te: next forward 477020 cycles after stop
+881201600.00ns INFO     ..tt_um_2amlogic_protocol_emulator forward 01a0: 1Te [20823, 20832, 20833, 20837], 2Te [41666, 41669] cycles
+881201600.00ns INFO     ..tt_um_2amlogic_protocol_emulator reply 82, Te 18940, gap 12 Te: next forward 477017 cycles after stop
+919913280.00ns INFO     ..tt_um_2amlogic_protocol_emulator forward 01a0: 1Te [20823, 20832, 20833, 20837], 2Te [41666, 41669] cycles
+919913280.00ns INFO     ..tt_um_2amlogic_protocol_emulator reply 82, Te 18940, gap 12 Te: next forward 477038 cycles after stop
+958709940.00ns INFO     ..tt_um_2amlogic_protocol_emulator forward 01a0: 1Te [20823, 20832, 20833, 20837], 2Te [41666, 41669] cycles
+958709940.00ns INFO     ..tt_um_2amlogic_protocol_emulator reply 95, Te 18940, gap 12 Te: next forward 481362 cycles after stop
+998147000.00ns INFO     ..tt_um_2amlogic_protocol_emulator forward 01a0: 1Te [20823, 20832, 20833, 20837], 2Te [41666, 41669] cycles
+998147000.00ns INFO     ..tt_um_2amlogic_protocol_emulator reply a7, Te 20833, gap 12 Te: next forward 471886 cycles after stop
+998147000.00ns INFO     cocotb.regression                  test_firmware_dali.transactions passed
+998147000.00ns INFO     cocotb.regression                  running test_firmware_dali.half_bit_mutant (2/2)
+998484520.00ns INFO     ..tt_um_2amlogic_protocol_emulator Short TX half-bit rejected: Manchester interval 13232 cycles outside timing tolerance
+998484520.00ns INFO     cocotb.regression                  test_firmware_dali.half_bit_mutant passed
+998484520.00ns INFO     cocotb.regression                  ********************************************************************************************
+                                                           ** TEST                                STATUS  SIM TIME (ns)  REAL TIME (s)  RATIO (ns/s) **
+                                                           ********************************************************************************************
+                                                           ** test_firmware_dali.transactions      PASS   998147000.00         274.41    3637366.50  **
+                                                           ** test_firmware_dali.half_bit_mutant   PASS      337520.00           0.14    2447006.00  **
+                                                           ********************************************************************************************
+                                                           ** TESTS=2 PASS=2 FAIL=0 SKIP=0                998484520.00         274.56    3636735.05  **
+                                                           ********************************************************************************************
