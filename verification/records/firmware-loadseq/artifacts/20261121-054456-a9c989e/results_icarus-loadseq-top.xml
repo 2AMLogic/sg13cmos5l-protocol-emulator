@@ -1,0 +1,8 @@
+<testsuites name="results">
+  <testsuite name="all" package="all">
+    <property name="random_seed" value="1" />
+    <testcase name="test_program_stays_idle_until_mode_drop_then_runs" classname="test_loadseq_top" file="&lt;repo&gt;/verification/test_loadseq_top.py" lineno="100" time="0.002335786819458008" sim_time_ns="650.0" ratio_time="278278.82004695316" />
+    <testcase name="test_without_mode_drop_the_program_never_runs" classname="test_loadseq_top" file="&lt;repo&gt;/verification/test_loadseq_top.py" lineno="115" time="0.002318859100341797" sim_time_ns="790.0" ratio_time="340684.7789430393" />
+    <testcase name="test_reload_after_run_restarts_from_word_zero" classname="test_loadseq_top" file="&lt;repo&gt;/verification/test_loadseq_top.py" lineno="133" time="0.0038666725158691406" sim_time_ns="1280.0" ratio_time="331033.98199531384" />
+  </testsuite>
+</testsuites>

@@ -20,6 +20,12 @@ Chronological record of merged pull requests and closed issues, newest first.
 
 ### 2026-11-23
 
+- **PR #568**: fix: name withheld changed segments in signoff_movement_diff excerpts
+- **PR #566**: refactor: consolidate test_check_records fixture boilerplate into shared _commit/_commit_record/_update_rtl/_run_fixture helpers
+- **PR #559**: docs: require merge-first, --collapse re-minting of stale signoff leaves
+- **Issue #565** (closed): Simplify verification/test_check_records.py: unify layered record-commit and fixture helpers (~290 LOC)
+- **Issue #558** (closed): Re-mint signoff records against post-merge live leaves, not pre-merge ones
+- **Issue #503** (closed): signoff_movement_diff: excerpt truncation is silent — say how many changed segments were withheld
 - **PR #564**: Reuse the control-space harness helpers in the primitives bench and re-mint the affected evidence
 - **PR #563**: refactor(verification): drop dead DMX512 model API and reuse shared bench helpers
 - **PR #562**: refactor: factor test_check_ratification_gate.py boilerplate into shared helpers
@@ -58,6 +64,10 @@ Chronological record of merged pull requests and closed issues, newest first.
 - **Issue #511** (closed): Update the roadmap’s Proposed range and finish DR 0025’s collapse history
 - **PR #498**: feat(signoff): add --diff-vs non-graded movement comparison for baseline refreshes
 - **Issue #403** (closed): signoff baseline: name the tiers-doc (source_doc_content_hash) movement when the klt version moves, as the 0.8.0->0.9.0 refresh did not
+
+### 2026-11-21
+
+- **PR #(this PR)**: firmware: CAN 2.0A node on the frozen ISA (issue #450): arbitrated transmit, receive with de-stuffing/CRC-15/ACK
 
 ### 2026-11-20
 

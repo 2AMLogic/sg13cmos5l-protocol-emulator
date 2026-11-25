@@ -3,11 +3,19 @@
 
 Inputs (all committed): spec/target-spec.md (row names), the "Current reading"
 digest of spec/gap-to-submission.md (row verdicts), measurements/
-characterization-sources.json (measured values and evidence citations) and
-verification/records/*/records/*.md (the cited records).
+characterization-sources.json (measured values, evidence citations and, since
+issue #524, a per-row evidence owner) and verification/records/*/records/*.md
+(the cited records).
 
 Outputs: measurements/characterization.md and the generic signoff envelope
 manifests/evidence/characterization.json (status pass only when no row fails).
+
+Owner column (issue #524): every row that does not pass must name, in
+characterization-sources.json, the open issue that would move its verdict
+(owner.issues, rendered as clickable links) and/or the ratification it waits
+on (owner.waits). The generator enforces this offline -- it validates shape,
+never fetching issue state; openness is the filer's verification, recorded
+when the owner is entered.
 
 --check also compares the top-level manifest's item 8 citation
 (manifests/sg13cmos5l-protocol-emulator.json, evidence["8"].content_hash)
@@ -39,6 +47,7 @@ SOURCES = "measurements/characterization-sources.json"
 REPORT = "measurements/characterization.md"
 ENVELOPE = "manifests/evidence/characterization.json"
 MANIFEST = "manifests/sg13cmos5l-protocol-emulator.json"
+ISSUE_URL = "https://github.com/2AMLogic/sg13cmos5l-protocol-emulator/issues/"
 VERDICT = {"met": "pass", "unmet": "fail", "proposed": "proposed"}
 REMEDIATION = (
     "remediate in order: regenerate the report and envelope (rerun without --check), "
@@ -115,6 +124,47 @@ def esc(s: str) -> str:
     return s.replace("|", "\\|")
 
 
+def owner_cell(n: int, row: dict, verdict: str) -> str:
+    """Render the per-row owner / ratification-wait cell (issue #524).
+
+    characterization-sources.json carries an optional per-row "owner" object:
+    {"issues": [<open issue numbers>], "waits": "<ratification it waits on>"}.
+    A row whose verdict is fail / no evidence MUST carry at least one of the
+    two, so a failing row without an owner or a named wait fails generation
+    instead of silently regressing to an untracked gap. Shape only -- issue
+    state is never fetched here (generation stays offline).
+    """
+    o = row.get("owner")
+    if o is None:
+        if verdict in ("fail", "no evidence"):
+            raise Invalid(
+                f"row {n}: failing row carries no owner or ratification wait; add an "
+                f'"owner" {{"issues": [...]}} and/or {{"waits": "..."}} entry for the '
+                f"row in {SOURCES}"
+            )
+        return "none"
+    if not isinstance(o, dict):
+        raise Invalid(f"row {n}: owner must be an object with optional issues / waits")
+    issues = o.get("issues", [])
+    waits = o.get("waits", "")
+    if not isinstance(issues, list) or not all(
+        isinstance(i, int) and not isinstance(i, bool) and i > 0 for i in issues
+    ):
+        raise Invalid(f"row {n}: owner.issues must be a list of positive issue numbers")
+    if len(set(issues)) != len(issues):
+        raise Invalid(f"row {n}: owner.issues names an issue twice")
+    if not isinstance(waits, str) or (waits and not waits.strip()):
+        raise Invalid(f"row {n}: owner.waits must be a non-empty string when present")
+    if not issues and not waits.strip():
+        raise Invalid(f"row {n}: owner names neither an issue nor a wait")
+    parts = []
+    if waits.strip():
+        parts.append(f"waits on {waits.strip()}")
+    if issues:
+        parts.append(", ".join(f"[#{i}]({ISSUE_URL}{i})" for i in issues))
+    return esc("; ".join(parts))
+
+
 def build(repo: Path) -> tuple[str, str]:
     src = json.loads((repo / SOURCES).read_text())
     names = spec_rows((repo / "spec/target-spec.md").read_text())
@@ -135,12 +185,15 @@ def build(repo: Path) -> tuple[str, str]:
         "bench data belongs elsewhere in `measurements/`). Verdicts are the live reading of",
         "`spec/gap-to-submission.md`; the report neither relaxes nor re-grades the ratified spec.",
         "Each number names the flow that produced it (LibreLane = Tiny Tapeout template flow;",
-        "klt = this program's flow).",
+        "klt = this program's flow). Every failing row's owner cell names the open issue",
+        "that would move its verdict, or the ratification it waits on (issue #524; the",
+        "generator validates shape offline -- openness was verified when the owner was",
+        "recorded).",
         "",
         "## Spec rows",
         "",
-        "| Row | Spec row | Target | Measured | Conditions | Verdict | Evidence records |",
-        "|---|---|---|---|---|---|---|",
+        "| Row | Spec row | Target | Measured | Conditions | Verdict | Evidence records | Owner / wait |",
+        "|---|---|---|---|---|---|---|---|",
     ]
     fails = []
     for n in sorted(rows):
@@ -158,7 +211,8 @@ def build(repo: Path) -> tuple[str, str]:
         ev = cite(r["evidence"], live, f"row {n}")
         lines.append(
             f"| {n} | {esc(names[n])} | {esc(r['target'])} | {esc(r['measured'])} | "
-            f"{esc(r['conditions'])} | {verdict}: {esc(reason)} | {esc(ev)} |"
+            f"{esc(r['conditions'])} | {verdict}: {esc(reason)} | {esc(ev)} | "
+            f"{owner_cell(n, r, verdict)} |"
         )
 
     clk = src["clock_ns"]

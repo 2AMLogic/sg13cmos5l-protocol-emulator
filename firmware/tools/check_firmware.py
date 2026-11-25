@@ -45,6 +45,7 @@ def main() -> int:
     cmds = [[sys.executable, str(TOOLS / "gen_i2c_sr.py"), "--check"]]
     cmds += [[sys.executable, str(TOOLS / "gen_spi_modes.py"), "--check"]]
     cmds += [[sys.executable, str(TOOLS / "gen_uart_nested.py"), "--check"]]
+    cmds += [[sys.executable, str(TOOLS / "gen_can_2a.py"), "--check"]]
     cmds += [[sys.executable, str(TOOLS / "asm.py"), str(a), "--check"] for a in asms]
     cmds += [[sys.executable, str(TOOLS / "asm.py"), str(a),
               "--out-dir", str(BOOT_BUILD), "--check"] for a in boot_asms]

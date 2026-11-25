@@ -137,6 +137,32 @@ class CheckLatestTests(unittest.TestCase):
             "drifted: t1_met_count: committed=1 fresh=2", res.stderr)
         self.assertNotIn("checklist wording moved", res.stderr)
 
+    def test_drift_hint_qualifies_collapse_and_covers_grader_only_drift(self):
+        envelope = {
+            "status": "drifted",
+            "drift": [
+                {"field": "items.2.detail.content_hash_pin",
+                 "committed": None, "fresh": "verified"},
+            ],
+        }
+        res = run_wrapper(envelope, check_rc=3)
+        self.assertEqual(res.returncode, 1, res.stderr)
+        self.assertIn("origin/main", res.stderr)
+        self.assertIn("scripts/signoff-report.sh --out FILE", res.stderr)
+        self.assertIn(
+            "python3 verification/remint_records.py --collapse signoff-baseline",
+            res.stderr,
+        )
+        self.assertIn("hashed inputs made interchangeable live leaves stale", res.stderr)
+        self.assertIn("grader-only drift", res.stderr)
+        self.assertIn("manifests/README.md", res.stderr)
+        self.assertIn("status or reason", res.stderr)
+        self.assertIn(
+            "drifted: items.2.detail.content_hash_pin: "
+            "committed=None fresh='verified'",
+            res.stderr,
+        )
+
     def test_clean_modern_match_with_empty_doc_fields(self):
         envelope = {
             "status": "match", "doc_drift": False,
