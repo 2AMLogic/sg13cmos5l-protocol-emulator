@@ -42,5 +42,6 @@ include loadseq-top
 include reset-release-offsets
 include firmware-dmx512
 include firmware-nec-ir
+include firmware-nec-ir-rx
 include firmware-modbus
 include firmware-i2s

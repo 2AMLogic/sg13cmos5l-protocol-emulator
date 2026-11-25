@@ -467,6 +467,16 @@ inventory is a hard failure.
     "nec_ir_rx": [
       "IR_RX"
     ],
+    "nec_ir_rx_result": [
+      "RESULT[0]",
+      "RESULT[1]",
+      "RESULT[2]",
+      "RESULT[3]",
+      "RESULT[4]",
+      "RESULT[5]",
+      "RESULT[6]",
+      "RESULT[7]"
+    ],
     "swd": [
       "SWCLK",
       "SWDIO"
@@ -507,6 +517,7 @@ inventory is a hard failure.
         "i2s": "unused",
         "nec_ir_tx": "unused",
         "nec_ir_rx": "unused",
+        "nec_ir_rx_result": "unused",
         "swd": "unused",
         "can": "CAN_RXD",
         "modbus": "unused"
@@ -538,6 +549,7 @@ inventory is a hard failure.
         "i2s": "unused",
         "nec_ir_tx": "unused",
         "nec_ir_rx": "unused",
+        "nec_ir_rx_result": "unused",
         "swd": "unused",
         "can": "unused",
         "modbus": "RX"
@@ -569,6 +581,7 @@ inventory is a hard failure.
         "i2s": "unused",
         "nec_ir_tx": "unused",
         "nec_ir_rx": "unused",
+        "nec_ir_rx_result": "unused",
         "swd": "unused",
         "can": "unused",
         "modbus": "unused"
@@ -600,6 +613,7 @@ inventory is a hard failure.
         "i2s": "unused",
         "nec_ir_tx": "unused",
         "nec_ir_rx": "unused",
+        "nec_ir_rx_result": "unused",
         "swd": "unused",
         "can": "unused",
         "modbus": "unused"
@@ -631,6 +645,7 @@ inventory is a hard failure.
         "i2s": "unused",
         "nec_ir_tx": "unused",
         "nec_ir_rx": "IR_RX",
+        "nec_ir_rx_result": "unused",
         "swd": "unused",
         "can": "unused",
         "modbus": "unused"
@@ -662,6 +677,7 @@ inventory is a hard failure.
         "i2s": "unused",
         "nec_ir_tx": "unused",
         "nec_ir_rx": "unused",
+        "nec_ir_rx_result": "unused",
         "swd": "unused",
         "can": "unused",
         "modbus": "unused"
@@ -693,6 +709,7 @@ inventory is a hard failure.
         "i2s": "unused",
         "nec_ir_tx": "unused",
         "nec_ir_rx": "unused",
+        "nec_ir_rx_result": "unused",
         "swd": "unused",
         "can": "unused",
         "modbus": "unused"
@@ -724,6 +741,7 @@ inventory is a hard failure.
         "i2s": "unused",
         "nec_ir_tx": "unused",
         "nec_ir_rx": "unused",
+        "nec_ir_rx_result": "unused",
         "swd": "unused",
         "can": "unused",
         "modbus": "unused"
@@ -755,6 +773,7 @@ inventory is a hard failure.
         "i2s": "unused",
         "nec_ir_tx": "unused",
         "nec_ir_rx": "unused",
+        "nec_ir_rx_result": "RESULT[0]",
         "swd": "unused",
         "can": "CAN_TXD",
         "modbus": "TX"
@@ -786,6 +805,7 @@ inventory is a hard failure.
         "i2s": "unused",
         "nec_ir_tx": "unused",
         "nec_ir_rx": "unused",
+        "nec_ir_rx_result": "RESULT[1]",
         "swd": "unused",
         "can": "unused",
         "modbus": "DE"
@@ -817,6 +837,7 @@ inventory is a hard failure.
         "i2s": "unused",
         "nec_ir_tx": "unused",
         "nec_ir_rx": "unused",
+        "nec_ir_rx_result": "RESULT[2]",
         "swd": "unused",
         "can": "unused",
         "modbus": "unused"
@@ -848,6 +869,7 @@ inventory is a hard failure.
         "i2s": "unused",
         "nec_ir_tx": "unused",
         "nec_ir_rx": "unused",
+        "nec_ir_rx_result": "RESULT[3]",
         "swd": "unused",
         "can": "unused",
         "modbus": "unused"
@@ -879,6 +901,7 @@ inventory is a hard failure.
         "i2s": "unused",
         "nec_ir_tx": "unused",
         "nec_ir_rx": "unused",
+        "nec_ir_rx_result": "RESULT[4]",
         "swd": "unused",
         "can": "unused",
         "modbus": "unused"
@@ -910,6 +933,7 @@ inventory is a hard failure.
         "i2s": "WS",
         "nec_ir_tx": "unused",
         "nec_ir_rx": "unused",
+        "nec_ir_rx_result": "RESULT[5]",
         "swd": "unused",
         "can": "unused",
         "modbus": "unused"
@@ -941,6 +965,7 @@ inventory is a hard failure.
         "i2s": "BCLK",
         "nec_ir_tx": "unused",
         "nec_ir_rx": "unused",
+        "nec_ir_rx_result": "RESULT[6]",
         "swd": "unused",
         "can": "unused",
         "modbus": "unused"
@@ -972,6 +997,7 @@ inventory is a hard failure.
         "i2s": "SD",
         "nec_ir_tx": "IR_TX",
         "nec_ir_rx": "unused",
+        "nec_ir_rx_result": "RESULT[7]",
         "swd": "unused",
         "can": "unused",
         "modbus": "unused"
@@ -1003,6 +1029,7 @@ inventory is a hard failure.
         "i2s": "unused",
         "nec_ir_tx": "unused",
         "nec_ir_rx": "unused",
+        "nec_ir_rx_result": "unused",
         "swd": "unused",
         "can": "unused",
         "modbus": "unused"
@@ -1034,6 +1061,7 @@ inventory is a hard failure.
         "i2s": "unused",
         "nec_ir_tx": "unused",
         "nec_ir_rx": "unused",
+        "nec_ir_rx_result": "unused",
         "swd": "unused",
         "can": "unused",
         "modbus": "unused"
@@ -1065,6 +1093,7 @@ inventory is a hard failure.
         "i2s": "unused",
         "nec_ir_tx": "unused",
         "nec_ir_rx": "unused",
+        "nec_ir_rx_result": "unused",
         "swd": "SWCLK",
         "can": "unused",
         "modbus": "unused"
@@ -1096,6 +1125,7 @@ inventory is a hard failure.
         "i2s": "unused",
         "nec_ir_tx": "unused",
         "nec_ir_rx": "unused",
+        "nec_ir_rx_result": "unused",
         "swd": "SWDIO",
         "can": "unused",
         "modbus": "unused"
@@ -1127,6 +1157,7 @@ inventory is a hard failure.
         "i2s": "unused",
         "nec_ir_tx": "unused",
         "nec_ir_rx": "unused",
+        "nec_ir_rx_result": "unused",
         "swd": "unused",
         "can": "unused",
         "modbus": "unused"
@@ -1158,6 +1189,7 @@ inventory is a hard failure.
         "i2s": "unused",
         "nec_ir_tx": "unused",
         "nec_ir_rx": "unused",
+        "nec_ir_rx_result": "unused",
         "swd": "unused",
         "can": "unused",
         "modbus": "unused"
@@ -1189,6 +1221,7 @@ inventory is a hard failure.
         "i2s": "unused",
         "nec_ir_tx": "unused",
         "nec_ir_rx": "unused",
+        "nec_ir_rx_result": "unused",
         "swd": "unused",
         "can": "unused",
         "modbus": "unused"
@@ -1220,6 +1253,7 @@ inventory is a hard failure.
         "i2s": "unused",
         "nec_ir_tx": "unused",
         "nec_ir_rx": "unused",
+        "nec_ir_rx_result": "unused",
         "swd": "unused",
         "can": "unused",
         "modbus": "unused"
@@ -1593,6 +1627,21 @@ inventory is a hard failure.
       ]
     },
     {
+      "file": "firmware/asm/nec_ir_rx.asm",
+      "profile": "nec_ir_rx",
+      "patterns": [
+        "asm_ports",
+        "nec_ir_rx_mask"
+      ]
+    },
+    {
+      "file": "verification/test_firmware_nec_ir_rx.py",
+      "profile": "bench_nec_ir_rx",
+      "patterns": [
+        "bench_nec_ir_rx"
+      ]
+    },
+    {
       "file": "verification/test_protocol_emulator.py",
       "profile": "bench_load",
       "patterns": [
@@ -1649,6 +1698,7 @@ inventory is a hard failure.
 | `asm_ports` | the set of `OUT` / `IN` port names; must match the ports of the table's pins for the profile |
 | `uart_tx_mask` | first `LDI R1, imm` in `uart_tx.asm` / `uart_tx_9600.asm` (the TX bit mask and idle level) and every `LDI` immediately feeding `AND`/`OR`/`XOR` |
 | `uart_rx_mask` | first `LDI R1, imm` in `uart_rx*.asm` (the RX bit mask), every `LDI` immediately feeding `AND`/`OR`/`XOR`, and, as `spi_miso_mask`, the mask of each `IN Rx, <RX port>` sample; at least one such sample site must exist |
+| `nec_ir_rx_mask` | in `nec_ir_rx.asm`: the first `LDI R1, imm` is the IR_RX bit mask, each `IN Rx, UI_IN` sample is masked by an `AND Rx, Ry` whose nearest `LDI Ry` is that mask, and at least one `OUT UO_OUT` carries a computed (non-constant) byte — the decoded result (added by #488) |
 | `uart_rx_debug` | every `OUT UIO_OUT, Rx` in `uart_rx*.asm`: the source must be an `LDI` constant, a `SUB` countdown followed by `BNZ` (zero on loop exit), or the frame-error shape `IN`/`AND`/`XOR`/`SHF LEFT` on the RX mask register. Values are limited to 0 and the two `bench_debug.uart_rx` bits, both bits must be written, and one `OUT` to the result port must carry a non-constant value |
 | `spi_images` | each `LDI R2, imm` immediately followed by `OUT <port>, R2`, where `<port>` is the output port the table puts CS/SCLK/MOSI on (`UIO_OUT` since #155): the first is the idle image (CS high, SCLK at CPOL), every image may use only CS/SCLK/MOSI bits, and no constant image goes to any other port |
 | `spi_miso_mask` | for `IN Rx, UIO_IN`, the nearest `LDI Ry` before the next `AND Rx, Ry` must equal the MISO bit mask |
@@ -1665,7 +1715,7 @@ inventory is a hard failure.
 | `swd_sample` | each `IN Rx, UIO_IN` in `swd_probe.asm` is followed by `AND Rx, R0`, the SWDIO-mask register that isolates the sampled bit (added by #452) |
 | `modbus_images` | in `modbus_rtu.asm`: the first `LDI R1, imm` is the `RX` bit mask, each `IN Rx, UI_IN` sample has its `AND Rx, Ry` mask from the nearest `LDI Ry`, and every `OUT UO_OUT, Rx` is a recognised image -- a constant (`LDI`: the idle `TX`, driver-enable `DE`, or stop `TX\|DE` image) or the isolated-TX-bit OR of a driver image -- whose values use only the TX and DE bits (added by #446) |
 | `bench_modbus` | the Modbus bench's `RX_BIT` and `TX_BIT, DE_BIT` constants name the table's `modbus` pins (added by #446) |
-| `bench_*` | the named module-level constants and capture specs of each bench (`TX_PIN/TX_BIT`, `CS_BIT…`, `MISO_PIN/MISO_BIT`, `SCL_PIN/SDA_PIN`, `DIN_PIN/DIN_BIT` (#141), `CLK_BIT/DATA_BIT` (#235), `SWCLK_BIT/SWDIO_BIT` (#452), `BCLK_PIN/BCLK_BIT`, `WS_PIN/WS_BIT`, `SD_PIN/SD_BIT` (#451); since issue #136 also `LINE_PIN`, `CAPTURE_SPECS`, the `i2c_board(dut, scl=SCL_BIT, sda=SDA_BIT)` wiring of the pad model, and every `pads.*` call naming a pad as `SCL_BIT`/`SDA_BIT`, in place of the removed `_RELEASED`, `_ACK_PULL`, `(sda_drive << N)` and `per_scl`/`per_sda`; since issue #155 the SPI bench's `CAPTURE_SPECS` port and bit for CS/SCLK/MOSI, `LINE_PIN`, the `spi_board(dut, cs=CS_BIT, sclk=SCLK_BIT, mosi=MOSI_BIT, miso=MISO_BIT)` wiring and its `pads.*` calls by named bit), and `load_program`'s `ui_in` assignments |
+| `bench_*` | the named module-level constants and capture specs of each bench (`TX_PIN/TX_BIT`, `CS_BIT…`, `MISO_PIN/MISO_BIT`, `SCL_PIN/SDA_PIN`, `DIN_PIN/DIN_BIT` (#141), `CLK_BIT/DATA_BIT` (#235), `SWCLK_BIT/SWDIO_BIT` (#452), `BCLK_PIN/BCLK_BIT`, `WS_PIN/WS_BIT`, `SD_PIN/SD_BIT` (#451); since issue #136 also `LINE_PIN`, `CAPTURE_SPECS`, the `i2c_board(dut, scl=SCL_BIT, sda=SDA_BIT)` wiring of the pad model, and every `pads.*` call naming a pad as `SCL_BIT`/`SDA_BIT`, in place of the removed `_RELEASED`, `_ACK_PULL`, `(sda_drive << N)` and `per_scl`/`per_sda`; since issue #155 the SPI bench's `CAPTURE_SPECS` port and bit for CS/SCLK/MOSI, `LINE_PIN`, the `spi_board(dut, cs=CS_BIT, sclk=SCLK_BIT, mosi=MOSI_BIT, miso=MISO_BIT)` wiring and its `pads.*` calls by named bit; since issue #488 the NEC IR RX bench's `RX_PIN/RX_BIT`), and `load_program`'s `ui_in` assignments |
 | `top_load_wiring` / `top_uio_oe` / `top_port_passthrough` | `.mode_pin(ui_in[n])`, `.serial_in(ui_in[n])`, `assign uio_oe = …;`, whole-bus `.port_*` connections |
 | `core_uio_out_reset` | the `port_uio_out <= 8'hXX;` reset literal |
 | `isa_port_table` | `firmware/tools/asm.py` port codes 00/01/10/11 |
@@ -1854,6 +1904,30 @@ the carrier-high image, every ALU-mask LDI is a pin mask, an `AND Rx, R1`
 isolation site exists) allows no IN port. The bench's `TX_PIN, TX_BIT` is
 checked by the `bench_nec_ir` profile. Like its siblings the program
 writes no pin-mode register, so no `pin_modes` entry.
+
+### NEC infrared receiver, multi-protocol extra credit (added by #488)
+
+`nec_ir_rx.asm` is the receiver half (issue #488, the follow-up #448
+deferred to): it decodes the demodulating receiver module's envelope on
+`IR_RX` = `ui_in[4]` — the `nec_ir_rx` phase's sampled role, first
+exercised by a committed image — and publishes each valid frame on all of
+`uo_out`, recorded as the `nec_ir_rx_result` phase (`RESULT[n]` on
+`uo_out[n]`, the `uart_rx_result` precedent: the result bus is
+time-multiplexed by firmware profile, push-pull in every phase, no
+electrical conflict). The publication order is **address byte first,
+command byte second**, a few cycles apart; the command stays on the bus
+until the next valid frame. No flag bit is needed. A bad complement
+(either pair), a repeat code, and a truncated or mid-frame-silence broken
+frame write **nothing** — the frame is discarded at the complement check
+or never reaches it — so a repeat leaves the previous result intact; the
+issue chose this policy and the firmware implements it without a word of
+slack being spent on a flag. The `nec_ir_rx` profile holds the image to
+the table (the `LDI R1` mask, the `IN/AND` sample sites, a computed byte
+reaching `nec_ir_rx_result`'s port, no other port touched) and the bench's
+`RX_PIN, RX_BIT` by the `bench_nec_ir_rx` profile. The program writes no
+pin-mode register, so like its siblings it has no `pin_modes` entry; the
+scratch it uses for the received bits is its own program memory (DR 0012's
+`PM_DATA_*`), not a pin.
 
 ### SWD probe, multi-protocol extra credit (added by #452)
 

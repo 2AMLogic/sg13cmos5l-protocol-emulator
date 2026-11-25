@@ -749,6 +749,37 @@ capture, PVT corner sweeps, or Monte Carlo.
   matches both parents' artifacts (no graded field moved; the merge
   combined the two one-line envelope re-attests, and the fresh
   re-attest on the merged tree wrote byte-identical bytes).**
+- **2026-11-20 (issue #488): the NEC infrared receiver registers its
+  `firmware-nec-ir-rx` experiment in `manifests/evidence/testbenches.txt`
+  — an item-10 attested file — so item 10 was re-attested
+  (`klt signoff --attest 10 --skip-local-only`) for the new inventory
+  hash, staling every live `1bdad204` head; the round minted on the
+  branch is `signoff-baseline 20261120-150000` ..
+  `20261120-163159-f2a35f0`, 5,520 successors — one per live record of
+  the parent round — sharing one render at the grading klt
+  `0.9.3.dev2551+gab900d2bca60`. No graded status moved (still 5 of 11
+  met, 1 not applicable); the newer grader fills `items.{2,3,7}.detail`
+  fields the `0.9.2` render left `None` and refreshes non-graded
+  checklist wording (`--check` reports it as documentation drift,
+  issue #502). Both docs citing a baseline were re-pointed in the same
+  change.**
+
+- **2026-11-21 (issue #488, the main merge): that 5,520-successor branch
+  round was itself the leaf bomb #472's collapse exists for, and merging
+  `main` (which had meanwhile collapsed its own side to
+  `20261121-010127-b6c83b033` through `20261120-164259-6fb3838`) staled
+  every one of those leaves again through the merged
+  `manifests/evidence/testbenches.txt`.** Item 10 was re-attested on the
+  merged tree (`klt signoff --attest 10 --skip-local-only`, 15/15; the
+  envelope now pins the merged inventory hash), the fresh render ran at
+  the merge revision, and the round that lands is **one collapsed record,
+  `signoff-baseline 20261121-121745-8ab3406`** (`remint_records.py
+  --collapse` bookkeeping plus the operator fill), superseding all 5,520
+  `f2a35f0` leaves. No graded field moved (`t1_met_count` 5 on both
+  sides); main's `b6c83b033` stays live beside it — its one hashed input,
+  the block manifest, is unchanged by the merge. Both docs citing a
+  baseline were re-pointed at the collapsed record.
+
 - **2026-11-20 (issue #481): the "(in the pinned `klayout-tools==0.8.0`)"
   parenthetical at `spec/statistical-claims-na.md:9` is historical, and the
   hash-bound statement is deliberately left byte-identical.** The statement

@@ -66,6 +66,15 @@ firmware/
                          in program memory, final mark, 60 ms idle, forever
                          (multi-protocol extra credit, issue #448; catalog
                          #443; firmware on the frozen DR 0017 ISA)
+    nec_ir_rx.asm        NEC infrared remote RECEIVER on ui_in[4] (the
+                         demodulating receiver module's envelope, idle
+                         high): leader/repeat classifier, 32 mid-space
+                         samples at 40,781 cycles after each mark end,
+                         on-frame complement checks, then the address byte
+                         and the command byte on uo_out -- the
+                         nec_ir_rx_result phase; repeats, bad complements
+                         and truncated frames write nothing (issue #488;
+                         firmware on the frozen DR 0017 ISA)
     swd_probe.asm        SWD debug PROBE (host) on uio[2] (SWCLK) and
                          uio[3] (SWDIO), push-pull with SWDIO released at
                          each turnaround: line reset, 0xE79E JTAG-to-SWD

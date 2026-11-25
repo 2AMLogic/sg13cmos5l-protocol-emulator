@@ -108,6 +108,7 @@ PHASES = (
     "i2s",
     "nec_ir_tx",
     "nec_ir_rx",
+    "nec_ir_rx_result",
     "swd",
     "can",
     "modbus",
@@ -161,6 +162,10 @@ PHASE_VOCAB = {
     # LED) and the demodulating receiver module's input.
     "nec_ir_tx": {"IR_TX"},
     "nec_ir_rx": {"IR_RX"},
+    # Multi-protocol extra credit (issue #488): the NEC infrared receiver's
+    # result publication, the uart_rx_result precedent (address then
+    # command byte on uo_out).
+    "nec_ir_rx_result": {f"RESULT[{i}]" for i in range(8)},
     # Multi-protocol extra credit (issue #452): the SWD probe's two lines.
     # SWCLK is always driven push-pull; SWDIO is driven push-pull in the
     # probe's write phases and released (sampled, with a pull-up) for the
@@ -184,6 +189,7 @@ PATTERNS = {
     "uart_tx_mask",         # first `LDI R1, imm` == TX bit mask; ALU mask LDIs
     "uart_rx_debug",        # every OUT UIO_OUT in uart_rx*.asm is a declared bench-debug write
     "uart_rx_mask",         # first `LDI R1, imm` == RX bit mask; ALU masks; IN/AND masks
+    "nec_ir_rx_mask",       # first `LDI R1, imm` == IR_RX mask; IN/AND sample sites; computed result write
     "spi_images",           # LDI R2 -> OUT UO_OUT pin images
     "spi_miso_mask",        # IN UIO_IN ... AND Rx, Ry nearest-LDI mask
     "i2c_idle_start",       # first two `LDI R3, imm` before OUT UIO_OUT, R3
@@ -195,6 +201,7 @@ PATTERNS = {
     "i2s_images",           # i2s_tx.asm: OUT UO_OUT only from R1; ALU-mask LDIs are the table's SD/BCLK/WS masks (or the PM_ADDR wrap constant); R1 images are 0 / WS / SD
     "bench_i2s",            # BCLK_PIN, BCLK_BIT / WS_PIN, WS_BIT / SD_PIN, SD_BIT = "port", n
     "bench_uart_tx",        # TX_PIN, TX_BIT = "port", n
+    "bench_nec_ir_rx",      # RX_PIN, RX_BIT = "port", n
     "bench_ws2812",         # DIN_PIN, DIN_BIT = "port", n
     "ps2_images",           # ps2_device.asm: release images, CLK mask, DATA images, bit moves, UIO_OD value
     "ps2_shifts",           # ps2_device.asm: the shift recipe after each IN UIO_IN
@@ -1288,6 +1295,51 @@ class Checker:
         wiring no committed image samples yet, so no IN port is allowed."""
         self.check_tx_firmware(rel, text, "nec_ir_tx", "NEC IR TX", "IR_TX")
 
+    # -------------------------------------------------- profile: nec_ir_rx
+    def prof_nec_ir_rx(self, rel, ent, text):
+        """The NEC infrared receiver (issue #488): IR_RX sampled from the
+        table's nec_ir_rx.IR_RX pin, the frame's result bytes written to
+        the nec_ir_rx_result port (address, then command). The recipe the
+        table pins: the first `LDI R1, imm` is the IR_RX bit mask, every
+        `IN Rx, UI_IN` sample is masked by `AND Rx, Ry` whose nearest LDI
+        is that mask, and at least one `OUT UO_OUT` must carry a computed
+        value (a byte read back from program memory, never a constant).
+        The program writes nothing else: no uio port, no pin-mode
+        register."""
+        c = self.concrete
+        ins = self.asm_instrs(text)
+        _outs, in_ports, res = self.out_in_ports([], [("nec_ir_rx", ["IR_RX"])],
+                                                 "nec_ir_rx_result")
+        self.check_ports(rel, ins, res, in_ports, res, in_ports)
+        mask = self.mask_of("nec_ir_rx", "IR_RX")
+        first = next((i for i in ins if i["m"] == "LDI" and i["ops"][0] == "R1"), None)
+        if first is None:
+            c.err(f"{rel}: no `LDI R1, imm` IR_RX bit-mask site found (pattern nec_ir_rx_mask)")
+        else:
+            c.sites += 1
+            v = self.imm(first["ops"][1])
+            if v != mask:
+                c.err(f"{rel}:{first['no']}: IR_RX mask LDI R1, {first['ops'][1]} but the table's "
+                      f"nec_ir_rx IR_RX pin {self.role_pin('nec_ir_rx', 'IR_RX')} is 0x{mask:02X}")
+        pb = self.role_pin("nec_ir_rx", "IR_RX")
+        if pb is not None:
+            before = c.sites
+            self.in_and_sites(rel, ins, lambda _i: (mask, "nec_ir_rx IR_RX mask"),
+                              port=PORT_ASM[(pb[0], "in")])
+            if c.sites == before:
+                c.err(f"{rel}: no `IN Rx, {PORT_ASM[(pb[0], 'in')]}` ... `AND Rx, Ry` sample "
+                      f"site found (pattern nec_ir_rx_mask)")
+        for port in sorted(res):
+            c.sites += 1
+            computed = False
+            for idx, i in enumerate(ins):
+                if i["m"] == "OUT" and i["ops"][0].upper() == port:
+                    _j, w = self.prev_write(ins, idx, i["ops"][1])
+                    computed |= w is not None and w["m"] not in ("LDI",)
+            if not computed:
+                c.err(f"{rel}: no `OUT {port}, Rx` emits a decoded (computed) byte; only "
+                      f"constants reach the nec_ir_rx_result port (pattern nec_ir_rx_mask)")
+
     # -------------------------------------------------------- profile: i2s
     def prof_i2s(self, rel, ent, text):
         """The I2S transmitter (issue #451): BCLK, WS and SD all driven on
@@ -1525,6 +1577,11 @@ class Checker:
 
     def prof_bench_nec_ir(self, rel, ent, text):
         self.check_bench_tx_pin(rel, text, "nec_ir_tx", "IR_TX")
+
+    def prof_bench_nec_ir_rx(self, rel, ent, text):
+        m = self.need(text, r'^RX_PIN,\s*RX_BIT\s*=\s*"(\w+)",\s*(\d+)', rel, "RX_PIN, RX_BIT")
+        if m:
+            self.check_pb(rel, "RX_PIN/RX_BIT", m.group(1), int(m.group(2)), "nec_ir_rx", "IR_RX")
 
     def prof_bench_ws2812(self, rel, ent, text):
         m = self.need(text, r'^DIN_PIN,\s*DIN_BIT\s*=\s*"(\w+)",\s*(\d+)', rel, "DIN_PIN, DIN_BIT")
