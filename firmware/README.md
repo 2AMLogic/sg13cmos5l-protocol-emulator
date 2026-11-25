@@ -45,6 +45,8 @@ firmware/
                          (target-spec row 13 stretch column, issue #235;
                          protocol chosen by the dated note in DR 0018 after
                          DR 0017's ISA freeze)
+    dali_master.asm      DALI control device on uio[0] (TX) and uio[1] (RX), direct arc power
+                         and QUERY ACTUAL LEVEL for short address zero
     dmx512_tx.asm        DMX512 (USITT DMX512-A) universe transmitter on
                          uo_out[0] through an external RS-485 transceiver:
                          BREAK, mark-after-break, 0x00 start code, 512
@@ -67,11 +69,20 @@ firmware/
     swd_probe.asm        SWD debug PROBE (host) on uio[2] (SWCLK) and
                          uio[3] (SWDIO), push-pull with SWDIO released at
                          each turnaround: line reset, 0xE79E JTAG-to-SWD
-                         switch, then two DP reads (IDCODE 0xA5, RDBUFF-bank
-                         0xBD) whose ACK/data/parity samples are reported on
-                         uo_out (multi-protocol extra credit, issue #452;
-                         protocol chosen by the dated note in DR 0018 after
-                         DR 0017's ISA freeze)
+                         switch, then five transactions -- DP IDCODE read,
+                         DP SELECT write, AP TAR write, the posted AP DRW
+                         read and the DP RDBUFF read that returns the
+                         addressed memory word -- sent from a stored table
+                         by one shared loop; ACK/data/parity samples are
+                         reported on uo_out (multi-protocol extra credit,
+                         issues #452 and #500; protocol chosen by the dated
+                         note in DR 0018 after DR 0017's ISA freeze)
+    onewire_master.asm   1-Wire bus MASTER on uio[3] (DQ, open-drain): reset
+                         + presence, Read ROM and Read Scratchpad with the
+                         Dallas CRC-8 checked in software, Convert T polled
+                         to done, temperature + status published on uo_out
+                         (multi-protocol extra credit, issue #447; the
+                         catalog is #443; no ISA change -- DR 0017 froze it)
     boot/boot_rom.asm    the on-chip boot ROM's program (issues #138 and
                          #139, DR 0013 layer 2: warm start and UART load).
                          Not loaded into program memory: the ROM in
@@ -635,6 +646,88 @@ klt functional-verification verification/request-firmware-i2c.json --format json
 Its result is committed as an append-only evidence record under
 `verification/records/firmware-i2c/`.
 
+### `onewire_master.asm` -- 1-Wire bus master, one DS18B20 (issue #447)
+
+The 1-Wire entry of the multi-protocol extra-credit catalog (#443): a
+**bus master** for a single DS18B20 temperature sensor, firmware only, on
+the frozen ISA (DR 0017) -- base instructions plus DR 0012's runtime pin
+mode and `PM_ADDR` as a one-byte scratch cell, the `ps2_device.asm` idiom.
+No DR 0015 primitive: the Dallas CRC-8 (x^8 + x^5 + x^4 + 1, reflected
+0x8C, init 0, AN27) is software shift/xor, folded **per wire bit** --
+1-Wire bits arrive LSB first and the reflected CRC eats them LSB first,
+so each sampled bit updates the CRC the moment it lands, and no byte loop
+of its own exists.
+
+One open-drain line: DQ = `uio[3]` (mask 0x08), the I2C Pmod's SDA
+position -- the row that carries pull-ups (DR 0010's `onewire` profile,
+`UIO_DIR` 0x00, `UIO_OD` 0x08). Writing 1 releases the line (the external
+pull-up wins), 0 pulls it low. What it does, in order: reset pulse +
+presence detect (nobody home -> status 2); Read ROM (0x33), 8 bytes,
+CRC-8 checked (bad -> status 3); Skip ROM (0xCC) + Convert T (0x44), then
+read-time-slot poll until the device answers 1; reset; Skip ROM + Read
+Scratchpad (0xBE), 9 bytes, CRC-8 checked (bad -> status 4); status 1.
+Every received byte is published on `uo_out` as it completes (the result
+convention of the I2C/SPI programs), so the temperature is scratchpad
+bytes 0..1 of the publication sequence and the status byte is the last
+write: 1 ok, 2 no presence, 3 ROM CRC error, 4 scratchpad CRC error.
+**252 words** of the 256-word store; the Read ROM step is in.
+
+Timing, in core cycles at DR 0001's opcode table (1 cycle per
+instruction, `WAIT imm8` = imm8 + 1), measured on the pads by the bench.
+Every wall-clock figure is arithmetic at target-spec row 4's **target**
+50 MHz clock, which is unconfirmed on both flows: 1 cycle = 20 ns. The
+limits are the DS18B20 datasheet's "1-Wire standard speed" table (Maxim
+19-7487):
+
+| Interval | Measured (cycles) | at 20 ns | DS18B20 limit |
+|---|---|---|---|
+| reset low | 24,002 | 480.04 us | >= 480 us |
+| presence sample (after release) | 3,502 | 70.04 us | inside the 15-60 + 60-240 us presence window |
+| reset window (release -> next fall) | >= 24,015 | >= 480.3 us | >= 480 us |
+| write-1 low | ~102 | ~2.04 us | 1-15 us |
+| write-0 low | ~3,077 | ~61.5 us | 60-120 us |
+| write-1 slot (fall -> fall) | ~3,019 | ~60.4 us | >= 60 us + >= 1 us recovery |
+| write-0 slot (fall -> fall) | ~3,332 | ~66.6 us | >= 60 us + >= 1 us recovery |
+| read-slot low | ~99 | ~1.98 us | >= 1 us, < 15 us |
+| read sample point (after fall) | ~449 | ~8.98 us | <= 15 us |
+| read slot (fall -> fall) | ~3,218 | ~64.4 us | >= 60 us + >= 1 us recovery |
+
+The 60 us-class delays inside the write engine are unrolled `WAIT 255`
+(its phase register `R2` must survive); the reset and slot tails are
+`WAIT 246` loops at 250 cycles an iteration. The assembler's
+data-dependent-latency lint warns on nine branches; four are pin-data
+handshakes or data-neutral CRC skips (presence detect, conversion poll,
+two CRC feedback branches) and five branch on the `PM_ADDR` bit counter,
+whose pin taint is an artifact of the lint's linear scan forgetting
+control state at labels -- the program's header documents each, and the
+bench asserts the exact list. Determinism claims exclude the presence
+detect, the conversion poll and the CRC feedback skips (1 cycle either
+way).
+
+**External parts and Pmod wiring** (no transceiver and no optocoupler is
+needed -- the master is an open-drain pad and the sensor hangs on the
+same line): one DS18B20 in a TO-92 (or 8-pin SOIC) package, Vdd pin to
+the Pmod's Vcc, GND pin to the Pmod's GND, DQ pin to `uio[3]` (the I2C
+Pmod's SDA position, upper-row pin 4), and one **4.7 kOhm pull-up from
+DQ to Vdd** -- the standard I2C Pmod's SDA pull-up can serve, but the
+DS18B20 datasheet's own value is 4.7 kOhm, so a discrete resistor on a
+breadboard Pmod adapter is the named part.
+
+The 750 ms real conversion time is **not** simulated: the bench's
+independent DS18B20 model (`verification/reference_models/onewire.py`,
+written from the datasheet's timing table and AN27 alone) answers the
+conversion poll busy for a configured few read slots and then says done,
+which this section says out loud.
+
+Run its DUT-facing bench with:
+
+```bash
+klt functional-verification verification/request-firmware-onewire.json --format json
+```
+
+Its result is committed as an append-only evidence record under
+`verification/records/firmware-onewire/`.
+
 ### `i2c_{fast,std}_sr[_poll].asm` — write, repeated START, read, clock stretch (issue #92)
 
 Four programs generated by `firmware/tools/gen_i2c_sr.py` (one instruction
@@ -908,91 +1001,139 @@ The image is **164 words** of the 256-word store (assembler:
 klt functional-verification verification/request-firmware-nec-ir.json --format json
 ```
 
-### `swd_probe.asm` — SWD debug probe (issue #452)
+### `swd_probe.asm` — SWD debug probe, one word of AP memory (issues #452, #500)
 
 The multi-protocol extra credit's debug-probe role: firmware on the frozen
 DR 0017 ISA, no RTL change and no hardware peripheral, speaking Arm's
 Serial Wire Debug as the **host**. The chip generates SWCLK and reads a
 target's SWDIO responses in the turnaround cycles — the first firmware
 here that samples a line the other side clocks back at it. The protocol
-choice and the counted cost model are the dated note of 2026-11-19 in
-DR 0018 (fourth revision; the ACK branch below is a later revision of the
-image): 227 stored words of the 256-word store, 218 SWCLK rising edges,
-1,179 model edges. Pins: SWCLK `uio[2]`, SWDIO
-`uio[3]` (DR 0010's `swd` phase, added by this issue), both push-pull
-while driven (`UIO_DIR` 0x0C), SWDIO released at each turnaround cycle
-(its `UIO_DIR` bit cleared) for the target-driven response phases, with a
-board pull-up on SWDIO as ADIv5 requires.
+choice and the counted cost model are the dated notes in DR 0018. Issue
+#452 landed the fallback image (IDCODE and one DP read, 227 stored words,
+unrolled at four words per request bit); issue #500 replaced it with the
+**table-driven image** below, which reads one word of AP memory:
+**256 stored words** of the 256-word store (116 code, 140 table; the store
+is full), **356 SWCLK rising edges**, the last SWCLK fall at core edge 2,615. Pins: SWCLK
+`uio[2]`, SWDIO `uio[3]` (DR 0010's `swd` phase), both push-pull while
+driven (`UIO_DIR` 0x0C), SWDIO released at each turnaround cycle (its
+`UIO_DIR` bit cleared) for the target-driven response phases, with a board
+pull-up on SWDIO as ADIv5 requires.
 
 The schedule: line reset (50 SWCLK cycles, SWDIO high), the 16-bit
 JTAG-to-SWD switch 0xE79E LSB first, a second line reset, two idle clocks
-(SWDIO low), then two DP read transactions — request 0xA5 (the IDCODE
-bank) and request 0xBD (the RDBUFF bank), each an 8-bit even-parity
-request, one clocked turnaround cycle, 36 response samples (3-bit ACK,
-32 data bits LSB first, even parity) taken by `IN` in the SWCLK-low phase
-*before* the rise the target may advance on (IHI 0031 B4.3.1), a second
-turnaround with SWDIO still released, then SWDIO re-driven — and, after
-the last transfer, eight idle clocks with SWDIO low before SWCLK stops.
-Every sample is reported on `uo_out` as the masked SWDIO byte (0x08 or
-0x00), in transaction order.
+(SWDIO low), then five transactions, each an 8-bit even-parity request, one
+clocked turnaround cycle and the 3-bit ACK:
+
+| # | Transaction | Request | Then |
+|---|---|---|---|
+| 1 | DP IDCODE (DPIDR) read | 0xA5 | 32 data bits + parity from the target |
+| 2 | DP SELECT write | 0xB1 | return turnaround, probe drives 0x00000000 + parity |
+| 3 | AP TAR write | 0x8B | return turnaround, probe drives 0x20000004 + parity |
+| 4 | AP DRW read (**posted**) | 0x9F | returns the read buffer's *previous* value, not the word |
+| 5 | DP RDBUFF read | 0xBD | returns the addressed word (the result) |
+
+after which come eight idle clocks with SWDIO low before SWCLK stops. Every
+response sample is reported on `uo_out` as the masked SWDIO byte (0x08 or
+0x00), in transaction order: the DRW read's data is the stale buffer value
+and the RDBUFF read's is the fixture word, so the bench can tell a probe that
+reports the posted read from one that fetches the result.
+
+**The table-driven shape.** The ISA has no data memory, but DR 0012's
+`PM_ADDR` / `PM_DATA_HI` / `PM_DATA_LO` read stored words (the NEC IR
+program's shape). Every probe-driven bit is one stored word, an `LDI` the
+program never executes: `LDI R2, 0x0C` (0x180C) is a 1 and `LDI R0, 0x04`
+(0x1004) a 0. The *high* byte has bit 3 set only for a 1, so ANDed with the
+SWDIO mask it is the SWCLK-low pin image; the *low* byte is the SWCLK-high
+image. One 8-word loop (`txq`) sends the request bits and the write-data
+bits of every transaction. Control words in the same table drive a small
+engine: a start word (another transaction, 8 request bits, or the end), a
+word after the request (a response follows: the 2 ACK slots after the first
+bit), a word after the ACK (a read: 33 data slots; a write: the 33 write-data
+bits that follow the turnaround) and, after a write's data, the
+transaction-complete word. The sequence, the kind and the length of every
+transaction are therefore data, and the code is 116 words. That is the
+measurement DR 0018's note left open: the unrolled schedule needed about 180
+words per write; stored as data a bit costs one word, and the five
+transactions fit in the 256-word store (issue #500 first had 11 words spare;
+the full-ACK check below uses all of them).
 
 **ACK bit order.** The ADIv5 ACK numeric codes are OK = 0b001,
 WAIT = 0b010, FAULT = 0b100, and the target sends the code LSB first
 (IHI 0031H B4.1.5), so in time order on the wire OK is **1,0,0**, WAIT
 **0,1,0** and FAULT **0,0,1**. The report bytes carry that wire order.
-The probe branches on the *first* ACK bit (the one handshake branch, one
-per transaction; the assembler's data-dependent-latency lint reports
-exactly these two `BZ`s and nothing else): a 1 continues to the data
-phase; a 0 (WAIT or FAULT) clocks the two remaining ACK slots, the return
-turnaround with SWDIO released, re-drives SWDIO low, and ends the transfer
-with the eight trailing idle clocks. With CTRL/STAT.ORUNDETECT = 0 (the
-power-up setting) a WAIT or FAULT has no data phase, so no data slots are
-clocked. There is no retry (agreed scope); an error on the first request
-ends the run before the second. DPIDR must answer OK; the WAIT/FAULT
-cases are exercised on the second request (RDBUFF), which can fail.
-What does not fit the unrolled schedule is the issue's full goal,
-one word of AP memory (probe-driven writes); a table-driven shape is the
-recorded follow-up.
+The probe branches on the *first* ACK bit: a 0 (WAIT or FAULT) clocks the
+two remaining ACK slots, the return turnaround with SWDIO released,
+re-drives SWDIO low, and ends the run with the eight trailing idle clocks.
+A 1 is then checked against the whole OK code: each of the other two ACK
+bits must be **0**. A silent target leaves the pulled-up line at 1,1,1 and
+1,0,1 / 1,1,0 are not ACK codes; either is a protocol error, so the probe
+never drives write data into it: it keeps SWDIO **released** for the rest of
+the ACK, the possible 33 data bits and the turnaround (35 slots, as Arm's
+CMSIS-DAP backs off a protocol error), then re-drives SWDIO low, ends the run
+with the eight trailing idle clocks and issues no further request. The model's
+`ACK_NONE` / `ACK_BAD` targets and the `driven-after-bad-ack` rule grade it,
+and a mutant with the check removed is rejected. With CTRL/STAT.ORUNDETECT = 0 (the
+power-up setting) a WAIT or FAULT has no data phase — a rejected **write**
+sends no data — so no data slots are clocked. There is no retry (agreed
+scope): an error on any transaction ends the run there, so a rejected SELECT
+or TAR write means the memory read is never issued. DPIDR must answer OK;
+the WAIT/FAULT cases are exercised on each of the five transactions.
 
-**Timing, in core cycles** (every instruction is 1 cycle; one `OUT` per
-SWCLK transition). Measured at the pads by
-`verification/test_firmware_swd.py` against the independent target model
-`verification/reference_models/swd.py`. As with the other programs, the
-cycle counts are the claim; every microsecond figure below is arithmetic
-at target-spec row 4's **unconfirmed** 50 MHz core clock (20 ns/cycle;
-STA against this core is blocked —
-`verification/records/sta-corner-sweep/`).
+**The modeled MEM-AP.** `verification/reference_models/swd.py` (`MemAp`)
+decodes the requests it is sent. SELECT and TAR have **no reset value**
+(an AP access before either write is a violation), so the probe cannot skip
+the writes; the DRW read is posted. The MEM-AP's **word-access starting
+state** is CSW.Size = 0b010 (32-bit) with CSW.AddrInc = 0b00 — the probe
+does not write CSW, so the model starts there; a real part's CSW reset is
+implementation-defined, which this records as an assumption rather than
+proving it for silicon. The ADIv5 register addresses and fields carry the
+same "confirm" mark as the other constants (no copy of IHI 0031 is in this
+repository).
+
+**Timing, in core cycles** (every instruction is 1 cycle, a `PM_DATA_HI`
+read is a fixed 2; one `OUT` per SWCLK transition). Measured at the pads by
+`verification/test_firmware_swd.py` against the independent target model.
+As with the other programs, the cycle counts are the claim; every
+microsecond figure below is arithmetic at target-spec row 4's
+**unconfirmed** 50 MHz core clock (20 ns/cycle; STA against this core is
+blocked — `verification/records/sta-corner-sweep/`).
 
 | Interval | Cycles | at unconfirmed 50 MHz | Graded against |
 |---|---|---|---|
-| line reset, per SWCLK cycle (SWDIO high) | high **1**, low **3** | 20 / 60 ns | >= 50 cycles with SWDIO high (ADIv5 connection; pyOCD's shape sends it) |
-| switch / request, per bit | high **2**, low **2** | 40 / 40 ns | SWDIO changes only while SWCLK low, stable across every rising edge (1 cycle of setup) |
+| line reset, per SWCLK cycle (SWDIO high) | high **1**, low **3** (**2** on the second reset's first cycle) | 20 / 60 ns | >= 50 cycles with SWDIO high (ADIv5 connection; pyOCD's shape sends it) |
+| switch / request / write-data, per bit (table loop) | high **7**, low **2** | 140 / 40 ns | SWDIO changes only while SWCLK low, stable across every rising edge (2 cycles of setup) |
 | response sample loop, per slot | high **1**, low **4..7** | 20 / 80..140 ns | sample taken in the SWCLK-low phase before the rise (IHI 0031 B4.3.1) |
-| request 0xA5 / 0xBD, 8 bits | 32 | 640 ns | even parity over APnDP/RnW/A2/A3; start 1, stop 0, park 1 |
-| one read transaction, back to back (request start rise to the next request's start rise: 8 request bits + turnaround + 36 slots + return turnaround) | **328 core cycles** (46 SWCLK rises) | **6.56 us** | ACK OK (1,0,0), 32 data bits LSB first, even parity |
-| whole program | 218 SWCLK cycles, 1,178 instructions | 23.56 us clocked | 8 trailing idle clocks with SWDIO low before SWCLK stops (ADIv5 B4.1.4) |
+| request, 8 bits | 72 | 1.44 us | even parity over APnDP/RnW/A2/A3; start 1, stop 0, park 1 |
+| write data, 33 bits | 297 | 5.94 us | 32 bits LSB first + even parity |
+| whole program | 356 SWCLK cycles; last SWCLK fall at core edge 2,615 | 52.3 us clocked | 8 trailing idle clocks with SWDIO low before SWCLK stops (ADIv5 B4.1.4) |
 
-The transaction starts on the first SWCLK rise of the request and ends on the first rise of the next request. In the ISA model (`verification.reference_models.isa.run`), holding SWDIO high selects the successful-read path at the first ACK bit. The 119th and 165th SWCLK rises fall on core edges 488 and 816. The RTL bench checks the same 328-cycle interval with the target driving the full OK code (1,0,0).
-
-ADIv5 sets no numeric SWCLK width minimum for a host-generated clock, so
-no width limit is invented; the model records the widths above and the
-bench holds the program to them. The ADIv5 constants themselves carry
-DR 0015's "confirm" mark (no copy of IHI 0031 is in this repository) —
-the constants that matter here (50-clock reset, 0xE79E, turnarounds,
-even parities, 8 trailing idles) are cross-checked against pyOCD's and
-CMSIS-DAP's observable behaviour, as DR 0018 records.
+The table loop's SWCLK-high phase is long (7 cycles) because the next bit's
+table read, mask and `OUT` sit between two rising edges; ADIv5 sets no
+numeric SWCLK width minimum for a host-generated clock, so no width limit
+is invented. The model records the widths above and the bench holds the
+program to them. The ADIv5 constants themselves carry DR 0015's "confirm"
+mark (no copy of IHI 0031 is in this repository) — the constants that
+matter here (50-clock reset, 0xE79E, turnarounds, even parities, 8 trailing
+idles) are cross-checked against pyOCD's and CMSIS-DAP's observable
+behaviour, as DR 0018 records.
 
 **Register shape.** R0 holds the SWCLK-low/SWDIO-high image 0x08, which
-doubles as the SWDIO mask for the sample loop's `AND`; R1 holds the
-SWCLK-high/SWDIO-high image 0x0C, which doubles as the push-pull
-`UIO_DIR` mask; R2 counts; R3 is the per-bit image / decrement scratch.
-Two preloaded images make one `OUT` per SWCLK transition — the stored-word
-arithmetic DR 0018's first draft got wrong and its fourth revision
-corrected. No conditional branch reads pin data, so the assembler's
-data-dependent-latency lint is silent (0 warnings).
+doubles as the SWDIO mask for the table loop and the sample loop's `AND`;
+R1 holds the SWCLK-high/SWDIO-high image 0x0C, which doubles as the
+push-pull `UIO_DIR` mask; R2 counts (and receives the count words from the
+table); R3 is the per-bit image / table-byte / decrement scratch.
+
+**Lint.** The assembler's data-dependent-latency lint reports **nine**
+branches. Three (`BZ ackerr` after the first ACK bit, `BNZ ackbad` after each
+of the other two) read the target's ACK from the pin — the documented
+handshake case. Six branch on a table byte or on a loop count read from the
+table (`BNZ tail`, `BNZ txn` after a control word, `BZ ret` for a write,
+`BNZ txq`, the loop-count `SUB`s of `txq`, `ackl` and `rx`): the
+data is the program's own constant table, so the schedule is fixed at
+assemble time, the same reading as the NEC IR program's.
 
 Assemble: `python3 firmware/tools/asm.py firmware/asm/swd_probe.asm`
-(**227 words**, 227 fall-through cycles, 2 warnings: the two ACK-branch `BZ`s); freshness:
+(**256 words**, 261 fall-through cycles, 9 warnings as above); freshness:
 `python3 firmware/tools/check_firmware.py`.
 
 **Wiring a target (direct, same rail).** The chip's I/O is 3.3 V on the
@@ -1227,7 +1368,7 @@ written (`WCTL UIO_DIR` at 7 sites, checked by `prof_can`):
 |---|---|---|
 | setup, byte-boundary dispatch down-count | 0x05, 0x04, 0x03, 0x02, 0x01, 0x00 | up to `uio[0..2]`, per set bit, through every transmitted frame |
 | transmit ACK-slot flag | 0x00 / 0x01 | `uio[0]` when another node ACKed |
-| receive CRC-check byte (two cycles) | the CRC_NEXT byte -- any value 0x00-0xFF | any `uio` pad, for about two cycles |
+| receive CRC-check byte (held across the CRC delimiter) | the CRC_NEXT byte -- 0x00 on a valid frame, non-zero on a CRC error | any `uio` pad, for about 480 cycles (~1.2 bit times) on a CRC-error frame; nothing on a valid frame, where the byte is 0x00 |
 | receive ACK flag | 0x00 (CRC error) / 0x01 (ACK driven) | `uio[0]` when ACK driven |
 
 `uio[0..2]` carry the SPI / I2C / SWD roles and the QSPI Pmod header in
@@ -1460,3 +1601,68 @@ loads through the DR 0001 serial load phase and reads back exactly through
 the fetch port the core will execute from — the same out-of-band stance as
 `verification/test_program_memory.py`, because DR 0001 defines no readback
 instruction and the 16-opcode table is exactly full.
+
+## DALI lighting control
+
+The [226-word image](build/dali_master.cycles.txt) sends direct arc power
+`0x54` to short address zero (`0x0054`), then repeats QUERY ACTUAL LEVEL
+(`0x01A0`). Each valid eight-bit answer appears on `uo_out[7:0]` after its
+stop bits. Until the first answer RESULT is zero. An early, malformed or
+missing answer leaves the last result on the pins. The controller assumes an
+idle, single-controller bus at startup. [Assembly source](asm/dali_master.asm)
+
+Manchester coding is bit-banged on the frozen ISA. Each bit contains two
+opposite levels. A rising mid-bit edge encodes one, a falling edge zero.
+The start bit is one, data is MSB first, and the two stop bits are high
+throughout. The receiver times each visible edge. After a mid-bit edge it
+accepts a boundary one half-bit later or the next mid-bit edge two halves
+later. After a boundary it requires a mid-bit edge one half-bit later.
+It polls every 24 cycles in the one-half-bit window and every 34 cycles in
+the two-half-bit window. These intervals set the sampling resolution.
+The only control-space registers used are `UIO_DIR`, `UIO_OD` and
+`PM_ADDR` (one scratch byte). No Manchester primitive is used.
+
+### Timing on the RTL
+
+All times and cycle limits below are **at target-spec row 4's unconfirmed
+50 MHz clock** (20 ns per core cycle). At 1,200 bit/s a half-bit, Te, is
+20,833⅓ cycles. The reference model converts the specified ±10% **rate**
+range to integer cycle limits. Equal-level halves have no intervening pad
+edge, so the bench grades their combined duration. Frame gaps are measured
+from the end of both stop bits. [Microchip AN1465, pp. 4–6, figures 7–10](https://ww1.microchip.com/downloads/en/AppNotes/01465A.pdf)
+
+| Interval | Protocol limit (cycles) | RTL observation (cycles) |
+|---|---:|---:|
+| Forward isolated half-bit | 18,940–23,148 | 20,823–20,837 |
+| Forward two adjacent equal halves | 37,879–46,296 | 41,666–41,669 |
+| Forward stops (4 Te) + gap to next forward (≥22 Te) | ≥541,667 nominal | 541,878 after direct arc, 541,796 on no reply |
+| Query EOF to backward start | 7–22 Te | 145,834 and 458,333 at the two endpoints, rounded to a clock |
+| Backward stops | 4 sender Te, idle high | 75,760 / 83,332 / 92,592 for the fast / nominal / slow gear |
+| Backward EOF to next forward | ≥458,334 nominal | 460,313–477,021 for the three valid replies of the main sequence (`0x81`, `0xA7`, `0x54`) |
+
+The pad bench shifts a single payload boundary by 8,000 cycles in each
+polarity, keeping its neighboring mid-bit edges on time. RESULT holds
+`0x54` through those replies, an early boundary and a late mid-bit edge,
+then updates to `0xA7` on a valid reply. The bench also covers a low final
+stop half, a shortened start, an early reply and silence.
+The receiver's lower bound on the start low and on the final zero's low
+half is tight to the 18,940-cycle minimum. Its last guard poll lands
+18,660–18,910 cycles after the fall on the start path and 18,816–18,859 on
+the final-zero path. The bench shortens each of those two lows to 18,600
+cycles at start-poll offsets of 0, 75, 150 and 225 cycles. RESULT holds in
+all eight runs. Valid 18,940-cycle halves still decode at the same offsets. Its TX
+negative control shortens the first half to 13,232 cycles. Reproduce with
+`python3 verification/test_dali_model.py` and
+`klt functional-verification verification/request-firmware-dali.json --format json`
+from the repository root. [RTL evidence](../verification/records/firmware-dali/records/20261123-032854-a42f198.md)
+
+### Pmod wiring
+
+Use a Pmod-to-mikroBUS adapter or jumpers to a **MikroElektronika DALI Click**
+(original board with two TLP181 optocouplers). With J2 at 3.3 V and J1 at
+INT, connect upper-row Pmod pin 1 (`uio[0]`) to **RST / DALI_TX**, pin 2
+(`uio[1]`) to **INT / DALI_RX**, pin 5 to logic GND, and pin 6 to +3.3 V.
+Connect the powered DALI pair to CN2. TX high releases the bus and TX low
+sinks it through U1/M1. RX high reports idle and RX low reports an asserted
+bus. The pad bench models these digital levels. Hardware and analogue
+timing have not been measured. [DALI Click manual, sections 5–6](https://download.mikroe.com/documents/add-on-boards/click/dali/dali-click-manual-v100.pdf)

@@ -3,14 +3,14 @@
   "kind": "generic",
   "status": "pass",
   "t1_item": 9,
-  "summary": "T1 item 9 (Testbenches shipped): 105/105 attestation checks passed (klt signoff --attest)",
+  "summary": "T1 item 9 (Testbenches shipped): 109/109 attestation checks passed (klt signoff --attest)",
   "source": "manifests/attest/item9.json",
   "attestation": {
     "producer": "klt signoff --attest",
     "inventory_schema_version": 1,
     "hash_algorithm": "sha256-raw-bytes",
-    "check_count": 105,
-    "passed_count": 105,
+    "check_count": 109,
+    "passed_count": 109,
     "checks": [
       {
         "check": "present",
@@ -295,6 +295,13 @@
       {
         "check": "present",
         "role": "testbench",
+        "path": "verification/reference_models/dali.py",
+        "passed": true,
+        "content_hash": "sha256:3bd0460bd9cd1246b88df7e7de8193c9df9064b36f5de7203fd1ce997db812cf"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
         "path": "verification/reference_models/isa.py",
         "passed": true,
         "content_hash": "sha256:7f9addaa7e5593a878de72671e2d8efd932628fe2e8799696810b6c25f60e84c"
@@ -318,7 +325,7 @@
         "role": "testbench",
         "path": "verification/remint_records.py",
         "passed": true,
-        "content_hash": "sha256:5ff353885e8db24a671a38694fafea9849ba4e1c3b9f66c56734af7173f7ad75"
+        "content_hash": "sha256:27be7443d2d30fa4c8f31d2ef6ed143ac3424084618e751e613fff535b35d22c"
       },
       {
         "check": "present",
@@ -354,6 +361,13 @@
         "path": "verification/request-control-space.json",
         "passed": true,
         "content_hash": "sha256:c678b465296de376935220aa0593173485a9427ae48d58fae6532cdc0fb77ca0"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "verification/request-firmware-dali.json",
+        "passed": true,
+        "content_hash": "sha256:350522ea6cec27266ad678351566df67d39dea4220664ae3e9bfc5d2aa87b1a7"
       },
       {
         "check": "present",
@@ -550,6 +564,20 @@
         "path": "verification/test_control_space.py",
         "passed": true,
         "content_hash": "sha256:2f544b083effbeb12567de2706e90955e5d9835d671c64c2fc0627f5f1a116c0"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "verification/test_dali_model.py",
+        "passed": true,
+        "content_hash": "sha256:d1db95d04b8940ff6f722c425ceddcf57ebd02789a7ef815761163c88011784e"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "verification/test_firmware_dali.py",
+        "passed": true,
+        "content_hash": "sha256:1b261253371e13c4c0d9788effdeda69f0f66969d7a152f458b1ad8bcee9be28"
       },
       {
         "check": "present",
@@ -770,7 +798,7 @@
         "path": "manifests/attest/item9.json",
         "scope": "repo"
       },
-      "content_hash": "sha256:79c140a4a282fa623d5bd881e541da552572b90f9962aa5d9459334e93b7a383"
+      "content_hash": "sha256:c3fae4a7032c1f909ecdcb37af789311bbe7f8ec45897c3120c5bd6ff76a6bfb"
     }
   }
 }

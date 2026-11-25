@@ -271,8 +271,8 @@ per image (DR 0012) and one image is loaded per run:
 3. Both registers reset to 0, so whatever ran before a reset, every `uio`
    pin is an input until the new image writes its own mode.
 
-The checker holds every SPI and I2C image to its profile's `pin_modes` and
-reports any pin-mode write the profile does not declare. The section below
+The checker holds every SPI, I2C, PS/2 and 1-Wire image to its profile's
+`pin_modes` and reports any pin-mode write the profile does not declare. The section below
 is the analysis of the pre-#155 plan and is kept as history.
 
 ### SPI `MISO` and I2C `SCL` both on `uio[0]` — electrical compatibility (pre-#155 plan)
@@ -350,6 +350,14 @@ inventory is a hard failure.
       "uio_dir": "0x00",
       "uio_od": "0x0C"
     },
+    "dali": {
+      "uio_dir": "0x01",
+      "uio_od": "0x00"
+    },
+    "onewire": {
+      "uio_dir": "0x00",
+      "uio_od": "0x08"
+    },
     "swd": {
       "uio_dir": "0x0C",
       "uio_od": "0x00"
@@ -418,6 +426,33 @@ inventory is a hard failure.
       "PS2_CLK",
       "PS2_DATA"
     ],
+    "dali": [
+      "TX",
+      "RX"
+    ],
+    "dali_result": [
+      "RESULT[0]",
+      "RESULT[1]",
+      "RESULT[2]",
+      "RESULT[3]",
+      "RESULT[4]",
+      "RESULT[5]",
+      "RESULT[6]",
+      "RESULT[7]"
+    ],
+    "onewire": [
+      "DQ"
+    ],
+    "onewire_result": [
+      "RESULT[0]",
+      "RESULT[1]",
+      "RESULT[2]",
+      "RESULT[3]",
+      "RESULT[4]",
+      "RESULT[5]",
+      "RESULT[6]",
+      "RESULT[7]"
+    ],
     "dmx512": [
       "TX"
     ],
@@ -464,6 +499,10 @@ inventory is a hard failure.
         "i2c_result": "unused",
         "ws2812": "unused",
         "ps2": "unused",
+        "dali": "unused",
+        "dali_result": "unused",
+        "onewire": "unused",
+        "onewire_result": "unused",
         "dmx512": "unused",
         "i2s": "unused",
         "nec_ir_tx": "unused",
@@ -491,6 +530,10 @@ inventory is a hard failure.
         "i2c_result": "unused",
         "ws2812": "unused",
         "ps2": "unused",
+        "dali": "unused",
+        "dali_result": "unused",
+        "onewire": "unused",
+        "onewire_result": "unused",
         "dmx512": "unused",
         "i2s": "unused",
         "nec_ir_tx": "unused",
@@ -518,6 +561,10 @@ inventory is a hard failure.
         "i2c_result": "unused",
         "ws2812": "unused",
         "ps2": "unused",
+        "dali": "unused",
+        "dali_result": "unused",
+        "onewire": "unused",
+        "onewire_result": "unused",
         "dmx512": "unused",
         "i2s": "unused",
         "nec_ir_tx": "unused",
@@ -545,6 +592,10 @@ inventory is a hard failure.
         "i2c_result": "unused",
         "ws2812": "unused",
         "ps2": "unused",
+        "dali": "unused",
+        "dali_result": "unused",
+        "onewire": "unused",
+        "onewire_result": "unused",
         "dmx512": "unused",
         "i2s": "unused",
         "nec_ir_tx": "unused",
@@ -572,6 +623,10 @@ inventory is a hard failure.
         "i2c_result": "unused",
         "ws2812": "unused",
         "ps2": "unused",
+        "dali": "unused",
+        "dali_result": "unused",
+        "onewire": "unused",
+        "onewire_result": "unused",
         "dmx512": "unused",
         "i2s": "unused",
         "nec_ir_tx": "unused",
@@ -599,6 +654,10 @@ inventory is a hard failure.
         "i2c_result": "unused",
         "ws2812": "unused",
         "ps2": "unused",
+        "dali": "unused",
+        "dali_result": "unused",
+        "onewire": "unused",
+        "onewire_result": "unused",
         "dmx512": "unused",
         "i2s": "unused",
         "nec_ir_tx": "unused",
@@ -626,6 +685,10 @@ inventory is a hard failure.
         "i2c_result": "unused",
         "ws2812": "unused",
         "ps2": "unused",
+        "dali": "unused",
+        "dali_result": "unused",
+        "onewire": "unused",
+        "onewire_result": "unused",
         "dmx512": "unused",
         "i2s": "unused",
         "nec_ir_tx": "unused",
@@ -653,6 +716,10 @@ inventory is a hard failure.
         "i2c_result": "unused",
         "ws2812": "unused",
         "ps2": "unused",
+        "dali": "unused",
+        "dali_result": "unused",
+        "onewire": "unused",
+        "onewire_result": "unused",
         "dmx512": "unused",
         "i2s": "unused",
         "nec_ir_tx": "unused",
@@ -680,6 +747,10 @@ inventory is a hard failure.
         "i2c_result": "RESULT[0]",
         "ws2812": "unused",
         "ps2": "unused",
+        "dali": "unused",
+        "dali_result": "RESULT[0]",
+        "onewire": "unused",
+        "onewire_result": "RESULT[0]",
         "dmx512": "TX",
         "i2s": "unused",
         "nec_ir_tx": "unused",
@@ -707,6 +778,10 @@ inventory is a hard failure.
         "i2c_result": "RESULT[1]",
         "ws2812": "unused",
         "ps2": "unused",
+        "dali": "unused",
+        "dali_result": "RESULT[1]",
+        "onewire": "unused",
+        "onewire_result": "RESULT[1]",
         "dmx512": "unused",
         "i2s": "unused",
         "nec_ir_tx": "unused",
@@ -734,6 +809,10 @@ inventory is a hard failure.
         "i2c_result": "RESULT[2]",
         "ws2812": "unused",
         "ps2": "unused",
+        "dali": "unused",
+        "dali_result": "RESULT[2]",
+        "onewire": "unused",
+        "onewire_result": "RESULT[2]",
         "dmx512": "unused",
         "i2s": "unused",
         "nec_ir_tx": "unused",
@@ -761,6 +840,10 @@ inventory is a hard failure.
         "i2c_result": "RESULT[3]",
         "ws2812": "unused",
         "ps2": "unused",
+        "dali": "unused",
+        "dali_result": "RESULT[3]",
+        "onewire": "unused",
+        "onewire_result": "RESULT[3]",
         "dmx512": "unused",
         "i2s": "unused",
         "nec_ir_tx": "unused",
@@ -788,6 +871,10 @@ inventory is a hard failure.
         "i2c_result": "RESULT[4]",
         "ws2812": "unused",
         "ps2": "unused",
+        "dali": "unused",
+        "dali_result": "RESULT[4]",
+        "onewire": "unused",
+        "onewire_result": "RESULT[4]",
         "dmx512": "unused",
         "i2s": "unused",
         "nec_ir_tx": "unused",
@@ -815,6 +902,10 @@ inventory is a hard failure.
         "i2c_result": "RESULT[5]",
         "ws2812": "unused",
         "ps2": "unused",
+        "dali": "unused",
+        "dali_result": "RESULT[5]",
+        "onewire": "unused",
+        "onewire_result": "RESULT[5]",
         "dmx512": "unused",
         "i2s": "WS",
         "nec_ir_tx": "unused",
@@ -842,6 +933,10 @@ inventory is a hard failure.
         "i2c_result": "RESULT[6]",
         "ws2812": "unused",
         "ps2": "unused",
+        "dali": "unused",
+        "dali_result": "RESULT[6]",
+        "onewire": "unused",
+        "onewire_result": "RESULT[6]",
         "dmx512": "unused",
         "i2s": "BCLK",
         "nec_ir_tx": "unused",
@@ -869,6 +964,10 @@ inventory is a hard failure.
         "i2c_result": "RESULT[7]",
         "ws2812": "DIN",
         "ps2": "unused",
+        "dali": "unused",
+        "dali_result": "RESULT[7]",
+        "onewire": "unused",
+        "onewire_result": "RESULT[7]",
         "dmx512": "unused",
         "i2s": "SD",
         "nec_ir_tx": "IR_TX",
@@ -896,6 +995,10 @@ inventory is a hard failure.
         "i2c_result": "unused",
         "ws2812": "unused",
         "ps2": "unused",
+        "dali": "TX",
+        "dali_result": "unused",
+        "onewire": "unused",
+        "onewire_result": "unused",
         "dmx512": "unused",
         "i2s": "unused",
         "nec_ir_tx": "unused",
@@ -923,6 +1026,10 @@ inventory is a hard failure.
         "i2c_result": "unused",
         "ws2812": "unused",
         "ps2": "unused",
+        "dali": "RX",
+        "dali_result": "unused",
+        "onewire": "unused",
+        "onewire_result": "unused",
         "dmx512": "unused",
         "i2s": "unused",
         "nec_ir_tx": "unused",
@@ -931,7 +1038,7 @@ inventory is a hard failure.
         "can": "unused",
         "modbus": "unused"
       },
-      "shared_pin_rationale": ""
+      "shared_pin_rationale": "The SPI image drives MOSI. The DALI image samples the isolated receiver here with UIO_DIR bit 1 clear."
     },
     {
       "pin": "uio[2]",
@@ -950,6 +1057,10 @@ inventory is a hard failure.
         "i2c_result": "unused",
         "ws2812": "unused",
         "ps2": "PS2_CLK",
+        "dali": "unused",
+        "dali_result": "unused",
+        "onewire": "unused",
+        "onewire_result": "unused",
         "dmx512": "unused",
         "i2s": "unused",
         "nec_ir_tx": "unused",
@@ -977,6 +1088,10 @@ inventory is a hard failure.
         "i2c_result": "unused",
         "ws2812": "unused",
         "ps2": "PS2_DATA",
+        "dali": "unused",
+        "dali_result": "unused",
+        "onewire": "DQ",
+        "onewire_result": "unused",
         "dmx512": "unused",
         "i2s": "unused",
         "nec_ir_tx": "unused",
@@ -1004,6 +1119,10 @@ inventory is a hard failure.
         "i2c_result": "unused",
         "ws2812": "unused",
         "ps2": "unused",
+        "dali": "unused",
+        "dali_result": "unused",
+        "onewire": "unused",
+        "onewire_result": "unused",
         "dmx512": "unused",
         "i2s": "unused",
         "nec_ir_tx": "unused",
@@ -1031,6 +1150,10 @@ inventory is a hard failure.
         "i2c_result": "unused",
         "ws2812": "unused",
         "ps2": "unused",
+        "dali": "unused",
+        "dali_result": "unused",
+        "onewire": "unused",
+        "onewire_result": "unused",
         "dmx512": "unused",
         "i2s": "unused",
         "nec_ir_tx": "unused",
@@ -1058,6 +1181,10 @@ inventory is a hard failure.
         "i2c_result": "unused",
         "ws2812": "unused",
         "ps2": "unused",
+        "dali": "unused",
+        "dali_result": "unused",
+        "onewire": "unused",
+        "onewire_result": "unused",
         "dmx512": "unused",
         "i2s": "unused",
         "nec_ir_tx": "unused",
@@ -1085,6 +1212,10 @@ inventory is a hard failure.
         "i2c_result": "unused",
         "ws2812": "unused",
         "ps2": "unused",
+        "dali": "unused",
+        "dali_result": "unused",
+        "onewire": "unused",
+        "onewire_result": "unused",
         "dmx512": "unused",
         "i2s": "unused",
         "nec_ir_tx": "unused",
@@ -1287,6 +1418,14 @@ inventory is a hard failure.
       ]
     },
     {
+      "file": "firmware/asm/dali_master.asm",
+      "profile": "dali",
+      "patterns": [
+        "asm_ports",
+        "dali_levels"
+      ]
+    },
+    {
       "file": "firmware/asm/ps2_device.asm",
       "profile": "ps2",
       "patterns": [
@@ -1348,6 +1487,13 @@ inventory is a hard failure.
       ]
     },
     {
+      "file": "verification/test_firmware_dali.py",
+      "profile": "bench_dali",
+      "patterns": [
+        "bench_dali"
+      ]
+    },
+    {
       "file": "firmware/asm/i2s_tx.asm",
       "profile": "i2s",
       "patterns": [
@@ -1367,6 +1513,22 @@ inventory is a hard failure.
       "profile": "bench_ps2",
       "patterns": [
         "bench_ps2"
+      ]
+    },
+    {
+      "file": "firmware/asm/onewire_master.asm",
+      "profile": "onewire",
+      "patterns": [
+        "asm_ports",
+        "onewire_images",
+        "onewire_in_mask"
+      ]
+    },
+    {
+      "file": "verification/test_firmware_onewire.py",
+      "profile": "bench_onewire",
+      "patterns": [
+        "bench_onewire"
       ]
     },
     {
@@ -1643,6 +1805,24 @@ checker's `ps2_shifts` pattern holds each read's bit-isolation shifts to the
 table; as with the other profiles, the bench grades what the program does on
 the pads.
 
+### 1-Wire master, multi-protocol extra credit (added by #447)
+
+`onewire_master.asm` is the 1-Wire entry of the multi-protocol extra-credit
+catalog (#443). It is a 1-Wire **bus master** for one DS18B20: a single
+open-drain DQ line on `uio[3]` (the I2C Pmod's SDA position, the row that
+carries pull-ups), with the external 4.7 kΩ pull-up the `firmware/README.md`
+wiring table names. The table records that as the `onewire` phase (`DQ`, a
+driven open-drain role) plus the `onewire_result` phase (`RESULT[n]` on all
+of `uo_out`, the received-byte publication convention the I2C/SPI programs
+use), and as an `onewire` entry in `pin_modes` (`UIO_DIR` 0x00, `UIO_OD`
+0x08). `uio[3]`'s existing `shared_pin_rationale` covers 1-Wire the same way
+it covers the other profiles: one row, one protocol, one image, DR 0012 sets
+the mode. The `onewire_images` pattern holds every pin image the program
+writes to 0 or the DQ mask, `onewire_in_mask` holds each DQ sample's mask to
+the DQ bit, and the bench's `DQ_BIT` and pad-model calls are checked by the
+`bench_onewire` profile. The bus itself -- every reset, presence and slot
+timing -- is graded by the independent DS18B20 model
+(`verification/reference_models/onewire.py`), not by these patterns.
 ### DMX512 transmitter, multi-protocol extra credit (added by #445)
 
 `dmx512_tx.asm` is the DMX512 (USITT DMX512-A) universe transmitter (issue
@@ -1712,8 +1892,9 @@ register is the only spare 8-bit state on a 4-register ISA, the trick
 DR 0013's boot loader also uses). The image writes neither `UIO_OD` nor
 `UIO_OUT`, so `uio_od = 0`, `uio_out = 0` and `uio_oe = uio_dir`: every
 set `UIO_DIR` bit drives that `uio` pad low -- `uio[0..2]` through every
-transmitted frame (0x05..0x01), and any pad for about two cycles while
-the CRC byte is parked there. Those pads carry the SPI / I2C / SWD roles
+transmitted frame (0x05..0x01), and any pad for about 480 cycles (~1.2 bit
+times, `firmware/build/can_2a.cycles.txt` addresses 0xC7-0xD2) while the
+non-zero CRC byte of a CRC-error frame is parked there (0x00 on a valid frame). Those pads carry the SPI / I2C / SWD roles
 and the QSPI Pmod header, so nothing may be connected to the `uio` pads
 while this image runs. The `pin_modes` schema holds one `uio_dir` value
 per profile and cannot express a varying one, so `can` has no
@@ -1782,8 +1963,9 @@ move into place; WS and BCLK are single-bit ORs.
    and unmet prerequisites. On the committed tree it lists nothing. The top
    level is DR 0012's pin-mode rule (#135), so an open-drain role is wired by
    the firmware image that uses it: each I2C image releases the lines and
-   then sets `UIO_OD`, and since #155 each SPI image writes its idle image
-   and then sets `UIO_DIR`. The UART receive programs' bench-debug writes to
+   then sets `UIO_OD`, since #155 each SPI image writes its idle image
+   and then sets `UIO_DIR`, and the PS/2 and 1-Wire images release DQ and
+   set `UIO_OD` (#447). The UART receive programs' bench-debug writes to
    `UIO_OUT` are not listed, because those programs write no pin-mode
    register (see "UART receive" above). They would be listed if one did.
 
@@ -1862,3 +2044,12 @@ direction the target plan needs), [DR 0013](0013-program-loading.md) (boot
 UART on option B), issues #94 (this), #133 (target pin plan), #155 (the pin
 moves), #135 (DR 0012 RTL), #75 (open-drain), #23 (firmware epic), #104 (I2C on the
 real core; physical pad wiring explicitly out of scope there).
+
+## Update of 2026-11-19 — DALI control device (#449)
+
+The DALI image uses the upper bidirectional Pmod row. It preloads the idle
+high level on `uio[0]` (TX) before enabling its push-pull driver. The isolated
+interface returns the bus level on `uio[1]` (RX). The other six pins are
+inputs. A valid backward frame publishes its byte on `uo_out[7:0]`.
+The `dali_levels` inventory pattern checks the TX levels and RX bit extraction.
+The `bench_dali` pattern checks the bench's TX and RX assignments.

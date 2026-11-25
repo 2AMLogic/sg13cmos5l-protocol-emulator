@@ -84,7 +84,9 @@ PIN_MODE_PROFILES = {
     "spi": ("spi_transfer",),
     "i2c": ("i2c_transfer",),
     "ps2": ("ps2",),
+    "dali": ("dali",),
     "swd": ("swd",),
+    "onewire": ("onewire",),
 }
 PIN_MODE_REGS = ("uio_dir", "uio_od")
 CTL_INDEX = {"UIO_DIR": "0X00", "UIO_OD": "0X01"}
@@ -98,6 +100,10 @@ PHASES = (
     "i2c_result",
     "ws2812",
     "ps2",
+    "dali",
+    "dali_result",
+    "onewire",
+    "onewire_result",
     "dmx512",
     "i2s",
     "nec_ir_tx",
@@ -117,7 +123,7 @@ LOAD_ROLE_PORT = {"PROG_SER": "ui_in", "PROG_MODE": "ui_in",
 # Role classes (what the role does electrically).
 DRIVE_PP = {"TX", "CS", "SCLK", "MOSI", "DIN", "IR_TX", "SWCLK", "SWDIO", "DE",
             "CAN_TXD", "BCLK", "WS", "SD"} | {f"RESULT[{i}]" for i in range(8)}
-DRIVE_OD = {"SCL", "SDA", "PS2_CLK", "PS2_DATA"}
+DRIVE_OD = {"SCL", "SDA", "PS2_CLK", "PS2_DATA", "DQ"}
 # DR 0010 can section: the CAN image's UIO_DIR scratch use (issue #450 review).
 CAN_UIO_DIR_WRITE_SITES = 7
 CAN_UIO_DIR_SETUP = 0x05
@@ -138,6 +144,12 @@ PHASE_VOCAB = {
     "ws2812": {"DIN"},
     # Row 13 stretch (DR 0018 note, issue #235): the PS/2 device's two lines.
     "ps2": {"PS2_CLK", "PS2_DATA"},
+    "dali": {"TX", "RX"},
+    "dali_result": {f"RESULT[{i}]" for i in range(8)},
+    # Multi-protocol extra credit (issue #447): the 1-Wire master's single
+    # open-drain data line, driven low and sampled high.
+    "onewire": {"DQ"},
+    "onewire_result": {f"RESULT[{i}]" for i in range(8)},
     # Multi-protocol extra credit (issue #445): the DMX512 transmitter's
     # line, driven push-pull through an external RS-485 transceiver.
     "dmx512": {"TX"},
@@ -186,6 +198,8 @@ PATTERNS = {
     "bench_ws2812",         # DIN_PIN, DIN_BIT = "port", n
     "ps2_images",           # ps2_device.asm: release images, CLK mask, DATA images, bit moves, UIO_OD value
     "ps2_shifts",           # ps2_device.asm: the shift recipe after each IN UIO_IN
+    "dali_levels",          # TX pin images, RX shift and mask
+    "bench_dali",           # TX_BIT, RX_BIT = n, m
     "bench_ps2",            # CLK_BIT, DATA_BIT = n, m
     "swd_images",           # swd_probe.asm: preloaded image pair, per-bit images, UIO_DIR values, no UIO_OD
     "swd_sample",           # swd_probe.asm: each IN UIO_IN followed by AND Rx, R0 (the SWDIO mask)
@@ -196,6 +210,9 @@ PATTERNS = {
     "can_images",           # can_2a.asm: pin images from LINE_OUT pairs/status words
     "can_sample",           # can_2a.asm: each IN UI_IN followed by AND Rx, R3 (the RXD mask)
     "bench_can",            # TX_PIN/TX_BIT + RX_BIT = port, n, n
+    "onewire_images",       # onewire_master.asm: every LDI -> OUT UIO_OUT pin image is 0 or the DQ mask
+    "onewire_in_mask",      # onewire_master.asm: each IN UIO_IN sample is masked with the DQ bit
+    "bench_onewire",        # DQ_BIT = n; pads calls name DQ_BIT; no uio_in writes
     "bench_spi_consts",     # CS/SCLK/MOSI/MISO constants and capture ports
     "bench_i2c_consts",     # SCL/SDA constants, LINE_PIN, CAPTURE_SPECS, i2c_board(scl=, sda=), pad calls
     "bench_i2c_sr_consts",  # imports from test_firmware_i2c, pad calls by named bit, no uio_in write
@@ -1090,6 +1107,33 @@ class Checker:
         # OUT from R1 drives is a dataflow question this text check does not
         # answer; the bench grades every DIN level the program produces.
 
+    # -------------------------------------------------------- profile: dali
+    def prof_dali(self, rel, ent, text):
+        ins = self.asm_instrs(text)
+        outs, inputs, result = self.out_in_ports([("dali", ["TX"])], [("dali", ["RX"])], "dali_result")
+        self.check_ports(rel, ins, outs | result, inputs, outs | result, inputs)
+        tx = self.mask_of("dali", "TX")
+        rx = self.mask_of("dali", "RX")
+        for idx, inst in enumerate(ins):
+            op, args = inst["m"], inst["ops"]
+            if op == "OUT" and args[0] in outs:
+                _, writer = self.prev_write(ins, idx, args[1])
+                value = self.imm(writer["ops"][1]) if writer and writer["m"] == "LDI" else None
+                self.concrete.sites += 1
+                if value not in (0, tx):
+                    self.concrete.err(f"{rel}:{inst['no']}: TX pin image must be zero or 0x{tx:02X}")
+            if op == "IN" and args[1] in inputs:
+                reg = args[0]
+                tail = ins[idx + 1:idx + 3]
+                self.concrete.sites += 1
+                if (rx != 2 or [(i["m"], i["ops"]) for i in tail] !=
+                        [("SHF", [reg, "RIGHT"]), ("AND", [reg, "R1"])]):
+                    self.concrete.err(f"{rel}:{inst['no']}: RX sample must isolate the table's dali.RX bit")
+        # R1 is also the post-shift RX mask, so it must stay one.
+        writes = [i for i in ins if i["m"] in self.WRITES and i["ops"][0] == "R1"]
+        if len(writes) != 1 or writes[0]["m"] != "LDI" or self.imm(writes[0]["ops"][1]) != 1:
+            self.concrete.err(f"{rel}: RX mask R1 must be initialized to one and preserved")
+
     # --------------------------------------------------------- profile: ps2
     def prof_ps2(self, rel, ent, text):
         """Row 13's stretch program (DR 0018 note of 2026-10-11, issue #235):
@@ -1186,6 +1230,46 @@ class Checker:
                 c.err(f"{rel}:{i['no']}: IN UIO_IN is followed by shifts {list(sig)}, which is none of "
                       f"the recipes the table's PS2_CLK uio[{cb}] / PS2_DATA uio[{db}] allow: "
                       f"{[list(k) for k in expected]}")
+
+    # --------------------------------------------------------- profile: onewire
+    def prof_onewire(self, rel, ent, text):
+        """The 1-Wire master (issue #447): DQ on the table's pin, open-drain
+        (`UIO_OD`, checked with the other profiles in runtime_pin_mode),
+        every pin image either 0 (assert) or the DQ mask (released), every
+        DQ sample masked with the DQ bit, and the received bytes on the
+        `onewire_result` port."""
+        c = self.concrete
+        ins = self.asm_instrs(text)
+        outs, ins_p, res = self.out_in_ports(
+            [("onewire", ["DQ"])], [("onewire", ["DQ"])], "onewire_result"
+        )
+        self.check_ports(rel, ins, outs | res, ins_p, outs | res, ins_p)
+        mask = self.mask_of("onewire", "DQ")
+        if not mask:
+            c.err(f"{rel}: the table's onewire phase has no DQ pin")
+            return
+        # every LDI feeding an OUT UIO_OUT is the low image (0) or released
+        for a, b in zip(ins, ins[1:]):
+            if a["m"] != "LDI" or b["m"] != "OUT":
+                continue
+            if b["ops"][0].upper() != "UIO_OUT" or b["ops"][1] != a["ops"][0]:
+                continue
+            c.sites += 1
+            v = self.imm(a["ops"][1])
+            if v not in (0, mask):
+                c.err(f"{rel}:{a['no']}: pin image {a['ops'][1]} for OUT UIO_OUT; a 1-Wire "
+                      f"master writes only 0 (assert) or the released DQ mask 0x{mask:02X}")
+        # each IN UIO_IN's next AND (on the IN's destination) masks the DQ bit
+        pb = self.role_pin("onewire", "DQ")
+        before = c.sites
+        self.in_and_sites(rel, ins, lambda _i: (mask, "onewire DQ mask"),
+                          port=PORT_ASM[(pb[0], "in")] if pb else "UIO_IN")
+        if c.sites == before:
+            c.err(f"{rel}: no `IN Rx, UIO_IN` ... `AND Rx, Ry` DQ sample site found")
+        # and the byte results reach the result port
+        if not any(i["m"] == "OUT" and i["ops"][0].upper() in res for i in ins):
+            c.err(f"{rel}: no OUT to the onewire_result port; the received bytes "
+                  "belong there")
 
     # -------------------------------------------------------- profile: dmx
     def prof_dmx512(self, rel, ent, text):
@@ -1447,6 +1531,12 @@ class Checker:
         if m:
             self.check_pb(rel, "DIN_PIN/DIN_BIT", m.group(1), int(m.group(2)), "ws2812", "DIN")
 
+    def prof_bench_dali(self, rel, ent, text):
+        m = self.need(text, r'^TX_BIT,\s*RX_BIT\s*=\s*(\d+),\s*(\d+)', rel, "TX_BIT, RX_BIT")
+        if m:
+            self.check_pb(rel, "TX_BIT", "uio", int(m.group(1)), "dali", "TX")
+            self.check_pb(rel, "RX_BIT", "uio", int(m.group(2)), "dali", "RX")
+
     def prof_bench_ps2(self, rel, ent, text):
         m = self.need(text, r'^CLK_BIT,\s*DATA_BIT\s*=\s*(\d+),\s*(\d+)', rel, "CLK_BIT, DATA_BIT")
         if m:
@@ -1470,6 +1560,14 @@ class Checker:
         if m:
             self.check_pb(rel, "SWCLK_BIT", "uio", int(m.group(1)), "swd", "SWCLK")
             self.check_pb(rel, "SWDIO_BIT", "uio", int(m.group(2)), "swd", "SWDIO")
+    def prof_bench_onewire(self, rel, ent, text):
+        m = self.need(text, r'^DQ_BIT\s*=\s*(\d+)', rel, "DQ_BIT")
+        if m:
+            self.check_pb(rel, "DQ_BIT", "uio", int(m.group(1)), "onewire", "DQ")
+        # the slave drives DQ through the pad model, by named bit, and the
+        # bench must not write uio_in itself
+        self.pad_calls(rel, text, required=(("pull_low", "DQ_BIT"), ("release", "DQ_BIT")),
+                       names=("DQ_BIT",))
 
     # ------------------------------------------------- profile: modbus
     def modbus_image_values(self, ins: list[dict], idx: int):
@@ -1992,7 +2090,7 @@ class Checker:
                 self.unwired.append(
                     f"prerequisite: {rel} writes bench-debug values to UIO_OUT and also writes "
                     f"{', '.join(modes)}: the debug values would reach uio pads (DR 0012; issue #154)")
-        # Each SPI / I2C / PS/2 / SWD image must put its runtime pins in the
+        # Each SPI / I2C / PS/2 / SWD / DALI image must put its runtime pins in the
         # table's mode:
         # write the profile's `pin_modes` value to UIO_DIR / UIO_OD, after
         # its first `OUT UIO_OUT` (uio_out resets to 0, so enabling a driver
@@ -2003,7 +2101,7 @@ class Checker:
         what = {"uio_dir": ("UIO_DIR", "push-pull"), "uio_od": ("UIO_OD", "open-drain")}
         for rel, ent in sorted(self.inv.items()):
             prof = ent["profile"]
-            if prof not in ("spi", "i2c", "ps2", "swd") or prof not in modes:
+            if prof not in ("spi", "i2c", "ps2", "dali", "onewire", "swd") or prof not in modes:
                 continue
             text = self.read(rel, self.concrete)
             if text is None:
@@ -2015,7 +2113,7 @@ class Checker:
                 sites = [i for i, x in enumerate(ins) if x["m"] == "WCTL"
                          and x["ops"][0].upper() in (name, CTL_INDEX[name])]
                 self.concrete.sites += 1
-                if not want:
+                if not want and prof != "dali":
                     if sites:
                         self.unwired.append(
                             f"{rel}: writes {name}, but the table's {prof} profile drives no "

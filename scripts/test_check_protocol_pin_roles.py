@@ -413,6 +413,12 @@ def _(fx):
     expect_fail(fx, "DIN pin image LDI R2, 0x40", "concrete-firmware-bench")
 
 
+@case("DALI receive samples must extract the isolated receiver pin")
+def _(fx):
+    fx.mutate("firmware/asm/dali_master.asm", "SHF   R3, RIGHT", "SHF   R3, LEFT")
+    expect_fail(fx, "RX sample", "concrete-firmware-bench")
+
+
 @case("WS2812 program drives uo_out from another register")
 def _(fx):
     fx.mutate("firmware/asm/ws2812.asm", "OUT   UO_OUT, R1       ; s20", "OUT   UO_OUT, R0       ; s20")
@@ -620,8 +626,8 @@ def _(fx):
 @case("SWD per-bit pin image is not an SWCLK x SWDIO combination")
 def _(fx):
     fx.mutate("firmware/asm/swd_probe.asm",
-              "        LDI   R3, 0x00         ; bit 0 = 0\n        OUT   UIO_OUT, R3",
-              "        LDI   R3, 0x10         ; (mutated)\n        OUT   UIO_OUT, R3")
+              "        LDI   R3, 0x00\n        OUT   UIO_OUT, R3      ; SWDIO falls low",
+              "        LDI   R3, 0x10         ; (mutated)\n        OUT   UIO_OUT, R3      ; SWDIO falls low")
     expect_fail(fx, "is not one of", "concrete-firmware-bench")
 
 
@@ -665,6 +671,55 @@ def _(fx):
               "        NOP                    ; (mutated)")
     code, out = fx.run("--require-implemented")
     assert code == 1 and "swd_probe.asm" in out and "UIO_DIR" in out, out
+
+
+@case("1-Wire released-DQ image mutated")
+def _(fx):
+    fx.mutate("firmware/asm/onewire_master.asm",
+              "        LDI   R3, 0x08\n        OUT   UIO_OUT, R3      ; DQ released ...",
+              "        LDI   R3, 0x09\n        OUT   UIO_OUT, R3      ; DQ released ...")
+    expect_fail(fx, "pin image 0x09", "concrete-firmware-bench")
+
+
+@case("1-Wire assert image is not 0")
+def _(fx):
+    fx.mutate("firmware/asm/onewire_master.asm",
+              "wrent:  LDI   R3, 1            ; walk mask: bit 0 first (1-Wire is LSB first)\nwrbit:  LDI   R1, 0\n        OUT   UIO_OUT, R1      ; falling edge: the slot starts",
+              "wrent:  LDI   R3, 1            ; walk mask: bit 0 first (1-Wire is LSB first)\nwrbit:  LDI   R1, 2\n        OUT   UIO_OUT, R1      ; falling edge: the slot starts")
+    expect_fail(fx, "pin image 2", "concrete-firmware-bench")
+
+
+@case("1-Wire DQ sample mask mutated")
+def _(fx):
+    fx.mutate("firmware/asm/onewire_master.asm",
+              "        IN    R3, UIO_IN\n        LDI   R1, 0x08\n        AND   R3, R1           ; DQ (bit 3) isolated",
+              "        IN    R3, UIO_IN\n        LDI   R1, 0x04\n        AND   R3, R1           ; DQ (bit 3) isolated")
+    expect_fail(fx, "masked with 0x04", "concrete-firmware-bench")
+
+
+@case("1-Wire bench DQ_BIT moved")
+def _(fx):
+    fx.mutate("verification/test_firmware_onewire.py", "DQ_BIT = 3", "DQ_BIT = 2")
+    expect_fail(fx, "DQ_BIT is uio[2]", "concrete-firmware-bench")
+
+
+@case("1-Wire DQ moved in the table alone")
+def _(fx):
+    def mv(t):
+        pin(t, "uio[3]")["protocol_roles"]["onewire"] = "unused"
+        pin(t, "uio[2]")["protocol_roles"]["onewire"] = "DQ"
+        t["pin_modes"]["onewire"]["uio_od"] = "0x04"
+    fx.mutate_table(mv)
+    expect_fail(fx, "firmware/asm/onewire_master.asm", "concrete-firmware-bench")
+
+
+@case("1-Wire program does not write the table's UIO_OD value")
+def _(fx):
+    fx.mutate("firmware/asm/onewire_master.asm",
+              "        WCTL  UIO_OD, R3       ; ... then open-drain on DQ alone",
+              "        NOP                   ; ... then open-drain on DQ alone")
+    code, out = fx.run("--require-implemented")
+    assert code == 1 and "onewire_master.asm" in out and "UIO_OD" in out, out
 
 
 @case("UART RX mask LDI mutated in each RX program")
@@ -843,6 +898,41 @@ def _(fx):
     fx.mutate("firmware/tools/gen_i2c_sr.py", '"LDI   R3, 0x04       ; poll mask"',
               '"LDI   R3, 0x02       ; poll mask"')
     expect_fail(fx, "firmware/tools/gen_i2c_sr.py", "concrete-firmware-bench")
+
+
+# CAN 2.0A (issue #584): DR 0010's can section records that the image uses
+# UIO_DIR as scratch, pinned by CAN_UIO_DIR_WRITE_SITES = 7 sites and the
+# setup immediate LDI <reg>, 0x05 before the first write. Both guards need
+# negative evidence: a silent drift between can_2a.asm and the record must
+# not pass the checker.
+@case("CAN UIO_DIR scratch: an 8th WCTL site fails the DR 0010 record")
+def _(fx):
+    fx.mutate("firmware/asm/can_2a.asm",
+              "\tWCTL  UIO_DIR, R2\n\tRCTL  R1, PM_DATA_HI\n",
+              "\tWCTL  UIO_DIR, R2\n\tWCTL  UIO_DIR, R2\n\tRCTL  R1, PM_DATA_HI\n")
+    expect_fail(fx, "8 `WCTL UIO_DIR` sites but DR 0010's can section records 7",
+                "concrete-firmware-bench")
+
+
+@case("CAN UIO_DIR scratch: a deleted 6th WCTL site fails the DR 0010 record")
+def _(fx):
+    # The first site (and its LDI R2, 0x05 setup) stays, so only the count
+    # guard fires; the anchor is the unique XOR-zeroed release site.
+    fx.mutate("firmware/asm/can_2a.asm",
+              "\tXOR   R2, R2\n\tWCTL  UIO_DIR, R2\n",
+              "\tXOR   R2, R2\n")
+    expect_fail(fx, "6 `WCTL UIO_DIR` sites but DR 0010's can section records 7",
+                "concrete-firmware-bench")
+
+
+@case("CAN UIO_DIR scratch: a wrong first-site setup immediate fails")
+def _(fx):
+    fx.mutate("firmware/asm/can_2a.asm",
+              "\tLDI   R2, 0x05\n\tWCTL  UIO_DIR, R2\n",
+              "\tLDI   R2, 0x06\n\tWCTL  UIO_DIR, R2\n")
+    expect_fail(fx,
+                "the first `WCTL UIO_DIR` is not preceded by `LDI <reg>, 0x05`",
+                "concrete-firmware-bench")
 
 
 # ------------------------------------------------- concrete: bench sites
@@ -1294,13 +1384,13 @@ def _(fx):
     metadata = {"prof_info"}
     concrete = {
         "prof_uart_tx", "prof_uart_rx", "prof_spi", "prof_i2c", "prof_i2c_gen",
-        "prof_demo", "prof_ws2812", "prof_ps2", "prof_dmx512", "prof_nec_ir",
+        "prof_demo", "prof_ws2812", "prof_ps2", "prof_onewire", "prof_dmx512", "prof_nec_ir",
         "prof_swd", "prof_can", "prof_modbus", "prof_i2s", "prof_bench_i2s",
         "prof_bench_can", "prof_bench_uart", "prof_bench_dmx512", "prof_bench_ws2812",
         "prof_bench_nec_ir", "prof_bench_modbus",
-        "prof_bench_ps2", "prof_bench_swd", "prof_bench_spi",
+        "prof_bench_ps2", "prof_bench_onewire", "prof_bench_swd", "prof_bench_spi",
         "prof_bench_i2c", "prof_bench_i2c_sr", "prof_bench_load", "prof_top",
-        "prof_core", "prof_isa_ports",
+        "prof_core", "prof_isa_ports", "prof_dali", "prof_bench_dali",
     }
 
     unclassified = sorted(handlers - metadata - concrete)
