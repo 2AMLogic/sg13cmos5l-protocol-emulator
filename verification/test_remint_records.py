@@ -723,6 +723,37 @@ def rerun_links_cases(failures: list) -> None:
           < chained.index(f"  - Re-mint of `records/{OLD_ID}.md`"), chained, failures)
 
 
+def grand_predecessor_cases(failures: list) -> None:
+    """#596: a predecessor whose H1 names a grand-predecessor (it was itself
+    a re-mint whose heading was never rewritten) still gets its H1 rewritten
+    to the new Record ID."""
+    grand = "20260101-000001-aaaaaaa"
+    with tempfile.TemporaryDirectory(prefix="remint-selftest-") as d:
+        repo = build(Path(d))
+        old = T.record_path(repo, "demo", OLD_ID)
+        text = old.read_text(encoding="utf-8")
+        check("fixture predecessor H1 names its own id",
+              f"\n# Record {OLD_ID}\n" in text, text, failures)
+        old.write_text(text.replace(f"\n# Record {OLD_ID}\n",
+                                    f"\n# Record {grand}\n"), encoding="utf-8")
+        T._git(repo, "add", "-A")
+        T._git(repo, "commit", "--quiet", "-m", "grand-predecessor H1")
+        T._git(repo, "update-ref", T.BASE_REF, "HEAD")
+        stale(repo)
+        code, out = tool(repo, "--rerun", "--klt", str(repo / "klt-stub"))
+        new = [r for r in records(repo) if r != OLD_ID]
+        check("grand-predecessor H1: re-mint succeeds", code == 0 and len(new) == 1,
+              out, failures)
+        if new:
+            prose = T.record_path(repo, "demo", new[0]).read_text(
+                encoding="utf-8").split("-->", 1)[1]
+            check("grand-predecessor H1 is rewritten to the new Record ID",
+                  f"\n# Record {new[0]}\n" in prose and f"# Record {grand}" not in prose,
+                  prose, failures)
+            check("grand-predecessor: Supersedes still names the predecessor",
+                  f"- **Supersedes**: `{OLD_ID}`" in prose, prose, failures)
+
+
 def main() -> int:
     failures: list = []
     with tempfile.TemporaryDirectory(prefix="remint-selftest-") as d:
@@ -884,6 +915,7 @@ def main() -> int:
     collapse_successor_cases(failures)
     results_xml_cases(failures)
     rerun_links_cases(failures)
+    grand_predecessor_cases(failures)
 
     print()
     if failures:
