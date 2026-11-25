@@ -753,6 +753,20 @@ def grand_predecessor_cases(failures: list) -> None:
             check("grand-predecessor: Supersedes still names the predecessor",
                   f"- **Supersedes**: `{OLD_ID}`" in prose, prose, failures)
 
+    with tempfile.TemporaryDirectory(prefix="remint-collapse-") as d:
+        repo = build_collapsible(Path(d))
+        commit_leaves(repo, lambda rid, text: text.replace(
+            f"\n# Record {rid}\n", f"\n# Record {grand}\n"))
+        code, out = tool(repo, "--collapse", "signoff-baseline")
+        new = [rid for rid in baseline_records(repo) if rid not in LEAF_IDS]
+        check("grand-predecessor H1: collapse succeeds", code == 0 and len(new) == 1,
+              out, failures)
+        if new:
+            text = T.record_path(repo, "signoff-baseline", new[0]).read_text(encoding="utf-8")
+            check("collapse rewrites a grand-predecessor H1 to the new Record ID",
+                  f"\n# Record {new[0]}\n" in text and f"# Record {grand}" not in text,
+                  text, failures)
+
 
 def main() -> int:
     failures: list = []
