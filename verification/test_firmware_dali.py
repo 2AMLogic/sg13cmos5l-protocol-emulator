@@ -23,6 +23,7 @@ TX_BIT, RX_BIT = 0, 1
 PERIOD_NS = 20  # target-spec row 4 (unconfirmed)
 HALF = round(TE)
 SHORT_LOW = 18_600  # observable low pulse below ceil(TE_MIN) = 18,940
+LONG_LOW = 23_250  # observable low pulse above floor(TE_MAX) = 23,148
 # Core-cycle offsets that walk the 250-cycle start poll through its phases.
 PHASES = (0, 75, 150, 225)
 
@@ -83,10 +84,12 @@ class Gear:
             durations[0] = half // 3
         if bad == "short_start":
             durations[0] = SHORT_LOW  # start low, 340 cycles under the minimum
-        if bad == "short_final":
+        if bad in ("short_final", "long_final"):
             final = 17  # last data cell, before the four idle stop halves
             assert levels[final] == 0 and levels[final + 1:] == [1] * 4
-            durations[final] = SHORT_LOW
+            durations[final] = SHORT_LOW if bad == "short_final" else LONG_LOW
+        if bad == "long_start":
+            durations[0] = LONG_LOW  # start low, 102 cycles over the maximum
         shifts = {"late_boundary": (6, 8_000), "early_boundary": (6, -8_000),
                   "late_mid": (7, 3_000)}
         if bad in shifts:
@@ -135,6 +138,12 @@ async def transactions(dut):
         *[(12, HALF, 0x95, "short_start", ph) for ph in PHASES],
         *[(12, ceil(TE_MIN), 0x82, None, ph) for ph in PHASES],
         (12, ceil(TE_MIN), 0x95, None, 150),
+        # Upper bound: valid floor(TE_MAX) replies (all end in a zero) publish
+        # at every start-poll phase; a single over-limit low never does.
+        *[(12, floor(TE_MAX), b, None, ph) for b, ph in zip((0x82, 0x36, 0x82, 0x36), PHASES)],
+        *[(12, HALF, 0x95, "long_start", ph) for ph in PHASES],
+        (12, HALF, 0x3C, None),
+        *[(12, HALF, 0x4A, "long_final", ph) for ph in PHASES],
         (12, HALF, 0xA7, None),
     ):
         # Watch concurrently even during the reply. An early TX falling edge
@@ -164,7 +173,8 @@ async def transactions(dut):
                 dut._log.info("no reply: next start %d cycles after stop begins", start - query_stop)
                 assert start - query_stop <= round(26 * TE) + 500, "missed timeout deadline"
         assert int(dut.uo_out.value) == last, f"{bad or 'valid'} reply: RESULT"
-        if bad in ("late_boundary", "early_boundary", "late_mid", "short_start", "short_final"):
+        if bad in ("late_boundary", "early_boundary", "late_mid", "short_start", "short_final",
+                   "long_start", "long_final"):
             dut._log.info("Rejected %s on %02x at phase %d, RESULT held %02x", bad, reply, phase, last)
         query_stop = next_stop
     gear.pads.assert_no_contention()

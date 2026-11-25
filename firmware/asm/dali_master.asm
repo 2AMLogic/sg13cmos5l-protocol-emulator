@@ -78,9 +78,11 @@ direct_inner:
         BNZ   direct_gap
         JMP   query
 
-; One poll is 250 cycles: WAIT (244), IN, SHF, AND, branch, SUB, BNZ.
-; RX = uio[1]. Ignore unrelated pads. Require idle throughout the stops
-; and early settling period. Then accept a start low up to 22 Te after EOF.
+; The early polls take 250 cycles each: WAIT (244), IN, SHF, AND, branch, SUB,
+; BNZ. RX = uio[1]. Ignore unrelated pads. Require idle throughout the stops
+; and early settling period. Then accept a start low up to 22 Te after EOF,
+; polling every 25 cycles so the start fall is seen at most 25 cycles late.
+; That keeps the phase uncertainty of the sampling deadlines below to 25 cycles.
 arm_receiver:
         LDI   R0, 4
 early_block:
@@ -95,11 +97,11 @@ early_poll:
         BNZ   early_poll
         SUB   R0, R1
         BNZ   early_block
-        LDI   R0, 5
+        LDI   R0, 50           ; 50 x 250 x 25 = the former 5 x 250 x 250
 window_block:
         LDI   R2, 250
 window_poll:
-        WAIT  243
+        WAIT  18
         IN    R3, UIO_IN
         SHF   R3, RIGHT
         AND   R3, R1
@@ -108,7 +110,7 @@ window_poll:
         BNZ   window_poll
         SUB   R0, R1
         BNZ   window_block
-        WAIT  249              ; include the sample at the far edge of the window
+        WAIT  16               ; include the sample at the far edge of the window
         IN    R3, UIO_IN
         SHF   R3, RIGHT
         AND   R3, R1
@@ -116,8 +118,8 @@ window_poll:
 
 start_low:
         WCTL  PM_ADDR, R1      ; leading one shifts out after eight data bits
-        LDI   R2, 74           ; start detection can lag by one 250-cycle poll
-        WAIT  159              ; last guard poll lands 18,660-18,910 cycles after
+        LDI   R2, 74           ; start detection can lag by one 25-cycle poll
+        WAIT  159              ; last guard poll lands 18,660-18,685 cycles after
                                ; the fall: a 18,600 pulse is always caught, an
                                ; 18,940 (minimum) one never
 low_guard:
@@ -128,8 +130,16 @@ low_guard:
         BNZ   recover
         SUB   R2, R1
         BNZ   low_guard
-        LDI   R2, 195          ; sample every 24 cycles near the rising edge
-rise_poll:
+        RCTL  R3, PM_ADDR      ; 1 after a start low, 0 after a final zero
+        LDI   R2, 181          ; final zero: last sample ~23,159-23,194 cycles
+                               ; after the fall, so a valid 23,148 rise is
+                               ; seen and a 23,250 one never is
+        OR    R3, R3
+        BZ    rise_poll
+        LDI   R2, 188          ; start low: last sample lands 23,150-23,200 cycles
+                               ; after the fall (RTL-bracketed at phases 0, 75,
+                               ; 150, 225; the start poll lag is 25 wide)
+rise_poll:                     ; sample every 24 cycles near the rising edge
         WAIT  17
         IN    R3, UIO_IN
         SHF   R3, RIGHT
