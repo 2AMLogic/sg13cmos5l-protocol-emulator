@@ -1639,7 +1639,7 @@ from the end of both stop bits. [Microchip AN1465, pp. 4–6, figures 7–10](ht
 | Forward stops (4 Te) + gap to next forward (≥22 Te) | ≥541,667 nominal | 541,878 after direct arc, 541,796 on no reply |
 | Query EOF to backward start | 7–22 Te | 145,834 and 458,333 at the two endpoints, rounded to a clock |
 | Backward stops | 4 sender Te, idle high | 75,760 / 83,332 / 92,592 for the fast / nominal / slow gear |
-| Backward EOF to next forward | ≥458,334 nominal | 460,321–477,031 for the three valid replies |
+| Backward EOF to next forward | ≥458,334 nominal | 460,313–477,021 for the three valid replies of the main sequence (`0x81`, `0xA7`, `0x54`) |
 
 The pad bench shifts a single payload boundary by 8,000 cycles in each
 polarity, keeping its neighboring mid-bit edges on time. RESULT holds

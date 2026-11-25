@@ -297,7 +297,7 @@
         "role": "testbench",
         "path": "verification/remint_records.py",
         "passed": true,
-        "content_hash": "sha256:cf7f29cf5ecafa64cbcf80fcf83f84952e5cef2959000fe4290fead6ade0b863"
+        "content_hash": "sha256:27be7443d2d30fa4c8f31d2ef6ed143ac3424084618e751e613fff535b35d22c"
       },
       {
         "check": "present",
