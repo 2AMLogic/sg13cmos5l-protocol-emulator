@@ -37,12 +37,13 @@ import hashlib
 import json
 import re
 import sys
-from collections.abc import Iterable, Iterator
+from collections.abc import Callable
+from functools import cache
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO / "verification"))
-from check_records import effective_supersedes
+from check_records import EXPERIMENT_RE, effective_supersedes
 
 SOURCES = "measurements/characterization-sources.json"
 REPORT = "measurements/characterization.md"
@@ -62,45 +63,28 @@ class Invalid(Exception):
     pass
 
 
-def live_records(repo: Path, experiments: Iterable[str]) -> dict[str, dict[str, str]]:
-    """experiment -> {record_id: ''} for records no later record supersedes.
-
-    Only the named experiments are read, each once (issue #625); an experiment
-    without a records directory has no live records.
-    """
-    base = repo / "verification" / "records"
-    out: dict[str, dict[str, str]] = {}
-    for exp in dict.fromkeys(experiments):
-        ids: set[str] = set()
-        superseded: set[str] = set()
-        for f in sorted((base / exp / "records").glob("*.md")) if isinstance(exp, str) else []:
-            m = re.search(r"<!-- record-meta\n(.*?)\n-->", f.read_text(), re.S)
-            if not m:
-                continue
-            meta = json.loads(m.group(1))
-            ids.add(f.stem)
-            superseded.update(effective_supersedes(f, meta.get("supersedes"), ids))
-        out[exp] = dict.fromkeys(sorted(ids - superseded), "")
-    return out
+def live_record_ids(repo: Path, exp: str) -> list[str]:
+    """Return the experiment's live record IDs in chronological order."""
+    if not EXPERIMENT_RE.fullmatch(exp):
+        return []
+    records = repo / "verification" / "records" / exp / "records"
+    ids: set[str] = set()
+    superseded: set[str] = set()
+    for f in sorted(records.glob("*.md")):
+        m = re.search(r"<!-- record-meta\n(.*?)\n-->", f.read_text(), re.S)
+        if not m:
+            continue
+        meta = json.loads(m.group(1))
+        ids.add(f.stem)
+        superseded.update(effective_supersedes(f, meta.get("supersedes"), ids))
+    return sorted(ids - superseded)
 
 
-def cited_experiments(node) -> Iterator[str]:
-    """Every experiment characterization-sources.json names, at any nesting."""
-    if isinstance(node, dict):
-        if "experiment" in node:
-            yield node["experiment"]
-        for v in node.values():
-            yield from cited_experiments(v)
-    elif isinstance(node, list):
-        for v in node:
-            yield from cited_experiments(v)
-
-
-def cite(ev: list[dict], live: dict[str, dict[str, str]], where: str) -> str:
+def cite(ev: list[dict], records_for: Callable[[str], list[str]], where: str) -> str:
     parts = []
     for e in ev:
         exp = e["experiment"]
-        heads = sorted(live.get(exp, {}))
+        heads = records_for(exp) if isinstance(exp, str) else []
         if not heads:
             raise Invalid(f"{where}: experiment {exp!r} has no live record")
         rid = e.get("record_id")
@@ -186,7 +170,11 @@ def build(repo: Path) -> tuple[str, str]:
     src = json.loads((repo / SOURCES).read_text())
     names = spec_rows((repo / "spec/target-spec.md").read_text())
     dig = digest((repo / "spec/gap-to-submission.md").read_text())
-    live = live_records(repo, cited_experiments(src))
+
+    @cache
+    def records_for(exp: str) -> list[str]:
+        return live_record_ids(repo, exp)
+
     rows = {int(k): v for k, v in src["rows"].items()}
     if set(rows) != set(names) or set(dig) != set(names):
         raise Invalid(f"row sets differ: spec {sorted(names)}, sources {sorted(rows)}, digest {sorted(dig)}")
@@ -225,7 +213,7 @@ def build(repo: Path) -> tuple[str, str]:
             verdict = "no evidence" if state == "unmet" else verdict
         if verdict in ("fail", "no evidence"):
             fails.append(n)
-        ev = cite(r["evidence"], live, f"row {n}")
+        ev = cite(r["evidence"], records_for, f"row {n}")
         lines.append(
             f"| {n} | {esc(names[n])} | {esc(r['target'])} | {esc(r['measured'])} | "
             f"{esc(r['conditions'])} | {verdict}: {esc(reason)} | {esc(ev)} | "
@@ -238,7 +226,7 @@ def build(repo: Path) -> tuple[str, str]:
         "## Fmax per corner",
         "",
         f"Flow: {src['timing_flow']}, clock {clk:g} ns, record "
-        f"{cite([src['timing_record']], live, 'timing_record')}. Fmax is an **estimate** derived as "
+        f"{cite([src['timing_record']], records_for, 'timing_record')}. Fmax is an **estimate** derived as "
         "1/(T - worst setup slack); the worst path at typ and fast is an I/O path, so treat those "
         "two as upper bounds.",
         "",
@@ -252,7 +240,7 @@ def build(repo: Path) -> tuple[str, str]:
     kt = src["klt_timing"]
     lines += [
         "",
-        f"Flow {kt['flow']}: {kt['status']} (record {cite(kt['evidence'], live, 'klt_timing')}).",
+        f"Flow {kt['flow']}: {kt['status']} (record {cite(kt['evidence'], records_for, 'klt_timing')}).",
         "",
         "## Area",
         "",
@@ -260,14 +248,15 @@ def build(repo: Path) -> tuple[str, str]:
         "|---|---|---|---|",
     ]
     for a in src["area"]:
-        lines.append(f"| {esc(a['item'])} | {esc(a['value'])} | {esc(a['flow'])} | {esc(cite(a['evidence'], live, 'area'))} |")
+        ev = cite(a["evidence"], records_for, "area")
+        lines.append(f"| {esc(a['item'])} | {esc(a['value'])} | {esc(a['flow'])} | {esc(ev)} |")
     p = src["power"]
     lines += [
         "",
         "## Power",
         "",
         f"Dynamic power per corner: **{p['value']}**. {p['reason']} "
-        f"(record {cite(p['evidence'], live, 'power')}).",
+        f"(record {cite(p['evidence'], records_for, 'power')}).",
         "",
         "## Findings",
         "",

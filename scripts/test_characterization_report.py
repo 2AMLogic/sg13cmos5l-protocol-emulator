@@ -107,10 +107,11 @@ class Report(unittest.TestCase):
             self.build(evidence=[{"experiment": "exp", "record_id": "nope"}])
 
     def test_unknown_experiment_rejected(self):
-        for exp in ("nope", 42, None):
-            with self.assertRaises(cr.Invalid) as cm:
-                self.build(evidence=[{"experiment": exp}])
-            self.assertIn(f"experiment {exp!r} has no live record", str(cm.exception))
+        for exp in ("nope", "exp/", "./exp", 42, None):
+            with self.subTest(exp=exp):
+                with self.assertRaises(cr.Invalid) as cm:
+                    self.build(evidence=[{"experiment": exp}])
+                self.assertIn(f"experiment {exp!r} has no live record", str(cm.exception))
 
     def test_superseded_record_rejected(self):
         recs = [("20260101-000000-aaaaaaa", None), ("20260102-000000-bbbbbbb", "20260101-000000-aaaaaaa")]
@@ -132,7 +133,7 @@ class Report(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             make_repo(root, records=[(a, [b]), (b, None), (c, [a, b, b, c, None])])
-            self.assertEqual(set(cr.live_records(root, ["exp"])["exp"]), {b, c})
+            self.assertEqual(cr.live_record_ids(root, "exp"), [b, c])
 
     def test_report_cites_latest_after_supersede(self):
         recs = [("20260101-000000-aaaaaaa", None), ("20260102-000000-bbbbbbb", "20260101-000000-aaaaaaa")]
@@ -250,8 +251,12 @@ class ReadScope(unittest.TestCase):
         with tempfile.TemporaryDirectory() as t:
             root = Path(t)
             make_repo(root)
-            write_records(root, "other", [("20260101-000000-zzzzzzz", None)])
+            write_records(root, "planned", [(self.B, None)])
             write_records(root, "sibling", [("20260101-000000-yyyyyyy", None)])
+            sources = root / cr.SOURCES
+            src = json.loads(sources.read_text())
+            src["corners"][0]["experiment"] = "planned"
+            sources.write_text(json.dumps(src))
             self.assertEqual(self.record_reads(root), [("exp", self.A)])
 
     def test_cited_experiment_read_once_including_superseded_records(self):
