@@ -90,28 +90,6 @@ PIN_MODE_PROFILES = {
 }
 PIN_MODE_REGS = ("uio_dir", "uio_od")
 CTL_INDEX = {"UIO_DIR": "0X00", "UIO_OD": "0X01"}
-PHASES = (
-    "uart_tx",
-    "uart_rx",
-    "uart_rx_result",
-    "spi_transfer",
-    "spi_result",
-    "i2c_transfer",
-    "i2c_result",
-    "ws2812",
-    "ps2",
-    "dali",
-    "dali_result",
-    "onewire",
-    "onewire_result",
-    "dmx512",
-    "i2s",
-    "nec_ir_tx",
-    "nec_ir_rx",
-    "swd",
-    "can",
-    "modbus",
-)
 UNUSED = "unused"
 # PROG_SER / PROG_MODE are the serial program-load inputs. CRC_BYTE_SEL (an
 # input) and CRC_READOUT (the eight outputs) are DR 0013 layer 1's load-phase
@@ -166,15 +144,15 @@ PHASE_VOCAB = {
     # probe's write phases and released (sampled, with a pull-up) for the
     # target's response phases.
     "swd": {"SWCLK", "SWDIO"},
+    # Multi-protocol extra credit (issue #450): the CAN 2.0A node's two
+    # lines through an external transceiver. CAN_TXD (the transceiver's D
+    # input) is push-pull; CAN_RXD (its R output) is an input.
+    "can": {"CAN_TXD", "CAN_RXD"},
     # Multi-protocol extra credit (issue #446): the Modbus RTU server's
     # three line-side signals, all through an external RS-485
     # transceiver: the received line, the driven line, and the
     # transceiver's driver-enable (DE and /RE tied).
     "modbus": {"RX", "TX", "DE"},
-    # Multi-protocol extra credit (issue #450): the CAN 2.0A node's two
-    # lines through an external transceiver. CAN_TXD (the transceiver's D
-    # input) is push-pull; CAN_RXD (its R output) is an input.
-    "can": {"CAN_TXD", "CAN_RXD"},
 }
 
 # Extraction patterns this script implements. An inventory entry naming any
@@ -332,10 +310,10 @@ class Checker:
         if s.errors:
             return False
         phases = t["phases"]
-        if set(phases) != set(PHASES):
-            s.err(f"table.phases: keys {sorted(phases)} != {sorted(PHASES)}")
+        if set(phases) != set(PHASE_VOCAB):
+            s.err(f"table.phases: keys {sorted(phases)} != {sorted(PHASE_VOCAB)}")
         else:
-            for ph in PHASES:
+            for ph in PHASE_VOCAB:
                 roles = phases[ph]
                 if not isinstance(roles, list) or len(set(roles)) != len(roles):
                     s.err(f"table.phases.{ph}: must be a list of distinct roles")
@@ -376,8 +354,8 @@ class Checker:
             if pin.get("metadata_class") != "generic_isa_capability":
                 s.err(f"{label}: metadata_class must be 'generic_isa_capability'")
             pr = pin["protocol_roles"]
-            if set(pr) != set(PHASES):
-                s.err(f"{label}: protocol_roles keys {sorted(pr)} != {sorted(PHASES)}")
+            if set(pr) != set(PHASE_VOCAB):
+                s.err(f"{label}: protocol_roles keys {sorted(pr)} != {sorted(PHASE_VOCAB)}")
         for port in PORTS:
             for bit in range(8):
                 if (port, bit) not in seen:
