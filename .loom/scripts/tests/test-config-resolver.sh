@@ -231,30 +231,22 @@ write_sized_tier() {
     [[ "$(wc -c < "$path")" -eq "$size" ]] || fail "fixture $path is not $size bytes"
 }
 
-# Tier-relative path for each of the five positions (defaults is handled via
-# LOOM_CONFIG_DEFAULTS_FILE, so its "relative" path lives under the repo dir
-# purely for fixture storage).
-declare -A TIER_PATH=(
-    [defaults]="defaults-fixture.json"
-    [legacy]="$LOOM_CONFIG_LEGACY_REL"
-    [project]="$LOOM_CONFIG_PROJECT_REL"
-    [fleet]=".loom-local/fleet-repo.json"
-    [local]="$LOOM_CONFIG_LOCAL_REL"
-)
-
 echo "Test 13: oversized tier (131071 / 131072 / 137977 bytes) in each of the five positions round-trips"
 for tier in defaults legacy project fleet local; do
+    case "$tier" in
+        defaults) tier_path="defaults-fixture.json" ;;
+        legacy)   tier_path="$LOOM_CONFIG_LEGACY_REL" ;;
+        project)  tier_path="$LOOM_CONFIG_PROJECT_REL" ;;
+        fleet)    tier_path=".loom-local/fleet-repo.json" ;;
+        local)    tier_path="$LOOM_CONFIG_LOCAL_REL" ;;
+    esac
     for size in 131071 131072 137977; do
         repo=$(new_repo)
-        write_sized_tier "$repo/${TIER_PATH[$tier]}" "$size"
-        if [[ "$tier" == "defaults" ]]; then
-            export LOOM_CONFIG_DEFAULTS_FILE="$repo/${TIER_PATH[$tier]}"
-        fi
+        write_sized_tier "$repo/$tier_path" "$size"
         rc=0
-        actual=$(loom_resolve_config "$repo" 2>/dev/null) || rc=$?
-        export LOOM_CONFIG_DEFAULTS_FILE=""
+        actual=$(LOOM_CONFIG_DEFAULTS_FILE="$repo/defaults-fixture.json" loom_resolve_config "$repo" 2>/dev/null) || rc=$?
         assert_eq "$rc" "0" "$tier tier of $size bytes resolves with exit 0"
-        if [[ "$rc" -eq 0 ]] && [[ "$actual" == "$(jq -c . "$repo/${TIER_PATH[$tier]}")" ]]; then
+        if [[ "$rc" -eq 0 ]] && [[ "$actual" == "$(jq -c . "$repo/$tier_path")" ]]; then
             pass "$tier tier of $size bytes: output equals input"
         else
             fail "$tier tier of $size bytes: output differs from input"
@@ -290,6 +282,32 @@ assert_eq "$rc" "0" "resolves with exit 0"
 assert_eq "$(printf '%s' "$actual" | jq -c '.keep')" "true" "valid higher tier still applied"
 assert_eq "$(printf '%s' "$actual" | jq -r '.x | length')" "137969" "oversized defaults tier still applied"
 assert_eq "$(printf '%s' "$actual" | jq -c 'keys')" '["keep","x"]' "malformed/missing tiers contributed nothing"
+rm -rf "$repo"
+
+echo "Test 15b: a tier containing two objects is discarded on both read paths"
+repo=$(new_repo)
+g init -q -b main
+mkdir -p "$repo/.loom"
+echo '{"source":"checkout"}' > "$repo/.loom/config.json"
+g add .loom/config.json
+g commit -q -m 'Valid legacy tier'
+write_sized_tier "$repo/defaults-fixture.json" 137977
+printf '%s\n' '{"x":"overridden"}' '{"extra":true}' > "$repo/.loom/config.json"
+assert_defaults_only() {
+    local actual
+    actual=$(LOOM_CONFIG_DEFAULTS_FILE="$repo/defaults-fixture.json" loom_resolve_config "$repo")
+    if [[ "$actual" == "$(< "$repo/defaults-fixture.json")" ]]; then
+        pass "$1 preserves the full defaults object"
+    else
+        fail "$1 contributed data from the malformed tier"
+    fi
+}
+assert_defaults_only "Working copy"
+g commit -q -am 'Malformed legacy tier'
+g update-ref refs/remotes/origin/main HEAD
+g symbolic-ref refs/remotes/origin/HEAD refs/remotes/origin/main
+g reset -q --hard HEAD~1
+assert_defaults_only "Behind checkout reading origin/HEAD"
 rm -rf "$repo"
 
 echo "Test 16: resolver passes no tier JSON on jq's argv"
