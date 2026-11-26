@@ -146,6 +146,18 @@ def expect_ordered(fx: Fixture, *needles: str) -> None:
     assert at == sorted(at), f"diagnostics out of order {list(zip(needles, at))} in:\n{out}"
 
 
+def expect_vocabulary_errors(fx: Fixture, phases: list[str]) -> None:
+    code, out = fx.run()
+    assert code == 1, f"expected exit 1, got {code}:\n{out}"
+    assert "[schema] FAIL" in out, out
+    reported = re.findall(
+        r"ERROR: table\.phases\.(\w+): roles .*supported vocabulary\b", out
+    )
+    assert reported == phases, (
+        f"expected vocabulary errors for {phases}, got {reported}:\n{out}"
+    )
+
+
 # ---------------------------------------------------------------- baseline
 # Issue #135 (DR 0012): the committed top level now derives uio_oe from the
 # core's UIO_OD / UIO_DIR control registers, and the committed I2C programs
@@ -1145,6 +1157,22 @@ def _(fx):
 
 
 # ---------------------------------------------------------- table schema
+@case("schema: unsupported CAN role")
+def _(fx):
+    fx.mutate_table(lambda t: t["phases"]["can"].append("BOGUS"))
+    expect_vocabulary_errors(fx, ["can"])
+
+
+@case("schema: CAN vocabulary error precedes Modbus vocabulary error")
+def _(fx):
+    def add_unsupported_roles(table):
+        for phase in ("modbus", "can"):
+            table["phases"][phase].append("BOGUS")
+
+    fx.mutate_table(add_unsupported_roles)
+    expect_vocabulary_errors(fx, ["can", "modbus"])
+
+
 @case("schema: missing pin")
 def _(fx):
     fx.mutate_table(lambda t: t["pins"].remove(pin(t, "uio[3]")))
