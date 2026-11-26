@@ -25,7 +25,11 @@ resolves the `ihp-sg13cmos5l` PDK location via `klt pdk find`, and checks
 `iverilog` / `yosys` / `openroad` on `$PATH` — reporting what's missing with
 an actionable install pointer, never a traceback. It is safe to re-run
 (`uv tool install --force` reinstalls cleanly). `./scripts/setup-env.sh
---help` prints the script's own header comment with the full rationale.
+--help` (or `-h`) prints a short usage message — both invocations, the
+`klt` requirement it installs (read from `layout/toolchain.json`'s
+`klt_install`), the pinned `cocotb`/`cocotb-tools` versions, and the
+advisory `iverilog`/`yosys`/`openroad` checks — and points back here for
+the rationale.
 
 ## Pinned versions
 
