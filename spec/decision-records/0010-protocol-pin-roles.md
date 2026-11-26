@@ -58,6 +58,14 @@ what they said before is in this file's history (PRs #148, #149, #170). The UART
 RX move followed in #178 (below). The Status line above is unchanged; this
 record is still Proposed.
 
+**Update 2026-11-21 (issue #446).** The Modbus RTU server image adds a
+`modbus` phase: `RX` on `ui_in[1]` (the uart_rx profile's pad, fed by the
+RS-485 transceiver's R output), `TX` on `uo_out[0]` (the uart_tx/dmx512
+pad, to the transceiver's D input) and the transceiver's driver-enable on
+`uo_out[1]` (`DE`, DE and /RE tied). No `uio` pin is touched: the image
+writes neither `UIO_DIR` nor `UIO_OD`, so it has no `pin_modes` entry.
+See "Modbus RTU server" below.
+
 ### Load phase (reset released with `ui_in[7]` high)
 
 | Pin | Role |
@@ -263,8 +271,8 @@ per image (DR 0012) and one image is loaded per run:
 3. Both registers reset to 0, so whatever ran before a reset, every `uio`
    pin is an input until the new image writes its own mode.
 
-The checker holds every SPI and I2C image to its profile's `pin_modes` and
-reports any pin-mode write the profile does not declare. The section below
+The checker holds every SPI, I2C, PS/2 and 1-Wire image to its profile's
+`pin_modes` and reports any pin-mode write the profile does not declare. The section below
 is the analysis of the pre-#155 plan and is kept as history.
 
 ### SPI `MISO` and I2C `SCL` both on `uio[0]` — electrical compatibility (pre-#155 plan)
@@ -342,6 +350,14 @@ inventory is a hard failure.
       "uio_dir": "0x00",
       "uio_od": "0x0C"
     },
+    "dali": {
+      "uio_dir": "0x01",
+      "uio_od": "0x00"
+    },
+    "onewire": {
+      "uio_dir": "0x00",
+      "uio_od": "0x08"
+    },
     "swd": {
       "uio_dir": "0x0C",
       "uio_od": "0x00"
@@ -410,8 +426,40 @@ inventory is a hard failure.
       "PS2_CLK",
       "PS2_DATA"
     ],
+    "dali": [
+      "TX",
+      "RX"
+    ],
+    "dali_result": [
+      "RESULT[0]",
+      "RESULT[1]",
+      "RESULT[2]",
+      "RESULT[3]",
+      "RESULT[4]",
+      "RESULT[5]",
+      "RESULT[6]",
+      "RESULT[7]"
+    ],
+    "onewire": [
+      "DQ"
+    ],
+    "onewire_result": [
+      "RESULT[0]",
+      "RESULT[1]",
+      "RESULT[2]",
+      "RESULT[3]",
+      "RESULT[4]",
+      "RESULT[5]",
+      "RESULT[6]",
+      "RESULT[7]"
+    ],
     "dmx512": [
       "TX"
+    ],
+    "i2s": [
+      "BCLK",
+      "WS",
+      "SD"
     ],
     "nec_ir_tx": [
       "IR_TX"
@@ -426,6 +474,11 @@ inventory is a hard failure.
     "can": [
       "CAN_TXD",
       "CAN_RXD"
+    ],
+    "modbus": [
+      "RX",
+      "TX",
+      "DE"
     ]
   },
   "pins": [
@@ -446,11 +499,17 @@ inventory is a hard failure.
         "i2c_result": "unused",
         "ws2812": "unused",
         "ps2": "unused",
+        "dali": "unused",
+        "dali_result": "unused",
+        "onewire": "unused",
+        "onewire_result": "unused",
         "dmx512": "unused",
+        "i2s": "unused",
         "nec_ir_tx": "unused",
         "nec_ir_rx": "unused",
         "swd": "unused",
-        "can": "CAN_RXD"
+        "can": "CAN_RXD",
+        "modbus": "unused"
       },
       "shared_pin_rationale": "PROG_SER during the load phase; CAN_RXD (run phase) is the CAN transceiver's R output read by the issue #450 image -- the load phase ends before any protocol image runs, so the two roles never coincide"
     },
@@ -471,11 +530,17 @@ inventory is a hard failure.
         "i2c_result": "unused",
         "ws2812": "unused",
         "ps2": "unused",
+        "dali": "unused",
+        "dali_result": "unused",
+        "onewire": "unused",
+        "onewire_result": "unused",
         "dmx512": "unused",
+        "i2s": "unused",
         "nec_ir_tx": "unused",
         "nec_ir_rx": "unused",
         "swd": "unused",
-        "can": "unused"
+        "can": "unused",
+        "modbus": "RX"
       },
       "shared_pin_rationale": ""
     },
@@ -496,11 +561,17 @@ inventory is a hard failure.
         "i2c_result": "unused",
         "ws2812": "unused",
         "ps2": "unused",
+        "dali": "unused",
+        "dali_result": "unused",
+        "onewire": "unused",
+        "onewire_result": "unused",
         "dmx512": "unused",
+        "i2s": "unused",
         "nec_ir_tx": "unused",
         "nec_ir_rx": "unused",
         "swd": "unused",
-        "can": "unused"
+        "can": "unused",
+        "modbus": "unused"
       },
       "shared_pin_rationale": ""
     },
@@ -521,11 +592,17 @@ inventory is a hard failure.
         "i2c_result": "unused",
         "ws2812": "unused",
         "ps2": "unused",
+        "dali": "unused",
+        "dali_result": "unused",
+        "onewire": "unused",
+        "onewire_result": "unused",
         "dmx512": "unused",
+        "i2s": "unused",
         "nec_ir_tx": "unused",
         "nec_ir_rx": "unused",
         "swd": "unused",
-        "can": "unused"
+        "can": "unused",
+        "modbus": "unused"
       },
       "shared_pin_rationale": ""
     },
@@ -546,11 +623,17 @@ inventory is a hard failure.
         "i2c_result": "unused",
         "ws2812": "unused",
         "ps2": "unused",
+        "dali": "unused",
+        "dali_result": "unused",
+        "onewire": "unused",
+        "onewire_result": "unused",
         "dmx512": "unused",
+        "i2s": "unused",
         "nec_ir_tx": "unused",
         "nec_ir_rx": "IR_RX",
         "swd": "unused",
-        "can": "unused"
+        "can": "unused",
+        "modbus": "unused"
       },
       "shared_pin_rationale": ""
     },
@@ -571,11 +654,17 @@ inventory is a hard failure.
         "i2c_result": "unused",
         "ws2812": "unused",
         "ps2": "unused",
+        "dali": "unused",
+        "dali_result": "unused",
+        "onewire": "unused",
+        "onewire_result": "unused",
         "dmx512": "unused",
+        "i2s": "unused",
         "nec_ir_tx": "unused",
         "nec_ir_rx": "unused",
         "swd": "unused",
-        "can": "unused"
+        "can": "unused",
+        "modbus": "unused"
       },
       "shared_pin_rationale": ""
     },
@@ -596,11 +685,17 @@ inventory is a hard failure.
         "i2c_result": "unused",
         "ws2812": "unused",
         "ps2": "unused",
+        "dali": "unused",
+        "dali_result": "unused",
+        "onewire": "unused",
+        "onewire_result": "unused",
         "dmx512": "unused",
+        "i2s": "unused",
         "nec_ir_tx": "unused",
         "nec_ir_rx": "unused",
         "swd": "unused",
-        "can": "unused"
+        "can": "unused",
+        "modbus": "unused"
       },
       "shared_pin_rationale": ""
     },
@@ -621,11 +716,17 @@ inventory is a hard failure.
         "i2c_result": "unused",
         "ws2812": "unused",
         "ps2": "unused",
+        "dali": "unused",
+        "dali_result": "unused",
+        "onewire": "unused",
+        "onewire_result": "unused",
         "dmx512": "unused",
+        "i2s": "unused",
         "nec_ir_tx": "unused",
         "nec_ir_rx": "unused",
         "swd": "unused",
-        "can": "unused"
+        "can": "unused",
+        "modbus": "unused"
       },
       "shared_pin_rationale": ""
     },
@@ -646,11 +747,17 @@ inventory is a hard failure.
         "i2c_result": "RESULT[0]",
         "ws2812": "unused",
         "ps2": "unused",
+        "dali": "unused",
+        "dali_result": "RESULT[0]",
+        "onewire": "unused",
+        "onewire_result": "RESULT[0]",
         "dmx512": "TX",
+        "i2s": "unused",
         "nec_ir_tx": "unused",
         "nec_ir_rx": "unused",
         "swd": "unused",
-        "can": "CAN_TXD"
+        "can": "CAN_TXD",
+        "modbus": "TX"
       },
       "shared_pin_rationale": "One image runs at a time: the UART/DMX512 transmitters and the CAN node (issue #450) each drive this pad from their own image; the result[0] role belongs to the echo images"
     },
@@ -671,11 +778,17 @@ inventory is a hard failure.
         "i2c_result": "RESULT[1]",
         "ws2812": "unused",
         "ps2": "unused",
+        "dali": "unused",
+        "dali_result": "RESULT[1]",
+        "onewire": "unused",
+        "onewire_result": "RESULT[1]",
         "dmx512": "unused",
+        "i2s": "unused",
         "nec_ir_tx": "unused",
         "nec_ir_rx": "unused",
         "swd": "unused",
-        "can": "unused"
+        "can": "unused",
+        "modbus": "DE"
       },
       "shared_pin_rationale": ""
     },
@@ -696,11 +809,17 @@ inventory is a hard failure.
         "i2c_result": "RESULT[2]",
         "ws2812": "unused",
         "ps2": "unused",
+        "dali": "unused",
+        "dali_result": "RESULT[2]",
+        "onewire": "unused",
+        "onewire_result": "RESULT[2]",
         "dmx512": "unused",
+        "i2s": "unused",
         "nec_ir_tx": "unused",
         "nec_ir_rx": "unused",
         "swd": "unused",
-        "can": "unused"
+        "can": "unused",
+        "modbus": "unused"
       },
       "shared_pin_rationale": ""
     },
@@ -721,11 +840,17 @@ inventory is a hard failure.
         "i2c_result": "RESULT[3]",
         "ws2812": "unused",
         "ps2": "unused",
+        "dali": "unused",
+        "dali_result": "RESULT[3]",
+        "onewire": "unused",
+        "onewire_result": "RESULT[3]",
         "dmx512": "unused",
+        "i2s": "unused",
         "nec_ir_tx": "unused",
         "nec_ir_rx": "unused",
         "swd": "unused",
-        "can": "unused"
+        "can": "unused",
+        "modbus": "unused"
       },
       "shared_pin_rationale": ""
     },
@@ -746,11 +871,17 @@ inventory is a hard failure.
         "i2c_result": "RESULT[4]",
         "ws2812": "unused",
         "ps2": "unused",
+        "dali": "unused",
+        "dali_result": "RESULT[4]",
+        "onewire": "unused",
+        "onewire_result": "RESULT[4]",
         "dmx512": "unused",
+        "i2s": "unused",
         "nec_ir_tx": "unused",
         "nec_ir_rx": "unused",
         "swd": "unused",
-        "can": "unused"
+        "can": "unused",
+        "modbus": "unused"
       },
       "shared_pin_rationale": ""
     },
@@ -771,11 +902,17 @@ inventory is a hard failure.
         "i2c_result": "RESULT[5]",
         "ws2812": "unused",
         "ps2": "unused",
+        "dali": "unused",
+        "dali_result": "RESULT[5]",
+        "onewire": "unused",
+        "onewire_result": "RESULT[5]",
         "dmx512": "unused",
+        "i2s": "WS",
         "nec_ir_tx": "unused",
         "nec_ir_rx": "unused",
         "swd": "unused",
-        "can": "unused"
+        "can": "unused",
+        "modbus": "unused"
       },
       "shared_pin_rationale": ""
     },
@@ -796,11 +933,17 @@ inventory is a hard failure.
         "i2c_result": "RESULT[6]",
         "ws2812": "unused",
         "ps2": "unused",
+        "dali": "unused",
+        "dali_result": "RESULT[6]",
+        "onewire": "unused",
+        "onewire_result": "RESULT[6]",
         "dmx512": "unused",
+        "i2s": "BCLK",
         "nec_ir_tx": "unused",
         "nec_ir_rx": "unused",
         "swd": "unused",
-        "can": "unused"
+        "can": "unused",
+        "modbus": "unused"
       },
       "shared_pin_rationale": ""
     },
@@ -821,11 +964,17 @@ inventory is a hard failure.
         "i2c_result": "RESULT[7]",
         "ws2812": "DIN",
         "ps2": "unused",
+        "dali": "unused",
+        "dali_result": "RESULT[7]",
+        "onewire": "unused",
+        "onewire_result": "RESULT[7]",
         "dmx512": "unused",
+        "i2s": "SD",
         "nec_ir_tx": "IR_TX",
         "nec_ir_rx": "unused",
         "swd": "unused",
-        "can": "unused"
+        "can": "unused",
+        "modbus": "unused"
       },
       "shared_pin_rationale": ""
     },
@@ -846,11 +995,17 @@ inventory is a hard failure.
         "i2c_result": "unused",
         "ws2812": "unused",
         "ps2": "unused",
+        "dali": "TX",
+        "dali_result": "unused",
+        "onewire": "unused",
+        "onewire_result": "unused",
         "dmx512": "unused",
+        "i2s": "unused",
         "nec_ir_tx": "unused",
         "nec_ir_rx": "unused",
         "swd": "unused",
-        "can": "unused"
+        "can": "unused",
+        "modbus": "unused"
       },
       "shared_pin_rationale": ""
     },
@@ -871,13 +1026,19 @@ inventory is a hard failure.
         "i2c_result": "unused",
         "ws2812": "unused",
         "ps2": "unused",
+        "dali": "RX",
+        "dali_result": "unused",
+        "onewire": "unused",
+        "onewire_result": "unused",
         "dmx512": "unused",
+        "i2s": "unused",
         "nec_ir_tx": "unused",
         "nec_ir_rx": "unused",
         "swd": "unused",
-        "can": "unused"
+        "can": "unused",
+        "modbus": "unused"
       },
-      "shared_pin_rationale": ""
+      "shared_pin_rationale": "The SPI image drives MOSI. The DALI image samples the isolated receiver here with UIO_DIR bit 1 clear."
     },
     {
       "pin": "uio[2]",
@@ -896,11 +1057,17 @@ inventory is a hard failure.
         "i2c_result": "unused",
         "ws2812": "unused",
         "ps2": "PS2_CLK",
+        "dali": "unused",
+        "dali_result": "unused",
+        "onewire": "unused",
+        "onewire_result": "unused",
         "dmx512": "unused",
+        "i2s": "unused",
         "nec_ir_tx": "unused",
         "nec_ir_rx": "unused",
         "swd": "SWCLK",
-        "can": "unused"
+        "can": "unused",
+        "modbus": "unused"
       },
       "shared_pin_rationale": "Standard SPI and I2C Pmod rows overlap here by Tiny Tapeout's design: one row carries one protocol and one firmware image is loaded per run. The SPI images leave the pin an input (UIO_DIR bit 2 = 0, UIO_OD bit 2 = 0) and sample MISO on uio_in[2]; the I2C images make it open-drain SCL (UIO_OD bit 2); the SWD images drive it push-pull as SWCLK (UIO_DIR bit 2). DR 0012 sets the mode per image, so no image sees the other's role."
     },
@@ -921,11 +1088,17 @@ inventory is a hard failure.
         "i2c_result": "unused",
         "ws2812": "unused",
         "ps2": "PS2_DATA",
+        "dali": "unused",
+        "dali_result": "unused",
+        "onewire": "DQ",
+        "onewire_result": "unused",
         "dmx512": "unused",
+        "i2s": "unused",
         "nec_ir_tx": "unused",
         "nec_ir_rx": "unused",
         "swd": "SWDIO",
-        "can": "unused"
+        "can": "unused",
+        "modbus": "unused"
       },
       "shared_pin_rationale": "Push-pull SCLK (SCK) in the SPI images (UIO_DIR bit 3), open-drain SDA in the I2C images (UIO_OD bit 3), and SWDIO in the SWD images -- push-pull while the probe drives it (UIO_DIR bit 3), released for the target's response phases (added by #452): several electrical roles on one pad, legal only because DR 0012 sets the pin mode at run time per image and one image is loaded per run. No role exists while another profile runs."
     },
@@ -946,11 +1119,17 @@ inventory is a hard failure.
         "i2c_result": "unused",
         "ws2812": "unused",
         "ps2": "unused",
+        "dali": "unused",
+        "dali_result": "unused",
+        "onewire": "unused",
+        "onewire_result": "unused",
         "dmx512": "unused",
+        "i2s": "unused",
         "nec_ir_tx": "unused",
         "nec_ir_rx": "unused",
         "swd": "unused",
-        "can": "unused"
+        "can": "unused",
+        "modbus": "unused"
       },
       "shared_pin_rationale": ""
     },
@@ -971,11 +1150,17 @@ inventory is a hard failure.
         "i2c_result": "unused",
         "ws2812": "unused",
         "ps2": "unused",
+        "dali": "unused",
+        "dali_result": "unused",
+        "onewire": "unused",
+        "onewire_result": "unused",
         "dmx512": "unused",
+        "i2s": "unused",
         "nec_ir_tx": "unused",
         "nec_ir_rx": "unused",
         "swd": "unused",
-        "can": "unused"
+        "can": "unused",
+        "modbus": "unused"
       },
       "shared_pin_rationale": ""
     },
@@ -996,11 +1181,17 @@ inventory is a hard failure.
         "i2c_result": "unused",
         "ws2812": "unused",
         "ps2": "unused",
+        "dali": "unused",
+        "dali_result": "unused",
+        "onewire": "unused",
+        "onewire_result": "unused",
         "dmx512": "unused",
+        "i2s": "unused",
         "nec_ir_tx": "unused",
         "nec_ir_rx": "unused",
         "swd": "unused",
-        "can": "unused"
+        "can": "unused",
+        "modbus": "unused"
       },
       "shared_pin_rationale": ""
     },
@@ -1021,11 +1212,17 @@ inventory is a hard failure.
         "i2c_result": "unused",
         "ws2812": "unused",
         "ps2": "unused",
+        "dali": "unused",
+        "dali_result": "unused",
+        "onewire": "unused",
+        "onewire_result": "unused",
         "dmx512": "unused",
+        "i2s": "unused",
         "nec_ir_tx": "unused",
         "nec_ir_rx": "unused",
         "swd": "unused",
-        "can": "unused"
+        "can": "unused",
+        "modbus": "unused"
       },
       "shared_pin_rationale": ""
     }
@@ -1221,6 +1418,14 @@ inventory is a hard failure.
       ]
     },
     {
+      "file": "firmware/asm/dali_master.asm",
+      "profile": "dali",
+      "patterns": [
+        "asm_ports",
+        "dali_levels"
+      ]
+    },
+    {
       "file": "firmware/asm/ps2_device.asm",
       "profile": "ps2",
       "patterns": [
@@ -1282,10 +1487,48 @@ inventory is a hard failure.
       ]
     },
     {
+      "file": "verification/test_firmware_dali.py",
+      "profile": "bench_dali",
+      "patterns": [
+        "bench_dali"
+      ]
+    },
+    {
+      "file": "firmware/asm/i2s_tx.asm",
+      "profile": "i2s",
+      "patterns": [
+        "asm_ports",
+        "i2s_images"
+      ]
+    },
+    {
+      "file": "verification/test_firmware_i2s.py",
+      "profile": "bench_i2s",
+      "patterns": [
+        "bench_i2s"
+      ]
+    },
+    {
       "file": "verification/test_firmware_ps2.py",
       "profile": "bench_ps2",
       "patterns": [
         "bench_ps2"
+      ]
+    },
+    {
+      "file": "firmware/asm/onewire_master.asm",
+      "profile": "onewire",
+      "patterns": [
+        "asm_ports",
+        "onewire_images",
+        "onewire_in_mask"
+      ]
+    },
+    {
+      "file": "verification/test_firmware_onewire.py",
+      "profile": "bench_onewire",
+      "patterns": [
+        "bench_onewire"
       ]
     },
     {
@@ -1302,6 +1545,21 @@ inventory is a hard failure.
       "profile": "bench_swd",
       "patterns": [
         "bench_swd"
+      ]
+    },
+    {
+      "file": "firmware/asm/modbus_rtu.asm",
+      "profile": "modbus",
+      "patterns": [
+        "asm_ports",
+        "modbus_images"
+      ]
+    },
+    {
+      "file": "verification/test_firmware_modbus.py",
+      "profile": "bench_modbus",
+      "patterns": [
+        "bench_modbus"
       ]
     },
     {
@@ -1400,11 +1658,14 @@ inventory is a hard failure.
 | `i2c_poll_mask` | the `LDI R3, imm` before each `pollN: IN` equals the SCL mask |
 | `gen_strings` | the instruction string literals of `firmware/tools/gen_i2c_sr.py`, parsed with `ast` and the same line grammar as assembly |
 | `ws2812_din` | first `LDI R2, imm` in `ws2812.asm` (the DIN pin image, which is also the bit-7 mask) equals the `ws2812` DIN pin's mask; an `AND Rx, R2` bit-isolation site exists; `R2` is never reloaded; every `OUT UO_OUT` is from `R1` or `R2` (added by #141) |
+| `i2s_images` | in `i2s_tx.asm`: every `OUT UO_OUT` is from `R1` (the pin image); every `LDI` immediately feeding `AND`/`OR`/`XOR` is one of the `i2s` profile's SD, BCLK or WS masks (or the table-base constant that is ORed into `PM_ADDR` and written straight back with `WCTL PM_ADDR`); every `LDI R1, imm` is 0, the WS mask or the SD mask (or the table base written to `PM_ADDR`); all three masks are used and an `AND Rx, R0` SD-isolation site exists (added by #451) |
 | `ps2_images` | in `ps2_device.asm`: every `LDI R3, imm` that feeds `OUT UIO_OUT, R3` is the released image `CLK | DATA`; every `LDI R3, imm` that feeds `OR R3, R1` is the `CLK` mask; no `LDI R1, imm` sets the `CLK` bit, and `LDI R1` at `tx_stop` is the `DATA` mask; every run of `ADD Rx, Rx` is as long as the `DATA` bit number (it moves a bit into place); `WCTL UIO_OD` writes the `ps2` profile's `pin_modes` value (added by #235) |
 | `ps2_shifts` | each `IN Rx, UIO_IN` in `ps2_device.asm` is followed by one of three shift recipes, whose counts the checker derives from the table: the bus state (`DATA << 1 | CLK`, which needs `CLK` one bit below `DATA`), the `CLK` bit alone, or the `DATA` bit moved to bit 7 (added by #235) |
 | `swd_images` | in `swd_probe.asm`: the preloaded image registers hold the SWDIO-high pair (R0 = SWDIO, R1 = SWCLK\|SWDIO), every `LDI` immediately feeding `OUT UIO_OUT` is one of the four SWCLK x SWDIO images, every `OUT UIO_OUT` reads R0/R1 (the preloaded pair) or R3 (a per-bit image), every `WCTL UIO_DIR` value is SWCLK alone (SWDIO released) or SWCLK\|SWDIO (both driven), and `WCTL UIO_OD` never appears (added by #452) |
 | `swd_sample` | each `IN Rx, UIO_IN` in `swd_probe.asm` is followed by `AND Rx, R0`, the SWDIO-mask register that isolates the sampled bit (added by #452) |
-| `bench_*` | the named module-level constants and capture specs of each bench (`TX_PIN/TX_BIT`, `CS_BIT…`, `MISO_PIN/MISO_BIT`, `SCL_PIN/SDA_PIN`, `DIN_PIN/DIN_BIT` (#141), `CLK_BIT/DATA_BIT` (#235), `SWCLK_BIT/SWDIO_BIT` (#452); since issue #136 also `LINE_PIN`, `CAPTURE_SPECS`, the `i2c_board(dut, scl=SCL_BIT, sda=SDA_BIT)` wiring of the pad model, and every `pads.*` call naming a pad as `SCL_BIT`/`SDA_BIT`, in place of the removed `_RELEASED`, `_ACK_PULL`, `(sda_drive << N)` and `per_scl`/`per_sda`; since issue #155 the SPI bench's `CAPTURE_SPECS` port and bit for CS/SCLK/MOSI, `LINE_PIN`, the `spi_board(dut, cs=CS_BIT, sclk=SCLK_BIT, mosi=MOSI_BIT, miso=MISO_BIT)` wiring and its `pads.*` calls by named bit), and `load_program`'s `ui_in` assignments |
+| `modbus_images` | in `modbus_rtu.asm`: the first `LDI R1, imm` is the `RX` bit mask, each `IN Rx, UI_IN` sample has its `AND Rx, Ry` mask from the nearest `LDI Ry`, and every `OUT UO_OUT, Rx` is a recognised image -- a constant (`LDI`: the idle `TX`, driver-enable `DE`, or stop `TX\|DE` image) or the isolated-TX-bit OR of a driver image -- whose values use only the TX and DE bits (added by #446) |
+| `bench_modbus` | the Modbus bench's `RX_BIT` and `TX_BIT, DE_BIT` constants name the table's `modbus` pins (added by #446) |
+| `bench_*` | the named module-level constants and capture specs of each bench (`TX_PIN/TX_BIT`, `CS_BIT…`, `MISO_PIN/MISO_BIT`, `SCL_PIN/SDA_PIN`, `DIN_PIN/DIN_BIT` (#141), `CLK_BIT/DATA_BIT` (#235), `SWCLK_BIT/SWDIO_BIT` (#452), `BCLK_PIN/BCLK_BIT`, `WS_PIN/WS_BIT`, `SD_PIN/SD_BIT` (#451); since issue #136 also `LINE_PIN`, `CAPTURE_SPECS`, the `i2c_board(dut, scl=SCL_BIT, sda=SDA_BIT)` wiring of the pad model, and every `pads.*` call naming a pad as `SCL_BIT`/`SDA_BIT`, in place of the removed `_RELEASED`, `_ACK_PULL`, `(sda_drive << N)` and `per_scl`/`per_sda`; since issue #155 the SPI bench's `CAPTURE_SPECS` port and bit for CS/SCLK/MOSI, `LINE_PIN`, the `spi_board(dut, cs=CS_BIT, sclk=SCLK_BIT, mosi=MOSI_BIT, miso=MISO_BIT)` wiring and its `pads.*` calls by named bit), and `load_program`'s `ui_in` assignments |
 | `top_load_wiring` / `top_uio_oe` / `top_port_passthrough` | `.mode_pin(ui_in[n])`, `.serial_in(ui_in[n])`, `assign uio_oe = …;`, whole-bus `.port_*` connections |
 | `core_uio_out_reset` | the `port_uio_out <= 8'hXX;` reset literal |
 | `isa_port_table` | `firmware/tools/asm.py` port codes 00/01/10/11 |
@@ -1544,6 +1805,24 @@ checker's `ps2_shifts` pattern holds each read's bit-isolation shifts to the
 table; as with the other profiles, the bench grades what the program does on
 the pads.
 
+### 1-Wire master, multi-protocol extra credit (added by #447)
+
+`onewire_master.asm` is the 1-Wire entry of the multi-protocol extra-credit
+catalog (#443). It is a 1-Wire **bus master** for one DS18B20: a single
+open-drain DQ line on `uio[3]` (the I2C Pmod's SDA position, the row that
+carries pull-ups), with the external 4.7 kΩ pull-up the `firmware/README.md`
+wiring table names. The table records that as the `onewire` phase (`DQ`, a
+driven open-drain role) plus the `onewire_result` phase (`RESULT[n]` on all
+of `uo_out`, the received-byte publication convention the I2C/SPI programs
+use), and as an `onewire` entry in `pin_modes` (`UIO_DIR` 0x00, `UIO_OD`
+0x08). `uio[3]`'s existing `shared_pin_rationale` covers 1-Wire the same way
+it covers the other profiles: one row, one protocol, one image, DR 0012 sets
+the mode. The `onewire_images` pattern holds every pin image the program
+writes to 0 or the DQ mask, `onewire_in_mask` holds each DQ sample's mask to
+the DQ bit, and the bench's `DQ_BIT` and pad-model calls are checked by the
+`bench_onewire` profile. The bus itself -- every reset, presence and slot
+timing -- is graded by the independent DS18B20 model
+(`verification/reference_models/onewire.py`), not by these patterns.
 ### DMX512 transmitter, multi-protocol extra credit (added by #445)
 
 `dmx512_tx.asm` is the DMX512 (USITT DMX512-A) universe transmitter (issue
@@ -1613,8 +1892,9 @@ register is the only spare 8-bit state on a 4-register ISA, the trick
 DR 0013's boot loader also uses). The image writes neither `UIO_OD` nor
 `UIO_OUT`, so `uio_od = 0`, `uio_out = 0` and `uio_oe = uio_dir`: every
 set `UIO_DIR` bit drives that `uio` pad low -- `uio[0..2]` through every
-transmitted frame (0x05..0x01), and any pad for about two cycles while
-the CRC byte is parked there. Those pads carry the SPI / I2C / SWD roles
+transmitted frame (0x05..0x01), and any pad for about 480 cycles (~1.2 bit
+times, `firmware/build/can_2a.cycles.txt` addresses 0xC7-0xD2) while the
+non-zero CRC byte of a CRC-error frame is parked there (0x00 on a valid frame). Those pads carry the SPI / I2C / SWD roles
 and the QSPI Pmod header, so nothing may be connected to the `uio` pads
 while this image runs. The `pin_modes` schema holds one `uio_dir` value
 per profile and cannot express a varying one, so `can` has no
@@ -1624,6 +1904,42 @@ are checked by the `bench_can` profile, the pin images (every `OUT
 UO_OUT` reads R1, the `RCTL LINE_OUT` pair register, or R3, the recessive
 constant) by `can_images`, and each sample's bit isolation by
 `can_sample`.
+
+### Modbus RTU server, multi-protocol extra credit (added by #446)
+
+`modbus_rtu.asm` is the Modbus RTU **server** program (issue #446): all
+three line-side signals go through an external RS-485 transceiver, so the
+pads carry the transceiver's digital sides -- `RX` is `ui_in[1]` (sampled,
+idle high; the uart_rx profile's pad), `TX` is `uo_out[0]` (idle high on
+the line while DE is low; the uart_tx and dmx512 profiles' pad) and `DE`
+is `uo_out[1]`, the driver-enable wired to the transceiver's DE and /RE
+together: high while this server transmits its response, low while it
+listens. The table records the `modbus` phase with those three roles; all
+three are push-pull or input roles on pads that already play those parts
+in other images, and the image never writes `UIO_DIR` or `UIO_OD` (no
+`pin_modes` entry: every `uio` pin stays an input). The bench's
+`RX_BIT` and `TX_BIT, DE_BIT` constants are checked by the `bench_modbus`
+profile, the RX mask's `LDI` and each sample's `IN`/`AND` site plus the
+role-clean `uo_out` images (idle, driver-enable, stop, or the isolated TX
+bit OR a driver image) by `modbus_images`.
+
+### I2S transmitter, multi-protocol extra credit (added by #451)
+
+*Amendment note, 2026-11-23 (the record's Status is unchanged).*
+`i2s_tx.asm` is an I2S (Philips) controller that streams 16-bit stereo
+samples to a DAC (issue #451, catalog #443). It drives three signals on
+dedicated outputs and reads nothing: `SD` on `uo_out[7]` (the same pad as
+the WS2812 profile's DIN and the NEC profile's IR_TX), `WS` on `uo_out[5]`
+and `BCLK` on `uo_out[6]`, all push-pull, each unused in every other phase
+but the `RESULT[n]` readout phases that already cover all of `uo_out`. The
+table records that as the `i2s` phase (`BCLK`, `WS`, `SD`, driven roles),
+checked by the `i2s` profile and the `i2s_images` pattern, and the bench's
+`BCLK_PIN/BCLK_BIT`, `WS_PIN/WS_BIT`, `SD_PIN/SD_BIT` by the `bench_i2s`
+profile. The program writes no pin-mode register (every pin is a dedicated
+output), so like the UART, WS2812, DMX512 and NEC images it has **no**
+`pin_modes` entry. The three pins are the upper three `uo_out` bits so that
+SD, which is isolated from the shifted byte by one `AND` with 0x80, needs no
+move into place; WS and BCLK are single-bit ORs.
 
 ## Checker behaviour
 
@@ -1647,8 +1963,9 @@ constant) by `can_images`, and each sample's bit isolation by
    and unmet prerequisites. On the committed tree it lists nothing. The top
    level is DR 0012's pin-mode rule (#135), so an open-drain role is wired by
    the firmware image that uses it: each I2C image releases the lines and
-   then sets `UIO_OD`, and since #155 each SPI image writes its idle image
-   and then sets `UIO_DIR`. The UART receive programs' bench-debug writes to
+   then sets `UIO_OD`, since #155 each SPI image writes its idle image
+   and then sets `UIO_DIR`, and the PS/2 and 1-Wire images release DQ and
+   set `UIO_OD` (#447). The UART receive programs' bench-debug writes to
    `UIO_OUT` are not listed, because those programs write no pin-mode
    register (see "UART receive" above). They would be listed if one did.
 
@@ -1727,3 +2044,12 @@ direction the target plan needs), [DR 0013](0013-program-loading.md) (boot
 UART on option B), issues #94 (this), #133 (target pin plan), #155 (the pin
 moves), #135 (DR 0012 RTL), #75 (open-drain), #23 (firmware epic), #104 (I2C on the
 real core; physical pad wiring explicitly out of scope there).
+
+## Update of 2026-11-19 — DALI control device (#449)
+
+The DALI image uses the upper bidirectional Pmod row. It preloads the idle
+high level on `uio[0]` (TX) before enabling its push-pull driver. The isolated
+interface returns the bus level on `uio[1]` (RX). The other six pins are
+inputs. A valid backward frame publishes its byte on `uo_out[7:0]`.
+The `dali_levels` inventory pattern checks the TX levels and RX bit extraction.
+The `bench_dali` pattern checks the bench's TX and RX assignments.

@@ -12,6 +12,7 @@ Usage: python3 verification/test_remint_records.py
 
 from __future__ import annotations
 
+import datetime as datetime_mod
 import os
 import shutil
 import subprocess
@@ -413,12 +414,12 @@ def collapse_boundary_cases(failures: list) -> None:
             )
         return edit
 
-    def second_para(field, value, verdict):
+    def second_para(field, value, verdict, paragraph="  {verdict} second paragraph"):
         def edit(rid, text):
-            v = verdict[rid]
+            tail = paragraph.format(verdict=verdict[rid])
             return text.replace(
                 f"- **{field}**: {value}",
-                f"- **{field}**: Item 9 status\n\n  {v} second paragraph")
+                f"- **{field}**: Item 9 status\n\n{tail}")
         return edit
 
     claim = "`docs/baseline.md#the-measurement` -- fixture claim"
@@ -455,6 +456,21 @@ def collapse_boundary_cases(failures: list) -> None:
                 check(f"draft fails lint on Result and Run configuration ({label})",
                       r.returncode == 1 and "`Result`" in r.stdout
                       and "`Run configuration`" in r.stdout, r.stdout, failures)
+
+    for label, field, value, verdicts, paragraph in (
+        ("flush-left prose", "Result", result, differ, "{verdict} second paragraph"),
+        ("blockquote", "Result", result, differ, "> {verdict}"),
+        ("fenced code", "Result", result, differ, "```\n{verdict}\n```"),
+        ("matching prose", "Run configuration", "fixture run, no real simulator invoked",
+         same, "{verdict} second paragraph"),
+    ):
+        with tempfile.TemporaryDirectory(prefix="remint-collapse-") as d:
+            repo = build_collapsible(Path(d))
+            commit_leaves(repo, second_para(field, value, verdicts, paragraph))
+            code, out = tool(repo, "--collapse", "signoff-baseline")
+            check(f"--collapse refuses {label} after a blank line in {field}",
+                  code == 1 and f"`{field}`" in out and "ambiguous" in out
+                  and baseline_records(repo) == LEAF_IDS, out, failures)
 
     with tempfile.TemporaryDirectory(prefix="remint-collapse-") as d:
         repo = build_collapsible(Path(d))
@@ -606,6 +622,152 @@ def results_xml_cases(failures: list) -> None:
                   and not list(art.glob("results_*.xml")), out, failures)
 
 
+def rerun_links_cases(failures: list) -> None:
+    """A `--rerun` mint retargets the copied Links block's artifact
+    references at the successor's own `artifacts/<new-id>/` directory; the
+    predecessor stays cited only in the "Re-mint of" note (#588)."""
+    with tempfile.TemporaryDirectory(prefix="remint-links-") as d:
+        repo = build(Path(d))
+        links = (f"[klt result](../artifacts/{OLD_ID}/klt-functional-verification.json), "
+                 f"[test cases](../artifacts/{OLD_ID}/results_icarus.xml)")
+        inputs = [("rtl/dut.v", T._sha256_text(T.DUMMY_RTL)),
+                  (REQ, T._sha256_text('{"schema": "demo"}\n'))]
+        T.record_path(repo, "demo", OLD_ID).write_text(
+            T.make_record(OLD_ID, "demo", inputs=inputs, links=links),
+            encoding="utf-8")
+        old_art = repo / "verification/records/demo/artifacts" / OLD_ID
+        old_art.mkdir(parents=True)
+        (old_art / "klt-functional-verification.json").write_text("{}", encoding="utf-8")
+        (old_art / "results_icarus.xml").write_text("<testsuites/>", encoding="utf-8")
+        T._git(repo, "add", "-A")
+        T._git(repo, "commit", "--quiet", "-m", "record with artifact links")
+        T._git(repo, "update-ref", T.BASE_REF, "HEAD")
+        stale(repo)
+        (repo / "klt-stub").write_text(STUB_XML, encoding="utf-8")
+        code, out = tool(repo, "--rerun", "--klt", str(repo / "klt-stub"))
+        new = [r for r in records(repo) if r != OLD_ID]
+        check("--rerun mints one superseding record (links fixture)",
+              code == 0 and len(new) == 1 and "MINTED" in out, out, failures)
+        if new:
+            text = T.record_path(repo, "demo", new[0]).read_text(encoding="utf-8")
+            check("re-minted [klt result]/[test cases] point at the successor's artifacts",
+                  f"[klt result](../artifacts/{new[0]}/klt-functional-verification.json)" in text
+                  and f"[test cases](../artifacts/{new[0]}/results_icarus.xml)" in text,
+                  text, failures)
+            prose = text.split("-->", 1)[1]
+            check("the predecessor's artifact dir is cited only via the Re-mint note",
+                  f"artifacts/{OLD_ID}/" not in prose
+                  and f"Re-mint of `records/{OLD_ID}.md`" in prose, text, failures)
+            T._git(repo, "add", "-A")
+            T._git(repo, "commit", "--quiet", "-m", "remint")
+            r = lint(repo)
+            check("retargeted links resolve (re-minted tree passes the real linter)",
+                  r.returncode == 0, r.stdout + r.stderr, failures)
+
+    # Multi-id and no-artifact-reference edges, exercised on the renderer
+    # directly (the --rerun CLI never passes more than one supersedes id).
+    import remint_records as rr
+    other = "20260101-000005-abc1234"
+    new_id = "20260102-000000-abc1234"
+    meta = {"record_id": OLD_ID, "supersedes": None, "git_revision": "0" * 40,
+            "provenance": {"inputs": [{"path": "rtl/protocol_core.v",
+                                       "content_hash": "0" * 64}]}}
+    old_text = T.make_record(
+        OLD_ID, "demo", inputs=[("rtl/protocol_core.v", "0" * 64)],
+        links=(f"[klt result](../artifacts/{OLD_ID}/klt-functional-verification.json), "
+               f"[shared](../artifacts/{other}/results.xml), "
+               "[bench](../../../test_firmware_swd.py)"))
+    env = {"verification/request-demo.json":
+           {"status": "pass", "passed_count": 1, "test_count": 1}}
+    names = {"verification/request-demo.json":
+             ["klt-functional-verification.json", "results_icarus.xml"]}
+    rendered = rr.render_record(
+        old_text, meta, new_id, "0" * 40, env, names,
+        datetime_mod.datetime(2026, 1, 2, tzinfo=datetime_mod.timezone.utc),
+        ["rtl/protocol_core.v"], "9.9.9", supersede_ids=[OLD_ID, other])
+    check("multi-id retarget rewrites every superseded id's artifact refs",
+          f"[klt result](../artifacts/{new_id}/klt-functional-verification.json)" in rendered
+          and f"[shared](../artifacts/{new_id}/results.xml)" in rendered
+          and f"artifacts/{OLD_ID}/" not in rendered
+          and f"artifacts/{other}/" not in rendered, rendered, failures)
+    check("a Links line with no artifact reference is left unchanged",
+          "[bench](../../../test_firmware_swd.py)" in rendered, rendered, failures)
+
+    # Re-mint of an already-re-minted record: the predecessor's Links block
+    # carries inherited `Re-mint of` bullets naming ANCESTORS' artifact dirs.
+    # They are history and must survive byte-identical; only the record's own
+    # top-level citations retarget (#588 review).
+    anc1, anc2 = "20250101-000001-aaa1111", "20250101-000002-bbb2222"
+    inherited = [
+        f"  - Re-mint of `records/20241231-000000-ccc0000.md` (superseded, untouched); artifacts `artifacts/{anc1}/`.",
+        f"  - Re-mint of `records/{anc1}.md` (superseded, untouched); artifacts `artifacts/{anc2}/`.",
+        f"  - Re-mint of `records/{anc2}.md` (superseded, untouched); artifacts `artifacts/{OLD_ID}/`.",
+    ]
+    chain_text = T.make_record(
+        OLD_ID, "demo", inputs=[("rtl/protocol_core.v", "0" * 64)],
+        links=(f"[klt result](../artifacts/{OLD_ID}/klt-functional-verification.json), "
+               f"[test cases](../artifacts/{OLD_ID}/results_icarus.xml)\n"
+               + "\n".join(inherited)))
+    chained = rr.render_record(
+        chain_text, meta, new_id, "0" * 40, env, names,
+        datetime_mod.datetime(2026, 1, 2, tzinfo=datetime_mod.timezone.utc),
+        ["rtl/protocol_core.v"], "9.9.9")
+    check("a multi-hop re-mint retargets the top-level [klt result]/[test cases]",
+          f"[klt result](../artifacts/{new_id}/klt-functional-verification.json)" in chained
+          and f"[test cases](../artifacts/{new_id}/results_icarus.xml)" in chained,
+          chained, failures)
+    check("inherited Re-mint lineage bullets are byte-identical after the mint",
+          all(b in chained.split("\n") for b in inherited), chained, failures)
+    check("the new Re-mint note is appended after the inherited bullets",
+          chained.index(inherited[-1])
+          < chained.index(f"  - Re-mint of `records/{OLD_ID}.md`"), chained, failures)
+
+
+def grand_predecessor_cases(failures: list) -> None:
+    """#596: a predecessor whose H1 names a grand-predecessor (it was itself
+    a re-mint whose heading was never rewritten) still gets its H1 rewritten
+    to the new Record ID."""
+    grand = "20260101-000001-aaaaaaa"
+    with tempfile.TemporaryDirectory(prefix="remint-selftest-") as d:
+        repo = build(Path(d))
+        old = T.record_path(repo, "demo", OLD_ID)
+        text = old.read_text(encoding="utf-8")
+        check("fixture predecessor H1 names its own id",
+              f"\n# Record {OLD_ID}\n" in text, text, failures)
+        old.write_text(text.replace(f"\n# Record {OLD_ID}\n",
+                                    f"\n# Record {grand}\n"), encoding="utf-8")
+        T._git(repo, "add", "-A")
+        T._git(repo, "commit", "--quiet", "-m", "grand-predecessor H1")
+        T._git(repo, "update-ref", T.BASE_REF, "HEAD")
+        stale(repo)
+        code, out = tool(repo, "--rerun", "--klt", str(repo / "klt-stub"))
+        new = [r for r in records(repo) if r != OLD_ID]
+        check("grand-predecessor H1: re-mint succeeds", code == 0 and len(new) == 1,
+              out, failures)
+        if new:
+            prose = T.record_path(repo, "demo", new[0]).read_text(
+                encoding="utf-8").split("-->", 1)[1]
+            check("grand-predecessor H1 is rewritten to the new Record ID",
+                  f"\n# Record {new[0]}\n" in prose and f"# Record {grand}" not in prose,
+                  prose, failures)
+            check("grand-predecessor: Supersedes still names the predecessor",
+                  f"- **Supersedes**: `{OLD_ID}`" in prose, prose, failures)
+
+    with tempfile.TemporaryDirectory(prefix="remint-collapse-") as d:
+        repo = build_collapsible(Path(d))
+        commit_leaves(repo, lambda rid, text: text.replace(
+            f"\n# Record {rid}\n", f"\n# Record {grand}\n"))
+        code, out = tool(repo, "--collapse", "signoff-baseline")
+        new = [rid for rid in baseline_records(repo) if rid not in LEAF_IDS]
+        check("grand-predecessor H1: collapse succeeds", code == 0 and len(new) == 1,
+              out, failures)
+        if new:
+            text = T.record_path(repo, "signoff-baseline", new[0]).read_text(encoding="utf-8")
+            check("collapse rewrites a grand-predecessor H1 to the new Record ID",
+                  f"\n# Record {new[0]}\n" in text and f"# Record {grand}" not in text,
+                  text, failures)
+
+
 def main() -> int:
     failures: list = []
     with tempfile.TemporaryDirectory(prefix="remint-selftest-") as d:
@@ -641,6 +803,14 @@ def main() -> int:
               len(new) == 1 and "MINTED" in out, out, failures)
         if new:
             text = T.record_path(repo, "demo", new[0]).read_text(encoding="utf-8")
+            prose = text.split("-->", 1)[1]
+            check("re-minted record's H1 equals its Record ID",
+                  f"\n# Record {new[0]}\n" in prose
+                  and f"- **Record ID**: {new[0]}" in prose
+                  and f"# Record {OLD_ID}" not in prose, text, failures)
+            check("Supersedes and Links still name the predecessor",
+                  f"- **Supersedes**: `{OLD_ID}`" in text
+                  and f"records/{OLD_ID}.md" in text, text, failures)
             check("new record supersedes old, rehashed, artifacts written",
                   f'"supersedes": "{OLD_ID}"' in text and T._sha256_text(NEW_RTL) in text
                   and (repo / "verification/records/demo/artifacts" / new[0]
@@ -758,6 +928,8 @@ def main() -> int:
     collapse_boundary_cases(failures)
     collapse_successor_cases(failures)
     results_xml_cases(failures)
+    rerun_links_cases(failures)
+    grand_predecessor_cases(failures)
 
     print()
     if failures:

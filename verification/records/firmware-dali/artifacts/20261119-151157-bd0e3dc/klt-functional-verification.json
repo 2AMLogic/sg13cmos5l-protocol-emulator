@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "engine": "icarus",
+  "hdl_toplevel": "tt_um_2amlogic_protocol_emulator",
+  "testbench": "test_firmware_dali",
+  "status": "pass",
+  "test_count": 2,
+  "passed_count": 2,
+  "failed_count": 0,
+  "skipped_count": 0,
+  "tests": [
+    {
+      "name": "transactions",
+      "status": "passed",
+      "sim_time_ns": 298209980.0,
+      "real_time_s": 56.782
+    },
+    {
+      "name": "half_bit_mutant",
+      "status": "passed",
+      "sim_time_ns": 332400.0,
+      "real_time_s": 0.111
+    }
+  ],
+  "coverage": null,
+  "trace": null,
+  "environment": {
+    "engine": "icarus",
+    "engine_version": "13.0",
+    "cocotb_version": "2.1.0",
+    "results_xml": "/workspace/work/2amlogic-sg13cmos5l-protocol-emulator-3308d5e5/.loom/worktrees/2amlogic-sg13cmos5l-protocol-emulator-3308d5e5/issue-449/.loom-local/evidence/results_icarus.xml",
+    "test_log": "/workspace/work/2amlogic-sg13cmos5l-protocol-emulator-3308d5e5/.loom/worktrees/2amlogic-sg13cmos5l-protocol-emulator-3308d5e5/issue-449/.loom-local/evidence/test_icarus.log",
+    "build_log": "/workspace/work/2amlogic-sg13cmos5l-protocol-emulator-3308d5e5/.loom/worktrees/2amlogic-sg13cmos5l-protocol-emulator-3308d5e5/issue-449/.loom-local/evidence/build_icarus.log",
+    "random_seed": 1,
+    "source_defines": {},
+    "initial_state": null,
+    "sdf": null
+  }
+}
