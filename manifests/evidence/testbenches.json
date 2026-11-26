@@ -528,14 +528,14 @@
         "role": "testbench",
         "path": "verification/sdf_protocol_uart_tx.py",
         "passed": true,
-        "content_hash": "sha256:0395ca5fb77539659afb304c78925d98d7c1c58c76b8cdbcbf62835e3851ca98"
+        "content_hash": "sha256:1f4224a38c1f976878f50f40b83c6cc853700db31ddb91b6c8c50e18b0aa5e1c"
       },
       {
         "check": "present",
         "role": "testbench",
         "path": "verification/sdf_tx_edges.py",
         "passed": true,
-        "content_hash": "sha256:7251d3fde80db982bf53cfd23022db98e3228564d01cf0076b9d8bd27d504dbc"
+        "content_hash": "sha256:4a180ee31f14b8a3733767d415e4ec93320095c26ab316620415c6910abecb37"
       },
       {
         "check": "present",
@@ -724,7 +724,7 @@
         "role": "testbench",
         "path": "verification/test_sdf_uart_replay.py",
         "passed": true,
-        "content_hash": "sha256:41aca400e81bedc922c122eb71430adc9188ad08eb66a737167caf1b9d0d241a"
+        "content_hash": "sha256:3c57341bff77eefad9ca4f9fbc471cc9a19e71d10eb647a3b5cbad2c3d73e7fc"
       },
       {
         "check": "present",

@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "statement": "spec/statistical-claims-na.md",
-  "statement_content_hash": "sha256:f33772c92839ffcac11940d8cf362b25ac26007ad14768d25b8a38a87c6e4178",
+  "statement_content_hash": "sha256:f648dcce0c7e695f6744ee934da8893ed2712ef8c62ad7e4b1dc846df1330b57",
   "spec_markdown": "spec/target-spec.md",
-  "spec_markdown_content_hash": "sha256:ef889a9a411abad039aade3b510fdca419298dd375bda806a12b06454c471c64",
+  "spec_markdown_content_hash": "sha256:72ececa0b7103f3dfa00310d3950b982d01bfe7c7e3f6d70b4af644f7488bf35",
   "note": "Machine-bound half of the T1 item 6 not_applicable claim (issue #348): one row per ratified spec row with the reason its row class is not statistical. The grader reads this JSON, not the markdown; statement_content_hash and spec_markdown_content_hash freeze the two markdowns, and scripts/check_statistical_claims_na.py fails if either embed drifts. Rows 13 and 14 are unratified (Proposed 2026-10-09, not in DR 0004's register) and sit under not_covered, not rows: the grader requires rows to match the ratified spec companion exactly. When they ratify, move them into rows and re-mint.",
   "rows": [
     {
@@ -54,7 +54,7 @@
     {
       "id": "10",
       "class": "deterministic-frame-timing",
-      "reason": "For each fixed SDF corner and firmware image, the bench measures the time between the start edge and last transition at the TX pin. The 2 % bound uses one programmed bit period as its denominator. Routed rise and fall delays can differ by picoseconds even when the program waits a whole number of cycles. The three corners and two payloads per image are directed cases. RX rate offsets are also fixed stimuli. These checks make no claim about the distribution of clock jitter or part-to-part variation."
+      "reason": "For each fixed SDF corner and firmware image, the bench measures the time between the start edge and last transition at the TX pin. The 2 % bound uses one programmed bit period as its denominator. The signed residual depends on the SDF path delays and the 10 ps precision of the frozen cell models. The three corners and two payloads per image are directed cases. RX rate offsets are also fixed stimuli. These checks make no claim about the distribution of clock jitter or part-to-part variation."
     },
     {
       "id": "11",
