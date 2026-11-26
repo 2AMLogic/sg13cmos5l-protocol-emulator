@@ -1,0 +1,96 @@
+     -.--ns INFO     gpi                                ..mbed/gpi_embed.cpp:93   in _embed_init_python              Using Python 3.13.0rc1 interpreter at <klt-env>/bin/python
+     -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:79   in gpi_print_registered_impl       VPI registered
+     0.00ns INFO     cocotb                             Running on Icarus Verilog version 13.0 (stable)
+     0.00ns INFO     cocotb                             Seeding Python random module with supplied seed 1
+     0.00ns INFO     cocotb                             Initialized cocotb v2.0.1 from <klt-env>/lib/python3.13/site-packages/cocotb
+     0.00ns INFO     cocotb.regression                  pytest not found, install it to enable better AssertionError messages
+     0.00ns INFO     cocotb                             Running tests
+     0.00ns INFO     cocotb.regression                  running test_firmware_dali.transactions (1/2)
+14240240.00ns INFO     ..tt_um_2amlogic_protocol_emulator forward 0054: 1Te [20823, 20832, 20833, 20835], 2Te [41666, 41667] cycles
+39243940.00ns INFO     ..tt_um_2amlogic_protocol_emulator forward 01a0: 1Te [20823, 20832, 20833, 20837], 2Te [41666, 41669] cycles
+39243940.00ns INFO     ..tt_um_2amlogic_protocol_emulator forward stop to next start: 541878 cycles
+83634820.00ns INFO     ..tt_um_2amlogic_protocol_emulator forward 01a0: 1Te [20823, 20832, 20833, 20837], 2Te [41666, 41669] cycles
+83634820.00ns INFO     ..tt_um_2amlogic_protocol_emulator reply 81, Te 23148, gap 22 Te: next forward 460315 cycles after stop
+123228700.00ns INFO     ..tt_um_2amlogic_protocol_emulator forward 01a0: 1Te [20823, 20832, 20833, 20837], 2Te [41666, 41669] cycles
+161292240.00ns INFO     ..tt_um_2amlogic_protocol_emulator forward 01a0: 1Te [20823, 20832, 20833, 20837], 2Te [41666, 41669] cycles
+197134400.00ns INFO     ..tt_um_2amlogic_protocol_emulator forward 01a0: 1Te [20823, 20832, 20833, 20837], 2Te [41666, 41669] cycles
+222134500.00ns INFO     ..tt_um_2amlogic_protocol_emulator forward 01a0: 1Te [20823, 20832, 20833, 20837], 2Te [41666, 41669] cycles
+222134500.00ns INFO     ..tt_um_2amlogic_protocol_emulator no reply: next start 541698 cycles after stop begins
+258758360.00ns INFO     ..tt_um_2amlogic_protocol_emulator forward 01a0: 1Te [20823, 20832, 20833, 20837], 2Te [41666, 41669] cycles
+258758360.00ns INFO     ..tt_um_2amlogic_protocol_emulator reply 54, Te 18940, gap 7 Te: next forward 477039 cycles after stop
+297517520.00ns INFO     ..tt_um_2amlogic_protocol_emulator forward 01a0: 1Te [20823, 20832, 20833, 20837], 2Te [41666, 41669] cycles
+297517520.00ns INFO     ..tt_um_2amlogic_protocol_emulator Rejected late_boundary on 81 at phase 0, RESULT held 54
+336691720.00ns INFO     ..tt_um_2amlogic_protocol_emulator forward 01a0: 1Te [20823, 20832, 20833, 20837], 2Te [41666, 41669] cycles
+336691720.00ns INFO     ..tt_um_2amlogic_protocol_emulator Rejected late_boundary on 7e at phase 0, RESULT held 54
+375449440.00ns INFO     ..tt_um_2amlogic_protocol_emulator forward 01a0: 1Te [20823, 20832, 20833, 20837], 2Te [41666, 41669] cycles
+375449440.00ns INFO     ..tt_um_2amlogic_protocol_emulator Rejected early_boundary on 81 at phase 0, RESULT held 54
+414207380.00ns INFO     ..tt_um_2amlogic_protocol_emulator forward 01a0: 1Te [20823, 20832, 20833, 20837], 2Te [41666, 41669] cycles
+414207380.00ns INFO     ..tt_um_2amlogic_protocol_emulator Rejected late_mid on 81 at phase 0, RESULT held 54
+453644760.00ns INFO     ..tt_um_2amlogic_protocol_emulator forward 01a0: 1Te [20823, 20832, 20833, 20837], 2Te [41666, 41669] cycles
+453644760.00ns INFO     ..tt_um_2amlogic_protocol_emulator reply a7, Te 20833, gap 12 Te: next forward 471902 cycles after stop
+492783620.00ns INFO     ..tt_um_2amlogic_protocol_emulator forward 01a0: 1Te [20823, 20832, 20833, 20837], 2Te [41666, 41669] cycles
+492783620.00ns INFO     ..tt_um_2amlogic_protocol_emulator Rejected short_final on 82 at phase 0, RESULT held a7
+531923980.00ns INFO     ..tt_um_2amlogic_protocol_emulator forward 01a0: 1Te [20823, 20832, 20833, 20837], 2Te [41666, 41669] cycles
+531923980.00ns INFO     ..tt_um_2amlogic_protocol_emulator Rejected short_final on 82 at phase 75, RESULT held a7
+571065840.00ns INFO     ..tt_um_2amlogic_protocol_emulator forward 01a0: 1Te [20823, 20832, 20833, 20837], 2Te [41666, 41669] cycles
+571065840.00ns INFO     ..tt_um_2amlogic_protocol_emulator Rejected short_final on 82 at phase 150, RESULT held a7
+610209200.00ns INFO     ..tt_um_2amlogic_protocol_emulator forward 01a0: 1Te [20823, 20832, 20833, 20837], 2Te [41666, 41669] cycles
+610209200.00ns INFO     ..tt_um_2amlogic_protocol_emulator Rejected short_final on 82 at phase 225, RESULT held a7
+648926100.00ns INFO     ..tt_um_2amlogic_protocol_emulator forward 01a0: 1Te [20823, 20832, 20833, 20837], 2Te [41666, 41669] cycles
+648926100.00ns INFO     ..tt_um_2amlogic_protocol_emulator Rejected short_start on 95 at phase 0, RESULT held a7
+687644500.00ns INFO     ..tt_um_2amlogic_protocol_emulator forward 01a0: 1Te [20823, 20832, 20833, 20837], 2Te [41666, 41669] cycles
+687644500.00ns INFO     ..tt_um_2amlogic_protocol_emulator Rejected short_start on 95 at phase 75, RESULT held a7
+726364400.00ns INFO     ..tt_um_2amlogic_protocol_emulator forward 01a0: 1Te [20823, 20832, 20833, 20837], 2Te [41666, 41669] cycles
+726364400.00ns INFO     ..tt_um_2amlogic_protocol_emulator Rejected short_start on 95 at phase 150, RESULT held a7
+765085800.00ns INFO     ..tt_um_2amlogic_protocol_emulator forward 01a0: 1Te [20823, 20832, 20833, 20837], 2Te [41666, 41669] cycles
+765085800.00ns INFO     ..tt_um_2amlogic_protocol_emulator Rejected short_start on 95 at phase 225, RESULT held a7
+803792580.00ns INFO     ..tt_um_2amlogic_protocol_emulator forward 01a0: 1Te [20823, 20832, 20833, 20837], 2Te [41666, 41669] cycles
+803792580.00ns INFO     ..tt_um_2amlogic_protocol_emulator reply 82, Te 18940, gap 12 Te: next forward 477018 cycles after stop
+842500860.00ns INFO     ..tt_um_2amlogic_protocol_emulator forward 01a0: 1Te [20823, 20832, 20833, 20837], 2Te [41666, 41669] cycles
+842500860.00ns INFO     ..tt_um_2amlogic_protocol_emulator reply 82, Te 18940, gap 12 Te: next forward 477018 cycles after stop
+881210640.00ns INFO     ..tt_um_2amlogic_protocol_emulator forward 01a0: 1Te [20823, 20832, 20833, 20837], 2Te [41666, 41669] cycles
+881210640.00ns INFO     ..tt_um_2amlogic_protocol_emulator reply 82, Te 18940, gap 12 Te: next forward 477018 cycles after stop
+919921920.00ns INFO     ..tt_um_2amlogic_protocol_emulator forward 01a0: 1Te [20823, 20832, 20833, 20837], 2Te [41666, 41669] cycles
+919921920.00ns INFO     ..tt_um_2amlogic_protocol_emulator reply 82, Te 18940, gap 12 Te: next forward 477018 cycles after stop
+958718540.00ns INFO     ..tt_um_2amlogic_protocol_emulator forward 01a0: 1Te [20823, 20832, 20833, 20837], 2Te [41666, 41669] cycles
+958718540.00ns INFO     ..tt_um_2amlogic_protocol_emulator reply 95, Te 18940, gap 12 Te: next forward 481360 cycles after stop
+998940280.00ns INFO     ..tt_um_2amlogic_protocol_emulator forward 01a0: 1Te [20823, 20832, 20833, 20837], 2Te [41666, 41669] cycles
+998940280.00ns INFO     ..tt_um_2amlogic_protocol_emulator reply 82, Te 23148, gap 12 Te: next forward 460190 cycles after stop
+1039163760.00ns INFO     ..tt_um_2amlogic_protocol_emulator forward 01a0: 1Te [20823, 20832, 20833, 20837], 2Te [41666, 41669] cycles
+1039163760.00ns INFO     ..tt_um_2amlogic_protocol_emulator reply 36, Te 23148, gap 12 Te: next forward 460202 cycles after stop
+1079388500.00ns INFO     ..tt_um_2amlogic_protocol_emulator forward 01a0: 1Te [20823, 20832, 20833, 20837], 2Te [41666, 41669] cycles
+1079388500.00ns INFO     ..tt_um_2amlogic_protocol_emulator reply 82, Te 23148, gap 12 Te: next forward 460190 cycles after stop
+1119614980.00ns INFO     ..tt_um_2amlogic_protocol_emulator forward 01a0: 1Te [20823, 20832, 20833, 20837], 2Te [41666, 41669] cycles
+1119614980.00ns INFO     ..tt_um_2amlogic_protocol_emulator reply 36, Te 23148, gap 12 Te: next forward 460202 cycles after stop
+1158422280.00ns INFO     ..tt_um_2amlogic_protocol_emulator forward 01a0: 1Te [20823, 20832, 20833, 20837], 2Te [41666, 41669] cycles
+1158422280.00ns INFO     ..tt_um_2amlogic_protocol_emulator Rejected long_start on 95 at phase 0, RESULT held 36
+1197231080.00ns INFO     ..tt_um_2amlogic_protocol_emulator forward 01a0: 1Te [20823, 20832, 20833, 20837], 2Te [41666, 41669] cycles
+1197231080.00ns INFO     ..tt_um_2amlogic_protocol_emulator Rejected long_start on 95 at phase 75, RESULT held 36
+1236041380.00ns INFO     ..tt_um_2amlogic_protocol_emulator forward 01a0: 1Te [20823, 20832, 20833, 20837], 2Te [41666, 41669] cycles
+1236041380.00ns INFO     ..tt_um_2amlogic_protocol_emulator Rejected long_start on 95 at phase 150, RESULT held 36
+1274853180.00ns INFO     ..tt_um_2amlogic_protocol_emulator forward 01a0: 1Te [20823, 20832, 20833, 20837], 2Te [41666, 41669] cycles
+1274853180.00ns INFO     ..tt_um_2amlogic_protocol_emulator Rejected long_start on 95 at phase 225, RESULT held 36
+1314241640.00ns INFO     ..tt_um_2amlogic_protocol_emulator forward 01a0: 1Te [20823, 20832, 20833, 20837], 2Te [41666, 41669] cycles
+1314241640.00ns INFO     ..tt_um_2amlogic_protocol_emulator reply 3c, Te 20833, gap 12 Te: next forward 469456 cycles after stop
+1353467000.00ns INFO     ..tt_um_2amlogic_protocol_emulator forward 01a0: 1Te [20823, 20832, 20833, 20837], 2Te [41666, 41669] cycles
+1353467000.00ns INFO     ..tt_um_2amlogic_protocol_emulator Rejected long_final on 4a at phase 0, RESULT held 3c
+1392693860.00ns INFO     ..tt_um_2amlogic_protocol_emulator forward 01a0: 1Te [20823, 20832, 20833, 20837], 2Te [41666, 41669] cycles
+1392693860.00ns INFO     ..tt_um_2amlogic_protocol_emulator Rejected long_final on 4a at phase 75, RESULT held 3c
+1431922220.00ns INFO     ..tt_um_2amlogic_protocol_emulator forward 01a0: 1Te [20823, 20832, 20833, 20837], 2Te [41666, 41669] cycles
+1431922220.00ns INFO     ..tt_um_2amlogic_protocol_emulator Rejected long_final on 4a at phase 150, RESULT held 3c
+1471152080.00ns INFO     ..tt_um_2amlogic_protocol_emulator forward 01a0: 1Te [20823, 20832, 20833, 20837], 2Te [41666, 41669] cycles
+1471152080.00ns INFO     ..tt_um_2amlogic_protocol_emulator Rejected long_final on 4a at phase 225, RESULT held 3c
+1510589460.00ns INFO     ..tt_um_2amlogic_protocol_emulator forward 01a0: 1Te [20823, 20832, 20833, 20837], 2Te [41666, 41669] cycles
+1510589460.00ns INFO     ..tt_um_2amlogic_protocol_emulator reply a7, Te 20833, gap 12 Te: next forward 471902 cycles after stop
+1510589460.00ns INFO     cocotb.regression                  test_firmware_dali.transactions passed
+1510589460.00ns INFO     cocotb.regression                  running test_firmware_dali.half_bit_mutant (2/2)
+1510928260.00ns INFO     ..tt_um_2amlogic_protocol_emulator Short TX half-bit rejected: Manchester interval 13232 cycles outside timing tolerance
+1510928260.00ns INFO     cocotb.regression                  test_firmware_dali.half_bit_mutant passed
+1510928260.00ns INFO     cocotb.regression                  ********************************************************************************************
+                                                            ** TEST                                STATUS  SIM TIME (ns)  REAL TIME (s)  RATIO (ns/s) **
+                                                            ********************************************************************************************
+                                                            ** test_firmware_dali.transactions      PASS   1510589460.00         414.92    3640712.19  **
+                                                            ** test_firmware_dali.half_bit_mutant   PASS      338800.00           0.15    2287972.85  **
+                                                            ********************************************************************************************
+                                                            ** TESTS=2 PASS=2 FAIL=0 SKIP=0                1510928260.00         415.07    3640203.45  **
+                                                            ********************************************************************************************

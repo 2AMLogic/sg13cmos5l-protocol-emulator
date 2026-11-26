@@ -78,9 +78,11 @@ direct_inner:
         BNZ   direct_gap
         JMP   query
 
-; One poll is 250 cycles: WAIT (244), IN, SHF, AND, branch, SUB, BNZ.
-; RX = uio[1]. Ignore unrelated pads. Require idle throughout the stops
-; and early settling period. Then accept a start low up to 22 Te after EOF.
+; The early polls take 250 cycles each: WAIT (244), IN, SHF, AND, branch, SUB,
+; BNZ. RX = uio[1]. Ignore unrelated pads. Require idle throughout the stops
+; and early settling period. Then accept a start low up to 22 Te after EOF,
+; polling every 25 cycles within a block, 28 across the outer counter rollover.
+; The transition from the early guard to the first window sample takes 29.
 arm_receiver:
         LDI   R0, 4
 early_block:
@@ -95,11 +97,11 @@ early_poll:
         BNZ   early_poll
         SUB   R0, R1
         BNZ   early_block
-        LDI   R0, 5
+        LDI   R0, 50           ; 50 x 250 x 25 = the former 5 x 250 x 250
 window_block:
         LDI   R2, 250
 window_poll:
-        WAIT  243
+        WAIT  18
         IN    R3, UIO_IN
         SHF   R3, RIGHT
         AND   R3, R1
@@ -108,7 +110,7 @@ window_poll:
         BNZ   window_poll
         SUB   R0, R1
         BNZ   window_block
-        WAIT  249              ; include the sample at the far edge of the window
+        WAIT  16               ; include the sample at the far edge of the window
         IN    R3, UIO_IN
         SHF   R3, RIGHT
         AND   R3, R1
@@ -116,10 +118,10 @@ window_poll:
 
 start_low:
         WCTL  PM_ADDR, R1      ; leading one shifts out after eight data bits
-        LDI   R2, 74           ; start detection can lag by one 250-cycle poll
-        WAIT  159              ; last guard poll lands 18,660-18,910 cycles after
-                               ; the fall: a 18,600 pulse is always caught, an
-                               ; 18,940 (minimum) one never
+        LDI   R2, 74           ; deadlines below are relative to the detecting IN
+        WAIT  159              ; last guard = detection + 18,660 cycles
+                               ; add the falling-edge detection lag: even at a
+                               ; rollover the guard precedes the 18,940 minimum
 low_guard:
         WAIT  243
         IN    R3, UIO_IN
@@ -128,8 +130,16 @@ low_guard:
         BNZ   recover
         SUB   R2, R1
         BNZ   low_guard
-        LDI   R2, 195          ; sample every 24 cycles near the rising edge
-rise_poll:
+        RCTL  R3, PM_ADDR      ; 1 after a start low, 0 after a final zero
+        LDI   R2, 181          ; guard + 28 + 180*24: detection + 23,168 (short
+                               ; window) or 23,164 (long). Add the fall-to-IN
+                               ; lag for the deadline relative to the pad edge.
+        OR    R3, R3
+        BZ    rise_poll
+        LDI   R2, 188          ; guard + 29 + 187*24 = detection + 23,177
+                               ; at a rollover this reaches 23,205 from the fall:
+                               ; a 23,148 rise is in time, a 23,250 rise is late
+rise_poll:                     ; sample every 24 cycles near the rising edge
         WAIT  17
         IN    R3, UIO_IN
         SHF   R3, RIGHT
@@ -280,9 +290,9 @@ idle_poll:
         BNZ   idle_block
         JMP   query
 
-; Final zero: the fall was seen by a 24- or 34-cycle poll, so the last guard
-; poll lands 18,816-18,859 cycles after it. A 18,600 stop-side low is always
-; caught and the 18,940 minimum never is.
+; Last guard = fall-detecting IN + 18,820 on the 24-cycle short-window path
+; or + 18,816 on the 34-cycle long-window path (four fewer decode instructions).
+; Add the polling lag to measure from the fall on the bus.
 final_low:
         WAIT  255
         WAIT  42
