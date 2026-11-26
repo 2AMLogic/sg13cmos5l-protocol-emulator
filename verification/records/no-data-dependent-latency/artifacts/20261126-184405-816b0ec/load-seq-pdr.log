@@ -1,0 +1,8 @@
+======== ABC command line "read_aiger <art>/load-seq.aig; scorr; pdr -a -T 300"
+Proved output 0 in frame 0 (trivial).
+Proved output 1 in frame 0 (trivial).
+Proved output 2 in frame 0 (trivial).
+Proved output 3 in frame 0 (trivial).
+Proved output 4 in frame 0 (trivial).
+All outputs solved or timed out in frame 1.
+Properties:  All = 5. Proved = 5. Disproved = 0. Undecided = 0.   Time =     0.01 sec

@@ -1,0 +1,49 @@
+[18:40:22 INFO] the model to be checked: <art>/core-mutant.aig
+[18:40:22 INFO] origin ts has 4872 vars, 1177 inputs, 530 latches, 0 constraints, 13315 clauses and 39609 lits in cnf
+[18:40:22 INFO] trivial simplified ts: 3111 vars, 1112 inputs, 530 latches, 0 constraints, 10495 clauses and 41500 lits in cnf
+[18:40:22 INFO] scorr: eliminates 7 latchs out of 530 in 0.34s
+[18:40:22 INFO] scorr: simplified ts: 2820 vars, 891 inputs, 522 latches, 0 constraints, 9527 clauses and 37165 lits in cnf
+[18:40:23 INFO] frts: eliminates 14 out of 2820 vars in 0.01s
+[18:40:23 INFO] frts: simplified ts: 2755 vars, 891 inputs, 522 latches, 0 constraints, 9396 clauses and 37063 lits in cnf
+[18:40:23 INFO] preprocessed ts has 2755 vars, 891 inputs, 522 latches, 0 constraints, 9396 clauses and 37063 lits in cnf
+[18:40:23 INFO] IC3 found no counterexample up to depth 0
+[18:40:23 INFO] IC3 found no counterexample up to depth 1
+[18:40:23 INFO] IC3 found no counterexample up to depth 2
+[18:40:23 INFO] IC3 found no counterexample up to depth 3
+[18:40:23 INFO] IC3 found no counterexample up to depth 4
+[18:40:23 INFO] IC3 found a counterexample at depth 7
+[18:40:23 INFO] obligations: [1, 1, 1, 1, 1, 7, 126]
+[18:40:23 INFO] frames [7]: 522 2 1 29 130 140 21
+[18:40:23 INFO] SolverStatistic {
+    num_solve: 3038,
+    avg_solve_time: 29.158µs,
+    avg_decide_var: 0.126293,
+    num_simplify_subsume: 0,
+    num_simplify_self_subsume: 0,
+}
+[18:40:23 INFO] Statistic {
+    time: 0.64s,
+    num_mic: 354,
+    avg_mic_cube_len: 4.070621,
+    avg_po_cube_len: 31.563960,
+    mic_drop: success: 145, fail: 1246, success rate: 10.42%,
+    num_down: 1391,
+    num_down_sat: 1543,
+    ctp: success: 0, fail: 60, success rate: 0.00%,
+    block: Block {
+        overall_time: 139.032743ms,
+        get_bad_time: 12 times in 21.889000µs,
+        blocked_time: 435 times in 15.013605ms,
+        get_pred_time: 44.660593ms,
+        mic_time: 106.991472ms,
+        push_time: 824.571µs,
+    },
+    propagate: Propagate {
+        overall_time: 1.222988ms,
+        push_inf_time: 1.132492ms,
+    },
+    xor_gen: success: 0, fail: 0, success rate: NaN%,
+    num_auxiliary_var: 0,
+    test: success: 0, fail: 0, success rate: NaN%,
+}
+SAT
