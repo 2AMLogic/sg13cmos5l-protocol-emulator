@@ -1319,15 +1319,22 @@ The image is **253 words** of the 256-word store (assembler:
 `python3 firmware/tools/check_firmware.py`; report
 `firmware/build/can_2a.cycles.txt`). Every path through a bit window --
 recessive or dominant, consumed or stuff slot, byte boundary or not -- is
-padded to the same 400-cycle OUT-to-OUT span; the generator derives each
-`WAIT` from the path's instruction count, and its host-side
-cycle-accurate simulation (`firmware/tools/test_gen_can_2a.py`) is its
-gate.
+padded to the same 400-cycle OUT-to-OUT span. The generator does not
+solve for that span: it emits a fixed table of `WAIT` literals sized for
+this one bit period, and the host-side cycle-accurate simulation
+(`firmware/tools/test_gen_can_2a.py`) is its gate -- it runs the
+assembled image and checks the resulting waveform against the `BIT` and
+`SP` constants.
 
-**Highest sustained rate recorded: 125 kbit/s** (400 cycles/bit, the
-issue's start rate), the benched claim. The generator's static solver
-closes the same instruction stream at 100 cycles/bit, but no 500 kbit/s
-claim is made without a bench -- it is left unclaimed, not asserted.
+**Highest sustained rate recorded: 125 kbit/s** -- a measured 400-cycle
+bit period with the sample point at offset 300 (the issue's start rate),
+which is 125 kbit/s at the nominal, unconfirmed 50 MHz. The RTL
+simulation record reports both
+(`verification/records/firmware-can/records/20261121-053414-a9c989e.md`).
+#450's 500 kbit/s (100 cycles/bit, the top of its 125–500 kbit/s range)
+is a target, not a result: this image's `WAIT` table is fixed at 400
+cycles/bit, and no faster rate is claimed without a bench -- it is left
+unclaimed, not asserted.
 
 **Status words** on `uo_out` (bit 0 is CAN_TXD and stays recessive in
 every one): `0x41` / `0x61` after the transmit (ACK seen / not), and at
