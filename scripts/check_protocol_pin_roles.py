@@ -785,8 +785,9 @@ class Checker:
 
     def prev_write(self, ins: list[dict], idx: int, reg: str):
         """(index, instr) of the nearest instruction before `idx` that writes `reg`."""
+        reg = reg.upper()
         for j in range(idx - 1, -1, -1):
-            if ins[j]["m"] in self.WRITES and ins[j]["ops"][0] == reg:
+            if ins[j]["m"] in self.WRITES and ins[j]["ops"][0].upper() == reg:
                 return j, ins[j]
         return None, None
 

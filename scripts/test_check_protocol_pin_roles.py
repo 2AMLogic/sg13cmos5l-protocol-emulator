@@ -992,6 +992,25 @@ def _(fx):
     assert concrete_sites(out) == concrete_sites(clean), out
 
 
+@case("I2C read-byte SDA sample: a lowercase XOR destination overwrites the mask")
+def _(fx):
+    fx.mutate(I2C_POLL, SDA_ISOLATE, "        XOR   r3, R3\n" + SDA_ISOLATE)
+    expect_fail(fx, "the nearest write of R3 is `XOR r3, R3`",
+                "concrete-firmware-bench", "--require-implemented")
+
+
+@case("I2C read-byte SDA sample: a lowercase AND mask operand finds the uppercase LDI")
+def _(fx):
+    fx.mutate(I2C_POLL, SDA_ISOLATE, SDA_ISOLATE.replace("R3", "r3"))
+    code, out = fx.run("--require-implemented")
+    assert code == 0, out
+    # An incorrect immediate must still reach this sample's mask comparison.
+    fx.mutate(I2C_POLL, "0x08       ; mask AND next SCL-low pins",
+              "0x04       ; mask AND next SCL-low pins")
+    expect_fail(fx, "is masked with 0x04 but the table's SDA pin mask is 0x08",
+                "concrete-firmware-bench", "--require-implemented")
+
+
 @case("I2C read-byte SDA sample: a mask register with no earlier write fails")
 def _(fx):
     early = ("        IN    R2, UIO_IN     ; sample the bus, before any mask is written\n"
