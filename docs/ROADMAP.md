@@ -28,11 +28,11 @@ limits no simulation closes (no silicon clock, no pad characterization). Work
 can move row 4 (50 MHz closes on 3 of 6 corners on LibreLane; the klt netlist
 estimate closes setup but fails hold), row 12 (stale gate-level and SDF records
 for the Fast-mode I2C images) and row 7 (klt place-and-route now measures
-8.96 tiles at 41.83% placed utilization, over the 2x2 budget at that
-utilization; the tracker keeps the row unmet).
+a placed die of 161,592 um^2 at 41.83% placed utilization, 1.23x the 2x2
+die (stage place); the tracker keeps the row unmet).
 
 **T1 checklist** (`klt signoff`, record
-`verification/records/signoff-baseline/records/20261126-042412-9d61011.md`,
+`verification/records/signoff-baseline/records/20261126-102153-793acd9.md`,
 klt 0.9.2): **5 of 11 met, 1 `not_applicable`**.
 
 | Item | Verdict | What moves it |
