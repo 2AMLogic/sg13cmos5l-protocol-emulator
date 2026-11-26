@@ -1,60 +1,26 @@
 #!/usr/bin/env bash
-# scripts/setup-env.sh — provision the local environment for verification/'s
-# klt-driven cocotb harness.
+# scripts/setup-env.sh — provision the environment for verification/'s
+# klt-driven cocotb harness, for local dev and for the ci.yml jobs that
+# invoke this script.
 #
-# Ported from 2AMLogic/sky130-modexp's scripts/setup-env.sh (this program's
-# first digital canary, per CLAUDE.md's "Harness bootstrap" section) and
-# adapted for this repo (issue #6):
-#
-#   1. Installs `klayout-tools` (`klt`) as a `uv tool`, together with
-#      pinned cocotb/cocotb-tools versions, in one shot -- at the exact
-#      commit `layout/toolchain.json`'s `klt_install` field already
-#      records for the layout/ DRC/LVS flow, not a second, independently
-#      chosen pin. This replaces the ad hoc `uv tool install --with cocotb
-#      --with cocotb-tools klayout-tools` workaround previously documented
-#      in verification/README.md.
-#   2. Resolves the `ihp-sg13cmos5l` PDK location via `klt pdk find` --
-#      this program's own shared PDK_ROOT resolver, which every downstream
-#      layout/flow tool already imports instead of re-deriving the lookup
-#      itself (see `klt pdk find --help`). sky130-modexp fetches its PDK
-#      (sky130A) via `volare`; IHP SG13 PDKs have no volare equivalent, so
-#      this script documents/reports what `klt pdk find` resolves rather
-#      than fetching a copy itself. See docs/environment.md for the full
-#      picture, including why this repo currently has more than one
-#      PDK_ROOT convention in play.
-#   3. Reports -- with an actionable message, never a Python traceback --
-#      which of `iverilog`, `yosys`, `openroad` are missing from `$PATH`.
+# Ported from 2AMLogic/sky130-modexp's scripts/setup-env.sh (CLAUDE.md's
+# "Harness bootstrap" section, issue #6) and adapted for this repo. See
+# docs/environment.md for the full rationale, the pinned-version record,
+# and how the two scripts differ.
 #
 # Exit codes:
-#   0  klt + cocotb/cocotb-tools provisioned; `klt functional-verification
-#      verification/request-protocol-emulator.json --format json` should
-#      now succeed (it needs Icarus + cocotb only, no PDK). The PDK
-#      resolution and iverilog/yosys/openroad checks are reported but
-#      non-fatal -- see their own output for what, if anything, is still
-#      missing.
+#   0  klt + cocotb/cocotb-tools provisioned; the PDK resolution and the
+#      iverilog/yosys/openroad checks are reported but non-fatal -- see
+#      their own output for what, if anything, is still missing.
 #   1  `uv` is missing, layout/toolchain.json can't be read, or the
 #      `uv tool install` for klt/cocotb/cocotb-tools failed.
-#
-# Usage:
-#   ./scripts/setup-env.sh
-#   ./scripts/setup-env.sh --help
-#
-# This is a local-dev convenience/pin tool, not a CI dependency: ci.yml
-# deliberately excludes the PDK-heavy legs (klt synthesize, klt
-# functional-verification) -- those are run locally and their results
-# recorded as append-only evidence under verification/records/. Do not wire
-# this script into ci.yml/test.yaml/gds.yaml.
-#
-# Pinned versions are recorded in docs/environment.md -- update both
-# together if you re-pin (klt's own pin lives in layout/toolchain.json;
-# this script reads it from there rather than duplicating it).
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 TOOLCHAIN_JSON="$REPO_ROOT/layout/toolchain.json"
 
 # --- pinned cocotb/cocotb-tools versions -- keep in sync with
-# docs/environment.md. klt's own pin is read live from
+# docs/environment.md. klt's own requirement is read live from
 # layout/toolchain.json (single source of truth shared with the layout/
 # DRC/LVS flow) rather than duplicated here.
 COCOTB_VERSION="2.1.0"
@@ -62,7 +28,27 @@ COCOTB_TOOLS_VERSION="0.1.0"
 # ----------------------------------------------------------------------------
 
 if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
-  sed -n '2,39p' "${BASH_SOURCE[0]}"
+  cat <<EOF
+Usage:
+  ./scripts/setup-env.sh            provision the verification/ environment
+  ./scripts/setup-env.sh --help     print this message (-h works too)
+
+What this script does:
+  1. Installs klayout-tools ('klt') as a 'uv tool' in one shot, together
+     with pinned cocotb==$COCOTB_VERSION and
+     cocotb-tools==$COCOTB_TOOLS_VERSION. The klt requirement itself is
+     read from layout/toolchain.json's klt_install field (the bare
+     'klayout-tools' requirement -- this repo pins no klt version of its
+     own; the script prints the version it installed).
+  2. Resolves the ihp-sg13cmos5l PDK location via 'klt pdk find' and
+     reports it (informational; 'klt functional-verification' needs no
+     PDK).
+  3. Checks iverilog / yosys / openroad on \$PATH and prints an
+     actionable fix for any that are missing (advisory, non-fatal).
+
+See docs/environment.md for the full rationale and the pinned-version
+record.
+EOF
   exit 0
 fi
 
@@ -79,7 +65,7 @@ if ! command -v uv >/dev/null 2>&1; then
 fi
 
 if [[ ! -f "$TOOLCHAIN_JSON" ]]; then
-  echo "ERROR: $TOOLCHAIN_JSON not found -- cannot determine the pinned klt commit." >&2
+  echo "ERROR: $TOOLCHAIN_JSON not found -- cannot read its klt_install field (the klt requirement this script installs)." >&2
   exit 1
 fi
 
