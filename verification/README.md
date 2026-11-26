@@ -765,13 +765,21 @@ isolated venv does not automatically pick up an ambient `cocotb` install --
 running the command above then fails with `cocotb is not installed`, even
 when `python3 -c "import cocotb"` works fine outside of `klt`.
 
-**Fix: run `./scripts/setup-env.sh`.** It installs `klt` together with
-pinned `cocotb`/`cocotb-tools` versions in one `uv tool install` call, at
-the exact `klt` commit `layout/toolchain.json` records (so this flow and
-the `layout/` DRC/LVS flow never drift onto different `klt` pins), and also
-reports the resolved `ihp-sg13cmos5l` `$PDK_ROOT` and whether
-`iverilog`/`yosys`/`openroad` are on `$PATH`. See `docs/environment.md` for
-the full pinned-version record and rationale. (This replaces the ad hoc
+**Fix: run `./scripts/setup-env.sh`.** It installs the same `klt`
+requirement `layout/toolchain.json`'s `klt_install` records — currently the
+bare `klayout-tools` requirement, unpinned since issue #371 — together with
+the explicitly versioned `cocotb` and `cocotb-tools` in one
+`uv tool install` call, so both cocotb packages land in `klt`'s own tool
+environment, where `klt functional-verification` imports them (that is why
+their versions are pinned and installed with `klt` rather than left to an
+ambient `python3`). The requirement being bare, two independent installs —
+this flow provisioning `klt` separately from the `layout/` DRC/LVS flow, or
+the same flow at different times — can resolve different klt versions;
+reading the one shared `klt_install` is what keeps both flows pointed at
+the same requirement. The script also reports the resolved
+`ihp-sg13cmos5l` `$PDK_ROOT` and whether `iverilog`/`yosys`/`openroad` are
+on `$PATH`. See `docs/environment.md` for the full pinned-version record
+and rationale. (This replaces the ad hoc
 `uv tool install --with cocotb --with cocotb-tools klayout-tools` workaround
 this note previously described.)
 
