@@ -1,0 +1,47 @@
+[17:47:29 INFO] the model to be checked: <art>/mut-int-exit.aig
+[17:47:29 INFO] origin ts has 6454 vars, 1468 inputs, 806 latches, 0 constraints, 17778 clauses and 53530 lits in cnf
+[17:47:29 INFO] trivial simplified ts: 4311 vars, 1359 inputs, 806 latches, 0 constraints, 14561 clauses and 56617 lits in cnf
+[17:47:29 INFO] scorr: eliminates 10 latchs out of 806 in 0.18s
+[17:47:29 INFO] scorr: simplified ts: 3597 vars, 871 inputs, 795 latches, 0 constraints, 12765 clauses and 50458 lits in cnf
+[17:47:29 INFO] frts: eliminates 23 out of 3597 vars in 0.01s
+[17:47:29 INFO] frts: simplified ts: 3497 vars, 869 inputs, 795 latches, 0 constraints, 12517 clauses and 49613 lits in cnf
+[17:47:29 INFO] preprocessed ts has 3497 vars, 869 inputs, 795 latches, 0 constraints, 12517 clauses and 49613 lits in cnf
+[17:47:29 INFO] IC3 found no counterexample up to depth 0
+[17:47:29 INFO] IC3 found no counterexample up to depth 1
+[17:47:29 INFO] IC3 found no counterexample up to depth 2
+[17:47:29 INFO] IC3 found a counterexample at depth 5
+[17:47:29 INFO] obligations: [1, 1, 1, 44, 8]
+[17:47:29 INFO] frames [5]: 795 8 45 8 1
+[17:47:29 INFO] SolverStatistic {
+    num_solve: 250,
+    avg_solve_time: 5.913µs,
+    avg_decide_var: 0.183572,
+    num_simplify_subsume: 0,
+    num_simplify_self_subsume: 0,
+}
+[17:47:29 INFO] Statistic {
+    time: 0.29s,
+    num_mic: 66,
+    avg_mic_cube_len: 1.060606,
+    avg_po_cube_len: 3.731915,
+    mic_drop: success: 0, fail: 70, success rate: 0.00%,
+    num_down: 70,
+    num_down_sat: 4,
+    ctp: success: 0, fail: 14, success rate: 0.00%,
+    block: Block {
+        overall_time: 2.226524ms,
+        get_bad_time: 16 times in 23.242000µs,
+        blocked_time: 110 times in 334.877000µs,
+        get_pred_time: 1.027116ms,
+        mic_time: 60.984µs,
+        push_time: 600.789µs,
+    },
+    propagate: Propagate {
+        overall_time: 559.559µs,
+        push_inf_time: 231.111µs,
+    },
+    xor_gen: success: 0, fail: 0, success rate: NaN%,
+    num_auxiliary_var: 0,
+    test: success: 0, fail: 0, success rate: NaN%,
+}
+SAT
