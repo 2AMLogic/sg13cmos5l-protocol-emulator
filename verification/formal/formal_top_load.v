@@ -9,9 +9,8 @@
  *
  *   1. Default (standalone loader, top `formal_top_load_seq`):
  *      Instantiates the shipped `rtl/protocol_program_memory.v` against a
- *      stub of `RM_IHPSG13_1P_256x16_c2_bm_bist` with free per-cycle `A_DOUT`
- *      and exact 8-bit load-write address (`A_ADDR == wcnt[7:0]`) plus
- *      256-word saturation (`wcnt <= 255`) assertions, paired with
+ *      stub of `RM_IHPSG13_1P_256x16_c2_bm_bist` whose otherwise unused read port
+ *      exposes the macro write strobe and full 8-bit address to
  *      `serial_load_seq_monitor` (`serial_load_latency.sv`). `mode_pin`
  *      (`ui_in[7]`) and `serial_in` (`ui_in[0]`) are completely free every
  *      cycle after the single reset cycle, covering:
@@ -190,6 +189,7 @@ module formal_top_load (
       .exec_phase   (exec_phase),
       .serial_loaded(serial_loaded),
       .fetch_rom    (fetch_rom),
+      .pm_fetch     (pm_fetch),
       .pm_we        (pm_we),
       .pm_re        (pm_re),
       .pm_addr      (pm_addr),
@@ -215,22 +215,9 @@ module RM_IHPSG13_1P_256x16_c2_bm_bist (
     input  wire [7:0]  A_BIST_ADDR,
     input  wire [15:0] A_BIST_DIN, A_BIST_BM
 );
-  (* anyseq *) wire [15:0] free_dout;
-  assign A_DOUT = free_dout;
-
-  // Exact 8-bit load write-address sequence (0, 1, ..., 255) and 256-word saturation.
-  reg [8:0] wcnt = 9'd0;
-  wire wr = A_MEN && A_WEN;
-  always @(posedge A_CLK) begin
-    if (wr) begin
-      assert (wcnt <= 9'd255);
-      assert (A_ADDR == wcnt[7:0]);
-      wcnt <= wcnt + 9'd1;
-    end
-  end
-`ifdef FORMAL
-  always @(posedge A_CLK) cover (wr && wcnt == 9'd2);
-`endif
+  // Standalone only: no core reads instructions. Return the physical write
+  // pins to the monitor through the DUT's pass-through instr_word port.
+  assign A_DOUT = {7'b0, A_MEN && A_WEN, A_ADDR};
 endmodule
 
 module formal_top_load_seq (
@@ -263,6 +250,8 @@ module formal_top_load_seq (
   );
 
   serial_load_seq_monitor mon (
+      .sram_write   (instr_word[8]),
+      .sram_addr    (instr_word[7:0]),
       .clk          (clk),
       .rst_n        (rst_n_r),
       .mode_pin     (mode_pin),

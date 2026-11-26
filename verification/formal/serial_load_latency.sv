@@ -21,8 +21,8 @@
  *          shadow's 16th-bit edges while `< 256` words have been written,
  *          which pins MSB-first bit order, 16th-bit commit timing, mid-word
  *          discard on an early `mode_pin` drop, and 256-word saturation).
- *      Together with the SRAM stub's `wcnt <= 255` and `A_ADDR == wcnt[7:0]`
- *      assertions in `formal_top_load.v`, this gives 5 safety properties.
+ *      Two more assertions compare the macro's effective write strobe on every
+ *      edge and its full address at each commit against the shadow loader.
  *
  *   2. `serial_load_latency` (integrated core + loader `formal_top_load`):
  *      adds `exec_phase == s_exec` (proving DR 0005's fixed +1-cycle
@@ -37,6 +37,8 @@
 `default_nettype none
 
 module serial_load_seq_monitor (
+    input wire        sram_write,
+    input wire [7:0]  sram_addr,
     input wire        clk,
     input wire        rst_n,
     input wire        mode_pin,
@@ -117,8 +119,12 @@ module serial_load_seq_monitor (
       assert (run_phase == s_run);
       assert (serial_loaded == s_sl);
       assert (pm_crc == s_crc);
+      serial_commit: assert (sram_write == s_load_wen);
+      if (s_load_wen)
+        assert (sram_addr == s_addr);
     end
 `ifdef FORMAL
+    cover (rst_n && sram_write && s_load_wen && sram_addr == 8'd2);
     cover (rst_n && s_load_wen && s_addr == 8'd1);
     cover (rst_n && s_load && !mode_pin && s_bit != 4'd0);
     cover (rst_n && s_sl && s_run && run_phase && serial_loaded && s_crc != 16'd0);
@@ -136,6 +142,7 @@ module serial_load_latency (
     input wire        exec_phase,
     input wire        serial_loaded,
     input wire        fetch_rom,
+    input wire        pm_fetch,
     input wire        pm_we,
     input wire        pm_re,
     input wire [7:0]  pm_addr,
@@ -160,6 +167,9 @@ module serial_load_latency (
 
   (* anyconst *) reg [2:0] obs_idx;
   reg        obs_valid;
+  // Preserve the fetch assertion for run-time stores, but tag only the
+  // second serial word for its cover. An aliased overwrite clears the tag.
+  reg        obs_second_serial;
   reg [15:0] obs_word;
 
   reg        s_started, s_load, s_run, s_exec, s_sl, s_full;
@@ -172,6 +182,9 @@ module serial_load_latency (
   wire [15:0] s_word     = {s_sreg[14:0], serial_in};
   wire        s_load_wen = s_load && mode_pin && (s_bit == 4'd15) && !s_full;
   wire        s_run_wen  = s_run && pm_we;
+
+  wire observed_fetch = s_exec && !fetch_rom && !s_prev_pm_re && !s_prev_pm_we
+                        && obs_valid && pc[2:0] == obs_idx;
 
   always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
@@ -188,6 +201,7 @@ module serial_load_latency (
       s_prev_pm_re <= 1'b0;
       s_prev_pm_we <= 1'b0;
       obs_valid    <= 1'b0;
+      obs_second_serial <= 1'b0;
       obs_word     <= 16'd0;
     end else begin
       s_exec       <= s_run;
@@ -204,9 +218,11 @@ module serial_load_latency (
       if (s_load_wen && (s_addr[2:0] == obs_idx)) begin
         obs_valid <= 1'b1;
         obs_word  <= s_word;
+        obs_second_serial <= (s_addr == 8'd1);
       end else if (s_run_wen && (pm_addr[2:0] == obs_idx)) begin
         obs_valid <= 1'b1;
         obs_word  <= pm_wdata;
+        obs_second_serial <= 1'b0;
       end
 
       if (s_load && !mode_pin)
@@ -241,14 +257,15 @@ module serial_load_latency (
       assert (exec_phase == s_exec);
       assert (serial_loaded == s_sl);
       assert (pm_crc == s_crc);
-      if (s_exec && !fetch_rom && !s_prev_pm_re && !s_prev_pm_we && obs_valid && (pc[2:0] == obs_idx)) begin
+      if (observed_fetch) begin
         assert (instr_word == obs_word);
       end
     end
 `ifdef FORMAL
     cover (rst_n && s_load_wen && s_addr == 8'd1);
     cover (rst_n && s_load && !mode_pin && s_bit != 4'd0);
-    cover (rst_n && s_exec && s_sl && !fetch_rom && obs_valid && (pc[2:0] == obs_idx) && pc == 8'd1);
+    second_serial_fetch: cover (rst_n && observed_fetch && $past(pm_fetch)
+                                && s_sl && obs_second_serial && pc == 8'd1 && instr_word == obs_word);
     cover (rst_n && s_exec && !s_sl && fetch_rom);
 `endif
   end

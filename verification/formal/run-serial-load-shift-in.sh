@@ -7,14 +7,13 @@
 # complementary models (`verification/formal/formal_top_load.v` +
 # `verification/formal/serial_load_latency.sv`):
 #
-#   [1/6] Standalone loader (`formal_top_load_seq`, 5 assertions):
-#         - Z3 BMC to depth $SEQ_BMC_DEPTH (default 60) + covers (4 monitor
-#           covers + SRAM write-count cover);
+#   [1/7] Standalone loader (`formal_top_load_seq`, 5 assertions):
+#         - Z3 BMC to depth $SEQ_BMC_DEPTH (default 60) + covers (5 monitor covers);
 #         - ABC `scorr; pdr -a` unbounded proof (5/5 proved);
 #         - `rIC3` (`multi-prop --no-parallel`) independent unbounded proof
 #           (5/5 proved; required when `REQUIRE_RIC3=1` or `RIC3` is present).
 #
-#   [2/6] Integrated loader + 8-word aliased synchronous SRAM + shipped
+#   [2/7] Integrated loader + 8-word aliased synchronous SRAM + shipped
 #         `rtl/protocol_core.v` (`-D INTEGRATED_LOAD`, `formal_top_load`):
 #         replaces `formal_top.v`'s constant-table / `free_serial_loaded`
 #         abstraction with the real shift-in path and checks BOTH the
@@ -29,13 +28,16 @@
 #           unbounded proof of all 8 `no_data_dependent_latency` assertions over
 #           the real shift-in + 8-word SRAM + core transition system.
 #
-#   [3/6]..[5/6] Three scratch-copy loader mutants (`rtl/` is never edited):
+#   [3/7]..[5/7] Three scratch-copy loader mutants (`rtl/` is never edited):
 #         - `exit`: load exit delayed while `serial_in` is high;
 #         - `bit`:  intra-word shift/bit-counter stall when `serial_in` is high
 #                   at `bit_cnt == 4'd7`;
 #         - `addr`: commit write-address stalls when `load_word == 16'hA5A5`.
 #         Every mutant must be disproved by Z3 BMC, by ABC PDR, and (when
 #         present/required) by `rIC3`; a tool crash fails the gate.
+#   [6/7] Integrated exit-stall mutant, checked with ABC and optionally rIC3.
+#   [7/7] Replay 256 complete words followed by excess bits on the standalone
+#         harness. Suppressing only the final SRAM write must fail serial_commit.
 
 set -u
 
@@ -202,7 +204,7 @@ ric3_expect_disproved () {
 }
 
 echo
-echo "== [1/6] standalone loader (formal_top_load_seq): BMC depth $SEQ_BMC_DEPTH + covers + ABC PDR + rIC3 =="
+echo "== [1/7] standalone loader (formal_top_load_seq): BMC depth $SEQ_BMC_DEPTH + covers + ABC PDR + rIC3 =="
 if elab_seq_smt2 "$ART_DIR/load-seq.smt2" rtl/protocol_program_memory.v; then
   sanitize_log "$ART_DIR/load-seq.smt2"
   if yosys-smtbmc -s z3 -t "$SEQ_BMC_DEPTH" "$ART_DIR/load-seq.smt2" >"$ART_DIR/load-seq-bmc.log" 2>&1; then
@@ -248,7 +250,7 @@ else
 fi
 
 echo
-echo "== [2/6] integrated loader + 8-word SRAM + core (formal_top_load): BMC + 14 covers + ABC PDR (13/13) + rIC3 =="
+echo "== [2/7] integrated loader + 8-word SRAM + core (formal_top_load): BMC + 14 covers + ABC PDR (13/13) + rIC3 =="
 if elab_int_smt2 "$ART_DIR/load-integrated.smt2" rtl/protocol_program_memory.v; then
   sanitize_log "$ART_DIR/load-integrated.smt2"
   if yosys-smtbmc -s z3 -t "$INT_BMC_DEPTH" "$ART_DIR/load-integrated.smt2" >"$ART_DIR/load-integrated-bmc.log" 2>&1; then
@@ -260,7 +262,7 @@ if elab_int_smt2 "$ART_DIR/load-integrated.smt2" rtl/protocol_program_memory.v; 
     tail -5 "$ART_DIR/load-integrated-bmc.log" >&2
     fail=1
   fi
-  if yosys-smtbmc -s z3 -c -t "$INT_COV_DEPTH" "$ART_DIR/load-integrated.smt2" >"$ART_DIR/load-integrated-cover.log" 2>&1; then
+  if yosys-smtbmc -s z3 -c -t "$INT_COV_DEPTH" --dump-vcd "$ART_DIR/load-integrated-cover%.vcd" "$ART_DIR/load-integrated.smt2" >"$ART_DIR/load-integrated-cover.log" 2>&1; then
     sanitize_log "$ART_DIR/load-integrated-cover.log"
     echo "integrated loader+core covers: all reachable (depth $INT_COV_DEPTH)"
   else
@@ -326,19 +328,19 @@ run_mutant () {
 }
 
 echo
-echo "== [3/6] loader mutant exit-stall (load exit delayed while serial_in is high) =="
+echo "== [3/7] loader mutant exit-stall (load exit delayed while serial_in is high) =="
 run_mutant "mutant exit-stall" exit \
   's/^        if (!mode_pin) begin$/        if (!mode_pin \&\& !serial_in) begin/' 1
 
-echo "== [4/6] loader mutant bit-stall (intra-word shift stalls at bit 7 when serial_in is high) =="
+echo "== [4/7] loader mutant bit-stall (intra-word shift stalls at bit 7 when serial_in is high) =="
 run_mutant "mutant bit-stall" bit \
   's/^            bit_cnt <= bit_cnt + 4'"'"'d1;$/            bit_cnt <= (bit_cnt == 4'"'"'d7 \&\& serial_in) ? bit_cnt : (bit_cnt + 4'"'"'d1);/' 1
 
-echo "== [5/6] loader mutant addr-stall (commit write-address stalls when load_word == 0xA5A5) =="
+echo "== [5/7] loader mutant addr-stall (commit write-address stalls when load_word == 0xA5A5) =="
 run_mutant "mutant addr-stall" addr \
   's/^                wr_addr <= wr_addr + 8'"'"'d1;$/                wr_addr <= (load_word == 16'"'"'hA5A5) ? wr_addr : (wr_addr + 8'"'"'d1);/' 1
 
-echo "== [6/6] integrated end-to-end mutant check (loader exit-stall disproved via integrated model) =="
+echo "== [6/7] integrated end-to-end mutant check (loader exit-stall disproved via integrated model) =="
 if elab_int_aig "$ART_DIR/mut-int-exit.aig" "$ART_DIR/protocol_program_memory_mut_exit.v"; then
   pdr_expect_disproved "integrated mutant exit-stall" "$ART_DIR/mut-int-exit.aig"
   if [ "$HAVE_RIC3" -eq 1 ]; then
@@ -347,6 +349,42 @@ if elab_int_aig "$ART_DIR/mut-int-exit.aig" "$ART_DIR/protocol_program_memory_mu
 else
   echo "integrated mutant exit-stall: AIGER export failed" >&2
   fail=1
+fi
+
+echo "== [7/7] last-word write at the SRAM pins =="
+# A directed trace reaches the 4096th serial bit cheaply. Constants below
+# apply only to this replay. The unbounded proofs use free loader inputs.
+replay_full_load () {
+  local mem_v="$1" log="$2"
+  yosys -Q -T -q -p "
+    read_verilog -formal -sv $mem_v verification/formal/serial_load_latency.sv verification/formal/formal_top_load.v
+    prep -top formal_top_load_seq -flatten
+    cd formal_top_load_seq
+    delete -input w:mode_pin w:serial_in
+    connect -set mode_pin 1
+    connect -set serial_in 1
+    chformal -cover -remove
+    async2sync
+    chformal -lower
+    sim -q -clock clk -n 4116 -assert
+  " >"$log" 2>&1
+}
+
+final_mut="$ART_DIR/protocol_program_memory_mut_final.v"
+sed "s/\.A_WEN      (mem_wen_pin)/.A_WEN      (mem_wen_pin \&\& !(load_active \&\& wr_addr == 8'hff \&\& serial_in))/" \
+  rtl/protocol_program_memory.v >"$final_mut"
+if [ "$(diff rtl/protocol_program_memory.v "$final_mut" | grep -c '^>')" -ne 1 ]; then
+  echo "ERROR: final-write substitution must change exactly one line" >&2
+  fail=1
+elif ! replay_full_load rtl/protocol_program_memory.v "$ART_DIR/full-load.log"; then
+  echo "Unmodified loader failed the 256-word replay" >&2
+  fail=1
+elif replay_full_load "$final_mut" "$ART_DIR/mut-final.log" ||
+     ! grep -Eq '^ERROR: Assertion formal_top_load_seq\.mon\.serial_commit .* failed\.$' "$ART_DIR/mut-final.log"; then
+  echo "Missing serial_commit failure on the final-write mutant" >&2
+  fail=1
+else
+  echo "Final-write replay: original passed through saturation; suppressed SRAM write failed serial_commit"
 fi
 
 echo

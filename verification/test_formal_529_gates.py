@@ -49,12 +49,19 @@ def make_shims(bin_dir: Path) -> None:
     write_exec(
         bin_dir / "yosys",
         """#!/usr/bin/env python3
-import re, sys
+import os, re, sys
 from pathlib import Path
 if "-V" in sys.argv or "--version" in sys.argv:
     print("Yosys 0.67+post (mock)")
     sys.exit(0)
 script = sys.argv[sys.argv.index("-p") + 1] if "-p" in sys.argv else ""
+if "sim -q -clock clk" in script and "protocol_program_memory_mut_final.v" in script:
+    mode = os.environ.get("FAKE_FINAL_WRITE", "detected")
+    if mode == "detected":
+        print("ERROR: Assertion formal_top_load_seq.mon.serial_commit (monitor) failed.")
+    elif mode == "crash":
+        print("ERROR: simulator crashed")
+    sys.exit(0 if mode == "missed" else 1)
 for m in re.finditer(r"write_smt2\\s+(?:-wires\\s+)?(\\S+)", script):
     Path(m.group(1)).write_text("; mock smt2\\n")
 for m in re.finditer(r"-ywmap\\s+(\\S+)\\s+(\\S+)", script):
@@ -269,6 +276,8 @@ class Formal529GatesTest(unittest.TestCase):
 
     def test_shift_in_rejects_mutant_crashes_and_missed_mutants(self) -> None:
         for var, val in (
+            ("FAKE_FINAL_WRITE", "missed"),
+            ("FAKE_FINAL_WRITE", "crash"),
             ("FAKE_SMTBMC_MODE", "mut_crash"),
             ("FAKE_SMTBMC_MODE", "mut_pass"),
             ("FAKE_ABC_MODE", "mut_crash"),
