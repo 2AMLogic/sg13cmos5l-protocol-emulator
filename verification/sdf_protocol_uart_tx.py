@@ -120,14 +120,26 @@ def _measure_image(stem, cycles_per_bit, clock_period_ps, tx_initial, tx_edges, 
     for t_ps, level in tx_edges:
         line.add(t_ps / 1000.0, level)
     decoder = UartDecoder(nominal_baud)
-    reports = decoder.decode(line)
-    assert [r.data for r in reports] == list(TX_PAYLOADS), (
-        f"{stem}: decoder recovered {[f'0x{r.data:02x}' for r in reports]}, "
-        f"the committed program transmits {[f'0x{p:02x}' for p in TX_PAYLOADS]}"
-    )
+    # Failures are *recorded* in the measurement doc and asserted by the test
+    # only after every image's measurement is filed, so one image's decode
+    # failure never discards another's evidence (#531).
+    failures = []
+    try:
+        reports = decoder.decode(line)
+    except UartFrameError as exc:
+        failures.append(f"original waveform decode: {exc}")
+        reports = []
+    decoded_hex = [f"0x{r.data:02x}" for r in reports]
+    if reports and decoded_hex != [f"0x{p:02x}" for p in TX_PAYLOADS]:
+        failures.append(
+            f"decoder recovered {decoded_hex}, the committed program transmits "
+            f"{[f'0x{p:02x}' for p in TX_PAYLOADS]}"
+        )
+        reports = []  # payload-keyed frame arithmetic is meaningless for other bytes
     frames = []
     for report, payload in zip(reports, TX_PAYLOADS):
-        assert report.stop_ok, f"{stem}: framing error, stop bit sampled 0"
+        if not report.stop_ok:
+            failures.append(f"0x{payload:02x}: framing error, stop bit sampled 0")
         # An over-limit frame is *recorded* (`within_bound`) and the bound is
         # asserted by the test only after every image's measurement is filed,
         # so the excursion's timestamps survive the failure (#531 test plan).
@@ -135,19 +147,21 @@ def _measure_image(stem, cycles_per_bit, clock_period_ps, tx_initial, tx_edges, 
         t_start_ps = round(report.t_start * 1000.0)
         window_ps = UART_FRAME_BITS * nominal_bit_period_ps
         edges_ps = [t for (t, _level) in tx_edges if t_start_ps <= t <= t_start_ps + window_ps]
-        assert edges_ps and edges_ps[0] == t_start_ps, (
-            f"{stem}: no TX edge list found around the model's start at {t_start_ps} ps"
-        )
+        if not (edges_ps and edges_ps[0] == t_start_ps):
+            failures.append(f"0x{payload:02x}: no TX edge list found around the model's start at {t_start_ps} ps")
+            continue
         last_edge_ps = edges_ps[-1]
         # The last edge's bit index on the nominal grid -- the model's own
         # placement (`_measure_drift`), cross-checked against the framing
         # convention's arithmetic (the bench's `expected_edge_offsets`).
         last_edge_bit_index = round((last_edge_ps - t_start_ps) / nominal_bit_period_ps)
-        assert last_edge_bit_index == bench.expected_edge_offsets(payload)[-1], (
-            f"{stem} 0x{payload:02x}: last edge at bit {last_edge_bit_index}, the 8N1 "
-            f"framing convention puts the last edge at bit "
-            f"{bench.expected_edge_offsets(payload)[-1]}"
-        )
+        if last_edge_bit_index != bench.expected_edge_offsets(payload)[-1]:
+            failures.append(
+                f"0x{payload:02x}: last edge at bit {last_edge_bit_index}, the 8N1 "
+                f"framing convention puts the last edge at bit "
+                f"{bench.expected_edge_offsets(payload)[-1]}"
+            )
+            continue
         delta_t_ps = last_edge_ps - t_start_ps
         drift_ps = delta_t_ps - last_edge_bit_index * nominal_bit_period_ps
         drift_pct = 100.0 * abs(drift_ps) / nominal_bit_period_ps
@@ -201,7 +215,9 @@ def _measure_image(stem, cycles_per_bit, clock_period_ps, tx_initial, tx_edges, 
         "nominal_bit_period_ps": nominal_bit_period_ps,
         "nominal_baud": nominal_baud,
         "pin": "uo_out[0]",
+        "tx_edges_ps": [t for (t, _level) in tx_edges],
         "frames": frames,
+        "failures": failures,
         "negative_control": control,
     }
 
@@ -261,18 +277,19 @@ async def test_uart_tx_bit_period_and_drift_in_time_units(dut):
                 await RisingEdge(dut.clk)
         finally:
             monitor.stop()
-        assert not monitor.violations, (
-            f"{stem}: {len(monitor.violations)} output transition(s) violated the pin "
-            f"contract: {monitor.violations[:3]}"
-        )
+        # The capture (violations included) is filed before anything can fail;
+        # the pin-contract violation is asserted after the report is written.
         REPORT.add_capture(run_cycles, monitor)
         # Bit-0 *changes* only: one list feeds both the decoder and the
         # published edge list, so a non-TX `uo_out` event cannot skew either.
         tx_edges = tx_level_changes(monitor.transitions, tx_initial)
         assert tx_edges, f"{stem}: no uo_out transition observed at the pins"
-        images.append(
-            _measure_image(stem, cycles_per_bit, clock_period_ps, tx_initial, tx_edges, dut._log.info)
-        )
+        image = _measure_image(stem, cycles_per_bit, clock_period_ps, tx_initial, tx_edges, dut._log.info)
+        image["pin_contract_violations"] = {
+            "count": len(monitor.violations),
+            "listed": [str(v) for v in monitor.violations[:3]],
+        }
+        images.append(image)
 
     REPORT.add_measurement("uart_tx_drift", {
         "units": {
@@ -286,6 +303,15 @@ async def test_uart_tx_bit_period_and_drift_in_time_units(dut):
         "images": images,
     })
     for image in images:
+        stem = image["image"]
+        assert not image["pin_contract_violations"]["count"], (
+            f"{stem}: {image['pin_contract_violations']['count']} output transition(s) violated "
+            f"the pin contract: {image['pin_contract_violations']['listed']}; the capture and "
+            "measurement are recorded in the protocol report"
+        )
+        assert not image["failures"], (
+            f"{stem}: {image['failures']}; the measurement is recorded in the protocol report"
+        )
         for frame in image["frames"]:
             assert frame["within_bound"], (
                 f"{image['image']} {frame['payload_hex']}: row-10 drift bound failed at "

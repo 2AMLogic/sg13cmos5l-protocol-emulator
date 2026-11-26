@@ -30,15 +30,26 @@ async def tick(*args, **kwargs):
 
 
 class UartReplayTests(unittest.TestCase):
-    def replay(self, first_image_scale, expected_failure=None, control_scale=1.025):
+    def replay(self, first_image_scale, expected_failure=None, control_scale=1.025,
+               scales=None, shift=None, violations=()):
+        """`scales`: per-image timestamp multipliers (default: first image only);
+        `shift`: (image, frame, edge, ps) moves one edge; `violations`: image
+        indices whose monitor reports a pin-contract violation."""
+        scales = scales or (first_image_scale, 1, 1)
         captures = [
-            [[round(t * first_image_scale) if i == 0 else t for t in frame] for frame in image]
+            [[round(t * scales[i]) for t in frame] for frame in image]
             for i, image in enumerate(EDGES_PS)
         ]
-        pending = iter(captures)
+        if shift:
+            i, f, e, ps = shift
+            captures[i][f][e] += ps
+        pending = iter(enumerate(captures))
 
         def replay_monitor(monitor):
-            for frame in next(pending):
+            index, image = next(pending)
+            if index in violations:
+                monitor.violations.append("uo_out rose 4950 ps after the clk edge")
+            for frame in image:
                 for i, t in enumerate(frame):
                     monitor.transitions.append({"pin": "uo_out", "t_ps": t, "value": str(i % 2)})
             return monitor
@@ -62,10 +73,14 @@ class UartReplayTests(unittest.TestCase):
             else:
                 asyncio.run(run)
             saved = json.loads(path.read_text())
+        self.saved = saved
         self.assertEqual(saved["captures"], 3)
         images = saved["measurements"]["uart_tx_drift"]["images"]
         self.assertEqual([i["image"] for i in images], ["uart_tx", "uart_tx_115200", "uart_tx_9600"])
         for image, captured in zip(images, captures):
+            self.assertEqual(image["tx_edges_ps"], [t for frame in captured for t in frame])
+            if image["failures"]:
+                continue
             self.assertEqual([f["edges_ps"] for f in image["frames"]], captured)
             self.assertEqual([f["decoded_hex"] for f in image["frames"]], ["0x5a", "0xa5"])
             self.assertTrue(all(f["stop_ok"] for f in image["frames"]))
@@ -92,6 +107,32 @@ class UartReplayTests(unittest.TestCase):
 
     def test_control_framing_error_alone_fails_after_write(self):
         self.replay(1, "stop bit sampled 0", control_scale=1.08)
+
+    def test_pin_contract_violation_keeps_capture_and_measured_frames(self):
+        # 0x5a stop-bit rise moved +24 ns: both bytes still decode, frame 1
+        # measures 2.4010%, and the monitor flags the late edge.
+        first, *remaining = self.replay(
+            1, "violated the pin contract", shift=(0, 0, 7, 24000), violations=(0,))
+        self.assertEqual(self.saved["contract_violation_count"], 1)
+        self.assertEqual(first["pin_contract_violations"]["count"], 1)
+        self.assertAlmostEqual(first["frames"][0]["drift_pct"], 2.4010)
+        self.assertFalse(first["frames"][0]["within_bound"])
+        self.assertEqual(first["failures"], [])
+        self.assert_decoded_controls(remaining)
+
+    def test_failed_decode_keeps_completed_and_later_images(self):
+        # 1.025x / 1.06x / 1.0 timestamp multipliers: image 0 measures, image 1
+        # cannot decode, image 2 must still be collected and measured.
+        first, second, third = self.replay(
+            1, "row-10 drift bound failed", scales=(1.025, 1.06, 1), control_scale=1.025)
+        self.assertAlmostEqual(first["frames"][0]["drift_pct"], 22.5010)
+        self.assertAlmostEqual(first["frames"][1]["drift_pct"], 20.0010)
+        self.assertEqual(second["frames"], [])
+        self.assertTrue(second["failures"])
+        self.assertIn("framing error at t=", second["failures"][0])
+        self.assertTrue(second["tx_edges_ps"])
+        self.assertEqual(third["failures"], [])
+        self.assertEqual([f["decoded_hex"] for f in third["frames"]], ["0x5a", "0xa5"])
 
 
 if __name__ == "__main__":
