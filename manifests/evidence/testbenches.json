@@ -108,7 +108,7 @@
         "role": "testbench",
         "path": "scripts/setup-env.sh",
         "passed": true,
-        "content_hash": "sha256:59d117fcc6dc8342c81bc69110a9b02914d977b193d687ad9d07bcc6fef757cd"
+        "content_hash": "sha256:fc3431735ae7ee171f61d524c02a0f31fa11dd500533d4c9322fa001b2be409b"
       },
       {
         "check": "present",

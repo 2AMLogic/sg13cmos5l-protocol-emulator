@@ -52,7 +52,7 @@
         "role": "hygiene",
         "path": "docs/environment.md",
         "passed": true,
-        "content_hash": "sha256:ed8ca28439cfcacc325602602f63996600d6acb0da543eb0bf61bf1a8c30b4d5"
+        "content_hash": "sha256:dec6a13a1f53bb85ac9473257a7b5a0b82b55ec3edbeae516f7521f01f01d265"
       },
       {
         "check": "present",
