@@ -134,6 +134,18 @@ def expect_fail(fx: Fixture, needle: str, layer: str | None = None, *extra: str)
         assert f"[{layer}] FAIL" in out, f"layer {layer} did not fail:\n{out}"
 
 
+def expect_ordered(fx: Fixture, *needles: str) -> None:
+    """The run fails with every `needle` among the concrete layer's
+    diagnostics, in this order."""
+    code, out = fx.run()
+    assert code == 1, f"expected exit 1, got {code}:\n{out}"
+    assert "[concrete-firmware-bench] FAIL" in out, f"layer concrete-firmware-bench did not fail:\n{out}"
+    at = [out.find(f"ERROR: {n}") for n in needles]
+    missing = [n for n, i in zip(needles, at) if i < 0]
+    assert not missing, f"diagnostic(s) {missing} missing from:\n{out}"
+    assert at == sorted(at), f"diagnostics out of order {list(zip(needles, at))} in:\n{out}"
+
+
 # ---------------------------------------------------------------- baseline
 # Issue #135 (DR 0012): the committed top level now derives uio_oe from the
 # core's UIO_OD / UIO_DIR control registers, and the committed I2C programs
@@ -1277,6 +1289,35 @@ def _(fx):
     code, out = fx.run()
     assert code == 1 and "[schema] PASS" in out, out
     assert "MISO" in out and "spi_mode3.asm" in out, out
+
+
+# ------------------------------------------------------ concrete: port roles
+@case("SPI result write is optional: an image without it passes")
+def _(fx):
+    fx.mutate("firmware/asm/spi_mode0.asm", "OUT   UO_OUT, R0          ; ECHO the assembled RX byte",
+              "OUT   UIO_OUT, R0          ; ECHO the assembled RX byte")
+    code, out = fx.run()
+    assert code == 0, out
+
+
+@case("SPI transfer output is required: writing only the result port fails")
+def _(fx):
+    fx.mutate("firmware/asm/spi_mode0.asm", "OUT   UIO_OUT, ", "OUT   UO_OUT, ", count=100)
+    expect_fail(fx, "firmware/asm/spi_mode0.asm: no OUT to port UIO_OUT; the table assigns pins on it",
+                "concrete-firmware-bench")
+
+
+@case("SPI on the wrong ports: all four port diagnostics report, in order")
+def _(fx):
+    fx.mutate("firmware/asm/spi_mode1.asm", "OUT   UIO_OUT, ", "OUT   UI_IN, ", count=100)
+    fx.mutate("firmware/asm/spi_mode1.asm", "IN    R3, UIO_IN", "IN    R3, UI_IN", count=100)
+    expect_ordered(fx,
+                   "firmware/asm/spi_mode1.asm: OUT to port UI_IN; "
+                   "the table allows ['UIO_OUT', 'UO_OUT'] for this profile",
+                   "firmware/asm/spi_mode1.asm: no OUT to port UIO_OUT; the table assigns pins on it",
+                   "firmware/asm/spi_mode1.asm: IN from port UI_IN; "
+                   "the table allows ['UIO_IN'] for this profile",
+                   "firmware/asm/spi_mode1.asm: no IN from port UIO_IN; the table assigns pins on it")
 
 
 # ------------------------------------------- the Checker's state is declared
