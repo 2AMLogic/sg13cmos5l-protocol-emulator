@@ -747,24 +747,18 @@ class Checker:
             if prof != "demo" and not ent["patterns"]:
                 self.schema.err(f"{rel}: no extraction patterns listed")
 
-    def out_in_ports(self, phase_roles_out, phase_roles_in, result_phase):
-        out_ports, in_ports = set(), set()
-        for ph, roles in phase_roles_out:
-            for r in roles:
-                pb = self.role_pin(ph, r)
-                if pb:
-                    out_ports.add(PORT_ASM[(pb[0], "out")])
-        for ph, roles in phase_roles_in:
-            for r in roles:
-                pb = self.role_pin(ph, r)
-                if pb:
-                    in_ports.add(PORT_ASM[(pb[0], "in")])
-        res = set()
-        for r in PHASE_VOCAB[result_phase]:
-            pb = self.role_pin(result_phase, r)
+    def phase_ports(self, phase, roles, direction):
+        """The assembly ports the table assigns to `roles` of `phase`, in
+        the given direction ("out" or "in"): one port name per distinct pin
+        port. A profile requests only the sets it consumes; a result
+        phase's whole vocabulary (PHASE_VOCAB[phase]) requests its full
+        result port set."""
+        ports = set()
+        for r in roles:
+            pb = self.role_pin(phase, r)
             if pb:
-                res.add(PORT_ASM[(pb[0], "out")])
-        return out_ports, in_ports, res
+                ports.add(PORT_ASM[(pb[0], direction)])
+        return ports
 
     # ---------------------------------------------------------- profile: uart
     def check_tx_firmware(self, rel, text, phase, label, role="TX"):
@@ -781,7 +775,7 @@ class Checker:
         site = "carrier-image" if carrier else "TX bit-mask"
         mask_what = f"{role} mask" if carrier else "TX bit mask"
         ins = self.asm_instrs(text)
-        outs, _ins, _ = self.out_in_ports([(phase, [role])], [], "spi_result")
+        outs = self.phase_ports(phase, [role], "out")
         self.check_ports(rel, ins, outs, set(), outs, set())
         mask = self.mask_of(phase, role)
         first = next((i for i in ins if i["m"] == "LDI" and i["ops"][0] == "R1"), None)
@@ -857,7 +851,8 @@ class Checker:
         an unmet prerequisite (DR 0010 "UART receive")."""
         c = self.concrete
         ins = self.asm_instrs(text)
-        _outs, in_ports, res = self.out_in_ports([], [("uart_rx", ["RX"])], "uart_rx_result")
+        in_ports = self.phase_ports("uart_rx", ["RX"], "in")
+        res = self.phase_ports("uart_rx_result", PHASE_VOCAB["uart_rx_result"], "out")
         dbg = self.debug_bits.get("uart_rx")
         self.check_ports(rel, ins, res | ({"UIO_OUT"} if dbg else set()), in_ports, res, in_ports)
         mask = self.mask_of("uart_rx", "RX")
@@ -928,9 +923,9 @@ class Checker:
             return
         cpol = int(m.group(1)) >> 1
         ins = self.asm_instrs(text)
-        outs, ins_p, res = self.out_in_ports(
-            [("spi_transfer", ["CS", "SCLK", "MOSI"])], [("spi_transfer", ["MISO"])], "spi_result"
-        )
+        outs = self.phase_ports("spi_transfer", ["CS", "SCLK", "MOSI"], "out")
+        ins_p = self.phase_ports("spi_transfer", ["MISO"], "in")
+        res = self.phase_ports("spi_result", PHASE_VOCAB["spi_result"], "out")
         self.check_ports(rel, ins, outs | res, ins_p, outs, ins_p)
         cs = self.mask_of("spi_transfer", "CS")
         sclk = self.mask_of("spi_transfer", "SCLK")
@@ -1043,9 +1038,9 @@ class Checker:
     def prof_i2c(self, rel, ent, text):
         c = self.concrete
         ins = self.asm_instrs(text)
-        outs, ins_p, res = self.out_in_ports(
-            [("i2c_transfer", ["SCL", "SDA"])], [("i2c_transfer", ["SCL", "SDA"])], "i2c_result"
-        )
+        outs = self.phase_ports("i2c_transfer", ["SCL", "SDA"], "out")
+        ins_p = self.phase_ports("i2c_transfer", ["SCL", "SDA"], "in")
+        res = self.phase_ports("i2c_result", PHASE_VOCAB["i2c_result"], "out")
         self.check_ports(rel, ins, outs | res, ins_p, outs, ins_p)
         self.i2c_checks(rel, ins)
         scl = self.mask_of("i2c_transfer", "SCL")
@@ -1081,7 +1076,7 @@ class Checker:
         or from R1, which holds that image ANDed with the data or zero."""
         c = self.concrete
         ins = self.asm_instrs(text)
-        outs, _ins, _ = self.out_in_ports([("ws2812", ["DIN"])], [], "spi_result")
+        outs = self.phase_ports("ws2812", ["DIN"], "out")
         self.check_ports(rel, ins, outs, set(), outs, set())
         mask = self.mask_of("ws2812", "DIN")
         first = next((i for i in ins if i["m"] == "LDI" and i["ops"][0] == "R2"), None)
@@ -1110,7 +1105,9 @@ class Checker:
     # -------------------------------------------------------- profile: dali
     def prof_dali(self, rel, ent, text):
         ins = self.asm_instrs(text)
-        outs, inputs, result = self.out_in_ports([("dali", ["TX"])], [("dali", ["RX"])], "dali_result")
+        outs = self.phase_ports("dali", ["TX"], "out")
+        inputs = self.phase_ports("dali", ["RX"], "in")
+        result = self.phase_ports("dali_result", PHASE_VOCAB["dali_result"], "out")
         self.check_ports(rel, ins, outs | result, inputs, outs | result, inputs)
         tx = self.mask_of("dali", "TX")
         rx = self.mask_of("dali", "RX")
@@ -1147,8 +1144,8 @@ class Checker:
             c.err(f"{rel}: the table's ps2 phase has no PS2_CLK / PS2_DATA pin")
             return
         cb, db = clk.bit_length() - 1, data.bit_length() - 1
-        outs, ins_p, _ = self.out_in_ports(
-            [("ps2", ["PS2_CLK", "PS2_DATA"])], [("ps2", ["PS2_CLK", "PS2_DATA"])], "spi_result")
+        outs = self.phase_ports("ps2", ["PS2_CLK", "PS2_DATA"], "out")
+        ins_p = self.phase_ports("ps2", ["PS2_CLK", "PS2_DATA"], "in")
         self.check_ports(rel, ins, outs, ins_p, outs, ins_p)
         # every `LDI R3, imm` that feeds `OUT UIO_OUT, R3` is the released image;
         # every one that feeds `OR R3, R1` is the CLK mask
@@ -1240,9 +1237,9 @@ class Checker:
         `onewire_result` port."""
         c = self.concrete
         ins = self.asm_instrs(text)
-        outs, ins_p, res = self.out_in_ports(
-            [("onewire", ["DQ"])], [("onewire", ["DQ"])], "onewire_result"
-        )
+        outs = self.phase_ports("onewire", ["DQ"], "out")
+        ins_p = self.phase_ports("onewire", ["DQ"], "in")
+        res = self.phase_ports("onewire_result", PHASE_VOCAB["onewire_result"], "out")
         self.check_ports(rel, ins, outs | res, ins_p, outs | res, ins_p)
         mask = self.mask_of("onewire", "DQ")
         if not mask:
@@ -1301,7 +1298,7 @@ class Checker:
         must each be used (SD isolated by `AND Rx, R0`, BCLK and WS ORed in)."""
         c = self.concrete
         ins = self.asm_instrs(text)
-        outs, _ins, _ = self.out_in_ports([("i2s", ["BCLK", "WS", "SD"])], [], "spi_result")
+        outs = self.phase_ports("i2s", ["BCLK", "WS", "SD"], "out")
         self.check_ports(rel, ins, outs, set(), outs, set())
         m = {r: self.mask_of("i2s", r) for r in ("BCLK", "WS", "SD")}
         pin_masks = set(m.values())
@@ -1358,8 +1355,8 @@ class Checker:
         if not clk or not dio:
             c.err(f"{rel}: the table's swd phase has no SWCLK / SWDIO pin")
             return
-        outs, ins_p, _res = self.out_in_ports(
-            [("swd", ["SWCLK", "SWDIO"])], [("swd", ["SWDIO"])], "spi_result")
+        outs = self.phase_ports("swd", ["SWCLK", "SWDIO"], "out")
+        ins_p = self.phase_ports("swd", ["SWDIO"], "in")
         # the probe reports each response sample on the result port UO_OUT
         # (as every result-carrying image does); the swd phase itself has no
         # uo_out pin role, so it is allowed here explicitly
@@ -1430,8 +1427,8 @@ class Checker:
         loop decrement); and every IN UI_IN is masked with R3."""
         c = self.concrete
         ins = self.asm_instrs(text)
-        outs, ins_p, _res = self.out_in_ports(
-            [("can", ["CAN_TXD"])], [("can", ["CAN_RXD"])], "spi_result")
+        outs = self.phase_ports("can", ["CAN_TXD"], "out")
+        ins_p = self.phase_ports("can", ["CAN_RXD"], "in")
         self.check_ports(rel, ins, outs | {"UO_OUT"}, ins_p, outs, ins_p)
         mask = self.mask_of("can", "CAN_RXD")
         first = next((i for i in ins if i["m"] == "LDI" and i["ops"][0] == "R3"), None)
@@ -1618,12 +1615,8 @@ class Checker:
         isolated TX bit OR a driver image."""
         c = self.concrete
         ins = self.asm_instrs(text)
-        outs, in_ports = set(), set()
-        for role, direction in (("TX", "out"), ("DE", "out"), ("RX", "in")):
-            pb = self.role_pin("modbus", role)
-            if pb:
-                (outs if direction == "out" else in_ports).add(
-                    PORT_ASM[(pb[0], direction)])
+        outs = self.phase_ports("modbus", ["TX", "DE"], "out")
+        in_ports = self.phase_ports("modbus", ["RX"], "in")
         self.check_ports(rel, ins, outs, in_ports, outs, in_ports)
         rx_mask = self.mask_of("modbus", "RX")
         tx_mask = self.mask_of("modbus", "TX")
