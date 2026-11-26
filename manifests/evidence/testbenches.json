@@ -3,14 +3,14 @@
   "kind": "generic",
   "status": "pass",
   "t1_item": 9,
-  "summary": "T1 item 9 (Testbenches shipped): 104/104 attestation checks passed (klt signoff --attest)",
+  "summary": "T1 item 9 (Testbenches shipped): 105/105 attestation checks passed (klt signoff --attest)",
   "source": "manifests/attest/item9.json",
   "attestation": {
     "producer": "klt signoff --attest",
     "inventory_schema_version": 1,
     "hash_algorithm": "sha256-raw-bytes",
-    "check_count": 104,
-    "passed_count": 104,
+    "check_count": 105,
+    "passed_count": 105,
     "checks": [
       {
         "check": "present",
@@ -87,7 +87,14 @@
         "role": "testbench",
         "path": "flow/run-sta-corner-sweep.sh",
         "passed": true,
-        "content_hash": "sha256:56875e4520756b3d5bbc2a4673b11e3a8898efc5104de372f88ff8eab787f464"
+        "content_hash": "sha256:85a0892c28a89400bfdaed935ecfdd9ce0a31fdf8c499049b4d14c69df87b9ff"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "flow/run-sta-post-route-sweep.sh",
+        "passed": true,
+        "content_hash": "sha256:7a35855e885fb6b61b602009bed857d492598e3c06a6b044e8ae077f00a24f86"
       },
       {
         "check": "present",
@@ -763,7 +770,7 @@
         "path": "manifests/attest/item9.json",
         "scope": "repo"
       },
-      "content_hash": "sha256:b0f385ed6cb50e5405bbdbb7fb6b2e99a1ec5e54e94aaf76a9f78c2cf9203f7d"
+      "content_hash": "sha256:09e280d622c9f298a6115525fa7e0a4314d771828342ccc48c361baa601224df"
     }
   }
 }

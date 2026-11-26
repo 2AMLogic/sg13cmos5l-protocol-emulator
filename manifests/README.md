@@ -908,6 +908,32 @@ capture, PVT corner sweeps, or Monte Carlo.
   belongs; when `2AMLogic/klayout-tools#2635` closes and the klt leg can
   produce a `klt sta` report for the macro-backed core, *that* report is the
   citation this item has been waiting for.
+- **Item 5 stays uncited even though the klt timing report now exists
+  (2026-11-21, issue #522)** — a deliberate decision, recorded here for the
+  same reason as the bullet above: so a later reader does not mistake it
+  for an oversight. The klt leg can now measure the macro-backed core
+  post-route: record
+  `verification/records/sta-corner-sweep/records/20261121-021116-a9c989e.md`
+  is a `klt sta` def-mode run over the flow-of-record routed DEF with the
+  run's own extracted SPEF, a propagated clock and the run's own final-SDC
+  boundary constraints (`constraint_completeness.status: "complete"`), and
+  it closes setup AND hold at the 20 ns / 50 MHz constraint at all three
+  macro-characterized corners — the artifact the bullet above was waiting
+  for, superseding the netlist-estimate records whose pre-CTS hold failure
+  was never citable. It is **still not a citation this manifest may carry**,
+  for the same three reasons as before, of which two are unchanged and one
+  is the one that moved: (1) unchanged — a citation must grade against a
+  ratified corner set, and DR 0007 stays `Proposed` (its own dated note of
+  2026-11-21 now points at the new record as the evidence its ratification
+  was waiting on; binding the set belongs to the key holders, not to a
+  manifest edit); (2) unchanged — coverage is 3 of the 6 corners row 4
+  declares, the other 3 structurally unreachable (issue #69); (3) the
+  wrong-flow reason is GONE — this is a `klt sta` report with `klt`
+  provenance, `timing_status` and the per-corner schema the grader reads,
+  which is exactly why it is named here. So item 5 correctly remains
+  `unmet`/`no_evidence` until the corner set is bound; at that point the
+  item-5 entry is the `klt sta` report together with the bit-exact
+  `klt functional-verification` report, per `manifests/design-evidence-tiers.md`.
 - **Item 6 is cited in the `not_applicable` form (2026-11-19, issue #348;
   before that it was uncited by explicit statement in this README — prose
   that bound nothing)**: this block's spec table (`spec/target-spec.md`)

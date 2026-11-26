@@ -225,13 +225,15 @@ assembler's static count over the instruction stream (the committed
 independent reference model, in **RTL simulation (Icarus 13.0 driven by
 `klt functional-verification` — the klt flow)**. The cycle count is the
 claim; any baud/MHz reading is arithmetic at target-spec row 4's 50 MHz
-clock, which is **unconfirmed on the klt flow**: `klt sta` closes setup at
-20 ns at the three macro-characterized corners but **hold fails at all three**
-([record](../verification/records/sta-corner-sweep/records/20261120-031100-51b7eac.md)),
-a pre-CTS, pre-route netlist estimate with an ideal clock and no hold repair,
-run at the fleet klt `0.9.2` in a throwaway environment and stamped with the
-PDK commit `f7bca326` (re-minted by #394; every figure byte-identical to the
-klt `0.8.1.dev146` record it supersedes),
+clock, which is **unconfirmed as a measured rate**: `klt sta` closes setup
+and hold at 20 ns at the three macro-characterized corners on the
+flow-of-record post-route geometry — def mode over the LibreLane routed DEF
+with the run's own extracted SPEF and final SDC, run at the fleet klt `0.9.2`
+in a throwaway environment and stamped with the PDK commit `f7bca326`
+([record](../verification/records/sta-corner-sweep/records/20261121-021116-a9c989e.md),
+superseding the pre-CTS netlist estimate whose hold failed at all three) —
+but row 4's corner set is still unratified (DR 0007 Proposed) and nothing is
+measured on silicon,
 so no wall-clock rate is claimed here. Nothing in this table was run on
 the Tiny Tapeout LibreLane flow or on silicon (see the
 "Evidence not yet in hand" section below).
@@ -578,16 +580,16 @@ No pin claim here is backed by silicon or by the LibreLane flow.
   Firmware, the control-space, boot-ROM, SPI-flash-boot, UART-load, primitive and load-integrity benches on that netlist at zero delay:
   [`firmware-gate-level`](../verification/records/firmware-gate-level/records/20261123-021014-387e0124.md).
   Firmware with back-annotated delays: UART TX, SPI and I2C repeated START, as above; nothing else.
-- **klt synthesis and timing.** `klt sta` now runs on the macro-backed design,
-  but the two flows do not agree on timing: LibreLane's post-route analysis
-  reports 0 setup and 0 hold violations at the three corners, while the klt
-  leg's pre-CTS, pre-route netlist estimate closes setup at 20 ns and fails
-  hold at all three
-  ([record](../verification/records/sta-corner-sweep/records/20261120-031100-51b7eac.md)).
-  Per the project rule that mismatch is a finding, not a number to pick from;
-  the two are different geometry stages, so it is not shown to be a tool
-  disagreement about the same design state, and neither number is merged with
-  the other. The klt place-and-route leg has not been run on this design
+- **klt synthesis and timing.** `klt sta` now runs on the macro-backed design
+  post-route: def mode over the flow-of-record routed DEF with the run's own
+  extracted SPEF and final SDC reports 0 setup and 0 hold violations at the
+  three corners, agreeing with LibreLane's post-route analysis on the verdict
+  ([record](../verification/records/sta-corner-sweep/records/20261121-021116-a9c989e.md)).
+  A residual numeric offset (klt the more optimistic; the SDC's derates and
+  clock transition, which the `klt sta` request schema cannot express) is
+  recorded as a finding in the same record, not merged away; the earlier
+  pre-CTS, pre-route netlist estimate's hold failure is superseded history.
+  The klt place-and-route leg has not been run on this design
   (#389).
 - **Silicon:** none.
 - **Pads.** The I2C results are on a logical, zero-delay pad model
