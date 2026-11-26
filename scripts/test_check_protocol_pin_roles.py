@@ -936,6 +936,76 @@ def _(fx):
     expect_fail(fx, "firmware/tools/gen_i2c_sr.py", "concrete-firmware-bench")
 
 
+# Issue #638: `in_and_sites` took a sample's isolation mask from the nearest
+# write of the AND's mask register and, unless that write was an `LDI`,
+# skipped the site -- no error, no site counted. On `169fa5fd5` the
+# read-byte SDA sample masked with zero by `XOR R3, R3` passed as consistent
+# (792 sites against the clean fixture's 793, exit 0). A matched IN/AND
+# pair must count once and name whatever leaves the mask unreadable; both
+# cases compare the concrete site count with the clean fixture's, so a
+# sample that vanishes from the count fails without a hard-coded total.
+I2C_POLL = "firmware/asm/i2c_fast_sr_poll.asm"
+SDA_SAMPLE = "        IN    R2, UIO_IN     ; sample the bus"
+SDA_ISOLATE = "        AND   R2, R3         ; isolate SDA (bit 3)"
+
+
+def only_line(fx: Fixture, rel: str, line: str) -> int:
+    """The 1-based number of `line` in the fixture file; it MUST occur once."""
+    nos = [n for n, l in enumerate(fx.path(rel).read_text(encoding="utf-8").splitlines(), 1)
+           if l == line]
+    assert len(nos) == 1, f"{line!r} occurs at lines {nos} in {rel}; expected exactly one"
+    return nos[0]
+
+
+def concrete_sites(out: str) -> int:
+    """The concrete layer's `N site(s) checked` count of one run."""
+    m = re.search(r"\[concrete-firmware-bench\] (?:PASS|FAIL) \((\d+) site\(s\) checked\)", out)
+    assert m, f"no concrete-layer site count in:\n{out}"
+    return int(m.group(1))
+
+
+def unresolved_sample(rel: str, in_no: int, and_no: int, why: str) -> str:
+    """The diagnostic of a read-byte SDA sample whose mask cannot be read."""
+    return (f"ERROR: {rel}:{in_no}: IN UIO_IN at line {in_no} is masked by `AND R2, R3` "
+            f"at line {and_no} with an unresolved mask: {why}; the table's SDA pin mask is 0x08")
+
+
+def expect_consistency_fail(fx: Fixture) -> str:
+    """The run exits 1 with the concrete layer and consistency both failing."""
+    code, out = fx.run()
+    assert code == 1, f"expected exit 1, got {code}:\n{out}"
+    assert "[concrete-firmware-bench] FAIL" in out, (
+        f"layer concrete-firmware-bench did not fail:\n{out}")
+    assert "consistency (schema + metadata + concrete): FAIL" in out, out
+    return out
+
+
+@case("I2C read-byte SDA sample: the mask register overwritten before the AND fails")
+def _(fx):
+    xor = "        XOR   R3, R3"
+    _code, clean = fx.run()
+    fx.mutate(I2C_POLL, SDA_ISOLATE, xor + "\n" + SDA_ISOLATE)
+    out = expect_consistency_fail(fx)
+    in_no, xor_no, and_no = (only_line(fx, I2C_POLL, l) for l in (SDA_SAMPLE, xor, SDA_ISOLATE))
+    why = f"the nearest write of R3 is `XOR R3, R3` (line {xor_no}), not an `LDI`"
+    assert unresolved_sample(I2C_POLL, in_no, and_no, why) in out, out
+    assert concrete_sites(out) == concrete_sites(clean), out
+
+
+@case("I2C read-byte SDA sample: a mask register with no earlier write fails")
+def _(fx):
+    early = ("        IN    R2, UIO_IN     ; sample the bus, before any mask is written\n"
+             "        AND   R2, R3         ; isolate SDA (bit 3), before any mask is written\n")
+    setup = "        LDI   R3, 0x0C        ; both lines released: bus idle"
+    _code, clean = fx.run()
+    fx.mutate(I2C_POLL, setup, early + setup)
+    out = expect_consistency_fail(fx)
+    in_no, and_no = (only_line(fx, I2C_POLL, l) for l in early.splitlines())
+    assert unresolved_sample(I2C_POLL, in_no, and_no,
+                             "R3 has no earlier write in this file") in out, out
+    assert concrete_sites(out) == concrete_sites(clean) + 1, out
+
+
 # CAN 2.0A (issue #584): DR 0010's can section records that the image uses
 # UIO_DIR as scratch, pinned by CAN_UIO_DIR_WRITE_SITES = 7 sites and the
 # setup immediate LDI <reg>, 0x05 before the first write. Both guards need

@@ -679,7 +679,9 @@ class Checker:
                     )
 
     def in_and_sites(self, rel: str, ins: list[dict], want_for, port: str = "UIO_IN") -> None:
-        """For each IN Rx,<port>, the next AND Rx,Ry takes its mask from the nearest LDI Ry."""
+        """For each IN Rx,<port>, the next AND Rx,Ry takes its mask from the
+        nearest write of Ry: an `LDI` immediate is compared with the table's
+        mask, and any other writer, or none, leaves the mask unresolved."""
         c = self.concrete
         for idx, i in enumerate(ins):
             if not (i["m"] == "IN" and i["ops"][1].upper() == port):
@@ -697,16 +699,24 @@ class Checker:
                 continue
             j, k = found
             ry = k["ops"][1]
-            ldi = next((q for q in reversed(ins[:j]) if q["m"] in self.WRITES and q["ops"][0] == ry), None)
-            if ldi is None or ldi["m"] != "LDI":
-                continue
             want, what = want_for(i)
             c.sites += 1
-            v = self.imm(ldi["ops"][1])
+            _j, w = self.prev_write(ins, j, ry)
+            if w is None or w["m"] != "LDI":
+                why = (f"the nearest write of {ry} is `{w['m']} {w['ops'][0]}, {w['ops'][1]}` "
+                       f"(line {w['no']}), not an `LDI`" if w
+                       else f"{ry} has no earlier write in this file")
+                c.err(
+                    f"{rel}:{i['no']}: IN {port} at line {i['no']} is masked by "
+                    f"`AND {rx}, {ry}` at line {k['no']} with an unresolved mask: "
+                    f"{why}; the table's {what} is 0x{want:02X}"
+                )
+                continue
+            v = self.imm(w["ops"][1])
             if v != want:
                 c.err(
-                    f"{rel}:{ldi['no']}: IN {port} at line {i['no']} is masked with "
-                    f"{ldi['ops'][1]} but the table's {what} is 0x{want:02X}"
+                    f"{rel}:{w['no']}: IN {port} at line {i['no']} is masked with "
+                    f"{w['ops'][1]} but the table's {what} is 0x{want:02X}"
                 )
 
     def run_inventory(self) -> None:
