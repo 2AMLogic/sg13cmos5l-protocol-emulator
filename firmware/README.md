@@ -1618,8 +1618,9 @@ throughout. The receiver times each visible edge. After a mid-bit edge it
 accepts a boundary one half-bit later or the next mid-bit edge two halves
 later. After a boundary it requires a mid-bit edge one half-bit later.
 It polls every 24 cycles in the one-half-bit window and every 34 cycles in
-the two-half-bit window, and every 25 cycles while waiting for the start low.
-These intervals set the sampling resolution.
+the two-half-bit window. The start-low loop polls every 25 cycles. Between
+blocks of 250 polls, the outer counter decrement, branch and reload make
+the interval 28 cycles.
 The only control-space registers used are `UIO_DIR`, `UIO_OD` and
 `PM_ADDR` (one scratch byte). No Manchester primitive is used.
 
@@ -1636,35 +1637,58 @@ from the end of both stop bits. [Microchip AN1465, pp. 4–6, figures 7–10](ht
 |---|---:|---:|
 | Forward isolated half-bit | 18,940–23,148 | 20,823–20,837 |
 | Forward two adjacent equal halves | 37,879–46,296 | 41,666–41,669 |
-| Forward stops (4 Te) + gap to next forward (≥22 Te) | ≥541,667 nominal | 541,878 after direct arc, 541,796 on no reply |
+| Forward stops (4 Te) + gap to next forward (≥22 Te) | ≥541,667 nominal | 541,878 after direct arc, 541,698 on no reply |
 | Query EOF to backward start | 7–22 Te | 145,834 and 458,333 at the two endpoints, rounded to a clock |
 | Backward stops | 4 sender Te, idle high | 75,760 / 83,332 / 92,592 for the fast / nominal / slow gear |
-| Backward EOF to next forward | ≥458,334 nominal | 460,313–477,021 for the three valid replies of the main sequence (`0x81`, `0xA7`, `0x54`) |
+| Backward EOF to next forward | ≥458,334 nominal | 460,315–477,039 for the three valid replies of the main sequence (`0x81`, `0xA7`, `0x54`) |
 
 The pad bench shifts a single payload boundary by 8,000 cycles in each
 polarity, keeping its neighboring mid-bit edges on time. RESULT holds
 `0x54` through those replies, an early boundary and a late mid-bit edge,
 then updates to `0xA7` on a valid reply. The bench also covers a low final
 stop half, a shortened start, an early reply and silence.
-The receiver's lower bound on the start low and on the final zero's low
-half is tight to the 18,940-cycle minimum. Its last guard poll lands
-18,660–18,685 cycles after the fall on the start path and 18,816–18,859 on
-the final-zero path. The bench shortens each of those two lows to 18,600
-cycles at start-poll offsets of 0, 75, 150 and 225 cycles. RESULT holds in
-all eight runs. Valid 18,940-cycle halves still decode at the same offsets.
-The upper bound is tuned the same way (issue #546). The final sample of the
-rise window lands about 23,159–23,194 cycles after the fall on the final-zero
-path, derived from the poll arithmetic, and 23,150–23,200 on the start path,
-bracketed on the RTL at the same four offsets. A valid 23,148-cycle reply,
-including ones ending in a zero, publishes at all four offsets. A single start
-or final-zero low of 23,250 cycles holds RESULT at all four. Between 23,148 and
-the sample point the receiver may still accept an over-limit low; the start-path
-width of that grey zone is the 25-cycle poll lag plus the 24-cycle rise poll
-interval. Its TX
+The deadlines below count from the `IN` that first sees the fall. To obtain
+the deadline from the **pad edge**, add the fall-to-sample delay. For
+example, a fall 1 ns after a sample in a 25-cycle loop adds just under 25
+cycles. The table rounds elapsed time up to whole core cycles.
+
+| Falling edge | Maximum delay to detecting IN inside the loop | Last low-guard IN after detection | Last rise IN after detection |
+|---|---:|---:|---:|
+| Start low | 25 cycles, 28 at a block rollover | 18,660 | 23,177 |
+| Final zero after a boundary (24-cycle window) | 24 cycles | 18,820 | 23,168 |
+| Final zero after a mid-bit edge (34-cycle window) | 34 cycles | 18,816 | 23,164 |
+
+The first guard sample follows start detection by 410 cycles. On a final
+zero, the 24-cycle and 34-cycle paths execute eight and four instructions
+respectively to reach `mid_edge`, then take the same 17 instructions,
+300 cycles in `final_low`, and 245 cycles for the guard wait and sample.
+Adding 73 more 250-cycle guard intervals gives the third column.
+The first rise sample follows the last guard sample by 29 cycles on the
+start path or 28 on either final-zero path. With the selected poll counts
+the last rise samples are `18,660 + 29 + 187 × 24` for start and
+`last guard + 28 + 180 × 24` for final zero.
+
+Each deadline extends past the model maximum of 23,148 cycles even at zero
+detection lag. At the latest phase in the loops, the last rise sample can
+fall at cycle 23,205 (start rollover), 23,192 (24-cycle final zero), or
+23,198 (34-cycle final zero). The transition from the preceding guard to the
+first window sample takes 29, 25, or 35 cycles respectively,
+giving absolute ceilings of 23,206, 23,193, and 23,199. An over-limit low
+can still publish if its rise precedes the last sample and the rest of the
+frame is valid. In all cases the 18,600-cycle low rises before the last
+guard, 18,940 rises after it, and 23,250 rises after the last rise sample.
+
+In the RTL bench the original offsets of 0, 75, 150 and 225 cycles at a
+12-Te reply gap all give a three-cycle start detection lag. Offsets 1, 4
+and 14 give lags of 2, 24 and 14. At offset 1,978 (query stop + 335,312),
+the trace measures 28 cycles to detection, 18,688 to the last guard and
+23,205 to the last rise sample. The bench checks both final-zero paths,
+holds RESULT for a single 23,250-cycle low, and checks that distinct
+23,148-cycle replies ending in zero publish at all eight offsets. The TX
 negative control shortens the first half to 13,232 cycles. Reproduce with
 `python3 verification/test_dali_model.py` and
 `klt functional-verification verification/request-firmware-dali.json --format json`
-from the repository root. [RTL evidence](../verification/records/firmware-dali/records/20261125-031328-c5463e8.md)
+from the repository root. [RTL evidence](../verification/records/firmware-dali/records/20261126-183357-3a3a165.md)
 
 ### Pmod wiring
 
