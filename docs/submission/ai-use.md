@@ -123,7 +123,7 @@ reports but is not a required check on `main`.
   ([`704a3fb`](../../verification/records/post-layout-sdf-regression/records/20261010-083555-704a3fb.md) <!-- superseded-ok: history of the failed-then-fixed record chain -->),
   whose netlist it shares, and states what it still does not show. A later
   record in that chain
-  ([`f90c026`](../../verification/records/post-layout-sdf-regression/records/20261123-191142-f90c026.md),
+  ([`2dca74c`](../../verification/records/post-layout-sdf-regression/records/20261126-061939-2dca74c.md),
   with the revised UART TX timing checks) still passes on the same routed
   netlist.
 - **Independent references.** Protocol firmware is graded against separately

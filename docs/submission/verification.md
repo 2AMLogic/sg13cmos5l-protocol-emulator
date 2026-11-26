@@ -170,7 +170,7 @@ failing `.asm` byte for byte.
 |---|---|---|---|---|---|
 | The directed firmware benches (UART TX 3, UART RX 11, SPI 3, I2C 4, I2C Sr 5), control space (10), boot ROM (7), SPI boot (6), primitives (11), UART boot (8, pin-only) and load integrity (9, pin-only) pass on the routed netlist; each of the eleven modules fails on its own stuck-at fault (and the SPI/I2C modules on a `uio_oe[3]` stuck-at-0) | The same oracles as RTL | **Zero-delay**, LibreLane netlist of gds run 38136727636 (`6dd0e9d`) | [firmware-gate-level 20261123-021014](../../verification/records/firmware-gate-level/records/20261123-021014-387e0124.md): 25 rows, `as_required` on every row | `PDK_ROOT=<pdk> ./flow/run-firmware-gate-level.sh --full --control-space --boot-rom --boot-spi --primitives --boot-uart --load-integrity` | `test_boot_uart` is pin-only on gates (white-box reads and two long runs are skipped). No SDF, no SRAM timing, no pad characterization. Not the constrained-random regression. |
 | The core bench (12 pin-observing tests, 1 skipped) passes at all three corners with real post-route delay | Same bench file, drive/sample aligned to the SDC (`verification/sdf_alignment.py`) | **SDF-annotated**, LibreLane netlist + SDF | [post-layout-sdf-regression 20261014-111000](../../verification/records/post-layout-sdf-regression/records/20261014-111000-25a41c3.md): 12 passed, 0 failed, 1 skipped at each corner | `KLT_BIN=<klt> PDK_ROOT=<pdk> ./flow/run-post-layout-sdf.sh --from <download>`, where `<download>` is the `GDS_logs` and `tt_submission` artifacts of gds run 38136727636 | Section 5. The skipped test is white-box and is *skipped, not passed*. |
-| UART TX, SPI modes 0-3 and I2C write / repeated START / read / clock stretch pass in all nine (corner, protocol) cells with real post-route delay; the SPI timing negative control fails as required; the I2C repeated-START run fails on the pre-DR 0020 netlist (#244) | `reference_models/{uart,spi,i2c}.py` through the SDF wrappers | **SDF-annotated**, LibreLane netlist + SDF of gds run 38136727636 | [post-layout-sdf-regression 20261123-191142](../../verification/records/post-layout-sdf-regression/records/20261123-191142-f90c026.md): runner exit 0, nine of nine cells pass (UART TX 4/4 since #531, which added the time-unit drift measurement) | `KLT_BIN=<klt> PDK_ROOT=<pdk> ./flow/run-post-layout-sdf.sh --suite protocols --from <download>` | Section 5. Boot programs, UART RX, PS/2, WS2812 and the random regression have no SDF run. |
+| UART TX, SPI modes 0-3 and I2C write / repeated START / read / clock stretch pass in all nine (corner, protocol) cells with real post-route delay; the SPI timing negative control fails as required; the I2C repeated-START run fails on the pre-DR 0020 netlist (#244) | `reference_models/{uart,spi,i2c}.py` through the SDF wrappers | **SDF-annotated**, LibreLane netlist + SDF of gds run 38136727636 | [post-layout-sdf-regression 20261126-061939](../../verification/records/post-layout-sdf-regression/records/20261126-061939-2dca74c.md): runner exit 0, nine of nine cells pass (UART TX 4/4 since #531, which added the time-unit drift measurement) | `KLT_BIN=<klt> PDK_ROOT=<pdk> ./flow/run-post-layout-sdf.sh --suite protocols --from <download>` | Section 5. Boot programs, UART RX, PS/2, WS2812 and the random regression have no SDF run. |
 
 The `6dd0e9d` netlist is current for the design (gds run 38136727636, the
 DR 0020 open-drain fix and the #246 timing-repair config): `git diff
@@ -215,7 +215,7 @@ by side; a mismatch is a finding, not a figure to choose between.
 
 ## 5. SDF-annotated run: what the annotation does and does not cover
 
-From [`post-layout-sdf-regression 20261123-191142`](../../verification/records/post-layout-sdf-regression/records/20261123-191142-f90c026.md)
+From [`post-layout-sdf-regression 20261126-061939`](../../verification/records/post-layout-sdf-regression/records/20261126-061939-2dca74c.md)
 and the header of `flow/run-post-layout-sdf.sh`:
 
 - **SRAM timing is omitted.** The macro runs as a zero-delay `FUNCTIONAL`
@@ -227,7 +227,7 @@ and the header of `flow/run-post-layout-sdf.sh`:
 - **The core bench and three protocol benches run.** Since 2026-10-11 the
   UART TX, SPI and I2C repeated-START firmware benches run on the routed
   netlist with SDF delays at all three corners
-  ([record](../../verification/records/post-layout-sdf-regression/records/20261123-191142-f90c026.md),
+  ([record](../../verification/records/post-layout-sdf-regression/records/20261126-061939-2dca74c.md),
   #217's harness). The boot programs, UART RX, PS/2, WS2812 and the
   constrained-random regression have no SDF run.
 - **C-flag semantics** have no post-layout evidence: the white-box test is
