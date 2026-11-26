@@ -62,6 +62,12 @@ _loom_config_private_defaults_path() {
     fi
 }
 
+# jq normally accepts a stream of JSON values. A tier must be one object.
+# Slurp the entire input before emitting anything and fail on an empty selection.
+_loom_config_parse_object() {
+    jq -cse 'select(length == 1) | .[0] | objects' "$@" 2>/dev/null
+}
+
 # _loom_config_soft_read <path> -> echoes the file's JSON when it parses as
 # a JSON object; echoes '{}' for a missing path, an unreadable file,
 # malformed JSON, or a non-object top level. Never fails the caller.
@@ -71,12 +77,7 @@ _loom_config_soft_read() {
         echo '{}'
         return 0
     fi
-    local parsed
-    if ! parsed=$(jq -c 'if type == "object" then . else {} end' "$path" 2>/dev/null); then
-        echo '{}'
-        return 0
-    fi
-    echo "$parsed"
+    _loom_config_parse_object "$path" || echo '{}'
 }
 
 # _loom_config_tracked_read <repo_root> <rel> -> like _loom_config_soft_read
@@ -87,7 +88,7 @@ _loom_config_soft_read() {
 # diverged, local edit) reads the working copy exactly as before. Mirrors
 # default_branch_tier_text in loom-daemon/src/config_resolver.rs.
 _loom_config_tracked_read() {
-    local root="$1" rel="$2" top head remote text parsed
+    local root="$1" rel="$2" top head remote parsed
     if ! command -v jq >/dev/null 2>&1; then
         echo '{}'
         return 0
@@ -100,12 +101,11 @@ _loom_config_tracked_read() {
         && git -C "$root" merge-base --is-ancestor HEAD origin/HEAD 2>/dev/null \
         && git -C "$root" diff --quiet HEAD -- "$rel" 2>/dev/null \
         && { [[ ! -e "$root/$rel" ]] || git -C "$root" cat-file -e "HEAD:$rel" 2>/dev/null; }; then
-        text=$(git -C "$root" show "origin/HEAD:$rel" 2>/dev/null || true)
-        if [[ -n "$text" ]] && parsed=$(printf '%s' "$text" | jq -c 'if type == "object" then . else {} end' 2>/dev/null); then
-            echo "$parsed"
-        else
-            echo '{}'
-        fi
+        parsed=$(
+            set -o pipefail
+            git -C "$root" show "origin/HEAD:$rel" 2>/dev/null | _loom_config_parse_object
+        ) || parsed='{}'
+        printf '%s\n' "$parsed"
         return 0
     fi
     _loom_config_soft_read "$root/$rel"
@@ -126,18 +126,19 @@ loom_resolve_config() {
     local defaults_path
     defaults_path=$(_loom_config_private_defaults_path)
 
-    local tier_defaults tier_legacy tier_project tier_local
+    local tier_defaults tier_legacy tier_project tier_fleet tier_local
     tier_defaults=$(_loom_config_soft_read "$defaults_path")
     tier_legacy=$(_loom_config_tracked_read "$repo_root" "$LOOM_CONFIG_LEGACY_REL")
     tier_project=$(_loom_config_tracked_read "$repo_root" "$LOOM_CONFIG_PROJECT_REL")
+    tier_fleet=$(_loom_config_soft_read "$repo_root/.loom-local/fleet-repo.json")
     tier_local=$(_loom_config_soft_read "$repo_root/$LOOM_CONFIG_LOCAL_REL")
 
-    jq -c -n \
-        --argjson a "$tier_defaults" \
-        --argjson b "$tier_legacy" \
-        --argjson c "$tier_project" \
-        --argjson d "$(_loom_config_soft_read "$repo_root/.loom-local/fleet-repo.json")" --argjson e "$tier_local" \
-        '$a * $b * $c * $d * $e'
+    # Stream the tiers (low -> high precedence) to jq on stdin, never as
+    # `--argjson` argv: Linux caps each argv string at MAX_ARG_STRLEN
+    # (128 KiB) on execve, so a tier past that size failed with "Argument
+    # list too long" (#15313). `printf` is a builtin, so no exec limit applies.
+    printf '%s\n' "$tier_defaults" "$tier_legacy" "$tier_project" "$tier_fleet" "$tier_local" \
+        | jq -c -s 'reduce .[] as $t ({}; . * $t)'
 }
 
 # loom_config_get <repo_root> <dotted.path> [default]

@@ -1,0 +1,7 @@
+# .loom/resync-pin-base — upstream fork point of each .loom/resync-ignore pin.
+# Written by `loom-daemon resync-pin add`; read by `loom-daemon resync-pin status`.
+# Columns (tab-separated): pin label, upstream Loom commit, source path at that
+# commit, how the commit was chosen (explicit | install-metadata).
+# Commit this file alongside .loom/resync-ignore. Resync never rewrites it.
+scripts/lib/config-resolver.sh	a897feac66e29afc200e72e21c5f74cdfecc8b24	defaults/scripts/lib/config-resolver.sh	explicit
+scripts/tests/test-config-resolver.sh	a897feac66e29afc200e72e21c5f74cdfecc8b24	defaults/scripts/tests/test-config-resolver.sh	explicit
