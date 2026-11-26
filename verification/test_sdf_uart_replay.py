@@ -31,7 +31,8 @@ async def tick(*args, **kwargs):
 
 class UartReplayTests(unittest.TestCase):
     def replay(self, first_image_scale, expected_failure=None, control_scale=1.025,
-               scales=None, shift=None, violations=()):
+               scales=None, shift=None, violations=(), idle=None, unknown=None,
+               initial_levels=(1, 1, 1), second_byte_edges=None, leading_rise=False):
         """`scales`: per-image timestamp multipliers (default: first image only);
         `shift`: (image, frame, edge, ps) moves one edge; `violations`: image
         indices whose monitor reports a pin-contract violation."""
@@ -43,15 +44,32 @@ class UartReplayTests(unittest.TestCase):
         if shift:
             i, f, e, ps = shift
             captures[i][f][e] += ps
+        if idle is not None:
+            captures[idle] = []
+        if second_byte_edges is not None:
+            captures[0][1] = captures[0][1][:second_byte_edges]
+
         pending = iter(enumerate(captures))
+        starts = iter(initial_levels)
+        self.checkpoints = []
+
+        async def load_image(dut, words):
+            if path.exists():
+                doc = json.loads(path.read_text())
+                measurement = doc.get("measurements", {}).get("uart_tx_drift", {})
+                self.checkpoints.append([i["image"] for i in measurement.get("images", [])])
+            dut.uo_out.value = next(starts)
 
         def replay_monitor(monitor):
             index, image = next(pending)
             if index in violations:
                 monitor.violations.append("uo_out rose 4950 ps after the clk edge")
-            for frame in image:
+            if leading_rise and index == 0:
+                monitor.transitions.append({"pin": "uo_out", "t_ps": 57864953, "value": "1"})
+            for f, frame in enumerate(image):
                 for i, t in enumerate(frame):
-                    monitor.transitions.append({"pin": "uo_out", "t_ps": t, "value": str(i % 2)})
+                    level = "X" if unknown == (index, f, i) else str(i % 2)
+                    monitor.transitions.append({"pin": "uo_out", "t_ps": t, "value": level})
             return monitor
 
         dut = SimpleNamespace(clk=object(), uo_out=SimpleNamespace(value=1),
@@ -59,7 +77,7 @@ class UartReplayTests(unittest.TestCase):
         report = uart._align.ProtocolReport("uart_tx", "test_firmware_uart", None, None)
         with (
             tempfile.TemporaryDirectory() as out,
-            patch.multiple(uart, REPORT=report, Clock=Mock(), load_program=tick, ReadOnly=tick,
+            patch.multiple(uart, REPORT=report, Clock=Mock(), load_program=load_image, ReadOnly=tick,
                            Timer=tick, RisingEdge=tick, NEGATIVE_CONTROL_SCALE=control_scale),
             patch.object(cocotb, "start_soon"),
             patch.object(uart._align.PinDelayMonitor, "start", replay_monitor),
@@ -77,8 +95,9 @@ class UartReplayTests(unittest.TestCase):
         self.assertEqual(saved["captures"], 3)
         images = saved["measurements"]["uart_tx_drift"]["images"]
         self.assertEqual([i["image"] for i in images], ["uart_tx", "uart_tx_115200", "uart_tx_9600"])
-        for image, captured in zip(images, captures):
-            self.assertEqual(image["tx_edges_ps"], [t for frame in captured for t in frame])
+        for index, (image, captured) in enumerate(zip(images, captures)):
+            preamble = [57864953] if leading_rise and index == 0 else []
+            self.assertEqual(image["tx_edges_ps"], preamble + [t for frame in captured for t in frame])
             if image["failures"]:
                 continue
             self.assertEqual([f["edges_ps"] for f in image["frames"]], captured)
@@ -93,8 +112,46 @@ class UartReplayTests(unittest.TestCase):
             self.assertTrue(control["all_failed_check_frame"])
             self.assertTrue(all(drift > 2 for drift in control["drift_pct"]))
 
+    def test_each_image_is_written_before_loading_the_next(self):
+        self.replay(1)
+        self.assertEqual(self.checkpoints, [["uart_tx"], ["uart_tx", "uart_tx_115200"]])
+
+    def test_idle_or_unknown_pin_retains_polarity_and_other_images(self):
+        cases = (
+            ({"idle": 1}, 1, "no TX", []),
+            ({"unknown": (1, 0, 1)}, 1, "X", [0, "X", 0, 1, 0, 1, 0, 1] + [0, 1] * 4),
+            ({"initial_levels": (1, "X", 1)}, "X", "X", [0, 1] * 8),
+        )
+        for fault, initial, diagnostic, levels in cases:
+            with self.subTest(fault=fault):
+                first, second, third = self.replay(1.025, "row-10 drift bound failed", **fault)
+                self.assertAlmostEqual(first["frames"][0]["drift_pct"], 22.5010)
+                self.assertAlmostEqual(first["frames"][1]["drift_pct"], 20.0010)
+                self.assertEqual(second["tx_initial"], initial)
+                self.assertEqual(second["tx_edge_levels"], levels)
+                self.assertIn(diagnostic, " ".join(second["failures"]))
+                self.assertEqual(third["failures"], [])
+                self.assert_decoded_controls([third])
+
+    def test_missing_or_malformed_second_byte_preserves_first(self):
+        for retained, diagnostic in ((0, "decoder recovered"), (1, "framing error")):
+            with self.subTest(second_byte_edges=retained):
+                first, *later = self.replay(1.025, diagnostic, second_byte_edges=retained)
+                self.assertIn(diagnostic, " ".join(first["failures"]))
+                frame, = first["frames"]
+                self.assertEqual(frame["decoded_hex"], "0x5a")
+                self.assertTrue(frame["stop_ok"])
+                self.assertAlmostEqual(frame["drift_pct"], 22.5010)
+                self.assertAlmostEqual(frame["mean_bit_period_ps"], 9_225_010 / 9)
+                self.assertFalse(frame["within_bound"])
+                self.assert_decoded_controls(later)
+
     def test_nominal_capture(self):
-        self.assert_decoded_controls(self.replay(1))
+        images = self.replay(1, initial_levels=(0, 1, 1), leading_rise=True)
+        self.assert_decoded_controls(images)
+        self.assertEqual(images[0]["tx_initial"], 0)
+        self.assertEqual(images[0]["tx_edge_levels"], [1] + [0, 1] * 8)
+        self.assertEqual(images[0]["frames"][0]["t_start_ps"], 63064943)
 
     def test_over_limit_capture_survives_control_framing_error(self):
         first, *remaining = self.replay(1.04, "row-10 drift bound failed")

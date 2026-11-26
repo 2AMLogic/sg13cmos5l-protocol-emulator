@@ -42,7 +42,7 @@ import test_firmware_uart as bench
 from firmware_artifacts import parse_hex_image
 from reference_models.uart import UART_FRAME_BITS, UartDecoder, UartFrameError
 from reference_models.waveform import Signal
-from sdf_tx_edges import tx_level_changes
+from sdf_tx_edges import tx_level, tx_level_changes
 from test_protocol_emulator import load_program
 
 PROTOCOL = "uart_tx"
@@ -97,12 +97,47 @@ def _header_bit_period(stem: str):
     return None if match is None else int(match.group(1))
 
 
-def _tx_bit(value_str: str) -> int:
-    """`uo_out`'s bit 0 (the TX pin) from the monitor's retained value
-    string (MSB first, so the last character is bit 0)."""
-    level = value_str[-1]
-    assert level in "01", f"uo_out reads {value_str!r}; the TX measurement needs 0/1 pins"
-    return int(level)
+def _known_intervals(initial, edges):
+    """Split at unknown levels. A return to binary starts a new idle reference."""
+    line = Signal(initial) if initial in (0, 1) else None
+    for t_ps, level in edges:
+        if level not in (0, 1):
+            if line is not None:
+                yield line, t_ps / 1000.0
+            line = None
+        elif line is None:
+            line = Signal(level)
+        else:
+            line.add(t_ps / 1000.0, level)
+    if line is not None:
+        yield line, None
+
+
+def _decode_capture(decoder, initial, edges, scale=1.0):
+    """Keep complete reports even if a subsequent stop bit cannot be decoded."""
+    reports = []
+    errors = []
+    for line, end_ns in _known_intervals(initial, edges):
+        if scale != 1.0:
+            line.transitions = [(t * scale, v) for t, v in line.transitions]
+        cursor = 0.0
+        while True:
+            try:
+                decoded = decoder.decode(line, t_from=cursor, max_frames=1)
+            except UartFrameError as exc:
+                errors.append(str(exc))
+                break
+            if not decoded:
+                break
+            frame, = decoded
+            # A binary prefix ending in X cannot establish a full frame window.
+            if end_ns is not None and frame.t_start + UART_FRAME_BITS * decoder.period >= end_ns * scale:
+                break
+            reports.append(frame)
+            if frame.pitch_ns is None:
+                break
+            cursor = frame.t_start + (UART_FRAME_BITS - 0.5) * decoder.period
+    return reports, errors
 
 
 def _measure_image(stem, cycles_per_bit, clock_period_ps, tx_initial, tx_edges, log) -> dict:
@@ -116,28 +151,25 @@ def _measure_image(stem, cycles_per_bit, clock_period_ps, tx_initial, tx_edges, 
     """
     nominal_bit_period_ps = cycles_per_bit * clock_period_ps
     nominal_baud = 1e12 / nominal_bit_period_ps
-    line = Signal(tx_initial, name=f"{stem}-tx")
-    for t_ps, level in tx_edges:
-        line.add(t_ps / 1000.0, level)
     decoder = UartDecoder(nominal_baud)
-    # Failures are *recorded* in the measurement doc and asserted by the test
-    # only after every image's measurement is filed, so one image's decode
-    # failure never discards another's evidence (#531).
     failures = []
-    try:
-        reports = decoder.decode(line)
-    except UartFrameError as exc:
-        failures.append(f"original waveform decode: {exc}")
-        reports = []
+    if tx_initial not in (0, 1):
+        failures.append(f"initial TX level is {tx_initial}")
+    if not tx_edges:
+        failures.append("no TX level change observed at the pin")
+    for t_ps, level in tx_edges:
+        if level not in (0, 1):
+            failures.append(f"TX level is {level} at {t_ps} ps")
+
+    reports, errors = _decode_capture(decoder, tx_initial, tx_edges)
+    failures.extend(f"original waveform decode: {error}" for error in errors)
     decoded_hex = [f"0x{r.data:02x}" for r in reports]
-    if reports and decoded_hex != [f"0x{p:02x}" for p in TX_PAYLOADS]:
-        failures.append(
-            f"decoder recovered {decoded_hex}, the committed program transmits "
-            f"{[f'0x{p:02x}' for p in TX_PAYLOADS]}"
-        )
-        reports = []  # payload-keyed frame arithmetic is meaningless for other bytes
+    expected_hex = [f"0x{payload:02x}" for payload in TX_PAYLOADS]
+    if decoded_hex != expected_hex:
+        failures.append(f"decoder recovered {decoded_hex}, the committed program transmits {expected_hex}")
     frames = []
-    for report, payload in zip(reports, TX_PAYLOADS):
+    for report in reports:
+        payload = report.data
         if not report.stop_ok:
             failures.append(f"0x{payload:02x}: framing error, stop bit sampled 0")
         # An over-limit frame is *recorded* (`within_bound`) and the bound is
@@ -165,10 +197,11 @@ def _measure_image(stem, cycles_per_bit, clock_period_ps, tx_initial, tx_edges, 
         delta_t_ps = last_edge_ps - t_start_ps
         drift_ps = delta_t_ps - last_edge_bit_index * nominal_bit_period_ps
         drift_pct = 100.0 * abs(drift_ps) / nominal_bit_period_ps
-        assert abs(drift_pct - report.drift_pct) < 1e-6, (
-            f"{stem} 0x{payload:02x}: arithmetic drift {drift_pct:.6f}% disagrees with "
-            f"the model's {report.drift_pct:.6f}%"
-        )
+        if abs(drift_pct - report.drift_pct) >= 1e-6:
+            failures.append(
+                f"0x{payload:02x}: arithmetic drift {drift_pct:.6f}% disagrees with "
+                f"the model's {report.drift_pct:.6f}%"
+            )
         mean_bit_period_ps = delta_t_ps / last_edge_bit_index
         frames.append({
             "payload_hex": f"0x{payload:02x}",
@@ -192,16 +225,10 @@ def _measure_image(stem, cycles_per_bit, clock_period_ps, tx_initial, tx_edges, 
             f"({1e12 / mean_bit_period_ps:.1f} baud), drift {drift_pct:.4f}% of bit"
         )
 
-    stretched = Signal(line.initial, name=f"{line.name}*{NEGATIVE_CONTROL_SCALE}")
-    stretched.transitions = [(t * NEGATIVE_CONTROL_SCALE, v) for (t, v) in line.transitions]
+    stretched_reports, errors = _decode_capture(decoder, tx_initial, tx_edges, NEGATIVE_CONTROL_SCALE)
     control = {"scale": NEGATIVE_CONTROL_SCALE}
-    try:
-        stretched_reports = decoder.decode(stretched)
-    except UartFrameError as exc:
-        # A control decode error must survive alongside the original frames
-        # and must not prevent the next image from being measured.
-        control["framing_error"] = str(exc)
-        stretched_reports = []
+    if errors:
+        control["framing_error"] = "; ".join(errors)
     control.update({
         "decoded": [f"0x{r.data:02x}" for r in stretched_reports],
         "drift_pct": [r.drift_pct for r in stretched_reports],
@@ -215,6 +242,8 @@ def _measure_image(stem, cycles_per_bit, clock_period_ps, tx_initial, tx_edges, 
         "nominal_bit_period_ps": nominal_bit_period_ps,
         "nominal_baud": nominal_baud,
         "pin": "uo_out[0]",
+        "tx_initial": tx_initial,
+        "tx_edge_levels": [level for _, level in tx_edges],
         "tx_edges_ps": [t for (t, _level) in tx_edges],
         "frames": frames,
         "failures": failures,
@@ -242,6 +271,17 @@ async def test_uart_tx_bit_period_and_drift_in_time_units(dut):
         observe = sample = None  # retention only: no observe point exists unaligned
 
     images = []
+    measurement = {
+        "units": {
+            "time": "ps (simulation time at the run's SDC clock)",
+            "drift": "percent of one nominal bit period",
+            "mean_bit_period": "ps per bit (delta-t / last-edge bit index)",
+        },
+        "clock_period_ps": clock_period_ps,
+        "aligned": _align.ALIGNMENT is not None,
+        "pin": "uo_out[0]",
+        "images": images,
+    }
     for stem, cycles_per_bit in TX_IMAGES:
         header = _header_bit_period(stem)
         if header is not None:
@@ -265,7 +305,7 @@ async def test_uart_tx_bit_period_and_drift_in_time_units(dut):
         # which would timestamp a phantom pre-settle "transition" no clk
         # edge accounts for.
         await ReadOnly()
-        tx_initial = _tx_bit(str(dut.uo_out.value))
+        tx_initial = tx_level(str(dut.uo_out.value))
         await Timer(1, unit="ns")  # leave the read-only region
         # The benches' own run-length arithmetic for these images
         # (`test_firmware_uart_rx.run_tx_program`): header + two frames +
@@ -283,25 +323,14 @@ async def test_uart_tx_bit_period_and_drift_in_time_units(dut):
         # Bit-0 *changes* only: one list feeds both the decoder and the
         # published edge list, so a non-TX `uo_out` event cannot skew either.
         tx_edges = tx_level_changes(monitor.transitions, tx_initial)
-        assert tx_edges, f"{stem}: no uo_out transition observed at the pins"
         image = _measure_image(stem, cycles_per_bit, clock_period_ps, tx_initial, tx_edges, dut._log.info)
         image["pin_contract_violations"] = {
             "count": len(monitor.violations),
             "listed": [str(v) for v in monitor.violations[:3]],
         }
         images.append(image)
+        REPORT.add_measurement("uart_tx_drift", measurement)
 
-    REPORT.add_measurement("uart_tx_drift", {
-        "units": {
-            "time": "ps (simulation time at the run's SDC clock)",
-            "drift": "percent of one nominal bit period",
-            "mean_bit_period": "ps per bit (delta-t / last-edge bit index)",
-        },
-        "clock_period_ps": clock_period_ps,
-        "aligned": _align.ALIGNMENT is not None,
-        "pin": "uo_out[0]",
-        "images": images,
-    })
     for image in images:
         stem = image["image"]
         assert not image["pin_contract_violations"]["count"], (

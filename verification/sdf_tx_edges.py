@@ -4,6 +4,12 @@ level changes out of the monitor's whole-`uo_out` transition list.
 Kept free of cocotb so a plain unittest can cover it."""
 
 
+def tx_level(value):
+    """Keep unknown pin levels as observed so a failed capture can be replayed."""
+    bit = value[-1]
+    return int(bit) if bit in "01" else bit
+
+
 def tx_level_changes(transitions, initial):
     """`(t_ps, level)` for each *change* of `uo_out[0]`.
 
@@ -19,9 +25,7 @@ def tx_level_changes(transitions, initial):
     for event in transitions:
         if event["pin"] != "uo_out":
             continue
-        bit = event["value"][-1]
-        assert bit in "01", f"uo_out reads {event['value']!r}; the TX measurement needs 0/1 pins"
-        bit = int(bit)
+        bit = tx_level(event["value"])
         if bit == level:
             continue
         level = bit
