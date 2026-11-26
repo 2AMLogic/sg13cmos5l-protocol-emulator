@@ -87,6 +87,7 @@ from reference_models.dmx512 import (
     BREAK_MIN_NS,
     MAB_MIN_NS,
     MAX_SLOT_DRIFT_PCT,
+    UNIVERSE_SLOTS,
     Dmx512Receiver,
 )
 from reference_models.waveform import Signal
@@ -116,10 +117,9 @@ BREAK_CYCLES = 4609
 MAB_CYCLES = 605
 #: One slot: 11 bit periods (start + 8 data + 2 stop), back to back.
 SLOT_CYCLES = 11 * BIT_PERIOD_CYCLES
-#: Slots per packet: the start code plus 512 channels.
-PACKET_SLOTS = 513
-#: One universe: BREAK + MAB + all slots.
-UNIVERSE_CYCLES = BREAK_CYCLES + MAB_CYCLES + PACKET_SLOTS * SLOT_CYCLES
+#: One universe: BREAK + MAB + all slots (`UNIVERSE_SLOTS` = the start
+#: code plus 512 channels, from the reference model).
+UNIVERSE_CYCLES = BREAK_CYCLES + MAB_CYCLES + UNIVERSE_SLOTS * SLOT_CYCLES
 #: Statically: the BREAK fall retires 2 (fetch-ahead) + 3 setup
 #: instructions + `WAIT 255` + XOR + OUT after the MODE drop.
 FIRST_BREAK_FALL_CYCLE = 2 + 3 + 256 + 1 + 1
@@ -167,7 +167,7 @@ import asm  # noqa: E402  (path-shimmed import of the committed assembler)
 # their tests (cocotb discovers tests by scanning the *named* module's
 # own namespace).
 from test_protocol_emulator import load_program  # noqa: E402
-from test_firmware_uart import capture_pin_bits  # noqa: E402
+from test_firmware_uart import capture_pin_bits, cycle_at_time  # noqa: E402
 
 SRC = REPO_ROOT / "firmware" / "asm" / "dmx512_tx.asm"
 HEX = REPO_ROOT / "firmware" / "build" / "dmx512_tx.hex"
@@ -195,15 +195,6 @@ def universe_run_cycles() -> int:
     the second packet's BREAK, mark and start code + margin."""
     return (FIRST_BREAK_FALL_CYCLE + UNIVERSE_CYCLES
             + CAPTURE_MARGIN_CYCLES)
-
-
-def time_scaled(signal: Signal, factor: float) -> Signal:
-    """A copy of the captured waveform with every transition time
-    stretched by `factor` -- the negative control that re-grades this
-    bench's own captured waveform as a mistimed transmitter."""
-    clone = Signal(signal.initial, name=f"{signal.name}*{factor}")
-    clone.transitions = [(t * factor, v) for (t, v) in signal.transitions]
-    return clone
 
 
 def shift_slot_early(signal: Signal, boundary_ns: float, period_ns: float) -> Signal:
@@ -266,7 +257,7 @@ async def test_committed_image_is_fresh(dut):
         f"committed program: {len(program.instructions)} words, "
         f"{committed_total_cycles()} fall-through cycles; universe is "
         f"{UNIVERSE_CYCLES} cycles ({BREAK_CYCLES} BREAK + {MAB_CYCLES} "
-        f"MAB + {PACKET_SLOTS} x {SLOT_CYCLES})"
+        f"MAB + {UNIVERSE_SLOTS} x {SLOT_CYCLES})"
     )
 
 
@@ -318,9 +309,9 @@ async def test_dmx512_universe_passes_independent_reference_model(dut):
         f"mark-after-break {pkt.mab_ns:.0f} ns is below the receiver "
         f"limit {MAB_MIN_NS:.0f} ns"
     )
-    assert len(pkt.slots) == PACKET_SLOTS, (
+    assert len(pkt.slots) == UNIVERSE_SLOTS, (
         f"universe 1 carries {len(pkt.slots)} slots, expected "
-        f"{PACKET_SLOTS} (start code + 512 channels) -- an 8-bit slot "
+        f"{UNIVERSE_SLOTS} (start code + 512 channels) -- an 8-bit slot "
         f"counter wrapping early would show here"
     )
     assert pkt.slots[0].data == 0x00, (
@@ -358,27 +349,20 @@ async def test_dmx512_universe_passes_independent_reference_model(dut):
     # ---- the measurement, in cycles (clock-rate-independent) ----------
     # Map the model's findings onto the captured transition cycle indices
     # and grade the widths against the committed program's static numbers.
-    t_of = {t: c for t, c in zip(
-        [t for (t, _v) in tx.signal.transitions], tx.transition_cycles)}
-    def cycle_of(t_ns: float) -> int:
-        got = t_of.get(t_ns)
-        assert got is not None, f"no captured transition at {t_ns} ns"
-        return got
-
-    break_falls = [cycle_of(p.t_break_fall) for p in decode.packets[:2]]
-    break_rises = [cycle_of(p.t_break_rise) for p in decode.packets[:2]]
+    break_falls = [cycle_at_time(tx, p.t_break_fall) for p in decode.packets[:2]]
+    break_rises = [cycle_at_time(tx, p.t_break_rise) for p in decode.packets[:2]]
     for n, (fall, rise) in enumerate(zip(break_falls, break_rises)):
         measured = rise - fall
         assert measured == BREAK_CYCLES, (
             f"BREAK {n + 1} measured {measured} cycles, the committed "
             f"program's static accounting says {BREAK_CYCLES}"
         )
-    mab1 = cycle_of(pkt.slots[0].t_start) - break_rises[0]
+    mab1 = cycle_at_time(tx, pkt.slots[0].t_start) - break_rises[0]
     assert mab1 == MAB_CYCLES, (
         f"mark-after-break measured {mab1} cycles, static accounting "
         f"says {MAB_CYCLES}"
     )
-    slot_falls = [cycle_of(s.t_start) for s in pkt.slots]
+    slot_falls = [cycle_at_time(tx, s.t_start) for s in pkt.slots]
     pitches = {b - a for a, b in zip(slot_falls, slot_falls[1:])}
     assert pitches == {SLOT_CYCLES}, (
         f"slot pitches measured {sorted(pitches)} cycles, expected only "
@@ -434,7 +418,7 @@ async def test_dmx512_universe_passes_independent_reference_model(dut):
     )
 
     # ---- negative control 2: the mistimed capture ----------------------
-    stretched = time_scaled(tx.signal, NEGATIVE_CONTROL_SCALE)
+    stretched = tx.time_scaled(NEGATIVE_CONTROL_SCALE)
     stretched_decode = receiver.decode(stretched)
     stretched_pkt = stretched_decode.packets[0]
     assert [s.data for s in stretched_pkt.slots] == \

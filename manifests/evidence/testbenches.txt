@@ -2,6 +2,14 @@
 # committed, with a cold-start invocation a third party can run, and the PDK
 # revision is pinned.
 #
+# Refreshed 2026-11-23 for issue #451 (the I2S audio transmitter): a
+# `firmware-i2s` experiment line is added (Icarus cocotb run; no gate-level
+# leg is claimed). The PDK revision is unchanged.
+#
+# Refreshed 2026-11-21 for issue #450 (the CAN 2.0A node): a
+# `firmware-can` experiment line is added (Icarus cocotb run). The PDK
+# revision is unchanged.
+#
 # Refreshed 2026-11-20 for issue #452 (the SWD debug probe): a
 # `firmware-swd` experiment line is added (Icarus cocotb run; no gate-level
 # leg is claimed). The PDK revision is unchanged.
@@ -193,11 +201,16 @@ experiment  firmware-spi  verification/test_firmware_spi.py; `klt functional-ver
 experiment  firmware-uart  verification/test_firmware_uart.py; `klt functional-verification verification/request-firmware-uart.json --format json`
 experiment  firmware-ws2812  verification/test_firmware_ws2812.py + reference_models/ws2812.py; `klt functional-verification verification/request-firmware-ws2812.json --format json`; model self-test `python3 verification/test_ws2812_model.py` (in `npm run lint`); mutant programs are tests in the bench
 experiment  firmware-ws2812-gate-level  `PDK_ROOT=<pdk> ./flow/run-ws2812-gate-level.sh` [PDK]; default netlist frozen in post-layout-sdf-regression/artifacts/20261011-114800-e5a0bae/
+experiment  firmware-dali  verification/test_firmware_dali.py + reference_models/dali.py; `klt functional-verification verification/request-firmware-dali.json --format json`; model self-test `python3 verification/test_dali_model.py`; shortened Manchester half-bit mutant in the RTL bench
 experiment  firmware-ps2  verification/test_firmware_ps2.py + reference_models/ps2.py; `klt functional-verification verification/request-firmware-ps2.json --format json`; model self-test `python3 verification/test_ps2_model.py` (in `npm run lint`); mutant programs are tests in the bench
+experiment  firmware-onewire  verification/test_firmware_onewire.py + reference_models/onewire.py; `klt functional-verification verification/request-firmware-onewire.json --format json`; model self-test `python3 verification/test_onewire_model.py` (in `npm run lint`); mutant programs are tests in the bench
 experiment  firmware-ps2-gate-level  `PDK_ROOT=<pdk> ./flow/run-ps2-gate-level.sh` [PDK]; default netlist frozen in post-layout-sdf-regression/artifacts/20261011-114800-e5a0bae/
 experiment  firmware-dmx512  verification/test_firmware_dmx512.py + reference_models/dmx512.py; `klt functional-verification verification/request-firmware-dmx512.json --format json`; model self-test `python3 verification/test_dmx512_model.py` (in `npm run lint`); negative controls are tests in the bench
 experiment  firmware-nec-ir  verification/test_firmware_nec_ir.py + reference_models/nec_ir.py; `klt functional-verification verification/request-firmware-nec-ir.json --format json`; model self-test `python3 verification/test_nec_ir_model.py` (in `npm run lint`); the mutation and stretched-capture controls are tests in the bench
 experiment  firmware-swd  verification/test_firmware_swd.py + reference_models/swd.py; `klt functional-verification verification/request-firmware-swd.json --format json`; model self-test `python3 verification/test_swd_model.py` (in `npm run lint`); mutant programs and WAIT/FAULT ACK runs are tests in the bench; no gate-level leg
+experiment  firmware-modbus  verification/test_firmware_modbus.py + reference_models/modbus_rtu.py; `klt functional-verification verification/request-firmware-modbus.json --format json`; model self-test `python3 verification/test_modbus_rtu_model.py` (in `npm run lint`); the retimed-capture negative control (test_capture_path_negative_control) is a test in the bench; no gate-level leg
+experiment  firmware-can  verification/test_firmware_can.py + reference_models/can_2a.py; `klt functional-verification verification/request-firmware-can.json --format json`; model self-test `python3 verification/test_can_2a_model.py`; generator gate `python3 firmware/tools/test_gen_can_2a.py` (CAN 2.0A node, issue #450)
+experiment  firmware-i2s  verification/test_firmware_i2s.py + reference_models/i2s.py; `klt functional-verification verification/request-firmware-i2s.json --format json`; model self-test `python3 verification/test_i2s_model.py` (in `npm run lint`); mutant programs and the delayed-SD capture control are tests in the bench; no gate-level leg (issue #451)
 experiment  firmware-uart-rx  verification/test_firmware_uart_rx.py; `klt functional-verification verification/request-firmware-uart-rx.json --format json`
 experiment  i2c-ack-window  `./verification/formal/run-i2c-ack-window.sh <dir>` (formal toolchain: yosys, yosys-abc, iverilog/vvp, python3, git history; no PDK, no z3); bounded ABC bmc3 on the actual core running the committed i2c_fast/i2c_std images, covers, and 13 firmware mutants per grade each replayed in Icarus (issue #259)
 experiment  isa-lockstep  verification/test_isa_lockstep.py + reference_models/isa.py; `klt functional-verification verification/request-isa-lockstep.json --format json`; controls `python3 verification/isa_lockstep_mutants.py --out <dir>`

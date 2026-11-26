@@ -1,0 +1,11 @@
+<testsuites name="results">
+  <testsuite name="all" package="all">
+    <property name="random_seed" value="1" />
+    <testcase name="test_committed_images_load_word_for_word" classname="test_loadseq" file="&lt;repo&gt;/verification/test_loadseq.py" lineno="135" time="1.9954943656921387" sim_time_ns="692980.0" ratio_time="347272.34108708665" />
+    <testcase name="test_asymmetric_one_word_and_full_256" classname="test_loadseq" file="&lt;repo&gt;/verification/test_loadseq.py" lineno="148" time="0.12894105911254883" sim_time_ns="45240.0" ratio_time="350857.98357303196" />
+    <testcase name="test_reset_reload_replays_the_same_initial_sequence" classname="test_loadseq" file="&lt;repo&gt;/verification/test_loadseq.py" lineno="160" time="0.1272881031036377" sim_time_ns="44560.0" ratio_time="350071.99348174233" />
+    <testcase name="test_mode_drop_is_its_own_edge" classname="test_loadseq" file="&lt;repo&gt;/verification/test_loadseq.py" lineno="173" time="0.0013518333435058594" sim_time_ns="440.0" ratio_time="325483.9082892416" />
+    <testcase name="test_mutants_read_back_as_mutated_not_as_image" classname="test_loadseq" file="&lt;repo&gt;/verification/test_loadseq.py" lineno="185" time="0.00836634635925293" sim_time_ns="2880.0" ratio_time="344236.2862272377" />
+    <testcase name="test_generated_sequence_matches_existing_helper_shape" classname="test_loadseq" file="&lt;repo&gt;/verification/test_loadseq.py" lineno="208" time="0.0003516674041748047" sim_time_ns="0.0" ratio_time="0.0" />
+  </testsuite>
+</testsuites>

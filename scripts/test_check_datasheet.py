@@ -20,10 +20,8 @@ def copy_tree(dst: Path) -> None:
     shutil.copy(REPO / "docs" / "info.md", dst / "docs" / "info.md")
     shutil.copytree(REPO / "firmware" / "asm", dst / "firmware" / "asm")
     shutil.copytree(REPO / "firmware" / "build", dst / "firmware" / "build")
-    for rel in ("verification", ):
-        # only link targets are needed; copy the files the table cites
-        shutil.copytree(REPO / rel, dst / rel,
-                        ignore=shutil.ignore_patterns("__pycache__", "artifacts", "formal", "duts"))
+    # only link targets are needed; share the checkout's tree, read-only
+    (dst / "verification").symlink_to(REPO / "verification")
 
 
 class DatasheetDrift(unittest.TestCase):

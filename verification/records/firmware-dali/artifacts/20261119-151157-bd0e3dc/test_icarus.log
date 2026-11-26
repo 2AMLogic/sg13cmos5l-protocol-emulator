@@ -1,0 +1,35 @@
+     -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:242  in gpi_load_users                  Loaded entry library: '/usr/lib/x86_64-linux-gnu/libpython3.12.so.1.0'
+     -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:233  in gpi_load_users                  Running entry func 'initialize' from loaded library '/workspace/work/2amlogic-sg13cmos5l-protocol-emulator-3308d5e5/.loom/worktrees/2amlogic-sg13cmos5l-protocol-emulator-3308d5e5/issue-449/.loom-local/venv/lib/python3.12/site-packages/cocotb/simulator.cpython-312-x86_64-linux-gnu.so'
+     -.--ns INFO     pygpi                              ..ib/pygpi/embed.cpp:114  in initialize                      Using Python 3.12.12 interpreter at /workspace/work/2amlogic-sg13cmos5l-protocol-emulator-3308d5e5/.loom/worktrees/2amlogic-sg13cmos5l-protocol-emulator-3308d5e5/issue-449/.loom-local/venv/bin/python
+     -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:74   in gpi_print_registered_impl       GPI: VPI support registered
+     0.00ns INFO     cocotb.initialize                  Seeding Python random module with 1
+     0.00ns INFO     cocotb.initialize                  Initialized cocotb v2.1.0 from /workspace/work/2amlogic-sg13cmos5l-protocol-emulator-3308d5e5/.loom/worktrees/2amlogic-sg13cmos5l-protocol-emulator-3308d5e5/issue-449/.loom-local/venv/lib/python3.12/site-packages/cocotb
+     0.00ns INFO     cocotb.initialize                  Running on Icarus Verilog version 13.0 (stable)
+     0.00ns INFO     cocotb.regression                  Running tests
+     0.00ns INFO     cocotb.regression                  running test_firmware_dali.transactions (1/2)
+14233840.00ns INFO     ..tt_um_2amlogic_protocol_emulator forward 0054: 1Te [20823, 20832, 20833, 20835], 2Te [41666, 41667] cycles
+39237540.00ns INFO     ..tt_um_2amlogic_protocol_emulator forward 01a0: 1Te [20823, 20832, 20833, 20837], 2Te [41666, 41669] cycles
+39237540.00ns INFO     ..tt_um_2amlogic_protocol_emulator forward stop to next start: 541878 cycles
+75886280.00ns INFO     ..tt_um_2amlogic_protocol_emulator forward 01a0: 1Te [20823, 20832, 20833, 20837], 2Te [41666, 41669] cycles
+75886280.00ns INFO     ..tt_um_2amlogic_protocol_emulator reply 54, Te 19000, gap 7 Te: next forward 476963 cycles after stop
+120265400.00ns INFO     ..tt_um_2amlogic_protocol_emulator forward 01a0: 1Te [20823, 20832, 20833, 20837], 2Te [41666, 41669] cycles
+120265400.00ns INFO     ..tt_um_2amlogic_protocol_emulator reply 81, Te 23100, gap 22 Te: next forward 460783 cycles after stop
+159859640.00ns INFO     ..tt_um_2amlogic_protocol_emulator forward 01a0: 1Te [20823, 20832, 20833, 20837], 2Te [41666, 41669] cycles
+197926980.00ns INFO     ..tt_um_2amlogic_protocol_emulator forward 01a0: 1Te [20823, 20832, 20833, 20837], 2Te [41666, 41669] cycles
+233769140.00ns INFO     ..tt_um_2amlogic_protocol_emulator forward 01a0: 1Te [20823, 20832, 20833, 20837], 2Te [41666, 41669] cycles
+258771200.00ns INFO     ..tt_um_2amlogic_protocol_emulator forward 01a0: 1Te [20823, 20832, 20833, 20837], 2Te [41666, 41669] cycles
+258771200.00ns INFO     ..tt_um_2amlogic_protocol_emulator no reply: next start 541796 cycles after stop begins
+298209980.00ns INFO     ..tt_um_2amlogic_protocol_emulator forward 01a0: 1Te [20823, 20832, 20833, 20837], 2Te [41666, 41669] cycles
+298209980.00ns INFO     ..tt_um_2amlogic_protocol_emulator reply a7, Te 20833, gap 12 Te: next forward 471972 cycles after stop
+298209980.00ns INFO     cocotb.regression                  test_firmware_dali.transactions passed
+298209980.00ns INFO     cocotb.regression                  running test_firmware_dali.half_bit_mutant (2/2)
+298542380.00ns INFO     ..tt_um_2amlogic_protocol_emulator Short TX half-bit rejected: Manchester interval 13232 cycles outside timing tolerance
+298542380.00ns INFO     cocotb.regression                  test_firmware_dali.half_bit_mutant passed
+298542380.00ns INFO     cocotb.regression                  ********************************************************************************************
+                                                        ** TEST                                STATUS  SIM TIME (ns)  REAL TIME (s)  RATIO (ns/s) **
+                                                        ********************************************************************************************
+                                                        ** test_firmware_dali.transactions      PASS   298209980.00          56.78    5251839.12  **
+                                                        ** test_firmware_dali.half_bit_mutant   PASS      332400.00           0.11    2996118.27  **
+                                                        ********************************************************************************************
+                                                        ** TESTS=2 PASS=2 FAIL=0 SKIP=0                298542380.00          56.89    5247369.35  **
+                                                        ********************************************************************************************

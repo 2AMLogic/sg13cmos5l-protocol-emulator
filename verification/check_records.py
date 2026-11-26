@@ -69,6 +69,20 @@ Checks, per record `verification/records/<experiment>/records/<record-id>.md`:
    path would otherwise skip freshness forever (#183 review). Superseded
    records are frozen history: their inputs must still be well-formed, but
    the file may since have been deleted.
+8. **Artifact links resolve** (#545) -- every inline Markdown link in a
+   record body whose relative destination, resolved from the record's own
+   directory, points into the record's experiment `artifacts/` tree must
+   name a git-tracked regular file, or a directory that contains tracked
+   artifacts (a whole run directory, or another record id's directory in a
+   shared run -- links are resolved exactly as written). A record that
+   cites a measurement log absent from the tree asserts numbers nothing in
+   the tree substantiates, and an untracked local file does not satisfy the
+   citation. Destinations outside the experiment's `artifacts/` tree --
+   paths elsewhere in the repo, external URLs, fragments -- and paths that
+   appear only as inline code are out of scope: this check substantiates
+   artifact citations, it does not audit general Markdown. It applies to
+   live and superseded records alike; a superseded record is frozen
+   history, but the artifact it cites must still be in the tree.
 
 Usage:
     python3 verification/check_records.py
@@ -84,6 +98,7 @@ from __future__ import annotations
 import argparse
 from collections import Counter
 import json
+import posixpath
 import re
 import stat
 import subprocess
@@ -93,6 +108,10 @@ from pathlib import Path
 from _repo_utils import REPO_ROOT, run_git, sha256_of
 
 RECORDS_ROOT = REPO_ROOT / "verification" / "records"
+
+# The same root as a repo-relative POSIX path, for resolving link
+# destinations against the git inventory (#545).
+RECORDS_ROOT_POSIX = RECORDS_ROOT.relative_to(REPO_ROOT).as_posix()
 
 RECORD_ID_RE = re.compile(r"^\d{8}-\d{6}-[0-9a-f]{7,40}$")
 EXPERIMENT_RE = re.compile(r"^[a-z0-9][a-z0-9._-]*$")
@@ -248,17 +267,31 @@ def _tracked_record_files() -> list[Path]:
     return sorted(REPO_ROOT / name for name in out.split("\0") if name)
 
 
-def tracked_symlink_errors() -> list[str]:
-    """Every tracked entry under `verification/records/` with git mode
-    `120000` (a symlink). git versions only the link text, so the target can
-    be edited after merge with no append-only violation (#183 review)."""
+def _tracked_records_entries() -> list[tuple[str, str]]:
+    """One `git ls-files -s -z` scan of everything tracked under
+    `verification/records/`, as `(mode, path)` pairs. Shared by the
+    symlink/mode check and the artifact-link inventory (#545) so the full
+    corpus costs one git process, not one per record or link."""
     out = run_git("ls-files", "-s", "-z", "--", "verification/records/")
-    errors = []
+    entries = []
     for entry in out.split("\0"):
         if not entry:
             continue
         info, _, name = entry.partition("\t")
-        mode = info.split(" ")[0]
+        entries.append((info.split(" ")[0], name))
+    return entries
+
+
+def tracked_symlink_errors(entries: list[tuple[str, str]] | None = None) -> list[str]:
+    """Every tracked entry under `verification/records/` with git mode
+    `120000` (a symlink). git versions only the link text, so the target can
+    be edited after merge with no append-only violation (#183 review).
+    `entries`, when given, is a scan from `_tracked_records_entries()` so
+    callers that also need the artifact-link inventory pay for one scan."""
+    if entries is None:
+        entries = _tracked_records_entries()
+    errors = []
+    for mode, name in entries:
         if mode == "120000":
             errors.append(
                 f"{REPO_ROOT / name}: is a symlink; nothing under "
@@ -297,6 +330,78 @@ def _is_tracked(rel_path: str) -> bool:
         return bool(run_git("ls-files", "-z", "--error-unmatch", "--", rel_path))
     except subprocess.CalledProcessError:
         return False
+
+
+# Inline code spans are data, not citations: a path in backticks is prose
+# about a path, so spans are blanked before links are scanned (#545).
+_CODE_SPAN_RE = re.compile(r"`[^`\n]*`")
+# `[text](dest)` / `![alt](dest)`, with an optional whitespace and a
+# double-quoted title before the closing paren. Deliberately the simple
+# destination grammar (no spaces or angle brackets): the corpus writes no
+# other form, and accepting only what the corpus writes keeps the check
+# exact on historical records.
+_INLINE_LINK_DEST_RE = re.compile(r"!?\[[^\]]*\]\(\s*([^)\s]+)(?:\s+\"[^\"]*\")?\)")
+_SCHEME_RE = re.compile(r"^[A-Za-z][A-Za-z0-9+.-]*:")
+
+
+def _tracked_artifact_targets(
+    entries: list[tuple[str, str]],
+) -> tuple[frozenset[str], frozenset[str]]:
+    """`(files, dirs)` -- every tracked regular file under
+    `verification/records/`, plus every directory prefix that contains one,
+    as repo-relative POSIX paths. A link resolves only against these: an
+    untracked or missing target cannot substantiate a record's claim
+    (#545)."""
+    files = frozenset(name for mode, name in entries if mode == "100644")
+    dirs = set()
+    for name in files:
+        current = posixpath.dirname(name)
+        while current:
+            dirs.add(current)
+            current = posixpath.dirname(current)
+    return files, frozenset(dirs)
+
+
+def artifact_link_errors(
+    path: Path,
+    text: str,
+    tracked_files: frozenset[str],
+    tracked_dirs: frozenset[str],
+) -> list[str]:
+    """Every inline Markdown link in `text` whose relative destination
+    points into THIS record's experiment `artifacts/` tree must resolve,
+    from the record's own directory, to a tracked regular file or to a
+    directory containing tracked artifacts (#545). Links resolve exactly as
+    written, so a shared artifact under a sibling record id's directory and
+    a whole-run-directory link are judged as they read. Everything else --
+    external URLs, fragment-only links, destinations outside the
+    experiment's `artifacts/` tree, and anything inside an inline code span
+    -- is out of scope: this check substantiates artifact citations, it
+    does not audit general Markdown."""
+    try:
+        record_dir = path.parent.relative_to(REPO_ROOT).as_posix()
+    except ValueError:
+        return []
+    artifacts_root = f"{RECORDS_ROOT_POSIX}/{experiment_key(path)}/artifacts"
+    prefix = artifacts_root + "/"
+    errors = []
+    for match in _INLINE_LINK_DEST_RE.finditer(_CODE_SPAN_RE.sub(" ", text)):
+        dest = match.group(1)
+        bare = dest.split("#", 1)[0].strip()
+        if not bare or _SCHEME_RE.match(bare) or bare.startswith(("//", "/", "#")):
+            continue  # fragment-only or non-repository destination
+        resolved = posixpath.normpath(posixpath.join(record_dir, bare))
+        if resolved != artifacts_root and not resolved.startswith(prefix):
+            continue  # outside this experiment's artifacts/ tree: not a citation
+        if resolved in tracked_files or resolved in tracked_dirs:
+            continue
+        errors.append(
+            f"{path}: artifact link `({dest})` does not resolve to a tracked "
+            f"file or artifact directory from this record (`{resolved}` is not "
+            f"in the tree); a record's artifact citation must be committed "
+            f"evidence -- an untracked local file does not satisfy it"
+        )
+    return errors
 
 
 def input_error(path: Path, item) -> str | None:
@@ -389,7 +494,12 @@ def _extract_prose_fields(text: str) -> dict:
     return fields
 
 
-def lint_record(path: Path, all_record_ids_by_experiment: dict) -> list[str]:
+def lint_record(
+    path: Path,
+    all_record_ids_by_experiment: dict,
+    tracked_files: frozenset[str] = frozenset(),
+    tracked_dirs: frozenset[str] = frozenset(),
+) -> list[str]:
     errors = []
     link = symlink_error(path)
     if link:
@@ -401,6 +511,10 @@ def lint_record(path: Path, all_record_ids_by_experiment: dict) -> list[str]:
         errors.append(layout)
         return errors  # experiment identity is meaningless off-layout
     text = path.read_text(encoding="utf-8")
+
+    # Check 8 runs before any early return on metadata: a record with a
+    # broken artifact citation is wrong even when its metadata is too (#545).
+    errors.extend(artifact_link_errors(path, text, tracked_files, tracked_dirs))
 
     experiment = experiment_key(path)  # .../<experiment>/records/<id>.md
 
@@ -613,8 +727,13 @@ def main() -> int:
             "no tracked records under verification/records/**/records/*.md"
         )
 
+    # One scan feeds both the symlink/mode check and the artifact-link
+    # targets: the whole corpus costs one git process, not one per link
+    # (#545).
+    records_entries = _tracked_records_entries() if RECORDS_ROOT.exists() else []
     if RECORDS_ROOT.exists():
-        all_errors.extend(tracked_symlink_errors())
+        all_errors.extend(tracked_symlink_errors(records_entries))
+    tracked_files, tracked_dirs = _tracked_artifact_targets(records_entries)
 
     print(f"== linting {len(record_files)} record(s) ==")
     for error in all_errors:
@@ -655,7 +774,7 @@ def main() -> int:
             superseded.add((experiment, target))
 
     for path in record_files:
-        errors = lint_record(path, all_ids_by_experiment)
+        errors = lint_record(path, all_ids_by_experiment, tracked_files, tracked_dirs)
         errors += check_hash_freshness(path, superseded)
         if errors:
             print(f"FAIL: {path.relative_to(REPO_ROOT)}")
