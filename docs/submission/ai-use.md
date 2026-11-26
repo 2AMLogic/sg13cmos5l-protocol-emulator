@@ -121,11 +121,11 @@ reports but is not a required check on `main`.
   [record](../../verification/records/post-layout-sdf-regression/records/20261010-102552-d43f89c.md) <!-- superseded-ok: history of the failed-then-fixed record chain -->.
   That record supersedes the last failing one
   ([`704a3fb`](../../verification/records/post-layout-sdf-regression/records/20261010-083555-704a3fb.md) <!-- superseded-ok: history of the failed-then-fixed record chain -->),
-  whose netlist it shares, and states what it still does not show. A later
-  record in that chain
-  ([`2dca74c`](../../verification/records/post-layout-sdf-regression/records/20261126-061939-2dca74c.md),
-  with the revised UART TX timing checks) still passes on the same routed
-  netlist.
+  whose netlist it shares. That core regression used GDS run 38044212536
+  (netlist SHA-256 `027f17bd…`). The later protocol regression ran UART TX,
+  SPI and I²C on the netlist from GDS run 38136727636 (`fbc7bc30…`).
+  All three protocols passed at all three corners. [Protocol regression
+  record](../../verification/records/post-layout-sdf-regression/records/20261126-085014-d4e3e4d.md).
 - **Independent references.** Protocol firmware is graded against separately
   written reference models
   ([record](../../verification/records/protocol-reference-models/records/20261010-180436-9fb7815.md)).

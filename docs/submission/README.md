@@ -146,7 +146,7 @@ for Partial.
   with no max-slew or max-capacitance violation, from five repair settings
   in `src/config.json`. Both are in the records of gds run 38136727636
   (`librelane-corner-timing` `20261011-144900-e5a0bae`,
-  `post-layout-sdf-regression` `20261011-114800-e5a0bae` <!-- superseded-ok: the record that first carried this result; the chain tip is 20261126-061939-2dca74c -->). #217 closed at
+  `post-layout-sdf-regression` `20261011-114800-e5a0bae` <!-- superseded-ok: the record that first carried this result; the chain tip is 20261126-085014-d4e3e4d -->). #217 closed at
   2026-10-11T16:34Z on that evidence: UART TX, SPI and I2C repeated START
   have routed-SDF runs at all three corners; the boot programs, UART RX,
   PS/2, WS2812 and the random regression do not. D1 still has to be

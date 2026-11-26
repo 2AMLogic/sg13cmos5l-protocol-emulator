@@ -3,14 +3,14 @@
   "kind": "generic",
   "status": "pass",
   "t1_item": 9,
-  "summary": "T1 item 9 (Testbenches shipped): 104/104 attestation checks passed (klt signoff --attest)",
+  "summary": "T1 item 9 (Testbenches shipped): 110/110 attestation checks passed (klt signoff --attest)",
   "source": "manifests/attest/item9.json",
   "attestation": {
     "producer": "klt signoff --attest",
     "inventory_schema_version": 1,
     "hash_algorithm": "sha256-raw-bytes",
-    "check_count": 104,
-    "passed_count": 104,
+    "check_count": 110,
+    "passed_count": 110,
     "checks": [
       {
         "check": "present",
@@ -288,6 +288,20 @@
       {
         "check": "present",
         "role": "testbench",
+        "path": "verification/reference_models/uart.py",
+        "passed": true,
+        "content_hash": "sha256:71d6bc59efeefe811326c43525f2a4d948e35d88023723671a0a5fa2c2653dbd"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "verification/reference_models/waveform.py",
+        "passed": true,
+        "content_hash": "sha256:e1b521acd3be65db67762afac5dcd51aa0ed22105fa76db2783eaaa46ac0dcd6"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
         "path": "verification/reference_models/ws2812.py",
         "passed": true,
         "content_hash": "sha256:786c5d618cfa48ea1fc9c6f7f9044929e5483b2e66e98a4b720fde9b1821a128"
@@ -505,6 +519,27 @@
       {
         "check": "present",
         "role": "testbench",
+        "path": "verification/sdf_protocol_alignment.py",
+        "passed": true,
+        "content_hash": "sha256:48640483d9fa58c1d3befa0e6094dfce8a0201a88db48722c39c68a5baf930b4"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "verification/sdf_protocol_uart_tx.py",
+        "passed": true,
+        "content_hash": "sha256:0395ca5fb77539659afb304c78925d98d7c1c58c76b8cdbcbf62835e3851ca98"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "verification/sdf_tx_edges.py",
+        "passed": true,
+        "content_hash": "sha256:7251d3fde80db982bf53cfd23022db98e3228564d01cf0076b9d8bd27d504dbc"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
         "path": "verification/test_boot_rom.py",
         "passed": true,
         "content_hash": "sha256:544a650a9eca5ebdd8e7a71a791f2b6248e366d099524a6a14b06f719357367f"
@@ -687,6 +722,13 @@
       {
         "check": "present",
         "role": "testbench",
+        "path": "verification/test_sdf_uart_replay.py",
+        "passed": true,
+        "content_hash": "sha256:41aca400e81bedc922c122eb71430adc9188ad08eb66a737167caf1b9d0d241a"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
         "path": "verification/test_uio_pad_resolution.py",
         "passed": true,
         "content_hash": "sha256:d362a1c8409642c919b48a76061b1823db0c6de6ada494f3a97160609e40a5de"
@@ -763,7 +805,7 @@
         "path": "manifests/attest/item9.json",
         "scope": "repo"
       },
-      "content_hash": "sha256:b0f385ed6cb50e5405bbdbb7fb6b2e99a1ec5e54e94aaf76a9f78c2cf9203f7d"
+      "content_hash": "sha256:1ce145dd299b1d491cc63197b5971446e8f7d81f0ca4878175ced5a8b1d6fd7f"
     }
   }
 }
