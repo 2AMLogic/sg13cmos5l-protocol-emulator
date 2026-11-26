@@ -7,37 +7,39 @@
 # complementary models (`verification/formal/formal_top_load.v` +
 # `verification/formal/serial_load_latency.sv`):
 #
-#   [1/7] Standalone loader (`formal_top_load_seq`, 5 assertions):
+#   [1/8] Standalone loader (`formal_top_load_seq`, 5 assertions):
 #         - Z3 BMC to depth $SEQ_BMC_DEPTH (default 60) + covers (5 monitor covers);
 #         - ABC `scorr; pdr -a` unbounded proof (5/5 proved);
 #         - `rIC3` (`multi-prop --no-parallel`) independent unbounded proof
 #           (5/5 proved; required when `REQUIRE_RIC3=1` or `RIC3` is present).
 #
-#   [2/7] Integrated loader + 8-word aliased synchronous SRAM + shipped
+#   [2/8] Integrated loader + 8-word aliased synchronous SRAM + shipped
 #         `rtl/protocol_core.v` (`-D INTEGRATED_LOAD`, `formal_top_load`):
 #         replaces `formal_top.v`'s constant-table / `free_serial_loaded`
 #         abstraction with the real shift-in path and checks BOTH the
 #         byte-identical `no_data_dependent_latency.sv` (8 assertions) AND
-#         `serial_load_latency` (5 assertions: `run_phase`, `exec_phase`
-#         +1-cycle priming, `serial_loaded`, `pm_crc`, and Wolper symbolic-slot
-#         shifted-word fetch `instr_word == obs_word`):
+#         `serial_load_latency` (6 assertions: `run_phase`, `exec_phase`,
+#         actual core issue after one priming cycle, `serial_loaded`, `pm_crc`,
+#         and symbolic-slot shifted-word fetch `instr_word == obs_word`):
 #         - Z3 BMC to depth $INT_BMC_DEPTH (default 14) + all 14 covers to
 #           depth $INT_COV_DEPTH (default 40);
-#         - ABC `scorr; pdr -a` unbounded proof of all 13 assertions;
+#         - ABC `scorr; pdr -a` unbounded proof of all 14 assertions;
 #         - `rIC3` (`ic3` on `-D INTEGRATED_LOAD -D CORE_PROP_ONLY`) independent
 #           unbounded proof of all 8 `no_data_dependent_latency` assertions over
 #           the real shift-in + 8-word SRAM + core transition system.
 #
-#   [3/7]..[5/7] Three scratch-copy loader mutants (`rtl/` is never edited):
+#   [3/8]..[5/8] Three scratch-copy loader mutants (`rtl/` is never edited):
 #         - `exit`: load exit delayed while `serial_in` is high;
 #         - `bit`:  intra-word shift/bit-counter stall when `serial_in` is high
 #                   at `bit_cnt == 4'd7`;
 #         - `addr`: commit write-address stalls when `load_word == 16'hA5A5`.
 #         Every mutant must be disproved by Z3 BMC, by ABC PDR, and (when
 #         present/required) by `rIC3`; a tool crash fails the gate.
-#   [6/7] Integrated exit-stall mutant, checked with ABC and optionally rIC3.
-#   [7/7] Replay 256 complete words followed by excess bits on the standalone
+#   [6/8] Integrated exit-stall mutant, checked with ABC and optionally rIC3.
+#   [7/8] Replay 256 complete words followed by excess bits on the standalone
 #         harness. Suppressing only the final SRAM write must fail serial_commit.
+#   [8/8] Suppress the first core issue after loading WCTL PM_CRC_LO at address 0.
+#         Z3 must fail first_serial_issue and emit a trace on the integrated model.
 
 set -u
 
@@ -113,9 +115,13 @@ elab_seq_aig () {
   [ "$rc" -eq 0 ] && [ -s "$out" ]
 }
 
+# Add an observation port on the existing core net in the formal netlist.
+# A missing or renamed net must stop elaboration.
+issue_probe='select -assert-count 1 protocol_core/w:executing; expose protocol_core/w:executing'
+
 elab_int_smt2 () {
-  local out="$1" mem_v="$2"
-  yosys -ql "$out.log" -p "read_verilog -formal -sv rtl/protocol_core.v $mem_v; read_verilog -formal -sv -nomem2reg -D INTEGRATED_LOAD verification/formal/no_data_dependent_latency.sv verification/formal/serial_load_latency.sv verification/formal/formal_top_load.v; hierarchy -top formal_top_load; proc; flatten; opt_expr; opt_merge; opt_muxtree; opt_reduce; opt_merge; opt_dff; opt_clean; async2sync; dffunmap; write_smt2 -wires $out"
+  local out="$1" mem_v="$2" core_v="${3:-rtl/protocol_core.v}"
+  yosys -ql "$out.log" -p "read_verilog -formal -sv $core_v $mem_v; $issue_probe; read_verilog -formal -sv -nomem2reg -D INTEGRATED_LOAD verification/formal/no_data_dependent_latency.sv verification/formal/serial_load_latency.sv verification/formal/formal_top_load.v; hierarchy -top formal_top_load; proc; flatten; opt_expr; opt_merge; opt_muxtree; opt_reduce; opt_merge; opt_dff; opt_clean; async2sync; dffunmap; write_smt2 -wires $out"
   local rc=$?
   sanitize_log "$out.log"
   [ "$rc" -eq 0 ] && [ -s "$out" ]
@@ -123,7 +129,7 @@ elab_int_smt2 () {
 
 elab_int_aig () {
   local out="$1" mem_v="$2" extra_def="${3:-}"
-  yosys -ql "$out.yosys.log" -p "read_verilog -formal -sv rtl/protocol_core.v $mem_v; read_verilog -formal -sv -nomem2reg -D INTEGRATED_LOAD $extra_def verification/formal/no_data_dependent_latency.sv verification/formal/serial_load_latency.sv verification/formal/formal_top_load.v; hierarchy -top formal_top_load; proc; flatten; opt_expr; opt_merge; opt_muxtree; opt_reduce; opt_merge; opt_dff; opt_clean; async2sync; dffunmap; setundef -anyseq; chformal -remove -cover; techmap; opt_clean; aigmap; opt_clean; write_aiger -zinit -ywmap ${out%.aig}.ywb $out" 2>"$out.yosys.stderr"
+  yosys -ql "$out.yosys.log" -p "read_verilog -formal -sv rtl/protocol_core.v $mem_v; $issue_probe; read_verilog -formal -sv -nomem2reg -D INTEGRATED_LOAD $extra_def verification/formal/no_data_dependent_latency.sv verification/formal/serial_load_latency.sv verification/formal/formal_top_load.v; hierarchy -top formal_top_load; proc; flatten; opt_expr; opt_merge; opt_muxtree; opt_reduce; opt_merge; opt_dff; opt_clean; async2sync; dffunmap; setundef -anyseq; chformal -remove -cover; techmap; opt_clean; aigmap; opt_clean; write_aiger -zinit -ywmap ${out%.aig}.ywb $out" 2>"$out.yosys.stderr"
   local rc=$?
   sanitize_log "$out.yosys.log"
   sanitize_log "$out.yosys.stderr"
@@ -168,14 +174,16 @@ pdr_expect_disproved () {
 
 expect_cex () {
   local label="$1" smt2="$2" vcd="$3" depth="$4" log="${2%.smt2}-bmc.log"
+  local assertion="$5"
+  shift 5
   rm -f "$vcd" "$log"
-  if yosys-smtbmc -s z3 -t "$depth" --dump-vcd "$vcd" "$smt2" >"$log" 2>&1; then
+  if yosys-smtbmc -s z3 -t "$depth" "$@" --dump-vcd "$vcd" "$smt2" >"$log" 2>&1; then
     sanitize_log "$log"
     echo "$label: NO counterexample -- property missed a data-dependent load stall" >&2
     fail=1
   else
     sanitize_log "$log"
-    if grep -q 'Assert failed in' "$log" && grep -q 'BMC failed!' "$log" && [ -s "$vcd" ]; then
+    if grep -Fq "$assertion" "$log" && grep -q 'BMC failed!' "$log" && [ -s "$vcd" ]; then
       echo "$label: Z3 BMC counterexample found as required"
     else
       echo "$label: solver/tool failure in Z3 BMC -- no assertion counterexample/VCD" >&2
@@ -204,7 +212,7 @@ ric3_expect_disproved () {
 }
 
 echo
-echo "== [1/7] standalone loader (formal_top_load_seq): BMC depth $SEQ_BMC_DEPTH + covers + ABC PDR + rIC3 =="
+echo "== [1/8] standalone loader (formal_top_load_seq): BMC depth $SEQ_BMC_DEPTH + covers + ABC PDR + rIC3 =="
 if elab_seq_smt2 "$ART_DIR/load-seq.smt2" rtl/protocol_program_memory.v; then
   sanitize_log "$ART_DIR/load-seq.smt2"
   if yosys-smtbmc -s z3 -t "$SEQ_BMC_DEPTH" "$ART_DIR/load-seq.smt2" >"$ART_DIR/load-seq-bmc.log" 2>&1; then
@@ -250,7 +258,7 @@ else
 fi
 
 echo
-echo "== [2/7] integrated loader + 8-word SRAM + core (formal_top_load): BMC + 14 covers + ABC PDR (13/13) + rIC3 =="
+echo "== [2/8] integrated loader + 8-word SRAM + core (formal_top_load): BMC + 14 covers + ABC PDR (14/14) + rIC3 =="
 if elab_int_smt2 "$ART_DIR/load-integrated.smt2" rtl/protocol_program_memory.v; then
   sanitize_log "$ART_DIR/load-integrated.smt2"
   if yosys-smtbmc -s z3 -t "$INT_BMC_DEPTH" "$ART_DIR/load-integrated.smt2" >"$ART_DIR/load-integrated-bmc.log" 2>&1; then
@@ -277,7 +285,7 @@ else
 fi
 
 if elab_int_aig "$ART_DIR/load-integrated.aig" rtl/protocol_program_memory.v; then
-  pdr_expect_proved "integrated loader+core (8 core + 5 load assertions)" "$ART_DIR/load-integrated.aig" 13
+  pdr_expect_proved "integrated loader+core (8 core + 6 load assertions)" "$ART_DIR/load-integrated.aig" 14
 else
   echo "integrated loader+core AIGER export failed" >&2
   fail=1
@@ -311,7 +319,7 @@ run_mutant () {
     return
   fi
   if elab_seq_smt2 "$ART_DIR/mut-$tag.smt2" "$mut_v"; then
-    expect_cex "$label" "$ART_DIR/mut-$tag.smt2" "$ART_DIR/mut-$tag-cex.vcd" "$SEQ_BMC_DEPTH"
+    expect_cex "$label" "$ART_DIR/mut-$tag.smt2" "$ART_DIR/mut-$tag-cex.vcd" "$SEQ_BMC_DEPTH" "Assert failed in"
   else
     echo "$label: SMT2 elaboration failed" >&2
     fail=1
@@ -328,19 +336,19 @@ run_mutant () {
 }
 
 echo
-echo "== [3/7] loader mutant exit-stall (load exit delayed while serial_in is high) =="
+echo "== [3/8] loader mutant exit-stall (load exit delayed while serial_in is high) =="
 run_mutant "mutant exit-stall" exit \
   's/^        if (!mode_pin) begin$/        if (!mode_pin \&\& !serial_in) begin/' 1
 
-echo "== [4/7] loader mutant bit-stall (intra-word shift stalls at bit 7 when serial_in is high) =="
+echo "== [4/8] loader mutant bit-stall (intra-word shift stalls at bit 7 when serial_in is high) =="
 run_mutant "mutant bit-stall" bit \
   's/^            bit_cnt <= bit_cnt + 4'"'"'d1;$/            bit_cnt <= (bit_cnt == 4'"'"'d7 \&\& serial_in) ? bit_cnt : (bit_cnt + 4'"'"'d1);/' 1
 
-echo "== [5/7] loader mutant addr-stall (commit write-address stalls when load_word == 0xA5A5) =="
+echo "== [5/8] loader mutant addr-stall (commit write-address stalls when load_word == 0xA5A5) =="
 run_mutant "mutant addr-stall" addr \
   's/^                wr_addr <= wr_addr + 8'"'"'d1;$/                wr_addr <= (load_word == 16'"'"'hA5A5) ? wr_addr : (wr_addr + 8'"'"'d1);/' 1
 
-echo "== [6/7] integrated end-to-end mutant check (loader exit-stall disproved via integrated model) =="
+echo "== [6/8] integrated end-to-end mutant check (loader exit-stall disproved via integrated model) =="
 if elab_int_aig "$ART_DIR/mut-int-exit.aig" "$ART_DIR/protocol_program_memory_mut_exit.v"; then
   pdr_expect_disproved "integrated mutant exit-stall" "$ART_DIR/mut-int-exit.aig"
   if [ "$HAVE_RIC3" -eq 1 ]; then
@@ -351,7 +359,7 @@ else
   fail=1
 fi
 
-echo "== [7/7] last-word write at the SRAM pins =="
+echo "== [7/8] last-word write at the SRAM pins =="
 # A directed trace reaches the 4096th serial bit cheaply. Constants below
 # apply only to this replay. The unbounded proofs use free loader inputs.
 replay_full_load () {
@@ -385,6 +393,39 @@ elif replay_full_load "$final_mut" "$ART_DIR/mut-final.log" ||
   fail=1
 else
   echo "Final-write replay: original passed through saturation; suppressed SRAM write failed serial_commit"
+fi
+
+echo "== [8/8] first serial instruction issue on the core =="
+# Delay fetch_valid only in the issue path so PC and harness phase can advance.
+issue_mut="$ART_DIR/protocol_core_mut_first_issue.v"
+sed '/^  wire       executing = /{
+  i\  reg fetch_valid_d;\
+  always @(posedge clk or negedge rst_n)\
+    if (!rst_n) fetch_valid_d <= 0; else fetch_valid_d <= fetch_valid;
+  s/;$/ \&\& (fetch_valid_d || !serial_loaded || !port_ui_in[0]);/
+}' rtl/protocol_core.v >"$issue_mut"
+if [ "$(diff rtl/protocol_core.v "$issue_mut" | grep -c '^>')" -ne 4 ]; then
+  echo "ERROR: first-issue substitution must add the delayed valid and change executing" >&2
+  fail=1
+elif elab_int_smt2 "$ART_DIR/mut-first-issue.smt2" rtl/protocol_program_memory.v "$issue_mut"; then
+  # Replay WCTL PM_CRC_LO (0xa006) MSB first in steps 2..17, exit load
+  # at step 18, and hold the data pin high through the expected issue.
+  # These inputs apply only to the counterexample replay.
+  cat >"$ART_DIR/first-issue.smtc" <<'EOF'
+state 1 2 4 15 16
+assume (= [ui_in] #x81)
+state 3 5:14 17
+assume (= [ui_in] #x80)
+state 18:21
+assume (= [ui_in] #x01)
+EOF
+  expect_cex "first_serial_issue" "$ART_DIR/mut-first-issue.smt2" \
+    "$ART_DIR/mut-first-issue-cex.vcd" 22 \
+    "Assert failed in formal_top_load: u_load_prop.first_serial_issue" \
+    --smtc "$ART_DIR/first-issue.smtc"
+else
+  echo "First-issue mutant: SMT2 elaboration failed" >&2
+  fail=1
 fi
 
 echo

@@ -31,7 +31,7 @@
  *      clocked write/read/bit-mask semantics and `formal_top.v`'s modulo-8
  *      address aliasing, with free `anyconst` power-up contents). Both the
  *      byte-identical `no_data_dependent_latency.sv` monitor (8 core timing
- *      assertions) and `serial_load_latency` (5 load-to-fetch assertions,
+ *      assertions) and `serial_load_latency` (6 load-to-issue/fetch assertions,
  *      unless `-D CORE_PROP_ONLY` selects the 8 core assertions alone) run
  *      over the combined transition system.
  */
@@ -133,7 +133,11 @@ module formal_top_load (
       .serial_loaded(serial_loaded)
   );
 
+  // The formal runner exposes the existing protocol_core.executing net as
+  // an output before elaborating this top. Observe the DUT's issue enable.
+  wire core_executing;
   protocol_core dut_core (
+      .executing    (core_executing),
       .clk          (clk),
       .rst_n        (rst_n_r),
       .run_phase    (run_phase),
@@ -187,6 +191,7 @@ module formal_top_load (
       .serial_in    (ui_in[0]),
       .run_phase    (run_phase),
       .exec_phase   (exec_phase),
+      .executing    (core_executing),
       .serial_loaded(serial_loaded),
       .fetch_rom    (fetch_rom),
       .pm_fetch     (pm_fetch),

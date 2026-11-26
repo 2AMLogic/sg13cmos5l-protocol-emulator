@@ -12,7 +12,8 @@ PATH so CI's tool-light `records` job (`npm run lint`) verifies:
      and rejects undecided proofs, missed mutants, and mutant-only tool crashes;
   4. `run-serial-load-shift-in.sh` passes when standalone + integrated positive
      legs and covers pass and all 3 loader mutants are disproved across BMC,
-     ABC PDR and rIC3, and rejects unreached covers, missed mutants, and
+     ABC PDR and rIC3, and the first-issue mutant fails its named assertion.
+     The gates reject unreached covers, unrelated failures, missed mutants, and
      mutant-only solver crashes.
 
 Run: python3 verification/test_formal_529_gates.py
@@ -104,7 +105,10 @@ if is_mut:
     if "--dump-vcd" in sys.argv:
         vcd = sys.argv[sys.argv.index("--dump-vcd") + 1]
         Path(vcd).write_text("$date mock $end\\n")
-    print("## Assert failed in formal_top: mock.v:1")
+    if Path(model).name == "mut-first-issue.smt2" and mode != "wrong_issue_assertion":
+        print("## Assert failed in formal_top_load: u_load_prop.first_serial_issue")
+    else:
+        print("## Assert failed in formal_top: mock.v:1")
     print("## Status: FAILED")
     print("BMC failed!")
     sys.exit(1)
@@ -133,7 +137,7 @@ if "mut" in aig:
         print("Output 0 of miter was asserted in frame 3.")
         print("Properties:  All = 5. Proved = 2. Disproved = 3. Undecided = 0.   Time = 0.10 sec")
 elif "integrated" in aig:
-    print("Properties:  All = 13. Proved = 13. Disproved = 0. Undecided = 0.   Time = 0.20 sec")
+    print("Properties:  All = 14. Proved = 14. Disproved = 0. Undecided = 0.   Time = 0.20 sec")
 else:
     print("Properties:  All = 5. Proved = 5. Disproved = 0. Undecided = 0.   Time = 0.10 sec")
 """,
@@ -262,10 +266,14 @@ class Formal529GatesTest(unittest.TestCase):
         self.assertNotEqual(missed.returncode, 0)
 
     def test_shift_in_happy_path_and_rtl_untouched(self) -> None:
+        core = REPO_ROOT / "rtl" / "protocol_core.v"
+        core_before = core.read_bytes()
         mem_before = (REPO_ROOT / "rtl" / "protocol_program_memory.v").read_bytes()
         res = self.run_script(SHIFT_RUNNER, {"REQUIRE_RIC3": "1"})
         self.assertEqual(res.returncode, 0, res.stdout + res.stderr)
         self.assertIn("RESULT: all expectations met", res.stdout)
+        self.assertIn("first_serial_issue", res.stdout)
+        self.assertEqual(core.read_bytes(), core_before)
         self.assertEqual(
             (REPO_ROOT / "rtl" / "protocol_program_memory.v").read_bytes(), mem_before
         )
@@ -280,6 +288,7 @@ class Formal529GatesTest(unittest.TestCase):
             ("FAKE_FINAL_WRITE", "crash"),
             ("FAKE_SMTBMC_MODE", "mut_crash"),
             ("FAKE_SMTBMC_MODE", "mut_pass"),
+            ("FAKE_SMTBMC_MODE", "wrong_issue_assertion"),
             ("FAKE_ABC_MODE", "mut_crash"),
             ("FAKE_ABC_MODE", "mut_missed"),
             ("FAKE_RIC3_MODE", "mut_crash"),

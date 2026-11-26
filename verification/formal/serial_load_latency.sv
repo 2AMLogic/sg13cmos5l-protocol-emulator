@@ -25,8 +25,9 @@
  *      edge and its full address at each commit against the shadow loader.
  *
  *   2. `serial_load_latency` (integrated core + loader `formal_top_load`):
- *      adds `exec_phase == s_exec` (proving DR 0005's fixed +1-cycle
- *      run-phase priming latency into `protocol_core`), maintains `pm_crc`
+ *      checks the harness execution phase against the shadow schedule. At serial
+ *      run entry the core’s actual `executing` enable must stay low on the
+ *      priming cycle and rise on the next cycle (DR 0005). It maintains `pm_crc`
  *      equivalence across run-phase `WCTL PM_DATA_LO` / `PM_CRC_*` accesses,
  *      and uses a symbolic-slot observer (`(* anyconst *) reg [2:0] obs_idx`)
  *      to assert that every 16-bit word shifted in on `ui_in[0]` during the
@@ -140,6 +141,7 @@ module serial_load_latency (
     input wire        serial_in,
     input wire        run_phase,
     input wire        exec_phase,
+    input wire        executing,
     input wire        serial_loaded,
     input wire        fetch_rom,
     input wire        pm_fetch,
@@ -255,6 +257,10 @@ module serial_load_latency (
     if (rst_n) begin
       assert (run_phase == s_run);
       assert (exec_phase == s_exec);
+      // s_sl rises at serial run entry. Until the previous cycle was an
+      // execution slot, s_exec is 0 for priming and then 1 for first issue.
+      if (s_sl && !$past(s_exec))
+        first_serial_issue: assert (executing == s_exec);
       assert (serial_loaded == s_sl);
       assert (pm_crc == s_crc);
       if (observed_fetch) begin
