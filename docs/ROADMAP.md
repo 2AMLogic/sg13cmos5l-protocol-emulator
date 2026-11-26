@@ -32,7 +32,7 @@ for the Fast-mode I2C images) and row 7 (klt place-and-route now measures
 utilization; the tracker keeps the row unmet).
 
 **T1 checklist** (`klt signoff`, record
-`verification/records/signoff-baseline/records/20261126-062609-27c5c9f.md`,
+`verification/records/signoff-baseline/records/20261126-174906-360c4b1.md`,
 klt 0.9.2): **5 of 11 met, 1 `not_applicable`**.
 
 | Item | Verdict | What moves it |
