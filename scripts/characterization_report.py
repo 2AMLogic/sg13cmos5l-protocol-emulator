@@ -37,6 +37,7 @@ import hashlib
 import json
 import re
 import sys
+from collections.abc import Iterable, Iterator
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
@@ -61,22 +62,38 @@ class Invalid(Exception):
     pass
 
 
-def live_records(repo: Path) -> dict[str, dict[str, str]]:
-    """experiment -> {record_id: ''} for records no later record supersedes."""
-    out: dict[str, dict[str, str]] = {}
+def live_records(repo: Path, experiments: Iterable[str]) -> dict[str, dict[str, str]]:
+    """experiment -> {record_id: ''} for records no later record supersedes.
+
+    Only the named experiments are read, each once (issue #625); an experiment
+    without a records directory has no live records.
+    """
     base = repo / "verification" / "records"
-    for d in sorted(p for p in base.iterdir() if p.is_dir()):
+    out: dict[str, dict[str, str]] = {}
+    for exp in dict.fromkeys(experiments):
         ids: set[str] = set()
         superseded: set[str] = set()
-        for f in sorted((d / "records").glob("*.md")):
+        for f in sorted((base / exp / "records").glob("*.md")) if isinstance(exp, str) else []:
             m = re.search(r"<!-- record-meta\n(.*?)\n-->", f.read_text(), re.S)
             if not m:
                 continue
             meta = json.loads(m.group(1))
             ids.add(f.stem)
             superseded.update(effective_supersedes(f, meta.get("supersedes"), ids))
-        out[d.name] = dict.fromkeys(sorted(ids - superseded), "")
+        out[exp] = dict.fromkeys(sorted(ids - superseded), "")
     return out
+
+
+def cited_experiments(node) -> Iterator[str]:
+    """Every experiment characterization-sources.json names, at any nesting."""
+    if isinstance(node, dict):
+        if "experiment" in node:
+            yield node["experiment"]
+        for v in node.values():
+            yield from cited_experiments(v)
+    elif isinstance(node, list):
+        for v in node:
+            yield from cited_experiments(v)
 
 
 def cite(ev: list[dict], live: dict[str, dict[str, str]], where: str) -> str:
@@ -169,7 +186,7 @@ def build(repo: Path) -> tuple[str, str]:
     src = json.loads((repo / SOURCES).read_text())
     names = spec_rows((repo / "spec/target-spec.md").read_text())
     dig = digest((repo / "spec/gap-to-submission.md").read_text())
-    live = live_records(repo)
+    live = live_records(repo, cited_experiments(src))
     rows = {int(k): v for k, v in src["rows"].items()}
     if set(rows) != set(names) or set(dig) != set(names):
         raise Invalid(f"row sets differ: spec {sorted(names)}, sources {sorted(rows)}, digest {sorted(dig)}")

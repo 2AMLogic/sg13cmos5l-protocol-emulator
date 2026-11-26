@@ -23,12 +23,15 @@ MANIFEST = "manifests/sg13cmos5l-protocol-emulator.json"
 REC = '<!-- record-meta\n{{"record_id": "{rid}", "supersedes": {sup}}}\n-->\n'
 
 
-def make_repo(root: Path, digest_state="met", records=None, evidence=None, owner=None):
-    records = records if records is not None else [("20260101-000000-aaaaaaa", None)]
+def write_records(root: Path, exp: str, records) -> None:
+    d = root / "verification/records" / exp / "records"
+    d.mkdir(parents=True, exist_ok=True)
     for rid, sup in records:
-        d = root / "verification/records/exp/records"
-        d.mkdir(parents=True, exist_ok=True)
         (d / f"{rid}.md").write_text(REC.format(rid=rid, sup=json.dumps(sup)))
+
+
+def make_repo(root: Path, digest_state="met", records=None, evidence=None, owner=None):
+    write_records(root, "exp", records if records is not None else [("20260101-000000-aaaaaaa", None)])
     (root / "spec").mkdir()
     (root / "spec/target-spec.md").write_text("| 1 | Row one | t |\n")
     (root / "spec/gap-to-submission.md").write_text(
@@ -103,6 +106,12 @@ class Report(unittest.TestCase):
         with self.assertRaises(cr.Invalid):
             self.build(evidence=[{"experiment": "exp", "record_id": "nope"}])
 
+    def test_unknown_experiment_rejected(self):
+        for exp in ("nope", 42, None):
+            with self.assertRaises(cr.Invalid) as cm:
+                self.build(evidence=[{"experiment": exp}])
+            self.assertIn(f"experiment {exp!r} has no live record", str(cm.exception))
+
     def test_superseded_record_rejected(self):
         recs = [("20260101-000000-aaaaaaa", None), ("20260102-000000-bbbbbbb", "20260101-000000-aaaaaaa")]
         with self.assertRaises(cr.Invalid):
@@ -123,7 +132,7 @@ class Report(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             make_repo(root, records=[(a, [b]), (b, None), (c, [a, b, b, c, None])])
-            self.assertEqual(set(cr.live_records(root)["exp"]), {b, c})
+            self.assertEqual(set(cr.live_records(root, ["exp"])["exp"]), {b, c})
 
     def test_report_cites_latest_after_supersede(self):
         recs = [("20260101-000000-aaaaaaa", None), ("20260102-000000-bbbbbbb", "20260101-000000-aaaaaaa")]
@@ -217,6 +226,39 @@ class Report(unittest.TestCase):
 
     def test_drift_detected_on_committed_tree(self):
         self.assertEqual(cr.main(["--check"]), 0)
+
+
+class ReadScope(unittest.TestCase):
+    """The build reads only the experiments it cites, each once (issue #625)."""
+
+    A, B, C = ("20260101-000000-aaaaaaa", "20260102-000000-bbbbbbb", "20260103-000000-ccccccc")
+
+    def record_reads(self, root: Path) -> list[tuple[str, str]]:
+        """(experiment, record_id) for each record file build() reads, in order."""
+        seen = []
+        read_text = Path.read_text
+
+        def spy(path, *args, **kw):
+            seen.append(path)
+            return read_text(path, *args, **kw)
+
+        with mock.patch.object(Path, "read_text", spy):
+            cr.build(root)
+        return [(p.parent.parent.name, p.stem) for p in seen if p.parent.name == "records"]
+
+    def test_uncited_experiment_is_not_read(self):
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            make_repo(root)
+            write_records(root, "other", [("20260101-000000-zzzzzzz", None)])
+            write_records(root, "sibling", [("20260101-000000-yyyyyyy", None)])
+            self.assertEqual(self.record_reads(root), [("exp", self.A)])
+
+    def test_cited_experiment_read_once_including_superseded_records(self):
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            make_repo(root, records=[(self.A, None), (self.B, self.A), (self.C, [self.A, self.B])])
+            self.assertEqual(self.record_reads(root), [("exp", self.A), ("exp", self.B), ("exp", self.C)])
 
 
 class PinCheck(unittest.TestCase):
