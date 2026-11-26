@@ -1007,11 +1007,18 @@ class Checker:
         # poll mask
         for idx, i in enumerate(ins):
             if i["m"] == "IN" and i["label"] and i["label"].startswith(poll_label_prefix):
-                prev = next((q for q in reversed(ins[:idx]) if q["m"] == "LDI" and q["ops"][0] == "R3"), None)
+                _j, prev = self.prev_write(ins, idx, "R3")
                 c.sites += 1
-                if prev is None or self.imm(prev["ops"][1]) != scl:
-                    c.err(f"{rel}:{i['no']}: SCL poll mask "
-                          f"{prev['ops'][1] if prev else '(none)'} != table SCL mask 0x{scl:02X}")
+                if prev is None:
+                    value, shown = None, "(none)"
+                elif prev["m"] != "LDI":
+                    value = None
+                    shown = (f"`{prev['m']} {prev['ops'][0]}, {prev['ops'][1]}` "
+                             f"(line {prev['no']}), not an `LDI`")
+                else:
+                    value, shown = self.imm(prev["ops"][1]), prev["ops"][1]
+                if value != scl:
+                    c.err(f"{rel}:{i['no']}: SCL poll mask {shown} != table SCL mask 0x{scl:02X}")
 
     def prof_i2c(self, rel, ent, text):
         c = self.concrete
