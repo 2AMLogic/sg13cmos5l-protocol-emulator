@@ -923,6 +923,19 @@ stayed live). For the `COLLAPSIBLE_EXPERIMENTS` (`signoff-baseline`), that
 one mint is `--collapse EXPERIMENT` — never one successor per stale live
 leaf.
 
+For a two-parent merge of `origin/main` into the PR branch, set `merge_commit`
+to that merge's SHA, even if you mint at a later commit. Its second parent is
+the main revision the PR branch incorporated.
+
+```sh
+merge_commit=4f59a73cd  # Example from PR #538
+git rev-parse --verify "${merge_commit}^2"
+```
+
+Use the returned SHA wherever **Run configuration** or **Design provenance**
+names the merged main revision. Cite a predecessor baseline separately by its
+record ID and minting commit (here, `20261126-042412-9d61011` at `3329d73be`).
+
 ## Bulk evidence bytes: artifact store, manifest in git (#344)
 
 New runs of the heavy experiments (`librelane-gds-signoff-check`,
