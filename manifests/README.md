@@ -28,9 +28,11 @@ directory — see "The vendored tiers doc" below for why it was retired.
 ## How the report is produced and where it lives
 
 ```bash
-# Provisioning: klt at the exact pinned commit (scripts/setup-env.sh installs
-# it; the pin lives in layout/toolchain.json's klt_install and is the single
-# klt pin shared by the layout/ and verification/ flows):
+# Provisioning: klt from the shared klt_install requirement
+# (scripts/setup-env.sh installs it; layout/toolchain.json's klt_install
+# currently records the bare `klayout-tools` requirement -- unpinned since
+# issue #371 -- and is the single klt requirement shared by the layout/
+# and verification/ flows):
 ./scripts/setup-env.sh
 
 # Render + CI comparison, one entry point:
@@ -46,17 +48,24 @@ klt signoff --manifest manifests/sg13cmos5l-protocol-emulator.json \
             --format json
 ```
 
-and checks that the `klt` on `PATH` is at the pinned commit before grading.
+and, before grading, reports the producing `klt` build's identity -- `klt
+version --format json`'s version, git commit, release tag and grading
+ruleset, printed to stderr and carried in the rendered report's `build`
+block (recorded, not asserted, since issue #371) -- and checks that the
+installed `klt` exposes the `signoff` subcommand that
+`layout/toolchain.json`'s `klt_required_commands` names.
 Its output is committed as an append-only evidence record under
 `verification/records/signoff-baseline/` — the **committed report is the
 verdict of record** for this block's T1 state; the gap-to-T1 tracker (issue
 #27) points at it and must not re-derive grades by hand. `--check-latest`
 re-runs the grading and verifies the committed record still reproduces via
 `klt signoff --check` (klayout-tools #2258) — the grader's own comparison,
-which excludes the report's `build` block so the same pinned commit
-verifies from any provisioning route (clean-tree or `.dirty`-stamped,
-klayout-tools #2249). A `drifted` result means a graded field outside the
-build block — an evidence artifact changed under a citation's pinned hash,
+which excludes the report's `build` block: the producer identity recorded
+there is not compared, so a grading build verifies from any provisioning
+route (clean-tree or `.dirty`-stamped, klayout-tools #2249), and a `klt`
+version difference alone is not a drift. A `drifted` result means a graded
+field outside the build block — an evidence artifact changed under a
+citation's pinned hash,
 a manifest or tiers-doc edit, a per-item verdict, or a count — landed
 without a fresh record, and it fails. CI (`.github/workflows/ci.yml`'s
 `signoff` job) does this on every push and PR.
