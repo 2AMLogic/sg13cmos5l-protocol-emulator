@@ -154,8 +154,7 @@ def build_fixture_repo(tmp: Path) -> Path:
     ).write_text(record, encoding="utf-8")
 
     _git(repo, "init", "--quiet")
-    _git(repo, "add", "-A")
-    _git(repo, "commit", "--quiet", "-m", "fixture: initial record")
+    _commit(repo, "fixture: initial record")
     _git(repo, "update-ref", BASE_REF, "HEAD")
     return repo
 
@@ -183,6 +182,51 @@ def record_path(repo: Path, experiment: str, record_id: str) -> Path:
     )
 
 
+NEW_ID = "20260102-000000-abc1234"  # the id a case mints its "new" record under
+
+
+def _commit(repo: Path, msg: str) -> None:
+    """Stage everything and commit -- the fixture cases' shared epilogue."""
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "--quiet", "-m", msg)
+
+
+def _commit_record(
+    repo: Path,
+    record_id: str = NEW_ID,
+    *,
+    experiment: str = "demo",
+    meta_experiment: str | None = None,
+    inputs: list[tuple] | None = None,
+    msg: str = "fixture: add record",
+    **make_kwargs,
+) -> None:
+    """Render a record with `make_record` (inputs default to the fixture's
+    `rtl/dut.v`; `meta_experiment` overrides the experiment baked into the
+    record so it can disagree with the directory it lands in), write it under
+    `experiment`'s records directory, and commit it (#565)."""
+    record = make_record(
+        record_id,
+        meta_experiment if meta_experiment is not None else experiment,
+        inputs=(
+            inputs if inputs is not None else [("rtl/dut.v", _sha256_text(DUMMY_RTL))]
+        ),
+        **make_kwargs,
+    )
+    path = record_path(repo, experiment, record_id)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(record, encoding="utf-8")
+    _commit(repo, msg)
+
+
+def _update_rtl(repo: Path, suffix: str = "// v2\n") -> list[tuple]:
+    """Overwrite the fixture's dummy Verilog with `DUMMY_RTL + suffix` and
+    return the record-inputs pair citing the new content."""
+    new_rtl = DUMMY_RTL + suffix
+    (repo / "rtl" / "dut.v").write_text(new_rtl, encoding="utf-8")
+    return [("rtl/dut.v", _sha256_text(new_rtl))]
+
+
 # --- cases -----------------------------------------------------------------
 # Each case mutates a fresh fixture repo and returns nothing; the harness
 # asserts the expected exit code and a substring of the linter's output.
@@ -194,34 +238,12 @@ def case_valid(repo: Path) -> None:
 
 
 def case_missing_required_field(repo: Path) -> None:
-    new_id = "20260102-000000-abc1234"
-    path = record_path(repo, "demo", new_id)
-    path.write_text(
-        make_record(
-            new_id,
-            "demo",
-            inputs=[("rtl/dut.v", _sha256_text(DUMMY_RTL))],
-            omit_field="Claim",
-        ),
-        encoding="utf-8",
-    )
-    _git(repo, "add", "-A")
-    _git(repo, "commit", "--quiet", "-m", "fixture: record missing Claim")
+    _commit_record(repo, omit_field="Claim", msg="fixture: record missing Claim")
 
 
 def case_missing_required_meta_key(repo: Path) -> None:
-    new_id = "20260102-000000-abc1234"
-    record_path(repo, "demo", new_id).write_text(
-        make_record(
-            new_id,
-            "demo",
-            inputs=[("rtl/dut.v", _sha256_text(DUMMY_RTL))],
-            omit_provenance_key="klt_version",
-        ),
-        encoding="utf-8",
-    )
-    _git(repo, "add", "-A")
-    _git(repo, "commit", "--quiet", "-m", "fixture: record missing klt_version")
+    _commit_record(repo, omit_provenance_key="klt_version",
+                   msg="fixture: record missing klt_version")
 
 
 def case_edited_existing_record(repo: Path) -> None:
@@ -230,8 +252,7 @@ def case_edited_existing_record(repo: Path) -> None:
         path.read_text(encoding="utf-8").replace("fixture claim", "edited claim"),
         encoding="utf-8",
     )
-    _git(repo, "add", "-A")
-    _git(repo, "commit", "--quiet", "-m", "fixture: edit an existing record")
+    _commit(repo, "fixture: edit an existing record")
 
 
 def case_deleted_existing_record(repo: Path) -> None:
@@ -241,35 +262,20 @@ def case_deleted_existing_record(repo: Path) -> None:
         "--quiet",
         "verification/records/demo/records/20260101-000000-abc1234.md",
     )
-    _git(repo, "commit", "--quiet", "-m", "fixture: delete an existing record")
+    _commit(repo, "fixture: delete an existing record")
 
 
 def case_stale_provenance_hash(repo: Path) -> None:
-    (repo / "rtl" / "dut.v").write_text(
-        DUMMY_RTL + "// the RTL changed after the record was minted\n",
-        encoding="utf-8",
-    )
-    _git(repo, "add", "-A")
-    _git(repo, "commit", "--quiet", "-m", "fixture: change the cited source")
+    _update_rtl(repo, "// the RTL changed after the record was minted\n")
+    _commit(repo, "fixture: change the cited source")
 
 
 def case_superseded_record_exempt_from_freshness(repo: Path) -> None:
     """A superseded record is frozen history: it may legitimately cite a
     source that has since changed. Only the live record must be fresh."""
-    new_rtl = DUMMY_RTL + "// v2\n"
-    (repo / "rtl" / "dut.v").write_text(new_rtl, encoding="utf-8")
-    new_id = "20260103-000000-abc1234"
-    record_path(repo, "demo", new_id).write_text(
-        make_record(
-            new_id,
-            "demo",
-            inputs=[("rtl/dut.v", _sha256_text(new_rtl))],
-            supersedes="20260101-000000-abc1234",
-        ),
-        encoding="utf-8",
-    )
-    _git(repo, "add", "-A")
-    _git(repo, "commit", "--quiet", "-m", "fixture: supersede the first record")
+    _commit_record(repo, "20260103-000000-abc1234", inputs=_update_rtl(repo),
+                   supersedes="20260101-000000-abc1234",
+                   msg="fixture: supersede the first record")
 
 
 def case_shared_id_superseded_elsewhere_still_checked(repo: Path) -> None:
@@ -279,13 +285,8 @@ def case_shared_id_superseded_elsewhere_still_checked(repo: Path) -> None:
     superseding experiment A's copy of an ID does not also exempt experiment
     B's still-live copy of that ID (#157)."""
     shared_id = "20260101-000000-abc1234"
-    (repo / "verification" / "records" / "other" / "records").mkdir(parents=True)
-    record_path(repo, "other", shared_id).write_text(
-        make_record(shared_id, "other", inputs=[("rtl/dut.v", _sha256_text(DUMMY_RTL))]),
-        encoding="utf-8",
-    )
-    _git(repo, "add", "-A")
-    _git(repo, "commit", "--quiet", "-m", "fixture: second experiment, same id")
+    _commit_record(repo, shared_id, experiment="other",
+                   msg="fixture: second experiment, same id")
     # Supersede only `demo`'s copy, then change the cited source.
     case_superseded_record_exempt_from_freshness(repo)
 
@@ -307,21 +308,14 @@ def case_nested_copy_not_exempted_by_leaf_name(repo: Path) -> None:
         make_record(old_id, "demo", inputs=[("rtl/dut.v", ZEROED_HASH)]),
         encoding="utf-8",
     )
-    _git(repo, "add", "-A")
-    _git(repo, "commit", "--quiet", "-m", "fixture: tampered nested copy")
+    _commit(repo, "fixture: tampered nested copy")
 
 
 def case_self_supersession_rejected(repo: Path) -> None:
     """A record that lists its own ID in `supersedes` must not exempt itself
     from the freshness check (#183 review)."""
-    rid = "20260102-000000-abc1234"
-    (repo / "verification" / "records" / "selfsup" / "records").mkdir(parents=True)
-    record_path(repo, "selfsup", rid).write_text(
-        make_record(rid, "selfsup", inputs=[("rtl/dut.v", ZEROED_HASH)], supersedes=rid),
-        encoding="utf-8",
-    )
-    _git(repo, "add", "-A")
-    _git(repo, "commit", "--quiet", "-m", "fixture: record supersedes itself")
+    _commit_record(repo, experiment="selfsup", inputs=[("rtl/dut.v", ZEROED_HASH)],
+                   supersedes=NEW_ID, msg="fixture: record supersedes itself")
 
 
 def case_supersession_cycle_rejected(repo: Path) -> None:
@@ -329,77 +323,31 @@ def case_supersession_cycle_rejected(repo: Path) -> None:
     the other. A record may only supersede a strictly earlier ID, so a cycle
     cannot be expressed (#183 review)."""
     a, b = "20260102-000000-abc1234", "20260103-000000-abc1234"
-    (repo / "verification" / "records" / "cyc" / "records").mkdir(parents=True)
-    record_path(repo, "cyc", a).write_text(
-        make_record(a, "cyc", inputs=[("rtl/dut.v", ZEROED_HASH)], supersedes=b),
-        encoding="utf-8",
-    )
-    record_path(repo, "cyc", b).write_text(
-        make_record(b, "cyc", inputs=[("rtl/dut.v", ZEROED_HASH)], supersedes=a),
-        encoding="utf-8",
-    )
-    _git(repo, "add", "-A")
-    _git(repo, "commit", "--quiet", "-m", "fixture: supersession cycle")
+    _commit_record(repo, a, experiment="cyc",
+                   inputs=[("rtl/dut.v", ZEROED_HASH)], supersedes=b,
+                   msg="fixture: supersession cycle")
+    _commit_record(repo, b, experiment="cyc",
+                   inputs=[("rtl/dut.v", ZEROED_HASH)], supersedes=a,
+                   msg="fixture: supersession cycle")
 
 
 def case_bad_record_id_grammar(repo: Path) -> None:
-    bad = record_path(repo, "demo", "not-a-record-id")
-    bad.write_text(
-        make_record(
-            "not-a-record-id",
-            "demo",
-            inputs=[("rtl/dut.v", _sha256_text(DUMMY_RTL))],
-        ),
-        encoding="utf-8",
-    )
-    _git(repo, "add", "-A")
-    _git(repo, "commit", "--quiet", "-m", "fixture: malformed record id")
+    _commit_record(repo, "not-a-record-id", msg="fixture: malformed record id")
 
 
 def case_dangling_supersedes(repo: Path) -> None:
-    new_id = "20260104-000000-abc1234"
-    record_path(repo, "demo", new_id).write_text(
-        make_record(
-            new_id,
-            "demo",
-            inputs=[("rtl/dut.v", _sha256_text(DUMMY_RTL))],
-            supersedes="20250101-000000-deadbee",
-        ),
-        encoding="utf-8",
-    )
-    _git(repo, "add", "-A")
-    _git(repo, "commit", "--quiet", "-m", "fixture: supersedes a nonexistent record")
+    _commit_record(repo, "20260104-000000-abc1234",
+                   supersedes="20250101-000000-deadbee",
+                   msg="fixture: supersedes a nonexistent record")
 
 
 def case_new_record_is_a_pure_addition(repo: Path) -> None:
     """Adding a record must NOT trip the append-only check -- otherwise the
     convention would forbid the very thing it exists to allow."""
-    new_id = "20260105-000000-abc1234"
-    record_path(repo, "demo", new_id).write_text(
-        make_record(
-            new_id, "demo", inputs=[("rtl/dut.v", _sha256_text(DUMMY_RTL))]
-        ),
-        encoding="utf-8",
-    )
-    _git(repo, "add", "-A")
-    _git(repo, "commit", "--quiet", "-m", "fixture: add a new record")
+    _commit_record(repo, "20260105-000000-abc1234", msg="fixture: add a new record")
 
 
 # --- #183 second review: symlinks, degenerate inputs, crash cases ----------
-
-NEW_ID = "20260102-000000-abc1234"
-
-
-def _add_record(repo: Path, experiment: str, record_id: str, text: str, msg: str) -> None:
-    path = record_path(repo, experiment, record_id)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(text, encoding="utf-8")
-    _git(repo, "add", "-A")
-    _git(repo, "commit", "--quiet", "-m", msg)
-
-
-def _add_record_with_inputs(repo: Path, inputs: list[tuple], msg: str) -> None:
-    _add_record(repo, "demo", NEW_ID, make_record(NEW_ID, "demo", inputs=inputs), msg)
 
 
 # --- #371 / 2AMLogic/2am#7038: the exempt toolchain input path -------------
@@ -417,17 +365,14 @@ def case_stale_toolchain_hash_is_exempt(repo: Path) -> None:
     re-mint on every fleet bump."""
     (repo / "layout").mkdir(exist_ok=True)
     (repo / "layout" / "toolchain.json").write_text(TOOLCHAIN_PINNED, encoding="utf-8")
-    _add_record_with_inputs(
+    _commit_record(
         repo,
-        [
-            ("rtl/dut.v", _sha256_text(DUMMY_RTL)),
-            (TOOLCHAIN_PATH, _sha256_text(TOOLCHAIN_PINNED)),
-        ],
-        "fixture: live record citing the toolchain pin",
+        inputs=[("rtl/dut.v", _sha256_text(DUMMY_RTL)),
+                (TOOLCHAIN_PATH, _sha256_text(TOOLCHAIN_PINNED))],
+        msg="fixture: live record citing the toolchain pin",
     )
     (repo / "layout" / "toolchain.json").write_text(TOOLCHAIN_FLEET, encoding="utf-8")
-    _git(repo, "add", "-A")
-    _git(repo, "commit", "--quiet", "-m", "fixture: drop the per-repo klt pin")
+    _commit(repo, "fixture: drop the per-repo klt pin")
 
 
 def case_other_input_still_checked_on_exempt_record(repo: Path) -> None:
@@ -435,25 +380,18 @@ def case_other_input_still_checked_on_exempt_record(repo: Path) -> None:
     cites the exempt toolchain file must still fail on a stale hash for any
     other input it cites."""
     case_stale_toolchain_hash_is_exempt(repo)
-    (repo / "rtl" / "dut.v").write_text(
-        DUMMY_RTL + "// the RTL changed after the record was minted\n",
-        encoding="utf-8",
-    )
-    _git(repo, "add", "-A")
-    _git(repo, "commit", "--quiet", "-m", "fixture: change a non-exempt source too")
+    case_stale_provenance_hash(repo)
 
 
 def case_exempt_input_must_still_be_tracked(repo: Path) -> None:
     """Exempt from the hash *comparison* only, not from check 7: a live
     record's toolchain input must still name a git-tracked regular file, so a
     record citing a path that does not exist is still an error."""
-    _add_record_with_inputs(
+    _commit_record(
         repo,
-        [
-            ("rtl/dut.v", _sha256_text(DUMMY_RTL)),
-            (TOOLCHAIN_PATH, _sha256_text(TOOLCHAIN_PINNED)),
-        ],
-        "fixture: cite a toolchain file that was never committed",
+        inputs=[("rtl/dut.v", _sha256_text(DUMMY_RTL)),
+                (TOOLCHAIN_PATH, _sha256_text(TOOLCHAIN_PINNED))],
+        msg="fixture: cite a toolchain file that was never committed",
     )
 
 
@@ -463,11 +401,9 @@ def case_exempt_input_hash_must_still_be_wellformed(repo: Path) -> None:
     cannot be used to smuggle in an unverifiable entry."""
     (repo / "layout").mkdir(exist_ok=True)
     (repo / "layout" / "toolchain.json").write_text(TOOLCHAIN_PINNED, encoding="utf-8")
-    _add_record_with_inputs(
-        repo,
-        [("rtl/dut.v", _sha256_text(DUMMY_RTL)), (TOOLCHAIN_PATH, "")],
-        "fixture: toolchain input with an empty content_hash",
-    )
+    _commit_record(repo, inputs=[("rtl/dut.v", _sha256_text(DUMMY_RTL)),
+                                 (TOOLCHAIN_PATH, "")],
+                   msg="fixture: toolchain input with an empty content_hash")
 
 
 def case_symlinked_record_file(repo: Path) -> None:
@@ -480,8 +416,7 @@ def case_symlinked_record_file(repo: Path) -> None:
         encoding="utf-8",
     )
     record_path(repo, "demo", NEW_ID).symlink_to("../../../../docs/evil-record.md")
-    _git(repo, "add", "-A")
-    _git(repo, "commit", "--quiet", "-m", "fixture: symlinked record file")
+    _commit(repo, "fixture: symlinked record file")
 
 
 def case_symlinked_experiment_dir(repo: Path) -> None:
@@ -492,30 +427,29 @@ def case_symlinked_experiment_dir(repo: Path) -> None:
 
 
 def case_empty_content_hash(repo: Path) -> None:
-    _add_record_with_inputs(repo, [("rtl/dut.v", "")], "fixture: empty hash")
+    _commit_record(repo, inputs=[("rtl/dut.v", "")], msg="fixture: empty hash")
 
 
 def case_null_content_hash(repo: Path) -> None:
-    _add_record_with_inputs(repo, [("rtl/dut.v", None)], "fixture: null hash")
+    _commit_record(repo, inputs=[("rtl/dut.v", None)], msg="fixture: null hash")
 
 
 def case_empty_input_path(repo: Path) -> None:
-    _add_record_with_inputs(repo, [("", ZEROED_HASH)], "fixture: empty path")
+    _commit_record(repo, inputs=[("", ZEROED_HASH)], msg="fixture: empty path")
 
 
 def case_dev_null_input_path(repo: Path) -> None:
-    _add_record_with_inputs(
-        repo, [("/dev/null", _sha256_text(""))], "fixture: /dev/null input"
-    )
+    _commit_record(repo, inputs=[("/dev/null", _sha256_text(""))],
+                   msg="fixture: /dev/null input")
 
 
 def case_absolute_input_path(repo: Path) -> None:
     """An absolute path to a real file with the right hash: it passed the
     freshness check before, but it is not a repo-relative input."""
-    _add_record_with_inputs(
+    _commit_record(
         repo,
-        [(str((repo / "rtl" / "dut.v").resolve()), _sha256_text(DUMMY_RTL))],
-        "fixture: absolute input path",
+        inputs=[(str((repo / "rtl" / "dut.v").resolve()), _sha256_text(DUMMY_RTL))],
+        msg="fixture: absolute input path",
     )
 
 
@@ -523,56 +457,29 @@ def case_dotdot_escape_input_path(repo: Path) -> None:
     """A `..` path to a real file outside the repo, with the right hash."""
     outside = "outside the repo\n"
     (repo.parent / "outside.txt").write_text(outside, encoding="utf-8")
-    _add_record_with_inputs(
-        repo, [("../outside.txt", _sha256_text(outside))], "fixture: .. escape"
-    )
+    _commit_record(repo, inputs=[("../outside.txt", _sha256_text(outside))],
+                   msg="fixture: .. escape")
 
 
 def case_unicode_lookalike_experiment(repo: Path) -> None:
     """The Judge's A9c: an experiment named with a Cyrillic look-alike letter.
     It used to crash the linter (git octal-quotes non-ASCII paths)."""
     name = "d\u0435mo"  # Cyrillic small ie, not Latin e
-    _add_record(
-        repo,
-        name,
-        NEW_ID,
-        make_record(NEW_ID, name, inputs=[("rtl/dut.v", _sha256_text(DUMMY_RTL))]),
-        "fixture: unicode look-alike experiment",
-    )
+    _commit_record(repo, experiment=name, msg="fixture: unicode look-alike experiment")
 
 
 def case_supersedes_list_non_string_entry(repo: Path) -> None:
     """The Judge's A8g revisited for the list form (#472): a list is legal,
     but only of record-id strings -- a non-string entry must fail cleanly,
     not crash or be silently accepted."""
-    _add_record(
-        repo,
-        "demo",
-        NEW_ID,
-        make_record(
-            NEW_ID,
-            "demo",
-            inputs=[("rtl/dut.v", _sha256_text(DUMMY_RTL))],
-            supersedes=["20260101-000000-abc1234", 123],
-        ),
-        "fixture: supersedes list with a non-string entry",
-    )
+    _commit_record(repo, supersedes=["20260101-000000-abc1234", 123],
+                   msg="fixture: supersedes list with a non-string entry")
 
 
 # --- #472: the list form of `supersedes` -------------------------------------
 # One record may supersede several earlier leaves at once (a collapse
 # re-mint), so parallel branches stop doubling the live-leaf count. Every
 # entry obeys the same rules as the scalar form, judged per entry.
-
-
-def _add_demo_leaf(repo: Path, record_id: str) -> None:
-    _add_record(
-        repo,
-        "demo",
-        record_id,
-        make_record(record_id, "demo", inputs=[("rtl/dut.v", _sha256_text(DUMMY_RTL))]),
-        f"fixture: add leaf {record_id}",
-    )
 
 
 LEAF_1 = "20260101-000000-abc1234"  # the fixture repo's initial record
@@ -583,127 +490,55 @@ COLLAPSER = "20260102-000000-abc1234"
 
 def case_supersedes_list_valid(repo: Path) -> None:
     """A list naming two existing, strictly earlier records is valid."""
-    _add_demo_leaf(repo, LEAF_2)
-    _add_record(
-        repo,
-        "demo",
-        COLLAPSER,
-        make_record(
-            COLLAPSER,
-            "demo",
-            inputs=[("rtl/dut.v", _sha256_text(DUMMY_RTL))],
-            supersedes=[LEAF_1, LEAF_2],
-        ),
-        "fixture: one record superseding two leaves",
-    )
+    _commit_record(repo, LEAF_2)
+    _commit_record(repo, COLLAPSER, supersedes=[LEAF_1, LEAF_2],
+                   msg="fixture: one record superseding two leaves")
 
 
 def case_supersedes_list_exempts_both_from_freshness(repo: Path) -> None:
     """Every listed id is superseded: both stale leaves are frozen history,
     only the live collapsing record must be fresh (#472)."""
-    new_rtl = DUMMY_RTL + "// v2\n"
-    (repo / "rtl" / "dut.v").write_text(new_rtl, encoding="utf-8")
-    _add_demo_leaf(repo, LEAF_2)
-    _add_record(
-        repo,
-        "demo",
-        COLLAPSER,
-        make_record(
-            COLLAPSER,
-            "demo",
-            inputs=[("rtl/dut.v", _sha256_text(new_rtl))],
-            supersedes=[LEAF_1, LEAF_2],
-        ),
-        "fixture: collapse a stale leaf pair",
-    )
+    _commit_record(repo, LEAF_2)
+    _commit_record(repo, COLLAPSER, inputs=_update_rtl(repo),
+                   supersedes=[LEAF_1, LEAF_2],
+                   msg="fixture: collapse a stale leaf pair")
 
 
 def case_supersedes_list_missing_id(repo: Path) -> None:
-    _add_demo_leaf(repo, LEAF_2)
-    _add_record(
-        repo,
-        "demo",
-        COLLAPSER,
-        make_record(
-            COLLAPSER,
-            "demo",
-            inputs=[("rtl/dut.v", _sha256_text(DUMMY_RTL))],
-            supersedes=[LEAF_1, "20250101-000000-deadbee"],
-        ),
-        "fixture: list names a nonexistent record",
-    )
+    _commit_record(repo, LEAF_2)
+    _commit_record(repo, COLLAPSER, supersedes=[LEAF_1, "20250101-000000-deadbee"],
+                   msg="fixture: list names a nonexistent record")
 
 
 def case_supersedes_list_self_id(repo: Path) -> None:
-    _add_demo_leaf(repo, LEAF_2)
-    _add_record(
-        repo,
-        "demo",
-        COLLAPSER,
-        make_record(
-            COLLAPSER,
-            "demo",
-            inputs=[("rtl/dut.v", _sha256_text(DUMMY_RTL))],
-            supersedes=[LEAF_1, COLLAPSER],
-        ),
-        "fixture: list names its own record",
-    )
+    _commit_record(repo, LEAF_2)
+    _commit_record(repo, COLLAPSER, supersedes=[LEAF_1, COLLAPSER],
+                   msg="fixture: list names its own record")
 
 
 def case_supersedes_list_later_id(repo: Path) -> None:
     """A list entry naming a LATER record (which must therefore exist) does
     not sort strictly earlier -- rejected, and it exempts nothing."""
-    _add_demo_leaf(repo, LEAF_2)
-    _add_demo_leaf(repo, LATER)
-    _add_record(
-        repo,
-        "demo",
-        COLLAPSER,
-        make_record(
-            COLLAPSER,
-            "demo",
-            inputs=[("rtl/dut.v", _sha256_text(DUMMY_RTL))],
-            supersedes=[LEAF_1, LATER],
-        ),
-        "fixture: list names a later record",
-    )
+    _commit_record(repo, LEAF_2)
+    _commit_record(repo, LATER)
+    _commit_record(repo, COLLAPSER, supersedes=[LEAF_1, LATER],
+                   msg="fixture: list names a later record")
 
 
 def case_supersedes_list_duplicate_id(repo: Path) -> None:
-    _add_demo_leaf(repo, LEAF_2)
-    _add_record(
-        repo,
-        "demo",
-        COLLAPSER,
-        make_record(
-            COLLAPSER,
-            "demo",
-            inputs=[("rtl/dut.v", _sha256_text(DUMMY_RTL))],
-            supersedes=[LEAF_1, LEAF_1],
-        ),
-        "fixture: list names the same record twice",
-    )
+    _commit_record(repo, LEAF_2)
+    _commit_record(repo, COLLAPSER, supersedes=[LEAF_1, LEAF_1],
+                   msg="fixture: list names the same record twice")
 
 
 def _stale_leaf_with_sibling_list(repo: Path, siblings: list) -> None:
     """LEAF_1 is stale (rtl changed) and listed beside invalid `siblings`
     by a fresh collapser: LEAF_1's supersession must still take effect."""
-    new_rtl = DUMMY_RTL + "// v2\n"
-    (repo / "rtl" / "dut.v").write_text(new_rtl, encoding="utf-8")
     if LEAF_2 in siblings:
-        _add_demo_leaf(repo, LEAF_2)
-    _add_record(
-        repo,
-        "demo",
-        COLLAPSER,
-        make_record(
-            COLLAPSER,
-            "demo",
-            inputs=[("rtl/dut.v", _sha256_text(new_rtl))],
-            supersedes=[LEAF_1, *siblings],
-        ),
-        "fixture: list with a valid entry beside invalid ones",
-    )
+        _commit_record(repo, LEAF_2)
+    _commit_record(repo, COLLAPSER, inputs=_update_rtl(repo),
+                   supersedes=[LEAF_1, *siblings],
+                   msg="fixture: list with a valid entry beside invalid ones")
 
 
 def case_supersedes_list_valid_beside_int(repo: Path) -> None:
@@ -719,18 +554,7 @@ def case_supersedes_list_valid_beside_duplicates(repo: Path) -> None:
 
 
 def case_supersedes_empty_list(repo: Path) -> None:
-    _add_record(
-        repo,
-        "demo",
-        COLLAPSER,
-        make_record(
-            COLLAPSER,
-            "demo",
-            inputs=[("rtl/dut.v", _sha256_text(DUMMY_RTL))],
-            supersedes=[],
-        ),
-        "fixture: empty supersedes list",
-    )
+    _commit_record(repo, COLLAPSER, supersedes=[], msg="fixture: empty supersedes list")
 
 
 def case_scalar_and_list_supersede_mixed(repo: Path) -> None:
@@ -738,33 +562,13 @@ def case_scalar_and_list_supersede_mixed(repo: Path) -> None:
     may name a record another record already supersedes (#472 test-plan
     edge): the double-naming exempts nothing beyond the named ids, and the
     stale leaves are exempt while both naming records stay live and fresh."""
-    new_rtl = DUMMY_RTL + "// v2\n"
-    (repo / "rtl" / "dut.v").write_text(new_rtl, encoding="utf-8")
-    _add_demo_leaf(repo, LEAF_2)
-    _add_record(
-        repo,
-        "demo",
-        "20260104-000000-abc1234",
-        make_record(
-            "20260104-000000-abc1234",
-            "demo",
-            inputs=[("rtl/dut.v", _sha256_text(new_rtl))],
-            supersedes=LEAF_1,
-        ),
-        "fixture: scalar supersession of leaf 1",
-    )
-    _add_record(
-        repo,
-        "demo",
-        "20260105-000000-abc1234",
-        make_record(
-            "20260105-000000-abc1234",
-            "demo",
-            inputs=[("rtl/dut.v", _sha256_text(new_rtl))],
-            supersedes=[LEAF_1, LEAF_2],
-        ),
-        "fixture: list supersession naming an already-superseded record",
-    )
+    inputs = _update_rtl(repo)
+    _commit_record(repo, LEAF_2)
+    _commit_record(repo, "20260104-000000-abc1234", inputs=inputs,
+                   supersedes=LEAF_1, msg="fixture: scalar supersession of leaf 1")
+    _commit_record(repo, "20260105-000000-abc1234", inputs=inputs,
+                   supersedes=[LEAF_1, LEAF_2],
+                   msg="fixture: list supersession naming an already-superseded record")
 
 
 def case_gitlink_record(repo: Path) -> None:
@@ -787,13 +591,8 @@ def case_gitlink_record_empty_dir(repo: Path) -> None:
 
 
 def case_experiment_mismatch(repo: Path) -> None:
-    _add_record(
-        repo,
-        "demo",
-        NEW_ID,
-        make_record(NEW_ID, "other", inputs=[("rtl/dut.v", _sha256_text(DUMMY_RTL))]),
-        "fixture: experiment disagrees with directory",
-    )
+    _commit_record(repo, meta_experiment="other",
+                   msg="fixture: experiment disagrees with directory")
 
 
 # --- #545: a record's artifact links must resolve -----------------------------
@@ -823,33 +622,14 @@ def _mixed_links_row(run_id: str) -> str:
     )
 
 
-def _record_with_artifact_links(repo: Path, run_id: str, links: str, msg: str,
-                                prose_extra: str = "") -> None:
-    _add_record(
-        repo,
-        "demo",
-        run_id,
-        make_record(
-            run_id,
-            "demo",
-            inputs=[("rtl/dut.v", _sha256_text(DUMMY_RTL))],
-            links=links,
-            prose_extra=prose_extra,
-        ),
-        msg,
-    )
-
-
 def case_artifact_link_missing_log_fails(repo: Path) -> None:
     """The PR #455 shape: a mixed **Links** row citing two tracked sibling
     artifacts and one log that is not in the tree at all."""
     art = _artifact_dir(repo, "demo", LINK_ID)
     (art / "klt-functional-verification.json").write_text("{}\n", encoding="utf-8")
     (art / "results_icarus.xml").write_text("<results/>\n", encoding="utf-8")
-    _record_with_artifact_links(
-        repo, LINK_ID, _mixed_links_row(LINK_ID),
-        "fixture: record citing a missing artifact log",
-    )
+    _commit_record(repo, LINK_ID, links=_mixed_links_row(LINK_ID),
+                   msg="fixture: record citing a missing artifact log")
 
 
 def case_artifact_link_untracked_log_fails(repo: Path) -> None:
@@ -867,10 +647,8 @@ def case_artifact_link_tracked_log_passes(repo: Path) -> None:
     (art / "klt-functional-verification.json").write_text("{}\n", encoding="utf-8")
     (art / "results_icarus.xml").write_text("<results/>\n", encoding="utf-8")
     (art / "test_icarus.log").write_text("pad measurements\n", encoding="utf-8")
-    _record_with_artifact_links(
-        repo, LINK_ID, _mixed_links_row(LINK_ID),
-        "fixture: record with every cited artifact tracked",
-    )
+    _commit_record(repo, LINK_ID, links=_mixed_links_row(LINK_ID),
+                   msg="fixture: record with every cited artifact tracked")
 
 
 def case_artifact_link_valid_forms_pass(repo: Path) -> None:
@@ -895,42 +673,26 @@ def case_artifact_link_valid_forms_pass(repo: Path) -> None:
         f"  - indented bullet: [log](../artifacts/{LINK_ID}/test_icarus.log)\n"
         f"  - code span, not a link: `../artifacts/{LINK_ID}/never-committed.log`\n"
     )
-    _record_with_artifact_links(
-        repo, LINK_ID, links,
-        "fixture: every legitimate artifact-link form",
-        prose_extra=prose_extra,
-    )
+    _commit_record(repo, LINK_ID, links=links, prose_extra=prose_extra,
+                   msg="fixture: every legitimate artifact-link form")
 
 
 def case_artifact_link_indented_dangling_fails(repo: Path) -> None:
     """Indented links outside the **Links** field are citations too: a
     dangling artifact link in a sub-bullet must fail, not hide."""
-    _record_with_artifact_links(
-        repo, LINK_ID, "Design under test: `rtl/dut.v`",
-        "fixture: indented bullet cites a missing artifact log",
-        prose_extra=(
-            f"  - indented bullet: [log](../artifacts/{LINK_ID}/test_icarus.log)\n"
-        ),
-    )
+    _commit_record(repo, LINK_ID, links="Design under test: `rtl/dut.v`",
+                   msg="fixture: indented bullet cites a missing artifact log",
+                   prose_extra=(
+                       f"  - indented bullet: [log](../artifacts/{LINK_ID}/test_icarus.log)\n"
+                   ))
 
 
 def case_superseded_record_artifact_link_checked(repo: Path) -> None:
     """Supersession freezes a record's provenance hashes, not its
     citations: a superseded record's dangling artifact link still fails."""
     case_artifact_link_missing_log_fails(repo)
-    successor = "20260107-000000-abc1234"
-    _add_record(
-        repo,
-        "demo",
-        successor,
-        make_record(
-            successor,
-            "demo",
-            inputs=[("rtl/dut.v", _sha256_text(DUMMY_RTL))],
-            supersedes=LINK_ID,
-        ),
-        "fixture: supersede the record with the dangling artifact link",
-    )
+    _commit_record(repo, "20260107-000000-abc1234", supersedes=LINK_ID,
+                   msg="fixture: supersede the record with the dangling artifact link")
 
 
 CASES = [
@@ -1283,6 +1045,45 @@ BASE_SHA_CASES = [
 ]
 
 
+def _linter_problems(
+    exit_code: int, output: str, expected_exit: int, expected_substring: str = ""
+) -> list[str]:
+    """Problems with one linter run; empty means it behaved as specified."""
+    problems = []
+    if exit_code != expected_exit:
+        problems.append(f"exit {exit_code}, expected {expected_exit}")
+    if expected_substring and expected_substring not in output:
+        problems.append(f"output missing {expected_substring!r}")
+    if "Traceback (most recent call last)" in output:
+        problems.append("linter crashed with a traceback")
+    return problems
+
+
+def _report_case(name: str, problems: list[str], output: str) -> bool:
+    """Report one self-test case; False when it did not behave as specified."""
+    if problems:
+        print(f"FAIL: {name}")
+        for problem in problems:
+            print(f"  - {problem}")
+        print("  --- linter output ---")
+        for line in output.splitlines():
+            print(f"  | {line}")
+        return False
+    print(f"OK:   {name}")
+    return True
+
+
+def _run_fixture(mutate, extra_args_fn=None) -> tuple[int, str]:
+    """Build a fresh throwaway fixture repo, apply `mutate`, and run the
+    linter on it (`extra_args_fn`, when given, returns the extra argv to
+    append, e.g. `("--base-sha", <sha>)`). Returns (exit_code, output)."""
+    with tempfile.TemporaryDirectory(prefix="record-linter-selftest-") as tmpdir:
+        repo = build_fixture_repo(Path(tmpdir))
+        mutate(repo)
+        extra_args = extra_args_fn(repo) if extra_args_fn is not None else ()
+        return run_linter(repo, *extra_args)
+
+
 def main() -> int:
     if not LINTER.exists():
         print(f"FATAL: {LINTER} not found", file=sys.stderr)
@@ -1292,78 +1093,46 @@ def main() -> int:
         return 1
 
     # Per-entry rule (#472): an invalid sibling is reported but never makes
-    # the valid entry's target look live (stale) again.
-    for name, mutate, expected_stale in (
+    # the valid entry's target look live (stale) again. These cases keep
+    # their specialized per-record stale-ID comparisons (#542) and count in
+    # the banner and summary totals.
+    stale_cases = (
         ("valid id beside an int stays superseded", case_supersedes_list_valid_beside_int, set()),
         ("valid id beside nulls stays superseded", case_supersedes_list_valid_beside_nulls, set()),
         ("duplicate list leaves the uniquely named sibling superseded",
          case_supersedes_list_valid_beside_duplicates, {LEAF_1}),
-    ):
-        with tempfile.TemporaryDirectory(prefix="record-linter-selftest-") as tmpdir:
-            repo = build_fixture_repo(Path(tmpdir))
-            mutate(repo)
-            exit_code, output = run_linter(repo)
-            stale_ids = {rid for rid in (LEAF_1, LEAF_2) for line in output.splitlines()
-                         if f"{rid}.md:" in line and "is stale" in line}
-            if stale_ids != expected_stale or "Traceback" in output or exit_code != 1:
-                print(f"FAIL: {name}\n" + "\n".join("  | " + l for l in output.splitlines()))
-                return 1
-            print(f"OK:   {name}")
-
-    print(f"== check_records.py self-test ({len(CASES) + len(BASE_SHA_CASES)} cases) ==")
+    )
+    total = len(stale_cases) + len(CASES) + len(BASE_SHA_CASES)
     failures = 0
+
+    print(f"== check_records.py self-test ({total} cases) ==")
+
+    for name, mutate, expected_stale in stale_cases:
+        exit_code, output = _run_fixture(mutate)
+        stale_ids = {rid for rid in (LEAF_1, LEAF_2) for line in output.splitlines()
+                     if f"{rid}.md:" in line and "is stale" in line}
+        problems = []
+        if stale_ids != expected_stale:
+            problems.append(
+                f"stale records {sorted(stale_ids)}, expected {sorted(expected_stale)}")
+        problems.extend(_linter_problems(exit_code, output, expected_exit=1))
+        if not _report_case(name, problems, output):
+            failures += 1
+
     for name, mutate, expected_exit, expected_substring in CASES:
-        with tempfile.TemporaryDirectory(prefix="record-linter-selftest-") as tmpdir:
-            repo = build_fixture_repo(Path(tmpdir))
-            mutate(repo)
-            exit_code, output = run_linter(repo)
-
-            problems = []
-            if exit_code != expected_exit:
-                problems.append(f"exit {exit_code}, expected {expected_exit}")
-            if expected_substring not in output:
-                problems.append(f"output missing {expected_substring!r}")
-            if "Traceback (most recent call last)" in output:
-                problems.append("linter crashed with a traceback")
-
-            if problems:
-                failures += 1
-                print(f"FAIL: {name}")
-                for problem in problems:
-                    print(f"  - {problem}")
-                print("  --- linter output ---")
-                for line in output.splitlines():
-                    print(f"  | {line}")
-            else:
-                print(f"OK:   {name}")
+        exit_code, output = _run_fixture(mutate)
+        problems = _linter_problems(exit_code, output, expected_exit, expected_substring)
+        if not _report_case(name, problems, output):
+            failures += 1
 
     for name, mutate, base_sha_of, expected_exit, expected_substring in BASE_SHA_CASES:
-        with tempfile.TemporaryDirectory(prefix="record-linter-selftest-") as tmpdir:
-            repo = build_fixture_repo(Path(tmpdir))
-            mutate(repo)
-            exit_code, output = run_linter(repo, "--base-sha", base_sha_of(repo))
-
-            problems = []
-            if exit_code != expected_exit:
-                problems.append(f"exit {exit_code}, expected {expected_exit}")
-            if expected_substring not in output:
-                problems.append(f"output missing {expected_substring!r}")
-            if "Traceback (most recent call last)" in output:
-                problems.append("linter crashed with a traceback")
-
-            if problems:
-                failures += 1
-                print(f"FAIL: {name}")
-                for problem in problems:
-                    print(f"  - {problem}")
-                print("  --- linter output ---")
-                for line in output.splitlines():
-                    print(f"  | {line}")
-            else:
-                print(f"OK:   {name}")
+        exit_code, output = _run_fixture(
+            mutate, lambda repo, b=base_sha_of: ("--base-sha", b(repo)))
+        problems = _linter_problems(exit_code, output, expected_exit, expected_substring)
+        if not _report_case(name, problems, output):
+            failures += 1
 
     print()
-    total = len(CASES) + len(BASE_SHA_CASES)
     if failures:
         print(f"FAIL: {failures}/{total} self-test case(s) did not behave as specified")
         return 1

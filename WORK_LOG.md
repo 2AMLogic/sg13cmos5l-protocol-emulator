@@ -18,8 +18,63 @@ Chronological record of merged pull requests and closed issues, newest first.
 
 - [2026-09](work_log/WORK_LOG_2026-09.md)
 
+### 2026-11-23
+
+- **PR #568**: fix: name withheld changed segments in signoff_movement_diff excerpts
+- **PR #566**: refactor: consolidate test_check_records fixture boilerplate into shared _commit/_commit_record/_update_rtl/_run_fixture helpers
+- **PR #559**: docs: require merge-first, --collapse re-minting of stale signoff leaves
+- **Issue #565** (closed): Simplify verification/test_check_records.py: unify layered record-commit and fixture helpers (~290 LOC)
+- **Issue #558** (closed): Re-mint signoff records against post-merge live leaves, not pre-merge ones
+- **Issue #503** (closed): signoff_movement_diff: excerpt truncation is silent — say how many changed segments were withheld
+- **PR #564**: Reuse the control-space harness helpers in the primitives bench and re-mint the affected evidence
+- **PR #563**: refactor(verification): drop dead DMX512 model API and reuse shared bench helpers
+- **PR #562**: refactor: factor test_check_ratification_gate.py boilerplate into shared helpers
+- **Issue #561** (closed): Simplify scripts/test_check_ratification_gate.py: factor duplicated flip, review, and CLI boilerplate (~220 LOC)
+- **Issue #560** (closed): Simplify DMX512 verification model and bench: remove dead check_packet and reuse shared helpers (~55 LOC)
+- **Issue #557** (closed): Reuse control-space harness helpers in verification/test_primitives.py (~50 LOC)
+- **PR #549**: refactor: share record-linter self-test reporting and count all 51 cases
+- **Issue #542** (closed): Share record-linter self-test reporting and count all 51 cases
+- **PR #489**: refactor: share the program-memory pin driver between the two benches
+- **Issue #486** (closed): Share the program-memory pin driver across the load-phase and assembler round-trip benches
+
+### 2026-11-22
+
+- **PR #555**: refactor: emit i2c pair instruction stream from one shared builder
+- **Issue #554** (closed): Simplify firmware/tools/gen_i2c_pair.py: emit the 12 repeated bit blocks from a loop and keep SLOTS prose-only (~280 LOC)
+- **PR #553**: fix: anchor remint results_xml on REPO_ROOT and fail on a missing XML
+- **Issue #552** (closed): remint_records.py resolves klt's repo-scoped results_xml path against the caller's cwd, and a miss is silent
+- **PR #551**: Reuse the shared serial loader in the boot-ROM, boot-SPI and primitives benches and re-mint the affected evidence
+- **PR #550**: docs: qualify the refresh rule's movement disclosure by klt build and tell the three comparisons apart
+- **PR #548**: records: lint a record's artifact links against the git inventory
+- **Issue #545** (closed): Record linter does not resolve a record's cited artifact links
+- **Issue #540** (closed): Reuse the serial loader in the boot ROM, SPI boot and primitives benches
+- **PR #527**: fix: restore missing signoff-baseline artifact files cited by 15 records
+- **Issue #521** (closed): Restore the missing artifact files cited by 15 signoff-baseline records
+- **Issue #508** (closed): manifests/README.md: PR #498's refresh-disclosure paragraph will contradict #505's live-check paragraph once both land
+
+### 2026-11-21
+
+- **Issue #547** (closed): signoff-baseline refresh: per-leaf re-mint added 11,043 records (1.3M lines) where --collapse exists to mint one
+- **Issue #544** (closed): check_protocol_pin_roles.py: express the 'explicit zero pin-mode write' allowance as a rule, not a profile name
+- **PR #535**: feat: produce T1 item 11 part 2 power-grid evidence (run-power-par.sh, deck-bearing ERC re-mint, signoff round)
+- **PR #533**: docs: extend roadmap Proposed range to DR 0025 and finish its collapse history
+- **PR #528**: refactor: pass the pin role into the shared TX firmware and bench checks
+- **Issue #526** (closed): Reuse the transmit pin checks for NEC infrared
+- **Issue #523** (closed): T1 item 11 part 2: klt place-and-route with a power grid on the macro-backed top (power.pdn, tap cell statement, strap layers)
+- **Issue #511** (closed): Update the roadmap’s Proposed range and finish DR 0025’s collapse history
+- **PR #498**: feat(signoff): add --diff-vs non-graded movement comparison for baseline refreshes
+- **Issue #403** (closed): signoff baseline: name the tiers-doc (source_doc_content_hash) movement when the klt version moves, as the 0.8.0->0.9.0 refresh did not
+
+### 2026-11-21
+
+- **PR #(this PR)**: firmware: CAN 2.0A node on the frozen ISA (issue #450): arbitrated transmit, receive with de-stuffing/CRC-15/ACK
+
 ### 2026-11-20
 
+- **PR #477**: feat: collapse parallel evidence re-mints via a list-form supersedes
+- **Issue #472** (closed): Evidence hygiene: signoff-baseline leaf count doubles on every concurrent merge (8 to 16 to 32 in one day)
+- **PR #518**: docs: mark the STATISTICAL_TEXT_RE mirror comment's klt source as historical
+- **Issue #517** (closed): docs: check_statistical_claims_na.py's mirror comment still reads "at the pinned klayout-tools==0.8.0"
 - **PR #516**: docs(manifests): record the klt 0.8.0 pin parenthetical in the item-6 statement as historical
 - **Issue #481** (closed): docs(spec): spec/statistical-claims-na.md still says "the pinned klayout-tools==0.8.0" after #371 removes the pin
 - **PR #513**: feat(records): fail lint on attested-file drift; README is item-10 evidence

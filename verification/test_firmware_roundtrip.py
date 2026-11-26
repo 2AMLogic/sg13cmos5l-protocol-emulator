@@ -23,6 +23,12 @@ Driven by `klt functional-verification` (see
 `verification/request-firmware-roundtrip.json`) against
 `rtl/protocol_program_memory.v`. Like `test_program_memory.py`, this file
 is *input* to `klt functional-verification`, not a pytest module.
+
+The pin driver (`reset_release`, `load_words`, `fetch_word`, `read_reg`)
+is `verification/program_memory_driver.py`, shared with the load-phase
+bench (issue #486) -- the same routines that lived here as duplicate
+copies, moved unchanged; this bench's assertions (image freshness, the
+round trip itself, the cycle-report cross-check) stay below.
 """
 
 import re
@@ -31,7 +37,7 @@ from pathlib import Path
 
 import cocotb
 from cocotb.clock import Clock
-from cocotb.triggers import ClockCycles, ReadOnly, RisingEdge, Timer
+from cocotb.triggers import RisingEdge, Timer
 from cocotb.utils import get_sim_time
 
 CLK_PERIOD_NS = 10  # matches the 1ns/1ps timescale and a 50 MHz nominal
@@ -42,6 +48,22 @@ try:
 except ImportError:  # module run without verification/ on sys.path
     sys.path.insert(0, str(Path(__file__).resolve().parent))
     from repo_root import find_repo_root
+
+try:
+    from program_memory_driver import (
+        fetch_word,
+        load_words,
+        read_reg,
+        reset_release,
+    )
+except ImportError:  # module run without verification/ on sys.path
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from program_memory_driver import (
+        fetch_word,
+        load_words,
+        read_reg,
+        reset_release,
+    )
 
 REPO_ROOT = find_repo_root(globals().get("__file__"))
 
@@ -85,72 +107,6 @@ def parse_cycle_sections() -> dict:
     """Parse `CYCLES ...` report lines into (start, end, cycles) triples."""
     shared = _parse_sections(DEMO_CYCLES.read_text(encoding="utf-8"))
     return {name: fields[:3] for name, fields in shared.items()}
-
-
-async def reset_release(dut, mode, settle_cycles=0):
-    """Reset release with `mode` pre-driven (same sequencing contract as
-    `test_program_memory.py`: the next rising edge after release is the
-    mode-sampling edge and shifts nothing)."""
-    dut.mode_pin.value = mode
-    dut.serial_in.value = 0
-    # DR 0012's run-phase data-access port (issue #135) is the core's to
-    # drive; this module-level bench has no core, so tie it idle.
-    dut.pm_we.value = 0
-    dut.pm_re.value = 0
-    dut.pm_addr.value = 0
-    dut.pm_wdata.value = 0
-    dut.pm_crc_clr.value = 0
-    dut.fetch_addr.value = 0
-    # DR 0013 (issue #138): the core lowers `fetch_en` while it fetches from
-    # the boot ROM. This bench reads the array through the fetch port, so
-    # it holds the port enabled, as the core does once it runs from memory.
-    dut.fetch_en.value = 1
-    dut.rst_n.value = 0
-    await ClockCycles(dut.clk, 10)
-    dut.rst_n.value = 1
-    await RisingEdge(dut.clk)  # the mode-sampling edge
-    if settle_cycles:
-        await ClockCycles(dut.clk, settle_cycles)
-
-
-async def load_words(dut, words):
-    """Shift `words` MSB-first, one bit per rising edge with MODE high,
-    then drop MODE on its own edge (DR 0001 load phase)."""
-    dut.mode_pin.value = 1
-    for word in words:
-        for b in range(15, -1, -1):
-            dut.serial_in.value = (word >> b) & 1
-            await RisingEdge(dut.clk)
-    dut.mode_pin.value = 0
-    await RisingEdge(dut.clk)  # the MODE-drop edge: exit to run phase
-
-
-async def fetch_word(dut, addr):
-    """Synchronous fetch read -- the same instruction path the core's
-    fetch-and-execute drives.
-
-    Re-verified for the SRAM-macro-backed program memory (issue #18,
-    `spec/decision-records/0005-program-memory-implementation.md`): the
-    macro captures `A_ADDR` at a clock edge and presents the word on
-    `A_DOUT` for the following cycle, so a read costs one edge where the
-    superseded flip-flop array answered combinationally. The round-trip
-    *contract* this bench checks -- assembler image in, identical words
-    out at the same addresses -- is unchanged; only the sampling cycle
-    moved. See `verification/test_program_memory.py`'s `fetch_word` for
-    the same change in the module's own bench."""
-    dut.fetch_addr.value = addr
-    await RisingEdge(dut.clk)  # the macro captures A_ADDR on this edge
-    await ReadOnly()           # ...and A_DOUT settles just after it
-    value = int(dut.instr_word.value)
-    await Timer(1, unit="ns")  # leave the read-only region (writable again)
-    return value
-
-
-async def read_reg(dut, name):
-    """Read a registered output post-NBA (see test_program_memory.py's
-    note on this cocotb/Icarus read region)."""
-    await ReadOnly()
-    return int(getattr(dut, name).value)
 
 
 @cocotb.test()
