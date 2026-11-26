@@ -427,7 +427,7 @@ measurement:
   corners on the fixed netlist, and the same run on the pre-fix netlist fails
   at all three with the pads driven high; both are in
   [`post-layout-sdf-regression`](../../verification/records/post-layout-sdf-regression/)
-  (the pre-fix failures in the superseded `20261011-114800-e5a0bae` chain <!-- superseded-ok: frozen history of the #244 negative control --> and the fixed-netlist pass in the live [`20261126-085014-d4e3e4d`](../../verification/records/post-layout-sdf-regression/records/20261126-085014-d4e3e4d.md), which supersedes it). The Tiny Tapeout
+  (the pre-fix failures in the superseded `20261011-114800-e5a0bae` chain <!-- superseded-ok: frozen history of the #244 negative control --> and the fixed-netlist pass in the live [`20261126-133646-7f96de9`](../../verification/records/post-layout-sdf-regression/records/20261126-133646-7f96de9.md), which supersedes it). The Tiny Tapeout
   IO cell and mux are outside the netlist, so this is the design's boundary,
   not a pad waveform. One case is left to firmware: writing `UIO_OD` on a pin
   that is push-pull and high at that moment (DR 0020, "Limits"); no committed
