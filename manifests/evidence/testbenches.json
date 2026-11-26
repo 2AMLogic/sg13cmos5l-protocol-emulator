@@ -549,7 +549,7 @@
         "role": "testbench",
         "path": "verification/test_firmware_dali.py",
         "passed": true,
-        "content_hash": "sha256:1b261253371e13c4c0d9788effdeda69f0f66969d7a152f458b1ad8bcee9be28"
+        "content_hash": "sha256:826aa4a6f0a8472bf5de01c23fcd659987c33685131605fb72984e932fa9bc38"
       },
       {
         "check": "present",
