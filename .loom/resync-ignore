@@ -1,0 +1,5 @@
+# Temporary backport of 2AMLogic/loom#15322 (merge a897feac66e2, issue #622):
+# streams config tiers to jq on stdin so >128 KiB tiers do not fail with E2BIG.
+# Retire these pins once installed Loom resyncs past 2AMLogic/loom#15322 (>= v0.20.37).
+scripts/lib/config-resolver.sh
+scripts/tests/test-config-resolver.sh
