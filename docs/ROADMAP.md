@@ -32,7 +32,7 @@ a placed die of 161,592 um^2 at 41.83% placed utilization, 1.23x the 2x2
 die (stage place); the tracker keeps the row unmet).
 
 **T1 checklist** (`klt signoff`, record
-`verification/records/signoff-baseline/records/20261126-093016-26a14dd.md`,
+`verification/records/signoff-baseline/records/20261126-102153-793acd9.md`,
 klt 0.9.2): **5 of 11 met, 1 `not_applicable`**.
 
 | Item | Verdict | What moves it |
