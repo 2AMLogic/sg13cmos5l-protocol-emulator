@@ -349,6 +349,27 @@ def _(fx):
     assert code == 0 and "i2c_fast_sr.asm: `WCTL UIO_OD` writes 0x80" in out, out
 
 
+@case("runtime pin mode: a source register overwritten between its LDI and the WCTL is unwired")
+def _(fx):
+    fx.mutate("firmware/asm/i2c_fast.asm",
+              "        WCTL  UIO_OD, R3      ; DR 0012: SCL|SDA open-drain (after the OUT)\n",
+              "        XOR   R3, R3\n        WCTL  UIO_OD, R3\n")
+    code, out = fx.run()
+    assert code == 0 and "[implementation] INCOMPLETE: 1" in out, out
+    assert "i2c_fast.asm: `WCTL UIO_OD` writes None, table open-drain mask is 0x0C" in out, out
+    code, out = fx.run("--require-implemented")
+    assert code == 1 and "--require-implemented: FAIL" in out, out
+
+
+@case("runtime pin mode: the WCTL source register matches its writer in either case")
+def _(fx):
+    fx.mutate("firmware/asm/i2c_fast.asm",
+              "        WCTL  UIO_OD, R3      ; DR 0012: SCL|SDA open-drain (after the OUT)\n",
+              "        WCTL  UIO_OD, r3\n")
+    code, out = fx.run("--require-implemented")
+    assert code == 0 and "[implementation] COMPLETE: 0" in out, out
+
+
 @case("runtime pin mode: an SPI program without the WCTL UIO_DIR preamble is unwired")
 def _(fx):
     fx.mutate("firmware/asm/spi_mode2.asm",

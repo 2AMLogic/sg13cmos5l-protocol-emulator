@@ -776,7 +776,7 @@ class Checker:
     def prev_write(self, ins: list[dict], idx: int, reg: str):
         """(index, instr) of the nearest instruction before `idx` that writes `reg`."""
         for j in range(idx - 1, -1, -1):
-            if ins[j]["m"] in self.WRITES and ins[j]["ops"][0] == reg:
+            if ins[j]["m"] in self.WRITES and ins[j]["ops"][0].upper() == reg.upper():
                 return j, ins[j]
         return None, None
 
@@ -2096,9 +2096,8 @@ class Checker:
                         "(DR 0012: the pins stay inputs and never reach the bus)")
                     continue
                 site = sites[0]
-                src = ins[site]["ops"][1]
-                val = next((self.imm(x["ops"][1]) for x in reversed(ins[:site])
-                            if x["m"] in self.WRITES and x["ops"][0] == src and x["m"] == "LDI"), None)
+                _, writer = self.prev_write(ins, site, ins[site]["ops"][1])
+                val = self.imm(writer["ops"][1]) if writer and writer["m"] == "LDI" else None
                 if val != want:
                     self.unwired.append(
                         f"{rel}: `WCTL {name}` writes {val if val is None else hex(val)}, "
