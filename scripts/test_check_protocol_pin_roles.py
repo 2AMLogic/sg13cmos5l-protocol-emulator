@@ -24,12 +24,15 @@ Exit codes: 0 all cases behave as specified, 1 at least one did not.
 from __future__ import annotations
 
 import ast
+import importlib.util
+import inspect
 import json
 import re
 import shutil
 import subprocess
 import sys
 import tempfile
+import textwrap
 from pathlib import Path
 
 SCRIPT_DIR = Path(__file__).resolve().parent
@@ -44,6 +47,15 @@ _results: list[tuple[str, bool, str]] = []
 def real_table() -> dict:
     text = (REPO_ROOT / RECORD).read_text(encoding="utf-8")
     return json.loads(FENCE.search(text).group(2))
+
+
+def load_checker():
+    """The shipped checker as a module object, imported by path because
+    `python3 -I` does not put `scripts/` on `sys.path`; importing runs no check."""
+    spec = importlib.util.spec_from_file_location("check_protocol_pin_roles", CHECKER)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
 
 
 class Fixture:
@@ -1317,65 +1329,19 @@ def _(fx):
     with one dispatch -- `self.meta if prof in METADATA_PROFILES else
     self.concrete` -- so the profile -> layer mapping is declared in that one
     constant. A wrong choice attributes the diagnostic to the wrong one of
-    DR 0010's four reported results: the `info` profile's missing `info.yaml`
+    DR 0010's four reported results (the `info` profile's missing `info.yaml`
     would be blamed on `concrete-firmware-bench` instead of
-    `metadata-capability` (and a future metadata-source profile left
-    unclassified would get its missing file blamed there too), with every
-    behavioural case still green -- the missing-file branch is unreachable
-    through the CLI, so no fixture can catch it. This case walks the Checker's
-    own AST the way the attribute case above does and fails while any `prof_*`
-    handler's classification is undecided. It also asserts the dispatch reads
-    the constant -- that some `METADATA_PROFILES` name survives inside
-    `run_inventory` -- so the mapping cannot fall back to a bare literal
-    (leaving the constant, and this partition, dead) with the suite green."""
-    module = ast.parse(CHECKER.read_text(encoding="utf-8"))
-
-    declared: set[str] | None = None
-    for n in module.body:
-        targets = n.targets if isinstance(n, ast.Assign) else []
-        if not any(isinstance(t, ast.Name) and t.id == "METADATA_PROFILES"
-                   for t in targets):
-            continue
-        v = n.value
-        elems = (v.elts if isinstance(v, ast.Set)
-                 else v.args[0].elts if isinstance(v, ast.Call)
-                 and v.args and isinstance(v.args[0], ast.Set)
-                 else None)
-        assert elems is not None, (
-            f"{CHECKER.name}: METADATA_PROFILES is not a set/frozenset literal; "
-            "teach this case its new shape"
-        )
-        assert all(isinstance(e, ast.Constant) and isinstance(e.value, str)
-                   for e in elems), (
-            f"{CHECKER.name}: METADATA_PROFILES holds non-string elements; "
-            "teach this case its new shape"
-        )
-        declared = {e.value for e in elems}
-    assert declared is not None, (
-        f"{CHECKER.name}: module-level METADATA_PROFILES constant not found; "
-        "the missing-file layer dispatch has no declared home"
-    )
-
-    cls = next(n for n in ast.walk(module)
-               if isinstance(n, ast.ClassDef) and n.name == "Checker")
-    fn = next((m for m in cls.body
-               if isinstance(m, (ast.FunctionDef, ast.AsyncFunctionDef))
-               and m.name == "run_inventory"), None)
-    assert fn is not None, (
-        f"{CHECKER.name}: Checker.run_inventory not found; the missing-file "
-        "layer dispatch this case guards has moved -- teach this case its "
-        "new home"
-    )
-    assert any(isinstance(n, ast.Name) and n.id == "METADATA_PROFILES"
-               for n in ast.walk(fn)), (
-        f"{CHECKER.name}: Checker.run_inventory (defined at line {fn.lineno}) "
-        "does not reference METADATA_PROFILES; the missing-file layer dispatch "
-        "has drifted back to a literal and the constant -- with this case's "
-        "handler partition -- is dead code"
-    )
-    handlers = {m.name for m in cls.body
-                if isinstance(m, (ast.FunctionDef, ast.AsyncFunctionDef))
-                and m.name.startswith("prof_")}
+    `metadata-capability`) while every behavioural case stays green: the CLI
+    reports an absent file during schema validation and returns before this
+    dispatch. So this case imports the shipped checker by path and calls
+    `Checker.run_inventory()` itself, on one missing path per handler with a
+    nonempty `patterns` list, and asserts which layer reports each filename.
+    The two lists below stay independent of the shipped constant -- an
+    explicit decision for every `prof_*` handler -- and an AST check keeps
+    the dispatch reading that constant rather than a bare literal that would
+    leave it, and this partition, dead code."""
+    mod = load_checker()
+    handlers = {n for n in dir(mod.Checker) if n.startswith("prof_")}
 
     # The committed ground truth (DR 0010): `info` reads `info.yaml`, a
     # metadata document; every other inventoried profile's source file is
@@ -1393,29 +1359,52 @@ def _(fx):
         "prof_core", "prof_isa_ports", "prof_dali", "prof_bench_dali",
     }
 
-    unclassified = sorted(handlers - metadata - concrete)
-    assert not unclassified, (
-        f"{CHECKER.name}: prof_* handler(s) {unclassified} not classified; add "
-        "the profile to METADATA_PROFILES (metadata source) or to this case's "
-        "`concrete` set (firmware/bench/RTL source)"
+    classified = metadata | concrete
+    assert classified == handlers, (
+        f"{CHECKER.name}: prof_* handler name(s) {sorted(classified ^ handlers)} are "
+        "classified here but have no method, or shipped but unclassified; add each new "
+        "handler to `metadata` (metadata source) or `concrete` (firmware/bench/RTL "
+        "source), and drop names whose method is gone"
     )
-    unknown = sorted((metadata | concrete) - handlers)
-    assert not unknown, (
-        f"{CHECKER.name}: classified handler(s) {unknown} have no prof_* "
-        "method; drop them from this case's sets"
+    declared = {f"prof_{p}" for p in getattr(mod, "METADATA_PROFILES", ())}
+    assert declared == metadata, (
+        f"{CHECKER.name}: METADATA_PROFILES names {sorted(declared)} where this case "
+        f"classifies {sorted(metadata)} as metadata sources; reconcile the two"
     )
-    mismatched = sorted(f"prof_{p}" for p in declared if f"prof_{p}" not in metadata)
-    assert not mismatched, (
-        f"{CHECKER.name}: METADATA_PROFILES names {mismatched} but this case "
-        "classifies them as concrete; reconcile the two"
+
+    fn = getattr(mod.Checker, "run_inventory", None)
+    assert fn is not None, (
+        f"{CHECKER.name}: Checker.run_inventory moved; teach this case its new home"
     )
-    undeclared = sorted(p for p in (h[len("prof_"):] for h in metadata)
-                        if p not in declared)
-    assert not undeclared, (
-        f"{CHECKER.name}: metadata-source profile(s) {undeclared} missing from "
-        "METADATA_PROFILES; their missing files would be blamed on "
-        "concrete-firmware-bench"
+    dispatch = ast.parse(textwrap.dedent(inspect.getsource(fn)))
+    assert any(isinstance(n, ast.Name) and n.id == "METADATA_PROFILES"
+               for n in ast.walk(dispatch)), (
+        f"{CHECKER.name}: Checker.run_inventory does not reference METADATA_PROFILES; "
+        "the missing-file layer dispatch has drifted back to a literal and the "
+        "constant -- with this case's handler partition -- is dead code"
     )
+
+    empty = fx.path("empty-tree")
+    empty.mkdir()
+    ck = mod.Checker(empty, RECORD)
+    ck.inv = {
+        f"missing/{h}.txt": {"file": f"missing/{h}.txt",
+                             "profile": h[len("prof_"):], "patterns": ["any"]}
+        for h in sorted(handlers)
+    }
+    ck.run_inventory()
+
+    def reported(layer) -> list[str]:
+        """The inventory paths `layer` reports a missing file for, sorted."""
+        return sorted(e.split(": ", 1)[0] for e in layer.errors)
+
+    assert ck.schema.errors == [], ck.schema.errors
+    for layer, expected in ((ck.meta, metadata), (ck.concrete, concrete)):
+        want = sorted(f"missing/{h}.txt" for h in expected)
+        assert reported(layer) == want, (
+            f"{CHECKER.name}: [{layer.name}] reports missing {reported(layer)}; "
+            f"expected {want}"
+        )
 
 
 @case("summary: a schema failure still prints a complete JSON summary")
