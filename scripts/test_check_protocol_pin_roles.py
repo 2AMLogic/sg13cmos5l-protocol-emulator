@@ -929,6 +929,21 @@ def _(fx):
     expect_fail(fx, "SCL poll mask", "concrete-firmware-bench")
 
 
+@case("I2C SCL poll mask register overwritten between its LDI and the poll")
+def _(fx):
+    rel, poll = "firmware/asm/i2c_fast_sr_poll.asm", "        poll0: IN    R2, UIO_IN"
+    fx.mutate(rel, poll, "        XOR   R3, R3\n" + poll)
+    code, out = fx.run()
+    assert code == 1, f"expected exit 1, got {code}:\n{out}"
+    assert "[concrete-firmware-bench] FAIL" in out, f"layer concrete-firmware-bench did not fail:\n{out}"
+    assert "consistency (schema + metadata + concrete): FAIL" in out, out
+    sites = [n for n, l in enumerate(fx.path(rel).read_text(encoding="utf-8").splitlines(), 1)
+             if l.startswith(poll)]
+    assert len(sites) == 1, sites
+    assert f"ERROR: {rel}:{sites[0]}: SCL poll mask " in out, out
+    assert "`XOR R3, R3`" in out, out
+
+
 @case("I2C generator string literal mutated")
 def _(fx):
     fx.mutate("firmware/tools/gen_i2c_sr.py", '"LDI   R3, 0x04       ; poll mask"',
