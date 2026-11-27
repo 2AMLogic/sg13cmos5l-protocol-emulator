@@ -125,7 +125,7 @@ reports but is not a required check on `main`.
   (netlist SHA-256 `027f17bd…`). The later protocol regression ran UART TX,
   SPI and I²C on the netlist from GDS run 38136727636 (`fbc7bc30…`).
   All three protocols passed at all three corners. [Protocol regression
-  record](../../verification/records/post-layout-sdf-regression/records/20261127-071349-c9ac5e0.md).
+  record](../../verification/records/post-layout-sdf-regression/records/20261127-111136-4853b33.md).
 - **Independent references.** Protocol firmware is graded against separately
   written reference models
   ([record](../../verification/records/protocol-reference-models/records/20261127-071837-c9ac5e0.md)).

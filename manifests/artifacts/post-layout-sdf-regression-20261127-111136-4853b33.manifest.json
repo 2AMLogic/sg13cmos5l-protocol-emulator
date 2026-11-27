@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "entries": [
+    {
+      "sha256": "dc4a8a1ed5035a27dc82dc6f883f005e4a7c789054e36582f618bf33e82218b5",
+      "size": 126077,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.2",
+        "loom.repo": "2AMLogic/sg13cmos5l-protocol-emulator",
+        "commit": "4853b338414829a8858c695c1bc6c2d33c30de65"
+      },
+      "uri": "artifact:evidence/2AMLogic__sg13cmos5l-protocol-emulator/dc/dc4a8a1ed5035a27dc82dc6f883f005e4a7c789054e36582f618bf33e82218b5",
+      "name": "verification/.artifact-scratch/20261127-111136-4853b33/routed-protocols.tar.gz",
+      "media_type": "application/x-tar"
+    },
+    {
+      "sha256": "24dc8f2944d6815516fe968a3ff9182e91a6a6bab5485af81770471d56cda032",
+      "size": 23950,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.2",
+        "loom.repo": "2AMLogic/sg13cmos5l-protocol-emulator",
+        "commit": "4853b338414829a8858c695c1bc6c2d33c30de65"
+      },
+      "uri": "artifact:evidence/2AMLogic__sg13cmos5l-protocol-emulator/24/24dc8f2944d6815516fe968a3ff9182e91a6a6bab5485af81770471d56cda032",
+      "name": "verification/.artifact-scratch/20261127-111136-4853b33/capture-boundary-replay.json",
+      "media_type": "application/json"
+    }
+  ]
+}
