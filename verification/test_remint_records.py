@@ -12,6 +12,7 @@ Usage: python3 verification/test_remint_records.py
 
 from __future__ import annotations
 
+import contextlib
 import datetime as datetime_mod
 import os
 import shutil
@@ -22,10 +23,10 @@ from pathlib import Path
 
 import test_check_records as T
 
-TOOL = T.SCRIPT_DIR / "remint_records.py"
 REQ = "verification/request-demo.json"
 OLD_ID = "20260101-000000-abc1234"
 NEW_RTL = T.DUMMY_RTL + "// changed\n"
+SCRIPTS = ("check_records.py", "_repo_utils.py", "remint_records.py")
 
 STUB_PASS = """#!/bin/sh
 case "$1" in --version) echo "klt 9.9.9"; exit 0;; esac
@@ -64,28 +65,50 @@ def stub_with_results(env_results: str, create: bool = True) -> str:
               "\"passed_count\":1,\"environment\":{\"results_xml\":" + env_results + "}}'\n")
 
 
-def build(tmp: Path, with_request: bool = True) -> Path:
+def records_dir(repo: Path, experiment: str) -> Path:
+    return repo / "verification" / "records" / experiment / "records"
+
+
+def records(repo: Path, experiment: str = "demo") -> list[str]:
+    return sorted(p.stem for p in records_dir(repo, experiment).glob("*.md"))
+
+
+def init_fixture_repo(tmp: Path, *scripts: str) -> Path:
+    """A new, uncommitted repo under `tmp`: the dummy RTL on disk and the
+    named scripts copied into `verification/` from SCRIPT_DIR."""
     repo = tmp / "fixture"
     (repo / "rtl").mkdir(parents=True)
-    (repo / "verification" / "records" / "demo" / "records").mkdir(parents=True)
+    (repo / "verification").mkdir()
     (repo / "rtl" / "dut.v").write_text(T.DUMMY_RTL, encoding="utf-8")
+    for name in scripts:
+        shutil.copyfile(T.SCRIPT_DIR / name, repo / "verification" / name)
+    return repo
+
+
+def finalize_fixture_repo(repo: Path, stub: str | None = None) -> Path:
+    """Install the `klt` stub (if the case re-runs), commit the fixture and
+    point BASE_REF at that commit."""
+    if stub is not None:
+        klt = repo / "klt-stub"
+        klt.write_text(stub, encoding="utf-8")
+        klt.chmod(0o755)
+    T._git(repo, "init", "--quiet")
+    T._commit(repo, "fixture")
+    T._git(repo, "update-ref", T.BASE_REF, "HEAD")
+    return repo
+
+
+def build(tmp: Path, with_request: bool = True) -> Path:
+    repo = init_fixture_repo(tmp, *SCRIPTS, "artifact_store.py")
     req = '{"schema": "demo"}\n'
     inputs = [("rtl/dut.v", T._sha256_text(T.DUMMY_RTL))]
     if with_request:
         (repo / REQ).write_text(req, encoding="utf-8")
         inputs.append((REQ, T._sha256_text(req)))
-    for name in ("check_records.py", "_repo_utils.py", "remint_records.py", "artifact_store.py"):
-        shutil.copyfile(T.SCRIPT_DIR / name, repo / "verification" / name)
+    records_dir(repo, "demo").mkdir(parents=True)
     T.record_path(repo, "demo", OLD_ID).write_text(
         T.make_record(OLD_ID, "demo", inputs=inputs), encoding="utf-8")
-    stub = repo / "klt-stub"
-    stub.write_text(STUB_PASS, encoding="utf-8")
-    stub.chmod(0o755)
-    T._git(repo, "init", "--quiet")
-    T._git(repo, "add", "-A")
-    T._git(repo, "commit", "--quiet", "-m", "fixture")
-    T._git(repo, "update-ref", T.BASE_REF, "HEAD")
-    return repo
+    return finalize_fixture_repo(repo, STUB_PASS)
 
 
 STUB_XML = """#!/bin/sh
@@ -101,39 +124,26 @@ def build_multi(tmp: Path) -> Path:
     """Experiment `demo` has TWO live stale records (both hash request-a);
     experiment `multi` has one record hashing request-a AND request-b. All
     requests share one results_xml path (as klt does)."""
-    repo = tmp / "fixture"
-    (repo / "rtl").mkdir(parents=True)
-    (repo / "rtl" / "dut.v").write_text(T.DUMMY_RTL, encoding="utf-8")
+    repo = init_fixture_repo(tmp, *SCRIPTS)
     reqs = {}
     for n in ("a", "b"):
         rel = f"verification/request-{n}.json"
         text = f'{{"schema": "{n}"}}\n'
-        (repo / rel).parent.mkdir(parents=True, exist_ok=True)
         (repo / rel).write_text(text, encoding="utf-8")
         reqs[n] = (rel, T._sha256_text(text))
     rtl = ("rtl/dut.v", T._sha256_text(T.DUMMY_RTL))
-    for name in ("check_records.py", "_repo_utils.py", "remint_records.py"):
-        shutil.copyfile(T.SCRIPT_DIR / name, repo / "verification" / name)
     plan = [("demo", OLD_ID, ["a"]), ("demo", "20260101-000005-abc1234", ["a"]),
             ("multi", OLD_ID, ["a", "b"])]
     for exp, rid, ns in plan:
-        T.record_path(repo, exp, rid).parent.mkdir(parents=True, exist_ok=True)
+        records_dir(repo, exp).mkdir(parents=True, exist_ok=True)
         T.record_path(repo, exp, rid).write_text(
             T.make_record(rid, exp, inputs=[rtl, *[reqs[n] for n in ns]]), encoding="utf-8")
-    stub = repo / "klt-stub"
-    stub.write_text(STUB_XML, encoding="utf-8")
-    stub.chmod(0o755)
-    T._git(repo, "init", "--quiet")
-    T._git(repo, "add", "-A")
-    T._git(repo, "commit", "--quiet", "-m", "fixture")
-    T._git(repo, "update-ref", T.BASE_REF, "HEAD")
-    return repo
+    return finalize_fixture_repo(repo, STUB_XML)
 
 
 def stale(repo: Path) -> None:
     (repo / "rtl" / "dut.v").write_text(NEW_RTL, encoding="utf-8")
-    T._git(repo, "add", "-A")
-    T._git(repo, "commit", "--quiet", "-m", "change rtl")
+    T._commit(repo, "change rtl")
 
 
 # --- #472: --collapse ---------------------------------------------------------
@@ -144,84 +154,63 @@ def build_collapsible(tmp: Path, leaves: int = 2, claim_vary: bool = False,
     """Experiment `signoff-baseline` with N interchangeable live leaves
     (identical inputs, claim and result), optionally hashing a request
     file, optionally one leaf asserting a different claim."""
-    repo = tmp / "fixture"
-    (repo / "rtl").mkdir(parents=True)
-    (repo / "verification" / "records" / "signoff-baseline" / "records").mkdir(parents=True)
-    (repo / "rtl" / "dut.v").write_text(T.DUMMY_RTL, encoding="utf-8")
+    repo = init_fixture_repo(tmp, *SCRIPTS)
     inputs = [("rtl/dut.v", T._sha256_text(T.DUMMY_RTL))]
     if with_request:
         (repo / REQ).write_text('{"schema": "demo"}\n', encoding="utf-8")
         inputs.append((REQ, T._sha256_text('{"schema": "demo"}\n')))
-    for name in ("check_records.py", "_repo_utils.py", "remint_records.py"):
-        shutil.copyfile(T.SCRIPT_DIR / name, repo / "verification" / name)
+    records_dir(repo, "signoff-baseline").mkdir(parents=True)
     for i in range(leaves):
         rid = f"20260101-{i:06d}-abc1234"
         text = T.make_record(rid, "signoff-baseline", inputs=inputs)
         if claim_vary and i == 1:
             text = text.replace("fixture claim", "a different claim")
         T.record_path(repo, "signoff-baseline", rid).write_text(text, encoding="utf-8")
-    T._git(repo, "init", "--quiet")
-    T._git(repo, "add", "-A")
-    T._git(repo, "commit", "--quiet", "-m", "fixture")
-    T._git(repo, "update-ref", T.BASE_REF, "HEAD")
-    return repo
-
-
-def baseline_records(repo: Path) -> list[str]:
-    return sorted(
-        p.stem
-        for p in (repo / "verification/records/signoff-baseline/records").glob("*.md")
-    )
+    return finalize_fixture_repo(repo)
 
 
 LEAF_IDS = ["20260101-000000-abc1234", "20260101-000001-abc1234"]
 
 
 def collapse_cases(failures: list) -> None:
-    with tempfile.TemporaryDirectory(prefix="remint-collapse-") as d:
-        repo = build_collapsible(Path(d))
+    with fixture_repo(build_collapsible) as repo:
         code, out = tool(repo, "--collapse", "demo")
         check("--collapse refuses a non-interchangeable experiment",
               code == 1 and "refuses" in out and "--rerun" not in out.splitlines()[0]
-              and baseline_records(repo) == LEAF_IDS, out, failures)
+              and records(repo, "signoff-baseline") == LEAF_IDS, out, failures)
 
-    with tempfile.TemporaryDirectory(prefix="remint-collapse-") as d:
-        repo = build_collapsible(Path(d))
+    with fixture_repo(build_collapsible) as repo:
         code, out = tool(repo, "--collapse", "signoff-baseline")
         check("--collapse with nothing stale mints nothing",
               code == 0 and "nothing to collapse" in out
-              and baseline_records(repo) == LEAF_IDS, out, failures)
+              and records(repo, "signoff-baseline") == LEAF_IDS, out, failures)
 
-    with tempfile.TemporaryDirectory(prefix="remint-collapse-") as d:
-        repo = build_collapsible(Path(d), with_request=True)
+    with fixture_repo(build_collapsible, with_request=True) as repo:
         stale(repo)
         code, out = tool(repo, "--collapse", "signoff-baseline")
         check("--collapse refuses stale leaves that hash request files",
               code == 1 and "--rerun" in out
-              and baseline_records(repo) == LEAF_IDS, out, failures)
+              and records(repo, "signoff-baseline") == LEAF_IDS, out, failures)
 
-    with tempfile.TemporaryDirectory(prefix="remint-collapse-") as d:
-        repo = build_collapsible(Path(d), claim_vary=True)
+    with fixture_repo(build_collapsible, claim_vary=True) as repo:
         stale(repo)
         code, out = tool(repo, "--collapse", "signoff-baseline")
         check("--collapse refuses leaves with differing claims",
               code == 1 and "not interchangeable" in out
-              and baseline_records(repo) == LEAF_IDS, out, failures)
+              and records(repo, "signoff-baseline") == LEAF_IDS, out, failures)
 
-    with tempfile.TemporaryDirectory(prefix="remint-collapse-") as d:
-        repo = build_collapsible(Path(d))
+    with fixture_repo(build_collapsible) as repo:
         stale(repo)
         code, out = tool(repo, "--collapse", "signoff-baseline", "--rerun")
         check("--collapse and --rerun are mutually exclusive",
               code == 2 and "mutually exclusive" in out, out, failures)
 
-    with tempfile.TemporaryDirectory(prefix="remint-collapse-") as d:
-        repo = build_collapsible(Path(d))
+    with fixture_repo(build_collapsible) as repo:
         stale(repo)
         olds = {rid: T.record_path(repo, "signoff-baseline", rid).read_text(encoding="utf-8")
                 for rid in LEAF_IDS}
         code, out = tool(repo, "--collapse", "signoff-baseline")
-        new = [r for r in baseline_records(repo) if r not in LEAF_IDS]
+        new = [r for r in records(repo, "signoff-baseline") if r not in LEAF_IDS]
         check("--collapse mints exactly one record for two stale leaves",
               code == 0 and len(new) == 1 and "MINTED" in out
               and "collapses 2 stale live leaves" in out, out, failures)
@@ -237,11 +226,8 @@ def collapse_cases(failures: list) -> None:
             check("old leaves are byte-identical (append-only)",
                   all(T.record_path(repo, "signoff-baseline", r).read_text(encoding="utf-8") == olds[r]
                       for r in LEAF_IDS), "", failures)
-            T._git(repo, "add", "-A")
-            T._git(repo, "commit", "--quiet", "-m", "collapse mint")
-            r = subprocess.run([sys.executable, str(repo / "verification" / "check_records.py"),
-                                "--base-ref", T.BASE_REF, "--require-append-only"],
-                               cwd=repo, capture_output=True, text=True)
+            T._commit(repo, "collapse mint")
+            r = lint(repo)
             check("linter rejects the collapse mint until the placeholders are filled",
                   r.returncode == 1 and "empty/placeholder" in r.stdout
                   and "`Result`" in r.stdout and "`Run configuration`" in r.stdout,
@@ -254,17 +240,13 @@ def collapse_cases(failures: list) -> None:
                       .replace("- **Design provenance**: (fill in)",
                                "- **Design provenance**: rtl re-run by hand"))
             T.record_path(repo, "signoff-baseline", new[0]).write_text(filled, encoding="utf-8")
-            T._git(repo, "add", "-A")
-            T._git(repo, "commit", "--quiet", "-m", "fill the placeholders")
-            r = subprocess.run([sys.executable, str(repo / "verification" / "check_records.py"),
-                                "--base-ref", T.BASE_REF, "--require-append-only"],
-                               cwd=repo, capture_output=True, text=True)
+            T._commit(repo, "fill the placeholders")
+            r = lint(repo)
             check("filled collapse mint passes the real linter", r.returncode == 0,
                   r.stdout, failures)
             # Exactly one live record remains: the next change stales one record.
             (repo / "rtl" / "dut.v").write_text(NEW_RTL + "// v3\n", encoding="utf-8")
-            T._git(repo, "add", "-A")
-            T._git(repo, "commit", "--quiet", "-m", "v3")
+            T._commit(repo, "v3")
             code, out = tool(repo)
             stale_lines = [l for l in out.splitlines() if l.startswith("STALE")]
             check("two leaves collapsed to one live record",
@@ -287,31 +269,27 @@ def wrapped_result(text: str, verdict: str, indent: str) -> str:
 
 def collapse_wrapped_cases(failures: list) -> None:
     for label, indent in (("indented", "  "), ("flush-left", "")):
-        with tempfile.TemporaryDirectory(prefix="remint-collapse-") as d:
-            repo = build_collapsible(Path(d))
+        with fixture_repo(build_collapsible) as repo:
             for rid, verdict in zip(LEAF_IDS, ("PASS", "FAIL")):
                 p = T.record_path(repo, "signoff-baseline", rid)
                 p.write_text(wrapped_result(p.read_text(encoding="utf-8"), verdict, indent),
                              encoding="utf-8")
-            T._git(repo, "add", "-A")
-            T._git(repo, "commit", "--quiet", "-m", "wrap")
+            T._commit(repo, "wrap")
             stale(repo)
             code, out = tool(repo, "--collapse", "signoff-baseline")
             check(f"--collapse refuses leaves whose {label} Result continuations differ",
                   code == 1 and "not interchangeable" in out
-                  and baseline_records(repo) == LEAF_IDS, out, failures)
+                  and records(repo, "signoff-baseline") == LEAF_IDS, out, failures)
 
-        with tempfile.TemporaryDirectory(prefix="remint-collapse-") as d:
-            repo = build_collapsible(Path(d))
+        with fixture_repo(build_collapsible) as repo:
             for rid in LEAF_IDS:
                 p = T.record_path(repo, "signoff-baseline", rid)
                 p.write_text(wrapped_result(p.read_text(encoding="utf-8"), "PASS", indent),
                              encoding="utf-8")
-            T._git(repo, "add", "-A")
-            T._git(repo, "commit", "--quiet", "-m", "wrap")
+            T._commit(repo, "wrap")
             stale(repo)
             code, out = tool(repo, "--collapse", "signoff-baseline")
-            new = [r for r in baseline_records(repo) if r not in LEAF_IDS]
+            new = [r for r in records(repo, "signoff-baseline") if r not in LEAF_IDS]
             check(f"--collapse accepts identical {label} wrapped Results", code == 0
                   and len(new) == 1, out, failures)
             if new:
@@ -320,11 +298,10 @@ def collapse_wrapped_cases(failures: list) -> None:
                       "- **Result**: (fill in)" in text and "PASS (wrapped)" not in text
                       and "run configuration tail" not in text, text, failures)
 
-    with tempfile.TemporaryDirectory(prefix="remint-collapse-") as d:
-        repo = build_collapsible(Path(d))
+    with fixture_repo(build_collapsible) as repo:
         stale(repo)
         code, out = tool(repo, "--collapse", "signoff-baseline")
-        first = [r for r in baseline_records(repo) if r not in LEAF_IDS]
+        first = [r for r in records(repo, "signoff-baseline") if r not in LEAF_IDS]
         draft = T.record_path(repo, "signoff-baseline", first[0]) if first else None
         if draft:
             edited = draft.read_text(encoding="utf-8") + "\noperator note\n"
@@ -333,7 +310,7 @@ def collapse_wrapped_cases(failures: list) -> None:
         check("a repeat --collapse points at the pending draft and mints nothing",
               code == 0 and code2 == 1 and "already pending" in out2
               and bool(draft) and first[0] in out2
-              and [r for r in baseline_records(repo) if r not in LEAF_IDS] == first
+              and [r for r in records(repo, "signoff-baseline") if r not in LEAF_IDS] == first
               and draft.read_text(encoding="utf-8") == edited, out2, failures)
 
 
@@ -342,8 +319,7 @@ def mixed_list_cases(failures: list) -> None:
     the minter's liveness view (#472)."""
     for label, sibs in (("an int", [7]), ("nulls", [None, None]),
                         ("a duplicate", None)):
-        with tempfile.TemporaryDirectory(prefix="remint-mixed-") as d:
-            repo = build_collapsible(Path(d), leaves=3)
+        with fixture_repo(build_collapsible, leaves=3) as repo:
             ids = [f"20260101-{i:06d}-abc1234" for i in range(3)]
             sup = ([ids[0], *sibs] if sibs is not None
                    else [ids[0], ids[0], ids[1]])
@@ -352,8 +328,7 @@ def mixed_list_cases(failures: list) -> None:
                 T.make_record(nid, "signoff-baseline", supersedes=sup,
                               inputs=[("rtl/dut.v", T._sha256_text(T.DUMMY_RTL))]),
                 encoding="utf-8")
-            T._git(repo, "add", "-A")
-            T._git(repo, "commit", "--quiet", "-m", "mixed list")
+            T._commit(repo, "mixed list")
             stale(repo)
             code, out = tool(repo)
             stale_ids = {l.rsplit("/", 1)[-1][:-3] for l in out.splitlines()
@@ -373,10 +348,6 @@ def tool(repo: Path, *args: str, broker: str | None = None,
     return r.returncode, r.stdout + r.stderr
 
 
-def records(repo: Path) -> list[str]:
-    return sorted(p.stem for p in (repo / "verification/records/demo/records").glob("*.md"))
-
-
 def check(name: str, ok: bool, out: str, failures: list) -> None:
     print(("OK:   " if ok else "FAIL: ") + name)
     if not ok:
@@ -384,18 +355,27 @@ def check(name: str, ok: bool, out: str, failures: list) -> None:
         print("  | " + out.replace("\n", "\n  | "))
 
 
-def lint(repo: Path) -> subprocess.CompletedProcess:
-    return subprocess.run([sys.executable, str(repo / "verification" / "check_records.py"),
-                           "--base-ref", T.BASE_REF, "--require-append-only"],
-                          cwd=repo, capture_output=True, text=True)
+def lint(repo: Path, require_append_only: bool = True) -> subprocess.CompletedProcess:
+    args = [sys.executable, str(repo / "verification" / "check_records.py"),
+            "--base-ref", T.BASE_REF]
+    if require_append_only:
+        args.append("--require-append-only")
+    return subprocess.run(args, cwd=repo, capture_output=True, text=True)
+
+
+@contextlib.contextmanager
+def fixture_repo(build, *args, **kwargs):
+    """Yield what `build(Path(tmp), *args, **kwargs)` returns, in a throwaway
+    directory removed on exit."""
+    with tempfile.TemporaryDirectory(prefix="remint-selftest-") as d:
+        yield build(Path(d), *args, **kwargs)
 
 
 def commit_leaves(repo: Path, edit) -> None:
     for rid in LEAF_IDS:
         p = T.record_path(repo, "signoff-baseline", rid)
         p.write_text(edit(rid, p.read_text(encoding="utf-8")), encoding="utf-8")
-    T._git(repo, "add", "-A")
-    T._git(repo, "commit", "--quiet", "-m", "edit leaves")
+    T._commit(repo, "edit leaves")
     stale(repo)
 
 
@@ -432,17 +412,15 @@ def collapse_boundary_cases(failures: list) -> None:
         ("a Result second paragraph", lambda v: second_para("Result", result, v)),
     )
     for label, mk in cases:
-        with tempfile.TemporaryDirectory(prefix="remint-collapse-") as d:
-            repo = build_collapsible(Path(d))
+        with fixture_repo(build_collapsible) as repo:
             commit_leaves(repo, mk(differ))
             code, out = tool(repo, "--collapse", "signoff-baseline")
             check(f"--collapse mints nothing for conflicting leaves ({label})",
-                  code == 1 and baseline_records(repo) == LEAF_IDS, out, failures)
-        with tempfile.TemporaryDirectory(prefix="remint-collapse-") as d:
-            repo = build_collapsible(Path(d))
+                  code == 1 and records(repo, "signoff-baseline") == LEAF_IDS, out, failures)
+        with fixture_repo(build_collapsible) as repo:
             commit_leaves(repo, mk(same))
             code, out = tool(repo, "--collapse", "signoff-baseline")
-            new = [r for r in baseline_records(repo) if r not in LEAF_IDS]
+            new = [r for r in records(repo, "signoff-baseline") if r not in LEAF_IDS]
             check(f"--collapse accepts equivalent leaves ({label})",
                   code == 0 and len(new) == 1, out, failures)
             if new:
@@ -450,8 +428,7 @@ def collapse_boundary_cases(failures: list) -> None:
                 check(f"draft drops every inherited Result/Run configuration line ({label})",
                       "(indented)" not in text and "fixture run PASS" not in text
                       and ("second paragraph" in text) == ("Claim" in label), text, failures)
-                T._git(repo, "add", "-A")
-                T._git(repo, "commit", "--quiet", "-m", "draft")
+                T._commit(repo, "draft")
                 r = lint(repo)
                 check(f"draft fails lint on Result and Run configuration ({label})",
                       r.returncode == 1 and "`Result`" in r.stdout
@@ -464,27 +441,24 @@ def collapse_boundary_cases(failures: list) -> None:
         ("matching prose", "Run configuration", "fixture run, no real simulator invoked",
          same, "{verdict} second paragraph"),
     ):
-        with tempfile.TemporaryDirectory(prefix="remint-collapse-") as d:
-            repo = build_collapsible(Path(d))
+        with fixture_repo(build_collapsible) as repo:
             commit_leaves(repo, second_para(field, value, verdicts, paragraph))
             code, out = tool(repo, "--collapse", "signoff-baseline")
             check(f"--collapse refuses {label} after a blank line in {field}",
                   code == 1 and f"`{field}`" in out and "ambiguous" in out
-                  and baseline_records(repo) == LEAF_IDS, out, failures)
+                  and records(repo, "signoff-baseline") == LEAF_IDS, out, failures)
 
-    with tempfile.TemporaryDirectory(prefix="remint-collapse-") as d:
-        repo = build_collapsible(Path(d))
+    with fixture_repo(build_collapsible) as repo:
         commit_leaves(repo, lambda rid, t: t + "- **Result**: a second Result bullet\n")
         code, out = tool(repo, "--collapse", "signoff-baseline")
         check("--collapse refuses a leaf with a repeated required field",
               code == 1 and "not identifiable exactly once" in out
-              and baseline_records(repo) == LEAF_IDS, out, failures)
+              and records(repo, "signoff-baseline") == LEAF_IDS, out, failures)
 
 
 def collapse_successor_cases(failures: list) -> None:
     """The successor cites its own evidence, not the predecessor's."""
-    with tempfile.TemporaryDirectory(prefix="remint-collapse-") as d:
-        repo = build_collapsible(Path(d))
+    with fixture_repo(build_collapsible) as repo:
 
         def edit(rid, text):
             return (text.replace("- **Links**: Design under test: `rtl/dut.v`",
@@ -493,7 +467,7 @@ def collapse_successor_cases(failures: list) -> None:
                              "rtl at `" + "0" * 40 + "`"))
         commit_leaves(repo, edit)
         code, out = tool(repo, "--collapse", "signoff-baseline")
-        new = [r for r in baseline_records(repo) if r not in LEAF_IDS]
+        new = [r for r in records(repo, "signoff-baseline") if r not in LEAF_IDS]
         check("--collapse mints for leaves with artifact links", code == 0 and len(new) == 1,
               out, failures)
         if new:
@@ -508,28 +482,25 @@ def collapse_successor_cases(failures: list) -> None:
             check("run-specific Design provenance must be filled and the old one is historical",
                   "- **Design provenance**: (fill in)" in prose
                   and "Historical, from the predecessor" in prose, text, failures)
-            T._git(repo, "add", "-A")
-            T._git(repo, "commit", "--quiet", "-m", "draft")
+            T._commit(repo, "draft")
             r = lint(repo)
             check("lint requires Design provenance to be completed",
                   r.returncode == 1 and "`Design provenance`" in r.stdout, r.stdout, failures)
 
-    with tempfile.TemporaryDirectory(prefix="remint-collapse-") as d:
-        repo = build_collapsible(Path(d))
+    with fixture_repo(build_collapsible) as repo:
         commit_leaves(repo, lambda rid, t: t.replace(
             "N/A (fixture)", f"N/A, derived from {rid} elsewhere"))
         code, out = tool(repo, "--collapse", "signoff-baseline")
         check("--collapse refuses when a kept block cites the predecessor ambiguously",
               code == 1 and "nothing minted" in out
-              and baseline_records(repo) == LEAF_IDS, out, failures)
+              and records(repo, "signoff-baseline") == LEAF_IDS, out, failures)
 
 
 def results_xml_cases(failures: list) -> None:
     """`environment.results_xml` must anchor on REPO_ROOT, never the
     process's cwd, and a reported-but-unreadable XML is an error, not an
     optional extra (#552)."""
-    with tempfile.TemporaryDirectory(prefix="remint-selftest-") as d:
-        repo = build(Path(d))
+    with fixture_repo(build) as repo:
         stale(repo)
         (repo / "klt-stub").write_text(stub_with_results(
             '{"path":"verification/.klt/results.xml","scope":"repo",'
@@ -547,8 +518,7 @@ def results_xml_cases(failures: list) -> None:
                   and xml.read_text(encoding="utf-8") == "xml-doc-for-request-demo",
                   out, failures)
 
-    with tempfile.TemporaryDirectory(prefix="remint-selftest-") as d:
-        repo = build(Path(d))
+    with fixture_repo(build) as repo:
         stale(repo)
         (repo / "klt-stub").write_text(
             stub_with_results('"verification/.klt/results.xml"'), encoding="utf-8")
@@ -568,8 +538,7 @@ def results_xml_cases(failures: list) -> None:
             ("repo-scoped document",
              '{"path":"verification/.klt/never-written.xml","scope":"repo"}'),
             ("legacy string", '"verification/.klt/never-written.xml"')):
-        with tempfile.TemporaryDirectory(prefix="remint-selftest-") as d:
-            repo = build(Path(d))
+        with fixture_repo(build) as repo:
             stale(repo)
             (repo / "klt-stub").write_text(
                 stub_with_results(doc, create=False), encoding="utf-8")
@@ -584,8 +553,7 @@ def results_xml_cases(failures: list) -> None:
             ("absent scope with a non-null path",
              '{"path":"verification/.klt/results.xml","scope":"absent"}'),
             ("missing scope", '{"path":"verification/.klt/results.xml"}')):
-        with tempfile.TemporaryDirectory(prefix="remint-selftest-") as d:
-            repo = build(Path(d))
+        with fixture_repo(build) as repo:
             stale(repo)
             (repo / "klt-stub").write_text(stub_with_results(doc), encoding="utf-8")
             code, out = tool(repo, "--rerun", "--klt", str(repo / "klt-stub"))
@@ -593,8 +561,7 @@ def results_xml_cases(failures: list) -> None:
                   code == 1 and records(repo) == [OLD_ID]
                   and "ERROR" in out and "results_xml" in out, out, failures)
 
-    with tempfile.TemporaryDirectory(prefix="remint-selftest-") as d:
-        repo = build(Path(d))
+    with fixture_repo(build) as repo:
         stale(repo)
         (repo.parent / "outside-results.xml").write_text("outside", encoding="utf-8")
         (repo / "klt-stub").write_text(
@@ -605,8 +572,7 @@ def results_xml_cases(failures: list) -> None:
               code == 1 and records(repo) == [OLD_ID]
               and "ERROR" in out and "results_xml" in out, out, failures)
 
-    with tempfile.TemporaryDirectory(prefix="remint-selftest-") as d:
-        repo = build(Path(d))
+    with fixture_repo(build) as repo:
         stale(repo)
         (repo / "klt-stub").write_text(
             stub_with_results('{"path":null,"scope":"absent"}', create=False),
@@ -626,8 +592,7 @@ def rerun_links_cases(failures: list) -> None:
     """A `--rerun` mint retargets the copied Links block's artifact
     references at the successor's own `artifacts/<new-id>/` directory; the
     predecessor stays cited only in the "Re-mint of" note (#588)."""
-    with tempfile.TemporaryDirectory(prefix="remint-links-") as d:
-        repo = build(Path(d))
+    with fixture_repo(build) as repo:
         links = (f"[klt result](../artifacts/{OLD_ID}/klt-functional-verification.json), "
                  f"[test cases](../artifacts/{OLD_ID}/results_icarus.xml)")
         inputs = [("rtl/dut.v", T._sha256_text(T.DUMMY_RTL)),
@@ -639,8 +604,7 @@ def rerun_links_cases(failures: list) -> None:
         old_art.mkdir(parents=True)
         (old_art / "klt-functional-verification.json").write_text("{}", encoding="utf-8")
         (old_art / "results_icarus.xml").write_text("<testsuites/>", encoding="utf-8")
-        T._git(repo, "add", "-A")
-        T._git(repo, "commit", "--quiet", "-m", "record with artifact links")
+        T._commit(repo, "record with artifact links")
         T._git(repo, "update-ref", T.BASE_REF, "HEAD")
         stale(repo)
         (repo / "klt-stub").write_text(STUB_XML, encoding="utf-8")
@@ -658,8 +622,7 @@ def rerun_links_cases(failures: list) -> None:
             check("the predecessor's artifact dir is cited only via the Re-mint note",
                   f"artifacts/{OLD_ID}/" not in prose
                   and f"Re-mint of `records/{OLD_ID}.md`" in prose, text, failures)
-            T._git(repo, "add", "-A")
-            T._git(repo, "commit", "--quiet", "-m", "remint")
+            T._commit(repo, "remint")
             r = lint(repo)
             check("retargeted links resolve (re-minted tree passes the real linter)",
                   r.returncode == 0, r.stdout + r.stderr, failures)
@@ -728,16 +691,14 @@ def grand_predecessor_cases(failures: list) -> None:
     a re-mint whose heading was never rewritten) still gets its H1 rewritten
     to the new Record ID."""
     grand = "20260101-000001-aaaaaaa"
-    with tempfile.TemporaryDirectory(prefix="remint-selftest-") as d:
-        repo = build(Path(d))
+    with fixture_repo(build) as repo:
         old = T.record_path(repo, "demo", OLD_ID)
         text = old.read_text(encoding="utf-8")
         check("fixture predecessor H1 names its own id",
               f"\n# Record {OLD_ID}\n" in text, text, failures)
         old.write_text(text.replace(f"\n# Record {OLD_ID}\n",
                                     f"\n# Record {grand}\n"), encoding="utf-8")
-        T._git(repo, "add", "-A")
-        T._git(repo, "commit", "--quiet", "-m", "grand-predecessor H1")
+        T._commit(repo, "grand-predecessor H1")
         T._git(repo, "update-ref", T.BASE_REF, "HEAD")
         stale(repo)
         code, out = tool(repo, "--rerun", "--klt", str(repo / "klt-stub"))
@@ -753,12 +714,11 @@ def grand_predecessor_cases(failures: list) -> None:
             check("grand-predecessor: Supersedes still names the predecessor",
                   f"- **Supersedes**: `{OLD_ID}`" in prose, prose, failures)
 
-    with tempfile.TemporaryDirectory(prefix="remint-collapse-") as d:
-        repo = build_collapsible(Path(d))
+    with fixture_repo(build_collapsible) as repo:
         commit_leaves(repo, lambda rid, text: text.replace(
             f"\n# Record {rid}\n", f"\n# Record {grand}\n"))
         code, out = tool(repo, "--collapse", "signoff-baseline")
-        new = [rid for rid in baseline_records(repo) if rid not in LEAF_IDS]
+        new = [rid for rid in records(repo, "signoff-baseline") if rid not in LEAF_IDS]
         check("grand-predecessor H1: collapse succeeds", code == 0 and len(new) == 1,
               out, failures)
         if new:
@@ -770,13 +730,11 @@ def grand_predecessor_cases(failures: list) -> None:
 
 def main() -> int:
     failures: list = []
-    with tempfile.TemporaryDirectory(prefix="remint-selftest-") as d:
-        repo = build(Path(d))
+    with fixture_repo(build) as repo:
         code, out = tool(repo)
         check("fresh tree reports nothing, exit 0", code == 0 and "no stale" in out, out, failures)
 
-    with tempfile.TemporaryDirectory(prefix="remint-selftest-") as d:
-        repo = build(Path(d))
+    with fixture_repo(build) as repo:
         stale(repo)
         code, out = tool(repo)
         check("stale input reported with request, exit 1",
@@ -784,15 +742,13 @@ def main() -> int:
               and f"request(s): {REQ}" in out and "rtl/dut.v: recorded" in out, out, failures)
         check("report-only mints nothing", records(repo) == [OLD_ID], out, failures)
 
-    with tempfile.TemporaryDirectory(prefix="remint-selftest-") as d:
-        repo = build(Path(d), with_request=False)
+    with fixture_repo(build, with_request=False) as repo:
         stale(repo)
         code, out = tool(repo)
         check("record with no request file says re-mint by hand",
               code == 1 and "no request file" in out, out, failures)
 
-    with tempfile.TemporaryDirectory(prefix="remint-selftest-") as d:
-        repo = build(Path(d))
+    with fixture_repo(build) as repo:
         # Superseded records are exempt: add a fresh superseding record first.
         stale(repo)
         code, out = tool(repo, "--rerun", "--klt", str(repo / "klt-stub"))
@@ -816,27 +772,22 @@ def main() -> int:
                   and (repo / "verification/records/demo/artifacts" / new[0]
                        / "klt-functional-verification.json").is_file()
                   and '"klt_version": "9.9.9"' in text, text, failures)
-            T._git(repo, "add", "-A")
-            T._git(repo, "commit", "--quiet", "-m", "remint")
-            r = subprocess.run([sys.executable, str(repo / "verification/check_records.py"),
-                                "--base-ref", T.BASE_REF, "--require-append-only"],
-                               cwd=repo, capture_output=True, text=True)
+            T._commit(repo, "remint")
+            r = lint(repo)
             check("re-minted tree passes the real linter (old record untouched)",
                   r.returncode == 0 and old.read_text(encoding="utf-8") == before,
                   r.stdout + r.stderr, failures)
             code, out = tool(repo)
             check("after re-mint nothing is stale", code == 0, out, failures)
 
-    with tempfile.TemporaryDirectory(prefix="remint-selftest-") as d:
-        repo = build(Path(d))
+    with fixture_repo(build) as repo:
         stale(repo)
         (repo / "klt-stub").write_text(STUB_FAIL, encoding="utf-8")
         code, out = tool(repo, "--rerun", "--klt", str(repo / "klt-stub"))
         check("failing request mints nothing, exit 1",
               code == 1 and records(repo) == [OLD_ID] and "no record minted" in out, out, failures)
 
-    with tempfile.TemporaryDirectory(prefix="remint-selftest-") as d:
-        repo = build_multi(Path(d))
+    with fixture_repo(build_multi) as repo:
         stale(repo)
         code, out = tool(repo, "--rerun", "--klt", str(repo / "klt-stub"))
         check("multi: rerun succeeds", code == 0, out, failures)
@@ -858,18 +809,14 @@ def main() -> int:
                 f = art / f"results_icarus-{n}.xml"
                 check(f"multi-request record keeps request-{n} XML",
                       f.is_file() and f.read_text() == f"xml-for-request-{n}", out, failures)
-        T._git(repo, "add", "-A")
-        T._git(repo, "commit", "--quiet", "-m", "remint")
-        r = subprocess.run([sys.executable, str(repo / "verification/check_records.py"),
-                            "--base-ref", T.BASE_REF, "--require-append-only"],
-                           cwd=repo, capture_output=True, text=True)
+        T._commit(repo, "remint")
+        r = lint(repo)
         check("multi: both stale records superseded and tree passes check_records",
               r.returncode == 0, r.stdout + r.stderr, failures)
         code, out = tool(repo)
         check("multi: nothing stale afterwards", code == 0, out, failures)
 
-    with tempfile.TemporaryDirectory(prefix="remint-selftest-") as d:
-        repo = build(Path(d))
+    with fixture_repo(build) as repo:
         stale(repo)
         (repo / "klt-stub").write_text(STUB_STORE, encoding="utf-8")
         code, out = tool(repo, "--rerun", "--klt", str(repo / "klt-stub"),
@@ -891,11 +838,8 @@ def main() -> int:
             check("stored record carries the name/size/sha256 summary",
                   "| name | size | sha256 |" in text and "artifact store" in text
                   and "klt-functional-verification.json" in text, text, failures)
-            T._git(repo, "add", "-A")
-            T._git(repo, "commit", "--quiet", "-m", "remint")
-            r = subprocess.run([sys.executable, str(repo / "verification/check_records.py"),
-                                "--base-ref", T.BASE_REF],
-                               cwd=repo, capture_output=True, text=True)
+            T._commit(repo, "remint")
+            r = lint(repo, require_append_only=False)
             check("stored record passes the real linter", r.returncode == 0,
                   r.stdout + r.stderr, failures)
 
