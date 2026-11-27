@@ -415,14 +415,8 @@ async def test_can_arbitration(dut):
         f"0x{got:02X})")
 
 
-@cocotb.test()
-async def test_can_rx_ok_and_ack(dut):
-    """The bench sends a DLC-3 frame; the DUT receives it (hard sync on
-    the SOF edge, samples at 75%), checks the CRC and drives a dominant
-    ACK pulse inside the ACK slot bit window; final status 0xC1."""
-    cocotb.start_soon(Clock(dut.clk, CLK_PERIOD_NS, unit="ns").start())
-    rx_wire, rx_tail = encode_frame(RX_ID, RX_DATA)
-    rx_bits = rx_wire + rx_tail
+async def run_nominal_rx(dut, rx_bits):
+    """ACK the DUT's frame, send rx_bits at the nominal rate, and return the capture."""
     wire, tail = encode_frame(TX_ID, TX_DATA)
     run = 40 * BIT_CYCLES + (len(wire) + len(tail) + 14 + len(rx_bits) + 14) * BIT_CYCLES
     words = parse_hex_image(HEX)
@@ -457,6 +451,18 @@ async def test_can_rx_ok_and_ack(dut):
     bus.running = False
     await Timer(10, unit="ns")
     task.kill()
+    return bus
+
+
+@cocotb.test()
+async def test_can_rx_ok_and_ack(dut):
+    """The bench sends a DLC-3 frame; the DUT receives it (hard sync on
+    the SOF edge, samples at 75%), checks the CRC and drives a dominant
+    ACK pulse inside the ACK slot bit window; final status 0xC1."""
+    cocotb.start_soon(Clock(dut.clk, CLK_PERIOD_NS, unit="ns").start())
+    rx_wire, rx_tail = encode_frame(RX_ID, RX_DATA)
+    rx_bits = rx_wire + rx_tail
+    bus = await run_nominal_rx(dut, rx_bits)
 
     assert bus.rx_frame is not None, "the bench never sent its frame"
     start = bus.rx_frame[0]
@@ -486,39 +492,7 @@ async def test_can_rx_crc_error(dut):
     rx_wire = list(rx_wire)
     rx_wire[-1] ^= 1                      # corrupt the last CRC bit
     rx_bits = list(rx_wire) + rx_tail
-    wire, tail = encode_frame(TX_ID, TX_DATA)
-    run = 40 * BIT_CYCLES + (len(wire) + len(tail) + 14 + len(rx_bits) + 14) * BIT_CYCLES
-    words = parse_hex_image(HEX)
-    await load_program(dut, words)
-    bus = CanBus(dut)
-    state = {"armed": False, "idle": 20 * BIT_CYCLES, "prev": 1, "sof": None}
-
-    orig_level = bus.bus_level
-
-    def level_with_rx(cycle):
-        txd = bus.txd[-1] if len(bus.txd) > 4 else 1
-        if txd == 0 and state["prev"] == 1 and state["idle"] >= 14 * BIT_CYCLES:
-            state["sof"] = cycle - 1
-        state["prev"] = txd
-        state["idle"] = state["idle"] + 1 if txd else 0
-        if state["sof"] is not None and not state["armed"]:
-            a = state["sof"] + 1 + (len(wire) + 1) * BIT_CYCLES
-            bus.ack_windows = [(a + 2, a + BIT_CYCLES - 2)]
-            state["armed"] = True
-        if not state["armed"] or bus.rx_frame is not None:
-            return orig_level(cycle)
-        frame_at = state["sof"] + 1 + (len(wire) + len(tail) + 4) * BIT_CYCLES
-        if cycle >= frame_at:
-            bus.rx_frame = (frame_at, rx_bits, BIT_CYCLES)
-        return orig_level(cycle)
-
-    bus.bus_level = level_with_rx
-    task = cocotb.start_soon(bus.run())
-    for _ in range(run):
-        await RisingEdge(dut.clk)
-    bus.running = False
-    await Timer(10, unit="ns")
-    task.kill()
+    bus = await run_nominal_rx(dut, rx_bits)
 
     start = bus.rx_frame[0]
     ack_slot = start + (len(rx_wire) + 1) * BIT_CYCLES
@@ -545,39 +519,7 @@ async def test_can_rx_stuff_error(dut):
     else:
         raise AssertionError("the demo RX frame has no stuff bit to corrupt")
     rx_bits = w + rx_tail
-    wire, tail = encode_frame(TX_ID, TX_DATA)
-    run = 40 * BIT_CYCLES + (len(wire) + len(tail) + 14 + len(rx_bits) + 14) * BIT_CYCLES
-    words = parse_hex_image(HEX)
-    await load_program(dut, words)
-    bus = CanBus(dut)
-    state = {"armed": False, "idle": 20 * BIT_CYCLES, "prev": 1, "sof": None}
-
-    orig_level = bus.bus_level
-
-    def level_with_rx(cycle):
-        txd = bus.txd[-1] if len(bus.txd) > 4 else 1
-        if txd == 0 and state["prev"] == 1 and state["idle"] >= 14 * BIT_CYCLES:
-            state["sof"] = cycle - 1
-        state["prev"] = txd
-        state["idle"] = state["idle"] + 1 if txd else 0
-        if state["sof"] is not None and not state["armed"]:
-            a = state["sof"] + 1 + (len(wire) + 1) * BIT_CYCLES
-            bus.ack_windows = [(a + 2, a + BIT_CYCLES - 2)]
-            state["armed"] = True
-        if not state["armed"] or bus.rx_frame is not None:
-            return orig_level(cycle)
-        frame_at = state["sof"] + 1 + (len(wire) + len(tail) + 4) * BIT_CYCLES
-        if cycle >= frame_at:
-            bus.rx_frame = (frame_at, rx_bits, BIT_CYCLES)
-        return orig_level(cycle)
-
-    bus.bus_level = level_with_rx
-    task = cocotb.start_soon(bus.run())
-    for _ in range(run):
-        await RisingEdge(dut.clk)
-    bus.running = False
-    await Timer(10, unit="ns")
-    task.kill()
+    bus = await run_nominal_rx(dut, rx_bits)
 
     start = bus.rx_frame[0]
     ack_slot = start + (len(rx_wire) + 1) * BIT_CYCLES
