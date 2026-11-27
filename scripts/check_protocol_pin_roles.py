@@ -244,6 +244,11 @@ class Layer:
         return not self.errors
 
 
+def format_instr(instr: dict) -> str:
+    """Render an extracted instruction with the operand spellings from its source."""
+    return f"{instr['m']} {', '.join(instr['raw_ops'])}"
+
+
 class Checker:
     def __init__(self, root: Path, record: str):
         self.root = root
@@ -613,10 +618,13 @@ class Checker:
             label, mnem, rest = m.group(1), m.group(2).upper(), m.group(3)
             if mnem not in self.MNEM:
                 continue
-            ops = [o.strip() for o in rest.split(",")]
-            if len(ops) != self.MNEM[mnem] or not all(re.fullmatch(r"\w+", o) for o in ops):
+            raw_ops = [o.strip() for o in rest.split(",")]
+            if len(raw_ops) != self.MNEM[mnem] or not all(re.fullmatch(r"\w+", o) for o in raw_ops):
                 continue
-            out.append({"no": no, "label": label, "m": mnem, "ops": ops})
+            # Compare ISA registers by identity in every profile. Keep source
+            # tokens for diagnostics and leave all other operands as written.
+            ops = [o.upper() if o in ("r0", "r1", "r2", "r3") else o for o in raw_ops]
+            out.append({"no": no, "label": label, "m": mnem, "ops": ops, "raw_ops": raw_ops})
         return out
 
     @staticmethod
@@ -673,7 +681,7 @@ class Checker:
                 c.sites += 1
                 if v not in mask_ok:
                     c.err(
-                        f"{rel}:{a['no']}: {name} mask LDI {a['ops'][0]}, {a['ops'][1]} feeding "
+                        f"{rel}:{a['no']}: {name} mask {format_instr(a)} feeding "
                         f"{b['m']} is not a pin mask of this profile "
                         f"{sorted(f'0x{m:02X}' for m in mask_ok)}"
                     )
@@ -698,17 +706,17 @@ class Checker:
             if not found:
                 continue
             j, k = found
-            ry = k["ops"][1]
             want, what = want_for(i)
             c.sites += 1
-            _j, w = self.prev_write(ins, j, ry)
+            _j, w = self.prev_write(ins, j, k["ops"][1])
             if w is None or w["m"] != "LDI":
-                why = (f"the nearest write of {ry} is `{w['m']} {w['ops'][0]}, {w['ops'][1]}` "
+                ry = k["raw_ops"][1]
+                why = (f"the nearest write of {ry} is `{format_instr(w)}` "
                        f"(line {w['no']}), not an `LDI`" if w
                        else f"{ry} has no earlier write in this file")
                 c.err(
                     f"{rel}:{i['no']}: IN {port} at line {i['no']} is masked by "
-                    f"`AND {rx}, {ry}` at line {k['no']} with an unresolved mask: "
+                    f"`{format_instr(k)}` at line {k['no']} with an unresolved mask: "
                     f"{why}; the table's {what} is 0x{want:02X}"
                 )
                 continue
@@ -716,7 +724,7 @@ class Checker:
             if v != want:
                 c.err(
                     f"{rel}:{w['no']}: IN {port} at line {i['no']} is masked with "
-                    f"{w['ops'][1]} but the table's {what} is 0x{want:02X}"
+                    f"{w['raw_ops'][1]} but the table's {what} is 0x{want:02X}"
                 )
 
     def run_inventory(self) -> None:
@@ -773,7 +781,7 @@ class Checker:
             c.sites += 1
             v = self.imm(first["ops"][1])
             if v != mask:
-                c.err(f"{rel}:{first['no']}: {mask_what} LDI R1, {first['ops'][1]} but the table's "
+                c.err(f"{rel}:{first['no']}: {mask_what} {format_instr(first)} but the table's "
                       f"{phase} {role} pin {self.role_pin(phase, role)} is 0x{mask:02X}")
         self.check_mask_sites(rel, ins, {mask}, label)
         # the bit isolated by AND must come from the R1 mask
@@ -787,7 +795,7 @@ class Checker:
         """(index, instr) of the nearest instruction before `idx` that writes `reg`."""
         reg = reg.upper()
         for j in range(idx - 1, -1, -1):
-            if ins[j]["m"] in self.WRITES and ins[j]["ops"][0].upper() == reg:
+            if ins[j]["m"] in self.WRITES and ins[j]["ops"][0] == reg:
                 return j, ins[j]
         return None, None
 
@@ -852,7 +860,7 @@ class Checker:
             c.sites += 1
             v = self.imm(first["ops"][1])
             if v != mask:
-                c.err(f"{rel}:{first['no']}: RX bit mask LDI R1, {first['ops'][1]} but the table's "
+                c.err(f"{rel}:{first['no']}: RX bit mask {format_instr(first)} but the table's "
                       f"uart_rx RX pin {self.role_pin('uart_rx', 'RX')} is 0x{mask:02X}")
         self.check_mask_sites(rel, ins, {mask}, "UART RX")
         pb = self.role_pin("uart_rx", "RX")
@@ -886,14 +894,14 @@ class Checker:
             c.sites += 1
             vals = self.uart_rx_debug_value(text, ins, idx, "R1", mask, rx_port)
             if vals is None:
-                c.err(f"{rel}:{i['no']}: OUT UIO_OUT, {i['ops'][1]} is not a recognised bench-debug "
+                c.err(f"{rel}:{i['no']}: {format_instr(i)} is not a recognised bench-debug "
                       f"write (constant, countdown-to-zero, or the frame-error shape); the "
                       f"uart_rx profile allows only the sample mark and frame-error flag on "
                       f"uio_out, and the received byte belongs on the uart_rx_result port")
                 continue
             bad = sorted(v for v in vals if v not in (0, mark, ferr))
             if bad:
-                c.err(f"{rel}:{i['no']}: OUT UIO_OUT, {i['ops'][1]} writes "
+                c.err(f"{rel}:{i['no']}: {format_instr(i)} writes "
                       f"{', '.join(f'0x{v:02X}' for v in bad)}; bench_debug.uart_rx allows only 0, "
                       f"SAMPLE_MARK 0x{mark:02X} and FRAME_ERROR 0x{ferr:02X}")
             seen |= vals
@@ -956,19 +964,19 @@ class Checker:
             if (a["m"] == "LDI" and b["m"] == "OUT" and b["ops"][1] == a["ops"][0]
                     and b["ops"][0].upper() != img_port):
                 c.sites += 1
-                c.err(f"{rel}:{b['no']}: constant pin image {a['ops'][1]} written to "
+                c.err(f"{rel}:{b['no']}: constant pin image {a['raw_ops'][1]} written to "
                       f"{b['ops'][0].upper()}; the table puts CS/SCLK/MOSI on {img_port}")
         first_img = self.imm(pairs[0][0]["ops"][1])
         c.sites += 1
         if first_img != (cs | idle_s):
-            c.err(f"{rel}:{pairs[0][0]['no']}: idle image {pairs[0][0]['ops'][1]} but the table "
+            c.err(f"{rel}:{pairs[0][0]['no']}: idle image {pairs[0][0]['raw_ops'][1]} but the table "
                   f"(CS {self.role_pin('spi_transfer','CS')}, CPOL {cpol}) gives 0x{cs | idle_s:02X}")
         seen_sclk = seen_mosi = False
         for a, _b in pairs:
             v = self.imm(a["ops"][1])
             c.sites += 1
             if v not in allowed:
-                c.err(f"{rel}:{a['no']}: pin image {a['ops'][1]} uses bits outside the table's "
+                c.err(f"{rel}:{a['no']}: pin image {a['raw_ops'][1]} uses bits outside the table's "
                       f"CS/SCLK/MOSI pins (allowed images "
                       f"{sorted(f'0x{x:02X}' for x in allowed)})")
             seen_sclk |= v is not None and bool(v & sclk) != bool(idle_s)
@@ -1007,11 +1015,11 @@ class Checker:
             c.sites += 2
             idle, start = self.imm(firsts[0]["ops"][1]), self.imm(firsts[1]["ops"][1])
             if idle != (scl | sda):
-                c.err(f"{rel}:{firsts[0]['no']}: bus-idle image {firsts[0]['ops'][1]} but the table's "
+                c.err(f"{rel}:{firsts[0]['no']}: bus-idle image {firsts[0]['raw_ops'][1]} but the table's "
                       f"SCL|SDA (uio bits {self.role_pin('i2c_transfer','SCL')}, "
                       f"{self.role_pin('i2c_transfer','SDA')}) is 0x{scl | sda:02X}")
             if start != scl:
-                c.err(f"{rel}:{firsts[1]['no']}: START image {firsts[1]['ops'][1]} (SCL high, SDA low) "
+                c.err(f"{rel}:{firsts[1]['no']}: START image {firsts[1]['raw_ops'][1]} (SCL high, SDA low) "
                       f"but the table's SCL mask is 0x{scl:02X}")
         # every adjacent LDI -> ALU mask is an SCL or SDA mask
         self.check_mask_sites(rel, ins, {scl, sda}, "I2C")
@@ -1024,10 +1032,10 @@ class Checker:
                     value, shown = None, "(none)"
                 elif prev["m"] != "LDI":
                     value = None
-                    shown = (f"`{prev['m']} {prev['ops'][0]}, {prev['ops'][1]}` "
+                    shown = (f"`{format_instr(prev)}` "
                              f"(line {prev['no']}), not an `LDI`")
                 else:
-                    value, shown = self.imm(prev["ops"][1]), prev["ops"][1]
+                    value, shown = self.imm(prev["ops"][1]), prev["raw_ops"][1]
                 if value != scl:
                     c.err(f"{rel}:{i['no']}: SCL poll mask {shown} != table SCL mask 0x{scl:02X}")
 
@@ -1082,15 +1090,15 @@ class Checker:
             c.sites += 1
             v = self.imm(first["ops"][1])
             if v != mask:
-                c.err(f"{rel}:{first['no']}: DIN pin image LDI R2, {first['ops'][1]} but the table's "
+                c.err(f"{rel}:{first['no']}: DIN pin image {format_instr(first)} but the table's "
                       f"ws2812 DIN pin {self.role_pin('ws2812', 'DIN')} is 0x{mask:02X}")
         if not any(i["m"] == "AND" and i["ops"][1] == "R2" for i in ins):
             c.err(f"{rel}: no `AND Rx, R2` bit-isolation site found")
         for i in ins:
             if i["m"] == "OUT" and i["ops"][0].upper() == "UO_OUT":
                 c.sites += 1
-                if i["ops"][1].upper() not in ("R1", "R2"):
-                    c.err(f"{rel}:{i['no']}: OUT UO_OUT from {i['ops'][1]}; only R2 (the DIN image) "
+                if i["ops"][1] not in ("R1", "R2"):
+                    c.err(f"{rel}:{i['no']}: OUT UO_OUT from {i['raw_ops'][1]}; only R2 (the DIN image) "
                           "or R1 (DIN image AND data, or 0) may drive DIN")
             if i["m"] == "LDI" and i["ops"][0] == "R2" and i is not first:
                 c.err(f"{rel}:{i['no']}: R2 is reloaded; it must hold the DIN pin image throughout")
@@ -1152,12 +1160,12 @@ class Checker:
             if b["m"] == "OUT" and b["ops"][0].upper() == "UIO_OUT" and b["ops"][1] == "R3":
                 c.sites += 1
                 if v != (clk | data):
-                    c.err(f"{rel}:{a['no']}: released-bus image {a['ops'][1]} but the table's "
+                    c.err(f"{rel}:{a['no']}: released-bus image {a['raw_ops'][1]} but the table's "
                           f"PS2_CLK|PS2_DATA is 0x{clk | data:02X}")
             elif b["m"] == "OR" and b["ops"] == ["R3", "R1"]:
                 c.sites += 1
                 if v != clk:
-                    c.err(f"{rel}:{a['no']}: CLK mask {a['ops'][1]} but the table's PS2_CLK is 0x{clk:02X}")
+                    c.err(f"{rel}:{a['no']}: CLK mask {a['raw_ops'][1]} but the table's PS2_CLK is 0x{clk:02X}")
         # pin images in R1 (the CLK-low image): never the CLK bit; the
         # transmit images are exactly 0 (start bit) and the DATA mask (stop)
         seen = set()
@@ -1168,7 +1176,7 @@ class Checker:
                 if v is None:
                     continue
                 if v & clk:
-                    c.err(f"{rel}:{i['no']}: LDI R1, {i['ops'][1]} sets the CLK bit 0x{clk:02X}; "
+                    c.err(f"{rel}:{i['no']}: {format_instr(i)} sets the CLK bit 0x{clk:02X}; "
                           "R1 holds the CLK-low image")
                 if v & ~(clk | data) == 0:  # a pure pin image (no direction flag)
                     seen.add(v)
@@ -1250,7 +1258,7 @@ class Checker:
             c.sites += 1
             v = self.imm(a["ops"][1])
             if v not in (0, mask):
-                c.err(f"{rel}:{a['no']}: pin image {a['ops'][1]} for OUT UIO_OUT; a 1-Wire "
+                c.err(f"{rel}:{a['no']}: pin image {a['raw_ops'][1]} for OUT UIO_OUT; a 1-Wire "
                       f"master writes only 0 (assert) or the released DQ mask 0x{mask:02X}")
         # each IN UIO_IN's next AND (on the IN's destination) masks the DQ bit
         pb = self.role_pin("onewire", "DQ")
@@ -1313,8 +1321,8 @@ class Checker:
         for idx, i in enumerate(ins):
             if i["m"] == "OUT" and i["ops"][0].upper() == "UO_OUT":
                 c.sites += 1
-                if i["ops"][1].upper() != "R1":
-                    c.err(f"{rel}:{i['no']}: OUT UO_OUT from {i['ops'][1]}; only R1 (the pin image) may drive the pins")
+                if i["ops"][1] != "R1":
+                    c.err(f"{rel}:{i['no']}: OUT UO_OUT from {i['raw_ops'][1]}; only R1 (the pin image) may drive the pins")
             nxt = ins[idx + 1] if idx + 1 < len(ins) else None
             if i["m"] == "LDI" and nxt is not None and nxt["m"] in ("AND", "OR", "XOR") \
                     and i["ops"][0] in nxt["ops"]:
@@ -1323,14 +1331,14 @@ class Checker:
                 if v in pin_masks:
                     used.add(v)
                 elif not pm_addr_next(idx + 1, nxt["ops"][0], 3):
-                    c.err(f"{rel}:{i['no']}: ALU mask LDI {i['ops'][0]}, {i['ops'][1]} feeding {nxt['m']} is not one of "
+                    c.err(f"{rel}:{i['no']}: ALU mask {format_instr(i)} feeding {nxt['m']} is not one of "
                           f"the table's i2s pin masks {sorted(f'0x{x:02X}' for x in pin_masks)} "
                           "(nor a PM_ADDR wrap constant)")
             if i["m"] == "LDI" and i["ops"][0] == "R1":
                 v = self.imm(i["ops"][1])
                 c.sites += 1
                 if v not in (0, m["WS"], m["SD"]) and not pm_addr_next(idx, "R1", 1):
-                    c.err(f"{rel}:{i['no']}: pin image LDI R1, {i['ops'][1]} is not 0, the table's WS mask "
+                    c.err(f"{rel}:{i['no']}: pin image {format_instr(i)} is not 0, the table's WS mask "
                           f"0x{m['WS']:02X} or SD mask 0x{m['SD']:02X}")
         for role in ("BCLK", "WS", "SD"):
             if m[role] not in used:
@@ -1375,7 +1383,7 @@ class Checker:
                     and b["ops"][0].upper() == "UIO_OUT" and b["ops"][1] == a["ops"][0]):
                 c.sites += 1
                 if self.imm(a["ops"][1]) not in images:
-                    c.err(f"{rel}:{a['no']}: pin image {a['ops'][1]} is not one of "
+                    c.err(f"{rel}:{a['no']}: pin image {a['raw_ops'][1]} is not one of "
                           f"0x00 / 0x{clk:02X} / 0x{dio:02X} / 0x{clk | dio:02X} "
                           "(the four SWCLK x SWDIO combinations)")
         # every OUT UIO_OUT reads a preloaded image register or the scratch
@@ -1383,7 +1391,7 @@ class Checker:
             if i["m"] == "OUT" and i["ops"][0].upper() == "UIO_OUT":
                 c.sites += 1
                 if i["ops"][1] not in ("R0", "R1", "R3"):
-                    c.err(f"{rel}:{i['no']}: OUT UIO_OUT from {i['ops'][1]}; only R0/R1 "
+                    c.err(f"{rel}:{i['no']}: OUT UIO_OUT from {i['raw_ops'][1]}; only R0/R1 "
                           "(the preloaded pair) or R3 (a per-bit image) may drive the lines")
         # every WCTL UIO_DIR releases SWDIO or drives both; UIO_OD never appears
         for a, b in zip(ins, ins[1:]):
@@ -1392,7 +1400,7 @@ class Checker:
                     and b["ops"][1] == a["ops"][0]):
                 c.sites += 1
                 if self.imm(a["ops"][1]) not in (clk, clk | dio):
-                    c.err(f"{rel}:{a['no']}: WCTL UIO_DIR writes {a['ops'][1]}; the probe "
+                    c.err(f"{rel}:{a['no']}: WCTL UIO_DIR writes {a['raw_ops'][1]}; the probe "
                           f"uses 0x{clk:02X} (SWDIO released) and 0x{clk | dio:02X} (both driven)")
         if any(i["m"] == "WCTL" and i["ops"][0].upper() in ("UIO_OD", "0X01") for i in ins):
             c.sites += 1
@@ -1407,7 +1415,7 @@ class Checker:
             if not (nxt and nxt["m"] == "AND" and nxt["ops"][0] == i["ops"][0]
                     and nxt["ops"][1] == "R0"):
                 c.err(f"{rel}:{i['no']}: IN UIO_IN must be followed by "
-                      f"AND {i['ops'][0]}, R0 (R0 = 0x{dio:02X}, the SWDIO mask) "
+                      f"AND {i['raw_ops'][0]}, R0 (R0 = 0x{dio:02X}, the SWDIO mask) "
                       "to isolate the sampled bit")
 
     # ------------------------------------------------------ profile: can
@@ -1433,7 +1441,7 @@ class Checker:
         else:
             c.sites += 1
             if self.imm(first["ops"][1]) != mask:
-                c.err(f"{rel}:{first['no']}: CAN_RXD mask LDI R3, {first['ops'][1]} but "
+                c.err(f"{rel}:{first['no']}: CAN_RXD mask {format_instr(first)} but "
                       f"the table's can CAN_RXD pin {self.role_pin('can', 'CAN_RXD')} "
                       f"is 0x{mask:02X}")
         # DR 0010 records that this image uses UIO_DIR as scratch (no
@@ -1461,7 +1469,7 @@ class Checker:
             if i["m"] == "OUT" and i["ops"][0].upper() == "UO_OUT":
                 c.sites += 1
                 if i["ops"][1] not in ("R1", "R3"):
-                    c.err(f"{rel}:{i['no']}: OUT UO_OUT from {i['ops'][1]}; only R1 "
+                    c.err(f"{rel}:{i['no']}: OUT UO_OUT from {i['raw_ops'][1]}; only R1 "
                           "(the LINE_OUT pair / status register) or R3 (recessive) "
                           "may drive CAN_TXD")
         for idx, i in enumerate(ins):
@@ -1472,7 +1480,7 @@ class Checker:
             if not (nxt and nxt["m"] == "AND" and nxt["ops"][0] == i["ops"][0]
                     and nxt["ops"][1] == "R3"):
                 c.err(f"{rel}:{i['no']}: IN UI_IN must be followed by "
-                      f"AND {i['ops'][0]}, R3 (R3 = 0x{mask:02X}, the CAN_RXD mask) "
+                      f"AND {i['raw_ops'][0]}, R3 (R3 = 0x{mask:02X}, the CAN_RXD mask) "
                       "to isolate the sampled bit")
 
     # ------------------------------------------------------- profile: benches
@@ -1623,7 +1631,7 @@ class Checker:
         else:
             c.sites += 1
             if self.imm(first["ops"][1]) != rx_mask:
-                c.err(f"{rel}:{first['no']}: RX bit mask LDI R1, {first['ops'][1]} but the "
+                c.err(f"{rel}:{first['no']}: RX bit mask {format_instr(first)} but the "
                       f"table's modbus RX pin {self.role_pin('modbus', 'RX')} is 0x{rx_mask:02X}")
         pb = self.role_pin("modbus", "RX")
         if pb is not None:
@@ -1641,13 +1649,13 @@ class Checker:
             c.sites += 1
             vals = self.modbus_image_values(ins, idx)
             if vals is None:
-                c.err(f"{rel}:{i['no']}: OUT UO_OUT, {i['ops'][1]} is not a recognised modbus "
+                c.err(f"{rel}:{i['no']}: {format_instr(i)} is not a recognised modbus "
                       f"image shape (a constant image or the isolated-TX-bit OR; pattern "
                       f"modbus_images)")
                 continue
             bad = sorted(v for v in vals if v not in allowed)
             if bad:
-                c.err(f"{rel}:{i['no']}: OUT UO_OUT, {i['ops'][1]} can write "
+                c.err(f"{rel}:{i['no']}: {format_instr(i)} can write "
                       f"{', '.join(f'0x{v:02X}' for v in bad)}; the modbus profile allows only "
                       f"the idle 0x{tx_mask:02X}, driver-enable 0x{de_mask:02X} and stop "
                       f"0x{tx_mask | de_mask:02X} images (pattern modbus_images)")
