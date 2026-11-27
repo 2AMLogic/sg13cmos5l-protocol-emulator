@@ -40,7 +40,14 @@ from cocotb.triggers import ReadOnly, RisingEdge, Timer
 import sdf_protocol_alignment as _align
 import test_firmware_uart as bench
 from firmware_artifacts import parse_hex_image
-from reference_models.uart import MAX_FRAME_DRIFT_PCT, UART_FRAME_BITS, UartDecoder, UartFrameError
+from reference_models.uart import (
+    MAX_FRAME_DRIFT_PCT,
+    UART_DATA_BITS,
+    UART_FRAME_BITS,
+    UartDecoder,
+    UartFrameError,
+    last_edge_index,
+)
 from reference_models.waveform import Signal
 from sdf_tx_edges import tx_level, tx_level_changes
 from test_protocol_emulator import load_program
@@ -192,17 +199,19 @@ def _measure_image(stem, cycles_per_bit, clock_period_ps, tx_initial, tx_edges, 
             failures.append(f"0x{payload:02x}: no TX edge list found around the model's start at {t_start_ps} ps")
             continue
         last_edge_ps = edges_ps[-1]
-        # The last edge's bit index on the nominal grid -- the model's own
-        # placement (`_measure_drift`), cross-checked against the framing
-        # convention's arithmetic (the bench's `expected_edge_offsets`).
-        last_edge_bit_index = round((last_edge_ps - t_start_ps) / nominal_bit_period_ps)
+        # The last edge's slot on the nominal grid comes from the decoded
+        # frame's own levels (the 8N1 convention), never from rounding the
+        # measured offset: rounding would wrap a residual of half a bit or
+        # more onto the next slot and drop the frame this record must keep.
+        last_edge_bit_index = last_edge_index(
+            [0] + [(report.data >> i) & 1 for i in range(UART_DATA_BITS)] + [1]
+        )
         if last_edge_bit_index != bench.expected_edge_offsets(payload)[-1]:
             failures.append(
-                f"0x{payload:02x}: last edge at bit {last_edge_bit_index}, the 8N1 "
-                f"framing convention puts the last edge at bit "
+                f"0x{payload:02x}: decoded 0x{report.data:02x} puts the last edge at bit "
+                f"{last_edge_bit_index}, the transmitted payload's 8N1 framing puts it at bit "
                 f"{bench.expected_edge_offsets(payload)[-1]}"
             )
-            continue
         delta_t_ps = last_edge_ps - t_start_ps
         drift_ps = delta_t_ps - last_edge_bit_index * nominal_bit_period_ps
         drift_pct = 100.0 * abs(drift_ps) / nominal_bit_period_ps

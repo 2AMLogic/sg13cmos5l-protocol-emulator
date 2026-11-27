@@ -117,6 +117,18 @@ class UartFrameReport:
         )
 
 
+def last_edge_index(bits):
+    """Bit index of an 8N1 frame's last level change, from its sampled bits
+    (start, data LSB-first, stop). The idle level before the start is 1."""
+    last = 0
+    previous = 1
+    for k, level in enumerate(bits):
+        if level != previous:
+            last = k
+        previous = level
+    return last
+
+
 class UartFrameError(ValueError):
     """A framing violation the receiver cannot recover from mid-frame."""
 
@@ -167,7 +179,7 @@ class UartDecoder:
                 raise UartFrameError(
                     f"framing error at t={t_start:.3f}ns: stop bit sampled 0"
                 )
-            drift_ns = self._measure_drift(line, t_start)
+            drift_ns = self._measure_drift(line, t_start, bits)
             drift_pct = 100.0 * abs(drift_ns) / self.period
             t = t_start + (UART_FRAME_BITS - 0.5) * self.period
             t_next = self._next_start(line, t)
@@ -184,14 +196,17 @@ class UartDecoder:
         return reports
 
     def _next_start(self, line, t_from):
+        # Take the pre-edge level from the ordered transitions, never from a
+        # lookup at ``tt - epsilon``: at a large absolute time that epsilon
+        # vanishes in floating point and the lookup reads the new level.
+        previous = line.initial
         for tt, vv in line.transitions:
-            if tt <= t_from:
-                continue
-            if vv == 0 and line.value_at(tt - 1e-9) == 1:
+            if tt > t_from and vv == 0 and previous == 1:
                 return tt
+            previous = vv
         return None
 
-    def _measure_drift(self, line, t_start):
+    def _measure_drift(self, line, t_start, bits):
         """Cumulative actual-vs-nominal drift of one frame, in ns.
 
         The measurable statement of "cumulative per-frame drift" on a real
@@ -215,7 +230,10 @@ class UartDecoder:
         if not frame_edges:
             return 0.0
         last = frame_edges[-1]
-        k = round((last - t_start) / self.period)
+        # The nominal grid slot comes from the sampled frame's own levels, not
+        # from rounding the measured edge: rounding wraps a residual of half a
+        # bit or more onto the neighbouring slot and loses the excursion.
+        k = last_edge_index(bits)
         return last - (t_start + k * self.period)
 
     def _grade_pitch(self, pitch_ns):

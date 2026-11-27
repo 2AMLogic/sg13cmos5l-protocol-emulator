@@ -208,6 +208,36 @@ class UartReplayTests(unittest.TestCase):
                     self.assertAlmostEqual(frame["model_drift_pct"], frame["drift_pct"])
                     self.assertEqual(frame["within_bound"], passes)
 
+    def test_decode_is_independent_of_capture_origin(self):
+        # A capture 20 ms into the simulation decodes identically: the pre-edge
+        # level comes from the ordered transitions, not an epsilon lookup.
+        shift = 20_000_000_000
+        shifted = tuple(
+            tuple(tuple(t + shift for t in frame) for frame in image) for image in EDGES_PS
+        )
+        base = self.replay(1)
+        late = self.replay(1, edges=shifted)
+        for a, b in zip(base, late):
+            self.assertEqual([f["decoded_hex"] for f in a["frames"]],
+                             [f["decoded_hex"] for f in b["frames"]])
+            self.assertEqual([f["drift_ps"] for f in a["frames"]],
+                             [f["drift_ps"] for f in b["frames"]])
+            for x, y in zip(a["negative_control"]["drift_pct"], b["negative_control"]["drift_pct"]):
+                self.assertAlmostEqual(x, y, places=6)
+
+    def test_half_bit_stop_excursion_is_retained_not_rounded_away(self):
+        # First stop rise 9.5 bit periods after the start (1 Mbaud, typical).
+        for late_ps in (499980, 499990):
+            with self.subTest(late_ps=late_ps):
+                first, *_ = self.replay(1, "row-10 drift bound failed",
+                                        shifts=[(0, 0, -1, late_ps)])
+                frame = first["frames"][0]
+                self.assertEqual(frame["decoded_hex"], "0x5a")
+                self.assertEqual(frame["last_edge_bit_index"], 9)
+                self.assertEqual(frame["drift_ps"], late_ps + 10)  # plus the 10 ps nominal residual
+                self.assertGreater(frame["drift_pct"], 49.99)
+                self.assertFalse(frame["within_bound"])
+
     def test_early_next_start_is_graded_independently_of_last_edge(self):
         for early in (19990, 20000, 20010):
             passes = early <= 20000
