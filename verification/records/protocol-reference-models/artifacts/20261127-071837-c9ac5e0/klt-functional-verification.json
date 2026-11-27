@@ -1,0 +1,119 @@
+{
+  "schema_version": 2,
+  "engine": "icarus",
+  "hdl_toplevel": "model_validation_top",
+  "testbench": "test_protocol_models",
+  "status": "pass",
+  "test_count": 13,
+  "passed_count": 13,
+  "failed_count": 0,
+  "skipped_count": 0,
+  "tests": [
+    {
+      "name": "test_recorded_seed_matches_request",
+      "status": "passed",
+      "sim_time_ns": 1.0,
+      "real_time_s": 0.0
+    },
+    {
+      "name": "test_uart_random_legal_frames_round_trip_and_stay_in_budget",
+      "status": "passed",
+      "sim_time_ns": 1.0,
+      "real_time_s": 0.001
+    },
+    {
+      "name": "test_uart_negative_control_flags_drift_over_bound",
+      "status": "passed",
+      "sim_time_ns": 1.0,
+      "real_time_s": 0.0
+    },
+    {
+      "name": "test_uart_frame_pitch_grades_back_to_back_0xff",
+      "status": "passed",
+      "sim_time_ns": 1.0,
+      "real_time_s": 0.0
+    },
+    {
+      "name": "test_uart_isolated_0xff_frame_is_documented_unobservable",
+      "status": "passed",
+      "sim_time_ns": 1.0,
+      "real_time_s": 0.0
+    },
+    {
+      "name": "test_spi_random_legal_traffic_passes_in_all_modes",
+      "status": "passed",
+      "sim_time_ns": 1.0,
+      "real_time_s": 0.008
+    },
+    {
+      "name": "test_spi_negative_control_flags_clock_ceiling_violation",
+      "status": "passed",
+      "sim_time_ns": 1.0,
+      "real_time_s": 0.0
+    },
+    {
+      "name": "test_spi_negative_control_wrong_mode_sampling_mismatches",
+      "status": "passed",
+      "sim_time_ns": 1.0,
+      "real_time_s": 0.0
+    },
+    {
+      "name": "test_i2c_random_legal_traffic_meets_table10_minimums",
+      "status": "passed",
+      "sim_time_ns": 1.0,
+      "real_time_s": 0.009
+    },
+    {
+      "name": "test_i2c_clock_stretching_is_legal_and_reported",
+      "status": "passed",
+      "sim_time_ns": 1.0,
+      "real_time_s": 0.0
+    },
+    {
+      "name": "test_i2c_negative_control_flags_stop_setup_violation",
+      "status": "passed",
+      "sim_time_ns": 1.0,
+      "real_time_s": 0.0
+    },
+    {
+      "name": "test_i2c_negative_control_flags_overspeed_period_only",
+      "status": "passed",
+      "sim_time_ns": 1.0,
+      "real_time_s": 0.0
+    },
+    {
+      "name": "test_i2c_period_bound_edges_and_stretching",
+      "status": "passed",
+      "sim_time_ns": 1.0,
+      "real_time_s": 0.0
+    }
+  ],
+  "coverage": null,
+  "trace": null,
+  "environment": {
+    "engine": "icarus",
+    "engine_version": "13.0",
+    "tools": [],
+    "cocotb_version": "2.1.0",
+    "results_xml": {
+      "path": "verification/.klt/functional-verification/results_icarus.xml",
+      "scope": "repo",
+      "sha256": "sha256:a7ee54eae64102000eaa1f43cfea9c84df815692b8dc25b583c35a20692c1ba3"
+    },
+    "test_log": {
+      "path": "verification/.klt/functional-verification/test_icarus.log",
+      "scope": "repo",
+      "sha256": "sha256:c97cfdfdbdde625a158d05df261023e0b03131d41a6b30fc249a1428a513f23a"
+    },
+    "build_log": {
+      "path": "verification/.klt/functional-verification/build_icarus.log",
+      "scope": "repo",
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "random_seed": 20260922,
+    "source_defines": {},
+    "env": {},
+    "initial_state": null,
+    "sdf": null
+  }
+}

@@ -84,9 +84,42 @@ def good_envelope(protocol, annotated=True, status="pass"):
     }
 
 
+def good_measurement(name="uart_tx_drift", stems=None):
+    """A well-formed `measurements` entry for the protocols that carry one
+    (issue #531: the UART wrapper's time-unit bit-period / drift doc)."""
+    stems = list(stems or plp.PROTOCOLS["uart_tx"]["required_measurements"][name]["images"])
+    payloads = plp.PROTOCOLS["uart_tx"]["required_measurements"][name]["payloads"]
+
+    def frame(i):
+        return {
+            "payload_hex": payloads[i], "decoded_hex": "0x5a", "stop_ok": True,
+            "t_start_ps": 1000 + i, "edges_ps": [1000 + i, 9700 + i],
+            "last_edge_bit_index": 9, "last_edge_ps": 9700 + i,
+            "mean_bit_period_ps": 966.6666666666666, "drift_pct": 0.04,
+            "model_drift_pct": 0.04,
+        }
+
+    return {
+        "units": {"time": "ps", "drift": "percent_of_nominal_bit_period"},
+        "clock_period_ps": 20000,
+        "images": [
+            {
+                "image": stem, "cycles_per_bit": 50,
+                "nominal_bit_period_ps": 1000, "nominal_baud": 1e6,
+                "pin": "uo_out[0]", "frames": [frame(0), frame(1)],
+                "negative_control": {
+                    "scale": 1.025, "decoded": ["0x5a", "0xa5"],
+                    "all_failed_check_frame": True,
+                },
+            }
+            for stem in stems
+        ],
+    }
+
+
 def good_report(protocol, max_delay=890, violations=0):
     spec = plp.PROTOCOLS[protocol]
-    return {
+    doc = {
         "schema": "pe.sdf_protocol_report/1",
         "protocol": protocol,
         "bench_module": spec["bench_module"],
@@ -107,6 +140,12 @@ def good_report(protocol, max_delay=890, violations=0):
             for name, n in spec["required_controls"].items()
         },
     }
+    if spec["required_measurements"]:
+        doc["measurements"] = {
+            name: good_measurement(name, stems=req["images"])
+            for name, req in spec["required_measurements"].items()
+        }
+    return doc
 
 
 # ---------------------------------------------------------------------------
@@ -242,6 +281,42 @@ class GradeTests(unittest.TestCase):
         rep["timing_controls"]["spi_ceiling_compressed"]["failed_as_required"] = 7
         self.assertFailsWith(self.grade(report=rep), "1 of 8 did not fail as required")
 
+    def test_missing_required_measurement(self):
+        rep = good_report("uart_tx")
+        del rep["measurements"]
+        self.assertFailsWith(self.grade("uart_tx", report=rep), "measurement uart_tx_drift missing")
+
+    def test_measurement_with_too_few_images(self):
+        rep = good_report("uart_tx")
+        rep["measurements"]["uart_tx_drift"]["images"] = rep["measurements"]["uart_tx_drift"]["images"][:1]
+        self.assertFailsWith(self.grade("uart_tx", report=rep), "exactly ['uart_tx', 'uart_tx_115200', 'uart_tx_9600'] required")
+
+    def test_measurement_three_copies_of_one_image_is_not_coverage(self):
+        rep = good_report("uart_tx")
+        images = rep["measurements"]["uart_tx_drift"]["images"]
+        rep["measurements"]["uart_tx_drift"]["images"] = [images[0]] * 3
+        self.assertFailsWith(self.grade("uart_tx", report=rep), "duplicated ['uart_tx']")
+
+    def test_measurement_wrong_image_identity(self):
+        rep = good_report("uart_tx")
+        rep["measurements"]["uart_tx_drift"]["images"][2]["image"] = "uart_tx_19200"
+        self.assertFailsWith(self.grade("uart_tx", report=rep), "missing ['uart_tx_9600']")
+
+    def test_measurement_image_with_one_payload_only(self):
+        rep = good_report("uart_tx")
+        del rep["measurements"]["uart_tx_drift"]["images"][1]["frames"][1]
+        self.assertFailsWith(self.grade("uart_tx", report=rep), "payload frames ['0x5a']")
+
+    def test_measurement_image_without_timestamped_edges(self):
+        rep = good_report("uart_tx")
+        rep["measurements"]["uart_tx_drift"]["images"][1]["frames"] = []
+        self.assertFailsWith(self.grade("uart_tx", report=rep), "no timestamped TX edges")
+
+    def test_measurement_frame_without_drift_figures(self):
+        rep = good_report("uart_tx")
+        del rep["measurements"]["uart_tx_drift"]["images"][2]["frames"][0]["drift_pct"]
+        self.assertFailsWith(self.grade("uart_tx", report=rep), "missing drift figures")
+
 
 class AggregateTests(unittest.TestCase):
     ALIGN = {"clock_period_ns": 20.0, "drive_offset_ns": 4.0, "sample_offset_ns": 16.0}
@@ -327,7 +402,12 @@ class InventoryTests(unittest.TestCase):
     def test_expected_tests_are_exactly_the_benches_tests(self):
         for protocol, spec in plp.PROTOCOLS.items():
             bench = REPO / "verification" / f"{spec['bench_module']}.py"
-            self.assertEqual(sorted(self.cocotb_tests(bench)), sorted(spec["expected_tests"]),
+            wrapper = REPO / "verification" / f"{spec['testbench_module']}.py"
+            # the wrapper registers the bench's tests (register()) and may
+            # define its own (issue #531's time-unit UART measurement is
+            # one): the inventory is both, bench order first.
+            self.assertEqual(sorted(self.cocotb_tests(bench) + self.cocotb_tests(wrapper)),
+                             sorted(spec["expected_tests"]),
                              protocol)
 
     def test_wrappers_name_their_bench_and_protocol(self):

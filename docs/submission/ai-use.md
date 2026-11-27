@@ -121,13 +121,14 @@ reports but is not a required check on `main`.
   [record](../../verification/records/post-layout-sdf-regression/records/20261010-102552-d43f89c.md) <!-- superseded-ok: history of the failed-then-fixed record chain -->.
   That record supersedes the last failing one
   ([`704a3fb`](../../verification/records/post-layout-sdf-regression/records/20261010-083555-704a3fb.md) <!-- superseded-ok: history of the failed-then-fixed record chain -->),
-  whose netlist it shares, and states what it still does not show. A later
-  record on a newer netlist
-  ([`e5a0bae`](../../verification/records/post-layout-sdf-regression/records/20261011-114802-e5a0bae.md))
-  has since superseded it, still passing.
+  whose netlist it shares. That core regression used GDS run 38044212536
+  (netlist SHA-256 `027f17bd…`). The later protocol regression ran UART TX,
+  SPI and I²C on the netlist from GDS run 38136727636 (`fbc7bc30…`).
+  All three protocols passed at all three corners. [Protocol regression
+  record](../../verification/records/post-layout-sdf-regression/records/20261127-111136-4853b33.md).
 - **Independent references.** Protocol firmware is graded against separately
   written reference models
-  ([record](../../verification/records/protocol-reference-models/records/20261010-180436-9fb7815.md)).
+  ([record](../../verification/records/protocol-reference-models/records/20261127-071837-c9ac5e0.md)).
   The core is checked edge by edge against an independent instruction-set
   simulator written from the decision records (PR #204,
   [record](../../verification/records/isa-lockstep/records/20261011-182004-080e6be.md) <!-- superseded-ok: the record live at the main this page reviews; re-minted for issue #271 when DR 0001 gained dated notes -->).

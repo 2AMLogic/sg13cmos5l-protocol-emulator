@@ -1,0 +1,77 @@
+{
+  "schema_version": 2,
+  "engine": "icarus",
+  "hdl_toplevel": "tt_um_2amlogic_protocol_emulator",
+  "testbench": "test_boot_spi",
+  "status": "pass",
+  "test_count": 6,
+  "passed_count": 6,
+  "failed_count": 0,
+  "skipped_count": 0,
+  "tests": [
+    {
+      "name": "test_model_chain_and_prediction",
+      "status": "passed",
+      "sim_time_ns": 20.0,
+      "real_time_s": 0.178
+    },
+    {
+      "name": "test_good_flash_boots_a_program_that_starts_in_the_reset_state",
+      "status": "passed",
+      "sim_time_ns": 2353681.0,
+      "real_time_s": 9.875
+    },
+    {
+      "name": "test_protocol_programs_boot_from_flash_and_pass_reference_models",
+      "status": "passed",
+      "sim_time_ns": 2392281.0000000005,
+      "real_time_s": 13.108
+    },
+    {
+      "name": "test_blank_or_absent_flash_never_runs",
+      "status": "passed",
+      "sim_time_ns": 5969881.000000001,
+      "real_time_s": 28.319
+    },
+    {
+      "name": "test_corrupt_flash_never_runs",
+      "status": "passed",
+      "sim_time_ns": 10596961.0,
+      "real_time_s": 51.418
+    },
+    {
+      "name": "test_zero_signature_is_refused",
+      "status": "passed",
+      "sim_time_ns": 2353881.0,
+      "real_time_s": 10.146
+    }
+  ],
+  "coverage": null,
+  "trace": null,
+  "environment": {
+    "engine": "icarus",
+    "engine_version": "13.0",
+    "tools": [],
+    "cocotb_version": "2.1.0",
+    "results_xml": {
+      "path": "verification/.klt/functional-verification/results_icarus.xml",
+      "scope": "repo",
+      "sha256": "sha256:144b55c23d5d3dd745a6a0ab2c7b475d1f449019c4e680d762300468e270d048"
+    },
+    "test_log": {
+      "path": "verification/.klt/functional-verification/test_icarus.log",
+      "scope": "repo",
+      "sha256": "sha256:9aec3156c069ce26428de9b7b23bf7ec79434fa7ad00ba5a4b7b3fe37a1695b7"
+    },
+    "build_log": {
+      "path": "verification/.klt/functional-verification/build_icarus.log",
+      "scope": "repo",
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "random_seed": 1,
+    "source_defines": {},
+    "env": {},
+    "initial_state": null,
+    "sdf": null
+  }
+}

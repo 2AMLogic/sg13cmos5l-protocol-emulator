@@ -209,6 +209,9 @@ jobs:
       - name: Provision klt + pinned cocotb
         run: ./scripts/setup-env.sh
 
+      - name: Replay UART timing captures through the routed report writer
+        run: '"$(uv tool dir)/klayout-tools/bin/python" verification/test_sdf_uart_replay.py'
+
       - name: Run the RTL benches (gate only, no records written)
         run: scripts/run-rtl-benches.sh
 

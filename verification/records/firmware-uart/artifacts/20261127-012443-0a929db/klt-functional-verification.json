@@ -1,0 +1,59 @@
+{
+  "schema_version": 2,
+  "engine": "icarus",
+  "hdl_toplevel": "tt_um_2amlogic_protocol_emulator",
+  "testbench": "test_firmware_uart",
+  "status": "pass",
+  "test_count": 3,
+  "passed_count": 3,
+  "failed_count": 0,
+  "skipped_count": 0,
+  "tests": [
+    {
+      "name": "test_committed_image_is_fresh",
+      "status": "passed",
+      "sim_time_ns": 0.0,
+      "real_time_s": 0.001
+    },
+    {
+      "name": "test_uart_frames_pass_independent_reference_model",
+      "status": "passed",
+      "sim_time_ns": 46681.0,
+      "real_time_s": 0.057
+    },
+    {
+      "name": "test_reference_model_negative_control_still_fails",
+      "status": "passed",
+      "sim_time_ns": 0.0,
+      "real_time_s": 0.0
+    }
+  ],
+  "coverage": null,
+  "trace": null,
+  "environment": {
+    "engine": "icarus",
+    "engine_version": "13.0",
+    "tools": [],
+    "cocotb_version": "2.1.0",
+    "results_xml": {
+      "path": "verification/.klt/functional-verification/results_icarus.xml",
+      "scope": "repo",
+      "sha256": "sha256:673361b30e800cf52eec9d6467d61067f791a1ff973eedbbc52ad4d72bd13b1e"
+    },
+    "test_log": {
+      "path": "verification/.klt/functional-verification/test_icarus.log",
+      "scope": "repo",
+      "sha256": "sha256:e1e11f219b518ca7d102563be2e8daae812b7f24dc016c624eeb9f97ff8d31ab"
+    },
+    "build_log": {
+      "path": "verification/.klt/functional-verification/build_icarus.log",
+      "scope": "repo",
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "random_seed": 1,
+    "source_defines": {},
+    "env": {},
+    "initial_state": null,
+    "sdf": null
+  }
+}

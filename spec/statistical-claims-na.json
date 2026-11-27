@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "statement": "spec/statistical-claims-na.md",
-  "statement_content_hash": "sha256:d24dd333259c83d3c98071e8e3a69de462f29fc5a5f39f34c856568f95933a7e",
+  "statement_content_hash": "sha256:f648dcce0c7e695f6744ee934da8893ed2712ef8c62ad7e4b1dc846df1330b57",
   "spec_markdown": "spec/target-spec.md",
-  "spec_markdown_content_hash": "sha256:71850f2be503ebe8e9a1361bea58ac1653c3e0dd3311fc9128928fade0c5db9c",
+  "spec_markdown_content_hash": "sha256:32b7588fd7c19232ef248bac2b268852be5e4718e23050406997e91329420a17",
   "note": "Machine-bound half of the T1 item 6 not_applicable claim (issue #348): one row per ratified spec row with the reason its row class is not statistical. The grader reads this JSON, not the markdown; statement_content_hash and spec_markdown_content_hash freeze the two markdowns, and scripts/check_statistical_claims_na.py fails if either embed drifts. Rows 13 and 14 are unratified (Proposed 2026-10-09, not in DR 0004's register) and sit under not_covered, not rows: the grader requires rows to match the ratified spec companion exactly. When they ratify, move them into rows and re-mint.",
   "rows": [
     {
@@ -53,8 +53,8 @@
     },
     {
       "id": "10",
-      "class": "deterministic-cycle-count",
-      "reason": "Cumulative per-frame drift bound of at most 2 percent of the nominal bit period, met as a whole-cycle count: transmitter edges land on whole multiples of the bit period in core cycles, measured from the waveform by the reference model. Receiver tolerance is exercised at a fixed plus-or-minus 2 percent rate error, a chosen stimulus. No clock spread, jitter, ageing or per-lot term is claimed or budgeted."
+      "class": "deterministic-frame-timing",
+      "reason": "For each fixed SDF corner and firmware image, the bench measures the time between the start edge and last transition at the TX pin. The 2 % bound uses one programmed bit period as its denominator. The signed residual depends on the SDF path delays and the 10 ps precision of the frozen cell models. The three corners and two payloads per image are directed cases. RX rate offsets are also fixed stimuli. These checks make no claim about the distribution of clock jitter or part-to-part variation."
     },
     {
       "id": "11",

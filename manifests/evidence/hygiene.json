@@ -17,7 +17,7 @@
         "role": "hygiene",
         "path": ".github/workflows/ci.yml",
         "passed": true,
-        "content_hash": "sha256:57e37d76f5af58772995195eb46786eca7e5bb84a1ef3d46ad67bfb1a2c19240"
+        "content_hash": "sha256:b5d7bfc1bf9b87c9a1879aba39bb231752766bab16a965cd5eb2cef2cb7c7e4f"
       },
       {
         "check": "present",
@@ -73,7 +73,7 @@
         "role": "hygiene",
         "path": "manifests/evidence/testbenches.txt",
         "passed": true,
-        "content_hash": "sha256:37cf5bf9aab223f9fee4196d07b96a873adee8dab5beea50d87dd05e228add0e"
+        "content_hash": "sha256:6b38c16474927742ddabfefbb0af86bc603b8ff9849a1240511f9f7c7c263dd0"
       },
       {
         "check": "present",
@@ -87,7 +87,7 @@
         "role": "hygiene",
         "path": "spec/target-spec.md",
         "passed": true,
-        "content_hash": "sha256:71850f2be503ebe8e9a1361bea58ac1653c3e0dd3311fc9128928fade0c5db9c"
+        "content_hash": "sha256:32b7588fd7c19232ef248bac2b268852be5e4718e23050406997e91329420a17"
       },
       {
         "check": "present",

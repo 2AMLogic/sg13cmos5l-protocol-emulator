@@ -22,11 +22,11 @@
       "not_applicable": {
         "spec": {
           "file": "spec/target-spec-ratified.json",
-          "content_hash": "sha256:f64b320f750aa610245ab412ff21446fb260bcc1958849eba39c908df3f20f9b"
+          "content_hash": "sha256:28d10bd848140d6afeddf6e2b85e7e2d368ca826b93eb689233f713de0feca62"
         },
         "statement": {
           "file": "spec/statistical-claims-na.json",
-          "content_hash": "sha256:e506e819fcda46bb85d0b3c661e4273365928f87e453d810f8808d810f96e5ea"
+          "content_hash": "sha256:5f79afd3b6c295438f9c771dd6eca5c796a936914454228a396b6e60dc8ca465"
         }
       }
     },
@@ -36,11 +36,11 @@
     },
     "8": {
       "file": "manifests/evidence/characterization.json",
-      "content_hash": "sha256:0c35a9faa5b570442c51003676e7ecc89b08b145854fea7590c52141364cce5d"
+      "content_hash": "sha256:a84cb004662c6e4ef687033cc2ca4747f2e05e87cb27cce856f54ca6ddcc774c"
     },
     "9": {
       "file": "manifests/evidence/testbenches.json",
-      "content_hash": "sha256:b0f385ed6cb50e5405bbdbb7fb6b2e99a1ec5e54e94aaf76a9f78c2cf9203f7d"
+      "content_hash": "sha256:1ce145dd299b1d491cc63197b5971446e8f7d81f0ca4878175ced5a8b1d6fd7f"
     },
     "10": {
       "file": "manifests/evidence/hygiene.json",

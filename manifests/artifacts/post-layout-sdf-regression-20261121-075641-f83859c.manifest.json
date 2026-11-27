@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "entries": [
+    {
+      "sha256": "2a0f8620b5ebe01e0168e3f150f6990c58625008a3b80a5495e515dc68cc8623",
+      "size": 68606,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.2.dev111+g978f7464fae1",
+        "loom.repo": "2AMLogic/sg13cmos5l-protocol-emulator",
+        "commit": "a15ae425fff352f0579c007c8d3a8eba5da5d597"
+      },
+      "uri": "artifact:evidence/2AMLogic__sg13cmos5l-protocol-emulator/2a/2a0f8620b5ebe01e0168e3f150f6990c58625008a3b80a5495e515dc68cc8623",
+      "name": "verification/.artifact-scratch/20261121-075641-f83859c/routed-protocols.tar.gz",
+      "media_type": "application/x-tar"
+    }
+  ]
+}

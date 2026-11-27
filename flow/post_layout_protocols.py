@@ -12,7 +12,9 @@ testable without a routed run (`flow/test_post_layout_protocols.py`):
   annotation flag, every expected test passed (none skipped, none
   missing), and the wrapper's protocol report (captures made, every output
   transition before the observe point, real pin delay observed, required
-  timing controls run and failed as required);
+  timing controls run and failed as required, and -- where the protocol
+  declares one -- the wrapper's time-unit measurement present with its
+  timestamped edges and drift figures, issue #531);
 - the per-protocol, per-corner matrix, which is complete or the suite
   fails, and the stated SRAM / pad / scope limitations.
 
@@ -49,11 +51,27 @@ PROTOCOLS = {
             "test_committed_image_is_fresh",
             "test_uart_frames_pass_independent_reference_model",
             "test_reference_model_negative_control_still_fails",
+            # the wrapper's own test (issue #531): bit period and per-frame
+            # drift measured in time units from the routed pin transitions
+            "test_uart_tx_bit_period_and_drift_in_time_units",
         ),
         # one capture of the whole two-frame program
         "min_captures": 1,
         "required_controls": {},
-        "bench_controls": "captured TX waveform stretched 1.025x must fail the row-10 drift bound",
+        # the wrapper's time-unit measurement (issue #531) must cover every
+        # committed TX image it names (by identity, once each), each carrying
+        # both committed payloads, with the timestamped edges preserved
+        "required_measurements": {
+            "uart_tx_drift": {
+                "images": ("uart_tx", "uart_tx_115200", "uart_tx_9600"),
+                "payloads": ("0x5a", "0xa5"),
+            },
+        },
+        "bench_controls": (
+            "captured TX waveform stretched 1.025x must fail the row-10 drift bound; "
+            "the wrapper's time-unit measurement re-runs that control on the "
+            "timestamped routed waveform of every measured image"
+        ),
     },
     "spi": {
         "testbench_module": "sdf_protocol_spi",
@@ -67,6 +85,7 @@ PROTOCOLS = {
         "min_captures": 4,
         # two DUT bursts per mode, each re-graded at 0.9x the ceiling
         "required_controls": {"spi_ceiling_compressed": 8},
+        "required_measurements": {},
         "bench_controls": "captured ceiling burst under each wrong mode must not round-trip",
     },
     "i2c_sr": {
@@ -83,6 +102,7 @@ PROTOCOLS = {
         # exact-under-stretch); UIO_OD control: 4
         "min_captures": 16,
         "required_controls": {},
+        "required_measurements": {},
         "bench_controls": (
             "captured lines compressed 0.9x must fail t_LOW, f_SCL and t_SU;STA; "
             "firmware t_SU;STA WAIT 1 and SUSTA/2 cycles short must fail t_SU;STA alone"
@@ -101,6 +121,58 @@ FLOW = (
 
 class UsageError(Exception):
     pass
+
+
+def _grade_measurement(name, required, doc) -> list:
+    """Why one wrapper `measurements` entry does not satisfy its protocol's
+    requirement (issue #531): present, covering exactly the named images
+    (each once, none unexpected), every image carrying a frame for each
+    required payload and timestamped TX edges, and every frame carrying the
+    fields the drift figures are recomputed from."""
+    reasons = []
+    if not isinstance(doc, dict):
+        return [f"measurement {name} missing from the protocol report"]
+    images = doc.get("images") or []
+    expected = tuple(required["images"])
+    seen = [image.get("image") for image in images]
+    missing_images = [stem for stem in expected if stem not in seen]
+    duplicate_images = sorted({stem for stem in seen if seen.count(stem) > 1}, key=str)
+    unexpected_images = sorted({stem for stem in seen if stem not in expected}, key=str)
+    if missing_images or duplicate_images or unexpected_images or len(images) < len(expected):
+        reasons.append(
+            f"measurement {name} covers images {seen}, exactly {list(expected)} required "
+            f"(missing {missing_images}, duplicated {duplicate_images}, "
+            f"unexpected {unexpected_images})"
+        )
+    for image in images:
+        stem = image.get("image")
+        frames = image.get("frames") or []
+        payloads = [frame.get("payload_hex") for frame in frames]
+        if frames and payloads != list(required["payloads"]):
+            reasons.append(
+                f"measurement {name}: image {stem!r} carries payload frames {payloads}, "
+                f"{list(required['payloads'])} required"
+            )
+        if not frames or not image.get("nominal_bit_period_ps"):
+            reasons.append(
+                f"measurement {name}: image {stem!r} carries no timestamped TX edges"
+            )
+            continue
+        for index, frame in enumerate(frames):
+            missing = []
+            edges = frame.get("edges_ps")
+            if not isinstance(edges, list) or not edges:
+                missing.append("edges_ps")
+            for field in ("t_start_ps", "last_edge_bit_index", "mean_bit_period_ps", "drift_pct"):
+                value = frame.get(field)
+                if not isinstance(value, (int, float)) or isinstance(value, bool):
+                    missing.append(field)
+            if missing:
+                reasons.append(
+                    f"measurement {name}: image {stem!r} frame {index} is missing "
+                    f"drift figures {missing}"
+                )
+    return reasons
 
 
 def select(requested) -> list:
@@ -235,6 +307,10 @@ def grade(protocol, corner, envelope, run_rc, report, elapsed_s=None) -> dict:
                 reasons.append(f"timing control {name} ran {run} time(s), at least {minimum} required")
             if failed != run:
                 reasons.append(f"timing control {name}: {run - failed} of {run} did not fail as required")
+        measurements = report.get("measurements") or {}
+        entry["measurements"] = sorted(measurements)
+        for name, required in spec["required_measurements"].items():
+            reasons += _grade_measurement(name, required, measurements.get(name))
 
     entry["reasons"] = reasons
     entry["verdict"] = "pass" if not reasons else "fail"

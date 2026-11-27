@@ -1,0 +1,89 @@
+{
+  "schema_version": 2,
+  "engine": "icarus",
+  "hdl_toplevel": "tt_um_2amlogic_protocol_emulator",
+  "testbench": "test_boot_uart",
+  "status": "pass",
+  "test_count": 8,
+  "passed_count": 8,
+  "failed_count": 0,
+  "skipped_count": 0,
+  "tests": [
+    {
+      "name": "test_boot_image_chain_and_host_agreement",
+      "status": "passed",
+      "sim_time_ns": 20.0,
+      "real_time_s": 0.004
+    },
+    {
+      "name": "test_nominal_load_runs_the_image",
+      "status": "passed",
+      "sim_time_ns": 9101420.0,
+      "real_time_s": 7.537
+    },
+    {
+      "name": "test_row10_tolerance_edges",
+      "status": "passed",
+      "sim_time_ns": 126846740.0,
+      "real_time_s": 95.435
+    },
+    {
+      "name": "test_bad_images_never_run",
+      "status": "passed",
+      "sim_time_ns": 169111940.00000003,
+      "real_time_s": 118.887
+    },
+    {
+      "name": "test_garbage_before_the_magic_is_ignored",
+      "status": "passed",
+      "sim_time_ns": 7712620.0,
+      "real_time_s": 5.295
+    },
+    {
+      "name": "test_end_to_end_protocol_program_over_uart",
+      "status": "passed",
+      "sim_time_ns": 7023020.0,
+      "real_time_s": 4.875
+    },
+    {
+      "name": "test_full_image_and_warm_start",
+      "status": "passed",
+      "sim_time_ns": 45266420.0,
+      "real_time_s": 31.612
+    },
+    {
+      "name": "test_fallthroughs_into_the_uart_load",
+      "status": "passed",
+      "sim_time_ns": 13121000.0,
+      "real_time_s": 8.825
+    }
+  ],
+  "coverage": null,
+  "trace": null,
+  "environment": {
+    "engine": "icarus",
+    "engine_version": "13.0",
+    "tools": [],
+    "cocotb_version": "2.1.0",
+    "results_xml": {
+      "path": "verification/.klt/functional-verification/results_icarus.xml",
+      "scope": "repo",
+      "sha256": "sha256:fe3f8246db84e3138d958548205e7b6d0224a6d62a4964229c6de7a297c41873"
+    },
+    "test_log": {
+      "path": "verification/.klt/functional-verification/test_icarus.log",
+      "scope": "repo",
+      "sha256": "sha256:5e108c7add257cf5cd507f2e4ce9be304d6c86133a32f1b17909276207cb6bee"
+    },
+    "build_log": {
+      "path": "verification/.klt/functional-verification/build_icarus.log",
+      "scope": "repo",
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "random_seed": 1,
+    "source_defines": {},
+    "env": {},
+    "initial_state": null,
+    "sdf": null
+  }
+}
