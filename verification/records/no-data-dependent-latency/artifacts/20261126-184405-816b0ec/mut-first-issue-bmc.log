@@ -1,0 +1,45 @@
+##   0:00:00  Solver: z3
+##   0:00:00  Checking assertions in step 0..
+##   0:00:00  Checking assertions in step 1..
+##   0:00:00  Checking assertions in step 2..
+##   0:00:00  Checking assertions in step 3..
+##   0:00:00  Checking assertions in step 4..
+##   0:00:00  Checking assertions in step 5..
+##   0:00:00  Checking assertions in step 6..
+##   0:00:00  Checking assertions in step 7..
+##   0:00:00  Checking assertions in step 8..
+##   0:00:00  Checking assertions in step 9..
+##   0:00:00  Checking assertions in step 10..
+##   0:00:00  Checking assertions in step 11..
+##   0:00:00  Checking assertions in step 12..
+##   0:00:00  Checking assertions in step 13..
+##   0:00:00  Checking assertions in step 14..
+##   0:00:00  Checking assertions in step 15..
+##   0:00:00  Checking assertions in step 16..
+##   0:00:00  Checking assertions in step 17..
+##   0:00:00  Checking assertions in step 18..
+##   0:00:00  Checking assertions in step 19..
+##   0:00:00  Checking assertions in step 20..
+##   0:00:00  Checking assertions in step 21..
+##   0:00:00  BMC failed!
+##   0:00:00  Value for anyconst formal_top_load.init_dr (verification/formal/formal_top_load.v:55.29-55.36): 2
+##   0:00:00  Value for anyconst formal_top_load.obs_idx (verification/formal/serial_load_latency.sv:170.28-170.35): 1
+##   0:00:00  Value for anyconst formal_top_load.init0 (verification/formal/formal_top_load.v:54.29-54.34): 0
+##   0:00:00  Value for anyconst formal_top_load.init1 (verification/formal/formal_top_load.v:54.36-54.41): 0
+##   0:00:00  Value for anyconst formal_top_load.init2 (verification/formal/formal_top_load.v:54.43-54.48): 0
+##   0:00:00  Value for anyconst formal_top_load.init3 (verification/formal/formal_top_load.v:54.50-54.55): 0
+##   0:00:00  Value for anyconst formal_top_load.init4 (verification/formal/formal_top_load.v:54.57-54.62): 0
+##   0:00:00  Value for anyconst formal_top_load.init5 (verification/formal/formal_top_load.v:54.64-54.69): 0
+##   0:00:00  Value for anyconst formal_top_load.init6 (verification/formal/formal_top_load.v:54.71-54.76): 0
+##   0:00:00  Value for anyconst formal_top_load.init7 (verification/formal/formal_top_load.v:54.78-54.83): 0
+##   0:00:00  Value for anyconst formal_top_load.rom0 (verification/formal/formal_top_load.v:104.29-104.33): 0
+##   0:00:00  Value for anyconst formal_top_load.rom1 (verification/formal/formal_top_load.v:104.35-104.39): 0
+##   0:00:00  Value for anyconst formal_top_load.rom2 (verification/formal/formal_top_load.v:104.41-104.45): 0
+##   0:00:00  Value for anyconst formal_top_load.rom3 (verification/formal/formal_top_load.v:104.47-104.51): 0
+##   0:00:00  Value for anyconst formal_top_load.rom4 (verification/formal/formal_top_load.v:104.53-104.57): 0
+##   0:00:00  Value for anyconst formal_top_load.rom5 (verification/formal/formal_top_load.v:104.59-104.63): 0
+##   0:00:00  Value for anyconst formal_top_load.rom6 (verification/formal/formal_top_load.v:104.65-104.69): 0
+##   0:00:00  Value for anyconst formal_top_load.rom7 (verification/formal/formal_top_load.v:104.71-104.75): 0
+##   0:00:00  Assert failed in formal_top_load: u_load_prop.first_serial_issue
+##   0:00:00  Writing trace to VCD file: <art>/mut-first-issue-cex.vcd
+##   0:00:00  Status: FAILED

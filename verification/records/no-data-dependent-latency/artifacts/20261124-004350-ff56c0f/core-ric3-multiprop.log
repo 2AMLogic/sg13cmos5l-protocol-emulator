@@ -1,0 +1,34 @@
+[00:42:55 INFO] the model to be checked: <art>/core.aig
+[00:42:55 INFO] origin ts has 4859 vars, 1177 inputs, 530 latches, 0 constraints, 13274 clauses and 39512 lits in cnf
+[00:42:55 INFO] trivial simplified ts: 3111 vars, 1112 inputs, 530 latches, 0 constraints, 10472 clauses and 41379 lits in cnf
+[00:42:55 INFO] scorr: eliminates 7 latchs out of 530 in 0.24s
+[00:42:55 INFO] scorr: simplified ts: 2820 vars, 891 inputs, 522 latches, 0 constraints, 9506 clauses and 37063 lits in cnf
+[00:42:56 INFO] frts: eliminates 14 out of 2820 vars in 0.00s
+[00:42:56 INFO] frts: simplified ts: 2756 vars, 891 inputs, 522 latches, 0 constraints, 9376 clauses and 36952 lits in cnf
+[00:42:56 INFO] preprocessed ts has 2756 vars, 891 inputs, 522 latches, 0 constraints, 9376 clauses and 36952 lits in cnf
+[00:42:56 INFO] trivial simplified ts: 2750 vars, 891 inputs, 522 latches, 0 constraints, 9358 clauses and 36933 lits in cnf
+[00:42:56 INFO] preprocessed ts has 2750 vars, 891 inputs, 522 latches, 0 constraints, 9358 clauses and 36933 lits in cnf
+[00:43:06 INFO] frames [35]: 522 10 1 21 91 70 23 9 11 8 8 8 84 16 10 9 16 24 15 17 23 18 17 11 10 11 8 8 19 56 31 18 16 1286 297 
+[00:43:09 INFO] trivial simplified ts: 2750 vars, 891 inputs, 522 latches, 0 constraints, 9358 clauses and 36933 lits in cnf
+[00:43:09 INFO] preprocessed ts has 2750 vars, 891 inputs, 522 latches, 0 constraints, 9358 clauses and 36933 lits in cnf
+[00:43:10 INFO] trivial simplified ts: 2750 vars, 891 inputs, 522 latches, 0 constraints, 9358 clauses and 36933 lits in cnf
+[00:43:10 INFO] preprocessed ts has 2750 vars, 891 inputs, 522 latches, 0 constraints, 9358 clauses and 36933 lits in cnf
+[00:43:10 INFO] trivial simplified ts: 2750 vars, 891 inputs, 522 latches, 0 constraints, 9358 clauses and 36933 lits in cnf
+[00:43:10 INFO] preprocessed ts has 2750 vars, 891 inputs, 522 latches, 0 constraints, 9358 clauses and 36933 lits in cnf
+[00:43:20 INFO] frames [46]: 522 2 1 28 87 131 149 56 31 30 43 57 65 36 28 31 34 23 20 44 32 31 30 27 33 23 39 31 29 18 17 19 16 24 38 21 33 16 24 23 21 20 23 21 1037 238 
+[00:43:26 INFO] trivial simplified ts: 2750 vars, 891 inputs, 522 latches, 0 constraints, 9358 clauses and 36933 lits in cnf
+[00:43:26 INFO] preprocessed ts has 2750 vars, 891 inputs, 522 latches, 0 constraints, 9358 clauses and 36933 lits in cnf
+[00:43:26 INFO] trivial simplified ts: 2750 vars, 891 inputs, 522 latches, 0 constraints, 9358 clauses and 36933 lits in cnf
+[00:43:26 INFO] preprocessed ts has 2750 vars, 891 inputs, 522 latches, 0 constraints, 9358 clauses and 36933 lits in cnf
+[00:43:27 INFO] trivial simplified ts: 2750 vars, 891 inputs, 522 latches, 0 constraints, 9358 clauses and 36933 lits in cnf
+[00:43:27 INFO] preprocessed ts has 2750 vars, 891 inputs, 522 latches, 0 constraints, 9358 clauses and 36933 lits in cnf
+[00:43:35 INFO] trivial simplified ts: 2750 vars, 891 inputs, 522 latches, 0 constraints, 9358 clauses and 36933 lits in cnf
+[00:43:35 INFO] preprocessed ts has 2750 vars, 891 inputs, 522 latches, 0 constraints, 9358 clauses and 36933 lits in cnf
+UNSAT
+UNSAT
+UNSAT
+UNSAT
+UNSAT
+UNSAT
+UNSAT
+UNSAT

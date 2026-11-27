@@ -1,0 +1,22 @@
+== toolchain ==
+Yosys 0.67+post (git sha1 b8e7da6f40ae8f552c116bf6c359b07c6533e159, Release, GNU /usr/bin/c++ 13.3.0)
+rIC3 1.5.2
+
+== input hashes (monitor must equal the live record's sha256) ==
+6e9691ef026ff758e7a0b943bdec3d04aa49e84fb87b73227621b1661a469c18  verification/formal/no_data_dependent_latency.sv
+5a9263ffc09c9bfcb34d4302b6cf4ef6dc91a8150a241011772f1a4e04dd46a6  verification/formal/formal_top.v
+d4bab243a80af56a41b8ef730bc0ecbee889f2c02f4587311d6f9f694636437a  rtl/protocol_core.v
+== [1/5] real core: AIGER export + rIC3 multi-prop unbounded proof (8 properties) ==
+real core (AIGER multi-prop): rIC3 PROVED all 8 assertions UNBOUNDED
+== [2/5] real core: word-level BTOR2 export + rIC3 IC3 unbounded proof ==
+real core (BTOR2 ic3): rIC3 PROVED all 8 assertions UNBOUNDED
+== [3/5] real core: rIC3 BMC to depth 35 (expect no counterexample) ==
+real core (BMC): PASS through depth 35
+== [4/5] real-core WAIT mutant (WAIT stall cut to 1 cycle when ui_in == 0xA5): expect SAT ==
+core WAIT mutant: rIC3 DISPROVED mutant as required
+== [4b/5] real-core control-space mutant (2-cycle access stalls while ui_in == 0xA5, DR 0012): expect SAT ==
+core control-space mutant: rIC3 DISPROVED mutant as required
+== [4c/5] real-core P1 mutant (WCTL CRC_BYTE stall cut to 1 cycle when ui_in == 0xA5, DR 0015): expect SAT ==
+core P1 mutant: rIC3 DISPROVED mutant as required
+
+RESULT: all expectations met (rIC3 unbounded AIGER + BTOR2 proofs, BMC depth 35 pass, and all 3 core mutants disproved)

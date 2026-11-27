@@ -1,0 +1,23 @@
+[17:45:08 INFO] the model to be checked: <art>/load-seq.aig
+[17:45:08 INFO] origin ts has 651 vars, 70 inputs, 108 latches, 0 constraints, 1871 clauses and 5410 lits in cnf
+[17:45:08 INFO] trivial simplified ts: 432 vars, 51 inputs, 108 latches, 0 constraints, 1635 clauses and 5796 lits in cnf
+[17:45:08 INFO] scorr: eliminates 6 latchs out of 108 in 0.01s
+[17:45:08 INFO] scorr: simplified ts: 367 vars, 3 inputs, 102 latches, 0 constraints, 1420 clauses and 4797 lits in cnf
+[17:45:08 INFO] frts: eliminates 2 out of 367 vars in 0.00s
+[17:45:08 INFO] frts: simplified ts: 353 vars, 3 inputs, 102 latches, 0 constraints, 1392 clauses and 4735 lits in cnf
+[17:45:08 INFO] preprocessed ts has 353 vars, 3 inputs, 102 latches, 0 constraints, 1392 clauses and 4735 lits in cnf
+[17:45:08 INFO] trivial simplified ts: 352 vars, 3 inputs, 102 latches, 0 constraints, 1390 clauses and 4734 lits in cnf
+[17:45:08 INFO] preprocessed ts has 352 vars, 3 inputs, 102 latches, 0 constraints, 1390 clauses and 4734 lits in cnf
+[17:45:08 INFO] trivial simplified ts: 352 vars, 3 inputs, 102 latches, 0 constraints, 1390 clauses and 4734 lits in cnf
+[17:45:08 INFO] preprocessed ts has 352 vars, 3 inputs, 102 latches, 0 constraints, 1390 clauses and 4734 lits in cnf
+[17:45:09 INFO] trivial simplified ts: 352 vars, 3 inputs, 102 latches, 0 constraints, 1390 clauses and 4734 lits in cnf
+[17:45:09 INFO] preprocessed ts has 352 vars, 3 inputs, 102 latches, 0 constraints, 1390 clauses and 4734 lits in cnf
+[17:45:09 INFO] trivial simplified ts: 352 vars, 3 inputs, 102 latches, 0 constraints, 1390 clauses and 4734 lits in cnf
+[17:45:09 INFO] preprocessed ts has 352 vars, 3 inputs, 102 latches, 0 constraints, 1390 clauses and 4734 lits in cnf
+[17:45:09 INFO] trivial simplified ts: 352 vars, 3 inputs, 102 latches, 0 constraints, 1390 clauses and 4734 lits in cnf
+[17:45:09 INFO] preprocessed ts has 352 vars, 3 inputs, 102 latches, 0 constraints, 1390 clauses and 4734 lits in cnf
+UNSAT
+UNSAT
+UNSAT
+UNSAT
+UNSAT

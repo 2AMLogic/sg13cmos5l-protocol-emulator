@@ -1,0 +1,45 @@
+== toolchain ==
+Yosys 0.67+post (git sha1 b8e7da6f40ae8f552c116bf6c359b07c6533e159, Release, GNU /usr/bin/c++ 13.3.0)
+Z3 version 5.4.1 - 64 bit
+yosys-smtbmc [options] <yosys_smt2_output>
+rIC3 1.5.2
+
+== input hashes (no_data_dependent_latency.sv stays byte-identical) ==
+6e9691ef026ff758e7a0b943bdec3d04aa49e84fb87b73227621b1661a469c18  verification/formal/no_data_dependent_latency.sv
+3b92cab2f0f4d18ee04d467b4cfbb85e300d23f4abb32a3070b69fa629fbfa94  verification/formal/serial_load_latency.sv
+7862a78c839e426954623806d1ab423cc03baee55a1a3441255862212c82ec4d  verification/formal/formal_top_load.v
+2b08865ab24d6bac84b390dfa76bab6686b572ba8f19124130bfc34e93dff637  rtl/protocol_program_memory.v
+d4bab243a80af56a41b8ef730bc0ecbee889f2c02f4587311d6f9f694636437a  rtl/protocol_core.v
+
+== [1/7] standalone loader (formal_top_load_seq): BMC depth 60 + covers + ABC PDR + rIC3 ==
+standalone loader BMC: PASS (depth 60)
+standalone loader covers: all reachable
+standalone loader: ABC PDR PROVED all 5 assertions UNBOUNDED
+standalone loader: rIC3 PROVED all 5 assertions UNBOUNDED
+
+== [2/7] integrated loader + 8-word SRAM + core (formal_top_load): BMC + 14 covers + ABC PDR (13/13) + rIC3 ==
+Warning: Replacing memory \regs with list of registers. See rtl/protocol_core.v:620
+integrated loader+core BMC: PASS (depth 14)
+integrated loader+core covers: all reachable (depth 40)
+integrated loader+core (8 core + 5 load assertions): ABC PDR PROVED all 13 assertions UNBOUNDED
+integrated loader+core (no_data_dependent_latency): rIC3 PROVED all 8 assertions UNBOUNDED
+
+== [3/7] loader mutant exit-stall (load exit delayed while serial_in is high) ==
+mutant exit-stall: Z3 BMC counterexample found as required
+mutant exit-stall: ABC PDR disproved 3 of 5 assertions as required
+mutant exit-stall: rIC3 disproved mutant as required
+== [4/7] loader mutant bit-stall (intra-word shift stalls at bit 7 when serial_in is high) ==
+mutant bit-stall: Z3 BMC counterexample found as required
+mutant bit-stall: ABC PDR disproved 3 of 5 assertions as required
+mutant bit-stall: rIC3 disproved mutant as required
+== [5/7] loader mutant addr-stall (commit write-address stalls when load_word == 0xA5A5) ==
+mutant addr-stall: Z3 BMC counterexample found as required
+mutant addr-stall: ABC PDR disproved 2 of 5 assertions as required
+mutant addr-stall: rIC3 disproved mutant as required
+== [6/7] integrated end-to-end mutant check (loader exit-stall disproved via integrated model) ==
+integrated mutant exit-stall: ABC PDR disproved 4 of 13 assertions as required
+integrated mutant exit-stall: rIC3 disproved mutant as required
+== [7/7] last-word write at the SRAM pins ==
+Final-write replay: original passed through saturation; suppressed SRAM write failed serial_commit
+
+RESULT: all expectations met (standalone + integrated shift-in proofs closed, covers reached, all loader mutants disproved)

@@ -1,0 +1,60 @@
+[00:46:36 INFO] the model to be checked: <art>/mut-bit.aig
+[00:46:36 INFO] origin ts has 687 vars, 74 inputs, 117 latches, 0 constraints, 1973 clauses and 5711 lits in cnf
+[00:46:36 INFO] trivial simplified ts: 452 vars, 55 inputs, 117 latches, 0 constraints, 1709 clauses and 6050 lits in cnf
+[00:46:36 INFO] scorr: eliminates 6 latchs out of 117 in 0.02s
+[00:46:36 INFO] scorr: simplified ts: 386 vars, 7 inputs, 111 latches, 0 constraints, 1489 clauses and 5035 lits in cnf
+[00:46:36 INFO] frts: eliminates 1 out of 386 vars in 0.00s
+[00:46:36 INFO] frts: simplified ts: 373 vars, 7 inputs, 111 latches, 0 constraints, 1465 clauses and 4988 lits in cnf
+[00:46:36 INFO] preprocessed ts has 373 vars, 7 inputs, 111 latches, 0 constraints, 1465 clauses and 4988 lits in cnf
+[00:46:36 INFO] IC3 found no counterexample up to depth 0
+[00:46:36 INFO] IC3 found no counterexample up to depth 1
+[00:46:36 INFO] IC3 found no counterexample up to depth 2
+[00:46:36 INFO] IC3 found no counterexample up to depth 3
+[00:46:36 INFO] IC3 found no counterexample up to depth 4
+[00:46:36 INFO] IC3 found no counterexample up to depth 5
+[00:46:36 INFO] IC3 found no counterexample up to depth 6
+[00:46:36 INFO] IC3 found no counterexample up to depth 7
+[00:46:36 INFO] IC3 found no counterexample up to depth 8
+[00:46:36 INFO] IC3 found no counterexample up to depth 9
+[00:46:36 INFO] IC3 found no counterexample up to depth 10
+[00:46:36 INFO] IC3 found no counterexample up to depth 11
+[00:46:36 INFO] IC3 found no counterexample up to depth 12
+[00:46:36 INFO] IC3 found no counterexample up to depth 13
+[00:46:36 INFO] IC3 found no counterexample up to depth 14
+[00:46:36 INFO] IC3 found no counterexample up to depth 15
+[00:46:36 INFO] IC3 found a counterexample at depth 19
+[00:46:36 INFO] obligations: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 20, 101]
+[00:46:36 INFO] frames [18]: 111 5 5 4 4 6 4 4 3 9 7 7 13 10 23 19 60 16 
+[00:46:36 INFO] SolverStatistic {
+    num_solve: 5612,
+    avg_solve_time: 4.106µs,
+    avg_decide_var: 0.458335,
+    num_simplify_subsume: 0,
+    num_simplify_self_subsume: 0,
+}
+[00:46:36 INFO] Statistic {
+    time: 0.06s,
+    num_mic: 479,
+    avg_mic_cube_len: 2.465553,
+    avg_po_cube_len: 13.969938,
+    mic_drop: success: 272, fail: 893, success rate: 23.35%,
+    num_down: 1165,
+    num_down_sat: 979,
+    ctp: success: 0, fail: 453, success rate: 0.00%,
+    block: Block {
+        overall_time: 18.660979ms,
+        get_bad_time: 21 times in 16.522000µs,
+        blocked_time: 574 times in 3.150590ms,
+        get_pred_time: 5.64868ms,
+        mic_time: 12.484559ms,
+        push_time: 475.08µs,
+    },
+    propagate: Propagate {
+        overall_time: 4.319632ms,
+        push_inf_time: 4.892278ms,
+    },
+    xor_gen: success: 0, fail: 0, success rate: NaN%,
+    num_auxiliary_var: 0,
+    test: success: 0, fail: 0, success rate: NaN%,
+}
+SAT

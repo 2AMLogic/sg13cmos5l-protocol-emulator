@@ -1,0 +1,49 @@
+[18:40:27 INFO] the model to be checked: <art>/core-mutant-crcb.aig
+[18:40:27 INFO] origin ts has 4864 vars, 1177 inputs, 530 latches, 0 constraints, 13293 clauses and 39563 lits in cnf
+[18:40:27 INFO] trivial simplified ts: 3111 vars, 1112 inputs, 530 latches, 0 constraints, 10489 clauses and 41457 lits in cnf
+[18:40:28 INFO] scorr: eliminates 7 latchs out of 530 in 0.31s
+[18:40:28 INFO] scorr: simplified ts: 2820 vars, 891 inputs, 522 latches, 0 constraints, 9521 clauses and 37122 lits in cnf
+[18:40:28 INFO] frts: eliminates 14 out of 2820 vars in 0.01s
+[18:40:28 INFO] frts: simplified ts: 2755 vars, 891 inputs, 522 latches, 0 constraints, 9390 clauses and 37020 lits in cnf
+[18:40:28 INFO] preprocessed ts has 2755 vars, 891 inputs, 522 latches, 0 constraints, 9390 clauses and 37020 lits in cnf
+[18:40:28 INFO] IC3 found no counterexample up to depth 0
+[18:40:28 INFO] IC3 found no counterexample up to depth 1
+[18:40:28 INFO] IC3 found no counterexample up to depth 2
+[18:40:28 INFO] IC3 found no counterexample up to depth 3
+[18:40:28 INFO] IC3 found no counterexample up to depth 4
+[18:40:28 INFO] IC3 found a counterexample at depth 7
+[18:40:28 INFO] obligations: [1, 1, 1, 1, 1, 7, 96]
+[18:40:28 INFO] frames [7]: 522 2 1 29 127 111 21
+[18:40:28 INFO] SolverStatistic {
+    num_solve: 2595,
+    avg_solve_time: 24.923µs,
+    avg_decide_var: 0.111247,
+    num_simplify_subsume: 0,
+    num_simplify_self_subsume: 0,
+}
+[18:40:28 INFO] Statistic {
+    time: 0.56s,
+    num_mic: 317,
+    avg_mic_cube_len: 3.876972,
+    avg_po_cube_len: 23.915068,
+    mic_drop: success: 146, fail: 1058, success rate: 12.13%,
+    num_down: 1204,
+    num_down_sat: 1328,
+    ctp: success: 0, fail: 60, success rate: 0.00%,
+    block: Block {
+        overall_time: 101.233578ms,
+        get_bad_time: 12 times in 22.819000µs,
+        blocked_time: 353 times in 10.330176ms,
+        get_pred_time: 32.14544ms,
+        mic_time: 81.737274ms,
+        push_time: 543.144µs,
+    },
+    propagate: Propagate {
+        overall_time: 1.397409ms,
+        push_inf_time: 1.10994ms,
+    },
+    xor_gen: success: 0, fail: 0, success rate: NaN%,
+    num_auxiliary_var: 0,
+    test: success: 0, fail: 0, success rate: NaN%,
+}
+SAT

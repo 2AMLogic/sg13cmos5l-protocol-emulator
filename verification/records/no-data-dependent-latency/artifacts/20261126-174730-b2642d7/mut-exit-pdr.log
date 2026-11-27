@@ -1,0 +1,15 @@
+======== ABC command line "read_aiger <art>/mut-exit.aig; scorr; pdr -a -T 30"
+  2 : 0 28 37                                                             6    53      0.00 sec  CEX =   0
+Output 4 was asserted in frame  3 ( 3) (solved 1 out of 5 outputs).
+Output 2 was asserted in frame 15 (15) (solved 2 out of 5 outputs).
+Output 0 was asserted in frame 17 (17) (solved 3 out of 5 outputs).
+ 17 : 0 5 10 7 5 7 7 5 3 6 6 7 5 5 5 28 22 31                            21    75      0.04 sec  CEX =   3
+ 18 : 0 5 10 7 5 7 7 5 3 6 4 5 3 4 2 2 2 47 41                           20    79      0.05 sec  CEX =   3
+ 18 : 0 5 10 7 5 7 7 5 3 6 4 5 3 4 2 2 2 48 45                           18    82      0.05 sec  CEX =   3
+ 18 : 0 5 10 7 5 7 7 5 3 6 4 5 3 4 2 2 2 49 48                           18    85      0.06 sec  CEX =   3
+ 18 : 0 5 10 7 5 7 7 5 3 6 4 5 3 4 2 2 2 52 50                           18    88      0.06 sec  CEX =   3
+Invariant F[132] : 73 clauses with 0 flops (out of 102) (cex = 0, ave = 13.03)
+Verification of invariant with 73 clauses was successful.  Time =     0.00 sec
+Proved output 1 in frame -688404780 (converged).
+Proved output 3 in frame -688404772 (converged).
+Properties:  All = 5. Proved = 2. Disproved = 3. Undecided = 0.   Time =     0.64 sec

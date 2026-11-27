@@ -1,0 +1,64 @@
+[18:42:44 INFO] the model to be checked: <art>/load-integrated-coreprop.aig
+[18:42:44 INFO] origin ts has 5820 vars, 1361 inputs, 726 latches, 0 constraints, 15935 clauses and 48026 lits in cnf
+[18:42:44 INFO] trivial simplified ts: 3920 vars, 1286 inputs, 726 latches, 0 constraints, 12983 clauses and 50682 lits in cnf
+[18:42:45 INFO] scorr: eliminates 6 latchs out of 726 in 0.34s
+[18:42:45 INFO] scorr: simplified ts: 3290 vars, 866 inputs, 719 latches, 0 constraints, 11485 clauses and 45846 lits in cnf
+[18:42:45 INFO] frts: eliminates 23 out of 3290 vars in 0.01s
+[18:42:45 INFO] frts: simplified ts: 3212 vars, 866 inputs, 719 latches, 0 constraints, 11286 clauses and 45052 lits in cnf
+[18:42:45 INFO] preprocessed ts has 3212 vars, 866 inputs, 719 latches, 0 constraints, 11286 clauses and 45052 lits in cnf
+[18:42:45 INFO] IC3 found no counterexample up to depth 0
+[18:42:45 INFO] IC3 found no counterexample up to depth 1
+[18:42:45 INFO] IC3 found no counterexample up to depth 2
+[18:42:45 INFO] IC3 found no counterexample up to depth 3
+[18:42:45 INFO] IC3 found no counterexample up to depth 4
+[18:42:45 INFO] IC3 found no counterexample up to depth 5
+[18:42:46 INFO] IC3 found no counterexample up to depth 6
+[18:42:46 INFO] IC3 found no counterexample up to depth 7
+[18:42:46 INFO] IC3 found no counterexample up to depth 8
+[18:42:47 INFO] IC3 found no counterexample up to depth 9
+[18:42:47 INFO] IC3 found no counterexample up to depth 10
+[18:42:47 INFO] IC3 found no counterexample up to depth 11
+[18:42:47 INFO] IC3 found no counterexample up to depth 12
+[18:42:47 INFO] IC3 found no counterexample up to depth 13
+[18:42:47 INFO] IC3 found no counterexample up to depth 14
+[18:42:48 INFO] IC3 found no counterexample up to depth 15
+[18:42:48 INFO] IC3 found no counterexample up to depth 16
+[18:42:48 INFO] IC3 found no counterexample up to depth 17
+[18:42:48 INFO] IC3 found no counterexample up to depth 18
+[18:42:48 INFO] IC3 found no counterexample up to depth 19
+[18:42:48 INFO] IC3 proved the property
+[18:42:48 INFO] obligations: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1206]
+[18:42:48 INFO] frames [22]: 719 3 2 19 175 297 4 31 17 3 2 1 0 11 14 7 3 5 12 1211 0 176
+[18:42:48 INFO] SolverStatistic {
+    num_solve: 160287,
+    avg_solve_time: 29.373µs,
+    avg_decide_var: 0.107628,
+    num_simplify_subsume: 0,
+    num_simplify_self_subsume: 0,
+}
+[18:42:48 INFO] Statistic {
+    time: 3.74s,
+    num_mic: 2654,
+    avg_mic_cube_len: 5.867747,
+    avg_po_cube_len: 19.905546,
+    mic_drop: success: 1810, fail: 13416, success rate: 11.89%,
+    num_down: 15226,
+    num_down_sat: 17301,
+    ctp: success: 0, fail: 15833, success rate: 0.00%,
+    block: Block {
+        overall_time: 1.440745831s,
+        get_bad_time: 74 times in 2.074264ms,
+        blocked_time: 3691 times in 137.828780ms,
+        get_pred_time: 375.010618ms,
+        mic_time: 1.181219128s,
+        push_time: 34.802487ms,
+    },
+    propagate: Propagate {
+        overall_time: 816.992226ms,
+        push_inf_time: 974.110489ms,
+    },
+    xor_gen: success: 0, fail: 0, success rate: NaN%,
+    num_auxiliary_var: 0,
+    test: success: 0, fail: 0, success rate: NaN%,
+}
+UNSAT

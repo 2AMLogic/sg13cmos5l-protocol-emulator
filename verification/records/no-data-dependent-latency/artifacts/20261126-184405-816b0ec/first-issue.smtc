@@ -1,0 +1,6 @@
+state 1 2 4 15 16
+assume (= [ui_in] #x81)
+state 3 5:14 17
+assume (= [ui_in] #x80)
+state 18:21
+assume (= [ui_in] #x01)

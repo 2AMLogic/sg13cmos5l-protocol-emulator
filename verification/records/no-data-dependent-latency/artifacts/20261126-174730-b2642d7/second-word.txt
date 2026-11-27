@@ -1,0 +1,4 @@
+step 17: serial commit SRAM[0] = 0x0096
+step 33: serial commit SRAM[1] = 0x8098
+step 36: program fetch SRAM[1], MEN/REN=1, WEN/pm_re/pm_we=0
+step 37: PC=1, instr_word=obs_word=0x8098, core executing=1
