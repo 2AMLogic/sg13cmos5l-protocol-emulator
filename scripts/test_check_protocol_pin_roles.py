@@ -134,6 +134,15 @@ def expect_fail(fx: Fixture, needle: str, layer: str | None = None, *extra: str)
         assert f"[{layer}] FAIL" in out, f"layer {layer} did not fail:\n{out}"
 
 
+def concrete_mutation_case(
+    name: str, rel: str, old: str, new: str, needle: str
+) -> None:
+    @case(name)
+    def check(fx: Fixture) -> None:
+        fx.mutate(rel, old, new)
+        expect_fail(fx, needle, "concrete-firmware-bench")
+
+
 def expect_ordered(fx: Fixture, *needles: str) -> None:
     """The run fails with every `needle` among the concrete layer's
     diagnostics, in this order."""
@@ -200,11 +209,14 @@ def _(fx):
     assert "port_uio_out resets" not in out, out
 
 
-@case("runtime pin mode: a top-level uio_oe that is not DR 0012's rule fails")
-def _(fx):
+concrete_mutation_case(
+    "runtime pin mode: a top-level uio_oe that is not DR 0012's rule fails",
+    TOP,
+    RUNTIME_OE,
     # open-drain no longer wins over push-pull
-    fx.mutate(TOP, RUNTIME_OE, "assign uio_oe = (uio_od & ~core_uio_out) | uio_dir;")
-    expect_fail(fx, "is not DR 0012's pin-mode rule", "concrete-firmware-bench")
+    "assign uio_oe = (uio_od & ~core_uio_out) | uio_dir;",
+    "is not DR 0012's pin-mode rule",
+)
 
 
 @case("DR 0020: the pre-#244 wiring (uio_oe from the pad data) is refused by name")
@@ -314,10 +326,13 @@ def _(fx):
                 "metadata-capability")
 
 
-@case("runtime pin mode: a pin-mode register that does not reset to 0 fails")
-def _(fx):
-    fx.mutate("rtl/protocol_core.v", "uio_od       <= 8'h00;", "uio_od       <= 8'h81;")
-    expect_fail(fx, "uio_od resets to 8'h81", "concrete-firmware-bench")
+concrete_mutation_case(
+    "runtime pin mode: a pin-mode register that does not reset to 0 fails",
+    "rtl/protocol_core.v",
+    "uio_od       <= 8'h00;",
+    "uio_od       <= 8'h81;",
+    "uio_od resets to 8'h81",
+)
 
 
 @case("runtime pin mode: an I2C program without the WCTL UIO_OD preamble is unwired")
@@ -436,10 +451,13 @@ def _(fx):
     assert "DR 0008's synthesis-time mask cannot serve it" in out, out
 
 
-@case("a top-level uio_oe that drives a table input pin fails")
-def _(fx):
-    fx.mutate(TOP, RUNTIME_OE, "assign uio_oe = 8'h10;")
-    expect_fail(fx, "uio[4] is an input in the table", "concrete-firmware-bench")
+concrete_mutation_case(
+    "a top-level uio_oe that drives a table input pin fails",
+    TOP,
+    RUNTIME_OE,
+    "assign uio_oe = 8'h10;",
+    "uio[4] is an input in the table",
+)
 
 
 @case("no broad allow-mismatch switch exists")
@@ -451,42 +469,53 @@ def _(fx):
 
 
 # ----------------------------------------------- concrete: assembly sites
-@case("UART TX mask LDI mutated")
-def _(fx):
-    fx.mutate("firmware/asm/uart_tx.asm", "LDI   R1, 1 ", "LDI   R1, 2 ")
-    expect_fail(fx, "firmware/asm/uart_tx.asm", "concrete-firmware-bench")
+concrete_mutation_case(
+    "UART TX mask LDI mutated",
+    "firmware/asm/uart_tx.asm",
+    "LDI   R1, 1 ",
+    "LDI   R1, 2 ",
+    "firmware/asm/uart_tx.asm",
+)
 
+concrete_mutation_case(
+    "UART program gains an OUT to uio_out",
+    "firmware/asm/uart_tx.asm",
+    "OUT   UO_OUT, R1       ; TX idles HIGH",
+    "OUT   UIO_OUT, R1       ; TX idles HIGH",
+    "OUT to port UIO_OUT",
+)
 
-@case("UART program gains an OUT to uio_out")
-def _(fx):
-    fx.mutate("firmware/asm/uart_tx.asm", "OUT   UO_OUT, R1       ; TX idles HIGH",
-              "OUT   UIO_OUT, R1       ; TX idles HIGH")
-    expect_fail(fx, "OUT to port UIO_OUT", "concrete-firmware-bench")
+concrete_mutation_case(
+    "WS2812 DIN pin image LDI mutated",
+    "firmware/asm/ws2812.asm",
+    "LDI   R2, 0x80 ",
+    "LDI   R2, 0x40 ",
+    "DIN pin image LDI R2, 0x40",
+)
 
+concrete_mutation_case(
+    "DALI receive samples must extract the isolated receiver pin",
+    "firmware/asm/dali_master.asm",
+    "SHF   R3, RIGHT",
+    "SHF   R3, LEFT",
+    "RX sample",
+)
 
-@case("WS2812 DIN pin image LDI mutated")
-def _(fx):
-    fx.mutate("firmware/asm/ws2812.asm", "LDI   R2, 0x80 ", "LDI   R2, 0x40 ")
-    expect_fail(fx, "DIN pin image LDI R2, 0x40", "concrete-firmware-bench")
+concrete_mutation_case(
+    "WS2812 program drives uo_out from another register",
+    "firmware/asm/ws2812.asm",
+    "OUT   UO_OUT, R1       ; s20",
+    "OUT   UO_OUT, R0       ; s20",
+    "OUT UO_OUT from R0",
+)
 
-
-@case("DALI receive samples must extract the isolated receiver pin")
-def _(fx):
-    fx.mutate("firmware/asm/dali_master.asm", "SHF   R3, RIGHT", "SHF   R3, LEFT")
-    expect_fail(fx, "RX sample", "concrete-firmware-bench")
-
-
-@case("WS2812 program drives uo_out from another register")
-def _(fx):
-    fx.mutate("firmware/asm/ws2812.asm", "OUT   UO_OUT, R1       ; s20", "OUT   UO_OUT, R0       ; s20")
-    expect_fail(fx, "OUT UO_OUT from R0", "concrete-firmware-bench")
-
-
-@case("WS2812 bench DIN bit moved")
-def _(fx):
-    fx.mutate("verification/test_firmware_ws2812.py", 'DIN_PIN, DIN_BIT = "uo_out", 7',
-              'DIN_PIN, DIN_BIT = "uo_out", 6')
-    expect_fail(fx, "DIN_PIN/DIN_BIT is uo_out[6]", "concrete-firmware-bench")
+concrete_mutation_case(
+    "WS2812 bench DIN bit moved",
+    "verification/test_firmware_ws2812.py",
+    'DIN_PIN, DIN_BIT = "uo_out", 7',
+    'DIN_PIN, DIN_BIT = "uo_out", 6',
+    "DIN_PIN/DIN_BIT is uo_out[6]",
+)
 
 
 @case("WS2812 DIN moved in the table alone")
@@ -498,17 +527,21 @@ def _(fx):
     expect_fail(fx, "firmware/asm/ws2812.asm", "concrete-firmware-bench")
 
 
-@case("DMX512 TX mask LDI mutated")
-def _(fx):
-    fx.mutate("firmware/asm/dmx512_tx.asm", "LDI   R1, 1 ", "LDI   R1, 2 ")
-    expect_fail(fx, "firmware/asm/dmx512_tx.asm", "concrete-firmware-bench")
+concrete_mutation_case(
+    "DMX512 TX mask LDI mutated",
+    "firmware/asm/dmx512_tx.asm",
+    "LDI   R1, 1 ",
+    "LDI   R1, 2 ",
+    "firmware/asm/dmx512_tx.asm",
+)
 
-
-@case("DMX512 bench TX pin mutated")
-def _(fx):
-    fx.mutate("verification/test_firmware_dmx512.py", 'TX_PIN, TX_BIT = "uo_out", 0',
-              'TX_PIN, TX_BIT = "uo_out", 1')
-    expect_fail(fx, "TX_PIN/TX_BIT is uo_out[1]", "concrete-firmware-bench")
+concrete_mutation_case(
+    "DMX512 bench TX pin mutated",
+    "verification/test_firmware_dmx512.py",
+    'TX_PIN, TX_BIT = "uo_out", 0',
+    'TX_PIN, TX_BIT = "uo_out", 1',
+    "TX_PIN/TX_BIT is uo_out[1]",
+)
 
 
 @case("DMX512 TX moved in the table alone")
@@ -520,32 +553,37 @@ def _(fx):
     expect_fail(fx, "firmware/asm/dmx512_tx.asm", "concrete-firmware-bench")
 
 
-@case("I2S SD mask LDI mutated")
-def _(fx):
-    fx.mutate("firmware/asm/i2s_tx.asm", "LDI   R1, 0x80          ; s9\n        AND   R1, R0            ; s10  SD for the MSB",
-              "LDI   R1, 0x40          ; s9\n        AND   R1, R0            ; s10  SD for the MSB")
-    expect_fail(fx, "firmware/asm/i2s_tx.asm", "concrete-firmware-bench")
+concrete_mutation_case(
+    "I2S SD mask LDI mutated",
+    "firmware/asm/i2s_tx.asm",
+    "LDI   R1, 0x80          ; s9\n        AND   R1, R0            ; s10  SD for the MSB",
+    "LDI   R1, 0x40          ; s9\n        AND   R1, R0            ; s10  SD for the MSB",
+    "firmware/asm/i2s_tx.asm",
+)
 
+concrete_mutation_case(
+    "I2S WS mask LDI mutated",
+    "firmware/asm/i2s_tx.asm",
+    "LDI   R2, 0x20          ; s11\n        OR    R1, R2            ; s12  + WS\n        LDI   R3, 1",
+    "LDI   R2, 0x10          ; s11\n        OR    R1, R2            ; s12  + WS\n        LDI   R3, 1",
+    "firmware/asm/i2s_tx.asm",
+)
 
-@case("I2S WS mask LDI mutated")
-def _(fx):
-    fx.mutate("firmware/asm/i2s_tx.asm", "LDI   R2, 0x20          ; s11\n        OR    R1, R2            ; s12  + WS\n        LDI   R3, 1",
-              "LDI   R2, 0x10          ; s11\n        OR    R1, R2            ; s12  + WS\n        LDI   R3, 1")
-    expect_fail(fx, "firmware/asm/i2s_tx.asm", "concrete-firmware-bench")
+concrete_mutation_case(
+    "I2S pin driven from a register other than R1",
+    "firmware/asm/i2s_tx.asm",
+    "OUT   UO_OUT, R1        ; s8   BCLK rises\n        LDI   R1, 0x80          ; s9\n        AND   R1, R0            ; s10  SD for the MSB",
+    "OUT   UO_OUT, R2        ; s8   BCLK rises\n        LDI   R1, 0x80          ; s9\n        AND   R1, R0            ; s10  SD for the MSB",
+    "OUT UO_OUT from R2",
+)
 
-
-@case("I2S pin driven from a register other than R1")
-def _(fx):
-    fx.mutate("firmware/asm/i2s_tx.asm", "OUT   UO_OUT, R1        ; s8   BCLK rises\n        LDI   R1, 0x80          ; s9\n        AND   R1, R0            ; s10  SD for the MSB",
-              "OUT   UO_OUT, R2        ; s8   BCLK rises\n        LDI   R1, 0x80          ; s9\n        AND   R1, R0            ; s10  SD for the MSB")
-    expect_fail(fx, "OUT UO_OUT from R2", "concrete-firmware-bench")
-
-
-@case("I2S bench BCLK pin mutated")
-def _(fx):
-    fx.mutate("verification/test_firmware_i2s.py", 'BCLK_PIN, BCLK_BIT = "uo_out", 6',
-              'BCLK_PIN, BCLK_BIT = "uo_out", 4')
-    expect_fail(fx, "BCLK_PIN/BCLK_BIT is uo_out[4]", "concrete-firmware-bench")
+concrete_mutation_case(
+    "I2S bench BCLK pin mutated",
+    "verification/test_firmware_i2s.py",
+    'BCLK_PIN, BCLK_BIT = "uo_out", 6',
+    'BCLK_PIN, BCLK_BIT = "uo_out", 4',
+    "BCLK_PIN/BCLK_BIT is uo_out[4]",
+)
 
 
 @case("I2S WS moved in the table alone")
@@ -557,20 +595,23 @@ def _(fx):
     expect_fail(fx, "firmware/asm/i2s_tx.asm", "concrete-firmware-bench")
 
 
-@case("NEC IR carrier-image LDI mutated")
-def _(fx):
-    fx.mutate("firmware/asm/nec_ir.asm", "LDI   R1, 0x80        ; 1   carrier-high image / bit-7 mask",
-              "LDI   R1, 0x40        ; 1   carrier-high image / bit-7 mask")
+concrete_mutation_case(
+    "NEC IR carrier-image LDI mutated",
+    "firmware/asm/nec_ir.asm",
+    "LDI   R1, 0x80        ; 1   carrier-high image / bit-7 mask",
+    "LDI   R1, 0x40        ; 1   carrier-high image / bit-7 mask",
     # the diagnostic must still identify the carrier image through the
     # #526 consolidation, not just any wrong mask
-    expect_fail(fx, "IR_TX mask LDI R1, 0x40", "concrete-firmware-bench")
+    "IR_TX mask LDI R1, 0x40",
+)
 
-
-@case("NEC IR bench TX pin mutated")
-def _(fx):
-    fx.mutate("verification/test_firmware_nec_ir.py", 'TX_PIN, TX_BIT = "uo_out", 7',
-              'TX_PIN, TX_BIT = "uo_out", 6')
-    expect_fail(fx, "TX_PIN/TX_BIT is uo_out[6]", "concrete-firmware-bench")
+concrete_mutation_case(
+    "NEC IR bench TX pin mutated",
+    "verification/test_firmware_nec_ir.py",
+    'TX_PIN, TX_BIT = "uo_out", 7',
+    'TX_PIN, TX_BIT = "uo_out", 6',
+    "TX_PIN/TX_BIT is uo_out[6]",
+)
 
 
 @case("NEC IR TX moved in the table alone")
@@ -582,27 +623,29 @@ def _(fx):
     expect_fail(fx, "firmware/asm/nec_ir.asm", "concrete-firmware-bench")
 
 
-@case("Modbus RX mask LDI mutated")
-def _(fx):
-    fx.mutate("firmware/asm/modbus_rtu.asm",
-              "main:   LDI   R1, 2            ; RX mask (ui_in bit 1) and decrement",
-              "main:   LDI   R1, 4            ; RX mask (ui_in bit 1) and decrement")
-    expect_fail(fx, "RX bit mask LDI R1, 4", "concrete-firmware-bench")
+concrete_mutation_case(
+    "Modbus RX mask LDI mutated",
+    "firmware/asm/modbus_rtu.asm",
+    "main:   LDI   R1, 2            ; RX mask (ui_in bit 1) and decrement",
+    "main:   LDI   R1, 4            ; RX mask (ui_in bit 1) and decrement",
+    "RX bit mask LDI R1, 4",
+)
 
+concrete_mutation_case(
+    "Modbus TX image writes a pin outside TX/DE",
+    "firmware/asm/modbus_rtu.asm",
+    "        LDI   R2, 1            ; idle image: TX high, DE low",
+    "        LDI   R2, 5            ; idle image: TX high, DE low",
+    "can write 0x05",
+)
 
-@case("Modbus TX image writes a pin outside TX/DE")
-def _(fx):
-    fx.mutate("firmware/asm/modbus_rtu.asm",
-              "        LDI   R2, 1            ; idle image: TX high, DE low",
-              "        LDI   R2, 5            ; idle image: TX high, DE low")
-    expect_fail(fx, "can write 0x05", "concrete-firmware-bench")
-
-
-@case("Modbus bench DE pin mutated")
-def _(fx):
-    fx.mutate("verification/test_firmware_modbus.py", "TX_BIT, DE_BIT = 0, 1",
-              "TX_BIT, DE_BIT = 0, 2")
-    expect_fail(fx, "DE_BIT is uo_out[2]", "concrete-firmware-bench")
+concrete_mutation_case(
+    "Modbus bench DE pin mutated",
+    "verification/test_firmware_modbus.py",
+    "TX_BIT, DE_BIT = 0, 1",
+    "TX_BIT, DE_BIT = 0, 2",
+    "DE_BIT is uo_out[2]",
+)
 
 
 @case("Modbus DE moved in the table alone")
@@ -614,44 +657,53 @@ def _(fx):
     expect_fail(fx, "firmware/asm/modbus_rtu.asm", "concrete-firmware-bench")
 
 
-@case("PS/2 released-bus image mutated")
-def _(fx):
-    fx.mutate("firmware/asm/ps2_device.asm", "LDI   R3, 0x0C\n        OUT   UIO_OUT, R3      ; both lines released ...",
-              "LDI   R3, 0x0D\n        OUT   UIO_OUT, R3      ; both lines released ...")
-    expect_fail(fx, "released-bus image 0x0D", "concrete-firmware-bench")
+concrete_mutation_case(
+    "PS/2 released-bus image mutated",
+    "firmware/asm/ps2_device.asm",
+    "LDI   R3, 0x0C\n        OUT   UIO_OUT, R3      ; both lines released ...",
+    "LDI   R3, 0x0D\n        OUT   UIO_OUT, R3      ; both lines released ...",
+    "released-bus image 0x0D",
+)
 
+concrete_mutation_case(
+    "PS/2 CLK mask mutated",
+    "firmware/asm/ps2_device.asm",
+    "LDI   R3, 0x04\n        OR    R3, R1\n        OUT   UIO_OUT, R3      ; CLK stays",
+    "LDI   R3, 0x02\n        OR    R3, R1\n        OUT   UIO_OUT, R3      ; CLK stays",
+    "CLK mask 0x02",
+)
 
-@case("PS/2 CLK mask mutated")
-def _(fx):
-    fx.mutate("firmware/asm/ps2_device.asm", "LDI   R3, 0x04\n        OR    R3, R1\n        OUT   UIO_OUT, R3      ; CLK stays",
-              "LDI   R3, 0x02\n        OR    R3, R1\n        OUT   UIO_OUT, R3      ; CLK stays")
-    expect_fail(fx, "CLK mask 0x02", "concrete-firmware-bench")
+concrete_mutation_case(
+    "PS/2 stop-bit image is not the DATA mask",
+    "firmware/asm/ps2_device.asm",
+    "LDI   R1, 8            ; stop bit",
+    "LDI   R1, 0            ; stop bit",
+    "the pure pin images in LDI R1 are [0]",
+)
 
+concrete_mutation_case(
+    "PS/2 data bit moved by the wrong number of doublings",
+    "firmware/asm/ps2_device.asm",
+    "        ADD   R3, R3\n        ADD   R3, R3\n        ADD   R3, R3\n",
+    "        ADD   R3, R3\n        ADD   R3, R3\n",
+    "a bit is moved by 2 doubling(s)",
+)
 
-@case("PS/2 stop-bit image is not the DATA mask")
-def _(fx):
-    fx.mutate("firmware/asm/ps2_device.asm", "LDI   R1, 8            ; stop bit", "LDI   R1, 0            ; stop bit")
-    expect_fail(fx, "the pure pin images in LDI R1 are [0]", "concrete-firmware-bench")
+concrete_mutation_case(
+    "PS/2 bit-isolation shifts do not match the table's pin",
+    "firmware/asm/ps2_device.asm",
+    "        SHF   R3, LEFT         ; CLK (bit 2) -> bit 7\n",
+    "        SHF   R3, LEFT\n        SHF   R3, LEFT         ; CLK (bit 2) -> bit 7\n",
+    "which is none of the recipes",
+)
 
-
-@case("PS/2 data bit moved by the wrong number of doublings")
-def _(fx):
-    fx.mutate("firmware/asm/ps2_device.asm", "        ADD   R3, R3\n        ADD   R3, R3\n        ADD   R3, R3\n",
-              "        ADD   R3, R3\n        ADD   R3, R3\n")
-    expect_fail(fx, "a bit is moved by 2 doubling(s)", "concrete-firmware-bench")
-
-
-@case("PS/2 bit-isolation shifts do not match the table's pin")
-def _(fx):
-    fx.mutate("firmware/asm/ps2_device.asm", "        SHF   R3, LEFT         ; CLK (bit 2) -> bit 7\n",
-              "        SHF   R3, LEFT\n        SHF   R3, LEFT         ; CLK (bit 2) -> bit 7\n")
-    expect_fail(fx, "which is none of the recipes", "concrete-firmware-bench")
-
-
-@case("PS/2 bench pin constants moved")
-def _(fx):
-    fx.mutate("verification/test_firmware_ps2.py", "CLK_BIT, DATA_BIT = 2, 3", "CLK_BIT, DATA_BIT = 2, 4")
-    expect_fail(fx, "DATA_BIT is uio[4]", "concrete-firmware-bench")
+concrete_mutation_case(
+    "PS/2 bench pin constants moved",
+    "verification/test_firmware_ps2.py",
+    "CLK_BIT, DATA_BIT = 2, 3",
+    "CLK_BIT, DATA_BIT = 2, 4",
+    "DATA_BIT is uio[4]",
+)
 
 
 @case("PS/2 pins moved in the table alone")
@@ -672,43 +724,45 @@ def _(fx):
     assert code == 1 and "ps2_device.asm" in out and "UIO_OD" in out, out
 
 
-@case("SWD preloaded image pair mutated")
-def _(fx):
-    fx.mutate("firmware/asm/swd_probe.asm",
-              "        LDI   R0, 0x08         ; image: SWCLK low, SWDIO high",
-              "        LDI   R0, 0x09         ; (mutated)")
-    expect_fail(fx, "the preloaded images are R0=9", "concrete-firmware-bench")
+concrete_mutation_case(
+    "SWD preloaded image pair mutated",
+    "firmware/asm/swd_probe.asm",
+    "        LDI   R0, 0x08         ; image: SWCLK low, SWDIO high",
+    "        LDI   R0, 0x09         ; (mutated)",
+    "the preloaded images are R0=9",
+)
 
+concrete_mutation_case(
+    "SWD per-bit pin image is not an SWCLK x SWDIO combination",
+    "firmware/asm/swd_probe.asm",
+    "        LDI   R3, 0x00\n        OUT   UIO_OUT, R3      ; SWDIO falls low",
+    "        LDI   R3, 0x10         ; (mutated)\n        OUT   UIO_OUT, R3      ; SWDIO falls low",
+    "is not one of",
+)
 
-@case("SWD per-bit pin image is not an SWCLK x SWDIO combination")
-def _(fx):
-    fx.mutate("firmware/asm/swd_probe.asm",
-              "        LDI   R3, 0x00\n        OUT   UIO_OUT, R3      ; SWDIO falls low",
-              "        LDI   R3, 0x10         ; (mutated)\n        OUT   UIO_OUT, R3      ; SWDIO falls low")
-    expect_fail(fx, "is not one of", "concrete-firmware-bench")
+concrete_mutation_case(
+    "SWD sample isolation does not use the SWDIO-mask register",
+    "firmware/asm/swd_probe.asm",
+    "        AND   R3, R0           ; keep the SWDIO bit (R0 = 0x08)",
+    "        AND   R3, R1           ; (mutated)",
+    "IN UIO_IN must be followed by",
+)
 
+concrete_mutation_case(
+    "SWD UIO_DIR release value mutated",
+    "firmware/asm/swd_probe.asm",
+    "        LDI   R3, 0x04         ; direction: SWCLK only",
+    "        LDI   R3, 0x05         ; (mutated)",
+    "WCTL UIO_DIR writes 0x05",
+)
 
-@case("SWD sample isolation does not use the SWDIO-mask register")
-def _(fx):
-    fx.mutate("firmware/asm/swd_probe.asm",
-              "        AND   R3, R0           ; keep the SWDIO bit (R0 = 0x08)",
-              "        AND   R3, R1           ; (mutated)")
-    expect_fail(fx, "IN UIO_IN must be followed by", "concrete-firmware-bench")
-
-
-@case("SWD UIO_DIR release value mutated")
-def _(fx):
-    fx.mutate("firmware/asm/swd_probe.asm",
-              "        LDI   R3, 0x04         ; direction: SWCLK only",
-              "        LDI   R3, 0x05         ; (mutated)")
-    expect_fail(fx, "WCTL UIO_DIR writes 0x05", "concrete-firmware-bench")
-
-
-@case("SWD bench pin constants moved")
-def _(fx):
-    fx.mutate("verification/test_firmware_swd.py",
-              "SWCLK_BIT, SWDIO_BIT = 2, 3", "SWCLK_BIT, SWDIO_BIT = 2, 4")
-    expect_fail(fx, "SWDIO_BIT is uio[4]", "concrete-firmware-bench")
+concrete_mutation_case(
+    "SWD bench pin constants moved",
+    "verification/test_firmware_swd.py",
+    "SWCLK_BIT, SWDIO_BIT = 2, 3",
+    "SWCLK_BIT, SWDIO_BIT = 2, 4",
+    "SWDIO_BIT is uio[4]",
+)
 
 
 @case("SWD pins moved in the table alone")
@@ -730,34 +784,37 @@ def _(fx):
     assert code == 1 and "swd_probe.asm" in out and "UIO_DIR" in out, out
 
 
-@case("1-Wire released-DQ image mutated")
-def _(fx):
-    fx.mutate("firmware/asm/onewire_master.asm",
-              "        LDI   R3, 0x08\n        OUT   UIO_OUT, R3      ; DQ released ...",
-              "        LDI   R3, 0x09\n        OUT   UIO_OUT, R3      ; DQ released ...")
-    expect_fail(fx, "pin image 0x09", "concrete-firmware-bench")
+concrete_mutation_case(
+    "1-Wire released-DQ image mutated",
+    "firmware/asm/onewire_master.asm",
+    "        LDI   R3, 0x08\n        OUT   UIO_OUT, R3      ; DQ released ...",
+    "        LDI   R3, 0x09\n        OUT   UIO_OUT, R3      ; DQ released ...",
+    "pin image 0x09",
+)
 
+concrete_mutation_case(
+    "1-Wire assert image is not 0",
+    "firmware/asm/onewire_master.asm",
+    "wrent:  LDI   R3, 1            ; walk mask: bit 0 first (1-Wire is LSB first)\nwrbit:  LDI   R1, 0\n        OUT   UIO_OUT, R1      ; falling edge: the slot starts",
+    "wrent:  LDI   R3, 1            ; walk mask: bit 0 first (1-Wire is LSB first)\nwrbit:  LDI   R1, 2\n        OUT   UIO_OUT, R1      ; falling edge: the slot starts",
+    "pin image 2",
+)
 
-@case("1-Wire assert image is not 0")
-def _(fx):
-    fx.mutate("firmware/asm/onewire_master.asm",
-              "wrent:  LDI   R3, 1            ; walk mask: bit 0 first (1-Wire is LSB first)\nwrbit:  LDI   R1, 0\n        OUT   UIO_OUT, R1      ; falling edge: the slot starts",
-              "wrent:  LDI   R3, 1            ; walk mask: bit 0 first (1-Wire is LSB first)\nwrbit:  LDI   R1, 2\n        OUT   UIO_OUT, R1      ; falling edge: the slot starts")
-    expect_fail(fx, "pin image 2", "concrete-firmware-bench")
+concrete_mutation_case(
+    "1-Wire DQ sample mask mutated",
+    "firmware/asm/onewire_master.asm",
+    "        IN    R3, UIO_IN\n        LDI   R1, 0x08\n        AND   R3, R1           ; DQ (bit 3) isolated",
+    "        IN    R3, UIO_IN\n        LDI   R1, 0x04\n        AND   R3, R1           ; DQ (bit 3) isolated",
+    "masked with 0x04",
+)
 
-
-@case("1-Wire DQ sample mask mutated")
-def _(fx):
-    fx.mutate("firmware/asm/onewire_master.asm",
-              "        IN    R3, UIO_IN\n        LDI   R1, 0x08\n        AND   R3, R1           ; DQ (bit 3) isolated",
-              "        IN    R3, UIO_IN\n        LDI   R1, 0x04\n        AND   R3, R1           ; DQ (bit 3) isolated")
-    expect_fail(fx, "masked with 0x04", "concrete-firmware-bench")
-
-
-@case("1-Wire bench DQ_BIT moved")
-def _(fx):
-    fx.mutate("verification/test_firmware_onewire.py", "DQ_BIT = 3", "DQ_BIT = 2")
-    expect_fail(fx, "DQ_BIT is uio[2]", "concrete-firmware-bench")
+concrete_mutation_case(
+    "1-Wire bench DQ_BIT moved",
+    "verification/test_firmware_onewire.py",
+    "DQ_BIT = 3",
+    "DQ_BIT = 2",
+    "DQ_BIT is uio[2]",
+)
 
 
 @case("1-Wire DQ moved in the table alone")
@@ -790,11 +847,13 @@ def _(fx):
             f.close()
 
 
-@case("UART RX sampled from the wrong port")
-def _(fx):
-    fx.mutate("firmware/asm/uart_rx.asm", "IN    R2, UI_IN        ; SAMPLE (bit centre)",
-              "IN    R2, UIO_IN        ; SAMPLE (bit centre)")
-    expect_fail(fx, "IN from port UIO_IN", "concrete-firmware-bench")
+concrete_mutation_case(
+    "UART RX sampled from the wrong port",
+    "firmware/asm/uart_rx.asm",
+    "IN    R2, UI_IN        ; SAMPLE (bit centre)",
+    "IN    R2, UIO_IN        ; SAMPLE (bit centre)",
+    "IN from port UIO_IN",
+)
 
 
 @case("table moves UART RX back to ui_in[0]: RX programs fail by file")
@@ -829,26 +888,30 @@ def _(fx):
             f.close()
 
 
-@case("UART RX received byte copied to uio_out as well as uo_out")
-def _(fx):
-    fx.mutate("firmware/asm/uart_rx.asm", "OUT   UO_OUT, R0       ; emit the received byte",
-              "OUT   UO_OUT, R0       ; emit the received byte\n        OUT   UIO_OUT, R0")
-    expect_fail(fx, "OUT UIO_OUT, R0 is not a recognised bench-debug write", "concrete-firmware-bench")
+concrete_mutation_case(
+    "UART RX received byte copied to uio_out as well as uo_out",
+    "firmware/asm/uart_rx.asm",
+    "OUT   UO_OUT, R0       ; emit the received byte",
+    "OUT   UO_OUT, R0       ; emit the received byte\n        OUT   UIO_OUT, R0",
+    "OUT UIO_OUT, R0 is not a recognised bench-debug write",
+)
 
+concrete_mutation_case(
+    "UART RX arbitrary constant written to uio_out",
+    "firmware/asm/uart_rx.asm",
+    "LDI   R3, 0\n",
+    "LDI   R3, 0x7E\n",
+    "OUT UIO_OUT, R3 writes 0x7E; bench_debug.uart_rx allows only 0, "
+    "SAMPLE_MARK 0x02 and FRAME_ERROR 0x04",
+)
 
-@case("UART RX arbitrary constant written to uio_out")
-def _(fx):
-    fx.mutate("firmware/asm/uart_rx.asm", "LDI   R3, 0\n", "LDI   R3, 0x7E\n")
-    expect_fail(fx, "OUT UIO_OUT, R3 writes 0x7E; bench_debug.uart_rx allows only 0, "
-                    "SAMPLE_MARK 0x02 and FRAME_ERROR 0x04", "concrete-firmware-bench")
-
-
-@case("UART RX frame-error flag shifted onto an undeclared uio_out bit")
-def _(fx):
-    fx.mutate("firmware/asm/uart_rx.asm",
-              "SHF   R2, LEFT         ; -> UIO_OUT bit 2 (SHF leaves Z alone)",
-              "SHF   R2, RIGHT        ; -> UIO_OUT bit 2 (SHF leaves Z alone)")
-    expect_fail(fx, "is not a recognised bench-debug write", "concrete-firmware-bench")
+concrete_mutation_case(
+    "UART RX frame-error flag shifted onto an undeclared uio_out bit",
+    "firmware/asm/uart_rx.asm",
+    "SHF   R2, LEFT         ; -> UIO_OUT bit 2 (SHF leaves Z alone)",
+    "SHF   R2, RIGHT        ; -> UIO_OUT bit 2 (SHF leaves Z alone)",
+    "is not a recognised bench-debug write",
+)
 
 
 @case("table moves the UART RX debug bits: RX programs fail by file")
@@ -878,10 +941,13 @@ def _(fx):
         fx2.close()
 
 
-@case("UART TX 9600 mask LDI mutated")
-def _(fx):
-    fx.mutate("firmware/asm/uart_tx_9600.asm", "LDI   R1, 1", "LDI   R1, 2")
-    expect_fail(fx, "firmware/asm/uart_tx_9600.asm", "concrete-firmware-bench")
+concrete_mutation_case(
+    "UART TX 9600 mask LDI mutated",
+    "firmware/asm/uart_tx_9600.asm",
+    "LDI   R1, 1",
+    "LDI   R1, 2",
+    "firmware/asm/uart_tx_9600.asm",
+)
 
 
 @case("SPI idle image (CS bit) mutated in each mode")
@@ -898,18 +964,21 @@ def _(fx):
             f.close()
 
 
-@case("SPI MISO mask LDI mutated")
-def _(fx):
-    fx.mutate("firmware/asm/spi_mode0.asm", "LDI   R1, 0x04            ; MISO mask (uio_in bit 2)",
-              "LDI   R1, 0x01            ; MISO mask (uio_in bit 2)")
-    expect_fail(fx, "firmware/asm/spi_mode0.asm", "concrete-firmware-bench")
+concrete_mutation_case(
+    "SPI MISO mask LDI mutated",
+    "firmware/asm/spi_mode0.asm",
+    "LDI   R1, 0x04            ; MISO mask (uio_in bit 2)",
+    "LDI   R1, 0x01            ; MISO mask (uio_in bit 2)",
+    "firmware/asm/spi_mode0.asm",
+)
 
-
-@case("SPI pin image written to uo_out instead of uio_out")
-def _(fx):
-    fx.mutate("firmware/asm/spi_mode0.asm", "OUT   UIO_OUT, R2          ; CS falls",
-              "OUT   UO_OUT, R2          ; CS falls")
-    expect_fail(fx, "constant pin image 0x00 written to UO_OUT", "concrete-firmware-bench")
+concrete_mutation_case(
+    "SPI pin image written to uo_out instead of uio_out",
+    "firmware/asm/spi_mode0.asm",
+    "OUT   UIO_OUT, R2          ; CS falls",
+    "OUT   UO_OUT, R2          ; CS falls",
+    "constant pin image 0x00 written to UO_OUT",
+)
 
 
 @case("SPI MISO sampled from the wrong port")
@@ -930,24 +999,29 @@ def _(fx):
     expect_fail(fx, "firmware/asm/spi_mode1.asm", "concrete-firmware-bench")
 
 
-@case("I2C idle image mutated (SDA moved)")
-def _(fx):
-    fx.mutate("firmware/asm/i2c_fast.asm", "LDI   R3, 0x0C        ; both lines released",
-              "LDI   R3, 0x0A        ; both lines released")
-    expect_fail(fx, "bus-idle image", "concrete-firmware-bench")
+concrete_mutation_case(
+    "I2C idle image mutated (SDA moved)",
+    "firmware/asm/i2c_fast.asm",
+    "LDI   R3, 0x0C        ; both lines released",
+    "LDI   R3, 0x0A        ; both lines released",
+    "bus-idle image",
+)
 
+concrete_mutation_case(
+    "I2C SDA mask register LDI mutated",
+    "firmware/asm/i2c_std.asm",
+    "LDI   R1, 0x08",
+    "LDI   R1, 0x40",
+    "firmware/asm/i2c_std.asm",
+)
 
-@case("I2C SDA mask register LDI mutated")
-def _(fx):
-    fx.mutate("firmware/asm/i2c_std.asm", "LDI   R1, 0x08", "LDI   R1, 0x40")
-    expect_fail(fx, "firmware/asm/i2c_std.asm", "concrete-firmware-bench")
-
-
-@case("I2C SCL poll mask mutated in a poll variant")
-def _(fx):
-    fx.mutate("firmware/asm/i2c_fast_sr_poll.asm", "LDI   R3, 0x04       ; poll mask",
-              "LDI   R3, 0x02       ; poll mask")
-    expect_fail(fx, "SCL poll mask", "concrete-firmware-bench")
+concrete_mutation_case(
+    "I2C SCL poll mask mutated in a poll variant",
+    "firmware/asm/i2c_fast_sr_poll.asm",
+    "LDI   R3, 0x04       ; poll mask",
+    "LDI   R3, 0x02       ; poll mask",
+    "SCL poll mask",
+)
 
 
 @case("I2C SCL poll mask register overwritten between its LDI and the poll")
@@ -1046,11 +1120,102 @@ def _(fx):
         )
 
 
-@case("I2C generator string literal mutated")
+concrete_mutation_case(
+    "I2C generator string literal mutated",
+    "firmware/tools/gen_i2c_sr.py",
+    '"LDI   R3, 0x04       ; poll mask"',
+    '"LDI   R3, 0x02       ; poll mask"',
+    "firmware/tools/gen_i2c_sr.py",
+)
+
+
+# Issue #638: `in_and_sites` took a sample's isolation mask from the nearest
+# write of the AND's mask register and, unless that write was an `LDI`,
+# skipped the site -- no error, no site counted. On `169fa5fd5` the
+# read-byte SDA sample masked with zero by `XOR R3, R3` passed as consistent
+# (792 sites against the clean fixture's 793, exit 0). A matched IN/AND
+# pair must count once and name whatever leaves the mask unreadable; both
+# cases compare the concrete site count with the clean fixture's, so a
+# sample that vanishes from the count fails without a hard-coded total.
+I2C_POLL = "firmware/asm/i2c_fast_sr_poll.asm"
+SDA_SAMPLE = "        IN    R2, UIO_IN     ; sample the bus"
+SDA_ISOLATE = "        AND   R2, R3         ; isolate SDA (bit 3)"
+
+
+def only_line(fx: Fixture, rel: str, line: str) -> int:
+    """The 1-based number of `line` in the fixture file; it MUST occur once."""
+    nos = [n for n, l in enumerate(fx.path(rel).read_text(encoding="utf-8").splitlines(), 1)
+           if l == line]
+    assert len(nos) == 1, f"{line!r} occurs at lines {nos} in {rel}; expected exactly one"
+    return nos[0]
+
+
+def concrete_sites(out: str) -> int:
+    """The concrete layer's `N site(s) checked` count of one run."""
+    m = re.search(r"\[concrete-firmware-bench\] (?:PASS|FAIL) \((\d+) site\(s\) checked\)", out)
+    assert m, f"no concrete-layer site count in:\n{out}"
+    return int(m.group(1))
+
+
+def unresolved_sample(rel: str, in_no: int, and_no: int, why: str) -> str:
+    """The diagnostic of a read-byte SDA sample whose mask cannot be read."""
+    return (f"ERROR: {rel}:{in_no}: IN UIO_IN at line {in_no} is masked by `AND R2, R3` "
+            f"at line {and_no} with an unresolved mask: {why}; the table's SDA pin mask is 0x08")
+
+
+def expect_consistency_fail(fx: Fixture) -> str:
+    """The run exits 1 with the concrete layer and consistency both failing."""
+    code, out = fx.run()
+    assert code == 1, f"expected exit 1, got {code}:\n{out}"
+    assert "[concrete-firmware-bench] FAIL" in out, (
+        f"layer concrete-firmware-bench did not fail:\n{out}")
+    assert "consistency (schema + metadata + concrete): FAIL" in out, out
+    return out
+
+
+@case("I2C read-byte SDA sample: the mask register overwritten before the AND fails")
 def _(fx):
-    fx.mutate("firmware/tools/gen_i2c_sr.py", '"LDI   R3, 0x04       ; poll mask"',
-              '"LDI   R3, 0x02       ; poll mask"')
-    expect_fail(fx, "firmware/tools/gen_i2c_sr.py", "concrete-firmware-bench")
+    xor = "        XOR   R3, R3"
+    _code, clean = fx.run()
+    fx.mutate(I2C_POLL, SDA_ISOLATE, xor + "\n" + SDA_ISOLATE)
+    out = expect_consistency_fail(fx)
+    in_no, xor_no, and_no = (only_line(fx, I2C_POLL, l) for l in (SDA_SAMPLE, xor, SDA_ISOLATE))
+    why = f"the nearest write of R3 is `XOR R3, R3` (line {xor_no}), not an `LDI`"
+    assert unresolved_sample(I2C_POLL, in_no, and_no, why) in out, out
+    assert concrete_sites(out) == concrete_sites(clean), out
+
+
+@case("I2C read-byte SDA sample: a lowercase XOR destination overwrites the mask")
+def _(fx):
+    fx.mutate(I2C_POLL, SDA_ISOLATE, "        XOR   r3, R3\n" + SDA_ISOLATE)
+    expect_fail(fx, "the nearest write of R3 is `XOR r3, R3`",
+                "concrete-firmware-bench", "--require-implemented")
+
+
+@case("I2C read-byte SDA sample: a lowercase AND mask operand finds the uppercase LDI")
+def _(fx):
+    fx.mutate(I2C_POLL, SDA_ISOLATE, SDA_ISOLATE.replace("R3", "r3"))
+    code, out = fx.run("--require-implemented")
+    assert code == 0, out
+    # An incorrect immediate must still reach this sample's mask comparison.
+    fx.mutate(I2C_POLL, "0x08       ; mask AND next SCL-low pins",
+              "0x04       ; mask AND next SCL-low pins")
+    expect_fail(fx, "is masked with 0x04 but the table's SDA pin mask is 0x08",
+                "concrete-firmware-bench", "--require-implemented")
+
+
+@case("I2C read-byte SDA sample: a mask register with no earlier write fails")
+def _(fx):
+    early = ("        IN    R2, UIO_IN     ; sample the bus, before any mask is written\n"
+             "        AND   R2, R3         ; isolate SDA (bit 3), before any mask is written\n")
+    setup = "        LDI   R3, 0x0C        ; both lines released: bus idle"
+    _code, clean = fx.run()
+    fx.mutate(I2C_POLL, setup, early + setup)
+    out = expect_consistency_fail(fx)
+    in_no, and_no = (only_line(fx, I2C_POLL, l) for l in early.splitlines())
+    assert unresolved_sample(I2C_POLL, in_no, and_no,
+                             "R3 has no earlier write in this file") in out, out
+    assert concrete_sites(out) == concrete_sites(clean) + 1, out
 
 
 # CAN 2.0A (issue #584): DR 0010's can section records that the image uses
@@ -1058,56 +1223,57 @@ def _(fx):
 # setup immediate LDI <reg>, 0x05 before the first write. Both guards need
 # negative evidence: a silent drift between can_2a.asm and the record must
 # not pass the checker.
-@case("CAN UIO_DIR scratch: an 8th WCTL site fails the DR 0010 record")
-def _(fx):
-    fx.mutate("firmware/asm/can_2a.asm",
-              "\tWCTL  UIO_DIR, R2\n\tRCTL  R1, PM_DATA_HI\n",
-              "\tWCTL  UIO_DIR, R2\n\tWCTL  UIO_DIR, R2\n\tRCTL  R1, PM_DATA_HI\n")
-    expect_fail(fx, "8 `WCTL UIO_DIR` sites but DR 0010's can section records 7",
-                "concrete-firmware-bench")
+concrete_mutation_case(
+    "CAN UIO_DIR scratch: an 8th WCTL site fails the DR 0010 record",
+    "firmware/asm/can_2a.asm",
+    "\tWCTL  UIO_DIR, R2\n\tRCTL  R1, PM_DATA_HI\n",
+    "\tWCTL  UIO_DIR, R2\n\tWCTL  UIO_DIR, R2\n\tRCTL  R1, PM_DATA_HI\n",
+    "8 `WCTL UIO_DIR` sites but DR 0010's can section records 7",
+)
 
-
-@case("CAN UIO_DIR scratch: a deleted 6th WCTL site fails the DR 0010 record")
-def _(fx):
+concrete_mutation_case(
+    "CAN UIO_DIR scratch: a deleted 6th WCTL site fails the DR 0010 record",
+    "firmware/asm/can_2a.asm",
     # The first site (and its LDI R2, 0x05 setup) stays, so only the count
     # guard fires; the anchor is the unique XOR-zeroed release site.
-    fx.mutate("firmware/asm/can_2a.asm",
-              "\tXOR   R2, R2\n\tWCTL  UIO_DIR, R2\n",
-              "\tXOR   R2, R2\n")
-    expect_fail(fx, "6 `WCTL UIO_DIR` sites but DR 0010's can section records 7",
-                "concrete-firmware-bench")
+    "\tXOR   R2, R2\n\tWCTL  UIO_DIR, R2\n",
+    "\tXOR   R2, R2\n",
+    "6 `WCTL UIO_DIR` sites but DR 0010's can section records 7",
+)
 
-
-@case("CAN UIO_DIR scratch: a wrong first-site setup immediate fails")
-def _(fx):
-    fx.mutate("firmware/asm/can_2a.asm",
-              "\tLDI   R2, 0x05\n\tWCTL  UIO_DIR, R2\n",
-              "\tLDI   R2, 0x06\n\tWCTL  UIO_DIR, R2\n")
-    expect_fail(fx,
-                "the first `WCTL UIO_DIR` is not preceded by `LDI <reg>, 0x05`",
-                "concrete-firmware-bench")
+concrete_mutation_case(
+    "CAN UIO_DIR scratch: a wrong first-site setup immediate fails",
+    "firmware/asm/can_2a.asm",
+    "\tLDI   R2, 0x05\n\tWCTL  UIO_DIR, R2\n",
+    "\tLDI   R2, 0x06\n\tWCTL  UIO_DIR, R2\n",
+    "the first `WCTL UIO_DIR` is not preceded by `LDI <reg>, 0x05`",
+)
 
 
 # ------------------------------------------------- concrete: bench sites
-@case("SPI bench CS/SCLK swap")
-def _(fx):
-    fx.mutate("verification/test_firmware_spi.py", "CS_BIT, SCLK_BIT, MOSI_BIT = 0, 3, 1",
-              "CS_BIT, SCLK_BIT, MOSI_BIT = 3, 0, 1")
-    expect_fail(fx, "verification/test_firmware_spi.py", "concrete-firmware-bench")
+concrete_mutation_case(
+    "SPI bench CS/SCLK swap",
+    "verification/test_firmware_spi.py",
+    "CS_BIT, SCLK_BIT, MOSI_BIT = 0, 3, 1",
+    "CS_BIT, SCLK_BIT, MOSI_BIT = 3, 0, 1",
+    "verification/test_firmware_spi.py",
+)
 
+concrete_mutation_case(
+    "SPI bench MISO pin/bit mutated",
+    "verification/test_firmware_spi.py",
+    'MISO_PIN, MISO_BIT = "uio_in", 2',
+    'MISO_PIN, MISO_BIT = "uio_in", 3',
+    "MISO_PIN/MISO_BIT",
+)
 
-@case("SPI bench MISO pin/bit mutated")
-def _(fx):
-    fx.mutate("verification/test_firmware_spi.py", 'MISO_PIN, MISO_BIT = "uio_in", 2',
-              'MISO_PIN, MISO_BIT = "uio_in", 3')
-    expect_fail(fx, "MISO_PIN/MISO_BIT", "concrete-firmware-bench")
-
-
-@case("SPI bench grades a line captured on uo_out")
-def _(fx):
-    fx.mutate("verification/test_firmware_spi.py", '"sclk": (LINE_PIN, SCLK_BIT)',
-              '"sclk": ("uo_out", SCLK_BIT)')
-    expect_fail(fx, "SCLK_BIT (captured on uo_out) is uo_out[3]", "concrete-firmware-bench")
+concrete_mutation_case(
+    "SPI bench grades a line captured on uo_out",
+    "verification/test_firmware_spi.py",
+    '"sclk": (LINE_PIN, SCLK_BIT)',
+    '"sclk": ("uo_out", SCLK_BIT)',
+    "SCLK_BIT (captured on uo_out) is uo_out[3]",
+)
 
 
 @case("SPI bench board wired with a literal pin, or uio_in written directly")
@@ -1125,71 +1291,85 @@ def _(fx):
         fx2.close()
 
 
-@case("UART bench TX pin mutated")
-def _(fx):
-    fx.mutate("verification/test_firmware_uart.py", 'TX_PIN, TX_BIT = "uo_out", 0',
-              'TX_PIN, TX_BIT = "uo_out", 4')
-    expect_fail(fx, "TX_PIN/TX_BIT", "concrete-firmware-bench")
+concrete_mutation_case(
+    "UART bench TX pin mutated",
+    "verification/test_firmware_uart.py",
+    'TX_PIN, TX_BIT = "uo_out", 0',
+    'TX_PIN, TX_BIT = "uo_out", 4',
+    "TX_PIN/TX_BIT",
+)
 
+concrete_mutation_case(
+    "I2C bench SCL/SDA constants mutated",
+    "verification/test_firmware_i2c.py",
+    'SDA_PIN, SDA_BIT = "uio_out", 3',
+    'SDA_PIN, SDA_BIT = "uio_out", 6',
+    "SDA_PIN/SDA_BIT",
+)
 
-@case("I2C bench SCL/SDA constants mutated")
-def _(fx):
-    fx.mutate("verification/test_firmware_i2c.py", 'SDA_PIN, SDA_BIT = "uio_out", 3',
-              'SDA_PIN, SDA_BIT = "uio_out", 6')
-    expect_fail(fx, "SDA_PIN/SDA_BIT", "concrete-firmware-bench")
+concrete_mutation_case(
+    "I2C bench line read on the wrong port",
+    "verification/test_firmware_i2c.py",
+    'LINE_PIN = "uio_in"',
+    'LINE_PIN = "uio_out"',
+    "LINE_PIN",
+)
 
+concrete_mutation_case(
+    "I2C bench grades a line captured on the wrong bit",
+    "verification/test_firmware_i2c.py",
+    '"sda": (LINE_PIN, SDA_BIT)',
+    '"sda": (LINE_PIN, 6)',
+    '"sda": (LINE_PIN, SDA_BIT) capture spec',
+)
 
-@case("I2C bench line read on the wrong port")
-def _(fx):
-    fx.mutate("verification/test_firmware_i2c.py", 'LINE_PIN = "uio_in"', 'LINE_PIN = "uio_out"')
-    expect_fail(fx, "LINE_PIN", "concrete-firmware-bench")
+concrete_mutation_case(
+    "I2C bench board wired with a literal pin",
+    "verification/test_firmware_i2c.py",
+    "i2c_board(dut, scl=SCL_BIT, sda=SDA_BIT)",
+    "i2c_board(dut, scl=SCL_BIT, sda=6)",
+    "i2c_board(dut, scl=SCL_BIT, sda=SDA_BIT)",
+)
 
+concrete_mutation_case(
+    "I2C bench peripheral names a pad by literal",
+    "verification/test_firmware_i2c.py",
+    "pads.pull_low(SDA_BIT)",
+    "pads.pull_low(6)",
+    "pads.pull_low(6, ...)",
+)
 
-@case("I2C bench grades a line captured on the wrong bit")
-def _(fx):
-    fx.mutate("verification/test_firmware_i2c.py", '"sda": (LINE_PIN, SDA_BIT)',
-              '"sda": (LINE_PIN, 6)')
-    expect_fail(fx, '"sda": (LINE_PIN, SDA_BIT) capture spec', "concrete-firmware-bench")
+concrete_mutation_case(
+    "I2C bench bypasses the pad model by writing uio_in",
+    "verification/test_firmware_i2c.py",
+    "                pads.pull_low(SDA_BIT)",
+    "                pads.pull_low(SDA_BIT)\n                dut.uio_in.value = 0x01",
+    "writes dut.uio_in directly",
+)
 
+concrete_mutation_case(
+    "I2C SR bench peripheral drives a pad named by literal",
+    "verification/test_firmware_i2c_sr.py",
+    "pads.set_open_drain(SDA_BIT, sda_drive)",
+    "pads.set_open_drain(6, sda_drive)",
+    "pads.set_open_drain(6, ...)",
+)
 
-@case("I2C bench board wired with a literal pin")
-def _(fx):
-    fx.mutate("verification/test_firmware_i2c.py", "i2c_board(dut, scl=SCL_BIT, sda=SDA_BIT)",
-              "i2c_board(dut, scl=SCL_BIT, sda=6)")
-    expect_fail(fx, "i2c_board(dut, scl=SCL_BIT, sda=SDA_BIT)", "concrete-firmware-bench")
+concrete_mutation_case(
+    "I2C SR bench wires its own board",
+    "verification/test_firmware_i2c_sr.py",
+    "    pads = i2c_pads(dut).start()",
+    "    pads = i2c_board(dut, scl=0, sda=6).start()",
+    "i2c_pads(dut)",
+)
 
-
-@case("I2C bench peripheral names a pad by literal")
-def _(fx):
-    fx.mutate("verification/test_firmware_i2c.py", "pads.pull_low(SDA_BIT)", "pads.pull_low(6)")
-    expect_fail(fx, "pads.pull_low(6, ...)", "concrete-firmware-bench")
-
-
-@case("I2C bench bypasses the pad model by writing uio_in")
-def _(fx):
-    fx.mutate("verification/test_firmware_i2c.py", "                pads.pull_low(SDA_BIT)",
-              "                pads.pull_low(SDA_BIT)\n                dut.uio_in.value = 0x01")
-    expect_fail(fx, "writes dut.uio_in directly", "concrete-firmware-bench")
-
-
-@case("I2C SR bench peripheral drives a pad named by literal")
-def _(fx):
-    fx.mutate("verification/test_firmware_i2c_sr.py", "pads.set_open_drain(SDA_BIT, sda_drive)",
-              "pads.set_open_drain(6, sda_drive)")
-    expect_fail(fx, "pads.set_open_drain(6, ...)", "concrete-firmware-bench")
-
-
-@case("I2C SR bench wires its own board")
-def _(fx):
-    fx.mutate("verification/test_firmware_i2c_sr.py", "    pads = i2c_pads(dut).start()",
-              "    pads = i2c_board(dut, scl=0, sda=6).start()")
-    expect_fail(fx, "i2c_pads(dut)", "concrete-firmware-bench")
-
-
-@case("I2C SR bench does not import the capture specs")
-def _(fx):
-    fx.mutate("verification/test_firmware_i2c_sr.py", "    CAPTURE_SPECS,\n", "")
-    expect_fail(fx, "does not import CAPTURE_SPECS", "concrete-firmware-bench")
+concrete_mutation_case(
+    "I2C SR bench does not import the capture specs",
+    "verification/test_firmware_i2c_sr.py",
+    "    CAPTURE_SPECS,\n",
+    "",
+    "does not import CAPTURE_SPECS",
+)
 
 
 @case("load bench MODE literal and serial position mutated")
@@ -1212,10 +1392,13 @@ def _(fx):
     expect_fail(fx, "PROG_SER wired to ui_in[1]", "metadata-capability")
 
 
-@case("ISA port table code mutated")
-def _(fx):
-    fx.mutate("firmware/tools/asm.py", '"UO_OUT":  (0b10,', '"UO_OUT":  (0b11,')
-    expect_fail(fx, "ISA port UO_OUT", "concrete-firmware-bench")
+concrete_mutation_case(
+    "ISA port table code mutated",
+    "firmware/tools/asm.py",
+    '"UO_OUT":  (0b10,',
+    '"UO_OUT":  (0b11,',
+    "ISA port UO_OUT",
+)
 
 
 # ------------------------------------------------- metadata (info.yaml)
