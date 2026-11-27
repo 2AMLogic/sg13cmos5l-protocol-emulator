@@ -3,7 +3,7 @@
   "statement": "spec/statistical-claims-na.md",
   "statement_content_hash": "sha256:f648dcce0c7e695f6744ee934da8893ed2712ef8c62ad7e4b1dc846df1330b57",
   "spec_markdown": "spec/target-spec.md",
-  "spec_markdown_content_hash": "sha256:463fe8044a367da47853930e31ae82a116f1780f820f8001871b2a1652953dd6",
+  "spec_markdown_content_hash": "sha256:e53ac22ccad59ccb53a1eb0ea85b6227340d67be91987b5a79c25523ead46c5c",
   "note": "Machine-bound half of the T1 item 6 not_applicable claim (issue #348): one row per ratified spec row with the reason its row class is not statistical. The grader reads this JSON, not the markdown; statement_content_hash and spec_markdown_content_hash freeze the two markdowns, and scripts/check_statistical_claims_na.py fails if either embed drifts. Rows 13 and 14 are unratified (Proposed 2026-10-09, not in DR 0004's register) and sit under not_covered, not rows: the grader requires rows to match the ratified spec companion exactly. When they ratify, move them into rows and re-mint.",
   "rows": [
     {

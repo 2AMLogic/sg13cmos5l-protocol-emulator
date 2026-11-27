@@ -22,11 +22,11 @@
       "not_applicable": {
         "spec": {
           "file": "spec/target-spec-ratified.json",
-          "content_hash": "sha256:902772331c713eb6812137f26f8d1b8a1113f010afcac4b9abbb70ddd72d8ebb"
+          "content_hash": "sha256:7e1d9e9320145a7b14c8ec4776aeea5d786a02e3bdd6f731bfb17a03be777d82"
         },
         "statement": {
           "file": "spec/statistical-claims-na.json",
-          "content_hash": "sha256:4aa9f4b2805ace3cd5131fa991d9ddb72038999ad49397518a9961deb3f6e14c"
+          "content_hash": "sha256:e19338278bb236cf6b0531749f48696cf3de4ba8b90bae9c5081b0b1442687b7"
         }
       }
     },
@@ -36,7 +36,7 @@
     },
     "8": {
       "file": "manifests/evidence/characterization.json",
-      "content_hash": "sha256:3fd796ca4c2982111edbd45cb98dcab73a0d2fc658403a1ef8c299aeb3ea30a2"
+      "content_hash": "sha256:bc5a691c75c6bed6a94189ebb3d755c39ddce492b22331ec7f6f30012f48ac7b"
     },
     "9": {
       "file": "manifests/evidence/testbenches.json",
