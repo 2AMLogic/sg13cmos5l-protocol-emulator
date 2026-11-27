@@ -290,7 +290,7 @@
         "role": "testbench",
         "path": "verification/reference_models/uart.py",
         "passed": true,
-        "content_hash": "sha256:115671a12e91a7e1e2dce3d0cde62256d2e89c7422fc4f9f92b59b9d08b8658a"
+        "content_hash": "sha256:5e912dc6223e8f2d9ebc1278e558440452298d95497681a4301833f0901f08ea"
       },
       {
         "check": "present",
@@ -528,7 +528,7 @@
         "role": "testbench",
         "path": "verification/sdf_protocol_uart_tx.py",
         "passed": true,
-        "content_hash": "sha256:04d22e189009f45cf574920770f80e67b4a1e55f3804a452b19841e2ec56c9f0"
+        "content_hash": "sha256:441da86ddf5137e547fb1da1bf26f7e628247d2b9f61fb79e8d5cfe422f6c21e"
       },
       {
         "check": "present",
@@ -724,7 +724,7 @@
         "role": "testbench",
         "path": "verification/test_sdf_uart_replay.py",
         "passed": true,
-        "content_hash": "sha256:f83ce4f2405289271b4fc8c8fa2dad8f804bd5e723564c130c0769427d75f32f"
+        "content_hash": "sha256:5cfd47ea7260f44d0a184470338053c38721b2f02525f7a1e40a825d02ecb191"
       },
       {
         "check": "present",
