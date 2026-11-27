@@ -668,7 +668,8 @@ class Checker:
         """LDI Rn,imm immediately followed by AND/OR/XOR Rx,Rn must use a pin mask."""
         c = self.concrete
         for a, b in zip(ins, ins[1:]):
-            if a["m"] == "LDI" and b["m"] in ("AND", "OR", "XOR") and b["ops"][1] == a["ops"][0]:
+            if (a["m"] == "LDI" and b["m"] in ("AND", "OR", "XOR")
+                    and b["ops"][1].upper() == a["ops"][0].upper()):
                 v = self.imm(a["ops"][1])
                 c.sites += 1
                 if v not in mask_ok:
