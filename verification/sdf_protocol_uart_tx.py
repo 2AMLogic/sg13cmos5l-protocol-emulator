@@ -103,7 +103,7 @@ def _known_intervals(initial, edges):
     for t_ps, level in edges:
         if level not in (0, 1):
             if line is not None:
-                yield line, t_ps / 1000.0
+                yield line, t_ps
             line = None
         elif line is None:
             line = Signal(level)
@@ -117,7 +117,7 @@ def _decode_capture(decoder, initial, edges, scale=1.0):
     """Keep complete reports even if a subsequent stop bit cannot be decoded."""
     reports = []
     errors = []
-    for line, end_ns in _known_intervals(initial, edges):
+    for line, end_ps in _known_intervals(initial, edges):
         if scale != 1.0:
             line.transitions = [(t * scale, v) for t, v in line.transitions]
         cursor = 0.0
@@ -130,9 +130,14 @@ def _decode_capture(decoder, initial, edges, scale=1.0):
             if not decoded:
                 break
             frame, = decoded
-            # A binary prefix ending in X cannot establish a full frame window.
-            if end_ns is not None and frame.t_start + UART_FRAME_BITS * decoder.period >= end_ns * scale:
-                break
+            if end_ps is not None and frame.pitch_ns is None:
+                # The known interval is half-open. An X exactly one frame
+                # after the start leaves the whole frame observed. Compare
+                # durations from the original integer-ps timestamps.
+                start_ps = round(frame.t_start * 1000 / scale)
+                frame_ps = UART_FRAME_BITS * round(decoder.period * 1000)
+                if (end_ps - start_ps) * scale < frame_ps:
+                    break
             reports.append(frame)
             if frame.pitch_ns is None:
                 break
@@ -177,8 +182,9 @@ def _measure_image(stem, cycles_per_bit, clock_period_ps, tx_initial, tx_edges, 
         # so the excursion's timestamps survive the failure (#531 test plan).
         within_bound = bool(decoder.check_frame(report))
         t_start_ps = round(report.t_start * 1000.0)
-        window_ps = UART_FRAME_BITS * nominal_bit_period_ps
-        edges_ps = [t for (t, _level) in tx_edges if t_start_ps <= t <= t_start_ps + window_ps]
+        # A fall after the high stop sample belongs to the next start bit.
+        stop_sample_ps = t_start_ps + (UART_FRAME_BITS - 0.5) * nominal_bit_period_ps
+        edges_ps = [t for t, _level in tx_edges if t_start_ps <= t <= stop_sample_ps]
         if not (edges_ps and edges_ps[0] == t_start_ps):
             failures.append(f"0x{payload:02x}: no TX edge list found around the model's start at {t_start_ps} ps")
             continue

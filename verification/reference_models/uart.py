@@ -204,7 +204,9 @@ class UartDecoder:
         accumulates zero; injected edge jitter lands within the jitter
         amplitude.
         """
-        t_end = t_start + UART_FRAME_BITS * self.period
+        # The stop sample was high. The first fall after that sample is the
+        # next start, even when the transmitter has a short frame pitch.
+        t_end = t_start + (UART_FRAME_BITS - 0.5) * self.period
         frame_edges = [
             tt
             for (tt, vv) in line.transitions_between(t_start, t_end)
