@@ -1330,7 +1330,7 @@ assembled image and checks the resulting waveform against the `BIT` and
 bit period with the sample point at offset 300 (the issue's start rate),
 which is 125 kbit/s at the nominal, unconfirmed 50 MHz. The RTL
 simulation record reports both
-(`verification/records/firmware-can/records/20261121-053414-a9c989e.md`).
+(`verification/records/firmware-can/records/20261127-013626-8b3a543.md`).
 #450's 500 kbit/s (100 cycles/bit, the top of its 125–500 kbit/s range)
 is a target, not a result: this image's `WAIT` table is fixed at 400
 cycles/bit, and no faster rate is claimed without a bench -- it is left
