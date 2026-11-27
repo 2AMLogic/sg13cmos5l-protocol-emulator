@@ -143,6 +143,17 @@ def concrete_mutation_case(
         expect_fail(fx, needle, "concrete-firmware-bench")
 
 
+def register_spelling_case(name: str, rel: str, old: str, new: str) -> None:
+    @case(name)
+    def check(fx: Fixture) -> None:
+        code, clean = fx.run("--require-implemented")
+        assert code == 0, clean
+        fx.mutate(rel, old, new)
+        code, out = fx.run("--require-implemented")
+        assert code == 0, out
+        assert concrete_sites(out) == concrete_sites(clean), out
+
+
 def expect_ordered(fx: Fixture, *needles: str) -> None:
     """The run fails with every `needle` among the concrete layer's
     diagnostics, in this order."""
@@ -995,7 +1006,7 @@ def _(fx):
     # data-bearing images are then unseen. Mutating also the ceiling
     # burst's LDIs would hide the effect, so only the functional IN moves.
     fx.mutate("firmware/asm/spi_mode1.asm", "IN    R3, UIO_IN        ; sample MISO (bit",
-              "IN    R2, UIO_IN        ; sample MISO (bit", count=8)
+              "IN    r2, UIO_IN        ; sample MISO (bit", count=8)
     expect_fail(fx, "firmware/asm/spi_mode1.asm", "concrete-firmware-bench")
 
 
@@ -1109,6 +1120,12 @@ def _(fx):
     fx.mutate(I2C_POLL, SDA_ISOLATE, "        XOR   r3, R3\n" + SDA_ISOLATE)
     expect_fail(fx, "the nearest write of R3 is `XOR r3, R3`",
                 "concrete-firmware-bench", "--require-implemented")
+    mixed_and = SDA_ISOLATE.replace("R2, R3", "r2, r3")
+    fx.mutate(I2C_POLL, SDA_ISOLATE, mixed_and)
+    and_no = only_line(fx, I2C_POLL, mixed_and)
+    expect_fail(fx, f"`AND r2, r3` at line {and_no} with an unresolved mask: "
+                "the nearest write of r3 is `XOR r3, R3`",
+                "concrete-firmware-bench", "--require-implemented")
 
 
 @case("I2C read-byte SDA sample: a lowercase AND mask operand finds the uppercase LDI")
@@ -1135,6 +1152,45 @@ def _(fx):
     assert unresolved_sample(I2C_POLL, in_no, and_no,
                              "R3 has no earlier write in this file") in out, out
     assert concrete_sites(out) == concrete_sites(clean) + 1, out
+
+
+SPI_MODE0 = "firmware/asm/spi_mode0.asm"
+SPI_IDLE_LOAD = "        LDI   R2, 0x01          ; CS released, SCLK at CPOL idle"
+SPI_IDLE_OUT = "OUT   UIO_OUT, R2       ; the idle image"
+
+
+register_spelling_case("SPI idle OUT accepts a lowercase image register",
+                       SPI_MODE0, SPI_IDLE_OUT, SPI_IDLE_OUT.replace("R2", "r2"))
+register_spelling_case("I2C SDA isolation accepts a lowercase sample destination",
+                       I2C_POLL, SDA_ISOLATE, SDA_ISOLATE.replace("R2", "r2"))
+register_spelling_case("WS2812 DIN image accepts a lowercase LDI destination",
+                       "firmware/asm/ws2812.asm", "LDI   R2, 0x80", "LDI   r2, 0x80")
+register_spelling_case("I2C generator idle OUT accepts a lowercase image register",
+                       "firmware/tools/gen_i2c_sr.py", '"        OUT   UIO_OUT, R3"',
+                       '"        OUT   UIO_OUT, r3"')
+
+
+@case("SPI reports the incorrect idle image at its LDI with either OUT spelling")
+def _(fx):
+    load_no = only_line(fx, SPI_MODE0, SPI_IDLE_LOAD)
+    fx.mutate(SPI_MODE0, SPI_IDLE_LOAD, SPI_IDLE_LOAD.replace("0x01", "0x09"))
+    error = f"ERROR: {SPI_MODE0}:{load_no}: idle image 0x09"
+    code, upper = fx.run("--require-implemented")
+    assert code == 1 and error in upper, upper
+    fx.mutate(SPI_MODE0, SPI_IDLE_OUT, SPI_IDLE_OUT.replace("R2", "r2"))
+    code, mixed = fx.run("--require-implemented")
+    assert code == 1 and error in mixed, mixed
+    assert concrete_sites(mixed) == concrete_sites(upper), mixed
+
+
+@case("SPI idle OUT from a different register cannot consume the first LDI")
+def _(fx):
+    code, clean = fx.run("--require-implemented")
+    assert code == 0, clean
+    fx.mutate(SPI_MODE0, SPI_IDLE_OUT, SPI_IDLE_OUT.replace("R2", "r3"))
+    code, out = fx.run("--require-implemented")
+    assert code == 1 and "idle image 0x00" in out, out
+    assert concrete_sites(out) == concrete_sites(clean) - 1, out
 
 
 # CAN 2.0A (issue #584): DR 0010's can section records that the image uses
