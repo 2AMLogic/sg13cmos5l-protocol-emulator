@@ -965,6 +965,87 @@ def _(fx):
     assert "`XOR R3, R3`" in out, out
 
 
+@case("I2C adjacent ALU mask matches its LDI register in either case")
+def _(fx):
+    rel = "firmware/asm/i2c_fast_sr_poll.asm"
+    anchor = (
+        ".cyclesec i2c_tx1_low\n"
+        "        OUT   UIO_OUT, R3   ; SCL falls, SDA = data bit\n"
+        "        WAIT  66       ; 67 cycles\n"
+        "        LDI   R2, 0x04\n"
+        "        OR    R3, R2         ; raise SCL, SDA unchanged\n"
+    )
+    path = fx.path(rel)
+    original = path.read_text(encoding="utf-8")
+    assert anchor in original, f"mutation anchor not found in {rel}"
+    ldi_line = original[:original.index(anchor)].count("\n") + 4
+
+    def concrete_sites(out: str) -> int:
+        m = re.search(r"\[concrete-firmware-bench\] (?:PASS|FAIL) \((\d+) site\(s\) checked\)", out)
+        assert m, f"concrete site count missing from:\n{out}"
+        return int(m.group(1))
+
+    def run_pair(body: str) -> tuple[int, str]:
+        replacement = (
+            ".cyclesec i2c_tx1_low\n"
+            "        OUT   UIO_OUT, R3   ; SCL falls, SDA = data bit\n"
+            "        WAIT  66       ; 67 cycles\n"
+            + body
+        )
+        path.write_text(original.replace(anchor, replacement, 1), encoding="utf-8")
+        return fx.run("--require-implemented")
+
+    clean_code, clean_out = fx.run("--require-implemented")
+    assert clean_code == 0 and "--require-implemented: PASS" in clean_out, clean_out
+    clean_sites = concrete_sites(clean_out)
+
+    for ldi_reg, alu_reg in (("R2", "R2"), ("R2", "r2"), ("r2", "R2")):
+        code, out = run_pair(
+            f"        LDI   {ldi_reg}, 0x04\n"
+            f"        OR    R3, {alu_reg}         ; raise SCL, SDA unchanged\n"
+        )
+        assert code == 0 and "[concrete-firmware-bench] PASS" in out, out
+        assert concrete_sites(out) == clean_sites, (
+            ldi_reg, alu_reg, concrete_sites(out), clean_sites, out
+        )
+
+    expected_upper = (
+        f"ERROR: {rel}:{ldi_line}: I2C mask LDI R2, 0x01 feeding OR is not a pin mask "
+        "of this profile ['0x04', '0x08']"
+    )
+    outputs = {}
+    for ldi_reg, alu_reg in (("R2", "R2"), ("R2", "r2"), ("r2", "R2")):
+        code, out = run_pair(
+            f"        LDI   {ldi_reg}, 0x01\n"
+            f"        OR    R3, {alu_reg}         ; raise SCL, SDA unchanged\n"
+        )
+        assert code == 1 and "[concrete-firmware-bench] FAIL" in out, (
+            ldi_reg, alu_reg, code, out
+        )
+        assert concrete_sites(out) == clean_sites, (
+            ldi_reg, alu_reg, concrete_sites(out), clean_sites, out
+        )
+        want = expected_upper.replace("LDI R2,", f"LDI {ldi_reg},", 1)
+        assert want in out, (ldi_reg, alu_reg, out)
+        outputs[(ldi_reg, alu_reg)] = out
+    assert outputs[("R2", "r2")] == outputs[("R2", "R2")], (
+        outputs[("R2", "r2")], outputs[("R2", "R2")]
+    )
+
+    for body in (
+        "        LDI   R2, 0x01\n"
+        "        MOV   R1, R1\n"
+        "        OR    R3, r2         ; raise SCL, SDA unchanged\n",
+        "        LDI   R2, 0x01\n"
+        "        OR    R3, R1         ; raise SCL, SDA unchanged\n",
+    ):
+        code, out = run_pair(body)
+        assert code == 0 and "[concrete-firmware-bench] PASS" in out, (body, code, out)
+        assert concrete_sites(out) == clean_sites - 1, (
+            body, concrete_sites(out), clean_sites, out
+        )
+
+
 @case("I2C generator string literal mutated")
 def _(fx):
     fx.mutate("firmware/tools/gen_i2c_sr.py", '"LDI   R3, 0x04       ; poll mask"',
