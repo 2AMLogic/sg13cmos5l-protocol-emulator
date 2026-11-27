@@ -40,7 +40,7 @@ from cocotb.triggers import ReadOnly, RisingEdge, Timer
 import sdf_protocol_alignment as _align
 import test_firmware_uart as bench
 from firmware_artifacts import parse_hex_image
-from reference_models.uart import UART_FRAME_BITS, UartDecoder, UartFrameError
+from reference_models.uart import MAX_FRAME_DRIFT_PCT, UART_FRAME_BITS, UartDecoder, UartFrameError
 from reference_models.waveform import Signal
 from sdf_tx_edges import tx_level, tx_level_changes
 from test_protocol_emulator import load_program
@@ -114,7 +114,7 @@ def _known_intervals(initial, edges):
 
 
 def _decode_capture(decoder, initial, edges, scale=1.0):
-    """Keep complete reports even if a subsequent stop bit cannot be decoded."""
+    """Collect each decodable frame and keep framing errors in capture order."""
     reports = []
     errors = []
     for line, end_ps in _known_intervals(initial, edges):
@@ -126,7 +126,11 @@ def _decode_capture(decoder, initial, edges, scale=1.0):
                 decoded = decoder.decode(line, t_from=cursor, max_frames=1)
             except UartFrameError as exc:
                 errors.append(str(exc))
-                break
+                # Use the same start search and stop sample as decode(). The
+                # next falling edge after that sample can start a new frame.
+                failed_start = decoder._next_start(line, cursor)
+                cursor = failed_start + (UART_FRAME_BITS - 0.5) * decoder.period
+                continue
             if not decoded:
                 break
             frame, = decoded
@@ -180,7 +184,6 @@ def _measure_image(stem, cycles_per_bit, clock_period_ps, tx_initial, tx_edges, 
         # An over-limit frame is *recorded* (`within_bound`) and the bound is
         # asserted by the test only after every image's measurement is filed,
         # so the excursion's timestamps survive the failure (#531 test plan).
-        within_bound = bool(decoder.check_frame(report))
         t_start_ps = round(report.t_start * 1000.0)
         # A fall after the high stop sample belongs to the next start bit.
         stop_sample_ps = t_start_ps + (UART_FRAME_BITS - 0.5) * nominal_bit_period_ps
@@ -208,6 +211,11 @@ def _measure_image(stem, cycles_per_bit, clock_period_ps, tx_initial, tx_edges, 
                 f"0x{payload:02x}: arithmetic drift {drift_pct:.6f}% disagrees with "
                 f"the model's {report.drift_pct:.6f}%"
             )
+        # The decoder measures in floating-point ns. Its independent pitch
+        # error and the pin residual both lie on the capture's integer-ps grid.
+        pitch_error_ps = round((report.pitch_drift_pct or 0.0) * nominal_bit_period_ps / 100)
+        max_error_ps = max(abs(drift_ps), pitch_error_ps)
+        within_bound = report.stop_ok and 100 * max_error_ps <= MAX_FRAME_DRIFT_PCT * nominal_bit_period_ps
         mean_bit_period_ps = delta_t_ps / last_edge_bit_index
         frames.append({
             "payload_hex": f"0x{payload:02x}",
@@ -223,6 +231,7 @@ def _measure_image(stem, cycles_per_bit, clock_period_ps, tx_initial, tx_edges, 
             "drift_ps": drift_ps,
             "drift_pct": drift_pct,
             "model_drift_pct": report.drift_pct,
+            "pitch_error_ps": None if report.pitch_ns is None else pitch_error_ps,
             "within_bound": within_bound,
         })
         log(
@@ -238,7 +247,7 @@ def _measure_image(stem, cycles_per_bit, clock_period_ps, tx_initial, tx_edges, 
     control.update({
         "decoded": [f"0x{r.data:02x}" for r in stretched_reports],
         "drift_pct": [r.drift_pct for r in stretched_reports],
-        "all_failed_check_frame": bool(stretched_reports) and all(
+        "all_failed_check_frame": not errors and bool(stretched_reports) and all(
             not decoder.check_frame(r) for r in stretched_reports
         ),
     })
@@ -349,8 +358,9 @@ async def test_uart_tx_bit_period_and_drift_in_time_units(dut):
         )
         for frame in image["frames"]:
             assert frame["within_bound"], (
-                f"{image['image']} {frame['payload_hex']}: row-10 drift bound failed at "
-                f"{frame['drift_pct']:.4f}% of the bit period (bound 2%); the measurement "
+                f"{image['image']} {frame['payload_hex']}: row-10 drift bound failed: "
+                f"last edge {frame['drift_pct']:.4f}%, pitch error (ps) {frame['pitch_error_ps']} "
+                f"(bound {MAX_FRAME_DRIFT_PCT:g}% of the bit period); the measurement "
                 "is recorded in the protocol report"
             )
         control = image["negative_control"]

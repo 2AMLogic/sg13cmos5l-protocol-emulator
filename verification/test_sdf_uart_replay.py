@@ -31,19 +31,18 @@ async def tick(*args, **kwargs):
 
 class UartReplayTests(unittest.TestCase):
     def replay(self, first_image_scale, expected_failure=None, control_scale=1.025,
-               scales=None, shift=None, violations=(), idle=None, unknown=None,
+               scales=None, shifts=(), violations=(), idle=None, unknown=None,
                initial_levels=(1, 1, 1), second_byte_edges=None, leading_rise=False,
-               next_start_ps=None, unknown_gap=None):
+               next_start_ps=None, unknown_gap=None, edges=EDGES_PS):
         """`scales`: per-image timestamp multipliers (default: first image only);
-        `shift`: (image, frame, edge, ps) moves one edge; `violations`: image
+        `shifts`: (image, frame, edge, ps) offsets; `violations`: image
         indices whose monitor reports a pin-contract violation."""
         scales = scales or (first_image_scale, 1, 1)
         captures = [
             [[round(t * scales[i]) for t in frame] for frame in image]
-            for i, image in enumerate(EDGES_PS)
+            for i, image in enumerate(edges)
         ]
-        if shift:
-            i, f, e, ps = shift
+        for i, f, e, ps in shifts:
             captures[i][f][e] += ps
         if next_start_ps is not None:
             second = captures[0][1]
@@ -180,7 +179,7 @@ class UartReplayTests(unittest.TestCase):
             with self.subTest(next_start=next_start, stop_delay=stop_delay):
                 first, *_ = self.replay(
                     1, "row-10 drift bound failed" if stop_delay else None,
-                    next_start_ps=next_start, shift=(0, 0, 7, stop_delay))
+                    next_start_ps=next_start, shifts=[(0, 0, 7, stop_delay)])
                 a, b = first["frames"]
                 self.assertEqual(a["last_edge_ps"], 72064953 + stop_delay)
                 self.assertEqual(b["t_start_ps"], next_start)
@@ -190,12 +189,61 @@ class UartReplayTests(unittest.TestCase):
                 self.assertEqual(a["within_bound"], stop_delay == 0)
                 self.assertTrue(b["within_bound"])
 
+    def test_last_edge_limit_is_inclusive_on_the_pin_timestamp_grid(self):
+        # Fast-corner 1 Mbaud pin edges from record 20261127-012339-0a929db.
+        fast = ((63064653, 65064653, 66064653, 67064653, 69064653, 70064653, 71064653, 72064653),
+                (77264653, 78264653, 79264653, 80264653, 81264653, 83264653, 84264653, 85264653))
+        for sign in (-1, 1):
+            for magnitude in (19990, 20000, 20010):
+                residual = sign * magnitude
+                passes = magnitude <= 20000
+                with self.subTest(residual_ps=residual):
+                    first, *_ = self.replay(
+                        1, None if passes else "row-10 drift bound failed",
+                        edges=(fast, *EDGES_PS[1:]), shifts=[(0, 0, -1, residual)])
+                    frame = first["frames"][0]
+                    self.assertEqual(frame["last_edge_ps"], fast[0][-1] + residual)
+                    self.assertEqual(frame["drift_ps"], residual)
+                    self.assertEqual(frame["drift_pct"], magnitude / 10000)
+                    self.assertAlmostEqual(frame["model_drift_pct"], frame["drift_pct"])
+                    self.assertEqual(frame["within_bound"], passes)
+
+    def test_early_next_start_is_graded_independently_of_last_edge(self):
+        for early in (19990, 20000, 20010):
+            passes = early <= 20000
+            with self.subTest(early_ps=early):
+                first, *_ = self.replay(
+                    1, None if passes else "row-10 drift bound failed",
+                    next_start_ps=EDGES_PS[0][0][0] + 10000000 - early)
+                frame = first["frames"][0]
+                self.assertEqual(frame["drift_ps"], 10)
+                self.assertEqual(frame["pitch_error_ps"], early)
+                self.assertEqual(frame["within_bound"], passes)
+
+    def test_bad_first_stop_preserves_second_frame_and_its_drift(self):
+        first, *others = self.replay(
+            1, "stop bit sampled 0", shifts=[(0, 0, -1, 600000), (0, 1, -1, 24000)])
+        self.assertIn("stop bit sampled 0", first["failures"][0])
+        self.assertEqual(len(first["tx_edges_ps"]), 16)
+        frame, = first["frames"]
+        self.assertEqual(frame["decoded_hex"], "0xa5")
+        self.assertTrue(frame["stop_ok"])
+        self.assertEqual(frame["edges_ps"], [*EDGES_PS[0][1][:-1], 85288953])
+        self.assertEqual(frame["last_edge_bit_index"], 8)
+        self.assertEqual(frame["drift_ps"], 24010)
+        self.assertAlmostEqual(frame["drift_pct"], 2.4010)
+        self.assertFalse(frame["within_bound"])
+        control = first["negative_control"]
+        self.assertIn("stop bit sampled 0", control["framing_error"])
+        self.assertEqual(control["decoded"], ["0xa5"])
+        self.assert_decoded_controls(others)
+
     def test_unknown_at_frame_end_keeps_completed_frame(self):
         for offset in (-1, 0, 1):
             with self.subTest(offset=offset):
                 unknown_at = 73064943 + offset
                 first, *_ = self.replay(
-                    1, "TX level is X", shift=(0, 0, 7, 24000),
+                    1, "TX level is X", shifts=[(0, 0, 7, 24000)],
                     unknown_gap=(unknown_at, unknown_at + 20000))
                 frames = first["frames"]
                 self.assertEqual(frames[-1]["decoded_hex"], "0xa5")
@@ -216,7 +264,7 @@ class UartReplayTests(unittest.TestCase):
         # 0x5a stop-bit rise moved +24 ns: both bytes still decode, frame 1
         # measures 2.4010%, and the monitor flags the late edge.
         first, *remaining = self.replay(
-            1, "violated the pin contract", shift=(0, 0, 7, 24000), violations=(0,))
+            1, "violated the pin contract", shifts=[(0, 0, 7, 24000)], violations=(0,))
         self.assertEqual(self.saved["contract_violation_count"], 1)
         self.assertEqual(first["pin_contract_violations"]["count"], 1)
         self.assertAlmostEqual(first["frames"][0]["drift_pct"], 2.4010)
@@ -225,13 +273,16 @@ class UartReplayTests(unittest.TestCase):
         self.assert_decoded_controls(remaining)
 
     def test_failed_decode_keeps_completed_and_later_images(self):
-        # 1.025x / 1.06x / 1.0 timestamp multipliers: image 0 measures, image 1
-        # cannot decode, image 2 must still be collected and measured.
+        # 1.025x / 1.06x / 1.0 timestamp multipliers: image 0 measures, image 1 loses
+        # its first stop, but its second byte and image 2 are still measurable.
         first, second, third = self.replay(
             1, "row-10 drift bound failed", scales=(1.025, 1.06, 1), control_scale=1.025)
         self.assertAlmostEqual(first["frames"][0]["drift_pct"], 22.5010)
         self.assertAlmostEqual(first["frames"][1]["drift_pct"], 20.0010)
-        self.assertEqual(second["frames"], [])
+        recovered, = second["frames"]
+        self.assertEqual(recovered["decoded_hex"], "0xa5")
+        self.assertEqual(recovered["drift_ps"], 4166410)
+        self.assertFalse(recovered["within_bound"])
         self.assertTrue(second["failures"])
         self.assertIn("framing error at t=", second["failures"][0])
         self.assertTrue(second["tx_edges_ps"])
