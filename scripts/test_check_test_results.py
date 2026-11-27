@@ -28,6 +28,7 @@ from __future__ import annotations
 import subprocess
 import sys
 import tempfile
+from functools import partial
 from pathlib import Path
 
 SCRIPT_DIR = Path(__file__).resolve().parent
@@ -169,153 +170,64 @@ MULTI_SUITE_WITH_EMPTY_AUXILIARY = """<testsuites name="results">
 """
 
 
-def _run(results_xml: str | None, *, missing: bool = False, args: tuple[str, ...] = ()):
+def _invoke(*args: str, cwd: str | Path | None = None) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        [sys.executable, str(CHECKER), *args],
+        cwd=cwd, capture_output=True, text=True, check=False,
+    )
+
+
+def _run(results_xml: str | None) -> tuple[int, str]:
     with tempfile.TemporaryDirectory() as tmpdir:
         path = Path(tmpdir) / "results.xml"
-        if not missing:
-            path.write_text(results_xml or "", encoding="utf-8")
-        result = subprocess.run(
-            [sys.executable, str(CHECKER), *(args or (str(path),))],
-            capture_output=True,
-            text=True,
-            check=False,
-        )
+        if results_xml is not None:
+            path.write_text(results_xml, encoding="utf-8")
+        result = _invoke(str(path))
         return result.returncode, result.stdout + result.stderr
 
 
 # --------------------------------------------------------------------- cases
 
 
-def case_passing_attribute_shape() -> tuple[bool, str]:
-    code, out = _run(PASSING_ATTRIBUTE_SHAPE)
-    return (code == 0 and "PASS" in out), out
+XML_CASES = (
+    # Case name, results.xml contents, exit code, required output substrings.
+    ("case_passing_attribute_shape", PASSING_ATTRIBUTE_SHAPE, 0, ("PASS",)),
+    ("case_failing_attribute_shape", FAILING_ATTRIBUTE_SHAPE, 1, ("FAIL", "failures=1")),
+    # cocotb 2.0.1 reports failures only in nested testcase elements.
+    ("case_passing_no_attribute_shape", PASSING_NO_ATTRIBUTE_SHAPE, 0, ("PASS",)),
+    ("case_failing_no_attribute_shape", FAILING_NO_ATTRIBUTE_SHAPE, 1, ("FAIL", "failures=1")),
+    ("case_error_only_shape", ERROR_ONLY_SHAPE, 1, ("FAIL", "errors=1")),
+    ("case_multi_suite_one_fails", MULTI_SUITE_ONE_FAILS, 1, ("FAIL", "total: failures=1")),
+    ("case_missing_file", None, 1, ("FAIL", "does not exist")),
+    ("case_empty_file", "", 1, ("FAIL",)),
+    ("case_truncated_xml", TRUNCATED_XML, 1, ("FAIL",)),
+    ("case_no_testsuite_element", "<notjunit/>\n", 1, ("FAIL", "no <testsuite>")),
+    ("case_empty_testsuites_root", EMPTY_TESTSUITES, 1, ("FAIL", "no <testsuite>")),
+    # Issue #215: zero summary counters can hide nested errors or failures.
+    ("case_contradictory_errors_attr_fails", CONTRADICTORY_ERRORS_ATTR, 1,
+     ("FAIL", "total: failures=0 errors=1")),
+    ("case_contradictory_failures_attr_fails", CONTRADICTORY_FAILURES_ATTR, 1,
+     ("FAIL", "total: failures=1 errors=0")),
+    ("case_zero_test_suite_fails", ZERO_TEST_SUITE, 1, ("FAIL", "no executed")),
+    ("case_all_skipped_fails", ALL_SKIPPED, 1, ("FAIL", "no executed")),
+    ("case_negative_failures_counter_fails", NEGATIVE_FAILURES, 1, ("FAIL", "negative")),
+    ("case_negative_tests_counter_fails", NEGATIVE_TESTS, 1, ("FAIL", "negative")),
+    ("case_multi_suite_with_empty_auxiliary_passes", MULTI_SUITE_WITH_EMPTY_AUXILIARY, 0,
+     ("PASS", "executed=1")),
+)
 
 
-def case_failing_attribute_shape() -> tuple[bool, str]:
-    """The issue's own minimum fixture: failures="1" must fail."""
-    code, out = _run(FAILING_ATTRIBUTE_SHAPE)
-    return (code == 1 and "FAIL" in out and "failures=1" in out), out
-
-
-def case_passing_no_attribute_shape() -> tuple[bool, str]:
-    """The issue's own minimum fixture: failures="0" errors="0" must pass.
-
-    Also exercises this repo's actually-installed cocotb 2.0.1 shape, which
-    carries no summary attribute at all.
-    """
-    code, out = _run(PASSING_NO_ATTRIBUTE_SHAPE)
-    return (code == 0 and "PASS" in out), out
-
-
-def case_failing_no_attribute_shape() -> tuple[bool, str]:
-    """A failure recorded only via a nested <failure> element (no summary
-    attribute) must still be caught -- the fallback signal is load-bearing,
-    not decorative, for this repo's pinned cocotb version."""
-    code, out = _run(FAILING_NO_ATTRIBUTE_SHAPE)
-    return (code == 1 and "FAIL" in out and "failures=1" in out), out
-
-
-def case_error_only_shape() -> tuple[bool, str]:
-    """errors="1" with failures="0" must still fail -- both fields gate."""
-    code, out = _run(ERROR_ONLY_SHAPE)
-    return (code == 1 and "FAIL" in out and "errors=1" in out), out
-
-
-def case_multi_suite_one_fails() -> tuple[bool, str]:
-    code, out = _run(MULTI_SUITE_ONE_FAILS)
-    return (code == 1 and "FAIL" in out and "total: failures=1" in out), out
-
-
-def case_missing_file() -> tuple[bool, str]:
-    """The issue's own minimum fixture: a missing results.xml must fail.
-
-    This is the second bug on the original line: `grep` on a missing file
-    exits 2, which `! grep ...` silently turned into exit 0 (a pass).
-    """
-    code, out = _run(None, missing=True)
-    return (code == 1 and "FAIL" in out and "does not exist" in out), out
-
-
-def case_empty_file() -> tuple[bool, str]:
-    code, out = _run("")
-    return (code == 1 and "FAIL" in out), out
-
-
-def case_truncated_xml() -> tuple[bool, str]:
-    """A crashed simulator can leave a partially-written file -- unparseable
-    XML must fail, not be silently treated as a pass."""
-    code, out = _run(TRUNCATED_XML)
-    return (code == 1 and "FAIL" in out), out
-
-
-def case_no_testsuite_element() -> tuple[bool, str]:
-    code, out = _run("<notjunit/>\n")
-    return (code == 1 and "FAIL" in out and "no <testsuite>" in out), out
-
-
-def case_empty_testsuites_root() -> tuple[bool, str]:
-    """A <testsuites> root with zero <testsuite> children is structurally
-    empty and must fail, not silently pass because nothing counted a
-    failure."""
-    code, out = _run(EMPTY_TESTSUITES)
-    return (code == 1 and "FAIL" in out and "no <testsuite>" in out), out
-
-
-def case_contradictory_errors_attr_fails() -> tuple[bool, str]:
-    """errors="0" cannot hide a nested <error> element (issue #215)."""
-    code, out = _run(CONTRADICTORY_ERRORS_ATTR)
-    return (code == 1 and "FAIL" in out and "total: failures=0 errors=1" in out), out
-
-
-def case_contradictory_failures_attr_fails() -> tuple[bool, str]:
-    """failures="0" cannot hide a nested <failure> element (issue #215)."""
-    code, out = _run(CONTRADICTORY_FAILURES_ATTR)
-    return (code == 1 and "FAIL" in out and "total: failures=1 errors=0" in out), out
-
-
-def case_zero_test_suite_fails() -> tuple[bool, str]:
-    """A suite with zero counters and no testcases ran nothing (issue #215)."""
-    code, out = _run(ZERO_TEST_SUITE)
-    return (code == 1 and "FAIL" in out and "no executed" in out), out
-
-
-def case_all_skipped_fails() -> tuple[bool, str]:
-    """A run whose every testcase was skipped demonstrates nothing."""
-    code, out = _run(ALL_SKIPPED)
-    return (code == 1 and "FAIL" in out and "no executed" in out), out
-
-
-def case_negative_failures_counter_fails() -> tuple[bool, str]:
-    code, out = _run(NEGATIVE_FAILURES)
-    return (code == 1 and "FAIL" in out and "negative" in out), out
-
-
-def case_negative_tests_counter_fails() -> tuple[bool, str]:
-    code, out = _run(NEGATIVE_TESTS)
-    return (code == 1 and "FAIL" in out and "negative" in out), out
-
-
-def case_multi_suite_with_empty_auxiliary_passes() -> tuple[bool, str]:
-    """An empty auxiliary suite is fine when another suite executed a
-    passing testcase; skipped cases do not count as executed."""
-    code, out = _run(MULTI_SUITE_WITH_EMPTY_AUXILIARY)
-    return (code == 0 and "PASS" in out and "executed=1" in out), out
+def _check_xml_case(
+    xml: str | None, expected_code: int, substrings: tuple[str, ...],
+) -> tuple[bool, str]:
+    code, out = _run(xml)
+    return code == expected_code and all(s in out for s in substrings), out
 
 
 def case_too_many_arguments_is_a_usage_error() -> tuple[bool, str]:
     """More than one positional argument is a usage error (exit 2), distinct
     from a check failure (exit 1)."""
-    result = subprocess.run(
-        [
-            sys.executable,
-            str(CHECKER),
-            "/definitely/does/not/exist/results.xml",
-            "extra-argument",
-        ],
-        capture_output=True,
-        text=True,
-        check=False,
-    )
+    result = _invoke("/definitely/does/not/exist/results.xml", "extra-argument")
     return (result.returncode == 2), result.stdout + result.stderr
 
 
@@ -324,13 +236,7 @@ def case_default_path_resolves_to_repo_root() -> tuple[bool, str]:
     `<cwd>/test/results.xml` -- so the script behaves the same whether
     invoked from `npm run test` (cwd `test/`) or from the repo root."""
     repo_root = CHECKER.resolve().parent.parent
-    result = subprocess.run(
-        [sys.executable, str(CHECKER)],
-        capture_output=True,
-        text=True,
-        check=False,
-        cwd=tempfile.gettempdir(),  # a cwd with no test/results.xml of its own
-    )
+    result = _invoke(cwd=tempfile.gettempdir())
     expected_path = str(repo_root / "test" / "results.xml")
     return (expected_path in result.stdout), result.stdout + result.stderr
 
@@ -354,10 +260,7 @@ def _run_in_workspace(results_xml: str | None) -> tuple[int, str]:
         (Path(ws) / "test").mkdir()
         if results_xml is not None:
             (Path(ws) / GL_RESULTS_PATH).write_text(results_xml, encoding="utf-8")
-        result = subprocess.run(
-            [sys.executable, str(CHECKER), GL_RESULTS_PATH],
-            capture_output=True, text=True, check=False, cwd=ws,
-        )
+        result = _invoke(GL_RESULTS_PATH, cwd=ws)
         return result.returncode, result.stdout + result.stderr
 
 
@@ -392,10 +295,7 @@ def case_gl_workflow_stale_result_cannot_satisfy_gate() -> tuple[bool, str]:
         stale = Path(ws) / GL_RESULTS_PATH
         stale.write_text(PASSING_ATTRIBUTE_SHAPE, encoding="utf-8")
         stale.unlink()  # what the workflow's first step does
-        result = subprocess.run(
-            [sys.executable, str(CHECKER), GL_RESULTS_PATH],
-            capture_output=True, text=True, check=False, cwd=ws,
-        )
+        result = _invoke(GL_RESULTS_PATH, cwd=ws)
     return (result.returncode == 1), result.stdout + result.stderr
 
 
@@ -418,25 +318,7 @@ def case_gl_workflow_step_conditions_preserve_sim_verdict() -> tuple[bool, str]:
     return (not problems), "; ".join(problems)
 
 
-CASES = (
-    case_passing_attribute_shape,
-    case_failing_attribute_shape,
-    case_passing_no_attribute_shape,
-    case_failing_no_attribute_shape,
-    case_error_only_shape,
-    case_multi_suite_one_fails,
-    case_missing_file,
-    case_empty_file,
-    case_truncated_xml,
-    case_no_testsuite_element,
-    case_empty_testsuites_root,
-    case_contradictory_errors_attr_fails,
-    case_contradictory_failures_attr_fails,
-    case_zero_test_suite_fails,
-    case_all_skipped_fails,
-    case_negative_failures_counter_fails,
-    case_negative_tests_counter_fails,
-    case_multi_suite_with_empty_auxiliary_passes,
+CLI_AND_WORKFLOW_CASES = (
     case_too_many_arguments_is_a_usage_error,
     case_default_path_resolves_to_repo_root,
     case_gl_workflow_path_matrix,
@@ -450,24 +332,29 @@ def main() -> int:
         print(f"FATAL: {CHECKER} not found", file=sys.stderr)
         return 1
 
-    print(f"== check_test_results.py self-test ({len(CASES)} cases) ==")
+    cases = [
+        (name, partial(_check_xml_case, xml, expected_code, substrings))
+        for name, xml, expected_code, substrings in XML_CASES
+    ]
+    cases.extend((case.__name__, case) for case in CLI_AND_WORKFLOW_CASES)
+    print(f"== check_test_results.py self-test ({len(cases)} cases) ==")
     failures = 0
-    for case in CASES:
+    for name, case in cases:
         try:
             ok, detail = case()
         except Exception as exc:  # noqa: BLE001 -- report, don't abort the suite
             ok, detail = False, f"raised {type(exc).__name__}: {exc}"
         status = "PASS" if ok else "FAIL"
-        print(f"[{status}] {case.__name__}")
+        print(f"[{status}] {name}")
         if not ok:
             failures += 1
             print("        " + detail.replace("\n", "\n        "))
 
     print()
     if failures:
-        print(f"FAIL: {failures}/{len(CASES)} self-test case(s) did not behave as specified")
+        print(f"FAIL: {failures}/{len(cases)} self-test case(s) did not behave as specified")
         return 1
-    print(f"PASS: all {len(CASES)} self-test cases behaved as specified")
+    print(f"PASS: all {len(cases)} self-test cases behaved as specified")
     return 0
 
 
