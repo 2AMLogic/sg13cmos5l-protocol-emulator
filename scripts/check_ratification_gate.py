@@ -1,79 +1,28 @@
 #!/usr/bin/env python3
 """Ratification gate: a `spec/` Status flip to `Ratified` needs two RATIFY-KEY reviews.
 
-This is the enforcement half of the two-key mechanism documented in
-`spec/README.md` § "How ratification works here" and
-`spec/decision-records/0004-target-spec-ratification.md` § "The binding
-process". Until this script existed, that mechanism was described in prose
-and enforced by nothing: `spec/decision-records/0006-two-key-ratification-
-never-ran.md` records the consequence -- PR #29 flipped five `Status:` lines
-to `Ratified` and merged with zero PR reviews of any kind, 4m37s after a
-correct stand-down comment that nothing mechanical could read.
+The enforcement half of the two-key mechanism stated in `spec/README.md` § "How
+ratification works here". `docs/ratification-gate.md` is the authoritative
+description of what this script checks; it is not restated here, and if this
+script and that guide disagree, that is a defect in this script.
 
-**The documented mechanism and the enforced mechanism must name the same
-thing.** `docs/ratification-gate.md` is the authoritative description of what
-this script checks; if the two disagree, that is a defect in this script.
-
-What is gated (and only this): a **flip**, i.e. a file under `spec/` whose
-`Status:` line asserts ratification in the PR's head tree but did not in the
-merge-base tree. Everything else about a `spec/` change is untouched --
-editing a `Proposed` record, reflowing prose on an already-`Ratified` line,
-or reconciling a line *away* from `Ratified` (DR 0006's own repair) is not a
-flip and is not gated.
-
-When a flip is present, the gate requires **all** of:
-
-1. At least one `<!-- RATIFY-KEY: ee ... -->` marker and at least one
-   `<!-- RATIFY-KEY: market ... -->` marker, each in a non-dismissed review
-   on the carrying PR (`/pulls/<N>/reviews`), each well-formed per its
-   skill's "Output format" grammar (`verdict=`, `block=`, `reviewer=`,
-   `date=` all present and non-placeholder).
-2. A releasing verdict on each: `ee` must be `approve`; `market` must be
-   `competitive` or `adequate-for-catalog`. A `request-changes` /
-   `uncompetitive` / `escalate` key is a review that happened, not a release.
-   It is also not a *veto*: a review list is append-only, so a rejected
-   candidate fails the gate only when its kind has no usable key at all, and
-   only a reviewer's latest marker of a kind is operative (see
-   `evaluate_keys`).
-3. The two markers' `reviewer=` values distinct (case-insensitively).
-4. Neither key attributable to the PR's author -- neither the review's forge
-   login nor the marker's `reviewer=` value may equal the PR author's login.
-5. No change, in the same diff, to the gate's own files (see `GUARDED_PATHS`).
-   A PR may not ratify and rewrite its own gate in one move.
-
-**What this gate deliberately does not decide.** DR 0006 § "Routed, not
-decided" routes one question to an operator: whether two agent sessions
-sharing a single forge identity satisfy *"neither held by the design's
-author"*, or whether distinct forge principals are required. This script
-does not pre-empt that ruling -- it enforces distinct `reviewer=` values and
-non-authorship, and *reports* each key's forge login so the record shows it.
-When the operator rules that distinct principals are required, `--require-
-distinct-principals` turns that into a failure with no code change.
-
-Zero dependencies beyond the Python 3 standard library, `git`, and -- only
-when resolving PR context -- the `gh` CLI.
+Standard library only, plus `git` and -- only when resolving PR context -- `gh`.
 
 Usage:
     # CI / authoritative: explicit PR context.
     python3 scripts/check_ratification_gate.py --pr 47
 
-    # Local (npm run lint): auto-discovers the PR for the current branch.
-    # No flip -> pass. Flip with no resolvable PR context -> SKIP (the
-    # workflow job is the authoritative check). Under --merge-group neither
-    # SKIP path exists: an unresolvable base or PR fails instead.
+    # Local (npm run lint): auto-discovers the PR for the current branch; a
+    # flip with no resolvable PR context SKIPs (exit 0) -- the workflow job
+    # is the authoritative check.
     python3 scripts/check_ratification_gate.py --base-ref origin/main
 
     # Offline, for the self-test and for reproducing a control case.
     python3 scripts/check_ratification_gate.py --base-ref REF \
         --pr-author some-bot --reviews-file reviews.json
 
-    # Merge queue (merge_group event): --base-sha carries the queue's
-    # github.event.merge_group.base_sha and --merge-group-head-ref carries
-    # the queue ref (parsed for the carrying PR number). In this mode an
-    # unresolvable base, or a flip whose carrying PR cannot be resolved,
-    # FAILS -- it never SKIPs.
-    python3 scripts/check_ratification_gate.py --merge-group \
-        --base-sha <sha> \
+    # Merge queue (merge_group event): fails closed, never SKIPs.
+    python3 scripts/check_ratification_gate.py --merge-group --base-sha <sha> \
         --merge-group-head-ref refs/heads/gh-readonly-queue/main/pr-47-<sha>
 
 Exit codes: 0 pass (or nothing to gate), 1 the gate failed, 2 usage error.
