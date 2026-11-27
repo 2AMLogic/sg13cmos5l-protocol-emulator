@@ -41,8 +41,8 @@ rising edges, 1,182 model edges. Review of PR #501 then added the ACK branch
 (a WAIT or FAULT must end the transfer, not clock a data phase that is not
 there), so the fallback program was **227 words, 218 SWCLK rising edges
 on the OK path, 1,179 model edges**; the 201-word figures are the first
-revision's, kept in its superseded record. Issue #500 then measured the
-open question that note left: a **table-driven** probe, with the five
+revision's, kept in its superseded record. Issue #500 then answered the
+question that note left: a **table-driven** probe, with the five
 transactions of a memory-word read, was **245 words** (105 code, 140 table),
 **356 SWCLK rising edges**, with 11 words spare; the review's full-ACK check
 (a silent or invalid ACK never gets write data) uses them: **256 words**

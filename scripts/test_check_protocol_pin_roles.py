@@ -146,6 +146,18 @@ def expect_ordered(fx: Fixture, *needles: str) -> None:
     assert at == sorted(at), f"diagnostics out of order {list(zip(needles, at))} in:\n{out}"
 
 
+def expect_vocabulary_errors(fx: Fixture, phases: list[str]) -> None:
+    code, out = fx.run()
+    assert code == 1, f"expected exit 1, got {code}:\n{out}"
+    assert "[schema] FAIL" in out, out
+    reported = re.findall(
+        r"ERROR: table\.phases\.(\w+): roles .*supported vocabulary\b", out
+    )
+    assert reported == phases, (
+        f"expected vocabulary errors for {phases}, got {reported}:\n{out}"
+    )
+
+
 # ---------------------------------------------------------------- baseline
 # Issue #135 (DR 0012): the committed top level now derives uio_oe from the
 # core's UIO_OD / UIO_DIR control registers, and the committed I2C programs
@@ -335,6 +347,27 @@ def _(fx):
               "        LDI   R2, 0x80\n        WCTL  UIO_OD, R2\n")
     code, out = fx.run()
     assert code == 0 and "i2c_fast_sr.asm: `WCTL UIO_OD` writes 0x80" in out, out
+
+
+@case("runtime pin mode: a source register overwritten between its LDI and the WCTL is unwired")
+def _(fx):
+    fx.mutate("firmware/asm/i2c_fast.asm",
+              "        WCTL  UIO_OD, R3      ; DR 0012: SCL|SDA open-drain (after the OUT)\n",
+              "        XOR   R3, R3\n        WCTL  UIO_OD, R3\n")
+    code, out = fx.run()
+    assert code == 0 and "[implementation] INCOMPLETE: 1" in out, out
+    assert "i2c_fast.asm: `WCTL UIO_OD` writes None, table open-drain mask is 0x0C" in out, out
+    code, out = fx.run("--require-implemented")
+    assert code == 1 and "--require-implemented: FAIL" in out, out
+
+
+@case("runtime pin mode: the WCTL source register matches its writer in either case")
+def _(fx):
+    fx.mutate("firmware/asm/i2c_fast.asm",
+              "        WCTL  UIO_OD, R3      ; DR 0012: SCL|SDA open-drain (after the OUT)\n",
+              "        WCTL  UIO_OD, r3\n")
+    code, out = fx.run("--require-implemented")
+    assert code == 0 and "[implementation] COMPLETE: 0" in out, out
 
 
 @case("runtime pin mode: an SPI program without the WCTL UIO_DIR preamble is unwired")
@@ -917,6 +950,21 @@ def _(fx):
     expect_fail(fx, "SCL poll mask", "concrete-firmware-bench")
 
 
+@case("I2C SCL poll mask register overwritten between its LDI and the poll")
+def _(fx):
+    rel, poll = "firmware/asm/i2c_fast_sr_poll.asm", "        poll0: IN    R2, UIO_IN"
+    fx.mutate(rel, poll, "        XOR   R3, R3\n" + poll)
+    code, out = fx.run()
+    assert code == 1, f"expected exit 1, got {code}:\n{out}"
+    assert "[concrete-firmware-bench] FAIL" in out, f"layer concrete-firmware-bench did not fail:\n{out}"
+    assert "consistency (schema + metadata + concrete): FAIL" in out, out
+    sites = [n for n, l in enumerate(fx.path(rel).read_text(encoding="utf-8").splitlines(), 1)
+             if l.startswith(poll)]
+    assert len(sites) == 1, sites
+    assert f"ERROR: {rel}:{sites[0]}: SCL poll mask " in out, out
+    assert "`XOR R3, R3`" in out, out
+
+
 @case("I2C generator string literal mutated")
 def _(fx):
     fx.mutate("firmware/tools/gen_i2c_sr.py", '"LDI   R3, 0x04       ; poll mask"',
@@ -1145,6 +1193,22 @@ def _(fx):
 
 
 # ---------------------------------------------------------- table schema
+@case("schema: unsupported CAN role")
+def _(fx):
+    fx.mutate_table(lambda t: t["phases"]["can"].append("BOGUS"))
+    expect_vocabulary_errors(fx, ["can"])
+
+
+@case("schema: CAN vocabulary error precedes Modbus vocabulary error")
+def _(fx):
+    def add_unsupported_roles(table):
+        for phase in ("modbus", "can"):
+            table["phases"][phase].append("BOGUS")
+
+    fx.mutate_table(add_unsupported_roles)
+    expect_vocabulary_errors(fx, ["can", "modbus"])
+
+
 @case("schema: missing pin")
 def _(fx):
     fx.mutate_table(lambda t: t["pins"].remove(pin(t, "uio[3]")))

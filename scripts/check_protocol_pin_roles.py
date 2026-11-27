@@ -90,28 +90,6 @@ PIN_MODE_PROFILES = {
 }
 PIN_MODE_REGS = ("uio_dir", "uio_od")
 CTL_INDEX = {"UIO_DIR": "0X00", "UIO_OD": "0X01"}
-PHASES = (
-    "uart_tx",
-    "uart_rx",
-    "uart_rx_result",
-    "spi_transfer",
-    "spi_result",
-    "i2c_transfer",
-    "i2c_result",
-    "ws2812",
-    "ps2",
-    "dali",
-    "dali_result",
-    "onewire",
-    "onewire_result",
-    "dmx512",
-    "i2s",
-    "nec_ir_tx",
-    "nec_ir_rx",
-    "swd",
-    "can",
-    "modbus",
-)
 UNUSED = "unused"
 # PROG_SER / PROG_MODE are the serial program-load inputs. CRC_BYTE_SEL (an
 # input) and CRC_READOUT (the eight outputs) are DR 0013 layer 1's load-phase
@@ -166,15 +144,15 @@ PHASE_VOCAB = {
     # probe's write phases and released (sampled, with a pull-up) for the
     # target's response phases.
     "swd": {"SWCLK", "SWDIO"},
+    # Multi-protocol extra credit (issue #450): the CAN 2.0A node's two
+    # lines through an external transceiver. CAN_TXD (the transceiver's D
+    # input) is push-pull; CAN_RXD (its R output) is an input.
+    "can": {"CAN_TXD", "CAN_RXD"},
     # Multi-protocol extra credit (issue #446): the Modbus RTU server's
     # three line-side signals, all through an external RS-485
     # transceiver: the received line, the driven line, and the
     # transceiver's driver-enable (DE and /RE tied).
     "modbus": {"RX", "TX", "DE"},
-    # Multi-protocol extra credit (issue #450): the CAN 2.0A node's two
-    # lines through an external transceiver. CAN_TXD (the transceiver's D
-    # input) is push-pull; CAN_RXD (its R output) is an input.
-    "can": {"CAN_TXD", "CAN_RXD"},
 }
 
 # Extraction patterns this script implements. An inventory entry naming any
@@ -332,10 +310,10 @@ class Checker:
         if s.errors:
             return False
         phases = t["phases"]
-        if set(phases) != set(PHASES):
-            s.err(f"table.phases: keys {sorted(phases)} != {sorted(PHASES)}")
+        if set(phases) != set(PHASE_VOCAB):
+            s.err(f"table.phases: keys {sorted(phases)} != {sorted(PHASE_VOCAB)}")
         else:
-            for ph in PHASES:
+            for ph in PHASE_VOCAB:
                 roles = phases[ph]
                 if not isinstance(roles, list) or len(set(roles)) != len(roles):
                     s.err(f"table.phases.{ph}: must be a list of distinct roles")
@@ -376,8 +354,8 @@ class Checker:
             if pin.get("metadata_class") != "generic_isa_capability":
                 s.err(f"{label}: metadata_class must be 'generic_isa_capability'")
             pr = pin["protocol_roles"]
-            if set(pr) != set(PHASES):
-                s.err(f"{label}: protocol_roles keys {sorted(pr)} != {sorted(PHASES)}")
+            if set(pr) != set(PHASE_VOCAB):
+                s.err(f"{label}: protocol_roles keys {sorted(pr)} != {sorted(PHASE_VOCAB)}")
         for port in PORTS:
             for bit in range(8):
                 if (port, bit) not in seen:
@@ -798,7 +776,7 @@ class Checker:
     def prev_write(self, ins: list[dict], idx: int, reg: str):
         """(index, instr) of the nearest instruction before `idx` that writes `reg`."""
         for j in range(idx - 1, -1, -1):
-            if ins[j]["m"] in self.WRITES and ins[j]["ops"][0] == reg:
+            if ins[j]["m"] in self.WRITES and ins[j]["ops"][0].upper() == reg.upper():
                 return j, ins[j]
         return None, None
 
@@ -1029,11 +1007,18 @@ class Checker:
         # poll mask
         for idx, i in enumerate(ins):
             if i["m"] == "IN" and i["label"] and i["label"].startswith(poll_label_prefix):
-                prev = next((q for q in reversed(ins[:idx]) if q["m"] == "LDI" and q["ops"][0] == "R3"), None)
+                _j, prev = self.prev_write(ins, idx, "R3")
                 c.sites += 1
-                if prev is None or self.imm(prev["ops"][1]) != scl:
-                    c.err(f"{rel}:{i['no']}: SCL poll mask "
-                          f"{prev['ops'][1] if prev else '(none)'} != table SCL mask 0x{scl:02X}")
+                if prev is None:
+                    value, shown = None, "(none)"
+                elif prev["m"] != "LDI":
+                    value = None
+                    shown = (f"`{prev['m']} {prev['ops'][0]}, {prev['ops'][1]}` "
+                             f"(line {prev['no']}), not an `LDI`")
+                else:
+                    value, shown = self.imm(prev["ops"][1]), prev["ops"][1]
+                if value != scl:
+                    c.err(f"{rel}:{i['no']}: SCL poll mask {shown} != table SCL mask 0x{scl:02X}")
 
     def prof_i2c(self, rel, ent, text):
         c = self.concrete
@@ -2118,9 +2103,8 @@ class Checker:
                         "(DR 0012: the pins stay inputs and never reach the bus)")
                     continue
                 site = sites[0]
-                src = ins[site]["ops"][1]
-                val = next((self.imm(x["ops"][1]) for x in reversed(ins[:site])
-                            if x["m"] in self.WRITES and x["ops"][0] == src and x["m"] == "LDI"), None)
+                _, writer = self.prev_write(ins, site, ins[site]["ops"][1])
+                val = self.imm(writer["ops"][1]) if writer and writer["m"] == "LDI" else None
                 if val != want:
                     self.unwired.append(
                         f"{rel}: `WCTL {name}` writes {val if val is None else hex(val)}, "
