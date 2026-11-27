@@ -33,7 +33,7 @@ class UartReplayTests(unittest.TestCase):
     def replay(self, first_image_scale, expected_failure=None, control_scale=1.025,
                scales=None, shifts=(), violations=(), idle=None, unknown=None,
                initial_levels=(1, 1, 1), second_byte_edges=None, leading_rise=False,
-               next_start_ps=None, unknown_gap=None, edges=EDGES_PS):
+               next_start_ps=None, unknown_gap=None, edges=EDGES_PS, capture_ends=None):
         """`scales`: per-image timestamp multipliers (default: first image only);
         `shifts`: (image, frame, edge, ps) offsets; `violations`: image
         indices whose monitor reports a pin-contract violation."""
@@ -52,6 +52,11 @@ class UartReplayTests(unittest.TestCase):
         if second_byte_edges is not None:
             captures[0][1] = captures[0][1][:second_byte_edges]
 
+        if capture_ends is None:
+            capture_ends = [
+                max((t for frame in image for t in frame), default=0) + 12 * cycles * 20000
+                for image, (_, cycles) in zip(captures, uart.TX_IMAGES)
+            ]
         pending = iter(enumerate(captures))
         starts = iter(initial_levels)
         self.checkpoints = []
@@ -85,6 +90,7 @@ class UartReplayTests(unittest.TestCase):
             tempfile.TemporaryDirectory() as out,
             patch.multiple(uart, REPORT=report, Clock=Mock(), load_program=load_image, ReadOnly=tick,
                            Timer=tick, RisingEdge=tick, NEGATIVE_CONTROL_SCALE=control_scale),
+            patch.object(uart, "get_sim_time", side_effect=capture_ends),
             patch.object(cocotb, "start_soon"),
             patch.object(uart._align.PinDelayMonitor, "start", replay_monitor),
         ):
@@ -167,7 +173,7 @@ class UartReplayTests(unittest.TestCase):
         for frame, expected in zip(first["frames"], (36.0010, 32.0010)):
             self.assertAlmostEqual(frame["drift_pct"], expected)
             self.assertFalse(frame["within_bound"])
-        self.assertIn("framing error at t=67227.230ns", first["negative_control"]["framing_error"])
+        self.assertIn("frame origin 67227.230ns", first["negative_control"]["framing_error"])
         self.assertFalse(first["negative_control"]["all_failed_check_frame"])
         self.assert_decoded_controls(remaining)
 
@@ -267,6 +273,62 @@ class UartReplayTests(unittest.TestCase):
         self.assertIn("stop bit sampled 0", control["framing_error"])
         self.assertEqual(control["decoded"], ["0xa5"])
         self.assert_decoded_controls(others)
+
+    def test_monitor_end_truncates_last_frame_and_control(self):
+        # Delay the 115200 image's second frame as on the reviewed routed run.
+        frames = EDGES_PS[1]
+        second_start = 277_140_940
+        delayed = tuple(t - frames[1][0] + second_start for t in frames[1])
+        edges = (EDGES_PS[0], (frames[0], delayed), EDGES_PS[2])
+        ends = (100_000_000, 348_700_000, 3_000_000_000)
+        _, image, later = self.replay(1, "truncated frame", edges=edges, capture_ends=ends)
+        self.assertEqual(image["capture_end_ps"], ends[1])
+        self.assertEqual(image["tx_edges_ps"][-1], 346_580_950)
+        self.assertEqual([f["decoded_hex"] for f in image["frames"]], ["0x5a"])
+        self.assertIn("decoder recovered ['0x5a']", " ".join(image["failures"]))
+        control = image["negative_control"]
+        self.assertEqual(control["decoded"], ["0x5a"])
+        self.assertIn("truncated frame", control["framing_error"])
+        self.assertFalse(control["all_failed_check_frame"])
+        self.assert_decoded_controls([later])
+
+    def test_capture_end_at_full_frame_boundary(self):
+        start = EDGES_PS[0][1][0]
+        for offset in (-1, 0, 1):
+            with self.subTest(offset_ps=offset):
+                ends = (start + 10_000_000 + offset, 400_000_000, 3_000_000_000)
+                first, *later = self.replay(
+                    1, "truncated frame" if offset < 0 else None, capture_ends=ends)
+                expected = ["0x5a"] if offset < 0 else ["0x5a", "0xa5"]
+                self.assertEqual([f["decoded_hex"] for f in first["frames"]], expected)
+                # The stretched observation spans a full frame even in the -1 ps case.
+                self.assert_decoded_controls([first, *later])
+
+    def test_stop_sample_at_fast_and_slow_corner_edges(self):
+        # The two failing start instants from the routed captures in review 7215162274.
+        for index, start_ps in ((0, 63_064_653), (2, 660_725_473)):
+            period_ps = uart.TX_IMAGES[index][1] * 20_000
+            delta = start_ps - EDGES_PS[index][0][0]
+            edges = list(EDGES_PS)
+            edges[index] = tuple(tuple(t + delta for t in frame) for frame in edges[index])
+            stop_sample = start_ps + 19 * period_ps // 2
+            for offset in (-10, 0, 10):
+                with self.subTest(index=index, offset_ps=offset):
+                    stop_edge = stop_sample + offset
+                    diagnostic = "stop bit sampled 0" if offset > 0 else "row-10 drift bound failed"
+                    image = self.replay(1, diagnostic, edges=edges,
+                                        shifts=[(index, 0, -1, stop_edge - edges[index][0][-1])])[index]
+                    self.assertEqual(image["frames"][-1]["decoded_hex"], "0xa5")
+                    if offset > 0:
+                        self.assertEqual(len(image["frames"]), 1)
+                        self.assertIn(diagnostic, " ".join(image["failures"]))
+                    else:
+                        first = image["frames"][0]
+                        self.assertEqual(first["decoded_hex"], "0x5a")
+                        self.assertEqual(first["last_edge_ps"], stop_edge)
+                        self.assertEqual(first["drift_ps"], period_ps // 2 + offset)
+                        self.assertAlmostEqual(first["drift_pct"], first["model_drift_pct"])
+                        self.assertFalse(first["within_bound"])
 
     def test_unknown_at_frame_end_keeps_completed_frame(self):
         for offset in (-1, 0, 1):

@@ -528,7 +528,7 @@
         "role": "testbench",
         "path": "verification/sdf_protocol_uart_tx.py",
         "passed": true,
-        "content_hash": "sha256:441da86ddf5137e547fb1da1bf26f7e628247d2b9f61fb79e8d5cfe422f6c21e"
+        "content_hash": "sha256:5ff577ecf3ed604a4e27442c1fd01cedd25f7c763ab166762814e810291d1314"
       },
       {
         "check": "present",
@@ -724,7 +724,7 @@
         "role": "testbench",
         "path": "verification/test_sdf_uart_replay.py",
         "passed": true,
-        "content_hash": "sha256:5cfd47ea7260f44d0a184470338053c38721b2f02525f7a1e40a825d02ecb191"
+        "content_hash": "sha256:3ff1cc13807c1e3f5108b509fcff79bb00cfc7843e3f616aa2d857a23ca7fee2"
       },
       {
         "check": "present",
