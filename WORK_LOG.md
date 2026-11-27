@@ -20,6 +20,10 @@ Chronological record of merged pull requests and closed issues, newest first.
 
 ### 2026-11-23
 
+- **PR #537**: firmware: CAN 2.0A node on the frozen ISA (arbitrated TX, RX with CRC-15 and ACK)
+- **Issue #450** (closed): Firmware: CAN 2.0A on the existing ISA (multi-protocol extra credit)
+- **PR #532**: feat: map every failing characterization row to an open owner or ratification wait
+- **Issue #524** (closed): T1 item 8: map failing characterization rows to open evidence issues or ratification waits
 - **PR #568**: fix: name withheld changed segments in signoff_movement_diff excerpts
 - **PR #566**: refactor: consolidate test_check_records fixture boilerplate into shared _commit/_commit_record/_update_rtl/_run_fixture helpers
 - **PR #559**: docs: require merge-first, --collapse re-minting of stale signoff leaves
